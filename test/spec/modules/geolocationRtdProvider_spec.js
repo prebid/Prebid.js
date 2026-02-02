@@ -49,7 +49,10 @@ describe('Geolocation RTD Provider', function () {
       onDone = sinon.stub();
       permState = 'prompt';
       rtdConfig = {params: {}};
-      clock = sandbox.useFakeTimers(11000);
+      clock = sandbox.useFakeTimers({
+        now: 11000,
+        shouldClearNativeTimers: true
+      });
       sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
         cb({coords: {latitude: 1, longitude: 2}, timestamp: 1000});
       });
@@ -62,6 +65,11 @@ describe('Geolocation RTD Provider', function () {
         });
       })
       geolocationSubmodule.init(rtdConfig);
+    });
+
+    afterEach(() => {
+      clock.runAll();
+      clock.restore();
     });
 
     it('init should return true', function () {

@@ -14,7 +14,7 @@ export class GreedyPromise {
     }
     const result = [];
     const callbacks = [];
-    let [resolve, reject] = [SUCCESS, FAIL].map((type) => {
+    const [resolve, reject] = [SUCCESS, FAIL].map((type) => {
       return function (value) {
         if (type === SUCCESS && typeof value?.then === 'function') {
           value.then(resolve, reject);
@@ -86,15 +86,23 @@ export class GreedyPromise {
 
   static all(promises) {
     return new this((resolve, reject) => {
-      let res = [];
-      this.#collect(promises, (success, val, i) => success ? res[i] = val : reject(val), () => resolve(res));
+      const res = [];
+      this.#collect(promises, (success, val, i) => {
+        if (success) {
+          res[i] = val;
+        } else {
+          reject(val);
+        }
+      }, () => resolve(res));
     })
   }
 
   static allSettled(promises) {
     return new this((resolve) => {
-      let res = [];
-      this.#collect(promises, (success, val, i) => res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val}, () => resolve(res))
+      const res = [];
+      this.#collect(promises, (success, val, i) => {
+        res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val};
+      }, () => resolve(res))
     })
   }
 

@@ -46,13 +46,13 @@ export const spec = {
       const isDev = params.devMode || false;
       const pbcode = bidRequest.adUnitCode || false; // div id
 
-      let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
+      const endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
-      let mediaTypesInfo = getMediaTypesInfo(bidRequest);
-      let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
-      let sizes = mediaTypesInfo[type];
+      const mediaTypesInfo = getMediaTypesInfo(bidRequest);
+      const type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
+      const sizes = mediaTypesInfo[type];
 
-      let payload = {
+      const payload = {
         _f: 'vast2',
         alternative: 'prebid_js',
         _ps: placementId,
@@ -69,14 +69,15 @@ export const spec = {
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
       }
-      if (bidRequest.schain) {
-        payload.schain = serializeSChain(bidRequest.schain);
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        payload.schain = serializeSChain(schain);
       } else {
         delete payload.schain;
       }
 
       payload.uids = serializeUids(bidRequest);
-      if (payload.uids == '') {
+      if (payload.uids === '') {
         delete payload.uids;
       }
 
@@ -87,7 +88,7 @@ export const spec = {
       if (params.devMode !== undefined) { delete payload.pfilter.devMode; }
 
       if (payload.pfilter === undefined || !payload.pfilter.floorprice) {
-        let bidFloor = getBidFloor(bidRequest);
+        const bidFloor = getBidFloor(bidRequest);
         if (bidFloor > 0) {
           if (payload.pfilter !== undefined) {
             payload.pfilter.floorprice = bidFloor;
@@ -99,12 +100,14 @@ export const spec = {
       }
 
       if (mediaTypesInfo[VIDEO] !== undefined) {
-        let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+        const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
           .filter(key => Object.keys(VIDEO_ORTB_PARAMS).includes(key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
-          .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
+          .forEach(key => {
+            payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key];
+          });
       }
-      if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }
+      if (Object.keys(payload.pfilter).length === 0) { delete payload.pfilter }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -145,15 +148,15 @@ export const spec = {
 }
 
 function stvObjectToQueryString(obj, prefix) {
-  let str = [];
+  const str = [];
   let p;
   for (p in obj) {
     if (obj.hasOwnProperty(p)) {
-      let k = prefix ? prefix + '[' + p + ']' : p;
-      let v = obj[p];
+      const k = prefix ? prefix + '[' + p + ']' : p;
+      const v = obj[p];
       str.push((v !== null && typeof v === 'object')
         ? stvObjectToQueryString(v, k)
-        : (k == 'schain' || k == 'uids' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
+        : (k === 'schain' || k === 'uids' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
     }
   }
   return str.join('&');
@@ -166,7 +169,7 @@ function serializeSChain(schain) {
   ret += ',';
   ret += encodeURIComponent(schain.complete);
 
-  for (let node of schain.nodes) {
+  for (const node of schain.nodes) {
     ret += '!';
     ret += encodeURIComponent(node.asi);
     ret += ',';
@@ -189,48 +192,48 @@ function serializeSChain(schain) {
 }
 
 function serializeUids(bidRequest) {
-  let uids = [];
+  const uids = [];
 
   if (bidRequest.userIdAsEids === undefined || !Array.isArray(bidRequest.userIdAsEids)) {
     return '';
   }
 
-  let buids = {};
+  const buids = {};
   bidRequest.userIdAsEids.forEach((src) => (buids[deepAccess(src, 'source')] = deepAccess(src, 'uids.0')));
 
-  let id5 = deepAccess(buids['id5-sync.com'], 'id');
+  const id5 = deepAccess(buids['id5-sync.com'], 'id');
   if (id5) {
     uids.push(encodeURIComponent('id5:' + id5));
-    let id5Linktype = deepAccess(buids['id5-sync.com'], 'ext.linkType');
+    const id5Linktype = deepAccess(buids['id5-sync.com'], 'ext.linkType');
     if (id5Linktype) {
       uids.push(encodeURIComponent('id5_linktype:' + id5Linktype));
     }
   }
-  let netId = deepAccess(buids['netid.de'], 'id');
+  const netId = deepAccess(buids['netid.de'], 'id');
   if (netId) {
     uids.push(encodeURIComponent('netid:' + netId));
   }
-  let uId2 = deepAccess(buids['uidapi.com'], 'id');
+  const uId2 = deepAccess(buids['uidapi.com'], 'id');
   if (uId2) {
     uids.push(encodeURIComponent('uid2:' + uId2));
   }
-  let sharedId = deepAccess(buids['pubcid.org'], 'id');
+  const sharedId = deepAccess(buids['pubcid.org'], 'id');
   if (sharedId) {
     uids.push(encodeURIComponent('sharedid:' + sharedId));
   }
-  let liverampId = deepAccess(buids['liveramp.com'], 'id');
+  const liverampId = deepAccess(buids['liveramp.com'], 'id');
   if (liverampId) {
     uids.push(encodeURIComponent('liverampid:' + liverampId));
   }
-  let criteoId = deepAccess(buids['criteo.com'], 'id');
+  const criteoId = deepAccess(buids['criteo.com'], 'id');
   if (criteoId) {
     uids.push(encodeURIComponent('criteoid:' + criteoId));
   }
-  let utiqId = deepAccess(buids['utiq.com'], 'id');
+  const utiqId = deepAccess(buids['utiq.com'], 'id');
   if (utiqId) {
     uids.push(encodeURIComponent('utiq:' + utiqId));
   }
-  let euidId = deepAccess(buids['euid.eu'], 'id');
+  const euidId = deepAccess(buids['euid.eu'], 'id');
   if (euidId) {
     uids.push(encodeURIComponent('euid:' + euidId));
   }

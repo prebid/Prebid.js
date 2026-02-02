@@ -1,9 +1,12 @@
 import 'src/prebid.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+
+import {getGlobalVarName} from '../../src/buildOptions.js';
 
 describe('Publisher API _ AdUnits', function () {
   var assert = require('chai').assert;
   var expect = require('chai').expect;
-  var pbjsTestOnly = require('../helpers/pbjs-test-only').pbjsTestOnly;
+  var pbjsTestOnly = require('../helpers/pbjs-test-only.js').pbjsTestOnly;
 
   before(function () {
     var adUnits = [{
@@ -54,7 +57,7 @@ describe('Publisher API _ AdUnits', function () {
       ]
     }];
     pbjsTestOnly.clearAllAdUnits();
-    $$PREBID_GLOBAL$$.addAdUnits(adUnits);
+    getGlobal().addAdUnits(adUnits);
   });
 
   after(function () {
@@ -72,7 +75,7 @@ describe('Publisher API _ AdUnits', function () {
       bids2 = adUnit2.bids;
     });
 
-    it('the first adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
+    it(`the first adUnits value should be same with the adUnits that is added by ${getGlobalVarName()}.addAdUnits();`, function () {
       assert.strictEqual(adUnit1.code, '/1996833/slot-1', 'adUnit1 code');
       assert.deepEqual(adUnit1.sizes, [[300, 250], [728, 90]], 'adUnit1 sizes');
       assert.strictEqual(bids1[0].bidder, 'openx', 'adUnit1 bids1 bidder');
@@ -94,7 +97,7 @@ describe('Publisher API _ AdUnits', function () {
       assert.strictEqual(bids2[1].params.placementId, '827326', 'adUnit2 bids2 params.placementId');
     });
 
-    it('the second adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
+    it(`the second adUnits value should be same with the adUnits that is added by ${getGlobalVarName()}.addAdUnits();`, function () {
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
       assert.deepEqual(adUnit2['ortb2Imp'], {'ext': {'data': {'pbadslot': 'adSlotTest', 'inventory': [4], 'keywords': 'foo,bar', 'visitor': [1, 2, 3]}}}, 'adUnit2 ortb2Imp');
@@ -112,7 +115,7 @@ describe('Publisher API _ AdUnits', function () {
     var adUnits, adUnit2, bids2;
 
     it('the first adUnit should be not existed', function () {
-      $$PREBID_GLOBAL$$.removeAdUnit('/1996833/slot-1');
+      getGlobal().removeAdUnit('/1996833/slot-1');
       adUnits = pbjsTestOnly.getAdUnits();
       adUnit2 = adUnits[0];
       bids2 = adUnit2.bids;

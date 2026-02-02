@@ -41,9 +41,9 @@ export const spec = {
     let catData = null
     if (bidderRequest?.ortb2?.site) {
       catData = {
-          pagecat: bidderRequest.ortb2.site.pagecat || [],
-          sectioncat: bidderRequest.ortb2.site.sectioncat || [],
-          sitecat: bidderRequest.ortb2.site.cat || [],
+        pagecat: bidderRequest.ortb2.site.pagecat || [],
+        sectioncat: bidderRequest.ortb2.site.sectioncat || [],
+        sitecat: bidderRequest.ortb2.site.cat || [],
       }
     }
 
@@ -66,12 +66,12 @@ export const spec = {
     }
 
     return validBidRequests.map((bidRequest) => {
-      let rawSizes =
+      const rawSizes =
         deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
         bidRequest.sizes;
-      let size = rawSizes[0];
+      const size = rawSizes[0];
 
-      let url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`;
+      const url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`;
 
       const data = {
         width: size[0],
@@ -119,6 +119,7 @@ export const spec = {
       ttl: responseBody.bidResponse.ttl,
       ad: responseBody.bidResponse.ad,
       vastUrl: responseBody.bidResponse.vastUrl,
+      mediaType: responseBody.bidResponse.mediaType,
       meta: {
         advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
       }

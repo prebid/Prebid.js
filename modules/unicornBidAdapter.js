@@ -102,9 +102,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
 }
 
 const initializeEids = (bidRequest) => {
-  let eids = [];
+  const eids = [];
 
-  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
   if (id5) {
     eids.push({
       source: 'id5-sync.com',
@@ -139,7 +139,7 @@ const interpretResponse = (serverResponse, request) => {
           currency: res.cur
         }
 
-        if (b.adomain != undefined || b.adomain != null) {
+        if (b.adomain) {
           bid.meta = { advertiserDomains: b.adomain };
         }
 

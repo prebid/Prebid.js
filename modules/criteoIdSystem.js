@@ -228,7 +228,7 @@ export const criteoIdSubmodule = {
    * @returns {{id: {criteoId: string} | undefined}}}
    */
   getId(submoduleConfig) {
-    let localData = getCriteoDataFromStorage(submoduleConfig);
+    const localData = getCriteoDataFromStorage(submoduleConfig);
 
     const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);
 

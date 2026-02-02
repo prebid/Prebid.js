@@ -14,14 +14,15 @@ import {deepAccess, isArray, isEmptyStr, isFn} from '../../src/utils.js';
  */
 export function fillUsersIds(bidRequest, payload) {
   if (bidRequest.hasOwnProperty('userIdAsEids')) {
-    let didMapping = {
+    const didMapping = {
       did_netid: 'netid.de',
       did_uid2: 'uidapi.com',
       did_sharedid: 'sharedid.org',
       did_pubcid: 'pubcid.org',
       did_cruid: 'criteo.com',
       did_tdid: 'adserver.org',
-      did_pbmid: 'regexp:[esp\.]*pubmatic\.com',
+      // eslint-disable-next-line no-useless-escape
+      did_pbmid: 'regexp:^(?:esp\.)?pubmatic\.com$',
       did_id5: 'id5-sync.com',
       did_uqid: 'utiq.com',
       did_id5_linktype: ['id5-sync.com', function (e) {
@@ -40,7 +41,7 @@ export function fillUsersIds(bidRequest, payload) {
       }],
     };
     bidRequest.userIdAsEids?.forEach(eid => {
-      for (let paramName in didMapping) {
+      for (const paramName in didMapping) {
         let targetSource = didMapping[paramName];
 
         // func support
@@ -58,14 +59,14 @@ export function fillUsersIds(bidRequest, payload) {
         }
 
         // fill payload
-        let isMatches = targetSourceType === 'eq' ? eid.source === targetSource : eid.source.match(targetSource);
+        const isMatches = targetSourceType === 'eq' ? eid.source === targetSource : eid.source.match(targetSource);
         if (isMatches) {
           if (func == null) {
             if (eid.uids?.[0]?.id) {
               payload[paramName] = eid.uids[0].id;
             }
           } else {
-             payload[paramName] = func(eid);
+            payload[paramName] = func(eid);
           }
         }
       }
@@ -82,12 +83,12 @@ export function appendToUrl(url, what) {
 }
 
 export function objectToQueryString(obj, prefix) {
-  let str = [];
+  const str = [];
   let p;
   for (p in obj) {
     if (obj.hasOwnProperty(p)) {
-      let k = prefix ? prefix + '[' + p + ']' : p;
-      let v = obj[p];
+      const k = prefix ? prefix + '[' + p + ']' : p;
+      const v = obj[p];
       if (v === null || v === undefined) continue;
       str.push((typeof v === 'object')
         ? objectToQueryString(v, k)
@@ -153,7 +154,7 @@ export function getBannerSizes(bid) {
  * @returns {object} sizeObj
  */
 export function parseSize(size) {
-  let sizeObj = {}
+  const sizeObj = {}
   sizeObj.width = parseInt(size[0], 10);
   sizeObj.height = parseInt(size[1], 10);
   return sizeObj;
@@ -178,7 +179,7 @@ export function parseSizes(sizes) {
  * @returns {*}
  */
 export function convertMediaInfoForRequest(mediaTypesInfo) {
-  let requestData = {};
+  const requestData = {};
   Object.keys(mediaTypesInfo).forEach(mediaType => {
     requestData[mediaType] = mediaTypesInfo[mediaType].map(size => {
       return size.width + 'x' + size.height;
@@ -193,7 +194,7 @@ export function convertMediaInfoForRequest(mediaTypesInfo) {
  * @param bid
  */
 export function getMediaTypesInfo(bid) {
-  let mediaTypesInfo = {};
+  const mediaTypesInfo = {};
 
   if (bid.mediaTypes) {
     Object.keys(bid.mediaTypes).forEach(mediaType => {
@@ -240,24 +241,24 @@ export function siteContentToString(content) {
   if (!content) {
     return '';
   }
-  let stringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'isrc', 'url', 'keywords'];
-  let intKeys = ['episode', 'context', 'livestream'];
-  let arrKeys = ['cat'];
-  let retArr = [];
+  const stringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'isrc', 'url', 'keywords'];
+  const intKeys = ['episode', 'context', 'livestream'];
+  const arrKeys = ['cat'];
+  const retArr = [];
   arrKeys.forEach(k => {
-    let val = deepAccess(content, k);
+    const val = deepAccess(content, k);
     if (val && Array.isArray(val)) {
       retArr.push(k + ':' + val.join('|'));
     }
   });
   intKeys.forEach(k => {
-    let val = deepAccess(content, k);
+    const val = deepAccess(content, k);
     if (val && typeof val === 'number') {
       retArr.push(k + ':' + val);
     }
   });
   stringKeys.forEach(k => {
-    let val = deepAccess(content, k);
+    const val = deepAccess(content, k);
     if (val && typeof val === 'string') {
       retArr.push(k + ':' + encodeURIComponent(val));
     }

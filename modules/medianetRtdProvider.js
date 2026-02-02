@@ -33,7 +33,7 @@ function init(config) {
 
 function getBidRequestData(requestBidsProps, callback, config, userConsent) {
   executeCommand(() => {
-    let adUnits = getAdUnits(requestBidsProps.adUnits, requestBidsProps.adUnitCodes);
+    const adUnits = getAdUnits(requestBidsProps.adUnits, requestBidsProps.adUnitCodes);
     const request = window.mnjs.onPrebidRequestBid({requestBidsProps, config, userConsent});
     if (!request) {
       callback();

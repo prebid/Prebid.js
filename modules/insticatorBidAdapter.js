@@ -112,7 +112,7 @@ function buildVideo(bidRequest) {
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
 
-  let optionalParams = {};
+  const optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (bidRequestVideo[param] && OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
       optionalParams[param] = bidRequestVideo[param];
@@ -135,7 +135,7 @@ function buildVideo(bidRequest) {
     optionalParams['context'] = context;
   }
 
-  let videoObj = {
+  const videoObj = {
     mimes,
     w,
     h,
@@ -168,7 +168,7 @@ function buildImpression(bidRequest) {
     deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
   }
 
-  let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+  const bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
 
   if (!isNaN(bidFloor)) {
     imp.bidfloor = deepAccess(bidRequest, 'params.floor');
@@ -282,7 +282,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function buildRegs(bidderRequest) {
-  let regs = {
+  const regs = {
     ext: {},
   };
   if (bidderRequest.gdprConsent) {
@@ -355,9 +355,10 @@ function buildUser(bid) {
 }
 
 function extractSchain(bids, requestId) {
-  if (!bids || bids.length === 0 || !bids[0].schain) return;
+  if (!bids || bids.length === 0) return;
 
-  const schain = bids[0].schain;
+  const schain = bids[0]?.ortb2?.source?.ext?.schain;
+  if (!schain) return;
   if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }
@@ -457,7 +458,7 @@ function buildBid(bid, bidderRequest) {
   if (bid.adm && bid.adm.includes('<VAST')) {
     mediaType = 'video';
   }
-  let bidResponse = {
+  const bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
@@ -551,7 +552,7 @@ function validateBanner(bid) {
 function validateVideo(bid) {
   const videoParams = deepAccess(bid, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bid, 'params.video');
-  let video = {
+  const video = {
     ...videoParams,
     ...videoBidderParams // bidder specific overrides for video
   }

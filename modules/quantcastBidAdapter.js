@@ -79,8 +79,8 @@ function makeBannerImp(bid) {
 }
 
 function checkTCF(tcData) {
-  let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
-  let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
+  const restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
+  const qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
     : null;
 
@@ -89,14 +89,14 @@ function checkTCF(tcData) {
     return false;
   }
 
-  let vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
-  let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
+  const vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
+  const purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
 
   return !!(vendorConsent && purposeConsent);
 }
 
 function getQuantcastFPA() {
-  let fpa = storage.getCookie(QUANTCAST_FPA)
+  const fpa = storage.getCookie(QUANTCAST_FPA)
   return fpa || ''
 }
 
@@ -108,7 +108,7 @@ let hasUserSynced = false;
  */
 export const spec = {
   code: BIDDER_CODE,
-  GVLID: QUANTCAST_VENDOR_ID,
+  gvlid: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
 
   /**
@@ -149,7 +149,7 @@ export const spec = {
       }
     }
 
-    let bidRequestsList = [];
+    const bidRequestsList = [];
 
     bids.forEach(bid => {
       let imp;

@@ -12,7 +12,6 @@ const SYNC_URL = 'https://mfx.mobilefuse.com/usync';
 export const spec = {
   code: 'mobilefuse',
   supportedMediaTypes: [BANNER, VIDEO],
-  gvlid: 909,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -132,7 +131,7 @@ function getBidfloor(bidRequest) {
     return null;
   }
 
-  let floor = bidRequest.getFloor();
+  const floor = bidRequest.getFloor();
   if (floor.currency === 'USD') {
     return floor.floor;
   }

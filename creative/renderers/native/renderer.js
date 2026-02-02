@@ -1,3 +1,5 @@
+import { registerReportingObserver } from '../../reporting.js';
+import { BROWSER_INTERVENTION, MESSAGE_EVENT } from '../../constants.js';
 import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS} from './constants.js';
 
 export function getReplacer(adId, {assets = [], ortb, nativeKeys = {}}) {
@@ -73,6 +75,12 @@ export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) 
 }
 
 export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
+  registerReportingObserver((report) => {
+    sendMessage(MESSAGE_EVENT, {
+      event: BROWSER_INTERVENTION,
+      intervention: report
+    });
+  }, ['intervention']);
   const {head, body} = win.document;
   const resize = () => {
     // force redraw - for some reason this is needed to get the right dimensions
@@ -80,7 +88,7 @@ export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMark
     body.style.display = 'block';
     sendMessage(MESSAGE_NATIVE, {
       action: ACTION_RESIZE,
-      height: body.offsetHeight,
+      height: body.offsetHeight || win.document.documentElement.scrollHeight,
       width: body.offsetWidth
     });
   }

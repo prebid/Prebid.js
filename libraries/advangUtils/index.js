@@ -1,4 +1,5 @@
 import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
+import { getDNT as getNavigatorDNT } from '../dnt/index.js';
 import { config } from '../../src/config.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
@@ -12,12 +13,12 @@ export function isVideoBid(bid) {
 }
 
 export function getBannerBidFloor(bid) {
-  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
+  const floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
   return floorInfo?.floor || getBannerBidParam(bid, 'bidfloor');
 }
 
 export function getVideoBidFloor(bid) {
-  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
+  const floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
   return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
 }
 
@@ -45,8 +46,8 @@ export function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-export function getDoNotTrack() {
-  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
+export function getDoNotTrack(win = typeof window !== 'undefined' ? window : undefined) {
+  return getNavigatorDNT(win);
 }
 
 export function findAndFillParam(o, key, value) {
@@ -60,7 +61,7 @@ export function findAndFillParam(o, key, value) {
 }
 
 export function getOsVersion() {
-  let clientStrings = [
+  const clientStrings = [
     { s: 'Android', r: /Android/ },
     { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
     { s: 'Mac OS X', r: /Mac OS X/ },
@@ -76,7 +77,7 @@ export function getOsVersion() {
     { s: 'UNIX', r: /UNIX/ },
     { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
   ];
-  let cs = clientStrings.find(cs => cs.r.test(navigator.userAgent));
+  const cs = clientStrings.find(cs => cs.r.test(navigator.userAgent));
   return cs ? cs.s : 'unknown';
 }
 
@@ -86,7 +87,7 @@ export function getFirstSize(sizes) {
 
 export function parseSizes(sizes) {
   return parseSizesInput(sizes).map(size => {
-    let [ width, height ] = size.split('x');
+    const [ width, height ] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
       h: parseInt(height, 10) || undefined
@@ -127,24 +128,24 @@ export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
 }
 
 export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor, BIDDER_CODE, ADAPTER_VERSION) {
-  let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer(bidderRequest);
-  let paramSize = getBidParam(bid, 'size');
+  const topLocation = getTopWindowLocation(bidderRequest);
+  const topReferrer = getTopWindowReferrer(bidderRequest);
+  const paramSize = getBidParam(bid, 'size');
   let sizes = [];
-  let coppa = config.getConfig('coppa');
+  const coppa = config.getConfig('coppa');
 
-  if (typeof paramSize !== 'undefined' && paramSize != '') {
+  if (typeof paramSize !== 'undefined' && paramSize !== '') {
     sizes = parseSizes(paramSize);
   } else {
     sizes = getSizes(bid);
   }
 
   const firstSize = getFirstSize(sizes);
-  let floor = getBidFloor(bid) || (isVideo ? 0.5 : 0.1);
+  const floor = getBidFloor(bid) || (isVideo ? 0.5 : 0.1);
   const o = {
     'device': {
       'langauge': (global.navigator.language).split('-')[0],
-      'dnt': (global.navigator.doNotTrack === 1 ? 1 : 0),
+      'dnt': getDoNotTrack(global) ? 1 : 0,
       'devicetype': isMobile() ? 4 : isConnectedTV() ? 3 : 2,
       'js': 1,
       'os': getOsVersion()
@@ -169,7 +170,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   o.site['ref'] = topReferrer;
   o.site['mobile'] = isMobile() ? 1 : 0;
   const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
-  o.device['dnt'] = getDoNotTrack() ? 1 : 0;
+  o.device['dnt'] = getDoNotTrack(global) ? 1 : 0;
 
   findAndFillParam(o.site, 'name', function() {
     return global.top.document.title;
@@ -182,8 +183,8 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
     return global.screen.width;
   });
 
-  let placement = getBidParam(bid, 'placement');
-  let impType = isVideo ? {
+  const placement = getBidParam(bid, 'placement');
+  const impType = isVideo ? {
     'video': Object.assign({
       'id': generateUUID(),
       'pos': 0,
@@ -218,7 +219,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+    const { gdprApplies, consentString } = bidderRequest.gdprConsent;
     o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
     o.user.ext = {'consent': consentString};
   }

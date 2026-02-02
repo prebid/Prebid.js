@@ -36,7 +36,7 @@ function getSession(configParams) {
 }
 
 function setCookie(name, value, expires) {
-  let expTime = new Date();
+  const expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
   storage.setCookie(name, value, expTime.toUTCString(), 'Lax');
 }

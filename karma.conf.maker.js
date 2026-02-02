@@ -2,11 +2,11 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
-const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
-var path = require('path');
+const path = require('path');
+const helpers = require('./gulpHelpers.js');
 const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 
 function newWebpackConfig(codeCoverage, disableFeatures) {
@@ -22,23 +22,25 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
-
-  webpackConfig.module.rules
-    .flatMap((r) => r.use)
-    .filter((use) => use.loader === 'babel-loader')
-    .forEach((use) => {
-      use.options = Object.assign(
-        {cacheDirectory: cacheDir, cacheCompression: false},
-        babelConfig({test: true, codeCoverage, disableFeatures})
-      );
-    });
-
+  webpackConfig.module = webpackConfig.module || {};
+  webpackConfig.module.rules = webpackConfig.module.rules || [];
+  webpackConfig.module.rules.push({
+    test: /\.js$/,
+    exclude: path.resolve('./node_modules'),
+    loader: 'babel-loader',
+    options: {
+      cacheDirectory: cacheDir, cacheCompression: false,
+      presets: [['@babel/preset-env', {modules: 'commonjs'}]],
+      plugins: codeCoverage ? ['babel-plugin-istanbul'] : []
+    }
+  })
   return webpackConfig;
 }
 
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
+    'karma-safarinative-launcher',
     'karma-coverage',
     'karma-mocha',
     'karma-chai',
@@ -46,14 +48,14 @@ function newPluginsArray(browserstack) {
     'karma-sourcemap-loader',
     'karma-spec-reporter',
     'karma-webpack',
-    'karma-mocha-reporter'
+    'karma-mocha-reporter',
+    '@chiragrupani/karma-chromium-edge-launcher',
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
   }
   plugins.push('karma-firefox-launcher');
   plugins.push('karma-opera-launcher');
-  plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
   return plugins;
 }
@@ -83,13 +85,19 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
 }
 
 function setBrowsers(karmaConf, browserstack) {
+  karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+  karmaConf.customLaunchers.ChromeNoSandbox = {
+    base: 'ChromeHeadless',
+    // disable sandbox - necessary within Docker and when using versions installed through @puppeteer/browsers
+    flags: ['--no-sandbox']
+  }
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
+      build: process.env.BROWSERSTACK_BUILD_NAME
     }
-    if (process.env.TRAVIS) {
+    if (process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
@@ -98,14 +106,7 @@ function setBrowsers(karmaConf, browserstack) {
   } else {
     var isDocker = require('is-docker')();
     if (isDocker) {
-      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
-      karmaConf.customLaunchers.ChromeCustom = {
-        base: 'ChromeHeadless',
-        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
-        // more permissions than Docker allows by default)
-        flags: ['--no-sandbox']
-      }
-      karmaConf.browsers = ['ChromeCustom'];
+      karmaConf.browsers = ['ChromeNoSandbox'];
     } else {
       karmaConf.browsers = ['ChromeHeadless'];
     }
@@ -120,6 +121,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
   }
 
   var files = file ? ['test/test_deps.js', ...file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
+  files = files.map(helpers.getPrecompiledPath);
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -154,6 +156,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: watchMode,
+    autoWatchBatchDelay: 2000,
 
     reporters: ['mocha'],
 
@@ -171,10 +174,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 1e5, // default 2000
-    browserNoActivityTimeout: 1e5, // default 10000
-    captureTimeout: 3e5, // default 60000,
-    browserDisconnectTolerance: 1,
+    browserDisconnectTimeout: 1e4,
+    browserNoActivityTimeout: 3e4,
+    captureTimeout: 2e4,
+    browserDisconnectTolerance: 5,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins

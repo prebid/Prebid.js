@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { getTimeToFirstByte } from './timeToFirstBytesUtils';
+import { getTimeToFirstByte } from './timeToFirstBytesUtils.js';
 
 describe('getTimeToFirstByte', () => {
   let win;

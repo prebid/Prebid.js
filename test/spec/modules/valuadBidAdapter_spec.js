@@ -6,6 +6,7 @@ import { BANNER } from 'src/mediaTypes.js';
 import { deepClone, generateUUID } from 'src/utils.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import * as BoundingClientRect from 'libraries/boundingClientRect/boundingClientRect.js';
@@ -121,7 +122,7 @@ describe('ValuadAdapter', function () {
     });
 
     sandbox.stub(utils, 'canAccessWindowTop').returns(true);
-    sandbox.stub(utils, 'getDNT').returns(false);
+    sandbox.stub(dnt, 'getDNT').returns(false);
     sandbox.stub(utils, 'generateUUID').returns('test-uuid');
 
     sandbox.stub(refererDetection, 'parseDomain').returns('test.com');
@@ -157,7 +158,7 @@ describe('ValuadAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: 'valuad',
       params: {
         placementId: 'test-placement-id'
@@ -178,31 +179,31 @@ describe('ValuadAdapter', function () {
     });
 
     it('should return false when placementId is missing', function () {
-      let invalidBid = deepClone(bid);
+      const invalidBid = deepClone(bid);
       delete invalidBid.params.placementId;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when params are missing', function () {
-      let invalidBid = deepClone(bid);
+      const invalidBid = deepClone(bid);
       delete invalidBid.params;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when bidId is missing', function () {
-      let invalidBid = deepClone(bid);
+      const invalidBid = deepClone(bid);
       delete invalidBid.bidId;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when mediaTypes is missing', function () {
-      let invalidBid = deepClone(bid);
+      const invalidBid = deepClone(bid);
       delete invalidBid.mediaTypes;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when banner sizes are missing', function () {
-      let invalidBid = deepClone(bid);
+      const invalidBid = deepClone(bid);
       delete invalidBid.mediaTypes[BANNER].sizes;
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -238,9 +239,9 @@ describe('ValuadAdapter', function () {
       expect(payload.regs.gdpr).to.equal(1);
       expect(payload.regs.coppa).to.equal(0);
       expect(payload.regs.us_privacy).to.equal(bidderRequest.uspConsent);
-      expect(payload.regs.ext.gdpr_conset).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(payload.regs.ext.gdpr_consent).to.equal(bidderRequest.gdprConsent.consentString);
       expect(payload.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
-      expect(payload.regs.ext.gppSid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
+      expect(payload.regs.ext.gpp_sid).to.deep.equal(bidderRequest.ortb2.regs.gpp_sid);
       expect(payload.regs.ext.dsa).to.deep.equal(bidderRequest.ortb2.regs.ext.dsa);
 
       expect(payload.ext.params).to.deep.equal(validBidRequests[0].params);
@@ -253,9 +254,9 @@ describe('ValuadAdapter', function () {
     });
 
     it('should include schain if present', function () {
-      let bidWithSchain = deepClone(validBidRequests);
+      const bidWithSchain = deepClone(validBidRequests);
       bidWithSchain[0].schain = { ver: '1.0', complete: 1, nodes: [] };
-      let reqWithSchain = deepClone(bidderRequest);
+      const reqWithSchain = deepClone(bidderRequest);
       reqWithSchain.bids = bidWithSchain;
 
       const request = spec.buildRequests(bidWithSchain, reqWithSchain);
@@ -264,9 +265,9 @@ describe('ValuadAdapter', function () {
     });
 
     it('should include eids if present', function () {
-      let bidWithEids = deepClone(validBidRequests);
+      const bidWithEids = deepClone(validBidRequests);
       bidWithEids[0].userIdAsEids = [{ source: 'pubcid.org', uids: [{ id: 'test-pubcid' }] }];
-      let reqWithEids = deepClone(bidderRequest);
+      const reqWithEids = deepClone(bidderRequest);
       reqWithEids.bids = bidWithEids;
 
       const request = spec.buildRequests(bidWithEids, reqWithEids);
@@ -275,9 +276,9 @@ describe('ValuadAdapter', function () {
     });
 
     it('should handle floors correctly', function () {
-      let bidWithFloor = deepClone(validBidRequests);
+      const bidWithFloor = deepClone(validBidRequests);
       bidWithFloor[0].getFloor = sandbox.stub().returns({ currency: 'USD', floor: 1.50 });
-      let reqWithFloor = deepClone(bidderRequest);
+      const reqWithFloor = deepClone(bidderRequest);
       reqWithFloor.bids = bidWithFloor;
 
       const request = spec.buildRequests(bidWithFloor, reqWithFloor);
@@ -348,23 +349,28 @@ describe('ValuadAdapter', function () {
     });
 
     it('should return an empty array if seatbid is missing', function () {
-      let responseNoSeatbid = deepClone(serverResponse);
+      const responseNoSeatbid = deepClone(serverResponse);
       delete responseNoSeatbid.body.seatbid;
       const bids = spec.interpretResponse(responseNoSeatbid, requestToServer);
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
     it('should return an empty array if bid array is empty', function () {
-      let responseEmptyBid = deepClone(serverResponse);
+      const responseEmptyBid = deepClone(serverResponse);
       responseEmptyBid.body.seatbid[0].bid = [];
       const bids = spec.interpretResponse(responseEmptyBid, requestToServer);
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
-    it('should throw error if response body is missing', function () {
-      let responseNoBody = { body: null };
-      const fn = () => spec.interpretResponse(responseNoBody, requestToServer);
-      expect(fn).to.throw();
+    it('should return empty array when response is null or undefined', function () {
+      expect(spec.interpretResponse(null, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse(undefined, requestToServer)).to.deep.equal([]);
+    });
+
+    it('should return empty array when response body is missing or invalid', function () {
+      expect(spec.interpretResponse({}, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: null }, requestToServer)).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: undefined }, requestToServer)).to.deep.equal([]);
     });
   });
 
@@ -403,14 +409,14 @@ describe('ValuadAdapter', function () {
     });
 
     it('should return false if userSyncs array is missing in response body', function () {
-      let responseNoSyncs = deepClone(serverResponses);
+      const responseNoSyncs = deepClone(serverResponses);
       delete responseNoSyncs[0].body.userSyncs;
       const syncs = spec.getUserSyncs({}, responseNoSyncs);
       expect(syncs).to.be.false;
     });
 
     it('should return false if userSyncs array is empty', function () {
-      let responseEmptySyncs = deepClone(serverResponses);
+      const responseEmptySyncs = deepClone(serverResponses);
       responseEmptySyncs[0].body.userSyncs = [];
       const syncs = spec.getUserSyncs({}, responseEmptySyncs);
       expect(syncs).to.be.an('array').with.lengthOf(0);
@@ -469,7 +475,7 @@ describe('ValuadAdapter', function () {
     });
 
     it('should handle missing optional properties in bid object gracefully', function () {
-      let minimalBid = {
+      const minimalBid = {
         adUnitCode: 'adunit-code-2',
         auctionId: 'auc-id-2',
         bidder: 'valuad',

@@ -123,7 +123,7 @@ function getOpenRTBSiteObject(bidderRequest) {
       id: publisherId
     },
     ext: {
-      schain: bidderRequest.schain
+      schain: bidderRequest?.ortb2?.source?.ext?.schain
     }
   };
 }

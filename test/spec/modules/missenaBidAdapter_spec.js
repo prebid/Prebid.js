@@ -4,6 +4,7 @@ import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { getWinDimensions } from '../../../src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
@@ -13,12 +14,12 @@ const API_KEY = 'PA-XXXXXX';
 const GPID = '/11223344/AdUnit#300x250';
 
 describe('Missena Adapter', function () {
-  $$PREBID_GLOBAL$$.bidderSettings = {
+  getGlobal().bidderSettings = {
     missena: {
       storageAllowed: true,
     },
   };
-  let sandbox = sinon.createSandbox();
+  const sandbox = sinon.createSandbox();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
   const viewport = { width: getWinDimensions().innerWidth, height: getWinDimensions().innerHeight };
@@ -35,17 +36,21 @@ describe('Missena Adapter', function () {
       device: {
         ext: { cdep: COOKIE_DEPRECATION_LABEL },
       },
+      source: {
+        ext: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+            },
+          },
+        },
+      },
     },
     params: {
       apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
-    },
-    schain: {
-      validation: 'strict',
-      config: {
-        ver: '1.0',
-      },
     },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
@@ -260,7 +265,7 @@ describe('Missena Adapter', function () {
     });
 
     it('should send the prebid version', function () {
-      expect(payload.version).to.equal('$prebid.version$');
+      expect(payload.version).to.equal('prebid.js@$prebid.version$');
     });
 
     it('should send cookie deprecation', function () {

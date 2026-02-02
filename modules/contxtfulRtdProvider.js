@@ -41,7 +41,10 @@ const CONTXTFUL_DEFER_DEFAULT = 0;
 // Functions
 let _sm;
 function sm() {
-  return _sm ??= generateUUID();
+  if (_sm == null) {
+    _sm = generateUUID();
+  }
+  return _sm;
 }
 
 const storageManager = getStorageManager({
@@ -69,20 +72,20 @@ function getItemFromSessionStorage(key) {
 }
 
 function loadSessionReceptivity(requester) {
-  let sessionStorageValue = getItemFromSessionStorage(requester);
+  const sessionStorageValue = getItemFromSessionStorage(requester);
   if (!sessionStorageValue) {
     return null;
   }
 
   try {
     // Check expiration of the cached value
-    let sessionStorageReceptivity = JSON.parse(sessionStorageValue);
-    let expiration = parseInt(sessionStorageReceptivity?.exp);
+    const sessionStorageReceptivity = JSON.parse(sessionStorageValue);
+    const expiration = parseInt(sessionStorageReceptivity?.exp);
     if (expiration < new Date().getTime()) {
       return null;
     }
 
-    let rx = sessionStorageReceptivity?.rx;
+    const rx = sessionStorageReceptivity?.rx;
     return rx;
   } catch {
     return null;
@@ -190,7 +193,7 @@ function addConnectorEventListener(tagId, prebidConfig) {
       }
       // Fetch the customer configuration
       const { rxApiBuilder, fetchConfig } = rxConnector;
-      let config = await fetchConfig(tagId);
+      const config = await fetchConfig(tagId);
       if (!config) {
         return;
       }
@@ -301,7 +304,7 @@ function getDivIdPosition(divId) {
         return {};
       }
 
-      let box = getBoundingClientRect(domElement);
+      const box = getBoundingClientRect(domElement);
       const docEl = d.documentElement;
       const body = d.body;
       const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
@@ -322,7 +325,7 @@ function getDivIdPosition(divId) {
 }
 
 function tryGetDivIdPosition(divIdMethod) {
-  let divId = divIdMethod();
+  const divId = divIdMethod();
   if (divId) {
     const divIdPosition = getDivIdPosition(divId);
     if (divIdPosition.x !== undefined && divIdPosition.y !== undefined) {
@@ -333,7 +336,7 @@ function tryGetDivIdPosition(divIdMethod) {
 }
 
 function tryMultipleDivIdPositions(adUnit) {
-  let divMethods = [
+  const divMethods = [
     // ortb2\
     () => {
       adUnit.ortb2Imp = adUnit.ortb2Imp || {};
@@ -347,7 +350,7 @@ function tryMultipleDivIdPositions(adUnit) {
   ];
 
   for (const divMethod of divMethods) {
-    let divPosition = tryGetDivIdPosition(divMethod);
+    const divPosition = tryGetDivIdPosition(divMethod);
     if (divPosition) {
       return divPosition;
     }
@@ -355,7 +358,7 @@ function tryMultipleDivIdPositions(adUnit) {
 }
 
 function tryGetAdUnitPosition(adUnit) {
-  let adUnitPosition = {};
+  const adUnitPosition = {};
   adUnit.ortb2Imp = adUnit.ortb2Imp || {};
 
   // try to get position with the divId
@@ -380,10 +383,10 @@ function tryGetAdUnitPosition(adUnit) {
 
 function getAdUnitPositions(bidReqConfig) {
   const adUnits = bidReqConfig.adUnits || [];
-  let adUnitPositions = {};
+  const adUnitPositions = {};
 
   for (const adUnit of adUnits) {
-    let adUnitPosition = tryGetAdUnitPosition(adUnit);
+    const adUnitPosition = tryGetAdUnitPosition(adUnit);
     if (adUnitPosition) {
       adUnitPositions[adUnit.code] = adUnitPosition;
     }
@@ -410,20 +413,20 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   }
 
   let ortb2Fragment;
-  let getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
-  if (typeof (getContxtfulOrtb2Fragment) == 'function') {
+  const getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
+  if (typeof (getContxtfulOrtb2Fragment) === 'function') {
     ortb2Fragment = getContxtfulOrtb2Fragment(bidders, reqBidsConfigObj);
   } else {
     const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);
 
-    let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
-    let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
+    const fromApi = rxApi?.receptivityBatched?.(bidders) || {};
+    const fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
-    let sources = [fromStorage, fromApi];
+    const sources = [fromStorage, fromApi];
 
-    let rxBatch = Object.assign(...sources);
+    const rxBatch = Object.assign(...sources);
 
-    let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
+    const singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
     ortb2Fragment = {};
     ortb2Fragment.bidder = Object.fromEntries(
       bidders
@@ -467,8 +470,8 @@ function getScreen() {
   function getInnerSize() {
     const { innerWidth, innerHeight } = getWinDimensions();
 
-    let w = innerWidth;
-    let h = innerHeight;
+    const w = innerWidth;
+    const h = innerHeight;
 
     if (w && h) {
       return [w, h];
@@ -478,8 +481,8 @@ function getScreen() {
   function getDocumentSize() {
     const windowDimensions = getWinDimensions();
 
-    let w = windowDimensions.document.body.clientWidth;
-    let h = windowDimensions.document.body.clientHeight;
+    const w = windowDimensions.document.body.clientWidth;
+    const h = windowDimensions.document.body.clientHeight;
 
     if (w && h) {
       return [w, h];
@@ -488,8 +491,8 @@ function getScreen() {
 
   // If we cannot access or cast the window dimensions, we get None.
   // If we cannot collect the size from the window we try to use the root document dimensions
-  let [width, height] = getInnerSize() || getDocumentSize() || [0, 0];
-  let topLeft = { x: window.scrollX, y: window.scrollY };
+  const [width, height] = getInnerSize() || getDocumentSize() || [0, 0];
+  const topLeft = { x: window.scrollX, y: window.scrollY };
 
   return {
     topLeft,
@@ -511,7 +514,7 @@ function observeLastCursorPosition() {
   }
 
   function touchEventToPosition(event) {
-    let touch = event.touches.item(0);
+    const touch = event.touches.item(0);
     if (!touch) {
       return;
     }
@@ -527,7 +530,7 @@ function observeLastCursorPosition() {
   addListener('touchmove', touchEventToPosition);
 }
 
-let listeners = {};
+const listeners = {};
 function addListener(name, listener) {
   listeners[name] = listener;
 

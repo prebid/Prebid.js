@@ -1,0 +1,43 @@
+name: Post a comment
+on:
+  workflow_run:
+    workflows:
+      - Check for Duplicated Code
+      - Check for linter warnings / exceptions
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: master
+      - name: Retrieve comment data
+        id: get-comment
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: comment
+
+      - name: 'Comment on PR'
+        if: ${{ steps.get-comment.outputs.exists == 'true' }}
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const temp = '${{ runner.temp }}/artifacts';
+            const {issue_number, body} = JSON.parse(fs.readFileSync(path.join(temp, 'comment.json'))); 
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body
+            });

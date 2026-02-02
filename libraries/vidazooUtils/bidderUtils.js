@@ -6,7 +6,8 @@ import {
   parseSizesInput,
   parseUrl,
   triggerPixel,
-  uniques
+  uniques,
+  getWinDimensions
 } from '../../src/utils.js';
 import {chunk} from '../chunk/chunk.js';
 import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
@@ -213,6 +214,14 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
   });
 }
 
+function appendUserIdsAsEidsToRequestPayload(payloadRef, userIds) {
+  let key;
+  userIds.forEach((userIdObj) => {
+    key = `uid.${userIdObj.source}`;
+    payloadRef[key] = userIdObj.uids[0].id;
+  })
+}
+
 export function getVidazooSessionId(storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
@@ -221,7 +230,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const {
     params,
     bidId,
-    userId,
     adUnitCode,
     schain,
     mediaTypes,
@@ -239,7 +247,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
 
-  const gpid = bid?.ortb2Imp?.ext?.gpid || bid?.ortb2Imp?.ext?.data?.pbadslot || '';
+  const gpid = bid?.ortb2Imp?.ext?.gpid || '';
   const cat = bidderRequest?.ortb2?.site?.cat || [];
   const pagecat = bidderRequest?.ortb2?.site?.pagecat || [];
   const contentData = bidderRequest?.ortb2?.site?.content?.data || [];
@@ -260,7 +268,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  let data = {
+  const data = {
     url: encodeURIComponent(topWindowUrl),
     uqs: getTopWindowQueryParams(),
     cb: Date.now(),
@@ -273,7 +281,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     uniqueDealId: uniqueDealId,
     bidderVersion: bidderVersion,
     prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`,
+    res: getScreenResolution(),
     schain: schain,
     mediaTypes: mediaTypes,
     isStorageAllowed: isStorageAllowed,
@@ -294,7 +302,16 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     ...uniqueRequestData
   };
 
-  appendUserIdsToRequestPayload(data, userId);
+  // backward compatible userId generators
+  if (bid.userIdAsEids?.length > 0) {
+    appendUserIdsAsEidsToRequestPayload(data, bid.userIdAsEids);
+  }
+  if (bid.user?.ext?.eids?.length > 0) {
+    appendUserIdsAsEidsToRequestPayload(data, bid.user.ext.eids);
+  }
+  if (bid.userId) {
+    appendUserIdsToRequestPayload(data, bid.userId);
+  }
 
   const sua = bidderRequest?.ortb2?.device?.sua;
 
@@ -344,12 +361,27 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   if (dsa) {
     data.dsa = dsa;
   }
+  if (params.placementId) {
+    data.placementId = params.placementId;
+  }
 
   _each(ext, (value, key) => {
     data['ext.' + key] = value;
   });
 
+  if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2
+  if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
+
   return data;
+}
+
+function getScreenResolution() {
+  const dimensions = getWinDimensions();
+  const width = dimensions?.screen?.width;
+  const height = dimensions?.screen?.height;
+  if (width != null && height != null) {
+    return `${width}x${height}`
+  }
 }
 
 export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
@@ -362,7 +394,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     const reqBidId = request?.data?.bidId;
     const {results} = serverResponse.body;
 
-    let output = [];
+    const output = [];
 
     try {
       results.forEach((result, i) => {
@@ -465,6 +497,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     });
   }
 
+  // validBidRequests - an array of bids validated via the isBidRequestValid function.
+  // bidderRequest    - an object with data common to all bid requests.
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');

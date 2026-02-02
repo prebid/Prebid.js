@@ -117,7 +117,7 @@ export const spec = {
       }
       return impData;
     });
-    let payload = {
+    const payload = {
       id: bidderRequest.bidderRequestId,
       imp: imps,
       site: params.site ? params.site : {},
@@ -149,7 +149,7 @@ export const spec = {
       payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: bidderRequest.gdprConsent.gdprApplies == true ? 1 : 0});
+      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0});
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       payload.user.ext = Object.assign(payload.user.ext, {consent: bidderRequest.gdprConsent.consentString});
@@ -168,12 +168,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     const response = (serverResponse || {}).body;
     if (response && response.seatbid && response.seatbid.length && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zmSeatbid => {
         zmSeatbid.bid.forEach(zmBid => {
-          let bid = {
+          const bid = {
             requestId: zmBid.impid,
             cpm: zmBid.price,
             currency: response.cur,
@@ -240,7 +240,7 @@ function buildBanner(request) {
 }
 
 function buildVideo(request) {
-  let video = {};
+  const video = {};
   const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
@@ -294,7 +294,7 @@ function hasVideoMediaType(bidRequest) {
 }
 
 export function _getDomainFromURL(url) {
-  let anchor = document.createElement('a');
+  const anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }

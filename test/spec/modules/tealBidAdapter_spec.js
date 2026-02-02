@@ -139,7 +139,7 @@ const BID_RESPONSE = {
         {
           id: '123456789',
           impid: BID_REQUEST.bidId,
-          price: 0.286000000000000004,
+          price: 0.286,
           adm: '<img src ="//files.prebid.org/creatives/prebid300x250.png" />',
           adomain: [
             'teal.works'
@@ -164,7 +164,7 @@ const BID_RESPONSE = {
                 ]
               }
             },
-            origbidcpm: 0.286000000000000004
+            origbidcpm: 0.286
           }
         }
       ],

@@ -21,9 +21,10 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {config} from '../../../src/config.js';
 import {deepSetValue} from 'src/utils.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -220,7 +221,28 @@ const VIDEO_SERVER_RESPONSE = {
       'cookies': []
     }]
   }
-}
+};
+
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
+  "site": {
+    "cat": ["IAB2"],
+    "content": {
+      "data": [{
+        "ext": {"segtax": 7},
+        "name": "example.com",
+        "segments": [{"id": "segId1"}, {"id": "segId2"}]
+      }],
+      "language": "en"
+    },
+    "pagecat": ["IAB2-2"]
+  },
+  "source": {"ext": {"omidpn": "MyIntegrationPartner", "omidpv": "7.1"}},
+  "user": {
+    "data": [{"ext": {"segclass": "1", "segtax": 600}, "name": "example.com", "segment": [{"id": "243"}]}]
+  }
+};
 
 const REQUEST = {
   data: {
@@ -294,7 +316,7 @@ describe('VidazooBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         vidazoo: {
           storageAllowed: true,
         }
@@ -320,6 +342,8 @@ describe('VidazooBidAdapter', function () {
           bidderVersion: adapter.version,
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          ortb2Imp: VIDEO_BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           cb: 1000,
           dealId: 1,
           gdpr: 1,
@@ -472,6 +496,8 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          ortb2Imp: BID.ortb2Imp,
+          ortb2: ORTB2_OBJ,
           contentLang: 'en',
           coppa: 0,
           contentData: [{
@@ -600,11 +626,14 @@ describe('VidazooBidAdapter', function () {
       expect(requests[0]).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
-        data: {bids: [REQUEST_DATA, REQUEST_DATA2]}
+        data: {bids: [
+          {...REQUEST_DATA, ortb2: ORTB2_OBJ, ortb2Imp: BID.ortb2Imp},
+          {...REQUEST_DATA2, ortb2: ORTB2_OBJ, ortb2Imp: BID.ortb2Imp}
+        ]}
       });
     });
 
-    it('should return seperated requests for video and banner if singleRequest is true', function () {
+    it('should return separated requests for video and banner if singleRequest is true', function () {
       config.setConfig({
         bidderTimeout: 3000,
         vidazoo: {
@@ -640,7 +669,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       config.resetConfig();
       sandbox.restore();
     });
@@ -810,6 +839,70 @@ describe('VidazooBidAdapter', function () {
         expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
       });
     });
+    // testing bid.userIdAsEids handling
+    it("should include user ids from bid.userIdAsEids (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+    })
+    it("should include user ids from bid.userIdAsEids (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{"id": "fakeidi6j6dlc6e"}]
+        },
+        {
+          "source": "rwdcntrl.net",
+          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
+    })
+    // testing user.ext.eid handling
+    it("should include user ids from user.ext.eid (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+    })
+    it("should include user ids from user.ext.eid (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{"id": "fakeid8888dlc6e"}]
+            },
+            {
+              "source": "adserver.org",
+              "uids": [{"id": "fakeid495ff1"}]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
+    })
   });
 
   describe('alternate param names extractors', function () {
@@ -834,14 +927,14 @@ describe('VidazooBidAdapter', function () {
 
   describe('vidazoo session id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         vidazoo: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get undefined vidazoo session id', function () {
       const sessionId = getVidazooSessionId(storage);
@@ -858,14 +951,14 @@ describe('VidazooBidAdapter', function () {
 
   describe('deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         vidazoo: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myDealKey';
 
@@ -887,14 +980,14 @@ describe('VidazooBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         vidazoo: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -922,14 +1015,14 @@ describe('VidazooBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         vidazoo: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();

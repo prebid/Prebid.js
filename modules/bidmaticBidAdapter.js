@@ -207,6 +207,7 @@ export function prepareBidRequests(bidReq) {
     'PlacementId': bidReq.adUnitCode,
     'Sizes': parseSizesInput(sizes).join(','),
     'BidFloor': getBidFloor(bidReq),
+    'GPID': deepAccess(bidReq, 'ortb2Imp.ext.gpid'),
     ...getPlacementInfo(bidReq)
   });
 }

@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 30;
 export const BIDDER_CODE = 'bidtheatre';
-export const ENDPOINT_URL = 'https://prebidjs-bids.bidtheatre.net/prebidjsbid';
+export const ENDPOINT_URL = 'https://client-bids.adsby.bidtheatre.com/prebidjsbid';
 const METHOD = 'POST';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 export const DEFAULT_CURRENCY = 'USD';
@@ -76,7 +76,7 @@ export const spec = {
     }
 
     data.imp.forEach((impObj, index) => {
-      let publisherId = bidRequests[index].params.publisherId;
+      const publisherId = bidRequests[index].params.publisherId;
 
       if (publisherId) {
         deepSetValue(impObj, 'ext.bidder.publisherId', publisherId);

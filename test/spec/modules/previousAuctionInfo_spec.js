@@ -1,9 +1,9 @@
-import * as previousAuctionInfo from '../../../modules/previousAuctionInfo';
+import * as previousAuctionInfo from '../../../modules/previousAuctionInfo/index.js';
 import sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
-import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo';
+import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo/index.js';
 import { REJECTION_REASON } from '../../../src/constants.js';
 
 describe('previous auction info', () => {

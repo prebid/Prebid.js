@@ -43,16 +43,22 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
   const bid2 = {
@@ -91,21 +97,27 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
-        },
-        {
-          asi: 'example1.com',
-          sid: '2',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              },
+              {
+                asi: 'example1.com',
+                sid: '2',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
   const bid3 = {
@@ -148,16 +160,22 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
   const bid4 = {
@@ -198,16 +216,22 @@ describe('limelightDigitalAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   }
 
@@ -243,7 +267,7 @@ describe('limelightDigitalAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        let data = serverRequest.data;
+        const data = serverRequest.data;
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys(
           'deviceWidth',
@@ -324,7 +348,7 @@ describe('limelightDigitalAdapter', function () {
     })
   })
   describe('interpretBannerResponse', function () {
-    let resObject = {
+    const resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -345,7 +369,7 @@ describe('limelightDigitalAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -367,7 +391,7 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('interpretVideoResponse', function () {
-    let resObject = {
+    const resObject = {
       body: [ {
         requestId: '123',
         cpm: 0.3,
@@ -388,7 +412,7 @@ describe('limelightDigitalAdapter', function () {
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -410,7 +434,7 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('isBidRequestValid', function() {
-    let bid = {
+    const bid = {
       bidId: '2dd581a2b6281d',
       bidder: 'limelightDigital',
       bidderRequestId: '145e1d6a7837c9',
@@ -437,7 +461,7 @@ describe('limelightDigitalAdapter', function () {
     });
 
     it('should return false when required params are not passed', function() {
-      let bidFailed = {
+      const bidFailed = {
         bidder: 'limelightDigital',
         bidderRequestId: '145e1d6a7837c9',
         params: {
@@ -453,7 +477,7 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('interpretResponse', function() {
-    let resObject = {
+    const resObject = {
       requestId: '123',
       cpm: 0.3,
       width: 320,
@@ -469,7 +493,7 @@ describe('limelightDigitalAdapter', function () {
       }
     };
     it('should skip responses which do not contain required params', function() {
-      let bidResponses = {
+      const bidResponses = {
         body: [ {
           cpm: 0.3,
           ttl: 1000,
@@ -483,28 +507,28 @@ describe('limelightDigitalAdapter', function () {
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should skip responses which do not contain advertiser domains', function() {
-      let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithoutAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
     });
     it('should return responses which contain empty advertiser domains', function() {
-      let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
     it('should skip responses which do not contain meta media type', function() {
-      let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
+      const resObjectWithoutMetaMediaType = Object.assign({}, resObject);
       resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutMetaMediaType.meta.mediaType;
-      let bidResponses = {
+      const bidResponses = {
         body: [ resObjectWithoutMetaMediaType, resObject ]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
@@ -712,6 +736,101 @@ describe('limelightDigitalAdapter', function () {
       ]);
     });
   });
+  describe('getFloor support', function() {
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      },
+      refererInfo: {
+        page: 'testPage'
+      }
+    };
+    it('should include floorInfo when getFloor is available', function() {
+      const bidWithFloor = {
+        ...bid1,
+        getFloor: function(params) {
+          if (params.size[0] === 300 && params.size[1] === 250) {
+            return { currency: 'USD', floor: 2.0 };
+          }
+          return { currency: 'USD', floor: 0 };
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      const adUnit = serverRequests[0].data.adUnits[0];
+      expect(adUnit.sizes).to.have.lengthOf(1);
+      expect(adUnit.sizes[0].floorInfo).to.exist;
+      expect(adUnit.sizes[0].floorInfo.currency).to.equal('USD');
+      expect(adUnit.sizes[0].floorInfo.floor).to.equal(2.0);
+    });
+    it('should set floorInfo to null when getFloor is not available', function() {
+      const bidWithoutFloor = { ...bid1 };
+      delete bidWithoutFloor.getFloor;
+
+      const serverRequests = spec.buildRequests([bidWithoutFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      expect(serverRequests[0].data.adUnits[0].sizes[0].floorInfo).to.be.null;
+    });
+    it('should handle multiple sizes with different floors', function() {
+      const bidWithMultipleSizes = {
+        ...bid1,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [728, 90]]
+          }
+        },
+        getFloor: function(params) {
+          if (params.size[0] === 300 && params.size[1] === 250) {
+            return { currency: 'USD', floor: 1.5 };
+          }
+          if (params.size[0] === 728 && params.size[1] === 90) {
+            return { currency: 'USD', floor: 2.0 };
+          }
+          return { currency: 'USD', floor: 0 };
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithMultipleSizes], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      const adUnit = serverRequests[0].data.adUnits[0];
+      expect(adUnit.sizes).to.have.lengthOf(2);
+      expect(adUnit.sizes[0].floorInfo.floor).to.equal(1.5);
+      expect(adUnit.sizes[1].floorInfo.floor).to.equal(2.0);
+    });
+    it('should set floorInfo to null when getFloor returns empty object', function() {
+      const bidWithEmptyFloor = {
+        ...bid1,
+        getFloor: function() {
+          return {};
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithEmptyFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      expect(serverRequests[0].data.adUnits[0].sizes[0].floorInfo).to.deep.equal({});
+    });
+    it('should handle getFloor errors and set floorInfo to null', function() {
+      const bidWithErrorFloor = {
+        ...bid1,
+        getFloor: function() {
+          throw new Error('Floor module error');
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithErrorFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      const adUnit = serverRequests[0].data.adUnits[0];
+      expect(adUnit.sizes[0].floorInfo).to.be.null;
+    });
+  });
 });
 
 function validateAdUnit(adUnit, bid) {
@@ -734,11 +853,12 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
     return {
       width: size[0],
-      height: size[1]
+      height: size[1],
+      floorInfo: null
     }
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
-  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
+  expect(adUnit.supplyChain).to.deep.equal(bid.ortb2.source.ext.schain);
   expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
 }

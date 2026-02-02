@@ -1,8 +1,8 @@
 import { freepassIdSubmodule } from 'modules/freepassIdSystem';
 import sinon from 'sinon';
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 describe('FreePass ID System', function () {
   const UUID = '15fde1dc-1861-4894-afdf-b757272f3568';

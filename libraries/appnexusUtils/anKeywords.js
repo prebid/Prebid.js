@@ -39,7 +39,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
 
   _each(keywords, (v, k) => {
     if (isArray(v)) {
-      let values = [];
+      const values = [];
       _each(v, (val) => {
         val = getValueString(paramName + '.' + k, val);
         if (val || val === '') {
@@ -86,9 +86,9 @@ function convertKeywordsToANMap(kwarray) {
   kwarray.forEach(kw => {
     // if = exists, then split
     if (kw.indexOf('=') !== -1) {
-      let kwPair = kw.split('=');
-      let key = kwPair[0];
-      let val = kwPair[1];
+      const kwPair = kw.split('=');
+      const key = kwPair[0];
+      const val = kwPair[1];
 
       // then check for existing key in result > if so add value to the array > if not, add new key and create value array
       if (result.hasOwnProperty(key)) {
@@ -122,18 +122,29 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
   )
 }
 
+export function getANMapFromOrtbIASKeywords(ortb2) {
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  if (iasBrandSafety && typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length > 0) {
+    // Convert IAS object to array of key=value strings
+    const iasArray = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`);
+    return convertKeywordsToANMap(iasArray);
+  }
+  return {};
+}
+
 export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
   return getANKewyordParamFromMaps(
     getANMapFromOrtbKeywords(ortb2),
+    getANMapFromOrtbIASKeywords(ortb2), // <-- include IAS
     getANMapFromOrtbSegments(ortb2),
     ...anKeywordsMaps
   )
 }
 
 export function getANMapFromOrtbSegments(ortb2) {
-  let ortbSegData = {};
+  const ortbSegData = {};
   ORTB_SEG_PATHS.forEach(path => {
-    let ortbSegsArrObj = deepAccess(ortb2, path) || [];
+    const ortbSegsArrObj = deepAccess(ortb2, path) || [];
     ortbSegsArrObj.forEach(segObj => {
       // only read segment data from known sources
       const segtax = ORTB_SEGTAX_KEY_MAP[segObj?.ext?.segtax];

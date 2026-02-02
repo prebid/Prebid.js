@@ -140,6 +140,16 @@ export const AUCTION_INIT_EVENT = {
               90
             ]
           ]
+        },
+        'video': {
+          'playerSize': [300, 250],
+          'mimes': ["video/x-ms-wmv", "video/mp4"],
+          'minduration': 0,
+          'maxduration': 30,
+          'protocols': [1, 2],
+          'api': [1, 2, 4, 6],
+          'placement': 1,
+          'plcmt': 1
         }
       },
       'bids': [

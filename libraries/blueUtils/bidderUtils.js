@@ -2,7 +2,7 @@ import { isFn, isPlainObject, deepSetValue, replaceAuctionPrice, triggerPixel } 
 
 export function getBidFloor(bid, mediaType, defaultCurrency) {
   if (isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
+    const floor = bid.getFloor({
       currency: defaultCurrency,
       mediaType: mediaType,
       size: '*',
@@ -26,13 +26,13 @@ export function buildOrtbRequest(bidRequests, bidderRequest, context, gvlid, ort
 }
 
 export function ortbConverterRequest(buildRequest, imps, bidderRequest, context) {
-  let request = buildRequest(imps, bidderRequest, context);
+  const request = buildRequest(imps, bidderRequest, context);
   deepSetValue(request, 'site.publisher.id', context.publisherId);
   return request;
 }
 
 export function ortbConverterImp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
+  const imp = buildImp(bidRequest, context);
   // context.mediaTypes is expected to be set by the adapter calling this function
   const floor = getBidFloor(bidRequest, context.mediaTypes.banner, context.mediaTypes.defaultCurrency);
   imp.tagid = bidRequest.params.placementId;

@@ -1,0 +1,30 @@
+{
+  "disclosures": [
+    {
+      "identifier": "_pubcid_optout",
+      "type": "cookie",
+      "maxAgeSeconds": 31536000,
+      "cookieRefresh": false,
+      "domains": ["*"],
+      "purposes": []
+    },
+    {
+      "identifier": "_pubcid_optout",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": []
+    },
+    {
+      "identifier": "_pubcid_optout_exp",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": []
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "SharedId looks for an opt-out flag in both cookies and localStorage; disables itself if it finds one"
+    }
+  ]
+}

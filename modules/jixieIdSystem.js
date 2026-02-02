@@ -45,7 +45,7 @@ function removeNullProp(obj) {
  * @param {object} response
  */
 function persistExtInfo(response) {
-  let o = response;
+  const o = response;
   if (o) {
     const ageMS = (CK_LIFE_DAYS) * 24 * 60 * 60 * 1000;
     const expireDT = new Date(timestamp() + ageMS).toUTCString();
@@ -65,7 +65,7 @@ function persistExtInfo(response) {
  * @returns {string} a full url to call by ajax
  */
 function buildIdCallUrl(params, gdprConsent) {
-  let url = parseUrl(params.idendpoint || TRACKER_EP_FROM_IDMODULE);
+  const url = parseUrl(params.idendpoint || TRACKER_EP_FROM_IDMODULE);
 
   if (gdprConsent) {
     url.search.gdpr_consent = gdprConsent && gdprConsent.gdprApplies ? gdprConsent.consentString : '';
@@ -104,10 +104,10 @@ function pgHasJxEvtScript() {
  */
 function shouldCallSrv(logstr) {
   if (!logstr) return true;
-  let now = Date.now();
-  let tsStr = logstr.split('_')[0];
+  const now = Date.now();
+  const tsStr = logstr.split('_')[0];
   let ts = parseInt(tsStr, 10);
-  if (!(tsStr.length == 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
+  if (!(tsStr.length === 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
     ts = undefined;
   }
   return (ts === undefined || (ts && now > ts));
@@ -152,11 +152,11 @@ export const jixieIdSubmodule = {
       }
       // Case of no jixie script runs on this site:
       jxId = storage.getCookie(PBJS_JXID_KEY);
-      let idLogStr = storage.getCookie(PBJS_IDLOGSTR_KEY);
+      const idLogStr = storage.getCookie(PBJS_IDLOGSTR_KEY);
       if (jxId && !shouldCallSrv(idLogStr)) {
         callback(jxId);
       } else {
-        let handleResponse = function(responseText, xhr) {
+        const handleResponse = function(responseText, xhr) {
           if (xhr.status === 200) {
             let response = JSON.parse(responseText);
             if (response && response.data && response.data.success) {

@@ -1,8 +1,9 @@
 import {expect} from 'chai';
 import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT} from 'modules/taboolaBidAdapter.js';
-import {config} from '../../../src/config'
-import * as utils from '../../../src/utils'
-import {server} from '../../mocks/xhr'
+import {config} from '../../../src/config.js'
+import * as utils from '../../../src/utils.js'
+import {server} from '../../mocks/xhr.js'
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('Taboola Adapter', function () {
   let sandbox, hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
@@ -19,7 +20,7 @@ describe('Taboola Adapter', function () {
     getDataFromLocalStorage = sandbox.stub(userData.storageManager, 'getDataFromLocalStorage');
     localStorageIsEnabled = sandbox.stub(userData.storageManager, 'localStorageIsEnabled');
     commonBidRequest = createBidRequest();
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       taboola: {
         storageAllowed: true
       }
@@ -28,7 +29,7 @@ describe('Taboola Adapter', function () {
 
   afterEach(() => {
     sandbox.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
   })
 
   const displayBidRequestParams = {
@@ -114,6 +115,89 @@ describe('Taboola Adapter', function () {
       }
       spec.onBidWon(bid);
       expect(server.requests[0].url).to.equals('http://win.example.com/3.4')
+    });
+
+    it('should not fire nurl when deferBilling is true', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        deferBilling: true
+      }
+      spec.onBidWon(bid);
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  describe('onBidBillable', function () {
+    it('onBidBillable exist as a function', () => {
+      expect(spec.onBidBillable).to.exist.and.to.be.a('function');
+    });
+
+    it('should fire burl when available', function () {
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        burl: burl
+      }
+      spec.onBidBillable(bid);
+      expect(server.requests[0].url).to.equals('http://billing.example.com/3.4');
+    });
+
+    it('should fall back to nurl when burl is not available', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl
+      }
+      spec.onBidBillable(bid);
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+    });
+
+    it('should not fire anything when neither burl nor nurl is available', function () {
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250
+      }
+      spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(0);
     });
   });
 

@@ -11,6 +11,7 @@ import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../l
  */
 
 const BIDDER_CODE = 'hybrid';
+const GVLID = 206;
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
 const TRAFFIC_TYPE_WEB = 1;
 const PLACEMENT_TYPE_BANNER = 1;
@@ -77,7 +78,7 @@ function buildBid(bidData) {
         actionUrls: {}
       }
     };
-    let actionUrls = bid.inImageContent.content.actionUrls;
+    const actionUrls = bid.inImageContent.content.actionUrls;
     actionUrls.loadUrls = bidData.inImage.loadtrackers || [];
     actionUrls.impressionUrls = bidData.inImage.imptrackers || [];
     actionUrls.scrollActUrls = bidData.inImage.startvisibilitytrackers || [];
@@ -86,7 +87,7 @@ function buildBid(bidData) {
     actionUrls.closeBannerUrls = bidData.inImage.closebannertrackers || [];
 
     if (bidData.inImage.but) {
-      let inImageOptions = bid.inImageContent.content.inImageOptions = {};
+      const inImageOptions = bid.inImageContent.content.inImageOptions = {};
       inImageOptions.hasButton = true;
       inImageOptions.buttonLogoUrl = bidData.inImage.but_logo;
       inImageOptions.buttonProductUrl = bidData.inImage.but_prod;
@@ -130,6 +131,7 @@ function wrapAd(bid, bidData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   placementTypes: placementTypes,
 
@@ -191,12 +193,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    let bidRequests = JSON.parse(bidRequest.data).bidRequests;
+    const bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
-        let rawBid = ((bidRequests) || []).find(function (item) {
+        const rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;

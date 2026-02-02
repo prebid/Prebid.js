@@ -22,6 +22,7 @@ export const _ADAGIO = (function() {
   const w = getBestWindowForAdagio();
 
   w.ADAGIO = w.ADAGIO || {};
+  // TODO: consider using the Prebid-generated page view ID instead of generating a custom one
   w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || generateUUID();
   w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
   w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];

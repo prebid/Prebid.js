@@ -85,11 +85,15 @@ export const extractConsent = ({ gdpr }) => {
     return null
   }
   const { gdprApplies, consentString } = gdpr
-  if (!(gdprApplies == '0' || gdprApplies == '1')) {
-    throw 'TCF Consent: gdprApplies has wrong format'
+  if (!['0', '1'].includes(String(gdprApplies))) {
+    const msg = 'TCF Consent: gdprApplies has wrong format'
+    logError(msg)
+    return null
   }
-  if (consentString && typeof consentString != 'string') {
-    throw 'TCF Consent: consentString must be string if defined'
+  if (consentString && typeof consentString !== 'string') {
+    const msg = 'TCF Consent: consentString must be string if defined'
+    logError(msg)
+    return null
   }
   const result = {
     'gdpr_applies': gdprApplies,
@@ -200,7 +204,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
     const siteDataPath = 'site.content.data';
     const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || [];
     const updatedSiteContentData = [
-      ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
+      ...currentSiteContentData.filter(({ name }) => name !== siteContentData.name),
       siteContentData
     ];
     deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData);
@@ -210,7 +214,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
     const userDataPath = 'user.data';
     const currentUserData = deepAccess(bidderConfig, userDataPath) || [];
     const updatedUserData = [
-      ...currentUserData.filter(({ name }) => name != userData.name),
+      ...currentUserData.filter(({ name }) => name !== userData.name),
       userData
     ];
     deepSetValue(bidderConfig, userDataPath, updatedUserData);
@@ -218,7 +222,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
 };
 
 /**
- * Updates bidder configs with the targeting data retreived from Profile API
+ * Updates bidder configs with the targeting data retrieved from Profile API
  * @param {Object} papiResponse Response from Profile API
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration

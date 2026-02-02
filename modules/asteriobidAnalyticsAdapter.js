@@ -17,17 +17,17 @@ const analyticsType = 'endpoint'
 const analyticsName = 'AsterioBid Analytics'
 const _VERSION = 1
 
-let ajax = ajaxBuilder(20000)
+const ajax = ajaxBuilder(20000)
 let initOptions
-let auctionStarts = {}
-let auctionTimeouts = {}
+const auctionStarts = {}
+const auctionTimeouts = {}
 let sampling
 let pageViewId
 let flushInterval
 let eventQueue = []
 let asteriobidAnalyticsEnabled = false
 
-let asteriobidAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+const asteriobidAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
   track({ eventType, args }) {
     handleEvent(eventType, args)
   }

@@ -11,7 +11,7 @@ const GVLID = 1360;
 const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
-const STORAGE_TTL = 3600; // 1 hour in seconds
+const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -55,7 +55,7 @@ class NodalsAiRtdProvider {
     const params = config?.params || {};
     if (
       this.#isValidConfig(params) &&
-      this.#hasRequiredUserConsent(userConsent)
+      this.#hasRequiredUserConsent(userConsent, config)
     ) {
       this.#propertyId = params.propertyId;
       this.#userConsent = userConsent;
@@ -82,7 +82,7 @@ class NodalsAiRtdProvider {
    */
   getTargetingData(adUnitArray, config, userConsent) {
     let targetingData = {};
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return targetingData;
     }
     this.#userConsent = userConsent;
@@ -104,7 +104,7 @@ class NodalsAiRtdProvider {
   }
 
   getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       callback();
       return;
     }
@@ -124,7 +124,7 @@ class NodalsAiRtdProvider {
           callback,
           userConsent,
           storedData
-       );
+        );
       } catch (error) {
         logError(`Error getting bid request data: ${error}`);
         callback();
@@ -133,7 +133,7 @@ class NodalsAiRtdProvider {
   }
 
   onBidResponseEvent(bidResponse, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return;
     }
     this.#userConsent = userConsent;
@@ -154,7 +154,7 @@ class NodalsAiRtdProvider {
   }
 
   onAuctionEndEvent(auctionDetails, config, userConsent) {
-    if (!this.#hasRequiredUserConsent(userConsent)) {
+    if (!this.#hasRequiredUserConsent(userConsent, config)) {
       return;
     }
     this.#userConsent = userConsent;
@@ -204,7 +204,11 @@ class NodalsAiRtdProvider {
   }
 
   #getEngine() {
-    return window?.$nodals?.adTargetingEngine[ENGINE_VESION];
+    try {
+      return window?.$nodals?.adTargetingEngine?.[ENGINE_VESION];
+    } catch (error) {
+      return undefined;
+    }
   }
 
   #setOverrides(params) {
@@ -240,11 +244,12 @@ class NodalsAiRtdProvider {
   /**
    * Checks if the user has provided the required consent.
    * @param {Object} userConsent - User consent object.
+   * @param {Object} config - Configuration object for the module.
    * @returns {boolean} - True if the user consent is valid, false otherwise.
    */
 
-  #hasRequiredUserConsent(userConsent) {
-    if (!userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
+  #hasRequiredUserConsent(userConsent, config) {
+    if (config?.params?.publisherProvidedConsent === true || !userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
     if (
@@ -319,7 +324,7 @@ class NodalsAiRtdProvider {
   #dataIsStale(dataEnvelope) {
     const currentTime = Date.now();
     const dataTime = dataEnvelope.createdAt || 0;
-    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? STORAGE_TTL;
+    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? DEFAULT_STORAGE_TTL;
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
@@ -392,7 +397,9 @@ class NodalsAiRtdProvider {
     try {
       data = JSON.parse(response);
     } catch (error) {
-      throw `Error parsing response: ${error}`;
+      const msg = `Error parsing response: ${error}`;
+      logError(msg);
+      return;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
     this.#loadAdLibraries(data.deps || []);

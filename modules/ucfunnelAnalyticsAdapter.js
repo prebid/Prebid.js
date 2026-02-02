@@ -27,7 +27,7 @@ export const BIDDER_STATUS = {
 const analyticsOptions = {};
 
 export const parseBidderCode = function (bid) {
-  let bidderCode = bid.bidderCode || bid.bidder;
+  const bidderCode = bid.bidderCode || bid.bidder;
   return bidderCode.toLowerCase();
 };
 

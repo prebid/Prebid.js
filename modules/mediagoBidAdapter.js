@@ -32,8 +32,7 @@ const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
-let globals = {};
-let itemMaps = {};
+const globals = {};
 
 /* ----- mguid:start ------ */
 export const COOKIE_KEY_MGUID = '__mguid_';
@@ -73,7 +72,7 @@ export const getPmgUID = () => {
 function getProperty(obj, ...keys) {
   let o = obj;
 
-  for (let key of keys) {
+  for (const key of keys) {
     // console.log(key, o);
     if (o && o[key]) {
       o = o[key];
@@ -120,13 +119,13 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-    let mediaTypes = getProperty(req, 'mediaTypes');
+    const mediaTypes = getProperty(req, 'mediaTypes');
 
-    let sizes = transformSizes(getProperty(req, 'sizes'));
+    const sizes = transformSizes(getProperty(req, 'sizes'));
     let matchSize;
 
     // 确认尺寸是否符合我们要求
-    for (let size of sizes) {
+    for (const size of sizes) {
       matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
         break;
@@ -139,8 +138,7 @@ function getItems(validBidRequests, bidderRequest) {
     const bidFloor = getBidFloor(req);
     const gpid =
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
-      utils.deepAccess(req, 'params.placementId', 0);
+      utils.deepAccess(req, 'params.placementId', '');
 
     const gdprConsent = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -157,7 +155,8 @@ function getItems(validBidRequests, bidderRequest) {
     // if (mediaTypes.native) {}
     // banner广告类型
     if (mediaTypes.banner) {
-      let id = '' + (i + 1);
+      // fix id is not unique where there are multiple requests in the same page
+      const id = getProperty(req, 'bidId') || ('' + (i + 1) + Math.random().toString(36).substring(2, 15));
       ret = {
         id: id,
         bidfloor: bidFloor,
@@ -177,10 +176,6 @@ function getItems(validBidRequests, bidderRequest) {
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
-      };
-      itemMaps[id] = {
-        req,
-        ret
       };
     }
 
@@ -215,11 +210,11 @@ function getParam(validBidRequests, bidderRequest) {
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
 
-  let isMobile = getDevice() ? 1 : 0;
+  const isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
-  let isTest = validBidRequests[0].params.test || 0;
-  let auctionId = getProperty(bidderRequest, 'auctionId');
-  let items = getItems(validBidRequests, bidderRequest);
+  const isTest = validBidRequests[0].params.test || 0;
+  const bidderRequestId = getProperty(bidderRequest, 'bidderRequestId');
+  const items = getItems(validBidRequests, bidderRequest);
 
   const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
   const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
@@ -233,9 +228,8 @@ function getParam(validBidRequests, bidderRequest) {
   const keywords = getPageKeywords();
 
   if (items && items.length) {
-    let c = {
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      id: 'mgprebidjs_' + auctionId,
+    const c = {
+      id: 'mgprebidjs_' + bidderRequestId,
       test: +isTest,
       at: 1,
       cur: ['USD'],
@@ -296,7 +290,6 @@ function getParam(validBidRequests, bidderRequest) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -324,7 +317,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = getParam(validBidRequests, bidderRequest);
+    const payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
     return {
@@ -344,12 +337,11 @@ export const spec = {
     const cur = getProperty(serverResponse, 'body', 'cur');
 
     const bidResponses = [];
-    for (let bid of bids) {
-      let impid = getProperty(bid, 'impid');
-      if (itemMaps[impid]) {
-        let bidId = getProperty(itemMaps[impid], 'req', 'bidId');
+    for (const bid of bids) {
+      const impid = getProperty(bid, 'impid');
+      if (impid) {
         const bidResponse = {
-          requestId: bidId,
+          requestId: getProperty(bid, 'impid'),
           cpm: getProperty(bid, 'price'),
           width: getProperty(bid, 'w'),
           height: getProperty(bid, 'h'),
@@ -387,7 +379,7 @@ export const spec = {
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
-  //     // Bidder specifc code
+  //     // Bidder specific code
   //   },
 
   /**

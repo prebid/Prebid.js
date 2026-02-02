@@ -48,10 +48,10 @@ export const spec = {
     let url = '';
     let contents = [];
     let data = {};
-    let auctionId = bidderRequest ? bidderRequest.auctionId : '';
+    const auctionId = bidderRequest ? bidderRequest.auctionId : '';
     let gdrpApplies = true;
     let gdprConsent = '';
-    let placements = validBidRequests.map(bidRequest => {
+    const placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
@@ -61,9 +61,9 @@ export const spec = {
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
       if (bidderRequest && bidRequest.gdprConsent) { gdrpApplies = bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : true; }
       if (bidderRequest && bidRequest.gdprConsent) { gdprConsent = bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''; }
-      let adUnitId = bidRequest.adUnitCode;
-      let placementId = bidRequest.params.placementId;
-      let sizes = generateSizeParam(bidRequest.sizes);
+      const adUnitId = bidRequest.adUnitCode;
+      const placementId = bidRequest.params.placementId;
+      const sizes = generateSizeParam(bidRequest.sizes);
 
       return {
         sizes: sizes,
@@ -75,7 +75,7 @@ export const spec = {
       };
     });
 
-    let body = {
+    const body = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId,
       propertyId: propertyId,

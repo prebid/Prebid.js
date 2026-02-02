@@ -1,18 +1,16 @@
 import { expect } from "chai";
-import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig } from "../../../modules/enrichmentLiftMeasurement";
+import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig, compareConfigs, STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement/index.js";
 import {server} from 'test/mocks/xhr.js';
-import { config } from "../../../src/config"
-import { isInteger } from "../../../src/utils";
-import { ACTIVITY_ENRICH_EIDS } from "../../../src/activities/activities";
-import { isActivityAllowed } from "../../../src/activities/rules";
-import { activityParams } from "../../../src/activities/activityParams";
-import { MODULE_TYPE_UID } from "../../../src/activities/modules";
-import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/analyticsStub";
-import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter";
-import { EVENTS } from "../../../src/constants";
-import { getCoreStorageManager } from "../../../src/storageManager";
-import { compareConfigs } from "../../../modules/enrichmentLiftMeasurement";
-import { STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement";
+import { config } from "../../../src/config.js"
+import { isInteger } from "../../../src/utils.js";
+import { ACTIVITY_ENRICH_EIDS } from "../../../src/activities/activities.js";
+import { isActivityAllowed } from "../../../src/activities/rules.js";
+import { activityParams } from "../../../src/activities/activityParams.js";
+import { MODULE_TYPE_UID } from "../../../src/activities/modules.js";
+import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/analyticsStub.js";
+import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter.js";
+import { EVENTS } from "../../../src/constants.js";
+import { getCoreStorageManager } from "../../../src/storageManager.js";
 
 describe('enrichmentLiftMeasurement', () => {
   beforeEach(() => {
@@ -38,20 +36,20 @@ describe('enrichmentLiftMeasurement', () => {
       return fixedRandoms[callIndex++];
     });
     config.setConfig({ enrichmentLiftMeasurement: {
-        modules: modulesConfig
+      modules: modulesConfig
     }});
 
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
-        results.push(getCalculatedSubmodules(modulesConfig));
+      results.push(getCalculatedSubmodules(modulesConfig));
     }
     modulesConfig.forEach((idSystem) => {
-        const passedIdSystemsCount = results.filter((execution) => {
-            const item = execution.find(({name}) => idSystem.name === name)
-            return item?.enabled
-        }).length
-        const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
-        expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
+      const passedIdSystemsCount = results.filter((execution) => {
+        const item = execution.find(({name}) => idSystem.name === name)
+        return item?.enabled
+      }).length
+      const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
+      expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
     });
 
     mathRandomStub.restore();

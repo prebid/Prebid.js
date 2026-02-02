@@ -1,6 +1,6 @@
 import { mgidSubmodule, storage } from '../../../modules/mgidRtdProvider.js';
 import {expect} from 'chai';
-import * as refererDetection from '../../../src/refererDetection';
+import * as refererDetection from '../../../src/refererDetection.js';
 import {server} from '../../mocks/xhr.js';
 
 describe('Mgid RTD submodule', () => {
@@ -42,7 +42,7 @@ describe('Mgid RTD submodule', () => {
       muid: 'qwerty654321',
     };
 
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {
           site: {
@@ -54,7 +54,7 @@ describe('Mgid RTD submodule', () => {
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -123,13 +123,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData doesn\'t send params (consent and cxlang), if we haven\'t received them', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -157,13 +157,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData send gdprApplies event if it is false', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -197,15 +197,15 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData use og:url for cxurl, if it is available', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
-    let metaStub = sinon.stub(document, 'getElementsByTagName').returns([
+    const metaStub = sinon.stub(document, 'getElementsByTagName').returns([
       { getAttribute: () => 'og:test', content: 'fake' },
       { getAttribute: () => 'og:url', content: 'https://realOgUrl.com/' }
     ]);
@@ -231,13 +231,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData use topMostLocation for cxurl, if nothing else left', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     getRefererInfoStub.returns({
       topmostLocation: 'https://www.test.com/topMost'
@@ -262,13 +262,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData won\'t modify ortb2 if response is broken', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -288,13 +288,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData won\'t modify ortb2 if response status is not 200', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -313,13 +313,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData won\'t modify ortb2 if response results in error', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -339,13 +339,13 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('getBidRequestData won\'t modify ortb2 if response time hits timeout', () => {
-    let reqBidsConfigObj = {
+    const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
     };
 
-    let onDone = sinon.stub();
+    const onDone = sinon.stub();
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,

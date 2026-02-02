@@ -1,0 +1,18 @@
+{
+  "disclosures": [
+    {
+      "identifier": "__*_debugging__",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        1
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Debugging configuration is stored in sessionStorage"
+    }
+  ]
+}

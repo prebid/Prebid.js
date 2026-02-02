@@ -85,7 +85,7 @@ const NATIVE_MAPPING = {
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -124,9 +124,9 @@ export const spec = {
       Object.keys(userObjBid.params.user)
         .filter(param => USER_PARAMS.includes(param))
         .forEach((param) => {
-          let uparam = convertCamelToUnderscore(param);
+          const uparam = convertCamelToUnderscore(param);
           if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-            let segs = [];
+            const segs = [];
             userObjBid.params.user[param].forEach(val => {
               if (isNumber(val)) {
                 segs.push({'id': val});
@@ -147,7 +147,9 @@ export const spec = {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
@@ -159,7 +161,7 @@ export const spec = {
     }
 
     let debugObj = {};
-    let debugObjParams = {};
+    const debugObjParams = {};
     const debugCookieName = 'apn_prebid_debug';
     const debugCookie = storage.getCookie(debugCookieName) || null;
 
@@ -186,7 +188,7 @@ export const spec = {
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     const omidSupport = ((bidRequests) || []).find(hasOmidSupport);
 
     const payload = {
@@ -217,7 +219,7 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    let mfKeywords = config.getConfig('mediafuseAuctionKeywords');
+    const mfKeywords = config.getConfig('mediafuseAuctionKeywords');
     payload.keywords = getANKeywordParam(bidderRequest?.ortb2, mfKeywords);
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
@@ -237,9 +239,9 @@ export const spec = {
       };
 
       if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
-        let ac = bidderRequest.gdprConsent.addtlConsent;
+        const ac = bidderRequest.gdprConsent.addtlConsent;
         // pull only the ids from the string (after the ~) and convert them to an array of ints
-        let acStr = ac.substring(ac.indexOf('~') + 1);
+        const acStr = ac.substring(ac.indexOf('~') + 1);
         payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
       }
     }
@@ -249,7 +251,7 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let refererinfo = {
+      const refererinfo = {
         // TODO: this collects everything it finds, except for canonicalUrl
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
@@ -269,14 +271,20 @@ export const spec = {
       });
     }
 
-    if (bidRequests[0].userId) {
-      let eids = [];
-
-      addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
-      addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+    if (bidRequests[0].userIdAsEids?.length > 0) {
+      const eids = [];
+      bidRequests[0].userIdAsEids.forEach(eid => {
+        if (!eid || !eid.uids || eid.uids.length < 1) { return; }
+        eid.uids.forEach(uid => {
+          const tmp = {'source': eid.source, 'id': uid.id};
+          if (eid.source === 'adserver.org') {
+            tmp.rti_partner = 'TDID';
+          } else if (eid.source === 'uidapi.com') {
+            tmp.rti_partner = 'UID2';
+          }
+          eids.push(tmp);
+        });
+      });
 
       if (eids.length) {
         payload.eids = eids;
@@ -322,7 +330,7 @@ export const spec = {
     }
 
     if (serverResponse.debug && serverResponse.debug.debug_info) {
-      let debugHeader = 'MediaFuse Debug Auction for Prebid\n\n'
+      const debugHeader = 'MediaFuse Debug Auction for Prebid\n\n'
       let debugText = debugHeader + serverResponse.debug.debug_info
       debugText = debugText
         .replace(/(<td>|<th>)/gm, '\t') // Tables
@@ -360,17 +368,17 @@ export const spec = {
 };
 
 function reloadViewabilityScriptWithCorrectParameters(bid) {
-  let viewJsPayload = getMediafuseViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
+  const viewJsPayload = getMediafuseViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
 
   if (viewJsPayload) {
-    let prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
+    const prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
 
-    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload);
+    const jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload);
 
-    let newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
+    const newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
 
     // find iframe containing script tag
-    let frameArray = document.getElementsByTagName('iframe');
+    const frameArray = document.getElementsByTagName('iframe');
 
     // boolean var to modify only one script. That way if there are muliple scripts,
     // they won't all point to the same creative.
@@ -378,17 +386,17 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
 
     // first, loop on all ifames
     for (let i = 0; i < frameArray.length && !modifiedAScript; i++) {
-      let currentFrame = frameArray[i];
+      const currentFrame = frameArray[i];
       try {
         // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
-        let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
+        const nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
 
         if (nestedDoc) {
           // if the doc is present, we look for our jstracker
-          let scriptArray = nestedDoc.getElementsByTagName('script');
+          const scriptArray = nestedDoc.getElementsByTagName('script');
           for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
-            let currentScript = scriptArray[j];
-            if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
+            const currentScript = scriptArray[j];
+            if (currentScript.getAttribute('data-src') === jsTrackerSrc) {
               currentScript.setAttribute('src', newJsTrackerSrc);
               currentScript.setAttribute('data-src', '');
               if (currentScript.removeAttribute) {
@@ -411,11 +419,11 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
 }
 
 function strIsMediafuseViewabilityScript(str) {
-  let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
-  let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
+  const regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
+  const viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
 
-  let regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
-  let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
+  const regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
+  const fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
 
   return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
 }
@@ -426,7 +434,7 @@ function getMediafuseViewabilityScriptFromJsTrackers(jsTrackerArray) {
     viewJsPayload = jsTrackerArray;
   } else if (isArray(jsTrackerArray)) {
     for (let i = 0; i < jsTrackerArray.length; i++) {
-      let currentJsTracker = jsTrackerArray[i];
+      const currentJsTracker = jsTrackerArray[i];
       if (strIsMediafuseViewabilityScript(currentJsTracker)) {
         viewJsPayload = currentJsTracker;
       }
@@ -438,15 +446,15 @@ function getMediafuseViewabilityScriptFromJsTrackers(jsTrackerArray) {
 function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   // extracting the content of the src attribute
   // -> substring between src=" and "
-  let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
-  let indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
-  let jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
+  const indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
+  const indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
+  const jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
   return jsTrackerSrc;
 }
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
-  let options = {
+  const options = {
     withCredentials: true
   };
 
@@ -552,7 +560,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   // temporary function; may remove at later date if/when adserver fully supports dchain
   function setupDChain(rtbBid) {
-    let dchain = {
+    const dchain = {
       ver: '1.0',
       complete: 0,
       nodes: [{
@@ -613,11 +621,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     // setting up the jsTracker:
     // we put it as a data-src attribute so that the tracker isn't called
     // until we have the adId (see onBidWon)
-    let jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
+    const jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
 
     let jsTrackers = nativeAd.javascript_trackers;
 
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined || jsTrackers === null) {
       jsTrackers = jsTrackerDisarmed;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];
@@ -696,7 +704,7 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
-  let bidFloor = getBidFloor(bid);
+  const bidFloor = getBidFloor(bid);
   if (bidFloor) {
     tag.reserve = bidFloor;
   }
@@ -727,7 +735,7 @@ function bidToTag(bid) {
   if (!isEmpty(bid.params.keywords)) {
     tag.keywords = getANKewyordParamFromMaps(bid.params.keywords);
   }
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -818,12 +826,13 @@ function bidToTag(bid) {
           case 'api':
             if (!tag['video_frameworks'] && isArray(videoMediaType[param])) {
               // need to read thru array; remove 6 (we don't support it), swap 4 <> 5 if found (to match our adserver mapping for these specific values)
-              let apiTmp = videoMediaType[param].map(val => {
-                let v = (val === 4) ? 5 : (val === 5) ? 4 : val;
+              const apiTmp = videoMediaType[param].map(val => {
+                const v = (val === 4) ? 5 : (val === 5) ? 4 : val;
 
                 if (v >= 1 && v <= 5) {
                   return v;
                 }
+                return undefined;
               }).filter(v => v);
               tag['video_frameworks'] = apiTmp;
             }
@@ -853,7 +862,7 @@ function bidToTag(bid) {
 
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  let sizes = [];
+  const sizes = [];
   let sizeObj = {};
 
   if (isArray(requestSizes) && requestSizes.length === 2 &&
@@ -863,7 +872,7 @@ function transformSizes(requestSizes) {
     sizes.push(sizeObj);
   } else if (typeof requestSizes === 'object') {
     for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
+      const size = requestSizes[i];
       sizeObj = {};
       sizeObj.width = parseInt(size[0], 10);
       sizeObj.height = parseInt(size[1], 10);
@@ -932,7 +941,7 @@ function createAdPodRequest(tags, adPodBid) {
   const maxDuration = Math.max(...durationRangeSec);
 
   const tagToDuplicate = tags.filter(tag => tag.uuid === adPodBid.bidId);
-  let request = fill(...tagToDuplicate, numberOfPlacements);
+  const request = fill(...tagToDuplicate, numberOfPlacements);
 
   if (requireExactDuration) {
     const divider = Math.ceil(numberOfPlacements / durationRangeSec.length);
@@ -940,14 +949,14 @@ function createAdPodRequest(tags, adPodBid) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(tag => {
+      chunked[index].forEach(tag => {
         setVideoProperty(tag, 'minduration', duration);
         setVideoProperty(tag, 'maxduration', duration);
       });
     });
   } else {
     // all maxdurations should be the same
-    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+    request.forEach(tag => setVideoProperty(tag, 'maxduration', maxDuration));
   }
 
   return request;
@@ -994,7 +1003,7 @@ function buildNativeRequest(params) {
     // convert the sizes of image/icon assets to proper format (if needed)
     const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
     if (isImageAsset && request[requestKey].sizes) {
-      let sizes = request[requestKey].sizes;
+      const sizes = request[requestKey].sizes;
       if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
         request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
@@ -1062,7 +1071,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-function addUserId(eids, id, source, rti) {
+/* function addUserId(eids, id, source, rti) {
   if (id) {
     if (rti) {
       eids.push({ source, id, rti_partner: rti });
@@ -1071,14 +1080,14 @@ function addUserId(eids, id, source, rti) {
     }
   }
   return eids;
-}
+} */
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

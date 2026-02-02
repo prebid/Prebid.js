@@ -48,13 +48,13 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let codes = [];
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    const codes = [];
+    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
       adunitValue = validBidRequests[key];
-      let code = {
+      const code = {
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
@@ -65,12 +65,12 @@ export const spec = {
       if (typeof adunitValue.getFloor === 'function') {
         if (Array.isArray(adunitValue.sizes)) {
           adunitValue.sizes.forEach(value => {
-            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor != {}) { code.floor[value.join('x')] = tmpFloor; }
+            const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor[value.join('x')] = tmpFloor; }
           });
         }
-        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
-        if (tmpFloor != {}) { code.floor['*'] = tmpFloor; }
+        const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
       }
       if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
       codes.push(code);
@@ -89,7 +89,7 @@ export const spec = {
         };
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
       if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
       if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
       if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }
@@ -133,7 +133,7 @@ export const spec = {
           }
         };
         if ('dsa' in value) { bidResponse.meta.dsa = value['dsa']; }
-        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+        const paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
         paramsToSearchFor.forEach(param => {
           if (param in value) {
             bidResponse['mediasquare'][param] = value[param];
@@ -163,7 +163,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
+    if (typeof serverResponses === 'object' && serverResponses !== null && serverResponses !== undefined && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
@@ -177,17 +177,17 @@ export const spec = {
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType === 'video') {
       return;
     }
-    let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
+    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
     if (bid.hasOwnProperty('mediasquare')) {
       paramsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
-          if (typeof params[param] == 'number') {
+          if (typeof params[param] === 'number') {
             params[param] = params[param].toString();
           }
         }
@@ -197,7 +197,7 @@ export const spec = {
     paramsToSearchFor.forEach(param => {
       if (bid.hasOwnProperty(param)) {
         params[param] = bid[param];
-        if (typeof params[param] == 'number') {
+        if (typeof params[param] === 'number') {
           params[param] = params[param].toString();
         }
       }

@@ -22,10 +22,6 @@ export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.at = 1;
-    const {bundleId, publisherId} = bidderRequest.bids[0].params;
-    deepSetValue(req, 'site.domain', bundleId);
-    deepSetValue(req, 'site.publisher.domain', bundleId);
-    deepSetValue(req, 'site.publisher.id', publisherId);
     return req;
   }
 });
@@ -35,7 +31,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
 
-  isBidRequestValid: ({params = {}}) => Boolean(params.publisherId && params.bundleId),
+  isBidRequestValid: ({params = {}}) => Boolean(params.publisherId),
 
   buildRequests: (bidRequests, bidderRequest) =>
     ({url, method: 'POST', data: converter.toORTB({bidRequests, bidderRequest})}),

@@ -2,16 +2,17 @@ import { expect } from 'chai';
 import { Renderer, executeRenderer } from 'src/Renderer.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 describe('Renderer', function () {
   let oldAdUnits;
   beforeEach(function () {
-    oldAdUnits = $$PREBID_GLOBAL$$.adUnits;
-    $$PREBID_GLOBAL$$.adUnits = [];
+    oldAdUnits = getGlobal().adUnits;
+    getGlobal().adUnits = [];
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.adUnits = oldAdUnits;
+    getGlobal().adUnits = oldAdUnits;
   });
 
   describe('Renderer: A renderer installed on a bid response', function () {
@@ -133,7 +134,7 @@ describe('Renderer', function () {
     });
 
     it('should not load renderer and log warn message', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         renderer: {
           url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -141,7 +142,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -154,7 +155,7 @@ describe('Renderer', function () {
     });
 
     it('should load renderer adunit renderer when backupOnly', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         renderer: {
           url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -163,7 +164,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -177,7 +178,7 @@ describe('Renderer', function () {
     });
 
     it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         mediaTypes: {
           video: {
@@ -193,7 +194,7 @@ describe('Renderer', function () {
         }
       }]
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -207,14 +208,14 @@ describe('Renderer', function () {
     });
 
     it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
-      $$PREBID_GLOBAL$$.adUnits = [{
+      getGlobal().adUnits = [{
         code: 'video1',
         renderer: {
           url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
           render: sinon.spy()
         }
       }];
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
@@ -231,7 +232,7 @@ describe('Renderer', function () {
         return document;
       });
 
-      let testRenderer = Renderer.install({
+      const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { documentResolver: documentResolver }
       });

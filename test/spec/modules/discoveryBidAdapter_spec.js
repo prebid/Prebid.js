@@ -33,7 +33,7 @@ describe('discovery:BidAdapterTests', function () {
     sandbox.restore();
   });
 
-  let bidRequestData = {
+  const bidRequestData = {
     bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
     bidderRequestId: '4fec04e87ad785',
@@ -126,7 +126,7 @@ describe('discovery:BidAdapterTests', function () {
   };
   let request = [];
 
-  let bidRequestDataNoParams = {
+  const bidRequestDataNoParams = {
     bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
     bidderRequestId: '4fec04e87ad785',
@@ -221,13 +221,13 @@ describe('discovery:BidAdapterTests', function () {
   it('discovery:validate_generated_params', function () {
     storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
-    let req_data = JSON.parse(request.data);
+    const req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
   });
   describe('first party data', function () {
     it('should pass additional parameter in request for topics', function () {
       const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
-      let res = JSON.parse(request.data);
+      const res = JSON.parse(request.data);
       expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
     });
   });
@@ -284,7 +284,7 @@ describe('discovery:BidAdapterTests', function () {
     tempAdm += '%3Cscr';
     tempAdm += 'ipt%3E';
     tempAdm += '!function(){\"use strict\";function f(t){return(f=\"function\"==typeof Symbol&&\"symbol\"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&\"function\"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?\"symbol\":typeof t})(t)}function l(t){var e=0<arguments.length&&void 0!==t?t:{};try{e.random_t=(new Date).getTime(),g(function(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:\"\";if(\"object\"!==f(t))return e;var n=function(t){for(var e,n=[],o=0,i=Object.keys(t);o<i.length;o++)e=i[o],n.push(\"\".concat(e,\"=\").concat(t[e]));return n}(t).join(\"&\"),o=e.indexOf(\"#\"),i=e,t=\"\";return-1!==o&&(i=e.slice(0,o),t=e.slice(o)),n&&(i&&-1!==i.indexOf(\"?\")?i+=\"&\"+n:i+=\"?\"+n),i+t}(e,\"https://trace.mediago.io/api/log/track\"))}catch(e){}}function g(t,e,n){(t=t?t.split(\";;;\"):[]).map(function(t){try{0<=t.indexOf(\"/api/bidder/track\")&&n&&(t+=\"&inIframe=\".concat(!(!self.frameElement||\"IFRAME\"!=self.frameElement.tagName)||window.frames.length!=parent.frames.length||self!=top),t+=\"&pos_x=\".concat(n.left,\"&pos_y=\").concat(n.top,\"&page_w=\").concat(n.page_width,\"&page_h=\").concat(n.page_height))}catch(t){l({tn:p,winloss:1,fe:2,pos_err_c:1002,pos_err_m:t.toString()})}var e=new Image;e.src=t,e.style.display=\"none\",e.style.visibility=\"hidden\",e.width=0,e.height=0,document.body.appendChild(e)})}var d=[\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=101&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&de=infoseek.co.jp&iv=0\",\"${ITRACKER2}\",\"${ITRACKER3}\",\"${ITRACKER4}\",\"${ITRACKER5}\",\"${ITRACKER6}\"],u=[\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=104&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&sid=38__149__12__24__144__163__47__1__99&format=&crid=d8e9b4aa20fae1739d2aad8c926d3f15&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&de=infoseek.co.jp&iv=0\",\"${VTRACKER2}\",\"${VTRACKER3}\",\"${VTRACKER4}\",\"${VTRACKER5}\",\"${VTRACKER6}\"],p=\"f9f2b1ef23fe2759c2cad0953029a94b\",n=document.getElementById(\"mgcontainer-e1746bcc817beaba9d63bd4254aad533\");n&&function(){var a=n.getElementsByClassName(\"mediago-placement-track\");if(a&&a.length){var t,e=function(t){var e,n,o,i,c,r;\"object\"===f(r=a[t])&&(e=function(t){try{var e=t.getBoundingClientRect(),n=e&&e.top||-1,o=e&&e.left||-1,i=document.body.scrollWidth||-1,c=document.body.scrollHeight||-1;return{top:n.toFixed(0),left:o.toFixed(0),page_width:i,page_height:c}}catch(t){return l({tn:p,winloss:1,fe:2,pos_err_c:1001,pos_err_m:t.toString()}),{top:\"-1\",left:\"-1\",page_width:\"-1\",page_height:\"-1\"}}}(r),(n=d[t])&&g(n,0,e),o=u[t],c=!(i=function(){o&&g(o)}),function n(){setTimeout(function(){var t,e;!c&&(t=r,e=window.innerHeight||document.documentElement.clientHeight||document.body.clientHeight,(t.getBoundingClientRect()&&t.getBoundingClientRect().top)<=e-.75*(t.offsetHeight||t.clientHeight))?(c=!0,i()):n()},500)}())};for(t in a)e(t)}}()}();'
-    let serverResponse = {
+    const serverResponse = {
       body: {
         id: 'pp_hbjs_2405029787417735524',
         seatbid: [
@@ -308,11 +308,11 @@ describe('discovery:BidAdapterTests', function () {
       },
     };
 
-    let bids = spec.interpretResponse(serverResponse);
+    const bids = spec.interpretResponse(serverResponse);
 
     expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
+    const bid = bids[0];
     expect(bid.creativeId).to.equal('1366258');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);

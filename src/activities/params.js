@@ -24,6 +24,18 @@ export const ACTIVITY_PARAM_ADAPTER_CODE = 'adapterCode';
 export const ACTIVITY_PARAM_STORAGE_TYPE = 'storageType';
 
 /**
+ * Storage key - cookie name or localStorage key.
+ * Relevant for: accessDevice
+ */
+export const ACTIVITY_PARAM_STORAGE_KEY = 'storageKey'
+
+/**
+ * True if attempting to write to device storage; false otherwise (e.g. when reading from or checking availability of storage).
+ * Relevant for: accessDevice
+ */
+export const ACTIVITY_PARAM_STORAGE_WRITE = 'write';
+
+/**
  * s2sConfig[].configName, used to identify a particular s2s instance
  * relevant for: fetchBids, but only when component is 'prebid.pbsBidAdapter'
  */

@@ -3,8 +3,10 @@ import {config} from 'src/config.js';
 import {spec} from 'modules/adipoloBidAdapter.js';
 import {deepClone} from 'src/utils';
 import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
+import sinon from 'sinon';
 
-const ENDPOINT = 'https://prebid.adipolo.live';
+const US_ENDPOINT = 'https://prebid.adipolo.live';
+const EU_ENDPOINT = 'https://prebid-eu.adipolo.live';
 
 const defaultRequest = {
   tmax: 0,
@@ -87,11 +89,45 @@ describe('adipoloBidAdapter', () => {
     });
 
     it('should send request with correct structure', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'America/New_York' })
+      });
+
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal(ENDPOINT + '/bid');
+      expect(request.url).to.equal(US_ENDPOINT + '/bid');
       expect(request.options).to.have.property('contentType').and.to.equal('application/json');
       expect(request).to.have.property('data');
+
+      stub.restore();
+    });
+
+    it('should use EU endpoint if timezone is in Europe', function () {
+      const clock = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'Europe/Warsaw' })
+      });
+
+      const built = spec.buildRequests([defaultRequest], {});
+      expect(built.url).to.equal(EU_ENDPOINT + '/bid');
+
+      clock.restore();
+    });
+
+    it('should fallback to default US endpoint if timezone cannot be resolved', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').throws(new Error('Timezone error'));
+      const request = spec.buildRequests([defaultRequest], {});
+      expect(request.url).to.equal(US_ENDPOINT + '/bid');
+      stub.restore();
+    });
+
+    it('should use default US endpoint if timezone is outside Europe', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'Asia/Tokyo' })
+      });
+
+      const request = spec.buildRequests([defaultRequest], {});
+      expect(request.url).to.equal(US_ENDPOINT + '/bid');
+      stub.restore();
     });
 
     it('should build basic request structure', function () {
@@ -120,18 +156,20 @@ describe('adipoloBidAdapter', () => {
 
     it('should build request with schain', function () {
       const schainRequest = deepClone(defaultRequest);
-      schainRequest.schain = {
-        validation: 'strict',
-        config: {
-          ver: '1.0'
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0'
+              }
+            }
+          }
         }
       };
-      const request = JSON.parse(spec.buildRequests([schainRequest], {}).data)[0];
+      const request = JSON.parse(spec.buildRequests([schainRequest], bidderRequest).data)[0];
       expect(request).to.have.property('schain').and.to.deep.equal({
-        validation: 'strict',
-        config: {
-          ver: '1.0'
-        }
+        ver: '1.0'
       });
     });
 

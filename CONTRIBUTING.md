@@ -22,7 +22,7 @@ Prebid uses [Mocha](http://mochajs.org/) and [Chai](http://chaijs.com/) for unit
 provides mocks, stubs, and spies. [Karma](https://karma-runner.github.io/1.0/index.html) runs the tests and generates
 code coverage reports at `build/coverage/lcov/lcov-report/index.html`.
 
-Tests are stored in the [test/spec](test/spec) directory. Tests for Adapters are located in [test/spec/adapters](test/spec/adapters).
+Tests are stored in the [test/spec](test/spec) directory. Tests for Adapters are located in [test/spec/modules](test/spec/modules).
 They can be run with the following commands:
 
 - `gulp test` - run the test suite once (`npm test` is aliased to call `gulp test`)

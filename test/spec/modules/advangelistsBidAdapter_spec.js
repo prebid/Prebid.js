@@ -57,14 +57,14 @@ describe('advangelistsBidAdapter', function () {
     it('should have domain in request', function () {
       const bidRequest = bidRequests[0];
       const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
-      expect(requests[0].data.site.domain).length !== 0;
+      expect(requests[0].data.site.domain).to.have.length.above(0);
     });
   });
 
   describe('spec.interpretResponse', function () {
     describe('for banner bids', function () {
       it('should return valid video bid responses', function () {
-        let _mediaTypes = VIDEO;
+        const _mediaTypes = VIDEO;
         const advangelistsbidreqVid = {'bidRequest': {'mediaTypes': {'video': {'w': 320, 'h': 480}}}};
         const serverResponseVid = {'cur': 'USD', 'id': '25c6ab92aa0e81', 'seatbid': [{'seat': '3', 'bid': [{'crid': '1855', 'h': 480, 'protocol': 2, 'nurl': 'http://nep.advangelists.com/xp/evt?pp=1MO1wiaMhhq7wLRzZZwwwPkJxxKpYEnM5k5MH4qSGm1HR8rp3Nl7vDocvzZzSAvE4pnREL9mQ1kf5PDjk6E8em6DOk7vVrYUH1TYQyqCucd58PFpJNN7h30RXKHHFg3XaLuQ3PKfMuI1qZATBJ6WHcu875y0hqRdiewn0J4JsCYF53M27uwmcV0HnQxARQZZ72mPqrW95U6wgkZljziwKrICM3aBV07TU6YK5R5AyzJRuD6mtrQ2xtHlQ3jXVYKE5bvWFiUQd90t0jOGhPtYBNoOfP7uQ4ZZj4pyucxbr96orHe9PSOn9UpCSWArdx7s8lOfDpwOvbMuyGxynbStDWm38sDgd4bMHnIt762m5VMDNJfiUyX0vWzp05OsufJDVEaWhAM62i40lQZo7mWP4ipoOWLkmlaAzFIMsTcNaHAHiKKqGEOZLkCEhFNM0SLcvgN2HFRULOOIZvusq7TydOKxuXgCS91dLUDxDDDFUK83BFKlMkTxnCzkLbIR1bd9GKcr1TRryOrulyvRWAKAIhEsUzsc5QWFUhmI2dZ1eqnBQJ0c89TaPcnoaP2WipF68UgyiOstf2CBy0M34858tC5PmuQwQYwXscg6zyqDwR0i9MzGH4FkTyU5yeOlPcsA0ht6UcoCdFpHpumDrLUwAaxwGk1Nj8S6YlYYT5wNuTifDGbg22QKXzZBkUARiyVvgPn9nRtXnrd7WmiMYq596rya9RQj7LC0auQW8bHVQLEe49shsZDnAwZTWr4QuYKqgRGZcXteG7RVJe0ryBZezOq11ha9C0Lv0siNVBahOXE35Wzoq4c4BDaGpqvhaKN7pjeWLGlQR04ufWekwxiMWAvjmfgAfexBJ7HfbYNZpq__', 'adid': '61_1855', 'adomain': ['chevrolet.com'], 'price': 2, 'w': 320, 'iurl': 'https://daf37cpxaja7f.cloudfront.net/c61/creative_url_14922301369663_1.png', 'cat': ['IAB2'], 'id': '7f570b40-aca1-4806-8ea8-818ea679c82b_0', 'attr': [], 'impid': '0', 'cid': '61'}]}], 'bidid': '7f570b40-aca1-4806-8ea8-818ea679c82b'};
         const bidResponseVid = spec.interpretResponse({ body: serverResponseVid }, advangelistsbidreqVid);
@@ -87,10 +87,10 @@ describe('advangelistsBidAdapter', function () {
       it('should return valid banner bid responses', function () {
         const advangelistsbidreq = {bids: {}};
         bidRequests.forEach(bid => {
-          let _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER);
+          const _mediaTypes = (bid.mediaTypes && bid.mediaTypes.video ? VIDEO : BANNER);
           advangelistsbidreq.bids[bid.bidId] = {mediaTypes: _mediaTypes,
-            w: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][0] : bid.mediaTypes[_mediaTypes].playerSize[0],
-            h: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
+            w: _mediaTypes === BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][0] : bid.mediaTypes[_mediaTypes].playerSize[0],
+            h: _mediaTypes === BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
 
           };
         });

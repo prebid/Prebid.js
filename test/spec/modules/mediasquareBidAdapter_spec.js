@@ -135,7 +135,7 @@ describe('MediaSquare bid adapter tests', function () {
       "uids": [{
         "id": "12345678",
         "atype": 1
-       }]
+      }]
     }],
     gdprConsent: {
       gdprApplies: true,
@@ -250,7 +250,7 @@ describe('MediaSquare bid adapter tests', function () {
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);
     expect(server.requests.length).to.equal(1);
-    let message = JSON.parse(server.requests[0].requestBody);
+    const message = JSON.parse(server.requests[0].requestBody);
     expect(message).to.have.property('increment').exist;
     expect(message).to.have.property('increment').and.to.equal('1');
     expect(message).to.have.property('ova').and.to.equal('cleared');
@@ -271,9 +271,9 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with no bid body response', function() {
-    var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
-    var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies native in bid response', function () {

@@ -1,6 +1,7 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
-import { isArray, isFn, deepAccess, deepSetValue, getDNT, logError, logWarn } from '../src/utils.js';
+import { isArray, isFn, deepAccess, deepSetValue, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
@@ -185,8 +186,9 @@ function getBidAdapter() {
       deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidRequest.schain) {
-      deepSetValue(openrtbRequest, 'source.schain', bidRequest.schain);
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(openrtbRequest, 'source.schain', schain);
     }
 
     openrtbRequest.tmax = bidderRequest.timeout || 200;

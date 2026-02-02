@@ -15,7 +15,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
 export const USER_SYNC_ENDPOINT_IMAGE = 'https://cs.gssprt.jp/yie/ld/mcs';
-export const USER_SYNC_ENDPOINT_IFRAME = 'https://cs.gssprt.jp/yie/ld';
+export const USER_SYNC_ENDPOINT_IFRAME = 'https://aladdin.genieesspv.jp/yie/ld';
 const SUPPORTED_MEDIA_TYPES = [ BANNER ];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
@@ -119,8 +119,8 @@ function hasParamsNotBlankString(params, key) {
   return (
     key in params &&
     typeof params[key] !== 'undefined' &&
-    params[key] != null &&
-    params[key] != ''
+    params[key] !== null &&
+    params[key] !== ''
   );
 }
 
@@ -140,7 +140,7 @@ export const buildExtuidQuery = ({id5, imuId}) => {
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
-  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid') || utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
 
   const data = {
     zoneid: bid.params.zoneId,
@@ -151,7 +151,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       ? encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.GENIEE_CT0])
       : '',
     referer: refererInfo?.ref || encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.REFERRER]) || '',
-    topframe: window.parent == window.self ? 1 : 0,
+    topframe: window.parent === window.self ? 1 : 0,
     cur: bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
     requestid: bid.bidId,
     ua: navigator.userAgent,
@@ -159,6 +159,11 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     cks: 1,
     ...(gpid ? { gpid } : {}),
   };
+
+  const pageTitle = document.title;
+  if (pageTitle) {
+    data.title = encodeURIComponentIncludeSingleQuotation(pageTitle);
+  }
 
   try {
     if (window.self.toString() !== '[object Window]' || window.parent.toString() !== '[object Window]') {
@@ -337,11 +342,22 @@ export const spec = {
    */
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params.zoneId) return false;
-    const currencyType = config.getConfig('currency.adServerCurrency');
-    if (typeof currencyType === 'string' && ALLOWED_CURRENCIES.indexOf(currencyType) === -1) {
-      utils.logError('Invalid currency type, we support only JPY and USD!');
-      return false;
+
+    if (bidRequest.params.hasOwnProperty('currency')) {
+      const bidCurrency = bidRequest.params.currency;
+
+      if (!ALLOWED_CURRENCIES.includes(bidCurrency)) {
+        utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        return false;
+      }
+    } else {
+      const adServerCurrency = config.getConfig('currency.adServerCurrency');
+      if (typeof adServerCurrency === 'string' && !ALLOWED_CURRENCIES.includes(adServerCurrency)) {
+        utils.logError(`[${BIDDER_CODE}] adServerCurrency "${adServerCurrency}" is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        return false;
+      }
     }
+
     return true;
   },
   /**
@@ -416,7 +432,7 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return syncs;
 
     serverResponses.forEach((serverResponse) => {
-      if (!serverResponse?.body) return;
+      if (!serverResponse || !serverResponse.body) return;
 
       const bids = Object.values(serverResponse.body).filter(Boolean);
       if (!bids.length) return;

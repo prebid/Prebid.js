@@ -45,9 +45,9 @@ const FILE_NAME_CLIENT = 'grumi.js';
 /** @type {string} */
 const FILE_NAME_INPAGE = 'grumi-ip.js';
 /** @type {function} */
-export let getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`;
+export const getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`;
 /** @type {function} */
-export let getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`;
+export const getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`;
 /** @type {string} */
 export let wrapper
 /** @type {boolean} */;
@@ -55,9 +55,9 @@ let wrapperReady;
 /** @type {boolean} */;
 let preloaded;
 /** @type {object} */;
-let refererInfo = getRefererInfo();
+const refererInfo = getRefererInfo();
 /** @type {object} */;
-let overrides = window.grumi?.overrides;
+const overrides = window.grumi?.overrides;
 
 /**
  * fetches the creative wrapper
@@ -80,7 +80,7 @@ export function setWrapper(responseText) {
 }
 
 export function getInitialParams(key) {
-  let params = {
+  const params = {
     wver: '1.1.1',
     wtype: 'pbjs-module',
     key,
@@ -104,11 +104,11 @@ export function markAsLoaded() {
  * @param {string} key
  */
 export function preloadClient(key) {
-  let iframe = createInvisibleIframe();
+  const iframe = createInvisibleIframe();
   iframe.id = 'grumiFrame';
   insertElement(iframe);
   iframe.contentWindow.grumi = getInitialParams(key);
-  let url = getClientUrl(key);
+  const url = getClientUrl(key);
   loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
 }
 
@@ -174,7 +174,7 @@ function replaceMacros(wrapper, macros) {
  * @return {string}
  */
 function buildHtml(bid, wrapper, html, key) {
-  let macros = getMacros(bid, key);
+  const macros = getMacros(bid, key);
   wrapper = replaceMacros(wrapper, macros);
   return wrapHtml(wrapper, html);
 }
@@ -194,7 +194,7 @@ function mutateBid(bid, ad) {
  * @param {string} key
  */
 export function wrapBidResponse(bid, key) {
-  let wrapped = buildHtml(bid, wrapper, bid.ad, key);
+  const wrapped = buildHtml(bid, wrapper, bid.ad, key);
   mutateBid(bid, wrapped);
 }
 
@@ -213,14 +213,14 @@ function isSupportedBidder(bidder, paramsBidders) {
  * @return {boolean}
  */
 function shouldWrap(bid, params) {
-  let supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
-  let donePreload = params.wap ? preloaded : true;
-  let isGPT = params.gpt;
+  const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
+  const donePreload = params.wap ? preloaded : true;
+  const isGPT = params.gpt;
   return wrapperReady && supportedBidder && donePreload && !isGPT;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
-  let params = config.params;
+  const params = config.params;
   if (shouldWrap(bidResponse, params)) {
     wrapBidResponse(bidResponse, params.key);
   }
@@ -238,9 +238,9 @@ function isBillingMessage(data, params) {
  */
 function fireBillableEventsForApplicableBids(params) {
   window.addEventListener('message', function (message) {
-    let data = message.data;
+    const data = message.data;
     if (isBillingMessage(data, params)) {
-      let winningBid = auctionManager.findBidByAdId(data.adId);
+      const winningBid = auctionManager.findBidByAdId(data.adId);
       events.emit(EVENTS.BILLABLE_EVENT, {
         vendor: SUBMODULE_NAME,
         billingId: data.impressionId,
@@ -264,7 +264,7 @@ function setupInPage(params) {
 }
 
 function init(config, userConsent) {
-  let params = config.params;
+  const params = config.params;
   if (!params || !params.key) {
     logError('missing key for geoedge RTD module provider');
     return false;

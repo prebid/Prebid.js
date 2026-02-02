@@ -1,4 +1,10 @@
-import {EXT_PROMOTIONS, moveRule, splitPath, toOrtb25} from '../../../libraries/ortb2.5Translator/translator.js';
+import {
+  addExt,
+  EXT_PROMOTIONS,
+  moveRule,
+  splitPath,
+  toOrtb25, toOrtb26
+} from '../../../libraries/ortb2.5Translator/translator.js';
 import {deepAccess, deepClone, deepSetValue} from '../../../src/utils.js';
 
 describe('ORTB 2.5 translation', () => {
@@ -33,10 +39,7 @@ describe('ORTB 2.5 translation', () => {
   });
   describe('toOrtb25', () => {
     EXT_PROMOTIONS.forEach(path => {
-      const newPath = (() => {
-        const [prefix, field] = splitPath(path);
-        return `${prefix}.ext.${field}`;
-      })();
+      const newPath = addExt(...splitPath(path));
 
       it(`moves ${path} to ${newPath}`, () => {
         const obj = {};
@@ -61,4 +64,17 @@ describe('ORTB 2.5 translation', () => {
       });
     });
   });
+  describe('toOrtb26', () => {
+    EXT_PROMOTIONS.forEach(path => {
+      const oldPath = addExt(...splitPath(path));
+
+      it(`moves ${oldPath} to ${path}`, () => {
+        const obj = {};
+        deepSetValue(obj, oldPath, 'val');
+        toOrtb26(obj);
+        expect(deepAccess(obj, oldPath)).to.eql(undefined);
+        expect(deepAccess(obj, path)).to.eql('val');
+      });
+    });
+  })
 });

@@ -23,7 +23,6 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['viewdeos'],
-  gvlid: 924,
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {

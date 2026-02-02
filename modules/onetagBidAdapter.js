@@ -8,6 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -81,14 +82,14 @@ export function isValid(type, bid) {
   return false;
 }
 
-const isValidEventTracker = function(et) {
+const isValidEventTracker = function (et) {
   if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
     return false;
   }
   return true;
 }
 
-const isValidAsset = function(asset) {
+const isValidAsset = function (asset) {
   if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
   const hasValidContent = asset.title || asset.img || asset.data || asset.video;
   if (!hasValidContent) return false;
@@ -132,17 +133,18 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
-    payload.schain = validBidRequests[0].schain;
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain;
+  if (validBidRequests && validBidRequests.length !== 0 && schain && isSchainValid(schain)) {
+    payload.schain = schain;
   }
   try {
     if (storage.hasLocalStorage()) {
       payload.onetagSid = storage.getDataFromLocalStorage('onetag_sid');
     }
   } catch (e) { }
-  const connection = navigator.connection || navigator.webkitConnection;
-  payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
-  payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+  const connection = getConnectionInfo();
+  payload.networkConnectionType = connection?.type || null;
+  payload.networkEffectiveConnectionType = connection?.effectiveType || null;
   payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
   return {
     method: 'POST',
@@ -208,7 +210,8 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      paapi: fledgeAuctionConfigs}
+      paapi: fledgeAuctionConfigs
+    }
   } else {
     return bids;
   }
@@ -283,16 +286,10 @@ function getPageInfo(bidderRequest) {
     referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
     stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
-    wWidth: getWinDimensions().innerWidth,
-    wHeight: getWinDimensions().innerHeight,
-    oWidth: winDimensions.outerWidth,
-    oHeight: winDimensions.outerHeight,
+    wWidth: winDimensions.innerWidth,
+    wHeight: winDimensions.innerHeight,
     sWidth: winDimensions.screen.width,
     sHeight: winDimensions.screen.height,
-    aWidth: winDimensions.screen.availWidth,
-    aHeight: winDimensions.screen.availHeight,
-    sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
-    sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
     xOffset: topmostFrame.pageXOffset,
     yOffset: topmostFrame.pageYOffset,
     docHidden: getDocumentVisibility(topmostFrame),
@@ -301,7 +298,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.4'
+      adapter: '1.1.6'
     }
   };
 }
@@ -359,7 +356,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
@@ -420,7 +417,7 @@ function parseVideoSize(bid) {
 }
 
 function parseSizes(bid) {
-  let ret = [];
+  const ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
     return getSizes(bid.mediaTypes.banner.sizes)
   }
@@ -441,7 +438,7 @@ function getSizes(sizes) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  let syncs = [];
+  const syncs = [];
   let params = '';
   if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -476,18 +473,18 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor !== 'function') return [];
-    const getFloorObject = (size) => {
-      const floorData = bidRequest.getFloor({
-        currency: 'EUR',
-        mediaType: mediaType || '*',
-        size: size || null
-      }) || {};
+  const getFloorObject = (size) => {
+    const floorData = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: mediaType || '*',
+      size: size || null
+    }) || {};
 
-      return {
-        ...floorData,
-        size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
-        floor: floorData.floor != null ? floorData.floor : null
-      };
+    return {
+      ...floorData,
+      size: size && size.length === 2 ? { width: size[0], height: size[1] } : null,
+      floor: floorData.floor != null ? floorData.floor : null
+    };
   };
 
   if (Array.isArray(sizes) && sizes.length > 0) {

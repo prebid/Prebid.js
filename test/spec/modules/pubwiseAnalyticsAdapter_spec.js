@@ -4,14 +4,14 @@ import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
-let adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
+const adapterManager = require('src/adapterManager').default;
 
 describe('PubWise Prebid Analytics', function () {
   let requests;
   let sandbox;
   let clock;
-  let mock = {};
+  const mock = {};
 
   mock.DEFAULT_PW_CONFIG = {
     provider: 'pubwiseanalytics',
@@ -35,7 +35,7 @@ describe('PubWise Prebid Analytics', function () {
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
-    clock = sandbox.useFakeTimers();
+    clock = sandbox.useFakeTimers({shouldClearNativeTimers: true});
     sandbox.stub(events, 'getEvents').returns([]);
 
     requests = server.requests;
@@ -77,8 +77,8 @@ describe('PubWise Prebid Analytics', function () {
       clock.tick(500);
 
       /* check for critical values */
-      let request = requests[0];
-      let data = JSON.parse(request.requestBody);
+      const request = requests[0];
+      const data = JSON.parse(request.requestBody);
 
       // console.log(data.metaData);
       expect(data.metaData, 'metaData property').to.exist;
@@ -125,8 +125,8 @@ describe('PubWise Prebid Analytics', function () {
       clock.tick(500);
 
       /* check for critical values */
-      let request = requests[0];
-      let data = JSON.parse(request.requestBody);
+      const request = requests[0];
+      const data = JSON.parse(request.requestBody);
 
       // check the basics
       expect(data.eventList, 'eventList property').to.exist;
@@ -135,7 +135,7 @@ describe('PubWise Prebid Analytics', function () {
 
       // console.log(data.eventList[0].args);
 
-      let eventArgs = data.eventList[0].args;
+      const eventArgs = data.eventList[0].args;
       // the props we want removed should go away
       expect(eventArgs.adUnitCodes, 'adUnitCodes property').not.to.exist;
       expect(eventArgs.bidderRequests, 'adUnitCodes property').not.to.exist;

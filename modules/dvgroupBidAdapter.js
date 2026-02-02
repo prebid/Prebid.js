@@ -29,15 +29,15 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    let valid = bid.params.sspId;
+    const valid = bid.params.sspId;
 
     return !!valid;
   },
 
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
-      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
-      let bidMediaType = deepAccess(bid, 'mediaTypes.video');
+      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      const bidMediaType = deepAccess(bid, 'mediaTypes.video');
       return {
         method: 'POST',
         url: `https://${endpoint}/bid?sspuid=${bid.params.sspId}`,
@@ -62,7 +62,7 @@ export const spec = {
       bid.meta = bid.meta || {};
       bid.ttl = bid.ttl || TIME_TO_LIVE;
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
-      if (bid.meta.advertiserDomains.length == 0) {
+      if (bid.meta.advertiserDomains.length === 0) {
         bid.meta.advertiserDomains.push('dvgroup.com');
       }
     });

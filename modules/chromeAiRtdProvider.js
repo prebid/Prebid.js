@@ -1,6 +1,7 @@
 import { submodule } from '../src/hook.js';
 import { logError, mergeDeep, logMessage, deepSetValue, deepAccess } from '../src/utils.js';
-import { getCoreStorageManager } from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /* global LanguageDetector, Summarizer */
 /**
@@ -13,6 +14,7 @@ export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider:',
   STORAGE_KEY: 'chromeAi_detected_data', // Single key for both language and keywords
   MIN_TEXT_LENGTH: 20,
+  ACTIVATION_EVENTS: ['click', 'keydown', 'mousedown', 'touchend', 'pointerdown', 'pointerup'],
   DEFAULT_CONFIG: {
     languageDetector: {
       enabled: true,
@@ -30,7 +32,8 @@ export const CONSTANTS = Object.freeze({
   }
 });
 
-const storage = getCoreStorageManager(CONSTANTS.SUBMODULE_NAME);
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: CONSTANTS.SUBMODULE_NAME });
+
 let moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
 let detectedKeywords = null; // To store generated summary/keywords
 
@@ -74,7 +77,7 @@ const _createAiApiInstance = async (ApiConstructor, options) => {
 
 const mergeModuleConfig = (config) => {
   // Start with a deep copy of default_config to ensure all keys are present
-  let newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+  const newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
   if (config?.params) {
     mergeDeep(newConfig, config.params);
   }
@@ -226,11 +229,11 @@ export const detectLanguage = async (text) => {
 };
 
 export const detectSummary = async (text, config) => {
-    const summaryOptions = {
-        type: config.type,
-        format: config.format,
-        length: config.length,
-      };
+  const summaryOptions = {
+    type: config.type,
+    format: config.format,
+    length: config.length,
+  };
   const summarizer = await _createAiApiInstance(Summarizer, summaryOptions);
   if (!summarizer) {
     return null; // Error already logged by _createAiApiInstance
@@ -295,6 +298,30 @@ const initSummarizer = async () => {
   if (!moduleConfig.summarizer) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Summarizer config missing during init.`);
     return false;
+  }
+
+  // If the model is not 'available' (needs download), it typically requires a user gesture.
+  // We check availability and defer if needed.
+  try {
+    const availability = await Summarizer.availability();
+    const needsDownload = availability !== 'available' && availability !== 'unavailable'; // 'after-download', 'downloading', etc.
+
+    if (needsDownload && !navigator.userActivation?.isActive) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer needs download (${availability}) but user inactive. Deferring init...`);
+
+      const onUserActivation = () => {
+        CONSTANTS.ACTIVATION_EVENTS.forEach(evt => window.removeEventListener(evt, onUserActivation));
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} User activation detected. Retrying initSummarizer...`);
+        // Retry initialization with fresh gesture
+        initSummarizer();
+      };
+
+      CONSTANTS.ACTIVATION_EVENTS.forEach(evt => window.addEventListener(evt, onUserActivation, { once: true }));
+
+      return false; // Return false to not block main init, will retry later
+    }
+  } catch (e) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error checking Summarizer availability:`, e);
   }
 
   const summaryText = await detectSummary(pageText, moduleConfig.summarizer);
@@ -410,6 +437,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
 /** @type {RtdSubmodule} */
 export const chromeAiSubmodule = {
   name: CONSTANTS.SUBMODULE_NAME,
+  disclosureURL: 'local://modules/chromeAiRtdProvider.json',
   init,
   getBidRequestData
 };

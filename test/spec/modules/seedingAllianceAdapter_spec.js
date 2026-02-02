@@ -2,17 +2,18 @@
 import {assert, expect} from 'chai';
 import {getStorageManager} from 'src/storageManager.js';
 import {spec} from 'modules/seedingAllianceBidAdapter.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('SeedingAlliance adapter', function () {
   let serverResponse, bidRequest, bidResponses;
-  let bid = {
+  const bid = {
     'bidder': 'seedingAlliance',
     'params': {
       'adUnitId': '1hq8'
     }
   };
 
-  let validBidRequests = [{
+  const validBidRequests = [{
     bidId: 'bidId',
     params: {},
     mediaType: {
@@ -33,33 +34,33 @@ describe('SeedingAlliance adapter', function () {
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.ok(request.data);
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,cur,imp,regs'.split(',');
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
-      let data = Object.keys(request);
+      const keys = 'site,cur,imp,regs'.split(',');
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      const data = Object.keys(request);
 
       assert.includeDeepMembers(data, keys);
     });
 
     it('Verify the site url', function () {
-      let siteUrl = 'https://www.yourdomain.tld/your-directory/';
+      const siteUrl = 'https://www.yourdomain.tld/your-directory/';
       validBidRequests[0].params.url = siteUrl;
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
       assert.equal(request.site.page, siteUrl);
     });
   });
 
   describe('check user ID functionality', function () {
-    let storage = getStorageManager({ bidderCode: 'seedingAlliance' });
-    let localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    let getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    const storage = getStorageManager({ bidderCode: 'seedingAlliance' });
+    const localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+    const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     const bidRequests = [{
       bidId: 'bidId',
       params: {}
@@ -88,7 +89,7 @@ describe('SeedingAlliance adapter', function () {
 
     it('should return an empty array if local storage is not enabled', function () {
       localStorageIsEnabledStub.returns(false);
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -99,7 +100,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an empty array if local storage is enabled but storageAllowed is false', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -111,7 +112,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return a non empty array if local storage is enabled and storageAllowed is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
@@ -123,14 +124,14 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an array containing the nativendoUserEid', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
       };
       localStorageIsEnabledStub.returns(true);
 
-      let nativendoUserEid = { source: 'nativendo.de', uids: [{ id: '123', atype: 1 }] };
+      const nativendoUserEid = { source: 'nativendo.de', uids: [{ id: '123', atype: 1 }] };
       storage.setDataInLocalStorage('nativendo_id', '123');
 
       request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
@@ -146,8 +147,8 @@ describe('SeedingAlliance adapter', function () {
         id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: JSON.stringify({
                 native: {
                   assets: [
@@ -175,8 +176,8 @@ describe('SeedingAlliance adapter', function () {
         id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: '<iframe src="https://domain.tld/cds/delivery?wp=0.90"></iframe>',
               impid: 1,
               price: 0.90,

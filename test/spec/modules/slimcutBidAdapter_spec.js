@@ -17,7 +17,7 @@ describe('slimcutBidAdapter', function() {
     });
   });
   describe('isBidRequestValid', function() {
-    let bid = {
+    const bid = {
       'bidder': 'slimcut',
       'params': {
         'placementId': 83
@@ -35,7 +35,7 @@ describe('slimcutBidAdapter', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should return false when placementId is not valid (letters)', function() {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placementId': 'ABCD'
@@ -43,7 +43,7 @@ describe('slimcutBidAdapter', function() {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
     it('should return false when placementId < 0', function() {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placementId': -1
@@ -51,14 +51,14 @@ describe('slimcutBidAdapter', function() {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
     it('should return false when required params are not passed', function() {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
   describe('buildRequests', function() {
-    let bidRequests = [{
+    const bidRequests = [{
       'bidder': 'teads',
       'params': {
         'placementId': 10433394
@@ -73,7 +73,7 @@ describe('slimcutBidAdapter', function() {
       'auctionId': '4e156668c977d7',
       'deviceWidth': 1680
     }];
-    let bidderResquestDefault = {
+    const bidderResquestDefault = {
       'auctionId': '4e156668c977d7',
       'bidderRequestId': 'b41642f1aee381',
       'timeout': 3000
@@ -84,8 +84,8 @@ describe('slimcutBidAdapter', function() {
       expect(request.method).to.equal('POST');
     });
     it('should send GDPR to endpoint', function() {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      const bidderRequest = {
         'auctionId': '4e156668c977d7',
         'bidderRequestId': 'b41642f1aee381',
         'timeout': 3000,
@@ -118,7 +118,7 @@ describe('slimcutBidAdapter', function() {
     });
   });
   describe('getUserSyncs', () => {
-    let bids = {
+    const bids = {
       'body': {
         'responses': [{
           'ad': AD_SCRIPT,
@@ -136,21 +136,21 @@ describe('slimcutBidAdapter', function() {
       }
     };
     it('should get the correct number of sync urls', () => {
-      let urls = spec.getUserSyncs({
+      const urls = spec.getUserSyncs({
         iframeEnabled: true
       }, bids);
       expect(urls.length).to.equal(1);
       expect(urls[0].url).to.equal('https://sb.freeskreen.com/async_usersync.html');
     });
     it('should return no url if not iframe enabled', () => {
-      let urls = spec.getUserSyncs({
+      const urls = spec.getUserSyncs({
         iframeEnabled: false
       }, bids);
       expect(urls.length).to.equal(0);
     });
   });
   describe('interpretResponse', function() {
-    let bids = {
+    const bids = {
       'body': {
         'responses': [{
           'ad': AD_SCRIPT,
@@ -168,7 +168,7 @@ describe('slimcutBidAdapter', function() {
       }
     };
     it('should get correct bid response', function() {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'cpm': 0.5,
         'width': 300,
         'height': 250,
@@ -183,16 +183,16 @@ describe('slimcutBidAdapter', function() {
           'advertiserDomains': []
         }
       }];
-      let result = spec.interpretResponse(bids);
+      const result = spec.interpretResponse(bids);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
     it('handles nobid responses', function() {
-      let bids = {
+      const bids = {
         'body': {
           'responses': []
         }
       };
-      let result = spec.interpretResponse(bids);
+      const result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });
   });

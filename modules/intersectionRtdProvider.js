@@ -34,6 +34,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
         observer.observe(ph);
         return true;
       }
+      return false;
     });
     if (
       observed.length === adUnits.length ||
@@ -77,7 +78,9 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
     adUnits && adUnits.forEach((unit) => {
       const intersection = intersectionMap[unit.code];
       if (intersection && unit.bids) {
-        unit.bids.forEach(bid => bid.intersection = intersection);
+        unit.bids.forEach(bid => {
+          bid.intersection = intersection;
+        });
       }
     });
     onDone();

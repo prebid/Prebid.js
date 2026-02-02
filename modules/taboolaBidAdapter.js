@@ -102,7 +102,7 @@ const converter = ortbConverter({
     ttl: 300
   },
   imp(buildImp, bidRequest, context) {
-    let imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context);
     fillTaboolaImpData(bidRequest, imp);
     return imp;
   },
@@ -114,6 +114,9 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
+    if (bid.burl) {
+      bidResponse.burl = bid.burl;
+    }
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
@@ -170,7 +173,7 @@ export const spec = {
         if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
           return;
         }
-        let buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
+        const buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
         if (!buyerdata) {
           return;
         }
@@ -179,7 +182,7 @@ export const spec = {
           if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
             return;
           }
-          let parsedData = safeJSONParse(buyerItem.buyerdata)
+          const parsedData = safeJSONParse(buyerItem.buyerdata)
           if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
             return;
           }
@@ -212,9 +215,20 @@ export const spec = {
     return bids;
   },
   onBidWon: (bid) => {
-    if (bid.nurl) {
+    if (bid.nurl && !bid.deferBilling) {
       const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
       ajax(resolvedNurl);
+      bid.taboolaBillingFired = true;
+    }
+  },
+  onBidBillable: (bid) => {
+    if (bid.taboolaBillingFired) {
+      return;
+    }
+    const billingUrl = bid.burl || bid.nurl;
+    if (billingUrl) {
+      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
+      ajax(resolvedBillingUrl);
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -278,7 +292,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
   deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
-  if (data.user == undefined) {
+  if (data.user === undefined || data.user === null) {
     data.user = {
       buyeruid: 0,
       ext: {}
@@ -287,7 +301,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
   }
-  if (data.regs?.ext == undefined) {
+  if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
     }
@@ -320,7 +334,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
 
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
-  data.tmax = (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout);
+  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];

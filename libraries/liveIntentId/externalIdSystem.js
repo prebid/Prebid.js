@@ -82,7 +82,7 @@ function initializeClient(configParams) {
     resolveSettings
   })
 
-  let sourceEvent = makeSourceEventToSend(configParams)
+  const sourceEvent = makeSourceEventToSend(configParams)
   if (sourceEvent != null) {
     window.liQHub.push({ type: 'collect', clientRef, sourceEvent })
   }

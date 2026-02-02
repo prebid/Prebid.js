@@ -165,7 +165,7 @@ function getQueryString(auctionObj, adUnitCode, logType, winningBidObj) {
   const commonParams = getCommonParams(auctionObj, adUnitCode, logType);
   const bidParams = getBidParams(auctionObj, adUnitCode, winningBidObj);
   const queryString = formatQS(commonParams);
-  let bidStrings = bidParams.map((bid) => `&${formatQS(bid)}`).join('');
+  const bidStrings = bidParams.map((bid) => `&${formatQS(bid)}`).join('');
   return `${queryString}${bidStrings}`;
 }
 
@@ -352,11 +352,11 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
 
   const markValidBidsAsWinners = (winnersAdIds) => {
     winnersAdIds.forEach((adId) => {
-        const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
-        if (winnerBid) {
-          winnerBid.iwb = 1;
-        }
-      });
+      const winnerBid = findBidObj(auctionObj.bidsReceived, 'adId', adId);
+      if (winnerBid) {
+        winnerBid.iwb = 1;
+      }
+    });
   };
 
   const checkWinnersForIwb = (winner, winningBidObj) => {
@@ -397,6 +397,9 @@ function addS2sInfo(auctionObj, bidderRequests) {
 
       bidObjs.forEach((bidObj) => {
         bidObj.serverLatencyMillis = bidderRequest.serverResponseTimeMs;
+        bidObj.pbsExt = Object.fromEntries(
+          Object.entries(bidderRequest.pbsExt || {}).filter(([key]) => key !== 'debug')
+        );
         const serverError = deepAccess(bidderRequest, `serverErrors.0`);
         if (serverError && bidObj.status !== BID_SUCCESS) {
           bidObj.status = PBS_ERROR_STATUS_START + serverError.code;
@@ -520,7 +523,7 @@ function getDfpCurrencyInfo(bidResponse) {
  */
 function getCommonParams(auctionObj, adUnitCode, logType) {
   const adSlotObj = auctionObj.adSlots[adUnitCode] || {};
-  let commonParams = Object.assign(
+  const commonParams = Object.assign(
     { lgtp: logType },
     pick(mnetGlobals.configuration, KeysMap.Log.Globals),
     pick(auctionObj, KeysMap.Log.Auction),
@@ -619,7 +622,10 @@ function auctionInitHandler(eventType, auction) {
     });
 
   // addUidData
-  const userIds = deepAccess(auction.bidderRequests, '0.bids.0.userId');
+  let userIds;
+  if (typeof getGlobal().getUserIds === 'function') {
+    userIds = getGlobal().getUserIds();
+  }
   if (isPlainObject(userIds)) {
     const enabledUids = mnetGlobals.configuration.enabledUids || [];
     auctionObj.availableUids = Object.keys(userIds).sort();
@@ -836,7 +842,7 @@ const eventListeners = {
   [LoggingEvents.STALE_RENDER]: staleRenderHandler,
 };
 
-let medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+const medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   getlogsQueue() {
     return mnetGlobals.logsQueue;
   },

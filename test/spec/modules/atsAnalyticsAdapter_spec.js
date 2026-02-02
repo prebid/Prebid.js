@@ -1,19 +1,20 @@
-import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
+import atsAnalyticsAdapter, {parseBrowser, analyticsUrl, bidRequestedHandler} from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
-import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
-import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
-import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
-import {EVENTS} from 'src/constants.js';
 
-let utils = require('src/utils');
-let events = require('src/events');
+import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
+
+import {EVENTS} from 'src/constants.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
+
+const utils = require('src/utils');
+const events = require('src/events');
 
 const storage = getCoreStorageManager();
 let sandbox;
 let clock;
-let now = new Date();
+const now = new Date();
 
 describe('ats analytics adapter', function () {
   beforeEach(function () {
@@ -43,13 +44,13 @@ describe('ats analytics adapter', function () {
 
       this.timeout(2100);
 
-      let initOptions = {
+      const initOptions = {
         pid: '10433394'
       };
-      let auctionTimestamp = 1496510254326;
+      const auctionTimestamp = 1496510254326;
 
       // prepare general auction - request
-      let bidRequest = {
+      const bidRequest = {
         'bidderCode': 'appnexus',
         'auctionStart': 1580739265161,
         'bids': [{
@@ -71,7 +72,7 @@ describe('ats analytics adapter', function () {
         'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
       };
       // prepare general auction - response
-      let bidResponse = {
+      const bidResponse = {
         'height': 250,
         'statusMessage': 'Bid available',
         'adId': '2eddfdc0c791dc',
@@ -93,7 +94,7 @@ describe('ats analytics adapter', function () {
       };
 
       // what we expect after general auction
-      let expectedAfterBid = {
+      const expectedAfterBid = {
         'Data': [{
           'has_envelope': true,
           'adapter_version': 3,
@@ -114,7 +115,7 @@ describe('ats analytics adapter', function () {
         }]
       };
 
-      let wonRequest = {
+      const wonRequest = {
         'adId': '2eddfdc0c791dc',
         'mediaType': 'banner',
         'requestId': '30c77d079cdf17',
@@ -134,7 +135,7 @@ describe('ats analytics adapter', function () {
       };
 
       // lets simulate that some bidders timeout
-      let bidTimeoutArgsV1 = [
+      const bidTimeoutArgsV1 = [
         {
           bidId: '2baa51527bd015',
           bidder: 'bidderOne',
@@ -177,19 +178,22 @@ describe('ats analytics adapter', function () {
       // Step 6: Send bid won event
       events.emit(EVENTS.BID_WON, wonRequest);
 
-      sandbox.stub($$PREBID_GLOBAL$$, 'getAllWinningBids').callsFake((key) => {
-        return [wonRequest]
-      });
+      // Stub getAllWinningBids before auction end processing
+      const globalObj = getGlobal();
+      if (typeof globalObj.getAllWinningBids !== 'function') {
+        globalObj.getAllWinningBids = function() { return []; };
+      }
+      sandbox.stub(globalObj, 'getAllWinningBids').returns([wonRequest]);
 
       clock.tick(2000);
 
-      let requests = server.requests.filter(req => {
+      const requests = server.requests.filter(req => {
         return req.url.indexOf(analyticsUrl) > -1;
       });
 
       expect(requests.length).to.equal(1);
 
-      let realAfterBid = JSON.parse(requests[0].requestBody);
+      const realAfterBid = JSON.parse(requests[0].requestBody);
 
       // Step 7: assert real data after bid and expected data
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
@@ -200,51 +204,51 @@ describe('ats analytics adapter', function () {
     it('check browser is safari', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
-      let browser = parseBrowser();
+      const browser = parseBrowser();
       expect(browser).to.equal('Safari');
     })
     it('check browser is chrome', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
       sinon.stub(Math, 'random').returns(0.99);
-      let browser = parseBrowser();
+      const browser = parseBrowser();
       expect(browser).to.equal('Chrome');
     })
     it('check browser is edge', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
       sinon.stub(Math, 'random').returns(0.99);
-      let browser = parseBrowser();
+      const browser = parseBrowser();
       expect(browser).to.equal('Microsoft Edge');
     })
     it('check browser is firefox', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
       sinon.stub(Math, 'random').returns(0.99);
-      let browser = parseBrowser();
+      const browser = parseBrowser();
       expect(browser).to.equal('Firefox');
     })
     it('check browser is unknown', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns(undefined);
       sinon.stub(Math, 'random').returns(0.99);
-      let browser = parseBrowser();
+      const browser = parseBrowser();
       expect(browser).to.equal('Unknown');
     })
     it('should not fire analytics request if sampling rate is 0', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
-      let result = atsAnalyticsAdapter.shouldFireRequest(0);
+      const result = atsAnalyticsAdapter.shouldFireRequest(0);
       expect(result).to.equal(false);
     })
     it('should fire analytics request', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
-      let result = atsAnalyticsAdapter.shouldFireRequest(8);
+      const result = atsAnalyticsAdapter.shouldFireRequest(8);
       expect(result).to.equal(true);
     })
     it('should not fire analytics request if math random is something other then 0.99', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.98);
       // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
-      let result = atsAnalyticsAdapter.shouldFireRequest(10);
+      const result = atsAnalyticsAdapter.shouldFireRequest(10);
       expect(result).to.equal(false);
     })
 
@@ -252,7 +256,7 @@ describe('ats analytics adapter', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       atsAnalyticsAdapter.setSamplingCookie(10);
-      let samplingRate = storage.getCookie('_lr_sampling_rate');
+      const samplingRate = storage.getCookie('_lr_sampling_rate');
       expect(samplingRate).to.equal('10');
     })
 
@@ -260,7 +264,7 @@ describe('ats analytics adapter', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       atsAnalyticsAdapter.setSamplingCookie(0);
-      let samplingRate = storage.getCookie('_lr_sampling_rate');
+      const samplingRate = storage.getCookie('_lr_sampling_rate');
       expect(samplingRate).to.equal('0');
     })
 
@@ -272,6 +276,209 @@ describe('ats analytics adapter', function () {
         options: {}
       });
       expect(utils.logError.called).to.equal(true);
+    })
+
+    describe('has_envelope logic for Prebid v10.0+ compatibility', function () {
+      beforeEach(function () {
+        sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+        sinon.stub(Math, 'random').returns(0.99);
+        storage.setCookie('_lr_env_src_ats', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
+
+        // Enable analytics for testing
+        atsAnalyticsAdapter.enableAnalytics({
+          options: { pid: '10433394' }
+        });
+      });
+
+      it('should return true when userIdAsEids contains liveramp.com source with valid uids', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com',
+              'uids': [{'id': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'}]
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(true);
+      });
+
+      it('should return false when userIdAsEids contains liveramp source but no uids', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com',
+              'uids': []
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids contains non-liveramp sources', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'id5-sync.com',
+              'uids': [{'id': 'some-other-id'}]
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids is empty array', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': []
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids is not present', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17'
+            // No userIdAsEids property
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids is not an array', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': 'not-an-array'
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return true for legacy userId.idl_env (backward compatibility)', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userId': {
+              'idl_env': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'
+            }
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(true);
+      });
+
+      it('should return false when userIdAsEids has liveramp source but uids is null', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com',
+              'uids': null
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should return false when userIdAsEids has liveramp source but no uids property', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [{
+              'source': 'liveramp.com'
+              // No uids property
+            }]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(false);
+      });
+
+      it('should handle multiple userIdAsEids entries and find liveramp source', function () {
+        const bidRequestArgs = {
+          'bidderCode': 'appnexus',
+          'auctionStart': 1580739265161,
+          'bids': [{
+            'bidder': 'appnexus',
+            'bidId': '30c77d079cdf17',
+            'userIdAsEids': [
+              {
+                'source': 'id5-sync.com',
+                'uids': [{'id': 'id5-value'}]
+              },
+              {
+                'source': 'liveramp.com',
+                'uids': [{'id': 'liveramp-value'}]
+              },
+              {
+                'source': 'criteo.com',
+                'uids': [{'id': 'criteo-value'}]
+              }
+            ]
+          }],
+          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
+        };
+
+        const result = bidRequestedHandler(bidRequestArgs);
+        expect(result[0].has_envelope).to.equal(true);
+      });
     })
   })
 })

@@ -79,7 +79,8 @@ export const spec = {
         payload.gdprConsent = '';
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+      if (schain) { payload.schain = schain; }
       if (userEids !== null) payload.userEids = userEids;
     };
     payload.connectionType = getConnectionType();

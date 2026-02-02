@@ -1,0 +1,28 @@
+{
+  "ChromeHeadless": {
+    "bsName": "chrome",
+    "wdioName": "chrome",
+    "coverage": true,
+    "versions": {
+      "113.0": {
+        "coverage": false,
+        "chrome": "113.0.5672.0",
+        "name": "ChromeNoSandbox"
+      }
+    }
+  },
+  "EdgeHeadless": {
+    "bsName": "edge",
+    "wdioName": "msedge",
+    "runsOn": "windows-latest"
+  },
+  "SafariNative": {
+    "wdioName": "safari technology preview",
+    "bsName": "safari",
+    "runsOn": "macos-latest"
+  },
+  "FirefoxHeadless": {
+    "wdioName": "firefox",
+    "bsName": "firefox"
+  }
+}

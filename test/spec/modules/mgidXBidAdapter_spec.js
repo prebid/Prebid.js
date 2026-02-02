@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/mgidXBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
-import { config } from '../../../src/config';
-import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync';
+import { config } from '../../../src/config.js';
+import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync.js';
 
 const bidder = 'mgidX';
 
@@ -144,7 +144,7 @@ describe('MGIDXBidAdapter', function () {
     });
 
     it('Returns general data valid', function () {
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
@@ -224,7 +224,7 @@ describe('MGIDXBidAdapter', function () {
         }
       ];
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
@@ -259,7 +259,7 @@ describe('MGIDXBidAdapter', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('object');
       expect(data.gdpr).to.have.property('consentString');
@@ -273,7 +273,7 @@ describe('MGIDXBidAdapter', function () {
       bidderRequest.uspConsent = '1---';
       delete bidderRequest.gdprConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -288,8 +288,8 @@ describe('MGIDXBidAdapter', function () {
         applicableSections: [8]
       };
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
@@ -303,13 +303,13 @@ describe('MGIDXBidAdapter', function () {
       bidderRequest.ortb2.regs.gpp = 'abc123';
       bidderRequest.ortb2.regs.gpp_sid = [8];
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
 
-      bidderRequest.ortb2;
+      expect(bidderRequest).to.have.property('ortb2');
     })
   });
 
@@ -334,9 +334,9 @@ describe('MGIDXBidAdapter', function () {
           }
         }]
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(banner.body[0].requestId);
@@ -368,10 +368,10 @@ describe('MGIDXBidAdapter', function () {
           }
         }]
       };
-      let videoResponses = spec.interpretResponse(video);
+      const videoResponses = spec.interpretResponse(video);
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = videoResponses[0];
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -405,10 +405,10 @@ describe('MGIDXBidAdapter', function () {
           }
         }]
       };
-      let nativeResponses = spec.interpretResponse(native);
+      const nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = nativeResponses[0];
+      const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -439,7 +439,7 @@ describe('MGIDXBidAdapter', function () {
         }]
       };
 
-      let serverResponses = spec.interpretResponse(invBanner);
+      const serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid video response is passed', function () {
@@ -455,7 +455,7 @@ describe('MGIDXBidAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invVideo);
+      const serverResponses = spec.interpretResponse(invVideo);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid native response is passed', function () {
@@ -472,7 +472,7 @@ describe('MGIDXBidAdapter', function () {
           currency: 'USD',
         }]
       };
-      let serverResponses = spec.interpretResponse(invNative);
+      const serverResponses = spec.interpretResponse(invNative);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -485,7 +485,7 @@ describe('MGIDXBidAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invalid);
+      const serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });

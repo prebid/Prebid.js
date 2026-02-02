@@ -154,12 +154,12 @@ export const spec = {
       Object.keys(userObjBid.params.user)
         .filter((param) => USER_PARAMS.includes(param))
         .forEach((param) => {
-          let uparam = convertCamelToUnderscore(param);
+          const uparam = convertCamelToUnderscore(param);
           if (
             param === 'segments' &&
             isArray(userObjBid.params.user[param])
           ) {
-            let segs = [];
+            const segs = [];
             userObjBid.params.user[param].forEach((val) => {
               if (isNumber(val)) {
                 segs.push({ id: val });
@@ -180,7 +180,9 @@ export const spec = {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
@@ -193,7 +195,7 @@ export const spec = {
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
 
     const payload = {
       tags: [...tags],
@@ -229,7 +231,7 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let refererinfo = {
+      const refererinfo = {
         // TODO: this collects everything it finds, except for canonicalUrl
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
@@ -242,7 +244,7 @@ export const spec = {
     }
 
     if (bidRequests[0].userId) {
-      let eids = [];
+      const eids = [];
 
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
@@ -314,7 +316,7 @@ export const spec = {
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
-  let options = {
+  const options = {
     withCredentials: true
   };
 
@@ -434,7 +436,7 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
-  let bidFloor = getBidFloor(bid);
+  const bidFloor = getBidFloor(bid);
   if (bidFloor) {
     tag.reserve = bidFloor;
   }
@@ -455,7 +457,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }

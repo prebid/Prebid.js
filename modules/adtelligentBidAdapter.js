@@ -32,8 +32,8 @@ const HOST_GETTERS = {
   indicue: () => 'ghb.console.indicue.com',
   stellormedia: () => 'ghb.ads.stellormedia.com'}
 const getUri = function (bidderCode) {
-  let bidderWithoutSuffix = bidderCode.split('_')[0];
-  let getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
+  const bidderWithoutSuffix = bidderCode.split('_')[0];
+  const getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
   return PROTOCOL + getter() + AUCTION_PATH
 }
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
@@ -167,6 +167,7 @@ function bidToTag(bidRequests, adapterRequest) {
 function prepareBidRequests(bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
@@ -181,6 +182,11 @@ function prepareBidRequests(bidReq) {
   if (bidReq.params.vpb_placement_id) {
     bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
   }
+
+  if (gpid) {
+    bidReqParams.GPID = gpid;
+  }
+
   if (mediaType === VIDEO) {
     const context = deepAccess(bidReq, 'mediaTypes.video.context');
 

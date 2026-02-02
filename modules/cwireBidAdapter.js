@@ -2,7 +2,6 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { getStorageManager } from "../src/storageManager.js";
 import { BANNER } from "../src/mediaTypes.js";
 import {
-  generateUUID,
   getParameterByName,
   isNumber,
   logError,
@@ -27,11 +26,6 @@ export const BID_ENDPOINT = "https://prebid.cwi.re/v1/bid";
 export const EVENT_ENDPOINT = "https://prebid.cwi.re/v1/event";
 export const GVL_ID = 1081;
 
-/**
- * Allows limiting ad impressions per site render. Unique per prebid instance ID.
- */
-export const pageViewId = generateUUID();
-
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
@@ -40,8 +34,8 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
  * @returns {*&{cwExt: {dimensions: {width: number, height: number}, style: {maxWidth: number, maxHeight: number}}}}
  */
 function slotDimensions(bid) {
-  let adUnitCode = bid.adUnitCode;
-  let slotEl = document.getElementById(adUnitCode);
+  const adUnitCode = bid.adUnitCode;
+  const slotEl = document.getElementById(adUnitCode);
 
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`);
@@ -78,7 +72,7 @@ function slotDimensions(bid) {
  * @returns *[]
  */
 function getFeatureFlags() {
-  let ffParam = getParameterByName("cwfeatures");
+  const ffParam = getParameterByName("cwfeatures");
   if (ffParam) {
     return ffParam.split(",");
   }
@@ -98,7 +92,7 @@ function getBidFloor(bid) {
     return {};
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: "USD",
     mediaType: "*",
     size: "*",
@@ -210,10 +204,10 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // There are more fields on the refererInfo object
-    let referrer = bidderRequest?.refererInfo?.page;
+    const referrer = bidderRequest?.refererInfo?.page;
 
     // process bid requests
-    let processed = validBidRequests
+    const processed = validBidRequests
       .map((bid) => slotDimensions(bid))
       .map((bid) => {
         const bidFloor = getBidFloor(bid);
@@ -248,7 +242,7 @@ export const spec = {
       slots: processed,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
-      pageViewId: pageViewId,
+      pageViewId: bidderRequest.pageViewId,
       networkBandwidth: getConnectionDownLink(window.navigator),
       sdk: {
         version: "$prebid.version$",
@@ -321,11 +315,11 @@ export const spec = {
     const syncs = [];
     if (hasPurpose1Consent(gdprConsent) && gdprConsent.consentString) {
       logInfo("GDPR purpose 1 consent was given, adding user-syncs");
-      let type = syncOptions.pixelEnabled
+      const type = syncOptions.pixelEnabled
         ? "image"
         : null ?? syncOptions.iframeEnabled
-        ? "iframe"
-        : null;
+          ? "iframe"
+          : null;
       if (type) {
         syncs.push({
           type: type,

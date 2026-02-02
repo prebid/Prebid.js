@@ -1,11 +1,31 @@
 import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { BANNER, NATIVE } from '../../../src/mediaTypes';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import * as ajax from 'src/ajax.js';
+import { config } from 'src/config.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import * as webdriver from '../../../libraries/webdriver/webdriver.js';
+
+const adUnitCode = 'adUnit-123';
+let sandbox;
 
 describe('Yandex adapter', function () {
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+
+    config.setConfig({
+      yandex: {
+        sampling: 1.0,
+      },
+    });
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       const bid = getBidRequest();
@@ -46,12 +66,7 @@ describe('Yandex adapter', function () {
     let mockBidderRequest;
 
     beforeEach(function () {
-      mockBidRequests = [{
-        bidId: 'bid123',
-        params: {
-          placementId: 'R-I-123456-2',
-        }
-      }];
+      mockBidRequests = [getBidRequest()];
       mockBidderRequest = {
         ortb2: {
           device: {
@@ -66,6 +81,15 @@ describe('Yandex adapter', function () {
           }
         }
       };
+
+      sandbox.stub(frameElement, 'getBoundingClientRect').returns({
+        left: 123,
+        top: 234,
+      });
+    });
+
+    afterEach(function () {
+      removeElement(adUnitCode);
     });
 
     it('should set site.content.language from document language if it is not set', function () {
@@ -89,6 +113,37 @@ describe('Yandex adapter', function () {
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js');
       expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined;
+    });
+
+    it('should return banner coordinates', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].ext.coords.x).to.equal(123);
+      expect(requests[0].data.imp[0].ext.coords.y).to.equal(234);
+    });
+
+    it('should return page scroll coordinates', function () {
+      createElementVisible(adUnitCode);
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.device.ext.scroll.top).to.equal(0);
+      expect(requests[0].data.device.ext.scroll.left).to.equal(0);
+    });
+
+    it('should return correct visible', function () {
+      createElementVisible(adUnitCode);
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(true);
+    });
+
+    it('should return correct visible for hidden element', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      createElementHidden(adUnitCode);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false);
+    });
+
+    it('should return correct visible for invisible element', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      createElementInvisible(adUnitCode);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false);
     });
 
     /** @type {import('../../../src/auction').BidderRequest} */
@@ -138,6 +193,34 @@ describe('Yandex adapter', function () {
       },
     };
 
+    it('create a valid banner request with custom domain', function () {
+      config.setConfig({
+        yandex: {
+          domain: 'yandex.tr',
+        },
+      });
+
+      const bannerRequest = getBidRequest();
+      bannerRequest.getFloor = () => ({
+        currency: 'EUR',
+        // floor: 0.5
+      });
+
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
+
+      expect(request).to.exist;
+      const { method, url } = request;
+
+      expect(method).to.equal('POST');
+
+      const parsedRequestUrl = utils.parseUrl(url);
+
+      expect(parsedRequestUrl.hostname).to.equal('yandex.tr');
+    })
+
     it('creates a valid banner request', function () {
       const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
@@ -158,7 +241,7 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('yandex.ru');
+      expect(parsedRequestUrl.hostname).to.equal('yandex.com');
       expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
       expect(query['imp-id']).to.equal('1');
@@ -248,6 +331,14 @@ describe('Yandex adapter', function () {
       const requests = spec.buildRequests([getBidRequest()], bidderRequest);
 
       expect(requests[0].data.site).to.deep.equal(expected.site);
+    });
+
+    it('should include webdriver flag when available', function () {
+      sandbox.stub(webdriver, 'isWebdriverEnabled').returns(true);
+
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+
+      expect(requests[0].data.device.ext.webdriver).to.be.true;
     });
 
     describe('banner', () => {
@@ -495,6 +586,18 @@ describe('Yandex adapter', function () {
           },
         });
       });
+
+      it('should include eventtrackers in the native request', () => {
+        const nativeParams = buildRequestAndGetNativeParams({
+          mediaTypes: {
+            native: {
+              title: { required: true },
+            },
+          },
+        });
+
+        expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
+      });
     });
   });
 
@@ -510,6 +613,7 @@ describe('Yandex adapter', function () {
               price: 0.3,
               crid: 321,
               adm: '<!-- HTML/JS -->',
+              mtype: 1,
               w: 300,
               h: 250,
               adomain: [
@@ -517,6 +621,7 @@ describe('Yandex adapter', function () {
               ],
               adid: 'yabs.123=',
               nurl: 'https://example.com/nurl/?price=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}',
+              lurl: 'https://example.com/nurl/?reason=${AUCTION_LOSS}',
             }
           ]
         }],
@@ -543,6 +648,7 @@ describe('Yandex adapter', function () {
       expect(rtbBid.netRevenue).to.equal(true);
       expect(rtbBid.ttl).to.equal(180);
       expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
+      expect(rtbBid.lurl).to.exist;
 
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
@@ -563,6 +669,7 @@ describe('Yandex adapter', function () {
               impid: 'videoBid1',
               price: 1.50,
               adm: '<VAST version="3.0"></VAST>',
+              mtype: 2,
               w: 640,
               h: 480,
               adomain: ['advertiser.com'],
@@ -668,6 +775,7 @@ describe('Yandex adapter', function () {
                   ],
                   adid: 'yabs.123=',
                   adm: JSON.stringify(nativeAdmResponce),
+                  mtype: 4,
                 },
               ],
             }],
@@ -698,6 +806,117 @@ describe('Yandex adapter', function () {
             height: 32,
           },
         });
+      });
+
+      it('should add eventtrackers urls to impressionTrackers', function () {
+        bannerRequest.bidRequest = {
+          mediaType: NATIVE,
+          bidId: 'bidid-1',
+        };
+
+        const nativeAdmResponse = getNativeAdmResponse();
+        nativeAdmResponse.native.eventtrackers = [
+          {
+            event: 1, // TRACKER_EVENTS.impression
+            method: 1, // TRACKER_METHODS.img
+            url: 'https://example.com/imp-event-tracker',
+          },
+          {
+            event: 2,
+            method: 2,
+            url: 'https://example.com/skip-me',
+          },
+        ];
+
+        const bannerResponse = {
+          body: {
+            seatbid: [
+              {
+                bid: [
+                  {
+                    impid: 1,
+                    price: 0.3,
+                    adm: JSON.stringify(nativeAdmResponse),
+                    mtype: 4,
+                  },
+                ],
+              },
+            ],
+          },
+        };
+
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
+
+        expect(bid.native.impressionTrackers).to.include(
+          'https://example.com/imptracker'
+        );
+        expect(bid.native.impressionTrackers).to.include(
+          'https://example.com/imp-event-tracker'
+        );
+        expect(bid.native.impressionTrackers).to.not.include('https://example.com/skip-me');
+      });
+
+      it('should handle missing imptrackers', function () {
+        bannerRequest.bidRequest = {
+          mediaType: NATIVE,
+          bidId: 'bidid-1',
+        };
+
+        const nativeAdmResponse = getNativeAdmResponse();
+        delete nativeAdmResponse.native.imptrackers;
+        nativeAdmResponse.native.eventtrackers = [{
+          event: 1,
+          method: 1,
+          url: 'https://example.com/fallback-tracker'
+        }];
+
+        const bannerResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: 1,
+                price: 0.3,
+                adm: JSON.stringify(nativeAdmResponse),
+                mtype: 4,
+              }]
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
+
+        expect(bid.native.impressionTrackers)
+          .to.deep.equal(['https://example.com/fallback-tracker']);
+      });
+
+      it('should handle missing eventtrackers', function () {
+        bannerRequest.bidRequest = {
+          mediaType: NATIVE,
+          bidId: 'bidid-1',
+        };
+
+        const nativeAdmResponse = getNativeAdmResponse();
+
+        const bannerResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: 1,
+                price: 0.3,
+                adm: JSON.stringify(nativeAdmResponse),
+                mtype: 4,
+              }]
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
+
+        expect(bid.native.impressionTrackers)
+          .to.deep.equal(['https://example.com/imptracker']);
       });
     });
   });
@@ -754,7 +973,39 @@ describe('Yandex adapter', function () {
       expect(utils.triggerPixel.callCount).to.equal(1)
       expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1')
     })
-  })
+  });
+
+  describe('onTimeout callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      expect(spec.onTimeout({ forTest: true })).to.not.throw;
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('on onBidderError callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      spec.onBidderError({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('on onBidBillable callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      spec.onBidBillable({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('on onAdRenderSucceeded callback', () => {
+    it('will always call server', () => {
+      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      spec.onAdRenderSucceeded({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
 });
 
 function getBidConfig() {
@@ -770,7 +1021,87 @@ function getBidRequest(extra = {}) {
   return {
     ...getBidConfig(),
     bidId: 'bidid-1',
-    adUnitCode: 'adUnit-123',
+    adUnitCode,
     ...extra,
   };
+}
+
+/**
+ * Creates a basic div element with specified ID and appends it to document body
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created div element
+ */
+function createElement(id) {
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.width = '50px';
+  div.style.height = '50px';
+  div.style.background = 'black';
+
+  // Adjust frame dimensions if running within an iframe
+  if (frameElement) {
+    frameElement.style.width = '100px';
+    frameElement.style.height = '100px';
+  }
+
+  window.document.body.appendChild(div);
+
+  return div;
+}
+
+/**
+ * Creates a visible element with mocked bounding client rect for testing
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created div with mocked geometry
+ */
+function createElementVisible(id) {
+  const element = createElement(id);
+  // Mock client rect to simulate visible position in viewport
+  sandbox.stub(element, 'getBoundingClientRect').returns({
+    x: 10,
+    y: 10,
+  });
+  return element;
+}
+
+/**
+ * Creates a completely hidden element (not rendered) using display: none
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created hidden div element
+ */
+function createElementInvisible(id) {
+  const element = document.createElement('div');
+  element.id = id;
+  element.style.display = 'none';
+
+  window.document.body.appendChild(element);
+  return element;
+}
+
+/**
+ * Creates an invisible but space-reserved element using visibility: hidden
+ * with mocked bounding client rect for testing
+ * @param {string} id - The ID to assign to the div element
+ * @returns {HTMLDivElement} The created hidden div with mocked geometry
+ */
+function createElementHidden(id) {
+  const element = createElement(id);
+  element.style.visibility = 'hidden';
+  // Mock client rect to simulate hidden element's geometry
+  sandbox.stub(element, 'getBoundingClientRect').returns({
+    x: 100,
+    y: 100,
+  });
+  return element;
+}
+
+/**
+ * Removes an element from the DOM by its ID if it exists
+ * @param {string} id - The ID of the element to remove
+ */
+function removeElement(id) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.remove();
+  }
 }

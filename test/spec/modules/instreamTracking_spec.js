@@ -13,7 +13,7 @@ let sandbox;
 
 let clock;
 function enableInstreamTracking(regex) {
-  let configStub = sandbox.stub(config, 'getConfig');
+  const configStub = sandbox.stub(config, 'getConfig');
   configStub.withArgs('instreamTracking').returns(Object.assign(
     {
       enabled: true,
@@ -25,8 +25,8 @@ function enableInstreamTracking(regex) {
 }
 
 function mockPerformanceApi({adServerCallSent, videoPresent}) {
-  let performanceStub = sandbox.stub(window.performance, 'getEntriesByType');
-  let entries = [{
+  const performanceStub = sandbox.stub(window.performance, 'getEntriesByType');
+  const entries = [{
     name: 'https://domain.com/img.png',
     initiatorType: 'img'
   }, {
@@ -124,7 +124,6 @@ function getMockInput(mediaType) {
 
   let adUnit;
   switch (mediaType) {
-    default:
     case 'banner':
       adUnit = bannerAdUnit;
       break;
@@ -134,6 +133,7 @@ function getMockInput(mediaType) {
     case INSTREAM:
       adUnit = inStreamAdUnit;
       break;
+    default:
   }
 
   const bidResponse = mockBidResponse(adUnit, utils.getUniqueIdentifierStr());
@@ -148,7 +148,7 @@ function getMockInput(mediaType) {
 describe('Instream Tracking', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    clock = sandbox.useFakeTimers();
+    clock = sandbox.useFakeTimers({shouldClearNativeTimers: true});
   });
 
   afterEach(function () {

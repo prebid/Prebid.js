@@ -39,7 +39,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    let data = converter.toORTB({bidderRequest, bidRequests})
+    const data = converter.toORTB({bidderRequest, bidRequests})
     return [{
       method: 'POST',
       url: ENDPOINT,

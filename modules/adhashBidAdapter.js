@@ -64,7 +64,7 @@ function brandSafety(badWords, maxScore) {
    * @param {string} rule rule type (full, partial, starts, ends, regexp)
    * @param {string} decodedWord decoded word
    * @param {string} wordsToMatch list of all words on the page separated by delimiters
-   * @returns {object|boolean} matched rule and occurances. If nothing is matched returns false
+   * @returns {object|boolean} matched rule and occurrences. If nothing is matched returns false
    */
   const wordsMatchedWithRule = function (rule, decodedWord, wordsToMatch) {
     if (!wordsToMatch) {
@@ -117,7 +117,7 @@ function brandSafety(badWords, maxScore) {
     let score = 0;
     const decodedUrl = decodeURI(window.top.location.href.substring(window.top.location.origin.length));
     const wordsAndNumbersInUrl = decodedUrl
-      .replaceAll(/[-,\._/\?=&#%]/g, ' ')
+      .replaceAll(/[-,._/?=&#%]/g, ' ')
       .replaceAll(/\s\s+/g, ' ')
       .toLowerCase()
       .trim();
@@ -268,14 +268,14 @@ export const spec = {
 
     if (storage.localStorageIsEnabled()) {
       const prefix = request.bidRequest.params.prefix || 'adHash';
-      let recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
+      const recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
       recentAdsPrebid.push([
         (new Date().getTime() / 1000) | 0,
         responseBody.creatives[0].advertiserId,
         responseBody.creatives[0].budgetId,
         responseBody.creatives[0].expectedHashes.length ? responseBody.creatives[0].expectedHashes[0] : '',
       ]);
-      let recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
+      const recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
       storage.setDataInLocalStorage(prefix + 'recentAdsPrebid', recentAdsPrebidFinal);
     }
 
@@ -298,7 +298,7 @@ export const spec = {
         advertiserDomains: responseBody.advertiserDomains ? [responseBody.advertiserDomains] : []
       }
     };
-    if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
+    if (typeof request === 'object' && typeof request.bidRequest === 'object' && typeof request.bidRequest.mediaTypes === 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
       response = Object.assign({
         ad:
         `<div id="${oneTimeId}"></div>

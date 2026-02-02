@@ -1,10 +1,10 @@
-import adapterManager from '../../../src/adapterManager.js';
+import adapterManager, { gdprDataHandler } from '../../../src/adapterManager.js';
 import agmaAnalyticsAdapter, {
   getTiming,
   getOrtb2Data,
   getPayload,
 } from '../../../modules/agmaAnalyticsAdapter.js';
-import { gdprDataHandler } from '../../../src/adapterManager.js';
+
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
@@ -255,7 +255,7 @@ describe('AGMA Analytics Adapter', () => {
 
     const ortb2 = {
       site: {
-        domain: 'inital.com'
+        domain: 'initial.com'
       }
     };
 

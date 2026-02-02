@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/undertoneBidAdapter.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {deepClone, getWinDimensions} from '../../../src/utils';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {deepClone, getWinDimensions} from '../../../src/utils.js';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -65,9 +65,8 @@ const videoBidReq = [{
   },
   ortb2Imp: {
     ext: {
-      data: {
-        pbadslot: '/1111/pbadslot#728x90'
-      }
+      data: {},
+      gpid: '/1111/pbadslot#728x90'
     }
   },
   mediaTypes: {
@@ -117,7 +116,7 @@ const bidReq = [{
   sizes: [[1, 1]],
   bidId: '453cf42d72bb3c',
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874',
-  schain: schainObj
+  ortb2: { source: { ext: { schain: schainObj } } }
 }];
 
 const supplyChainedBidReqs = [{
@@ -130,7 +129,7 @@ const supplyChainedBidReqs = [{
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  schain: schainObj
+  ortb2: { source: { ext: { schain: schainObj } } }
 }, {
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
@@ -287,7 +286,7 @@ const bidVideoResponse = [
 let element;
 let sandbox;
 
-let elementParent = {
+const elementParent = {
   offsetLeft: 100,
   offsetTop: 100,
   offsetHeight: 100,
@@ -399,7 +398,7 @@ describe('Undertone Adapter', () => {
       const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
       const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
-      let gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      const gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
@@ -409,7 +408,7 @@ describe('Undertone Adapter', () => {
       const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
       const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
-      let ccpa = bidderReqCcpa.uspConsent;
+      const ccpa = bidderReqCcpa.uspConsent;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&ccpa=${ccpa}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
@@ -419,8 +418,8 @@ describe('Undertone Adapter', () => {
       const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
       const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
-      let ccpa = bidderReqCcpaAndGdpr.uspConsent;
-      let gdpr = bidderReqCcpaAndGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      const ccpa = bidderReqCcpaAndGdpr.uspConsent;
+      const gdpr = bidderReqCcpaAndGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}&ccpa=${ccpa}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
@@ -526,7 +525,7 @@ describe('Undertone Adapter', () => {
 
   describe('interpretResponse', () => {
     it('should build bid array', () => {
-      let result = spec.interpretResponse({body: bidResponse});
+      const result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
@@ -563,7 +562,7 @@ describe('Undertone Adapter', () => {
   });
 
   describe('getUserSyncs', () => {
-    let testParams = [
+    const testParams = [
       {
         name: 'with iframe and no gdpr or ccpa data',
         arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, null],
@@ -652,7 +651,7 @@ describe('Undertone Adapter', () => {
     ];
 
     for (let i = 0; i < testParams.length; i++) {
-      let currParams = testParams[i];
+      const currParams = testParams[i];
       it(currParams.name, function () {
         const result = spec.getUserSyncs.apply(this, currParams.arguments);
         expect(result).to.have.lengthOf(currParams.expect.pixels.length);
