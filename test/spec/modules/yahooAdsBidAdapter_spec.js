@@ -1034,6 +1034,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.source).to.deep.equal({
+        tid: undefined,
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,
