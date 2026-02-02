@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { config } from 'src/config.js';
 import {
   _getBidRequests,
   _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
@@ -755,6 +756,10 @@ describe('connatixBidAdapter', function () {
       headers: function() { }
     };
 
+    afterEach(() => {
+      config.resetConfig();
+    });
+
     it('Should return an empty array when iframeEnabled: false', function () {
       expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
@@ -832,16 +837,16 @@ describe('connatixBidAdapter', function () {
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
     });
-    it('Should not modify the sync url if gppConsent param is provided', function () {
+    it('Should append gpp and gpp_sid to the url if gppConsent param is provided', function () {
       const userSyncList = spec.getUserSyncs(
         {iframeEnabled: true, pixelEnabled: true},
         [serverResponse],
         {gdprApplies: true, consentString: 'test&2'},
         '1YYYN',
-        {consent: '1'}
+        {gppString: 'GPP', applicableSections: [2, 4]}
       );
       const { url } = userSyncList[0];
-      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
     });
     it('Should correctly append all consents to the sync url if the url contains query params', function () {
       const userSyncList = spec.getUserSyncs(
@@ -849,10 +854,24 @@ describe('connatixBidAdapter', function () {
         [serverResponse2],
         {gdprApplies: true, consentString: 'test&2'},
         '1YYYN',
-        {consent: '1'}
+        {gppString: 'GPP', applicableSections: [2, 4]}
       );
       const { url } = userSyncList[0];
-      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
+    });
+    it('Should append coppa to the url if coppa is true', function () {
+      config.setConfig({
+        coppa: true
+      });
+      const userSyncList = spec.getUserSyncs(
+        {iframeEnabled: true, pixelEnabled: true},
+        [serverResponse],
+        {gdprApplies: true, consentString: 'test&2'},
+        '1YYYN',
+        {gppString: 'GPP', applicableSections: [2, 4]}
+      );
+      const { url } = userSyncList[0];
+      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4&coppa=1`);
     });
   });
 
