@@ -2,8 +2,6 @@
 <html lang="en">
 <head>
     <title>Optable RTD submodule example - Prebid.js</title>
-    <!--Optable bundle-->
-    <script async src="https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js"></script>
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
     <script async src="../../build/dev/prebid.js"></script>
@@ -130,39 +128,31 @@
             ];
 
             pbjs.setConfig({
-                optableRtdConfig: { // optional, check the doc for explanation
-                    email: 'email-sha256-hash',
-                    phone: 'phone-sha256-hash',
-                    postal_code: 'postal_code',
-                },
                 debug: true, // use only for testing, remove in production
                 realTimeData: {
-                    auctionDelay: 1000, // should be set lower in production use
+                    auctionDelay: 2500, // should be set lower in production use
                     dataProviders: [
                         {
                             name: 'optable',
                             waitForIt: true,
                             params: {
-                                // bundleUrl: "https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js?hello=world",
-                                // adserverTargeting: false,
-                                // handleRtd: async (reqBidsConfigObj, optableExtraData, mergeFn) => {
-                                //     const optableBundle = /** @type {Object} */ (window.optable);
-                                //     console.warn('Entering custom RTD handler');
-                                //     console.warn('reqBidsConfigObj', reqBidsConfigObj);
-                                //     console.warn('optableExtraData', optableExtraData);
-                                //     console.warn('mergeFn', mergeFn);
-                                //
-                                //     // Call Optable DCN for targeting data and return the ORTB2 object
-                                //     const targetingData = await optableBundle.instance.targeting();
-                                //
-                                //     if (!targetingData || !targetingData.ortb2) {
-                                //         return;
-                                //     }
-                                //
-                                //     mergeFn(
-                                //         reqBidsConfigObj.ortb2Fragments.global,
-                                //         targetingData.ortb2,
-                                //     );
+                                // REQUIRED PARAMETERS:
+                                host: 'na.edge.optable.co',      // Your DCN hostname
+                                site: 'js-sdk',             // Your site identifier
+                                node: 'prebidtest',                 // Your node identifier
+
+                                // OPTIONAL PARAMETERS:
+                                cookies: false,                   // Cookie mode (default: true, set to false for cookieless)
+                                // timeout: '500ms',             // API timeout hint
+                                ids: ['i4:1.2.3.4'],          // User identifiers (also auto-extracted from Prebid userId module)
+                                // hids: ['hid1'],               // Household identifiers
+
+                                // CUSTOM HANDLER (optional):
+                                // handleRtd: (reqBidsConfigObj, targetingData, mergeFn) => {
+                                //     console.log('Custom RTD handler');
+                                //     console.log('Targeting data:', targetingData);
+                                //     // Perform custom logic here
+                                //     mergeFn(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2);
                                 // }
                             }
                         }
@@ -174,6 +164,7 @@
 
             pbjs.onEvent('bidRequested', function (data) {
                 try {
+                    // Display the enriched user data from Optable RTD
                     window.optable.cmd.push(() => {
                         document.getElementById('enriched-optable').style.display = 'block';
                         document.getElementById('enriched-optable-data').textContent = JSON.stringify(data.ortb2.user, null, 2);
