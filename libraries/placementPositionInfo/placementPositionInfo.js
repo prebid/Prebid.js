@@ -121,7 +121,7 @@ export function getPlacementPositionUtils() {
       AuctionsCount: bidReq.auctionsCount,
       DistanceToView: distanceToView,
       PlacementPercentView: Math.round(placementPercentView),
-      ElementHeight: elementHeight || 1
+      ElementHeight: Math.round(elementHeight) || 1
     });
   }
 
