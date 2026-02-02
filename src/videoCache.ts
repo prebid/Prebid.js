@@ -213,12 +213,8 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
 }
 
 function getVastXml(bid) {
-  if (bid.vastXml) {
-    return bid.vastXml;
-  }
-
-  return wrapURI(bid.vastUrl, bid.vastTrackers);
-}
+  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastTrackers);
+};
 
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
