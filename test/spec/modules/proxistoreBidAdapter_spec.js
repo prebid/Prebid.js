@@ -165,6 +165,13 @@ describe('ProxistoreBidAdapter', function () {
       it('should include tmax from bidderRequest timeout', function () {
         expect(data.tmax).to.equal(1000);
       });
+
+      it('should include website and language in ext.proxistore', function () {
+        expect(data.ext).to.be.an('object');
+        expect(data.ext.proxistore).to.be.an('object');
+        expect(data.ext.proxistore.website).to.equal('example.fr');
+        expect(data.ext.proxistore.language).to.equal('fr');
+      });
     });
 
     describe('endpoint URL selection', function () {

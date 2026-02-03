@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {deepSetValue} from '../src/utils.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
@@ -14,6 +15,20 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30,
     currency: 'EUR',
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    const bidRequests = context.bidRequests;
+    if (bidRequests && bidRequests.length > 0) {
+      const params = bidRequests[0].params;
+      if (params.website) {
+        deepSetValue(request, 'ext.proxistore.website', params.website);
+      }
+      if (params.language) {
+        deepSetValue(request, 'ext.proxistore.language', params.language);
+      }
+    }
+    return request;
   }
 });
 
