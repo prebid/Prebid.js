@@ -126,6 +126,12 @@ export const spec = {
         payload.gpid = gpid;
       }
 
+      // instl
+      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      if (instl === 1 || instl === '1') {
+        payload.instl = 1;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,

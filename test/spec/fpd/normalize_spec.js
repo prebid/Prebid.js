@@ -1,5 +1,7 @@
-import {normalizeEIDs, normalizeFPD, normalizeSchain} from '../../../src/fpd/normalize.js';
+import {makeNormalizer, normalizeEIDs, normalizeFPD, normalizeSchain} from '../../../src/fpd/normalize.js';
 import * as utils from '../../../src/utils.js';
+import {deepClone, deepSetValue} from '../../../src/utils.js';
+import deepAccess from 'dlv/index.js';
 
 describe('FPD normalization', () => {
   let sandbox;
@@ -50,42 +52,67 @@ describe('FPD normalization', () => {
       expect(normalizeEIDs({})).to.eql({});
     })
   })
-  describe('schain', () => {
-    it('should move schain to ext.schain', () => {
-      const fpd = {
-        source: {
-          schain: 'foo'
-        }
-      }
-      expect(normalizeSchain(fpd)).to.deep.equal({
-        source: {
-          ext: {
-            schain: 'foo'
-          }
-        }
-      })
-    });
-    it('should warn on conflict', () => {
-      const fpd = {
-        source: {
-          schain: 'foo',
-          ext: {
-            schain: 'bar'
-          }
-        },
-      }
-      expect(normalizeSchain(fpd)).to.eql({
-        source: {
-          ext: {
-            schain: 'foo'
-          }
-        }
-      });
-      sinon.assert.called(utils.logWarn);
+
+  describe('makeNormalizer', () => {
+    let ortb2;
+    beforeEach(() => {
+      ortb2 = {};
     });
 
-    it('should do nothing if there is no schain', () => {
-      expect(normalizeSchain({})).to.eql({});
-    })
+    Object.entries({
+      'preferred path': 'preferred.path',
+      'fallback path': 'fallback.path'
+    }).forEach(([t, dest]) => {
+      describe(`when the destination path is the ${t}`, () => {
+        let normalizer, expected;
+        beforeEach(() => {
+          normalizer = makeNormalizer('preferred.path', 'fallback.path', dest);
+          expected = {};
+          deepSetValue(expected, dest, ['data']);
+        })
+
+        function check() {
+          expect(deepAccess(ortb2, dest)).to.eql(deepAccess(expected, dest));
+          if (dest === 'preferred.path') {
+            expect(ortb2.fallback?.path).to.not.exist;
+          } else {
+            expect(ortb2.preferred?.path).to.not.exist;
+          }
+        }
+
+        it('should do nothing if there is neither preferred nor fallback data', () => {
+          ortb2.unrelated = ['data'];
+          normalizer(ortb2);
+          expect(ortb2).to.eql({unrelated: ['data']});
+        })
+
+        it(`should leave fpd unchanged if data is only in the ${t}`, () => {
+          deepSetValue(ortb2, dest, ['data']);
+          normalizer(ortb2);
+          expect(ortb2).to.eql(expected);
+        });
+
+        it('should move data when it is in the fallback path', () => {
+          ortb2.fallback = {path: ['data']};
+          normalizer(ortb2);
+          check();
+        });
+
+        it('should move data when it is in the preferred path', () => {
+          ortb2.preferred = {path: ['data']};
+          normalizer(ortb2);
+          expect(deepAccess(ortb2, dest)).to.eql(deepAccess(expected, dest));
+          check();
+        });
+
+        it('should warn on conflict', () => {
+          ortb2.preferred = {path: ['data']};
+          ortb2.fallback = {path: ['fallback']};
+          normalizer(ortb2);
+          sinon.assert.called(utils.logWarn);
+          check();
+        })
+      });
+    });
   })
 })
