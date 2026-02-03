@@ -691,7 +691,7 @@
       "componentType": "bidder",
       "componentName": "adocean",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 328,
       "disclosureURL": null
     },
     {
@@ -1210,13 +1210,6 @@
       "componentName": "appnexusAst",
       "aliasOf": "appnexus",
       "gvlid": 32,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "emetriq",
-      "aliasOf": "appnexus",
-      "gvlid": 213,
       "disclosureURL": null
     },
     {
@@ -3646,6 +3639,13 @@
       "componentName": "pangle",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "panxo",
+      "aliasOf": null,
+      "gvlid": 1527,
       "disclosureURL": null
     },
     {

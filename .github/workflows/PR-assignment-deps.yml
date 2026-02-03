@@ -20,7 +20,7 @@ jobs:
         run: |
           npx gulp build
       - name: Upload dependencies.json
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dependencies.json
           path: ./build/dist/dependencies.json
@@ -28,7 +28,7 @@ jobs:
         run: |
           echo '{ "prNo": ${{ github.event.pull_request.number }} }' >> ${{ runner.temp}}/prInfo.json
       - name: Upload PR info
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: prInfo
           path: ${{ runner.temp}}/prInfo.json
