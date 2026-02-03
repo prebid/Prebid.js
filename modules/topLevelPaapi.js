@@ -17,12 +17,10 @@ config.getConfig('paapi', (cfg) => {
   moduleConfig = cfg.paapi?.topLevelSeller;
   if (moduleConfig) {
     getBidToRender.before(renderPaapiHook);
-    getBidToRender.after(renderOverrideHook);
     getRenderingData.before(getRenderingDataHook);
     markWinningBid.before(markWinningBidHook);
   } else {
     getBidToRender.getHooks({hook: renderPaapiHook}).remove();
-    getBidToRender.getHooks({hook: renderOverrideHook}).remove();
     getRenderingData.getHooks({hook: getRenderingDataHook}).remove();
     markWinningBid.getHooks({hook: markWinningBidHook}).remove();
   }
@@ -40,31 +38,27 @@ function bidIfRenderable(bid) {
   return bid;
 }
 
-const forRenderStack = [];
-
-function renderPaapiHook(next, adId, forRender = true, override = PbPromise.resolve()) {
-  forRenderStack.push(forRender);
-  const ids = parsePaapiAdId(adId);
-  if (ids) {
-    override = override.then((bid) => {
-      if (bid) return bid;
-      const [auctionId, adUnitCode] = ids;
-      return paapiBids(auctionId)?.[adUnitCode]?.then(bid => {
-        if (!bid) {
-          logWarn(MODULE_NAME, `No PAAPI bid found for auctionId: "${auctionId}", adUnit: "${adUnitCode}"`);
-        }
-        return bidIfRenderable(bid);
-      });
-    });
-  }
-  next(adId, forRender, override);
-}
-
-function renderOverrideHook(next, bidPm) {
-  const forRender = forRenderStack.pop();
-  if (moduleConfig?.overrideWinner) {
-    bidPm = bidPm.then((bid) => {
-      if (isPaapiBid(bid) || bid?.status === BID_STATUS.RENDERED) return bid;
+function renderPaapiHook(next, adId, forRender = true, cb) {
+  PbPromise
+    .resolve()
+    .then(() => {
+      const ids = parsePaapiAdId(adId);
+      if (ids) {
+        const [auctionId, adUnitCode] = ids;
+        return paapiBids(auctionId)?.[adUnitCode]?.then(bid => {
+          if (!bid) {
+            logWarn(MODULE_NAME, `No PAAPI bid found for auctionId: "${auctionId}", adUnit: "${adUnitCode}"`);
+          }
+          return bidIfRenderable(bid);
+        });
+      }
+    })
+    .then((bid) => {
+      if (bid != null) return bid;
+      return new Promise(resolve => next(adId, forRender, resolve))
+    })
+    .then((bid) => {
+      if (bid == null || isPaapiBid(bid) || bid?.status === BID_STATUS.RENDERED) return bid;
       return getPAAPIBids({adUnitCode: bid.adUnitCode}).then(res => {
         const paapiBid = bidIfRenderable(res[bid.adUnitCode]);
         if (paapiBid) {
@@ -77,9 +71,8 @@ function renderOverrideHook(next, bidPm) {
         }
         return bid;
       });
-    });
-  }
-  next(bidPm);
+    })
+    .then(cb);
 }
 
 export function getRenderingDataHook(next, bid, options) {
