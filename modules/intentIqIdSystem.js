@@ -5,25 +5,25 @@
  * @requires module:modules/userId
  */
 
-import {logError, isPlainObject, isStr, isNumber} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
-import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
-import {appendSPData} from '../libraries/intentIqUtils/urlUtils.js';
+import { logError, isPlainObject, isStr, isNumber } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js'
+import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';
+import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js'
-import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
+import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
-import {readData, storeData, defineStorageType, removeDataByKey, tryParse} from '../libraries/intentIqUtils/storageUtils.js';
+import { readData, storeData, defineStorageType, removeDataByKey, tryParse } from '../libraries/intentIqUtils/storageUtils.js';
 import {
   FIRST_PARTY_KEY,
   CLIENT_HINTS_KEY,
   EMPTY,
   GVLID,
   VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
-  HOURS_24, CH_KEYS
+  HOURS_72, CH_KEYS
 } from '../libraries/intentIqConstants/intentIqConstants.js';
-import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
-import {iiqPixelServerAddress, iiqServerAddress} from '../libraries/intentIqUtils/intentIqConfig.js';
+import { SYNC_KEY } from '../libraries/intentIqUtils/getSyncKey.js';
+import { iiqPixelServerAddress, getIiqServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
 import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
@@ -81,7 +81,7 @@ function addUniquenessToUrl(url) {
   return url;
 }
 
-function appendFirstPartyData (url, firstPartyData, partnerData) {
+function appendFirstPartyData(url, firstPartyData, partnerData) {
   url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
   url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
   url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
@@ -93,7 +93,7 @@ function verifyIdType(value) {
   return -1;
 }
 
-function appendPartnersFirstParty (url, configParams) {
+function appendPartnersFirstParty(url, configParams) {
   const partnerClientId = typeof configParams.partnerClientId === 'string' ? encodeURIComponent(configParams.partnerClientId) : '';
   const partnerClientIdType = typeof configParams.partnerClientIdType === 'number' ? verifyIdType(configParams.partnerClientIdType) : -1;
 
@@ -105,7 +105,7 @@ function appendPartnersFirstParty (url, configParams) {
   return url;
 }
 
-function appendCMPData (url, cmpData) {
+function appendCMPData(url, cmpData) {
   url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
   url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
   url += cmpData.gdprApplies
@@ -114,7 +114,7 @@ function appendCMPData (url, cmpData) {
   return url
 }
 
-function appendCounters (url) {
+function appendCounters(url) {
   url += '&jaesc=' + encodeURIComponent(callCount);
   url += '&jafc=' + encodeURIComponent(failCount);
   url += '&jaensc=' + encodeURIComponent(noDataCount);
@@ -146,7 +146,7 @@ function addMetaData(url, data) {
   return url + '&fbp=' + data;
 }
 
-export function initializeGlobalIIQ (partnerId) {
+export function initializeGlobalIIQ(partnerId) {
   if (!globalName || !window[globalName]) {
     globalName = `iiq_identity_${partnerId}`
     window[globalName] = {}
@@ -171,7 +171,7 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   url = appendCMPData(url, cmpData);
   url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
   url = handleAdditionalParams(browser, url, 0, configParams.additionalParams);
-  url = appendSPData(url, firstPartyData)
+  url = appendSPData(url, partnerData);
   url += '&source=' + PREBID;
   return url;
 }
@@ -184,7 +184,7 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
     const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL
     if (newUser || needToDoSync) {
       ajax(url, () => {
-      }, undefined, {method: 'GET', withCredentials: true});
+      }, undefined, { method: 'GET', withCredentials: true });
       if (firstPartyData?.date) {
         firstPartyData.date = Date.now()
         storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
@@ -193,7 +193,7 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
   } else if (!lastSyncDate || lastSyncElapsedTime > SYNC_REFRESH_MILL) {
     storeData(SYNC_KEY(partner), Date.now() + '', allowedStorage);
     ajax(url, () => {
-    }, undefined, {method: 'GET', withCredentials: true});
+    }, undefined, { method: 'GET', withCredentials: true });
   }
 }
 
@@ -285,7 +285,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return value && INVALID_ID !== value ? {'intentIqId': value} : undefined;
+    return value && INVALID_ID !== value ? { 'intentIqId': value } : undefined;
   },
 
   /**
@@ -431,7 +431,7 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    function updateGlobalObj () {
+    function updateGlobalObj() {
       if (globalName) {
         window[globalName].partnerData = partnerData
         window[globalName].firstPartyData = firstPartyData
@@ -442,8 +442,8 @@ export const intentIqIdSubmodule = {
 
     let hasPartnerData = !!Object.keys(partnerData).length;
     if (!isCMPStringTheSame(firstPartyData, cmpData) ||
-          !firstPartyData.sCal ||
-          (hasPartnerData && (!partnerData.cttl || !partnerData.date || Date.now() - partnerData.date > partnerData.cttl))) {
+      !firstPartyData.sCal ||
+      (hasPartnerData && (!partnerData.cttl || !partnerData.date || Date.now() - partnerData.date > partnerData.cttl))) {
       firstPartyData.uspString = cmpData.uspString;
       firstPartyData.gppString = cmpData.gppString;
       firstPartyData.gdprString = cmpData.gdprString;
@@ -454,7 +454,7 @@ export const intentIqIdSubmodule = {
     if (!shouldCallServer) {
       if (!hasPartnerData && !firstPartyData.isOptedOut) {
         shouldCallServer = true;
-      } else shouldCallServer = Date.now() > firstPartyData.sCal + HOURS_24;
+      } else shouldCallServer = Date.now() > firstPartyData.sCal + HOURS_72;
     }
 
     if (firstPartyData.isOptedOut) {
@@ -498,7 +498,7 @@ export const intentIqIdSubmodule = {
     updateGlobalObj() // update global object before server request, to make sure analytical adapter will have it even if the server is "not in time"
 
     // use protocol relative urls for http or https
-    let url = `${iiqServerAddress(configParams, gdprDetected)}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `${getIiqServerAddress(configParams)}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
     url = appendFirstPartyData(url, firstPartyData, partnerData);
     url = appendPartnersFirstParty(url, configParams);
@@ -511,7 +511,7 @@ export const intentIqIdSubmodule = {
     url += actualABGroup ? '&testGroup=' + encodeURIComponent(actualABGroup) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
     url = handleAdditionalParams(currentBrowserLowerCase, url, 1, additionalParams);
-    url = appendSPData(url, firstPartyData)
+    url = appendSPData(url, partnerData)
     url += '&source=' + PREBID;
     url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource
     url += '&abtg=' + encodeURIComponent(actualABGroup)
@@ -528,6 +528,9 @@ export const intentIqIdSubmodule = {
     const resp = function (callback) {
       const callbacks = {
         success: response => {
+          if (rrttStrtTime && rrttStrtTime > 0) {
+            partnerData.rrtt = Date.now() - rrttStrtTime;
+          }
           const respJson = tryParse(response);
           // If response is a valid json and should save is true
           if (respJson) {
@@ -542,7 +545,7 @@ export const intentIqIdSubmodule = {
             if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
             if ('cttl' in respJson) {
               partnerData.cttl = respJson.cttl;
-            } else partnerData.cttl = HOURS_24;
+            } else partnerData.cttl = HOURS_72;
 
             if ('tc' in respJson) {
               partnerData.terminationCause = respJson.tc;
@@ -588,7 +591,7 @@ export const intentIqIdSubmodule = {
               } else {
                 // If data is a single string, assume it is an id with source intentiq.com
                 if (respJson.data && typeof respJson.data === 'string') {
-                  respJson.data = {eids: [respJson.data]}
+                  respJson.data = { eids: [respJson.data] }
                 }
               }
               partnerData.data = respJson.data;
@@ -604,7 +607,7 @@ export const intentIqIdSubmodule = {
 
             if ('spd' in respJson) {
               // server provided data
-              firstPartyData.spd = respJson.spd;
+              partnerData.spd = respJson.spd;
             }
 
             if ('abTestUuid' in respJson) {
@@ -618,10 +621,6 @@ export const intentIqIdSubmodule = {
               partnerData.gpr = respJson.gpr;
             } else {
               delete partnerData.gpr // remove prediction flag in case server doesn't provide it
-            }
-
-            if (rrttStrtTime && rrttStrtTime > 0) {
-              partnerData.rrtt = Date.now() - rrttStrtTime;
             }
 
             if (respJson.data?.eids) {
@@ -648,11 +647,12 @@ export const intentIqIdSubmodule = {
           callback(runtimeEids);
         }
       };
-      rrttStrtTime = Date.now();
 
       partnerData.wsrvcll = true;
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       clearCountersAndStore(allowedStorage, partnerData);
+
+      rrttStrtTime = Date.now();
 
       const sendAjax = uh => {
         if (uh) url += '&uh=' + encodeURIComponent(uh);
@@ -675,7 +675,7 @@ export const intentIqIdSubmodule = {
         sendAjax('');
       }
     };
-    const respObj = {callback: resp};
+    const respObj = { callback: resp };
 
     if (runtimeEids?.eids?.length) respObj.id = runtimeEids.eids;
     return respObj
