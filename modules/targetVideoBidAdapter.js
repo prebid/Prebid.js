@@ -45,6 +45,7 @@ export const spec = {
             const video = mediaTypes[VIDEO];
             const placementId = params.placementId;
             const site = getSiteObj();
+            const floor = params.floor;
 
             if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
@@ -70,6 +71,12 @@ export const spec = {
               },
               video: getDefinedParams(video, VIDEO_PARAMS)
             }
+
+            const bidFloor = typeof floor === 'string' ? Number(floor.trim())
+              : typeof floor === 'number' ? floor
+                : NaN;
+
+            if (Number.isFinite(bidFloor) && bidFloor > 0) imp.bidfloor = bidFloor;
 
             if (video.playerSize) {
               imp.video = Object.assign(
