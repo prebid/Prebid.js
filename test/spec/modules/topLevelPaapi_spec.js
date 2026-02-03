@@ -287,9 +287,13 @@ describe('topLevelPaapi', () => {
               });
             });
 
+            function getBidToRenderPm(adId, forRender = true) {
+              return new Promise((resolve) => getBidToRender(adId, forRender, resolve));
+            }
+
             it('should hook into getBidToRender', () => {
               return getBids({adUnitCode: 'au', auctionId}).then(res => {
-                return getBidToRender(res.au.adId).then(bidToRender => [res.au, bidToRender])
+                return getBidToRenderPm(res.au.adId).then(bidToRender => [res.au, bidToRender])
               }).then(([paapiBid, bidToRender]) => {
                 if (canRender) {
                   expect(bidToRender).to.eql(paapiBid)
@@ -319,7 +323,7 @@ describe('topLevelPaapi', () => {
               it(`should ${!canRender ? 'NOT' : ''} override winning bid for the same adUnit`, () => {
                 return Promise.all([
                   getBids({adUnitCode: 'au', auctionId}).then(res => res.au),
-                  getBidToRender(mockContextual.adId)
+                  getBidToRenderPm(mockContextual.adId)
                 ]).then(([paapiBid, bidToRender]) => {
                   if (canRender) {
                     expect(bidToRender).to.eql(paapiBid);
@@ -332,14 +336,14 @@ describe('topLevelPaapi', () => {
 
               it('should not override when the ad unit has no paapi winner', () => {
                 mockContextual.adUnitCode = 'other';
-                return getBidToRender(mockContextual.adId).then(bidToRender => {
+                return getBidToRenderPm(mockContextual.adId).then(bidToRender => {
                   expect(bidToRender).to.eql(mockContextual);
                 })
               });
 
               it('should not override when already a paapi bid', () => {
                 return getBids({adUnitCode: 'au', auctionId}).then(res => {
-                  return getBidToRender(res.au.adId).then((bidToRender) => [bidToRender, res.au]);
+                  return getBidToRenderPm(res.au.adId).then((bidToRender) => [bidToRender, res.au]);
                 }).then(([bidToRender, paapiBid]) => {
                   expect(bidToRender).to.eql(canRender ? paapiBid : mockContextual)
                 })
@@ -348,21 +352,21 @@ describe('topLevelPaapi', () => {
               if (canRender) {
                 it('should not not override when the bid was already rendered', () => {
                   getBids();
-                  return getBidToRender(mockContextual.adId).then((bid) => {
+                  return getBidToRenderPm(mockContextual.adId).then((bid) => {
                     // first pass - paapi wins over contextual
                     expect(bid.source).to.eql('paapi');
                     bid.status = BID_STATUS.RENDERED;
-                    return getBidToRender(mockContextual.adId, false).then(bidToRender => [bid, bidToRender])
+                    return getBidToRenderPm(mockContextual.adId, false).then(bidToRender => [bid, bidToRender])
                   }).then(([paapiBid, bidToRender]) => {
                     // if `forRender` = false (bit retrieved for x-domain events and such)
                     // the referenced bid is still paapi
                     expect(bidToRender).to.eql(paapiBid);
-                    return getBidToRender(mockContextual.adId);
+                    return getBidToRenderPm(mockContextual.adId);
                   }).then(bidToRender => {
                     // second pass, paapi has been rendered, contextual should win
                     expect(bidToRender).to.eql(mockContextual);
                     bidToRender.status = BID_STATUS.RENDERED;
-                    return getBidToRender(mockContextual.adId, false);
+                    return getBidToRenderPm(mockContextual.adId, false);
                   }).then(bidToRender => {
                     // if the contextual bid has been rendered, it's the one being referenced
                     expect(bidToRender).to.eql(mockContextual);
