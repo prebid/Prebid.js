@@ -24,7 +24,7 @@ TeqBlaze Sales Agent bid adapter supports Banner, Video (instream and outstream)
                     },
                     bids: [
                         {
-                            bidder: 'teqBlazeSalesAgentAdapter',
+                            bidder: 'teqBlazeSalesAgent',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ TeqBlaze Sales Agent bid adapter supports Banner, Video (instream and outstream)
                     },
                     bids: [
                         {
-                            bidder: 'teqBlazeSalesAgentAdapter',
+                            bidder: 'teqBlazeSalesAgent',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ TeqBlaze Sales Agent bid adapter supports Banner, Video (instream and outstream)
                     },
                     bids: [
                         {
-                            bidder: 'teqBlazeSalesAgentAdapter',
+                            bidder: 'teqBlazeSalesAgent',
                             params: {
                                 placementId: 'testNative',
                             }
