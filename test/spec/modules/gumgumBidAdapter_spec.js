@@ -100,6 +100,39 @@ describe('gumgumAdapter', function () {
 
   describe('buildRequests', function () {
     const sizesArray = [[300, 250], [300, 600]];
+    const id5Eid = {
+      source: 'id5-sync.com',
+      uids: [{
+        id: 'uid-string',
+        ext: {
+          linkType: 2
+        }
+      }]
+    };
+    const pubProvidedIdEids = [
+      {
+        uids: [
+          {
+            ext: {
+              stype: 'ppuid',
+            },
+            id: 'aac4504f-ef89-401b-a891-ada59db44336',
+          },
+        ],
+        source: 'audigent.com',
+      },
+      {
+        uids: [
+          {
+            ext: {
+              stype: 'ppuid',
+            },
+            id: 'y-zqTHmW9E2uG3jEETC6i6BjGcMhPXld2F~A',
+          },
+        ],
+        source: 'crwdcntrl.net',
+      },
+    ];
     const bidderRequest = {
       ortb2: {
         site: {
@@ -136,38 +169,7 @@ describe('gumgumAdapter', function () {
             sizes: sizesArray
           }
         },
-        userId: {
-          id5id: {
-            uid: 'uid-string',
-            ext: {
-              linkType: 2
-            }
-          }
-        },
-        pubProvidedId: [
-          {
-            uids: [
-              {
-                ext: {
-                  stype: 'ppuid',
-                },
-                id: 'aac4504f-ef89-401b-a891-ada59db44336',
-              },
-            ],
-            source: 'sonobi.com',
-          },
-          {
-            uids: [
-              {
-                ext: {
-                  stype: 'ppuid',
-                },
-                id: 'y-zqTHmW9E2uG3jEETC6i6BjGcMhPXld2F~A',
-              },
-            ],
-            source: 'aol.com',
-          },
-        ],
+        userIdAsEids: [id5Eid, ...pubProvidedIdEids],
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
@@ -227,13 +229,13 @@ describe('gumgumAdapter', function () {
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(bidRequests[0].userId.pubProvidedId));
+      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(pubProvidedIdEids));
     });
     it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.id5Id).to.equal(bidRequests[0].userId.id5id.uid);
-      expect(bidRequest.data.id5IdLinkType).to.equal(bidRequests[0].userId.id5id.ext.linkType);
+      expect(bidRequest.data.id5Id).to.equal(id5Eid.uids[0].id);
+      expect(bidRequest.data.id5IdLinkType).to.equal(id5Eid.uids[0].ext.linkType);
     });
 
     it('should set pubId param if found', function () {
@@ -614,7 +616,7 @@ describe('gumgumAdapter', function () {
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(bidRequests[0].userId.pubProvidedId));
+      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(pubProvidedIdEids));
     });
 
     it('should add gdpr consent parameters if gdprConsent is present', function () {
@@ -714,14 +716,18 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.uspConsent).to.eq(uspConsentObj.uspConsent);
     });
     it('should add a tdid parameter if request contains unified id from TradeDesk', function () {
-      const unifiedId = {
-        'userId': {
-          'tdid': 'tradedesk-id'
-        }
-      }
-      const request = Object.assign(unifiedId, bidRequests[0]);
+      const tdidEid = {
+        source: 'adserver.org',
+        uids: [{
+          id: 'tradedesk-id',
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      };
+      const request = Object.assign({}, bidRequests[0], { userIdAsEids: [...bidRequests[0].userIdAsEids, tdidEid] });
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.tdid).to.eq(unifiedId.userId.tdid);
+      expect(bidRequest.data.tdid).to.eq(tdidEid.uids[0].id);
     });
     it('should not add a tdid parameter if unified id is not found', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -729,7 +735,8 @@ describe('gumgumAdapter', function () {
     });
     it('should send IDL envelope ID if available', function () {
       const idl_env = 'abc123';
-      const request = { ...bidRequests[0], userId: { idl_env } };
+      const idlEid = { source: 'liveramp.com', uids: [{ id: idl_env }] };
+      const request = { ...bidRequests[0], userIdAsEids: [idlEid] };
       const bidRequest = spec.buildRequests([request])[0];
 
       expect(bidRequest.data).to.have.property('idl_env');
@@ -743,7 +750,8 @@ describe('gumgumAdapter', function () {
     });
     it('should add a uid2 parameter if request contains uid2 id', function () {
       const uid2 = { id: 'sample-uid2' };
-      const request = { ...bidRequests[0], userId: { uid2 } };
+      const uid2Eid = { source: 'uidapi.com', uids: [{ id: uid2.id }] };
+      const request = { ...bidRequests[0], userIdAsEids: [uid2Eid] };
       const bidRequest = spec.buildRequests([request])[0];
 
       expect(bidRequest.data).to.have.property('uid2');
