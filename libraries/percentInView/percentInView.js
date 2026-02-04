@@ -9,8 +9,7 @@ export function getViewportOffset(win = window) {
   let y = 0;
   try {
     while (win?.frameElement != null) {
-      // eslint-disable-next-line no-restricted-properties
-      const rect = win.frameElement.getBoundingClientRect();
+      const rect = getBoundingClientRect(win.frameElement);
       x += rect.left;
       y += rect.top;
       win = win.parent;
