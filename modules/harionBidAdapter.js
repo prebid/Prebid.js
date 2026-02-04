@@ -13,7 +13,13 @@ export const spec = {
 
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
-  interpretResponse
+  interpretResponse: (serverResponse) => {
+    if (!serverResponse || !Array.isArray(serverResponse.body)) {
+      return [];
+    }
+
+    return interpretResponse(serverResponse);
+  }
 };
 
 registerBidder(spec);
