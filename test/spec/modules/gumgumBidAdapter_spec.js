@@ -231,6 +231,25 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(pubProvidedIdEids));
     });
+    it('should filter pubProvidedId entries by allowed sources', function () {
+      const filteredRequest = {
+        ...bidRequests[0],
+        userIdAsEids: [
+          {
+            source: 'audigent.com',
+            uids: [{ id: 'ppid-1', ext: { stype: 'ppuid' } }]
+          },
+          {
+            source: 'sonobi.com',
+            uids: [{ id: 'ppid-2', ext: { stype: 'ppuid' } }]
+          }
+        ]
+      };
+      const bidRequest = spec.buildRequests([filteredRequest])[0];
+      const pubProvidedIds = JSON.parse(bidRequest.data.pubProvidedId);
+      expect(pubProvidedIds.length).to.equal(1);
+      expect(pubProvidedIds[0].source).to.equal('audigent.com');
+    });
     it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
