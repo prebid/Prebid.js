@@ -1,5 +1,6 @@
 const ghRequester = require('./ghRequest.js');
 const AWS = require("@aws-sdk/client-s3");
+const fs = require('fs');
 
 const MODULE_PATTERNS = [
   /^modules\/([^\/]+)BidAdapter(\.(\w+)|\/)/,
@@ -25,7 +26,7 @@ function extractVendor(chunkName) {
 }
 
 const getLibraryRefs = (() => {
-  const deps = require('../../../build/dist/dependencies.json');
+  const deps = JSON.parse(fs.readFileSync(process.env.DEPENDENCIES_JSON).toString());
   const refs = {};
   return function (libraryName) {
     if (!refs.hasOwnProperty(libraryName)) {

@@ -202,15 +202,10 @@ window.apntag = {
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub, sandbox;
-  function getBidToRenderHook(next, adId) {
-    // make sure we can handle async bidToRender
-    next(adId, new Promise((resolve) => setTimeout(resolve)))
-  }
   before((done) => {
     hook.ready();
     pbjsModule.requestBids.getHooks().remove();
     resetDebugging();
-    getBidToRender.before(getBidToRenderHook, 100);
     // preload creative renderer
     getCreativeRenderer({}).then(() => done());
   });
@@ -232,7 +227,6 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
-    getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
   describe('processQueue', () => {
@@ -1239,6 +1233,7 @@ describe('Unit: Prebid Module', function () {
     }
 
     beforeEach(function () {
+      bidId++;
       doc = {
         write: sinon.spy(),
         close: sinon.spy(),
@@ -1297,17 +1292,43 @@ describe('Unit: Prebid Module', function () {
       })
     });
 
-    it('should write the ad to the doc', function () {
-      const ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
-      pushBidResponseToAuction({
-        ad
+    describe('when legacyRender is set', () => {
+      beforeEach(() => {
+        pbjs.setConfig({
+          auctionOptions: {
+            legacyRender: true
+          }
+        })
       });
-      const iframe = {};
-      doc.createElement.returns(iframe);
-      return renderAd(doc, bidId).then(() => {
-        expect(iframe.srcdoc).to.eql(ad);
-      })
-    });
+
+      afterEach(() => {
+        configObj.resetConfig()
+      });
+
+      it('should immediately write the ad to the doc', function () {
+        pushBidResponseToAuction({
+          ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+        });
+        pbjs.renderAd(doc, bidId);
+        sinon.assert.calledWith(doc.write, adResponse.ad);
+        sinon.assert.called(doc.close);
+      });
+    })
+
+    describe('when legacyRender is NOT set', () => {
+      it('should use an iframe, not document.write', function () {
+        const ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+        pushBidResponseToAuction({
+          ad
+        });
+        const iframe = {};
+        doc.createElement.returns(iframe);
+        return renderAd(doc, bidId).then(() => {
+          expect(iframe.srcdoc).to.eql(ad);
+          sinon.assert.notCalled(doc.write);
+        })
+      });
+    })
 
     it('should place the url inside an iframe on the doc', function () {
       pushBidResponseToAuction({
@@ -1382,7 +1403,8 @@ describe('Unit: Prebid Module', function () {
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
       return renderAd(doc, bidId).then(() => {
-        assert.deepEqual(pbjs.getAllWinningBids()[0], adResponse);
+        const winningBid = pbjs.getAllWinningBids().find(el => el.adId === adResponse.adId);
+        expect(winningBid).to.eql(adResponse);
       });
     });
 

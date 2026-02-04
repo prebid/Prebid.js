@@ -342,6 +342,15 @@ export const spec = {
       params['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params['gpp'] = encodeURIComponent(gppConsent.gppString);
+      params['gpp_sid'] = gppConsent.applicableSections.join(',');
+    }
+
+    if (config.getConfig('coppa') === true) {
+      params['coppa'] = 1;
+    }
+
     window.addEventListener('message', function handler(event) {
       if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;

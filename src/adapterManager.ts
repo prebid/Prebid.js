@@ -195,6 +195,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   gdprConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
   uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
   gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
+  alwaysHasCapacity?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -606,6 +607,7 @@ const adapterManager = {
             src: S2S.SRC,
             refererInfo,
             metrics,
+            alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -635,6 +637,7 @@ const adapterManager = {
       const bidderRequestId = generateUUID();
       const pageViewId = getPageViewIdForBidder(bidderCode);
       const metrics = auctionMetrics.fork();
+      const adapter = _bidderRegistry[bidderCode];
       const bidderRequest = addOrtb2({
         bidderCode,
         auctionId,
@@ -653,8 +656,9 @@ const adapterManager = {
         timeout: cbTimeout,
         refererInfo,
         metrics,
+        src: 'client',
+        alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
       });
-      const adapter = _bidderRegistry[bidderCode];
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
       }

@@ -5,7 +5,7 @@ on:
     branches:
       - master
       - '*-legacy'
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
 
 concurrency:
@@ -32,7 +32,7 @@ jobs:
 
       - name: Checkout code (PR)
         id: checkout-pr
-        if: ${{ github.event_name == 'pull_request_target' }}
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head

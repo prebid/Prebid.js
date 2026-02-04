@@ -3860,6 +3860,98 @@ describe('the rubicon adapter', function () {
           expect(bids[1].meta.mediaType).to.equal('video');
         });
 
+        it('should handle primaryCatId and secondaryCatIds when bid.bid_cat is present in response', function () {
+          const response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'emulated_format': 'video',
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
+                    ]
+                  }
+                ],
+                'bid_cat': ['IAB1-1']
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ],
+                'bid_cat': ['IAB1-2', 'IAB1-3']
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 10,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+          const bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].meta.primaryCatId).to.be.undefined;
+          expect(bids[0].meta.secondaryCatIds).to.be.undefined;
+          expect(bids[1].meta.primaryCatId).to.equal(response.ads[1].bid_cat[0]);
+          expect(bids[1].meta.secondaryCatIds).to.deep.equal(response.ads[1].bid_cat.slice(1));
+          expect(bids[2].meta.primaryCatId).to.equal(response.ads[0].bid_cat[0]);
+          expect(bids[2].meta.secondaryCatIds).to.be.undefined;
+        });
+
         describe('singleRequest enabled', function () {
           it('handles bidRequest of type Array and returns associated adUnits', function () {
             const overrideMap = [];

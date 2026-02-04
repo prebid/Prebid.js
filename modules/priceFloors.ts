@@ -448,7 +448,8 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   const noFloorSignalBiddersArray = getNoFloorSignalBidersArray(floorData)
 
   adUnits.forEach((adUnit) => {
-    adUnit.bids.forEach(bid => {
+    // adUnit.bids can be undefined
+    adUnit.bids?.forEach(bid => {
       // check if the bidder is in the no signal list
       const isNoFloorSignaled = noFloorSignalBiddersArray.some(bidderName => bidderName === bid.bidder)
       if (floorData.skipped || isNoFloorSignaled) {

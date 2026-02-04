@@ -294,12 +294,12 @@ function app(bidderRequest) {
 }
 
 function isMobile() {
-  return /(ios|ipod|ipad|iphone|android)/i.test(global.navigator.userAgent);
+  return /(ios|ipod|ipad|iphone|android)/i.test(window.navigator.userAgent);
 }
 
 function isConnectedTV() {
   return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(
-    global.navigator.userAgent
+    window.navigator.userAgent
   );
 }
 
