@@ -98,7 +98,10 @@ function buildRequests(bidRequests, bidderRequest) {
  * @return  An array of bids which were nested inside the server.
  */
 function interpretResponse(response, request) {
-  return converter.fromORTB({response: response.body, request: request.data}).bids;
+  if (response.body) {
+    return converter.fromORTB({response: response.body, request: request.data}).bids;
+  }
+  return [];
 }
 
 /**
