@@ -14,6 +14,8 @@ import { logWarn, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { ajaxBuilder } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'locId';
 const LOG_PREFIX = 'LocID:';
@@ -25,6 +27,10 @@ const DEFAULT_EID_ATYPE = 1;
 const GVLID = 3384;
 const MAX_ID_LENGTH = 512;
 const MAX_CONNECTION_IP_LENGTH = 64;
+const DEFAULT_IP_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const IP_CACHE_SUFFIX = '_ip';
+
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * Normalizes privacy mode config to a boolean flag.
@@ -136,7 +142,11 @@ function normalizeStoredId(storedId) {
     return null;
   }
   if (typeof storedId === 'object') {
-    const id = storedId.id ?? storedId.tx_cloc;
+    // Preserve explicit null for id (means "empty tx_cloc, valid cached response").
+    // 'id' in storedId is needed because ?? treats null as nullish and would
+    // incorrectly fall through to tx_cloc.
+    const hasExplicitId = 'id' in storedId;
+    const id = hasExplicitId ? storedId.id : (storedId.tx_cloc ?? null);
     const connectionIp = storedId.connectionIp ?? storedId.connection_ip;
     return { ...storedId, id, connectionIp };
   }
@@ -298,6 +308,96 @@ function extractConnectionIp(parsed) {
   return isValidConnectionIp(connectionIp) ? connectionIp : null;
 }
 
+function getIpCacheKey(config) {
+  const baseName = config?.storage?.name || '_locid';
+  return config?.params?.ipCacheName || (baseName + IP_CACHE_SUFFIX);
+}
+
+function getIpCacheTtlMs(config) {
+  const ttl = config?.params?.ipCacheTtlMs;
+  return (typeof ttl === 'number' && ttl > 0) ? ttl : DEFAULT_IP_CACHE_TTL_MS;
+}
+
+function readIpCache(config) {
+  try {
+    const key = getIpCacheKey(config);
+    const raw = storage.getDataFromLocalStorage(key);
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (!entry || typeof entry !== 'object') return null;
+    if (!isValidConnectionIp(entry.ip)) return null;
+    if (typeof entry.expiresAt === 'number' && Date.now() > entry.expiresAt) return null;
+    return entry;
+  } catch (e) {
+    logWarn(LOG_PREFIX, 'Error reading IP cache:', e.message);
+    return null;
+  }
+}
+
+function writeIpCache(config, ip) {
+  if (!isValidConnectionIp(ip)) return;
+  try {
+    const key = getIpCacheKey(config);
+    const nowMs = Date.now();
+    const ttlMs = getIpCacheTtlMs(config);
+    const entry = {
+      ip: ip,
+      fetchedAt: nowMs,
+      expiresAt: nowMs + ttlMs
+    };
+    storage.setDataInLocalStorage(key, JSON.stringify(entry));
+  } catch (e) {
+    logWarn(LOG_PREFIX, 'Error writing IP cache:', e.message);
+  }
+}
+
+/**
+ * Parses an IP response from an IP-only endpoint.
+ * Supports JSON ({ip: "..."}, {connection_ip: "..."}) and plain text IP.
+ */
+function parseIpResponse(response) {
+  if (!response) return null;
+
+  if (typeof response === 'string') {
+    const trimmed = response.trim();
+    if (trimmed.charAt(0) === '{') {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const ip = parsed.ip || parsed.connection_ip || parsed.connectionIp;
+        return isValidConnectionIp(ip) ? ip : null;
+      } catch (e) {
+        // Not valid JSON, try as plain text
+      }
+    }
+    return isValidConnectionIp(trimmed) ? trimmed : null;
+  }
+
+  if (typeof response === 'object') {
+    const ip = response.ip || response.connection_ip || response.connectionIp;
+    return isValidConnectionIp(ip) ? ip : null;
+  }
+
+  return null;
+}
+
+/**
+ * Checks if a stored tx_cloc entry is valid for reuse.
+ * Accepts both valid id strings AND null (empty tx_cloc is a valid cached result).
+ */
+function isStoredEntryReusable(normalizedStored, currentIp) {
+  if (!normalizedStored || !isValidConnectionIp(normalizedStored.connectionIp)) {
+    return false;
+  }
+  if (isExpired(normalizedStored)) {
+    return false;
+  }
+  if (currentIp && normalizedStored.connectionIp !== currentIp) {
+    return false;
+  }
+  // id must be either a valid string or explicitly null (empty tx_cloc)
+  return normalizedStored.id === null || isValidId(normalizedStored.id);
+}
+
 function getExpiresAt(config, nowMs) {
   const expiresDays = config?.storage?.expires;
   if (typeof expiresDays !== 'number' || expiresDays <= 0) {
@@ -383,8 +483,7 @@ function fetchLocIdFromEndpoint(config, callback) {
 
   const onSuccess = (response) => {
     const parsed = parseEndpointResponse(response);
-    const locId = extractLocIdFromResponse(parsed);
-    if (!locId) {
+    if (!parsed) {
       safeCallback(undefined);
       return;
     }
@@ -394,6 +493,10 @@ function fetchLocIdFromEndpoint(config, callback) {
       safeCallback(undefined);
       return;
     }
+    // tx_cloc may be null (empty/missing for this IP) -- this is a valid cacheable result.
+    // connection_ip is always required.
+    const locId = extractLocIdFromResponse(parsed);
+    writeIpCache(config, connectionIp);
     safeCallback(buildStoredId(locId, connectionIp, config));
   };
 
@@ -408,6 +511,56 @@ function fetchLocIdFromEndpoint(config, callback) {
   } catch (e) {
     logError(LOG_PREFIX, 'Error initiating request:', e.message);
     safeCallback(undefined);
+  }
+}
+
+/**
+ * Fetches the connection IP from a separate lightweight endpoint (GET only).
+ * Callback receives the IP string on success or null on failure.
+ */
+function fetchIpFromEndpoint(config, callback) {
+  const params = config?.params || {};
+  const ipEndpoint = params.ipEndpoint;
+  const timeoutMs = params.timeoutMs || DEFAULT_TIMEOUT_MS;
+
+  if (!ipEndpoint) {
+    callback(null);
+    return;
+  }
+
+  let callbackFired = false;
+  const safeCallback = (result) => {
+    if (!callbackFired) {
+      callbackFired = true;
+      callback(result);
+    }
+  };
+
+  const onSuccess = (response) => {
+    const ip = parseIpResponse(response);
+    safeCallback(ip);
+  };
+
+  const onError = (error) => {
+    logWarn(LOG_PREFIX, 'IP endpoint request failed:', error);
+    safeCallback(null);
+  };
+
+  try {
+    const ajax = ajaxBuilder(timeoutMs);
+    const requestOptions = {
+      method: 'GET',
+      withCredentials: params.withCredentials === true
+    };
+    if (params.apiKey) {
+      requestOptions.customHeaders = {
+        'x-api-key': params.apiKey
+      };
+    }
+    ajax(ipEndpoint, { success: onSuccess, error: onError }, null, requestOptions);
+  } catch (e) {
+    logError(LOG_PREFIX, 'Error initiating IP request:', e.message);
+    safeCallback(null);
   }
 }
 
@@ -434,6 +587,10 @@ export const locIdSubmodule = {
   /**
    * Get the LocID from endpoint.
    * Returns {id} for sync or {callback} for async per Prebid patterns.
+   *
+   * Two-tier cache: IP cache (4h default) and tx_cloc cache (7d default).
+   * IP is refreshed more frequently to detect network changes while keeping
+   * tx_cloc stable for its full cache period.
    */
   getId(config, consentData, storedId) {
     const params = config?.params || {};
@@ -443,38 +600,90 @@ export const locIdSubmodule = {
       return undefined;
     }
 
-    // Reuse valid stored ID
     const normalizedStored = normalizeStoredId(storedId);
-    const existingId = normalizedStored?.id;
-    if (
-      existingId &&
-      isValidId(existingId) &&
-      isValidConnectionIp(normalizedStored?.connectionIp) &&
-      !isExpired(normalizedStored)
-    ) {
-      return { id: normalizedStored };
+    const cachedIp = readIpCache(config);
+
+    // Step 1: IP cache is valid -- check if tx_cloc matches
+    if (cachedIp) {
+      if (isStoredEntryReusable(normalizedStored, cachedIp.ip)) {
+        return { id: normalizedStored };
+      }
+      // IP cached but tx_cloc missing, expired, or IP mismatch -- full fetch
+      return {
+        callback: (callback) => {
+          fetchLocIdFromEndpoint(config, callback);
+        }
+      };
     }
 
-    // Return callback for async endpoint fetch
+    // Step 2: IP cache expired or missing
+    if (params.ipEndpoint) {
+      // Two-call optimization: lightweight IP check first
+      return {
+        callback: (callback) => {
+          fetchIpFromEndpoint(config, (freshIp) => {
+            if (!freshIp) {
+              // IP fetch failed; fall back to main endpoint
+              fetchLocIdFromEndpoint(config, callback);
+              return;
+            }
+            writeIpCache(config, freshIp);
+            // Check if stored tx_cloc matches the fresh IP
+            if (isStoredEntryReusable(normalizedStored, freshIp)) {
+              callback(normalizedStored);
+              return;
+            }
+            // IP changed or no valid tx_cloc -- full fetch
+            fetchLocIdFromEndpoint(config, callback);
+          });
+        }
+      };
+    }
+
+    // Step 3: No ipEndpoint configured -- call main endpoint to refresh IP.
+    // Only update tx_cloc if IP changed or tx_cloc cache expired.
     return {
       callback: (callback) => {
-        fetchLocIdFromEndpoint(config, callback);
+        fetchLocIdFromEndpoint(config, (freshEntry) => {
+          if (!freshEntry) {
+            callback(undefined);
+            return;
+          }
+          // IP is already cached by fetchLocIdFromEndpoint's onSuccess.
+          // Check if we should preserve the existing tx_cloc (avoid churning it).
+          if (isStoredEntryReusable(normalizedStored, freshEntry.connectionIp)) {
+            callback(normalizedStored);
+            return;
+          }
+          // IP changed or tx_cloc expired/missing -- use fresh entry
+          callback(freshEntry);
+        });
       }
     };
   },
 
   /**
    * Extend existing LocID using pure logic only (no network).
+   * Accepts id: null (empty tx_cloc) as a valid cached result.
    */
   extendId(config, consentData, storedId) {
     const normalizedStored = normalizeStoredId(storedId);
-    if (!normalizedStored || !isValidId(normalizedStored.id) || !isValidConnectionIp(normalizedStored.connectionIp)) {
+    if (!normalizedStored || !isValidConnectionIp(normalizedStored.connectionIp)) {
+      return undefined;
+    }
+    // Accept both valid id strings AND null (empty tx_cloc is a valid cached result)
+    if (normalizedStored.id !== null && !isValidId(normalizedStored.id)) {
       return undefined;
     }
     if (isExpired(normalizedStored)) {
       return undefined;
     }
     if (!hasValidConsent(consentData, config?.params)) {
+      return undefined;
+    }
+    // Check IP cache -- if expired/missing or IP changed, trigger re-fetch
+    const cachedIp = readIpCache(config);
+    if (!cachedIp || cachedIp.ip !== normalizedStored.connectionIp) {
       return undefined;
     }
     const refreshInSeconds = config?.storage?.refreshInSeconds;

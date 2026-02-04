@@ -3,7 +3,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { locIdSubmodule } from 'modules/locIdSystem.js';
+import { locIdSubmodule, storage } from 'modules/locIdSystem.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { attachIdSystem } from 'modules/userId/index.js';
 import * as ajax from 'src/ajax.js';
@@ -24,6 +24,8 @@ describe('LocID System', () => {
     sandbox = sinon.createSandbox();
     sandbox.stub(uspDataHandler, 'getConsentData').returns(null);
     sandbox.stub(gppDataHandler, 'getConsentData').returns(null);
+    sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+    sandbox.stub(storage, 'setDataInLocalStorage');
     ajaxStub = sandbox.stub();
     ajaxBuilderStub = sandbox.stub(ajax, 'ajaxBuilder').returns(ajaxStub);
   });
@@ -124,7 +126,7 @@ describe('LocID System', () => {
       });
     });
 
-    it('should return undefined when tx_cloc is missing', (done) => {
+    it('should cache entry with null id when tx_cloc is missing but connection_ip is present', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         callbacks.success(JSON.stringify({ stable_cloc: 'stable-cloc-id-12345', connection_ip: TEST_CONNECTION_IP }));
       });
@@ -137,7 +139,9 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.be.undefined;
+        expect(id).to.be.an('object');
+        expect(id.id).to.be.null;
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
         done();
       });
     });
@@ -184,10 +188,20 @@ describe('LocID System', () => {
       });
     });
 
-    it('should reuse storedId when valid', () => {
+    it('should reuse storedId when valid and IP cache matches', () => {
+      // Set up IP cache matching stored entry's IP
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
       const config = {
         params: {
           endpoint: TEST_ENDPOINT
+        },
+        storage: {
+          name: '_locid'
         }
       };
       const storedId = {
@@ -479,7 +493,12 @@ describe('LocID System', () => {
       }
     };
 
-    it('should return stored id when valid', () => {
+    it('should return stored id when valid and IP cache is current', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 14400000
+      }));
       const storedId = { id: 'existing-id', connectionIp: TEST_CONNECTION_IP };
       const result = locIdSubmodule.extendId(config, {}, storedId);
       expect(result).to.deep.equal({ id: storedId });
@@ -488,6 +507,11 @@ describe('LocID System', () => {
     it('should reuse storedId when refreshInSeconds is configured but not due', () => {
       const now = Date.now();
       const refreshInSeconds = 60;
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: now,
+        expiresAt: now + 14400000
+      }));
       const storedId = {
         id: 'existing-id',
         connectionIp: TEST_CONNECTION_IP,
@@ -1099,7 +1123,7 @@ describe('LocID System', () => {
       });
     });
 
-    it('should reject empty ID in response', (done) => {
+    it('should cache entry with null id when tx_cloc is empty string', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         callbacks.success(JSON.stringify({ tx_cloc: '', connection_ip: TEST_CONNECTION_IP }));
       });
@@ -1112,7 +1136,9 @@ describe('LocID System', () => {
 
       const result = locIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.be.undefined;
+        expect(id).to.be.an('object');
+        expect(id.id).to.be.null;
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
         done();
       });
     });
@@ -1133,6 +1159,789 @@ describe('LocID System', () => {
         expect(id).to.be.undefined;
         done();
       });
+    });
+  });
+
+  describe('empty tx_cloc handling', () => {
+    it('should decode null id as undefined (no EID emitted)', () => {
+      const result = locIdSubmodule.decode({ id: null, connectionIp: TEST_CONNECTION_IP });
+      expect(result).to.be.undefined;
+    });
+
+    it('should cache empty tx_cloc response for the full cache period', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { expires: 7 }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        expect(id.id).to.be.null;
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        expect(id.expiresAt).to.be.a('number');
+        expect(id.expiresAt).to.be.greaterThan(Date.now());
+        done();
+      });
+    });
+
+    it('should reuse cached entry with null id on subsequent getId calls', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: null,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+      expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should not produce EID when tx_cloc is null', () => {
+      const decoded = locIdSubmodule.decode({ id: null, connectionIp: TEST_CONNECTION_IP });
+      expect(decoded).to.be.undefined;
+    });
+
+    it('should write IP cache when endpoint returns empty tx_cloc', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback(() => {
+        expect(storage.setDataInLocalStorage.called).to.be.true;
+        const callArgs = storage.setDataInLocalStorage.getCall(0).args;
+        expect(callArgs[0]).to.equal('_locid_ip');
+        const ipEntry = JSON.parse(callArgs[1]);
+        expect(ipEntry.ip).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
+    });
+  });
+
+  describe('IP cache management', () => {
+    const ipCacheConfig = {
+      params: { endpoint: TEST_ENDPOINT },
+      storage: { name: '_locid' }
+    };
+
+    it('should read valid IP cache entry', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      // If IP cache is valid and stored entry matches, should reuse
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.getId(ipCacheConfig, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+      expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should treat expired IP cache as missing', (done) => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now() - 20000,
+        expiresAt: Date.now() - 1000
+      }));
+
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.getId(ipCacheConfig, {}, storedId);
+      // Expired IP cache → calls main endpoint
+      expect(result).to.have.property('callback');
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        done();
+      });
+    });
+
+    it('should handle corrupted IP cache JSON gracefully', (done) => {
+      storage.getDataFromLocalStorage.returns('not-valid-json');
+
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const result = locIdSubmodule.getId(ipCacheConfig, {});
+      expect(result).to.have.property('callback');
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        expect(id.id).to.equal(TEST_ID);
+        done();
+      });
+    });
+
+    it('should derive IP cache key from storage name', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: 'custom_key' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback(() => {
+        const setCall = storage.setDataInLocalStorage.getCall(0);
+        expect(setCall.args[0]).to.equal('custom_key_ip');
+        done();
+      });
+    });
+
+    it('should use custom ipCacheName when configured', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT, ipCacheName: 'my_ip_cache' },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback(() => {
+        const setCall = storage.setDataInLocalStorage.getCall(0);
+        expect(setCall.args[0]).to.equal('my_ip_cache');
+        done();
+      });
+    });
+
+    it('should use custom ipCacheTtlMs when configured', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT, ipCacheTtlMs: 7200000 },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback(() => {
+        const setCall = storage.setDataInLocalStorage.getCall(0);
+        const ipEntry = JSON.parse(setCall.args[1]);
+        // TTL should be ~2 hours
+        const ttl = ipEntry.expiresAt - ipEntry.fetchedAt;
+        expect(ttl).to.equal(7200000);
+        done();
+      });
+    });
+
+    it('should write IP cache on every successful main endpoint response', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: '10.0.0.1' }));
+      });
+
+      const result = locIdSubmodule.getId(ipCacheConfig, {});
+      result.callback(() => {
+        expect(storage.setDataInLocalStorage.called).to.be.true;
+        const ipEntry = JSON.parse(storage.setDataInLocalStorage.getCall(0).args[1]);
+        expect(ipEntry.ip).to.equal('10.0.0.1');
+        done();
+      });
+    });
+  });
+
+  describe('getId with ipEndpoint (two-call optimization)', () => {
+    it('should call ipEndpoint first when IP cache is expired', (done) => {
+      let callCount = 0;
+      ajaxStub.callsFake((url, callbacks) => {
+        callCount++;
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success(JSON.stringify({ ip: '10.0.0.1' }));
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: '10.0.0.1' }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        // IP changed (no stored entry) → 2 calls: ipEndpoint + main endpoint
+        expect(callCount).to.equal(2);
+        expect(id.id).to.equal(TEST_ID);
+        done();
+      });
+    });
+
+    it('should reuse cached tx_cloc when ipEndpoint returns same IP', (done) => {
+      let callCount = 0;
+      ajaxStub.callsFake((url, callbacks) => {
+        callCount++;
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success(JSON.stringify({ ip: TEST_CONNECTION_IP }));
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: 'new-id', connection_ip: TEST_CONNECTION_IP }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // IP unchanged → only 1 call (ipEndpoint), reuses stored tx_cloc
+        expect(callCount).to.equal(1);
+        expect(id.id).to.equal(TEST_ID);
+        done();
+      });
+    });
+
+    it('should call main endpoint when ipEndpoint returns different IP', (done) => {
+      let callCount = 0;
+      ajaxStub.callsFake((url, callbacks) => {
+        callCount++;
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success(JSON.stringify({ ip: '10.0.0.99' }));
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: 'new-id', connection_ip: '10.0.0.99' }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // IP changed → 2 calls: ipEndpoint + main endpoint
+        expect(callCount).to.equal(2);
+        expect(id.id).to.equal('new-id');
+        done();
+      });
+    });
+
+    it('should fall back to main endpoint when ipEndpoint fails', (done) => {
+      let callCount = 0;
+      ajaxStub.callsFake((url, callbacks) => {
+        callCount++;
+        if (url === 'https://ip.example.com/check') {
+          callbacks.error('Network error');
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(callCount).to.equal(2);
+        expect(id.id).to.equal(TEST_ID);
+        done();
+      });
+    });
+
+    it('should fall back to main endpoint when ipEndpoint returns invalid IP', (done) => {
+      let callCount = 0;
+      ajaxStub.callsFake((url, callbacks) => {
+        callCount++;
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success('not-an-ip!!!');
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(callCount).to.equal(2);
+        expect(id.id).to.equal(TEST_ID);
+        done();
+      });
+    });
+
+    it('should pass apiKey header to ipEndpoint when configured', (done) => {
+      ajaxStub.callsFake((url, callbacks, _body, options) => {
+        if (url === 'https://ip.example.com/check') {
+          expect(options.customHeaders).to.deep.equal({ 'x-api-key': 'test-key-123' });
+          callbacks.success(JSON.stringify({ ip: TEST_CONNECTION_IP }));
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check',
+          apiKey: 'test-key-123'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        done();
+      });
+    });
+
+    it('should parse plain text IP from ipEndpoint', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success(TEST_CONNECTION_IP);
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: 'new-id', connection_ip: TEST_CONNECTION_IP }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // IP same → reuses stored tx_cloc
+        expect(id.id).to.equal(TEST_ID);
+        done();
+      });
+    });
+  });
+
+  describe('getId tx_cloc preservation (no churn)', () => {
+    it('should preserve existing tx_cloc when main endpoint returns same IP', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // IP unchanged → preserve existing tx_cloc (don't churn)
+        expect(id.id).to.equal(TEST_ID);
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
+    });
+
+    it('should use fresh tx_cloc when main endpoint returns different IP', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: '10.0.0.99' }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // IP changed → use fresh tx_cloc
+        expect(id.id).to.equal('fresh-id');
+        expect(id.connectionIp).to.equal('10.0.0.99');
+        done();
+      });
+    });
+
+    it('should use fresh tx_cloc when stored entry is expired even if IP matches', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now() - 86400000,
+        expiresAt: Date.now() - 1000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // tx_cloc expired → use fresh even though IP matches
+        expect(id.id).to.equal('fresh-id');
+        done();
+      });
+    });
+
+    it('should use fresh entry on first load (no stored entry)', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id.id).to.equal(TEST_ID);
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
+    });
+  });
+
+  describe('extendId with null id and IP cache', () => {
+    const config = {
+      params: { endpoint: TEST_ENDPOINT },
+      storage: { name: '_locid' }
+    };
+
+    it('should accept stored entry with null id (empty tx_cloc)', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 14400000
+      }));
+      const storedId = {
+        id: null,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+    });
+
+    it('should return undefined when IP cache shows different IP', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: '10.0.0.99',
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.be.undefined;
+    });
+
+    it('should extend when IP cache matches stored entry IP', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+    });
+
+    it('should return undefined when IP cache is missing (force getId refresh)', () => {
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined when IP cache is expired (force getId refresh)', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now() - 14400000,
+        expiresAt: Date.now() - 1000
+      }));
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.be.undefined;
+    });
+
+    it('should return undefined for undefined id (not null, not valid string)', () => {
+      const storedId = {
+        id: undefined,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.extendId(config, {}, storedId);
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe('normalizeStoredId with null id', () => {
+    it('should preserve explicit null id', () => {
+      // getId is the public interface; test via decode which uses normalized values
+      const stored = { id: null, connectionIp: TEST_CONNECTION_IP };
+      // decode returns undefined for null id (correct: no EID emitted)
+      const decoded = locIdSubmodule.decode(stored);
+      expect(decoded).to.be.undefined;
+    });
+
+    it('should preserve valid string id', () => {
+      const stored = { id: TEST_ID, connectionIp: TEST_CONNECTION_IP };
+      const decoded = locIdSubmodule.decode(stored);
+      expect(decoded).to.deep.equal({ locId: TEST_ID });
+    });
+
+    it('should fall back to tx_cloc when id key is absent', () => {
+      const stored = { tx_cloc: TEST_ID, connectionIp: TEST_CONNECTION_IP };
+      const decoded = locIdSubmodule.decode(stored);
+      expect(decoded).to.deep.equal({ locId: TEST_ID });
+    });
+
+    it('should handle connection_ip alias', () => {
+      const stored = { id: TEST_ID, connection_ip: TEST_CONNECTION_IP };
+      const decoded = locIdSubmodule.decode(stored);
+      expect(decoded).to.deep.equal({ locId: TEST_ID });
+    });
+  });
+
+  describe('parseIpResponse via ipEndpoint', () => {
+    it('should parse JSON with ip field', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success('{"ip":"1.2.3.4"}');
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: '1.2.3.4' }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        // IP fetched and used
+        expect(id).to.be.an('object');
+        done();
+      });
+    });
+
+    it('should parse JSON with connection_ip field', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success('{"connection_ip":"1.2.3.4"}');
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: '1.2.3.4' }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        done();
+      });
+    });
+
+    it('should parse plain text IP address', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        if (url === 'https://ip.example.com/check') {
+          callbacks.success('1.2.3.4\n');
+        } else {
+          callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: '1.2.3.4' }));
+        }
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT,
+          ipEndpoint: 'https://ip.example.com/check'
+        },
+        storage: { name: '_locid' }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        done();
+      });
+    });
+  });
+
+  describe('backward compatibility', () => {
+    it('should work with existing stored entries that have string ids', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result).to.deep.equal({ id: storedId });
+    });
+
+    it('should work with stored entries using connection_ip alias', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connection_ip: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result.id.connectionIp).to.equal(TEST_CONNECTION_IP);
+    });
+
+    it('should work with stored entries using tx_cloc alias', () => {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({
+        ip: TEST_CONNECTION_IP,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + 1000
+      }));
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        tx_cloc: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      expect(result.id.id).to.equal(TEST_ID);
     });
   });
 
