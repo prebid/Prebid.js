@@ -165,16 +165,20 @@ describe('bridgewellBidAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload.adUnits).to.be.an('array');
       expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
+      expect(payload.userIds).to.deep.equal(userId);
+      expect(payload.userIdAsEids).to.deep.equal(userIdAsEids);
+      expect(payload.auctionId).to.equal('1d1a030790a475');
+      expect(payload.bidderRequestId).to.equal('22edbae2733bf6');
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
         const u = payload.adUnits[i];
         expect(u).to.have.property('ChannelID').that.is.a('string');
         expect(u).to.not.have.property('cid');
         expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
         expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
-        expect(u).to.have.property('userIds');
-        expect(u.userIds).to.deep.equal(userId);
-        expect(u).to.have.property('userIdAsEids');
-        expect(u.userIdAsEids).to.deep.equal(userIdAsEids);
+        expect(u).to.have.property('transactionId');
+        expect(u).to.have.property('sizes');
+        expect(u).to.have.property('mediaTypes');
+        expect(u).to.have.property('ortb2Imp');
       }
     });
 
@@ -213,16 +217,20 @@ describe('bridgewellBidAdapter', function () {
       expect(payload).to.be.an('object');
       expect(payload.adUnits).to.be.an('array');
       expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
+      expect(payload.userIds).to.deep.equal(userId);
+      expect(payload.userIdAsEids).to.deep.equal(userIdAsEids);
+      expect(payload.auctionId).to.equal('1d1a030790a475');
+      expect(payload.bidderRequestId).to.equal('22edbae2733bf6');
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
         const u = payload.adUnits[i];
         expect(u).to.have.property('cid').that.is.a('number');
         expect(u).to.not.have.property('ChannelID');
         expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
         expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
-        expect(u).to.have.property('userIds');
-        expect(u.userIds).to.deep.equal(userId);
-        expect(u).to.have.property('userIdAsEids');
-        expect(u.userIdAsEids).to.deep.equal(userIdAsEids);
+        expect(u).to.have.property('transactionId');
+        expect(u).to.have.property('sizes');
+        expect(u).to.have.property('mediaTypes');
+        expect(u).to.have.property('ortb2Imp');
       }
     });
 
@@ -239,6 +247,178 @@ describe('bridgewellBidAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const validBidRequests = request.validBidRequests;
       expect(validBidRequests).to.deep.equal(bidRequests);
+    });
+
+    it('should include ortb2Imp fields in adUnit', function () {
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://www.bridgewell.com/',
+          legacy: {
+            referer: 'https://www.bridgewell.com/',
+          }
+        }
+      }
+      const bidRequestsWithOrtb2 = [
+        {
+          'bidder': 'bridgewell',
+          'params': {
+            'cid': 1234,
+          },
+          'adUnitCode': 'adunit-code-1',
+          'transactionId': 'trans-123',
+          'adUnitId': 'adunit-123',
+          'sizes': [[300, 250]],
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250]]
+            }
+          },
+          'bidId': 'bid-123',
+          'ortb2Imp': {
+            'ext': {
+              'data': {
+                'adserver': {
+                  'name': 'gam',
+                  'adslot': '/1234/test'
+                },
+                'pbadslot': '/1234/test-pbadslot'
+              },
+              'gpid': 'test-gpid',
+              'prebid': {
+                'passthrough': {
+                  'bucket': 'test-bucket',
+                  'client': 'test-client',
+                  'gamAdCode': 'test-gam',
+                  'undefinedField': undefined
+                }
+              }
+            },
+            'banner': {
+              'pos': 1
+            }
+          },
+          'userId': userId,
+          'userIdAsEids': userIdAsEids,
+        }
+      ];
+
+      const request = spec.buildRequests(bidRequestsWithOrtb2, bidderRequest);
+      const adUnit = request.data.adUnits[0];
+
+      expect(adUnit.transactionId).to.equal('trans-123');
+      expect(adUnit.adUnitId).to.equal('adunit-123');
+      expect(adUnit.sizes).to.deep.equal([[300, 250]]);
+      expect(adUnit.ortb2Imp.ext.data.adserver.name).to.equal('gam');
+      expect(adUnit.ortb2Imp.ext.data.adserver.adslot).to.equal('/1234/test');
+      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('/1234/test-pbadslot');
+      expect(adUnit.ortb2Imp.ext.gpid).to.equal('test-gpid');
+      expect(adUnit.ortb2Imp.banner.pos).to.equal(1);
+      expect(adUnit.ortb2Imp.ext.prebid.passthrough).to.deep.equal({
+        bucket: 'test-bucket',
+        client: 'test-client',
+        gamAdCode: 'test-gam'
+      });
+      expect(adUnit.ortb2Imp.ext.prebid.passthrough).to.not.have.property('undefinedField');
+    });
+
+    it('should include floor information when getFloor is available', function () {
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://www.bridgewell.com/',
+          legacy: {
+            referer: 'https://www.bridgewell.com/',
+          }
+        }
+      }
+      const bidRequestsWithFloor = [
+        {
+          'bidder': 'bridgewell',
+          'params': {
+            'cid': 1234,
+          },
+          'adUnitCode': 'adunit-code-1',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250]]
+            }
+          },
+          'bidId': 'bid-123',
+          'getFloor': function() {
+            return {
+              floor: 1.5,
+              currency: 'USD'
+            };
+          },
+          'userId': userId,
+          'userIdAsEids': userIdAsEids,
+        }
+      ];
+
+      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest);
+      const adUnit = request.data.adUnits[0];
+
+      expect(adUnit.floor).to.equal(1.5);
+      expect(adUnit.currency).to.equal('USD');
+    });
+
+    it('should include additional bid request fields in payload', function () {
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://www.bridgewell.com/',
+          ref: 'https://www.referrer.com/',
+          legacy: {
+            referer: 'https://www.bridgewell.com/',
+          }
+        },
+        ortb2: {
+          site: {
+            name: 'test-site'
+          }
+        }
+      }
+      const bidRequestsWithMetrics = [
+        {
+          'bidder': 'bridgewell',
+          'params': {
+            'cid': 1234,
+          },
+          'adUnitCode': 'adunit-code-1',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250]]
+            }
+          },
+          'bidId': 'bid-123',
+          'bidderRequestId': 'bidder-req-123',
+          'auctionId': 'auction-123',
+          'src': 's2s',
+          'auctionsCount': 5,
+          'bidRequestsCount': 10,
+          'bidderRequestsCount': 3,
+          'bidderWinsCount': 2,
+          'deferBilling': true,
+          'metrics': {
+            'test': 'metric'
+          },
+          'userId': userId,
+          'userIdAsEids': userIdAsEids,
+        }
+      ];
+
+      const request = spec.buildRequests(bidRequestsWithMetrics, bidderRequest);
+      const payload = request.data;
+
+      expect(payload.auctionId).to.equal('auction-123');
+      expect(payload.bidderRequestId).to.equal('bidder-req-123');
+      expect(payload.src).to.equal('s2s');
+      expect(payload.auctionsCount).to.equal(5);
+      expect(payload.bidRequestsCount).to.equal(10);
+      expect(payload.bidderRequestsCount).to.equal(3);
+      expect(payload.bidderWinsCount).to.equal(2);
+      expect(payload.deferBilling).to.equal(true);
+      expect(payload.metrics).to.deep.equal({test: 'metric'});
+      expect(payload.referrer).to.equal('https://www.referrer.com/');
+      expect(payload.ortb2).to.deep.equal({site: {name: 'test-site'}});
     });
   });
 

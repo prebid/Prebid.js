@@ -23,6 +23,17 @@ import { deepSetValue, logError, logInfo, mergeDeep } from "../src/utils.js";
 const MODULE_NAME = "NeuwoRTDModule";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
+// Cached API response to avoid redundant requests.
+let globalCachedResponse;
+
+/**
+ * Clears the cached API response. Primarily used for testing.
+ * @private
+ */
+export function clearCache() {
+  globalCachedResponse = undefined;
+}
+
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
 // Based on https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--category-taxonomies-
 const IAB_CONTENT_TAXONOMY_MAP = {
@@ -36,11 +47,13 @@ const IAB_CONTENT_TAXONOMY_MAP = {
 
 /**
  * Validates the configuration and initialises the module.
+ *
  * @param {Object} config The module configuration.
  * @param {Object} userConsent The user consent object.
  * @returns {boolean} `true` if the module is configured correctly, otherwise `false`.
  */
 function init(config, userConsent) {
+  logInfo(MODULE_NAME, "init:", config, userConsent);
   const params = config?.params || {};
   if (!params.neuwoApiUrl) {
     logError(MODULE_NAME, "init:", "Missing Neuwo Edge API Endpoint URL");
@@ -55,18 +68,46 @@ function init(config, userConsent) {
 
 /**
  * Fetches contextual data from the Neuwo API and enriches the bid request object with IAB categories.
+ * Uses cached response if available to avoid redundant API calls.
+ *
  * @param {Object} reqBidsConfigObj The bid request configuration object.
  * @param {function} callback The callback function to continue the auction.
  * @param {Object} config The module configuration.
+ * @param {Object} config.params Configuration parameters.
+ * @param {string} config.params.neuwoApiUrl The Neuwo API endpoint URL.
+ * @param {string} config.params.neuwoApiToken The Neuwo API authentication token.
+ * @param {string} [config.params.websiteToAnalyseUrl] Optional URL to analyze instead of current page.
+ * @param {string} [config.params.iabContentTaxonomyVersion] IAB content taxonomy version (default: "3.0").
+ * @param {boolean} [config.params.enableCache=true] If true, caches API responses to avoid redundant requests (default: true).
+ * @param {boolean} [config.params.stripAllQueryParams] If true, strips all query parameters from the URL.
+ * @param {string[]} [config.params.stripQueryParamsForDomains] List of domains for which to strip all query params.
+ * @param {string[]} [config.params.stripQueryParams] List of specific query parameter names to strip.
+ * @param {boolean} [config.params.stripFragments] If true, strips URL fragments (hash).
  * @param {Object} userConsent The user consent object.
  */
 export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   logInfo(MODULE_NAME, "getBidRequestData:", "starting getBidRequestData", config);
 
-  const { websiteToAnalyseUrl, neuwoApiUrl, neuwoApiToken, iabContentTaxonomyVersion } =
-    config.params;
+  const {
+    websiteToAnalyseUrl,
+    neuwoApiUrl,
+    neuwoApiToken,
+    iabContentTaxonomyVersion,
+    enableCache = true,
+    stripAllQueryParams,
+    stripQueryParamsForDomains,
+    stripQueryParams,
+    stripFragments,
+  } = config.params;
 
-  const pageUrl = encodeURIComponent(websiteToAnalyseUrl || getRefererInfo().page);
+  const rawUrl = websiteToAnalyseUrl || getRefererInfo().page;
+  const processedUrl = cleanUrl(rawUrl, {
+    stripAllQueryParams,
+    stripQueryParamsForDomains,
+    stripQueryParams,
+    stripFragments
+  });
+  const pageUrl = encodeURIComponent(processedUrl);
   // Adjusted for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?')
   const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
   const neuwoApiUrlFull =
@@ -75,8 +116,13 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   const success = (response) => {
     logInfo(MODULE_NAME, "getBidRequestData:", "Neuwo API raw response:", response);
     try {
-      const responseJson = JSON.parse(response);
-      injectIabCategories(responseJson, reqBidsConfigObj, iabContentTaxonomyVersion);
+      const responseParsed = JSON.parse(response);
+
+      if (enableCache) {
+        globalCachedResponse = responseParsed;
+      }
+
+      injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion);
     } catch (ex) {
       logError(MODULE_NAME, "getBidRequestData:", "Error while processing Neuwo API response", ex);
     }
@@ -88,7 +134,14 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     callback();
   };
 
-  ajax(neuwoApiUrlFull, { success, error }, null);
+  if (enableCache && globalCachedResponse) {
+    logInfo(MODULE_NAME, "getBidRequestData:", "Using cached response:", globalCachedResponse);
+    injectIabCategories(globalCachedResponse, reqBidsConfigObj, iabContentTaxonomyVersion);
+    callback();
+  } else {
+    logInfo(MODULE_NAME, "getBidRequestData:", "Calling Neuwo API Endpoint: ", neuwoApiUrlFull);
+    ajax(neuwoApiUrlFull, { success, error }, null);
+  }
 }
 
 //
@@ -96,7 +149,87 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
 //
 
 /**
+ * Cleans a URL by stripping query parameters and/or fragments based on the provided configuration.
+ *
+ * @param {string} url The URL to clean.
+ * @param {Object} options Cleaning options.
+ * @param {boolean} [options.stripAllQueryParams] If true, strips all query parameters.
+ * @param {string[]} [options.stripQueryParamsForDomains] List of domains for which to strip all query params.
+ * @param {string[]} [options.stripQueryParams] List of specific query parameter names to strip.
+ * @param {boolean} [options.stripFragments] If true, strips URL fragments (hash).
+ * @returns {string} The cleaned URL.
+ */
+export function cleanUrl(url, options = {}) {
+  const { stripAllQueryParams, stripQueryParamsForDomains, stripQueryParams, stripFragments } = options;
+
+  if (!url) {
+    logInfo(MODULE_NAME, "cleanUrl:", "Empty or null URL provided, returning as-is");
+    return url;
+  }
+
+  logInfo(MODULE_NAME, "cleanUrl:", "Input URL:", url, "Options:", options);
+
+  try {
+    const urlObj = new URL(url);
+
+    // Strip fragments if requested
+    if (stripFragments === true) {
+      urlObj.hash = "";
+      logInfo(MODULE_NAME, "cleanUrl:", "Stripped fragment from URL");
+    }
+
+    // Option 1: Strip all query params unconditionally
+    if (stripAllQueryParams === true) {
+      urlObj.search = "";
+      const cleanedUrl = urlObj.toString();
+      logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+      return cleanedUrl;
+    }
+
+    // Option 2: Strip all query params for specific domains
+    if (Array.isArray(stripQueryParamsForDomains) && stripQueryParamsForDomains.length > 0) {
+      const hostname = urlObj.hostname;
+      const shouldStripForDomain = stripQueryParamsForDomains.some(domain => {
+        // Support exact match or subdomain match
+        return hostname === domain || hostname.endsWith("." + domain);
+      });
+
+      if (shouldStripForDomain) {
+        urlObj.search = "";
+        const cleanedUrl = urlObj.toString();
+        logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+        return cleanedUrl;
+      }
+    }
+
+    // Option 3: Strip specific query parameters
+    // Caveats:
+    // - "?=value" is treated as query parameter with key "" and value "value"
+    // - "??" is treated as query parameter with key "?" and value ""
+    if (Array.isArray(stripQueryParams) && stripQueryParams.length > 0) {
+      const queryParams = urlObj.searchParams;
+      logInfo(MODULE_NAME, "cleanUrl:", `Query parameters to strip: ${stripQueryParams}`);
+      stripQueryParams.forEach(param => {
+        queryParams.delete(param);
+      });
+      urlObj.search = queryParams.toString();
+      const cleanedUrl = urlObj.toString();
+      logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", cleanedUrl);
+      return cleanedUrl;
+    }
+
+    const finalUrl = urlObj.toString();
+    logInfo(MODULE_NAME, "cleanUrl:", "Output URL:", finalUrl);
+    return finalUrl;
+  } catch (e) {
+    logError(MODULE_NAME, "cleanUrl:", "Error cleaning URL:", e);
+    return url;
+  }
+}
+
+/**
  * Injects data into the OpenRTB 2.x global fragments of the bid request object.
+ *
  * @param {Object} reqBidsConfigObj The main bid request configuration object.
  * @param {string} path The dot-notation path where the data should be injected (e.g., 'site.content.data').
  * @param {*} data The data to inject at the specified path.
@@ -109,6 +242,7 @@ export function injectOrtbData(reqBidsConfigObj, path, data) {
 
 /**
  * Builds an IAB category data object for use in OpenRTB.
+ *
  * @param {Object} marketingCategories Marketing Categories returned by Neuwo API.
  * @param {string[]} tiers The tier keys to extract from marketingCategories.
  * @param {number} segtax The IAB taxonomy version Id.
@@ -141,12 +275,13 @@ export function buildIabData(marketingCategories, tiers, segtax) {
 /**
  * Processes the Neuwo API response to build and inject IAB content and audience categories
  * into the bid request object.
- * @param {Object} responseJson The parsed JSON response from the Neuwo API.
+ *
+ * @param {Object} responseParsed The parsed JSON response from the Neuwo API.
  * @param {Object} reqBidsConfigObj The bid request configuration object to be modified.
  * @param {string} iabContentTaxonomyVersion The version of the IAB content taxonomy to use for segtax mapping.
  */
-function injectIabCategories(responseJson, reqBidsConfigObj, iabContentTaxonomyVersion) {
-  const marketingCategories = responseJson.marketing_categories;
+function injectIabCategories(responseParsed, reqBidsConfigObj, iabContentTaxonomyVersion) {
+  const marketingCategories = responseParsed.marketing_categories;
 
   if (!marketingCategories) {
     logError(MODULE_NAME, "injectIabCategories:", "No Marketing Categories in Neuwo API response.");

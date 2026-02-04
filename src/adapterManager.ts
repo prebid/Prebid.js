@@ -67,6 +67,7 @@ import type {
   AnalyticsConfig,
   AnalyticsProvider, AnalyticsProviderConfig,
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
+import {getGlobal} from "./prebidGlobal.ts";
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -168,6 +169,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
    */
   bidderRequestId: Identifier;
   auctionId: Identifier;
+  pageViewId: Identifier;
   /**
    * The bidder associated with this request, or null in the case of stored impressions.
    */
@@ -193,6 +195,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   gdprConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
   uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
   gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
+  alwaysHasCapacity?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -503,18 +506,27 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
+    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    const allowedBidders = new Set();
+
     adUnits.forEach(au => {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+        isS2S: serverBidders.includes(bid.bidder) && !clientBidders.includes(bid.bidder)
+      })))
+      au.bids.forEach(bid => {
+        allowedBidders.add(bid.bidder);
+      });
       incrementRequestsCounter(au.code);
     });
 
-    adUnits = setupAdUnitMediaTypes(adUnits, labels);
+    clientBidders = clientBidders.filter(bidder => allowedBidders.has(bidder));
+    serverBidders = serverBidders.filter(bidder => allowedBidders.has(bidder));
 
-    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
     if (config.getConfig('bidderSequence') === RANDOM) {
       clientBidders = shuffle(clientBidders);
@@ -554,6 +566,15 @@ const adapterManager = {
       return bidderRequest as T;
     }
 
+    const pbjsInstance = getGlobal();
+
+    function getPageViewIdForBidder(bidderCode: string | null): string {
+      if (!pbjsInstance.pageViewIdPerBidder.has(bidderCode)) {
+        pbjsInstance.pageViewIdPerBidder.set(bidderCode, generateUUID());
+      }
+      return pbjsInstance.pageViewIdPerBidder.get(bidderCode);
+    }
+
     _s2sConfigs.forEach(s2sConfig => {
       const s2sParams = s2sActivityParams(s2sConfig);
       if (s2sConfig && s2sConfig.enabled && dep.isAllowed(ACTIVITY_FETCH_BIDS, s2sParams)) {
@@ -564,11 +585,13 @@ const adapterManager = {
 
         (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
           const bidderRequestId = generateUUID();
+          const pageViewId = getPageViewIdForBidder(bidderCode);
           const metrics = auctionMetrics.fork();
           const bidderRequest = addOrtb2({
             bidderCode,
             auctionId,
             bidderRequestId,
+            pageViewId,
             uniquePbsTid,
             bids: getBids({
               bidderCode,
@@ -584,6 +607,7 @@ const adapterManager = {
             src: S2S.SRC,
             refererInfo,
             metrics,
+            alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -611,10 +635,13 @@ const adapterManager = {
     const adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
     clientBidders.forEach(bidderCode => {
       const bidderRequestId = generateUUID();
+      const pageViewId = getPageViewIdForBidder(bidderCode);
       const metrics = auctionMetrics.fork();
+      const adapter = _bidderRegistry[bidderCode];
       const bidderRequest = addOrtb2({
         bidderCode,
         auctionId,
+        pageViewId,
         bidderRequestId,
         bids: getBids({
           bidderCode,
@@ -629,8 +656,9 @@ const adapterManager = {
         timeout: cbTimeout,
         refererInfo,
         metrics,
+        src: 'client',
+        alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
       });
-      const adapter = _bidderRegistry[bidderCode];
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
       }

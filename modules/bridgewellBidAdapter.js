@@ -45,32 +45,81 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const adUnits = [];
-    var bidderUrl = REQUEST_ENDPOINT + Math.random();
+    const bidderUrl = REQUEST_ENDPOINT + Math.random();
 
     _each(validBidRequests, function (bid) {
+      const passthrough = bid.ortb2Imp?.ext?.prebid?.passthrough;
+      const filteredPassthrough = passthrough ? Object.fromEntries(
+        Object.entries({
+          bucket: passthrough.bucket,
+          client: passthrough.client,
+          gamAdCode: passthrough.gamAdCode,
+          gamLoc: passthrough.gamLoc,
+          colo: passthrough.colo,
+          device: passthrough.device,
+          lang: passthrough.lang,
+          pt: passthrough.pt,
+          region: passthrough.region,
+          site: passthrough.site,
+          ver: passthrough.ver
+        }).filter(([_, value]) => value !== undefined)
+      ) : undefined;
+
       const adUnit = {
         adUnitCode: bid.adUnitCode,
         requestId: bid.bidId,
+        transactionId: bid.transactionId,
+        adUnitId: bid.adUnitId,
+        sizes: bid.sizes,
         mediaTypes: bid.mediaTypes || {
           banner: {
             sizes: bid.sizes
           }
         },
-        userIds: bid.userId || {},
-        userIdAsEids: bid.userIdAsEids || {}
+        ortb2Imp: {
+          ext: {
+            prebid: {
+              passthrough: filteredPassthrough
+            },
+            data: {
+              adserver: {
+                name: bid.ortb2Imp?.ext?.data?.adserver?.name,
+                adslot: bid.ortb2Imp?.ext?.data?.adserver?.adslot
+              },
+              pbadslot: bid.ortb2Imp?.ext?.data?.pbadslot
+            },
+            gpid: bid.ortb2Imp?.ext?.gpid
+          },
+          banner: {
+            pos: bid.ortb2Imp?.banner?.pos
+          }
+        }
       };
-      if (bid.params.cid) {
+
+      if (bid.params?.cid) {
         adUnit.cid = bid.params.cid;
-      } else {
+      } else if (bid.params?.ChannelID) {
         adUnit.ChannelID = bid.params.ChannelID;
       }
+
+      let floorInfo = {};
+      if (typeof bid.getFloor === 'function') {
+        const mediaType = bid.mediaTypes?.banner ? BANNER : (bid.mediaTypes?.native ? NATIVE : '*');
+        const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
+        const size = sizes.length === 1 ? sizes[0] : '*';
+        floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+      }
+      adUnit.floor = floorInfo.floor;
+      adUnit.currency = floorInfo.currency;
       adUnits.push(adUnit);
     });
 
     let topUrl = '';
-    if (bidderRequest && bidderRequest.refererInfo) {
+    if (bidderRequest?.refererInfo?.page) {
       topUrl = bidderRequest.refererInfo.page;
     }
+
+    const firstBid = validBidRequests[0] || {};
 
     return {
       method: 'POST',
@@ -82,10 +131,23 @@ export const spec = {
         },
         inIframe: inIframe(),
         url: topUrl,
-        referrer: bidderRequest.refererInfo.ref,
+        referrer: bidderRequest?.refererInfo?.ref,
+        auctionId: firstBid?.auctionId,
+        bidderRequestId: firstBid?.bidderRequestId,
+        src: firstBid?.src,
+        userIds: firstBid?.userId || {},
+        userIdAsEids: firstBid?.userIdAsEids || [],
+        auctionsCount: firstBid?.auctionsCount,
+        bidRequestsCount: firstBid?.bidRequestsCount,
+        bidderRequestsCount: firstBid?.bidderRequestsCount,
+        bidderWinsCount: firstBid?.bidderWinsCount,
+        deferBilling: firstBid?.deferBilling,
+        metrics: firstBid?.metrics || {},
         adUnits: adUnits,
         // TODO: please do not send internal data structures over the network
-        refererInfo: bidderRequest.refererInfo.legacy},
+        refererInfo: bidderRequest?.refererInfo?.legacy,
+        ortb2: bidderRequest?.ortb2
+      },
       validBidRequests: validBidRequests
     };
   },

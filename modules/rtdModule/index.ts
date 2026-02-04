@@ -2,8 +2,8 @@ import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn, mergeDeep} from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
-import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
+import {EVENTS, JSON_MAPPING} from '../../src/constants.js';
+import adapterManager, {gdprDataHandler, gppDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
@@ -156,7 +156,6 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
-  const verifiers = [];
 
   if (!relevantSubModules.length) {
     return exitHook();
@@ -164,12 +163,31 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
 
   const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
   waitTimeout = setTimeout(exitHook, timeout);
+  const fpdKey = 'ortb2Fragments';
 
   relevantSubModules.forEach(sm => {
-    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
-    verifiers.push(fpdGuard.verify);
-    reqBidsConfigObj.ortb2Fragments = fpdGuard.obj;
-    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj[fpdKey] ?? {}, activityParams(MODULE_TYPE_RTD, sm.name));
+    // submodules need to be able to modify the request object, but we need
+    // to protect the FPD portion of it. Use a proxy that passes through everything
+    // except 'ortb2Fragments'.
+    const request = new Proxy(reqBidsConfigObj, {
+      get(target, prop, receiver) {
+        if (prop === fpdKey) return fpdGuard;
+        return Reflect.get(target, prop, receiver);
+      },
+      set(target, prop, value, receiver) {
+        if (prop === fpdKey) {
+          mergeDeep(fpdGuard, value);
+          return true;
+        }
+        return Reflect.set(target, prop, value, receiver);
+      },
+      deleteProperty(target, prop) {
+        if (prop === fpdKey) return true;
+        return Reflect.deleteProperty(target, prop)
+      }
+    })
+    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
   function onGetBidRequestDataCallback() {
@@ -190,7 +208,6 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
     isDone = true;
     clearTimeout(waitTimeout);
-    verifiers.forEach(fn => fn());
     fn.call(this, reqBidsConfigObj);
   }
 });
