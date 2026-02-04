@@ -1,17 +1,4 @@
 import {config} from '../../src/config.js';
-import {canAccessWindowTop, internal as utilsInternals} from '../../src/utils.js';
-
-/**
- * Returns the window to use for fingerprinting reads: win if provided, otherwise top or self.
- * @param {Window} [win]
- * @returns {Window}
- */
-export function getFallbackWindow(win) {
-  if (win) {
-    return win;
-  }
-  return canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
-}
 
 /**
  * Returns true if the given fingerprinting API is disabled via setConfig({ disableFingerprintingApis: [...] }).
