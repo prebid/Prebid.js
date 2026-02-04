@@ -138,8 +138,8 @@
                             params: {
                                 // REQUIRED PARAMETERS:
                                 host: 'na.edge.optable.co',      // Your DCN hostname
-                                site: 'js-sdk',             // Your site identifier
-                                node: 'prebidtest',                 // Your node identifier
+                                site: 'mediaco-sdk',             // Your site identifier
+                                node: 'mediaco',                 // Your node identifier
 
                                 // OPTIONAL PARAMETERS:
                                 cookies: false,                   // Cookie mode (default: true, set to false for cookieless)
@@ -162,13 +162,26 @@
 
             pbjs.addAdUnits(adUnits);
 
+            // Track if we've already displayed the data (only show once)
+            let displayedEnrichedData = false;
+
             pbjs.onEvent('bidRequested', function (data) {
                 try {
                     // Display the enriched user data from Optable RTD
-                    window.optable.cmd.push(() => {
+                    if (!displayedEnrichedData && data.ortb2 && data.ortb2.user) {
+                        console.log('Full bid request ortb2:', data.ortb2);
+                        console.log('User data:', data.ortb2.user);
+
+                        const userData = data.ortb2.user;
+                        const eidCount = userData.eids ? userData.eids.length : 0;
+                        const dataCount = userData.data ? userData.data.length : 0;
+
+                        console.log(`Found ${eidCount} EIDs and ${dataCount} data segments`);
+
                         document.getElementById('enriched-optable').style.display = 'block';
-                        document.getElementById('enriched-optable-data').textContent = JSON.stringify(data.ortb2.user, null, 2);
-                    });
+                        document.getElementById('enriched-optable-data').textContent = JSON.stringify(userData, null, 2);
+                        displayedEnrichedData = true;
+                    }
                 } catch (e) {
                     console.error('Exception while trying to display enriched data', e);
                 }

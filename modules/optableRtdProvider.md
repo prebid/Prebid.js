@@ -14,14 +14,43 @@ Prebid.js minimum version: 9.53.2+, or 10.2+
 
 Optable RTD submodule enriches the OpenRTB bid request by populating `user.ext.eids` and `user.data` using an identity graph and audience segmentation service hosted by Optable on behalf of the publisher.
 
-**This RTD module calls the Optable targeting API directly**, without requiring the Optable Web SDK to be loaded on the page. The module handles:
+**This module supports TWO modes of operation with automatic detection:**
 
-- Direct API calls to your Optable DCN for targeting data
-- Automatic consent extraction from Prebid consent modules (GPP/GDPR)
-- Identifier collection from both configuration and Prebid userId module
-- Passport (visitor ID) management for cookieless targeting
-- Response caching in localStorage for performance
-- ORTB2 data enrichment for bid requests
+### Mode 1: Web SDK Mode (Recommended for ad server targeting)
+
+Uses Optable Web SDK loaded on page via event-based integration.
+
+**Setup:**
+- Load Optable Web SDK: `<script src="https://[dcn].cdn.optable.co/[site]-sdk.js"></script>`
+- Configure RTD module with optional params only
+
+**Features:**
+- Bid request enrichment (EIDs passed to SSPs)
+- Ad server targeting (key-values for GAM/other ad servers)
+- Event-based (waits for 'optable-targeting:change' event)
+- SDK handles API calls, consent, caching, etc.
+
+### Mode 2: Direct API Mode (Lightweight, SDK-less)
+
+Makes direct HTTP calls to Optable targeting API without any external SDK.
+
+**Setup:**
+- No SDK required - module makes direct HTTPS GET requests
+- Configure RTD module with host, site, node parameters
+
+**Features:**
+- Bid request enrichment (EIDs passed to SSPs)
+- NO ad server targeting (use SDK mode for this)
+- Cache-first with fallback strategy (fast page loads)
+- Consent from Prebid's userConsent parameter (no CMP calls)
+- Timeout derived from auctionDelay (automatic)
+
+### Mode Detection
+
+The module automatically detects which mode to use:
+1. If `window.optable` is present → SDK mode
+2. If SDK absent but host/site/node configured → Direct API mode
+3. If neither → Error
 
 ## Usage
 
@@ -39,7 +68,30 @@ gulp build --modules="rtdModule,optableRtdProvider,appnexusBidAdapter,..."
 
 This module is configured as part of the `realTimeData.dataProviders`.
 
-**Basic Configuration:**
+**SDK Mode Configuration (with Optable Web SDK loaded):**
+
+```javascript
+// Load SDK first in your page:
+// <script src="https://[dcn].cdn.optable.co/[site]-sdk.js"></script>
+
+pbjs.setConfig({
+  debug: true,
+  realTimeData: {
+    dataProviders: [
+      {
+        name: 'optable',
+        waitForIt: true,
+        params: {
+          adserverTargeting: true,  // Enable ad server targeting
+          instance: 'instance'       // SDK instance name (default: 'instance')
+        },
+      },
+    ],
+  },
+});
+```
+
+**Direct API Mode Configuration (SDK-less):**
 
 ```javascript
 pbjs.setConfig({
@@ -103,20 +155,21 @@ pbjs.setConfig({
 
 ### Parameters
 
-| Name              | Type     | Description                                                                                                                                                                                                                              | Default | Required |
-|-------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|----------|
-| name              | String   | Real time data module name                                                                                                                                                                                                               | Always `optable` | Yes |
-| waitForIt         | Boolean  | Should be set to `true` to ensure targeting data is available before auction                                                                                                                                                            | `false` | Recommended |
-| params            | Object   | Configuration parameters                                                                                                                                                                                                                 |         | Yes |
-| params.host       | String   | Your Optable DCN hostname (e.g., `dcn.customer.com`)                                                                                                                                                                                    | None    | **Yes** |
-| params.site       | String   | Site identifier configured in your DCN                                                                                                                                                                                                   | None    | **Yes** |
-| params.node       | String   | Node identifier for your DCN                                                                                                                                                                                                             | None    | **Yes** |
-| params.cookies    | Boolean  | Cookie mode. Set to `false` for cookieless targeting using passport                                                                                                                                                                     | `true`  | No |
-| params.timeout    | String   | API timeout hint (e.g., `"500ms"`)                                                                                                                                                                                                      | `null`  | No |
-| params.cacheFallbackTimeout | Number   | Milliseconds to wait for fresh API data before falling back to cache. When cache exists, module tries API first; if response takes longer than this timeout, cached data is used instead. Should match or be slightly less than `auctionDelay` for best results. | `150`   | No |
-| params.ids        | Array    | Array of user identifier strings. These are combined with identifiers auto-extracted from Prebid userId module                                                                                                                          | `[]`    | No |
-| params.hids       | Array    | Array of household identifier strings                                                                                                                                                                                                    | `[]`    | No |
-| params.handleRtd  | Function | Custom function to handle/enrich RTD data. Function signature: `(reqBidsConfigObj, targetingData, mergeFn) => {}`. If not provided, the module uses a default handler that merges targeting data into ortb2Fragments.global            | `null`  | No |
+| Name              | Type     | Description                                                                                                                                                                                                                              | Default | Required | Mode |
+|-------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|----------|------|
+| name              | String   | Real time data module name                                                                                                                                                                                                               | Always `optable` | Yes | Both |
+| waitForIt         | Boolean  | Should be set to `true` to ensure targeting data is available before auction                                                                                                                                                            | `false` | Recommended | Both |
+| params            | Object   | Configuration parameters                                                                                                                                                                                                                 |         | Yes | Both |
+| **params.adserverTargeting** | **Boolean** | **Enable ad server targeting key-values (SDK mode only)** | **`true`** | **No** | **SDK** |
+| **params.instance** | **String** | **SDK instance name** | **`'instance'`** | **No** | **SDK** |
+| params.host       | String   | Your Optable DCN hostname (e.g., `dcn.customer.com`)                                                                                                                                                                                    | None    | **Yes** | Direct API |
+| params.site       | String   | Site identifier configured in your DCN                                                                                                                                                                                                   | None    | **Yes** | Direct API |
+| params.node       | String   | Node identifier for your DCN                                                                                                                                                                                                             | None    | **Yes** | Direct API |
+| params.cookies    | Boolean  | Cookie mode. Set to `false` for cookieless targeting using passport                                                                                                                                                                     | `true`  | No | Direct API |
+| params.timeout    | String   | API timeout hint (e.g., `"500ms"`)                                                                                                                                                                                                      | `null`  | No | Direct API |
+| params.ids        | Array    | Array of user identifier strings. These are combined with identifiers auto-extracted from Prebid userId module                                                                                                                          | `[]`    | No | Direct API |
+| params.hids       | Array    | Array of household identifier strings                                                                                                                                                                                                    | `[]`    | No | Direct API |
+| params.handleRtd  | Function | Custom function to handle/enrich RTD data. Function signature: `(reqBidsConfigObj, targetingData, mergeFn) => {}`. If not provided, the module uses a default handler that merges targeting data into ortb2Fragments.global            | `null`  | No | Both |
 
 ## How It Works
 

@@ -1,5 +1,9 @@
+/**
+ * Optable Real-Time Data (RTD) Provider Module for Prebid.js
+ * See modules/optableRtdProvider.md for full documentation
+ */
+
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-import {config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
 import {deepAccess, mergeDeep, prefixLog} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
@@ -11,52 +15,57 @@ const optableLog = prefixLog(LOG_PREFIX);
 const {logMessage, logWarn, logError} = optableLog;
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
 
-// localStorage key for targeting cache
+// localStorage key for targeting cache (direct API mode only)
 const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
 
-// Storage key prefix for passport (visitor ID) - matches Web SDK format
+// Storage key prefix for passport (visitor ID) - compatible with Web SDK format
 const PASSPORT_KEY_PREFIX = 'OPTABLE_PASSPORT_';
 
 /**
- * Extracts the parameters for Optable RTD module from the config object passed at instantiation
+ * Parse and validate module configuration
  * @param {Object} moduleConfig Configuration object for the module
  * @returns {Object} Parsed configuration
  */
 export const parseConfig = (moduleConfig) => {
-  // Required parameters
+  // Check for deprecated bundleUrl parameter
+  const bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
+  if (bundleUrl) {
+    logError('bundleUrl parameter is no longer supported. Please either: (1) Load Optable SDK directly in your page HTML, OR (2) Switch to Direct API mode using host/site/node parameters. See migration guide: https://docs.prebid.org/dev-docs/modules/optableRtdProvider.html');
+    return null;
+  }
+
   const host = deepAccess(moduleConfig, 'params.host', null);
   const site = deepAccess(moduleConfig, 'params.site', null);
   const node = deepAccess(moduleConfig, 'params.node', null);
+  const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
+  const instance = deepAccess(moduleConfig, 'params.instance', null);
 
-  // Validate required parameters
-  if (!host || typeof host !== 'string') {
-    logError('host parameter is required and must be a string');
+  const hasDirectApiConfig = host && site && node;
+
+  if (host !== null && (typeof host !== 'string' || !host.trim())) {
+    logError('host parameter must be a non-empty string');
     return null;
   }
-  if (!site || typeof site !== 'string') {
-    logError('site parameter is required and must be a string');
+  if (site !== null && (typeof site !== 'string' || !site.trim())) {
+    logError('site parameter must be a non-empty string');
     return null;
   }
-  if (!node || typeof node !== 'string') {
-    logError('node parameter is required and must be a string');
+  if (node !== null && (typeof node !== 'string' || !node.trim())) {
+    logError('node parameter must be a non-empty string');
     return null;
   }
 
-  // Optional parameters
   const cookies = deepAccess(moduleConfig, 'params.cookies', true);
   const timeout = deepAccess(moduleConfig, 'params.timeout', null);
-  const cacheFallbackTimeout = deepAccess(moduleConfig, 'params.cacheFallbackTimeout', 150);
   const ids = deepAccess(moduleConfig, 'params.ids', []);
   const hids = deepAccess(moduleConfig, 'params.hids', []);
   const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
 
-  // Validate handleRtd if provided
   if (handleRtd && typeof handleRtd !== 'function') {
     logError('handleRtd must be a function');
     return null;
   }
 
-  // Validate ids and hids are arrays
   if (!Array.isArray(ids)) {
     logError('ids parameter must be an array');
     return null;
@@ -67,15 +76,17 @@ export const parseConfig = (moduleConfig) => {
   }
 
   return {
-    host: host.trim(),
-    site: site.trim(),
-    node: node.trim(),
+    host: host ? host.trim() : null,
+    site: site ? site.trim() : null,
+    node: node ? node.trim() : null,
     cookies,
     timeout,
-    cacheFallbackTimeout,
     ids,
     hids,
-    handleRtd
+    handleRtd,
+    adserverTargeting,
+    instance,
+    hasDirectApiConfig
   };
 }
 
@@ -177,58 +188,74 @@ const setCachedTargeting = (targetingData) => {
 };
 
 /**
- * Read consent from CMP APIs directly (fallback when Prebid consent not available)
- * @returns {Object} Consent object
+ * Check if Optable Web SDK is available on the page
+ * @param {string|null} instance SDK instance name (default: 'instance')
+ * @returns {boolean} True if SDK is available
  */
-const getConsentFromCMPAPIs = () => {
-  const consent = {
-    deviceAccess: true,
-    gpp: null,
-    gppSectionIDs: null,
-    gdpr: null,
-    gdprApplies: null
-  };
-
-  // Try to read from GPP CMP API
-  if (typeof window.__gpp === 'function') {
-    try {
-      window.__gpp('ping', (data, success) => {
-        if (success && data) {
-          consent.gpp = data.gppString || null;
-          consent.gppSectionIDs = data.applicableSections || null;
-        }
-      });
-    } catch (e) {
-      logWarn('Failed to read GPP consent from CMP API', e);
-    }
-  }
-
-  // Try to read from TCF CMP API
-  if (typeof window.__tcfapi === 'function') {
-    try {
-      window.__tcfapi('getTCData', 2, (data, success) => {
-        if (success && data) {
-          consent.gdpr = data.tcString || null;
-          consent.gdprApplies = data.gdprApplies;
-          // TCF Purpose 1 = device access and storage
-          // Check both vendor consents and publisher consents
-          const purpose1Consent = data.purpose?.consents?.[1] || data.publisher?.consents?.[1];
-          consent.deviceAccess = purpose1Consent !== undefined ? purpose1Consent : true;
-        }
-      });
-    } catch (e) {
-      logWarn('Failed to read TCF consent from CMP API', e);
-    }
-  }
-
-  return consent;
+const isSDKAvailable = (instance = null) => {
+  const instanceKey = instance || 'instance';
+  return typeof window !== 'undefined' &&
+         window.optable &&
+         window.optable[instanceKey] &&
+         typeof window.optable[instanceKey].targeting === 'function';
 };
 
 /**
- * Extract consent information from Prebid config (with fallback to CMP APIs)
+ * Wait for Optable SDK event to fire with targeting data
+ * @param {string} eventName Name of the event to listen for
+ * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
+ */
+const waitForOptableEvent = (eventName) => {
+  return new Promise((resolve) => {
+    const optableBundle = /** @type {Object} */ (window.optable);
+    const cachedData = optableBundle?.instance?.targetingFromCache();
+
+    if (cachedData && cachedData.ortb2) {
+      logMessage('Optable SDK already has cached data');
+      resolve(cachedData);
+      return;
+    }
+
+    const eventListener = (event) => {
+      logMessage(`Received ${eventName} event`);
+      const targetingData = event.detail;
+      window.removeEventListener(eventName, eventListener);
+      resolve(targetingData);
+    };
+
+    window.addEventListener(eventName, eventListener);
+    logMessage(`Waiting for ${eventName} event`);
+  });
+};
+
+/**
+ * Handle RTD data using SDK mode (event-based)
+ * @param {Function} handleRtdFn Custom handler function or default
+ * @param {Object} reqBidsConfigObj Bid request configuration
+ * @param {Function} mergeFn Merge function
+ * @returns {Promise<void>}
+ */
+const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn) => {
+  const targetingData = await waitForOptableEvent('optable-targeting:change');
+
+  if (!targetingData || !targetingData.ortb2) {
+    logWarn('No targeting data from SDK event');
+    return;
+  }
+
+  if (handleRtdFn.constructor.name === 'AsyncFunction') {
+    await handleRtdFn(reqBidsConfigObj, targetingData, mergeFn);
+  } else {
+    handleRtdFn(reqBidsConfigObj, targetingData, mergeFn);
+  }
+};
+
+/**
+ * Extract consent information from Prebid's userConsent parameter
+ * @param {Object} userConsent User consent object passed by Prebid RTD framework
  * @returns {Object} Consent object with GPP, GDPR strings, and deviceAccess flag
  */
-const getConsentFromPrebid = () => {
+const extractConsent = (userConsent) => {
   const consent = {
     deviceAccess: true,
     gpp: null,
@@ -237,33 +264,25 @@ const getConsentFromPrebid = () => {
     gdprApplies: null
   };
 
-  // Try to get GPP consent from Prebid
-  const gppConsent = config.getConfig('consentManagement.gpp');
-  if (gppConsent) {
-    consent.gpp = gppConsent.gppString || null;
-    consent.gppSectionIDs = gppConsent.applicableSections || null;
+  // Extract GPP consent if available
+  if (userConsent?.gpp) {
+    consent.gpp = userConsent.gpp.gppString || null;
+    consent.gppSectionIDs = userConsent.gpp.applicableSections || null;
   }
 
-  // Try to get GDPR consent from Prebid
-  const gdprConsent = config.getConfig('consentManagement.gdpr');
-  if (gdprConsent && gdprConsent.gdprApplies !== undefined) {
-    consent.gdprApplies = gdprConsent.gdprApplies;
-    consent.gdpr = gdprConsent.consentString || null;
+  // Extract GDPR consent if available
+  if (userConsent?.gdpr) {
+    consent.gdprApplies = userConsent.gdpr.gdprApplies;
+    consent.gdpr = userConsent.gdpr.consentString || null;
 
-    // Compute deviceAccess from TCF Purpose 1 if available
-    if (gdprConsent.vendorData) {
-      const purpose1Consent = gdprConsent.vendorData.purpose?.consents?.[1] ||
-                              gdprConsent.vendorData.publisher?.consents?.[1];
+    // Extract deviceAccess from TCF Purpose 1 if available
+    if (userConsent.gdpr.vendorData) {
+      const purpose1Consent = userConsent.gdpr.vendorData.purpose?.consents?.[1] ||
+                              userConsent.gdpr.vendorData.publisher?.consents?.[1];
       if (purpose1Consent !== undefined) {
         consent.deviceAccess = purpose1Consent;
       }
     }
-  }
-
-  // If Prebid consent is empty, try CMP APIs directly
-  // This handles the case where RTD runs before consent modules initialize
-  if (!consent.gpp && !consent.gdpr) {
-    return getConsentFromCMPAPIs();
   }
 
   return consent;
@@ -303,23 +322,14 @@ const buildTargetingURL = (params) => {
 
   const searchParams = new URLSearchParams();
 
-  // Add identifiers
   ids.forEach(id => searchParams.append('id', id));
   hids.forEach(hid => searchParams.append('hid', hid));
 
-  // Add site identifier (required)
   searchParams.set('o', site);
-
-  // Add node identifier (required)
   searchParams.set('t', node);
-
-  // Add session ID (for analytics)
   searchParams.set('sid', sessionId);
-
-  // Add SDK identifier (for server-side analytics)
   searchParams.set('osdk', 'prebid-rtd-1.0.0');
 
-  // Add consent parameters
   if (consent.gpp) {
     searchParams.set('gpp', consent.gpp);
   }
@@ -333,7 +343,6 @@ const buildTargetingURL = (params) => {
     searchParams.set('gdpr', consent.gdprApplies ? '1' : '0');
   }
 
-  // Add cookie mode and passport
   if (cookies) {
     searchParams.set('cookies', 'yes');
   } else {
@@ -341,7 +350,6 @@ const buildTargetingURL = (params) => {
     searchParams.set('passport', passport || '');
   }
 
-  // Add timeout hint if provided
   if (timeout) {
     searchParams.set('timeout', timeout);
   }
@@ -375,7 +383,7 @@ const callTargetingAPI = (params) => {
           if (response.passport) {
             logMessage('Updating passport from API response');
             setPassport(host, node, response.passport);
-            // Remove passport from response to prevent it leaking into targeting
+            // Remove passport from response to prevent it being included in bid requests
             delete response.passport;
           }
 
@@ -417,14 +425,15 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn) => {
 
 /**
  * Main function called by Prebid to get bid request data
- * @param {Object} reqBidsConfigObj Bid request configuration object
- * @param {Function} callback Called on completion
- * @param {Object} moduleConfig Configuration for Optable RTD module
- * @param {Object} userConsent User consent object
+ * Automatically detects SDK mode or Direct API mode
+ * @param {Object} reqBidsConfigObj Bid request configuration object from Prebid
+ * @param {Function} callback Must be called when complete to continue auction
+ * @param {Object} moduleConfig RTD module configuration from pbjs.setConfig()
+ * @param {Object} userConsent User consent object from Prebid (GDPR/GPP/USP)
+ * @param {number} timeout Timeout in ms from RTD framework (derived from auctionDelay config)
  */
-export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
+export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig, userConsent, timeout) => {
   try {
-    // Parse and validate configuration
     const parsedConfig = parseConfig(moduleConfig);
     if (!parsedConfig) {
       logError('Invalid configuration, skipping Optable RTD');
@@ -432,31 +441,58 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       return;
     }
 
-    const {host, site, node, cookies, timeout, cacheFallbackTimeout, ids: configIds, hids: configHids, handleRtd} = parsedConfig;
+    const {host, site, node, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig} = parsedConfig;
     const handleRtdFn = handleRtd || defaultHandleRtd;
 
+    // Mode 1: SDK mode - If Optable Web SDK is loaded (window.optable), use its event system
+    // instead of making direct API calls. SDK handles caching, consent, and provides ad server targeting.
+    if (isSDKAvailable(instance)) {
+      logMessage('Optable Web SDK detected, using SDK mode');
+      logMessage('Waiting for SDK to dispatch targeting data via event');
+
+      await handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep);
+      callback();
+      return;
+    }
+
+    // Mode 2: Direct API mode - Make direct HTTP calls to Optable targeting API.
+    // No ad server targeting support, but lighter weight (no external SDK required).
+    if (!hasDirectApiConfig) {
+      logError('Neither Web SDK nor direct API configuration found. Please configure host, site, and node parameters, or load the Optable Web SDK.');
+      callback();
+      return;
+    }
+
+    logMessage('Using direct API mode (SDK not detected)');
+
+    const effectiveTimeout = (timeout && timeout > 100) ? timeout - 100 : configTimeout;
+
     logMessage(`Configuration: host=${host}, site=${site}, node=${node}, cookies=${cookies}`);
+    if (effectiveTimeout) {
+      logMessage(`Timeout: ${effectiveTimeout}ms${timeout ? ` (derived from auctionDelay: ${timeout}ms - 100ms)` : ' (from config)'}`);
+    }
 
-    // Generate session ID and extract consent (needed for both cache hit and miss)
     const sessionId = generateSessionID();
-    const consent = getConsentFromPrebid();
+    const consent = extractConsent(userConsent);
 
-    // Step 1: Check cache - if found, try API first with cache fallback
+    logMessage(`Session ID: ${sessionId}`);
+    logMessage(`Consent: GPP=${!!consent.gpp}, GDPR=${!!consent.gdpr}`);
+
+    const {ids, hids} = extractIdentifiers(configIds, configHids, reqBidsConfigObj);
+    logMessage(`Identifiers: ${ids.length} id(s), ${hids.length} hid(s)`);
+
+    const passport = getPassport(host, node);
+    logMessage(`Passport: ${passport ? 'found' : 'not found'}`);
+
+    // Check if we have cached data - if so, use it immediately and update in background
     const cachedData = getCachedTargeting();
     if (cachedData) {
-      logMessage('Cache found, trying API-first with cache fallback');
-      logMessage(`Cache fallback timeout: ${cacheFallbackTimeout}ms`);
+      logMessage('Cache found, using cached data and updating in background');
+      handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep);
+      callback();
 
-      // Extract identifiers from config and Prebid userId module
-      const {ids, hids} = extractIdentifiers(configIds, configHids, reqBidsConfigObj);
-      logMessage(`Identifiers: ${ids.length} id(s), ${hids.length} hid(s)`);
-
-      // Get passport from localStorage
-      const passport = getPassport(host, node);
-      logMessage(`Passport: ${passport ? 'found' : 'not found'}`);
-
-      // Start API call
-      const apiPromise = callTargetingAPI({
+      // Update cache in background (don't await)
+      callTargetingAPI({
         host,
         site,
         node,
@@ -466,66 +502,24 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
         sessionId,
         passport,
         cookies,
-        timeout
-      });
-
-      // Create timeout promise
-      const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => resolve(null), cacheFallbackTimeout);
-      });
-
-      // Race API call against timeout
-      const targetingData = await Promise.race([apiPromise, timeoutPromise]);
-
-      if (targetingData) {
-        // API returned in time - use fresh data
-        logMessage('API returned in time, using fresh targeting data');
-        handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep);
-
-        // Update cache and passport
-        setCachedTargeting(targetingData);
-        if (targetingData.passport) {
-          setPassport(host, node, targetingData.passport);
-        }
-
-        callback();
-      } else {
-        // Timeout - use cached data but keep waiting for API
-        logMessage('Timeout reached, using cached targeting data');
-        handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep);
-        callback();
-
-        // Continue waiting for API to update cache in background
-        logMessage('Waiting for API to complete in background to update cache');
-        apiPromise.then(data => {
-          if (data) {
-            logMessage('Background API call completed, cache updated');
-            setCachedTargeting(data);
-            if (data.passport) {
-              setPassport(host, node, data.passport);
-            }
+        timeout: effectiveTimeout
+      }).then(data => {
+        if (data) {
+          logMessage('Background API call completed, cache updated');
+          setCachedTargeting(data);
+          if (data.passport) {
+            setPassport(host, node, data.passport);
           }
-        }).catch(error => {
-          logWarn('Background API call failed:', error);
-        });
-      }
+        }
+      }).catch(error => {
+        logWarn('Background API call failed:', error);
+      });
 
       return;
     }
 
-    // Step 2: No cache found - make targeting API call
-    logMessage(`Session ID: ${sessionId}`);
-    logMessage(`Consent: GPP=${!!consent.gpp}, GDPR=${!!consent.gdpr}`);
-
-    // Extract identifiers from config and Prebid userId module
-    const {ids, hids} = extractIdentifiers(configIds, configHids, reqBidsConfigObj);
-    logMessage(`Identifiers: ${ids.length} id(s), ${hids.length} hid(s)`);
-
-    // Get passport from localStorage
-    const passport = getPassport(host, node);
-    logMessage(`Passport: ${passport ? 'found' : 'not found'}`);
-
-    // Call targeting API
+    // No cache - wait for API call
+    logMessage('No cache found, waiting for API call');
     const targetingData = await callTargetingAPI({
       host,
       site,
@@ -536,7 +530,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       sessionId,
       passport,
       cookies,
-      timeout
+      timeout: effectiveTimeout
     });
 
     if (!targetingData) {
@@ -545,15 +539,11 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       return;
     }
 
-    // Step 3: Cache the response
     setCachedTargeting(targetingData);
-
-    // Step 4: Merge targeting data into bid request
     handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep);
 
     callback();
   } catch (error) {
-    // If an error occurs, log it and call the callback to continue with the auction
     logError('getBidRequestData error: ', error);
     callback();
   }
@@ -561,20 +551,69 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
 
 /**
  * Get Optable targeting data and merge it into the ad units
- * Note: Ad server targeting requires the Optable Web SDK. This RTD module
- * focuses on enriching bid requests with EIDs. For ad server targeting,
- * please use the Optable Web SDK alongside this RTD module.
+ * Only works when Optable Web SDK is present on the page
  *
  * @param adUnits Array of ad units
  * @param moduleConfig Module configuration
  * @param userConsent User consent
  * @param auction Auction object
- * @returns {Object} Empty object (ad server targeting not supported without Web SDK)
+ * @returns {Object} Targeting data (empty object if SDK not available)
  */
 export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) => {
-  logMessage('getTargetingData: Ad server targeting not supported in direct API mode');
-  logMessage('For ad server targeting, please use the Optable Web SDK');
-  return {};
+  const parsedConfig = parseConfig(moduleConfig);
+  if (!parsedConfig) {
+    logWarn('Invalid configuration in getTargetingData');
+    return {};
+  }
+
+  const {adserverTargeting, instance} = parsedConfig;
+
+  if (!isSDKAvailable(instance)) {
+    logMessage('getTargetingData: Web SDK not available, ad server targeting disabled');
+    logMessage('For ad server targeting, please load the Optable Web SDK');
+    return {};
+  }
+
+  if (!adserverTargeting) {
+    logMessage('Ad server targeting is disabled via config');
+    return {};
+  }
+
+  const instanceKey = instance || 'instance';
+  const sdkInstance = window?.optable?.[instanceKey];
+
+  if (!sdkInstance || !sdkInstance.targetingKeyValuesFromCache) {
+    logWarn(`No Optable SDK instance found for: ${instanceKey}`);
+    return {};
+  }
+
+  const optableTargetingData = sdkInstance.targetingKeyValuesFromCache() || {};
+
+  if (!Object.keys(optableTargetingData).length) {
+    logWarn('No Optable targeting data found in SDK cache');
+    return {};
+  }
+
+  const targetingData = {};
+  adUnits.forEach(adUnit => {
+    targetingData[adUnit] = targetingData[adUnit] || {};
+    mergeDeep(targetingData[adUnit], optableTargetingData);
+  });
+
+  Object.keys(targetingData).forEach((adUnit) => {
+    Object.keys(targetingData[adUnit]).forEach((key) => {
+      if (!targetingData[adUnit][key] || !targetingData[adUnit][key].length) {
+        delete targetingData[adUnit][key];
+      }
+    });
+
+    if (!Object.keys(targetingData[adUnit]).length) {
+      delete targetingData[adUnit];
+    }
+  });
+
+  logMessage('Ad server targeting data:', targetingData);
+  return targetingData;
 };
 
 /**
