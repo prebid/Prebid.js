@@ -56,12 +56,6 @@ const RemoveDuplicateSizes = (validBid) => {
   }
 };
 
-const ConfigureProtectedAudience = (validBid, protectedAudienceEnabled) => {
-  if (!protectedAudienceEnabled && validBid.ortb2Imp && validBid.ortb2Imp.ext) {
-    delete validBid.ortb2Imp.ext.ae;
-  }
-}
-
 const getRequests = (conf, validBidRequests, bidderRequest) => {
   const {bids, bidderRequestId, bidderCode, ...bidderRequestData} = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
@@ -71,7 +65,6 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
     const currSiteId = validBid.params.siteId;
     addBidFloorInfo(validBid);
     RemoveDuplicateSizes(validBid);
-    ConfigureProtectedAudience(validBid, conf.protectedAudienceEnabled);
     requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || [];
     requestBySiteId[currSiteId].push(validBid);
   });
@@ -226,43 +219,18 @@ export const adapter = {
       'options': {
         'contentType': 'application/json'
       },
-      'protectedAudienceEnabled': bidderRequest.paapi?.enabled
     }, validBidRequests, bidderRequest);
   },
 
   interpretResponse: function (serverResponse) {
-    if (!(serverResponse && serverResponse.body && (serverResponse.body.auctionConfigs || serverResponse.body.bids))) {
+    if (!(serverResponse && serverResponse.body && serverResponse.body.bids)) {
       return [];
     }
 
     const serverResponseBody = serverResponse.body;
-    let bids = [];
-    let fledgeAuctionConfigs = null;
-    if (serverResponseBody.bids.length) {
-      bids = handleBidResponseByMediaType(serverResponseBody.bids);
-    }
+    const bids = handleBidResponseByMediaType(serverResponseBody.bids);
 
-    if (serverResponseBody.auctionConfigs) {
-      const auctionConfigs = serverResponseBody.auctionConfigs;
-      const bidIdList = Object.keys(auctionConfigs);
-      if (bidIdList.length) {
-        bidIdList.forEach((bidId) => {
-          fledgeAuctionConfigs = [{
-            'bidId': bidId,
-            'config': auctionConfigs[bidId]
-          }];
-        })
-      }
-    }
-
-    if (!fledgeAuctionConfigs) {
-      return bids;
-    }
-
-    return {
-      bids,
-      paapi: fledgeAuctionConfigs
-    };
+    return bids;
   }
 };
 

@@ -135,6 +135,15 @@ export interface AuctionOptionsConfig {
    * When true, prevent bids from being rendered if TTL is reached. Default is false.
    */
   suppressExpiredRender?: boolean;
+
+  /**
+   * If true, use legacy rendering logic.
+   *
+   * Since Prebid 10.12, `pbjs.renderAd` wraps creatives in an additional iframe. This can cause problems for some creatives
+   * that try to reach the top window and do not expect to find the extra iframe. You may set `legacyRender: true` to revert
+   * to pre-10.12 rendering logic.
+   */
+  legacyRender?: boolean;
 }
 
 export interface PriceBucketConfig {
@@ -366,6 +375,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         let requests = 1;
         const source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC) ? 's2s'
           : bidRequest.bidderCode;
+
+        // if the bidder has alwaysHasCapacity flag set and forceMaxRequestsPerOrigin is false, don't check capacity
+        if (bidRequest.alwaysHasCapacity && !config.getConfig('forceMaxRequestsPerOrigin')) {
+          return false;
+        }
+
         // if we have no previous info on this source just let them through
         if (sourceInfo[source]) {
           if (sourceInfo[source].SRA === false) {

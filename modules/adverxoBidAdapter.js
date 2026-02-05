@@ -21,14 +21,16 @@ const BIDDER_CODE = 'adverxo';
 const ALIASES = [
   {code: 'adport', skipPbsAliasing: true},
   {code: 'bidsmind', skipPbsAliasing: true},
-  {code: 'harrenmedia', skipPbsAliasing: true}
+  {code: 'harrenmedia', skipPbsAliasing: true},
+  {code: 'alchemyx', skipPbsAliasing: true}
 ];
 
 const AUCTION_URLS = {
   adverxo: 'js.pbsadverxo.com',
   adport: 'ayuetina.com',
   bidsmind: 'arcantila.com',
-  harrenmedia: 'harrenmediaprebid.com'
+  harrenmedia: 'harrenmediaprebid.com',
+  alchemyx: 'alchemyx.one'
 };
 
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
