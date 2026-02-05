@@ -130,7 +130,7 @@
             pbjs.setConfig({
                 debug: true, // use only for testing, remove in production
                 realTimeData: {
-                    auctionDelay: 2500, // should be set lower in production use
+                    auctionDelay: 1000, // should be set lower in production use
                     dataProviders: [
                         {
                             name: 'optable',
@@ -138,8 +138,8 @@
                             params: {
                                 // REQUIRED PARAMETERS:
                                 host: 'na.edge.optable.co',      // Your DCN hostname
-                                site: 'mediaco-sdk',             // Your site identifier
-                                node: 'mediaco',                 // Your node identifier
+                                site: 'prebidtest-sdk',             // Your site identifier
+                                node: 'prebidtest',                 // Your node identifier
 
                                 // OPTIONAL PARAMETERS:
                                 cookies: false,                   // Cookie mode (default: true, set to false for cookieless)
