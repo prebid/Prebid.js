@@ -32,6 +32,7 @@ import {
   TRACKER_METHOD_IMG,
   TRACKER_METHOD_JS
 } from '../../../../src/eventTrackers.js';
+import 'src/prebid.js';
 var events = require('../../../../src/events.js');
 
 const CONFIG = {
@@ -1813,6 +1814,18 @@ describe('adapterManager tests', function () {
 
       expect(sizes1).not.to.deep.equal(sizes2);
     });
+
+    it('should transfer elementSelector from ad unit', () => {
+      adUnits[0].elementSelector = 'test';
+      const requests = makeBidRequests();
+      requests.flatMap(req => req.bids).forEach(bidRequest => {
+        if (bidRequest.adUnitCode === adUnits[0].code) {
+          expect(bidRequest.elementSelector).to.equal('test');
+        } else {
+          expect(bidRequest.elementSelector).to.not.exist;
+        }
+      });
+    })
 
     it('should transfer deferBilling from ad unit', () => {
       adUnits[0].deferBilling = true;
