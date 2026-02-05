@@ -579,6 +579,8 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
     return {};
   }
 
+  // Resolve the SDK instance object based on the instance string
+  // Default to 'instance' if not provided
   const instanceKey = instance || 'instance';
   const sdkInstance = window?.optable?.[instanceKey];
 
@@ -607,12 +609,13 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
       }
     });
 
+    // If the key contains no data, remove it
     if (!Object.keys(targetingData[adUnit]).length) {
       delete targetingData[adUnit];
     }
   });
 
-  logMessage('Ad server targeting data:', targetingData);
+  logMessage('Optable targeting data: ', targetingData);
   return targetingData;
 };
 
