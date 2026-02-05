@@ -557,6 +557,7 @@ describe('secureCreatives', () => {
         })
       };
       sandbox.stub(document, 'getElementById');
+      sandbox.stub(document, 'querySelector');
     })
 
     it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
@@ -595,7 +596,7 @@ describe('secureCreatives', () => {
         width: 300,
         height: 250,
       });
-      sinon.assert.calledWith(document.getElementById, 'adUnit');
+      sinon.assert.calledWith(document.querySelector, '#adUnit');
     });
 
     it('should find elements for ad units that are not apn tags', () => {
@@ -608,7 +609,7 @@ describe('secureCreatives', () => {
         height: 250,
       });
       sinon.assert.calledWith(window.apntag.getTag, 'adUnit');
-      sinon.assert.calledWith(document.getElementById, 'adUnit');
+      sinon.assert.calledWith(document.querySelector, '#adUnit');
     });
 
     it('should not resize interstitials', () => {
