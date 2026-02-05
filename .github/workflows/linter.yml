@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload comment data
         if: ${{ steps.comment.outputs.result == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: comment
           path: ${{ runner.temp }}/comment.json
