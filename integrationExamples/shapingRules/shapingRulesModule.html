@@ -1,0 +1,168 @@
+<html>
+    <head>
+        <title>Prebid Test Bidder Example</title>
+        <script src="../../build/dev/prebid.js" async></script>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            const adUnitCode = 'adUnit-0000';
+            const adUnitCode2 = 'adUnit-0000-2';
+
+            const adUnits = [{
+                mediaTypes: {
+                    banner: {
+                        sizes: [600, 500]
+                    }
+                },
+                code: adUnitCode,
+                bids: [
+                    {bidder: 'testBidder', params: {}}
+                ]
+            },
+            {
+                mediaTypes: {
+                    banner: {
+                        sizes: [400, 500]
+                    }
+                },
+                code: adUnitCode2,
+                bids: [
+                    {bidder: 'testBidder', params: {}}
+                ]
+            },
+        ]
+
+            pbjs.que.push(function () {
+
+                /**
+                 * BID RESPONSE SIMULATION SECTION START
+                 *
+                 * This section handles simulating a bidder
+                 * that will always respond with bid responses.
+                 *
+                 * This part should not be present in production.
+                 */
+                pbjs.registerBidAdapter(null, 'testBidder', {
+                    supportedMediaTypes: ['banner', 'video', 'native'],
+                    isBidRequestValid: () => true
+                });
+
+                pbjs.setConfig({
+                    ortb2: {
+                        // this is where the contextual data is placed
+                        device: {
+                            geo: {
+                                country: 'JPN'
+                            }
+                        },
+                        site: {
+                            name: "example",
+                            domain: "page.example.com",
+
+                            // OpenRTB 2.5 spec / Content Taxonomy
+                            cat: ["IAB2"],
+                            sectioncat: ["IAB2-2"],
+                            pagecat: ["IAB2-2"],
+
+                            page: "https://page.example.com/here.html",
+                            ref: "https://ref.example.com",
+                            keywords: "power tools, drills",
+                            search: "drill",
+
+                            content: {
+                                userrating: "4",
+                                data: [{
+                                    name: "www.dataprovider1.com", // who resolved the segments
+                                    ext: {
+                                        segtax: 7, // taxonomy used to encode the segments
+                                        cids: ["iris_c73g5jq96mwso4d8"]
+                                    },
+                                    // the bare minimum are the IDs. These IDs are the ones from the new IAB Content Taxonomy v3
+                                    segment: [{ id: "687" }, { id: "123" } ]
+                                }]
+                            },
+                            ext: {
+                                data: { // fields that aren't part of openrtb 2.6
+                                    pageType: "article",
+                                    category: "repair"
+                                }
+                            }
+                        },
+
+                        // this is where the user data is placed
+                        user: {
+                            regs: {
+                                gpp: "abc1234",
+                                gpp_sid: [7],
+                                ext: {
+                                }
+                            },
+                            keywords: "a,b",
+                            data: [{
+                                name: "dataprovider.com",
+                                ext: {
+                                    segtax: 4
+                                },
+                                segment: [{
+                                    id: "1"
+                                }]
+                            }],
+                            ext: {
+                                data: {
+                                    registered: true,
+                                    interests: ["cars"]
+                                }
+                            }
+                        }
+                    },
+                    shapingRules: {
+                        auctionDelay: 2000,
+                        endpoint: {
+                            // run local http-server to server rules.json
+                            url: 'rules.json',
+                            method: 'GET'
+                        }
+                    },
+                    debugging: {
+                        enabled: true,
+                        intercept: [
+                            {
+                                when: {
+                                    bidder: 'testBidder',
+                                },
+                                then: {
+                                    creativeId: 'testCreativeId',
+                                    bidder: 'testBidder',
+                                }
+                            },
+                        ]
+                    }
+                });
+                /**
+                 * BID RESPONSE SIMULATION SECTION END
+                 */
+
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    adUnitCodes: [adUnitCode],
+                    bidsBackHandler: function(bidsReceived) {
+                        console.log('Bids received: ', bidsReceived);
+                    }
+                });
+
+                pbjs.requestBids({
+                    adUnitCodes: [adUnitCode2],
+                    bidsBackHandler: function(bidsReceived) {
+                        console.log('Bids received: ', bidsReceived);
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <h2>Prebid Test Bidder Example</h2>
+        <h5>Banner ad</h5>
+        <div id="banner"></div>
+    </body>
+</html>
