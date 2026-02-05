@@ -30,7 +30,7 @@ export const parseConfig = (moduleConfig) => {
   // Check for deprecated bundleUrl parameter
   const bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
   if (bundleUrl) {
-    logError('bundleUrl parameter is no longer supported. Please either: (1) Load Optable SDK directly in your page HTML, OR (2) Switch to Direct API mode using host/site/node parameters. See migration guide: https://docs.prebid.org/dev-docs/modules/optableRtdProvider.html');
+    logError('bundleUrl parameter is no longer supported. Please either: (1) Load Optable SDK directly in your page HTML, OR (2) Switch to Direct API mode using host/site/node parameters. See documentation for details.');
     return null;
   }
 
@@ -416,11 +416,35 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn) => {
     return;
   }
 
+  const eidCount = targetingData.ortb2?.user?.eids?.length || 0;
+  logMessage(`defaultHandleRtd: received targeting data with ${eidCount} EIDs`);
+  logMessage('Merging ortb2 data into global ORTB2 fragments...');
+
   mergeFn(
     reqBidsConfigObj.ortb2Fragments.global,
     targetingData.ortb2,
   );
-  logMessage('Prebid\'s global ORTB2 object after merge: ', reqBidsConfigObj.ortb2Fragments.global);
+
+  logMessage(`EIDs merged into ortb2Fragments.global.user.eids (${eidCount} EIDs)`);
+
+  // Also add to user.ext.eids for additional coverage
+  if (targetingData.ortb2.user?.eids) {
+    const targetORTB2 = reqBidsConfigObj.ortb2Fragments.global;
+    targetORTB2.user = targetORTB2.user ?? {};
+    targetORTB2.user.ext = targetORTB2.user.ext ?? {};
+    targetORTB2.user.ext.eids = targetORTB2.user.ext.eids ?? [];
+
+    logMessage('Also merging Optable EIDs into ortb2.user.ext.eids...');
+
+    // Merge EIDs into user.ext.eids
+    targetingData.ortb2.user.eids.forEach(eid => {
+      targetORTB2.user.ext.eids.push(eid);
+    });
+
+    logMessage(`EIDs also available in ortb2.user.ext.eids (${eidCount} EIDs)`);
+  }
+
+  logMessage(`SUCCESS: ${eidCount} EIDs will be included in bid requests`);
 };
 
 /**
