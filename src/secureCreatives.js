@@ -60,7 +60,7 @@ function ensureAdId(adId, reply) {
   }
 }
 
-export function receiveMessage(ev) {
+export function receiveMessage(ev, cb) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
   try {
@@ -70,9 +70,10 @@ export function receiveMessage(ev) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST).then(adObject => {
+    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST, (adObject) => {
       HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
-    })
+      cb && cb();
+    });
   }
 }
 

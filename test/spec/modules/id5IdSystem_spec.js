@@ -1361,13 +1361,8 @@ describe('ID5 ID System', function () {
       setTargetingStub = sinon.stub();
       window.googletag = {
         cmd: [],
-        pubads: function () {
-          return {
-            setTargeting: setTargetingStub
-          };
-        }
+        setConfig: setTargetingStub
       };
-      sinon.spy(window.googletag, 'pubads');
       storedObject = utils.deepClone(ID5_STORED_OBJ);
     });
 
@@ -1391,14 +1386,16 @@ describe('ID5 ID System', function () {
       for (const [tagName, tagValue] of Object.entries(tagsObj)) {
         const fullTagName = `${targetingEnabledConfig.params.gamTargetingPrefix}_${tagName}`;
 
-        const matchingCall = setTargetingStub.getCalls().find(call => call.args[0] === fullTagName);
+        const matchingCall = setTargetingStub.getCalls().find(call => {
+          const config = call.args[0];
+          return config.targeting && config.targeting[fullTagName] !== undefined;
+        });
         expect(matchingCall, `Tag ${fullTagName} was not set`).to.exist;
-        expect(matchingCall.args[1]).to.equal(tagValue);
+        expect(matchingCall.args[0].targeting[fullTagName]).to.equal(tagValue);
       }
 
       window.googletag.cmd = [];
       setTargetingStub.reset();
-      window.googletag.pubads.resetHistory();
     }
 
     it('should not set GAM targeting if it is not enabled', function () {
@@ -1434,6 +1431,306 @@ describe('ID5 ID System', function () {
       });
     })
   })
+
+  describe('Decode should also expose targeting via id5tags if configured', function () {
+    let origId5tags, storedObject;
+    const exposeTargetingConfig = getId5FetchConfig();
+    exposeTargetingConfig.params.gamTargetingPrefix = 'id5';
+    exposeTargetingConfig.params.exposeTargeting = true;
+
+    beforeEach(function () {
+      delete window.id5tags;
+      storedObject = utils.deepClone(ID5_STORED_OBJ);
+    });
+
+    afterEach(function () {
+      delete window.id5tags;
+      id5System.id5IdSubmodule._reset();
+    });
+
+    it('should not expose targeting if exposeTargeting is not enabled', function () {
+      const config = getId5FetchConfig();
+      config.params.gamTargetingPrefix = 'id5';
+      // exposeTargeting is not set
+      const testObj = {
+        ...storedObject,
+        'tags': {
+          'id': 'y',
+          'ab': 'n'
+        }
+      };
+      id5System.id5IdSubmodule.decode(testObj, config);
+      expect(window.id5tags).to.be.undefined;
+    });
+
+    it('should not expose targeting if tags not returned from server', function () {
+      // tags is not in the response
+      id5System.id5IdSubmodule.decode(storedObject, exposeTargetingConfig);
+      expect(window.id5tags).to.be.undefined;
+    });
+
+    it('should create id5tags.cmd when it does not exist pre-decode', function () {
+      const testObj = {
+        ...storedObject,
+        'tags': {
+          'id': 'y',
+          'ab': 'n'
+        }
+      };
+      id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
+
+      expect(window.id5tags).to.exist;
+      expect(window.id5tags.cmd).to.be.an('array');
+      expect(window.id5tags.tags).to.deep.equal({
+        'id': 'y',
+        'ab': 'n'
+      });
+    });
+
+    it('should execute queued functions when cmd was created earlier', async function () {
+      const testTags = {
+        'id': 'y',
+        'ab': 'n',
+        'enrich': 'y'
+      };
+      const testObj = {
+        ...storedObject,
+        'tags': testTags
+      };
+
+      const callTracker = [];
+      let resolvePromise;
+      const callbackPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
+
+      // Pre-create id5tags with queued functions
+      window.id5tags = {
+        cmd: [
+          (tags) => callTracker.push({call: 1, tags: tags}),
+          (tags) => callTracker.push({call: 2, tags: tags}),
+          (tags) => {
+            callTracker.push({call: 3, tags: tags});
+            resolvePromise();
+          }
+        ]
+      };
+
+      id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
+
+      await callbackPromise;
+
+      // Verify all queued functions were called with the tags
+      expect(callTracker).to.have.lengthOf(3);
+      expect(callTracker[0]).to.deep.equal({call: 1, tags: testTags});
+      expect(callTracker[1]).to.deep.equal({call: 2, tags: testTags});
+      expect(callTracker[2]).to.deep.equal({call: 3, tags: testTags});
+
+      // Verify tags were stored
+      expect(window.id5tags.tags).to.deep.equal(testTags);
+    });
+
+    it('should override push method to execute functions immediately', function () {
+      const testTags = {
+        'id': 'y',
+        'ab': 'n'
+      };
+      const testObj = {
+        ...storedObject,
+        'tags': testTags
+      };
+
+      id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
+
+      // Now push a new function and verify it executes immediately
+      let callResult = null;
+      window.id5tags.cmd.push((tags) => {
+        callResult = {executed: true, tags: tags};
+      });
+
+      expect(callResult).to.not.be.null;
+      expect(callResult.executed).to.be.true;
+      expect(callResult.tags).to.deep.equal(testTags);
+    });
+
+    it('should retrigger functions when tags are different but not when tags are the same', async function () {
+      const firstTags = {
+        'id': 'y',
+        'ab': 'n'
+      };
+      const secondTags = {
+        'id': 'y',
+        'ab': 'y',
+        'enrich': 'y'
+      };
+
+      const firstObj = {
+        ...storedObject,
+        'tags': firstTags
+      };
+
+      const callTracker = [];
+
+      // First decode
+      let resolveFirstPromise;
+      const firstCallbackPromise = new Promise((resolve) => {
+        resolveFirstPromise = resolve;
+      });
+
+      window.id5tags = {
+        cmd: [
+          (tags) => {
+            callTracker.push({call: 'decode', tags: utils.deepClone(tags)});
+            resolveFirstPromise();
+          }
+        ]
+      };
+
+      id5System.id5IdSubmodule.decode(firstObj, exposeTargetingConfig);
+
+      await firstCallbackPromise;
+
+      expect(callTracker).to.have.lengthOf(1);
+      expect(callTracker[0].tags).to.deep.equal(firstTags);
+
+      // Second decode with different tags - should retrigger
+      const secondObj = {
+        ...storedObject,
+        'tags': secondTags
+      };
+
+      let resolveSecondPromise;
+      const secondCallbackPromise = new Promise((resolve) => {
+        resolveSecondPromise = resolve;
+      });
+
+      // Update the callback to resolve when called again
+      window.id5tags.cmd[0] = (tags) => {
+        callTracker.push({call: 'decode', tags: utils.deepClone(tags)});
+        resolveSecondPromise();
+      };
+
+      id5System.id5IdSubmodule.decode(secondObj, exposeTargetingConfig);
+
+      await secondCallbackPromise;
+
+      // The queued function should be called again with new tags
+      expect(callTracker).to.have.lengthOf(2);
+      expect(callTracker[1].tags).to.deep.equal(secondTags);
+      expect(window.id5tags.tags).to.deep.equal(secondTags);
+
+      // Third decode with identical tags content (but different object reference) - should NOT retrigger
+      const thirdObj = {
+        ...storedObject,
+        'tags': {
+          'id': 'y',
+          'ab': 'y',
+          'enrich': 'y'
+        }
+      };
+
+      id5System.id5IdSubmodule.decode(thirdObj, exposeTargetingConfig);
+
+      // Give it a small delay to ensure it doesn't retrigger
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // With deepEqual, this should NOT retrigger since content is the same as secondTags
+      expect(callTracker).to.have.lengthOf(2);
+      expect(window.id5tags.tags).to.deep.equal(secondTags);
+    });
+
+    it('should handle when someone else has set id5tags.cmd earlier', async function () {
+      const testTags = {
+        'id': 'y',
+        'ab': 'n'
+      };
+      const testObj = {
+        ...storedObject,
+        'tags': testTags
+      };
+
+      const externalCallTracker = [];
+      let resolvePromise;
+      const callbackPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
+
+      // External script creates id5tags
+      window.id5tags = {
+        cmd: [],
+        externalData: 'some-external-value'
+      };
+
+      // Add external function
+      window.id5tags.cmd.push((tags) => {
+        externalCallTracker.push({external: true, tags: tags});
+        resolvePromise();
+      });
+
+      id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
+
+      await callbackPromise;
+
+      // External function should be called
+      expect(externalCallTracker).to.have.lengthOf(1);
+      expect(externalCallTracker[0].external).to.be.true;
+      expect(externalCallTracker[0].tags).to.deep.equal(testTags);
+
+      // External data should be preserved
+      expect(window.id5tags.externalData).to.equal('some-external-value');
+
+      // Tags should be set
+      expect(window.id5tags.tags).to.deep.equal(testTags);
+    });
+
+    it('should work with both gamTargetingPrefix and exposeTargeting enabled', async function () {
+      // Setup googletag
+      const origGoogletag = window.googletag;
+      window.googletag = {
+        cmd: [],
+        setConfig: sinon.stub()
+      };
+
+      const testTags = {
+        'id': 'y',
+        'ab': 'n'
+      };
+      const testObj = {
+        ...storedObject,
+        'tags': testTags
+      };
+
+      const callTracker = [];
+      let resolvePromise;
+      const callbackPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
+
+      window.id5tags = {
+        cmd: [(tags) => {
+          callTracker.push(tags);
+          resolvePromise();
+        }]
+      };
+
+      id5System.id5IdSubmodule.decode(testObj, exposeTargetingConfig);
+
+      await callbackPromise;
+
+      // Both mechanisms should work
+      expect(window.googletag.cmd.length).to.be.at.least(1);
+      expect(callTracker).to.have.lengthOf(1);
+      expect(callTracker[0]).to.deep.equal(testTags);
+      expect(window.id5tags.tags).to.deep.equal(testTags);
+
+      // Restore
+      if (origGoogletag) {
+        window.googletag = origGoogletag;
+      } else {
+        delete window.googletag;
+      }
+    });
+  });
 
   describe('A/B Testing', function () {
     const expectedDecodedObjectWithIdAbOff = {id5id: {uid: ID5_STORED_ID, ext: {linkType: ID5_STORED_LINK_TYPE}}};

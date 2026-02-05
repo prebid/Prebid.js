@@ -28,6 +28,7 @@ import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
 import {getGlobalVarName} from '../src/buildOptions.js';
+import { uspDataHandler } from '../src/consentHandler.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -292,7 +293,28 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
 };
 
 export async function getVastXml(options, localCacheMap = vastLocalCache) {
-  const vastUrl = buildGamVideoUrl(options);
+  let vastUrl = buildGamVideoUrl(options);
+
+  const adUnit = options.adUnit;
+  const video = adUnit?.mediaTypes?.video;
+  const sdkApis = (video?.api || []).join(',');
+  const usPrivacy = uspDataHandler.getConsentData?.();
+  // Adding parameters required by ima
+  if (config.getConfig('cache.useLocal') && window.google?.ima) {
+    vastUrl = new URL(vastUrl);
+    const imaSdkVersion = `h.${window.google.ima.VERSION}`;
+    vastUrl.searchParams.set('omid_p', `Google1/${imaSdkVersion}`);
+    vastUrl.searchParams.set('sdkv', imaSdkVersion);
+    if (sdkApis) {
+      vastUrl.searchParams.set('sdk_apis', sdkApis);
+    }
+    if (usPrivacy) {
+      vastUrl.searchParams.set('us_privacy', usPrivacy);
+    }
+
+    vastUrl = vastUrl.toString();
+  }
+
   const response = await fetch(vastUrl);
   if (!response.ok) {
     throw new Error('Unable to fetch GAM VAST wrapper');
