@@ -14,7 +14,7 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/brandmetricsRtdProvider.js',
   'modules/cleanioRtdProvider.js',
   'modules/humansecurityMalvDefenseRtdProvider.js',
-  'modules/humansecurityRtdProvider.js',
+  'modules/humansecurityRtdProvider.ts',
   'modules/confiantRtdProvider.js',
   'modules/contxtfulRtdProvider.js',
   'modules/hadronRtdProvider.js',
