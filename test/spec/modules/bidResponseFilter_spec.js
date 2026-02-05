@@ -118,12 +118,12 @@ describe('bidResponseFilter', () => {
     const reject = sinon.stub();
     const call = sinon.stub();
     const bid = {
+      mediaType: 'video',
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
         attr: 'BANNED_ATTR'
       },
-      mediaType: 'video'
     };
     mockAuctionIndex.getOrtb2 = () => ({
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
@@ -203,11 +203,11 @@ describe('bidResponseFilter', () => {
     const reject = sinon.stub();
     const call = sinon.stub();
     const bid = {
+      mediaType: 'audio',
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
         attr: 6,
-        mediaType: 'audio'
       },
     };
 
