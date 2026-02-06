@@ -91,6 +91,29 @@ describe('panxo RTD module', function () {
       expect(args[0]).to.haveOwnProperty('que');
       expect(args[1]).to.be.equal(onImplMessage);
     });
+
+    it('should flush pending callbacks when bridge is unavailable', function () {
+      sandbox2.restore();
+      // Bridge is not registered on the window -- onImplLoaded should fail open
+      sandbox2 = sinon.createSandbox();
+      sandbox2.stub(stubWindow, panxoBridgeId).value(undefined);
+
+      load({ params: { siteId: validSiteId } });
+
+      const callbackSpy = sandbox2.spy();
+      const reqBidsConfig = { ortb2Fragments: { bidder: {}, global: {} } };
+
+      // Queue a callback before bridge fails
+      onGetBidRequestData(reqBidsConfig, callbackSpy, { params: {} }, {});
+      // onImplLoaded already ran (bridge undefined) and flushed
+      expect(callbackSpy.calledOnce).to.be.true;
+    });
+
+    it('should not throw when bridge message is null', function () {
+      load({ params: { siteId: validSiteId } });
+      expect(() => onImplMessage(null)).to.not.throw();
+      expect(() => onImplMessage(undefined)).to.not.throw();
+    });
   });
 
   describe('Bid enrichment step', function () {
@@ -106,8 +129,12 @@ describe('panxo RTD module', function () {
       sandbox2 = sinon.createSandbox();
       callbackSpy = sandbox2.spy();
       reqBidsConfig = { ortb2Fragments: { bidder: {}, global: {} } };
+      // Prevent onImplLoaded from firing automatically so tests can
+      // control module readiness via onImplMessage directly.
+      loadExternalScriptStub.callsFake(() => {});
     });
     afterEach(function () {
+      loadExternalScriptStub.reset();
       sandbox2.restore();
     });
 

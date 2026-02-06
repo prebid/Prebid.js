@@ -110,6 +110,10 @@ function onImplLoaded() {
   const impl = wnd[`panxo_${sessionId}`];
   if (typeof impl !== 'object' || typeof impl.connect !== 'function') {
     if (verbose) logWarn('onload', 'Unable to access the implementation script');
+    if (!implReady) {
+      implReady = true;
+      flushPendingCallbacks();
+    }
     return;
   }
 
@@ -125,7 +129,7 @@ function onImplLoaded() {
  * @param {Object} msg
  */
 function onImplMessage(msg) {
-  if (typeof msg !== 'object') {
+  if (!msg || typeof msg !== 'object') {
     return;
   }
 
