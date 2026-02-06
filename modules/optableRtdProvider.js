@@ -30,28 +30,28 @@ export const parseConfig = (moduleConfig) => {
   // Check for deprecated bundleUrl parameter
   const bundleUrl = deepAccess(moduleConfig, 'params.bundleUrl', null);
   if (bundleUrl) {
-    logError('bundleUrl parameter is no longer supported. Please either: (1) Load Optable SDK directly in your page HTML, OR (2) Switch to Direct API mode using host/site/node parameters. See documentation for details.');
+    logError('bundleUrl parameter is no longer supported. Please either: (1) Load Optable SDK directly in your page HTML, OR (2) Switch to Direct API mode using host/node/site parameters. See documentation for details.');
     return null;
   }
 
   const host = deepAccess(moduleConfig, 'params.host', null);
-  const site = deepAccess(moduleConfig, 'params.site', null);
   const node = deepAccess(moduleConfig, 'params.node', null);
+  const site = deepAccess(moduleConfig, 'params.site', null);
   const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
   const instance = deepAccess(moduleConfig, 'params.instance', null);
 
-  const hasDirectApiConfig = host && site && node;
+  const hasDirectApiConfig = host && node && site;
 
   if (host !== null && (typeof host !== 'string' || !host.trim())) {
     logError('host parameter must be a non-empty string');
     return null;
   }
-  if (site !== null && (typeof site !== 'string' || !site.trim())) {
-    logError('site parameter must be a non-empty string');
-    return null;
-  }
   if (node !== null && (typeof node !== 'string' || !node.trim())) {
     logError('node parameter must be a non-empty string');
+    return null;
+  }
+  if (site !== null && (typeof site !== 'string' || !site.trim())) {
+    logError('site parameter must be a non-empty string');
     return null;
   }
 
@@ -77,8 +77,8 @@ export const parseConfig = (moduleConfig) => {
 
   return {
     host: host ? host.trim() : null,
-    site: site ? site.trim() : null,
     node: node ? node.trim() : null,
+    site: site ? site.trim() : null,
     cookies,
     timeout,
     ids,
@@ -318,7 +318,7 @@ const extractIdentifiers = (configIds, configHids, reqBidsConfigObj) => {
  * @returns {string} Complete URL for targeting API
  */
 const buildTargetingURL = (params) => {
-  const {host, site, node, ids, hids, consent, sessionId, passport, cookies, timeout} = params;
+  const {host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout} = params;
 
   const searchParams = new URLSearchParams();
 
@@ -465,7 +465,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       return;
     }
 
-    const {host, site, node, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig} = parsedConfig;
+    const {host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig} = parsedConfig;
     const handleRtdFn = handleRtd || defaultHandleRtd;
 
     // Mode 1: SDK mode - If Optable Web SDK is loaded (window.optable), use its event system
@@ -482,7 +482,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     // Mode 2: Direct API mode - Make direct HTTP calls to Optable targeting API.
     // No ad server targeting support, but lighter weight (no external SDK required).
     if (!hasDirectApiConfig) {
-      logError('Neither Web SDK nor direct API configuration found. Please configure host, site, and node parameters, or load the Optable Web SDK.');
+      logError('Neither Web SDK nor direct API configuration found. Please configure host, node, and site parameters, or load the Optable Web SDK.');
       callback();
       return;
     }
@@ -491,7 +491,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
 
     const effectiveTimeout = (timeout && timeout > 100) ? timeout - 100 : configTimeout;
 
-    logMessage(`Configuration: host=${host}, site=${site}, node=${node}, cookies=${cookies}`);
+    logMessage(`Configuration: host=${host}, node=${node}, site=${site}, cookies=${cookies}`);
     if (effectiveTimeout) {
       logMessage(`Timeout: ${effectiveTimeout}ms${timeout ? ` (derived from auctionDelay: ${timeout}ms - 100ms)` : ' (from config)'}`);
     }
@@ -518,8 +518,8 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       // Update cache in background (don't await)
       callTargetingAPI({
         host,
-        site,
         node,
+        site,
         ids,
         hids,
         consent,
@@ -546,8 +546,8 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     logMessage('No cache found, waiting for API call');
     const targetingData = await callTargetingAPI({
       host,
-      site,
       node,
+      site,
       ids,
       hids,
       consent,

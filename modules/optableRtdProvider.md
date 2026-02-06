@@ -21,7 +21,7 @@ Optable RTD submodule enriches the OpenRTB bid request by populating `user.ext.e
 Uses Optable Web SDK loaded on page via event-based integration.
 
 **Setup:**
-- Load Optable Web SDK: `<script src="https://[dcn].cdn.optable.co/[site]-sdk.js"></script>`
+- Load Optable Web SDK: `<script src="[Bundle URL]"></script>`
 - Configure RTD module with optional params only
 
 **Features:**
@@ -36,7 +36,7 @@ Makes direct HTTP calls to Optable targeting API without any external SDK.
 
 **Setup:**
 - No SDK required - module makes direct HTTPS GET requests
-- Configure RTD module with host, site, node parameters
+- Configure RTD module with host, node, site parameters
 
 **Features:**
 - Bid request enrichment (EIDs passed to SSPs)
@@ -49,7 +49,7 @@ Makes direct HTTP calls to Optable targeting API without any external SDK.
 
 The module automatically detects which mode to use:
 1. If `window.optable` is present → SDK mode
-2. If SDK absent but host/site/node configured → Direct API mode
+2. If SDK absent but host/node/site configured → Direct API mode
 3. If neither → Error
 
 ## Usage
@@ -72,11 +72,12 @@ This module is configured as part of the `realTimeData.dataProviders`.
 
 ```javascript
 // Load SDK first in your page:
-// <script src="https://[dcn].cdn.optable.co/[site]-sdk.js"></script>
+// <script src="[Bundle URL]"></script>
 
 pbjs.setConfig({
   debug: true,
   realTimeData: {
+    auctionDelay: 200,
     dataProviders: [
       {
         name: 'optable',
@@ -104,8 +105,8 @@ pbjs.setConfig({
         waitForIt: true,
         params: {
           host: 'dcn.customer.com',  // REQUIRED: Your Optable DCN hostname
-          site: 'my-site',            // REQUIRED: Your site identifier
           node: 'prod-us',            // REQUIRED: Your node identifier
+          site: 'my-site',            // REQUIRED: Your site identifier
         },
       },
     ],
@@ -126,14 +127,14 @@ pbjs.setConfig({
         params: {
           // REQUIRED PARAMETERS:
           host: 'dcn.customer.com',       // Your Optable DCN hostname
-          site: 'my-site',                 // Your site identifier
           node: 'prod-us',                 // Your node identifier
+          site: 'my-site',                 // Your site identifier
 
           // OPTIONAL PARAMETERS:
           cookies: false,                  // Set to false for cookieless mode (default: true)
           timeout: '500ms',                // API timeout hint
           ids: ['user-id-1', 'user-id-2'], // User identifiers (also auto-extracted from userId module)
-          hids: ['household-id'],          // Household identifiers
+          hids: ['hint-id'],               // Hint identifiers
 
           // CUSTOM HANDLER (optional):
           handleRtd: (reqBidsConfigObj, targetingData, mergeFn) => {
@@ -163,12 +164,12 @@ pbjs.setConfig({
 | **params.adserverTargeting** | **Boolean** | **Enable ad server targeting key-values (SDK mode only)** | **`true`** | **No** | **SDK** |
 | **params.instance** | **String** | **SDK instance name** | **`'instance'`** | **No** | **SDK** |
 | params.host       | String   | Your Optable DCN hostname (e.g., `dcn.customer.com`)                                                                                                                                                                                    | None    | **Yes** | Direct API |
-| params.site       | String   | Site identifier configured in your DCN                                                                                                                                                                                                   | None    | **Yes** | Direct API |
 | params.node       | String   | Node identifier for your DCN                                                                                                                                                                                                             | None    | **Yes** | Direct API |
+| params.site       | String   | Site identifier configured in your DCN                                                                                                                                                                                                   | None    | **Yes** | Direct API |
 | params.cookies    | Boolean  | Cookie mode. Set to `false` for cookieless targeting using passport                                                                                                                                                                     | `true`  | No | Direct API |
 | params.timeout    | String   | API timeout hint (e.g., `"500ms"`)                                                                                                                                                                                                      | `null`  | No | Direct API |
 | params.ids        | Array    | Array of user identifier strings. These are combined with identifiers auto-extracted from Prebid userId module                                                                                                                          | `[]`    | No | Direct API |
-| params.hids       | Array    | Array of household identifier strings                                                                                                                                                                                                    | `[]`    | No | Direct API |
+| params.hids       | Array    | Array of hint identifier strings                                                                                                                                                                                                    | `[]`    | No | Direct API |
 | params.handleRtd  | Function | Custom function to handle/enrich RTD data. Function signature: `(reqBidsConfigObj, targetingData, mergeFn) => {}`. If not provided, the module uses a default handler that merges targeting data into ortb2Fragments.global            | `null`  | No | Both |
 
 ## How It Works
@@ -177,7 +178,7 @@ pbjs.setConfig({
 
 When Prebid's auction starts, the Optable RTD module:
 
-1. Validates the configuration (checks for required `host`, `site`, and `node` parameters)
+1. Validates the configuration (checks for required `host`, `node`, and `site` parameters)
 2. Checks for cached targeting data in localStorage
 3. If no cache is found, proceeds to make an API call
 
@@ -199,7 +200,7 @@ The module makes a GET request to `https://{host}/v2/targeting` with the followi
 - `o`: Site identifier (required)
 - `t`: Node identifier (required)
 - `id`: User identifiers (multiple)
-- `hid`: Household identifiers (multiple)
+- `hid`: Hint identifiers (multiple)
 - `osdk`: SDK version identifier
 - `sid`: Session ID
 - `cookies`: Cookie mode (`yes` or `no`)
@@ -264,10 +265,10 @@ Provide identifiers directly in the RTD configuration:
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',
   node: 'prod-us',
+  site: 'my-site',
   ids: ['email-hash-123', 'phone-hash-456'],
-  hids: ['household-id-789']
+  hids: ['hint-id-789']
 }
 ```
 
@@ -303,8 +304,8 @@ All identifiers are combined and sent to the targeting API.
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',
   node: 'prod-us',
+  site: 'my-site',
   cookies: true  // or omit this parameter
 }
 ```
@@ -316,8 +317,8 @@ In cookie mode, the DCN uses first-party cookies for visitor identification.
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',
   node: 'prod-us',
+  site: 'my-site',
   cookies: false
 }
 ```
@@ -344,8 +345,8 @@ The `node` parameter is required and identifies your DCN node:
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',
-  node: 'us-east'  // Your node identifier
+  node: 'prod-us',  // Your node identifier
+  site: 'my-site'
 }
 ```
 
@@ -358,8 +359,8 @@ For advanced use cases, provide a custom `handleRtd` function:
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',
   node: 'prod-us',
+  site: 'my-site',
   handleRtd: (reqBidsConfigObj, targetingData, mergeFn) => {
     console.log('Targeting data received:', targetingData);
 
@@ -437,15 +438,15 @@ params: {
 ```javascript
 params: {
   host: 'dcn.customer.com',  // Your DCN hostname
-  site: 'my-site',           // Your site identifier
-  node: 'prod-us'            // Your node identifier
+  node: 'prod-us',           // Your node identifier
+  site: 'my-site'            // Your site identifier
 }
 ```
 
 ### Key Differences:
 
 1. **No External Loading**: Module no longer loads SDK from CDN, uses direct API calls instead
-2. **Required Parameters**: `host`, `site`, and `node` are now required
+2. **Required Parameters**: `host`, `node`, and `site` are now required
 3. **Ad Server Targeting**: Not supported. Use the Web SDK separately if you need GAM targeting keywords
 4. **Custom Handler Signature**: Changed from `(reqBidsConfigObj, optableExtraData, mergeFn, skipCache)` to `(reqBidsConfigObj, targetingData, mergeFn)`
 5. **Faster**: No external script loading delay
@@ -461,7 +462,7 @@ The following Web SDK features are intentionally **not** supported in this RTD m
 - Event dispatching system
 - Complex multi-storage key strategies
 
-See `modules/optableRtdProvider_EXCLUDED_FEATURES.txt` for details.
+See `modules/optableRtdProvider_EXCLUDED_FEATURES.md` for details.
 
 ## Troubleshooting
 
@@ -472,8 +473,8 @@ Ensure you've configured the `host` parameter:
 ```javascript
 params: {
   host: 'dcn.customer.com',  // Required!
-  site: 'my-site',
-  node: 'prod-us'
+  node: 'prod-us',
+  site: 'my-site'
 }
 ```
 
@@ -484,8 +485,8 @@ Ensure you've configured the `site` parameter:
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',  // Required!
-  node: 'prod-us'
+  node: 'prod-us',
+  site: 'my-site'  // Required!
 }
 ```
 
@@ -496,8 +497,8 @@ Ensure you've configured the `node` parameter:
 ```javascript
 params: {
   host: 'dcn.customer.com',
-  site: 'my-site',
-  node: 'prod-us'  // Required!
+  node: 'prod-us',  // Required!
+  site: 'my-site'
 }
 ```
 
@@ -508,7 +509,7 @@ Check:
 2. Is `auctionDelay` set appropriately (e.g., 200ms)?
 3. Are there identifiers available (check `ids` param and userId module)?
 4. Check browser console for API errors
-5. Verify your DCN hostname and site identifier are correct
+5. Verify your DCN host, node and site identifier are correct
 
 ### Consent issues
 
