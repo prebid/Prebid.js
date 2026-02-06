@@ -992,7 +992,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         {source: 'neustar.biz', uids: [{id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1}]}
       ];
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-
       expect(data.user.ext.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
 
