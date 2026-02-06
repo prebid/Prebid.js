@@ -1092,7 +1092,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
       bidderRequest.ortb2 = ortb2;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      
       expect(data.source).to.have.property('tid');
       expect(data.source.tid).to.equal('test-tid-with-ext');
       expect(data.source.ext).to.deep.equal({
