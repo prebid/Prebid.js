@@ -566,12 +566,12 @@ const adUnits = [{
 ## Transaction ID (TID) Support
 The Yahoo Advertising bid adapter supports reading publisher-provided transaction IDs from `ortb2.source.tid` and including them in the OpenRTB request. This enables better bid request tracking and deduplication across the supply chain.
 
-**Important:** To use transaction IDs, you must enable TIDs in your Prebid configuration by setting `enableTids: true`.
+**Important:** To use transaction IDs, you must enable TIDs in your Prebid configuration by setting `enableTIDs: true`.
 
 ### Global Transaction ID (applies to all bidders)
 ```javascript
 pbjs.setConfig({
-    enableTids: true,  // Required for TID support
+    enableTIDs: true,  // Required for TID support
     ortb2: {
         source: {
             tid: "transaction-id-12345"
@@ -585,7 +585,7 @@ pbjs.setConfig({
 pbjs.setBidderConfig({
     bidders: ['yahooAds'],
     config: {
-        enableTids: true,  // Required for TID support
+        enableTIDs: true,  // Required for TID support
         ortb2: {
             source: {
                 tid: "yahoo-specific-tid-67890"
@@ -595,7 +595,7 @@ pbjs.setBidderConfig({
 });
 ```
 
-**Note:** If `enableTids` is not set to `true`, the transaction ID will not be available to the adapter, even if `ortb2.source.tid` is configured. When TID is not provided or not enabled, the adapter will not include the `source.tid` field in the OpenRTB request.
+**Note:** If `enableTIDs` is not set to `true`, the transaction ID will not be available to the adapter, even if `ortb2.source.tid` is configured. When TID is not provided or not enabled, the adapter will not include the `source.tid` field in the OpenRTB request.
 
 # Optional: Bidder bidOverride Parameters
 The Yahoo Advertising bid adapter allows passing override data to the outbound bid-request that overrides First Party Data.
