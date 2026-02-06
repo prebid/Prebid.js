@@ -13,7 +13,7 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'adtrgtme';
-const BIDDER_VERSION = '1.0.6';
+const BIDDER_VERSION = '1.0.7';
 const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
@@ -61,7 +61,7 @@ function createORTB(bR, bid) {
   const consentString = gdpr ? bR.gdprConsent?.consentString : '';
   const usPrivacy = bR.uspConsent || '';
 
-  let oR = {
+  const oR = {
     id: generateUUID(),
     cur: [currency],
     imp: [],
@@ -76,31 +76,29 @@ function createORTB(bR, bid) {
       ip,
     },
     regs: {
-      ext: {
-        us_privacy: usPrivacy,
-        gdpr,
-      },
+      gdpr,
+      us_privacy: usPrivacy,
     },
     source: {
       ext: {
         hb: 1,
         bidderver: BIDDER_VERSION,
         prebidjsver: PREBIDJS_VERSION,
-        ...(bid?.schain && { schain: bid.schain }),
       },
       fd: 1,
+      ...(bid?.ortb2?.source?.ext?.schain && { schain: bid?.ortb2?.source?.ext?.schain }),
     },
     user: {
       ...user,
+      consent: consentString,
       ext: {
-        consent: consentString,
         ...(user?.ext || {}),
       },
     },
   };
 
-  if (bid?.schain) {
-    oR.source.ext.schain.nodes[0].rid = oR.id;
+  if (bid?.ortb2?.source?.ext?.schain) {
+    oR.source.schain.nodes[0].rid = oR.id;
   }
 
   return oR;
@@ -121,8 +119,8 @@ function appendImp(bid, oRtb) {
       dfp_ad_unit_code: bid.adUnitCode,
       ...(bid?.ortb2Imp?.ext?.data &&
         isPlainObject(bid.ortb2Imp.ext.data) && {
-          data: bid.ortb2Imp.ext.data,
-        }),
+        data: bid.ortb2Imp.ext.data,
+      }),
     },
     ...(bid?.params?.zid && { tagid: String(bid.params.zid) }),
     ...(bid?.ortb2Imp?.instl === 1 && { instl: 1 }),
@@ -219,7 +217,7 @@ export const spec = {
 
     sR.body.seatbid.forEach((sb) => {
       try {
-        let b = sb.bid[0];
+        const b = sb.bid[0];
 
         res.push({
           adId: b?.adId ? b.adId : b.impid || b.crid,

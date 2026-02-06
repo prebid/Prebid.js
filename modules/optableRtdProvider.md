@@ -6,6 +6,10 @@
     Module Type: RTD Provider
     Maintainer: prebid@optable.co
 
+## Minimal Prebid.js Versions
+
+Prebid.js minimum version: 9.53.2+, or 10.2+
+
 ## Description
 
 Optable RTD submodule enriches the OpenRTB request by populating `user.ext.eids` and `user.data` using an identity graph and audience segmentation service hosted by Optable on behalf of the publisher. This RTD submodule primarily relies on the Optable bundle loaded on the page, which leverages the Optable-specific Visitor ID and other PPIDs to interact with the identity graph, enriching the bid request with additional user IDs and audience data.
@@ -30,23 +34,18 @@ In order to use the module you first need to register with Optable and obtain a 
 <script async src="<bundleURL>"></script>
 ```
 
-In this case bundleUrl parameter is not needed and the script will await bundle loading before delegating to it.
-
 ### Configuration
 
-This module is configured as part of the `realTimeData.dataProviders`. We recommend setting `auctionDelay` to 1000 ms and make sure `waitForIt` is set to `true` for the `Optable` RTD provider.
+This module is configured as part of the `realTimeData.dataProviders`.
 
 ```javascript
 pbjs.setConfig({
   debug: true, // we recommend turning this on for testing as it adds more logging
   realTimeData: {
-    auctionDelay: 1000,
     dataProviders: [
       {
         name: 'optable',
-        waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
         params: {
-          bundleUrl: '<optional, your bundle url>',
           adserverTargeting: '<optional, true by default, set to true to also set GAM targeting keywords to ad slots>',
         },
       },
@@ -55,48 +54,12 @@ pbjs.setConfig({
 });
 ```
 
-### Additional input to the module
-
-Optable bundle may use PPIDs (publisher provided IDs) from the `user.ext.eids` as input.
-
-In addition, other arbitrary keys can be used as input, f.e. the following:
-
-- `optableRtdConfig.email` - a SHA256-hashed user email
-- `optableRtdConfig.phone` - a SHA256-hashed [E.164 normalized phone](https://unifiedid.com/docs/getting-started/gs-normalization-encoding#phone-number-normalization) (meaning a phone number consisting of digits and leading plus sign without spaces or any additional characters, f.e. a US number would be: `+12345678999`)
-- `optableRtdConfig.postal_code` - a ZIP postal code string
-
-Each of these identifiers is completely optional and can be provided through `pbjs.mergeConfig(...)` like so:
-
-```javascript
-pbjs.mergeConfig({
-  optableRtdConfig: {
-    email: await sha256("test@example.com"),
-    phone: await sha256("12345678999"),
-    postal_code: "61054"
-  }
-})
-```
-
-Where `sha256` function can be defined as:
-
-```javascript
-async function sha256(input) {
-  return [...new Uint8Array(
-    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input))
-  )].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-```
-
-To handle PPIDs and the above input - a custom `handleRtd` function may need to be provided.
-
 ### Parameters
 
 | Name                     | Type     | Description                                                                                                                                                                                                                                                     | Default          | Notes    |
 |--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------|
 | name                     | String   | Real time data module name                                                                                                                                                                                                                                      | Always `optable` |          |
-| waitForIt                | Boolean  | Should be set `true` together with `auctionDelay: 1000`                                                                                                                                                                                                         | `false`          |          |
 | params                   | Object   |                                                                                                                                                                                                                                                                 |                  |          |
-| params.bundleUrl         | String   | Optable bundle URL                                                                                                                                                                                                                                              | `null`           | Optional |
 | params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`           | Optional |
 | params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`           | Optional |
 

@@ -5,6 +5,7 @@ import {setResponseMediaType} from './mediaType.js';
 import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
 import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
+import { fillAudioImp, fillAudioResponse } from './audio.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -52,16 +53,6 @@ export const DEFAULT_PROCESSORS = {
       // populates imp.banner
       fn: fillBannerImp
     },
-    pbadslot: {
-      // removes imp.ext.data.pbaslot if it's not a string
-      // TODO: is this needed?
-      fn(imp) {
-        const pbadslot = imp.ext?.data?.pbadslot;
-        if (!pbadslot || typeof pbadslot !== 'string') {
-          delete imp.ext?.data?.pbadslot;
-        }
-      }
-    },
     secure: {
       // should set imp.secure to 1 unless publisher has set it
       fn(imp, bidRequest) {
@@ -98,7 +89,9 @@ export const DEFAULT_PROCESSORS = {
           ttl: bid.exp || context.ttl,
           netRevenue: context.netRevenue,
         }).filter(([k, v]) => typeof v !== 'undefined')
-          .forEach(([k, v]) => bidResponse[k] = v);
+          .forEach(([k, v]) => {
+            bidResponse[k] = v;
+          });
         if (!bidResponse.meta) {
           bidResponse.meta = {};
         }
@@ -142,5 +135,16 @@ if (FEATURES.VIDEO) {
   DEFAULT_PROCESSORS[BID_RESPONSE].video = {
     // sets video response attributes if bidResponse.mediaType === VIDEO
     fn: fillVideoResponse
+  }
+}
+
+if (FEATURES.AUDIO) {
+  DEFAULT_PROCESSORS[IMP].audio = {
+    // populates imp.audio
+    fn: fillAudioImp
+  }
+  DEFAULT_PROCESSORS[BID_RESPONSE].audio = {
+    // sets video response attributes if bidResponse.mediaType === AUDIO
+    fn: fillAudioResponse
   }
 }

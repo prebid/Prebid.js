@@ -26,7 +26,7 @@ const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
 const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-let consentInfo = {
+const consentInfo = {
   gdpr: {
     applies: 0,
     consentString: null,
@@ -223,7 +223,7 @@ export const ftrackIdSubmodule = {
       usPrivacyOptOutSale = usp[2];
       // usPrivacyLSPA = usp[3];
     }
-    if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
+    if (usPrivacyVersion === '1' && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
   },

@@ -8,6 +8,12 @@ import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { findUtiqService } from "../libraries/utiqUtils/utiqUtils.ts";
+import { getGlobal } from '../src/prebidGlobal.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ */
 
 const MODULE_NAME = 'utiqId';
 const LOG_PREFIX = 'Utiq module';
@@ -19,12 +25,11 @@ export const storage = getStorageManager({
 
 /**
  * Get the "atid" from html5 local storage to make it available to the UserId module.
- * @param config
  * @returns {{utiq: (*|string)}}
  */
 function getUtiqFromStorage() {
   let utiqPass;
-  let utiqPassStorage = JSON.parse(
+  const utiqPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
   );
 
@@ -75,6 +80,7 @@ export const utiqIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/utiqDeviceStorageDisclosure.json',
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
@@ -87,7 +93,7 @@ export const utiqIdSubmodule = {
   /**
    * Get the id from helper function and initiate a new user sync.
    * @param config
-   * @returns {{callback: result}|{id: {utiq: string}}}
+   * @returns {{callback: Function}|{id: {utiq: string}}}
    */
   getId: function (config) {
     const data = getUtiqFromStorage();
@@ -148,4 +154,9 @@ export const utiqIdSubmodule = {
   }
 };
 
+const pbjsGlobal = getGlobal();
+const refreshUserIds = pbjsGlobal && typeof pbjsGlobal.refreshUserIds === 'function'
+  ? pbjsGlobal.refreshUserIds.bind(pbjsGlobal)
+  : () => {};
+findUtiqService(storage, refreshUserIds, LOG_PREFIX, MODULE_NAME);
 submodule('userId', utiqIdSubmodule);

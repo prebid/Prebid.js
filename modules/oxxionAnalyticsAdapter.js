@@ -16,48 +16,48 @@ const {
   BID_TIMEOUT,
 } = EVENTS;
 
-let saveEvents = {}
+const saveEvents = {}
 let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
 let mode = {};
 let endpoint = 'https://default'
-let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
+const requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
 function filterAttributes(arg, removead) {
-  let response = {};
-  if (typeof arg == 'object') {
-    if (typeof arg['bidderCode'] == 'string') {
+  const response = {};
+  if (typeof arg === 'object') {
+    if (typeof arg['bidderCode'] === 'string') {
       response['originalBidder'] = getAdapterNameForAlias(arg['bidderCode']);
-    } else if (typeof arg['bidder'] == 'string') {
+    } else if (typeof arg['bidder'] === 'string') {
       response['originalBidder'] = getAdapterNameForAlias(arg['bidder']);
     }
-    if (!removead && typeof arg['ad'] != 'undefined') {
+    if (!removead && typeof arg['ad'] !== 'undefined') {
       response['ad'] = arg['ad'];
     }
-    if (typeof arg['gdprConsent'] != 'undefined') {
+    if (typeof arg['gdprConsent'] !== 'undefined') {
       response['gdprConsent'] = {};
-      if (typeof arg['gdprConsent']['consentString'] != 'undefined') {
+      if (typeof arg['gdprConsent']['consentString'] !== 'undefined') {
         response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString'];
       }
     }
-    if (typeof arg['meta'] == 'object') {
+    if (typeof arg['meta'] === 'object') {
       response['meta'] = {};
-      if (typeof arg['meta']['advertiserDomains'] != 'undefined') {
+      if (typeof arg['meta']['advertiserDomains'] !== 'undefined') {
         response['meta']['advertiserDomains'] = arg['meta']['advertiserDomains'];
       }
-      if (typeof arg['meta']['demandSource'] == 'string') {
+      if (typeof arg['meta']['demandSource'] === 'string') {
         response['meta']['demandSource'] = arg['meta']['demandSource'];
       }
     }
     requestsAttributes.forEach((attr) => {
-      if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
+      if (typeof arg[attr] !== 'undefined') { response[attr] = arg[attr]; }
     });
-    if (typeof response['creativeId'] == 'number') {
+    if (typeof response['creativeId'] === 'number') {
       response['creativeId'] = response['creativeId'].toString();
     }
   }
@@ -66,15 +66,15 @@ function filterAttributes(arg, removead) {
 }
 
 function cleanAuctionEnd(args) {
-  let response = {};
+  const response = {};
   let filteredObj;
-  let objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
+  const objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
   objects.forEach((attr) => {
     if (Array.isArray(args[attr])) {
       response[attr] = [];
       args[attr].forEach((obj) => {
         filteredObj = filterAttributes(obj, true);
-        if (typeof obj['bids'] == 'object') {
+        if (typeof obj['bids'] === 'object') {
           filteredObj['bids'] = [];
           obj['bids'].forEach((bid) => {
             filteredObj['bids'].push(filterAttributes(bid, true));
@@ -88,15 +88,15 @@ function cleanAuctionEnd(args) {
 }
 
 function cleanCreatives(args) {
-  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  const stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   return filterAttributes(stringArgs, false);
 }
 
 function enhanceMediaType(arg) {
   saveEvents['bidRequested'].forEach((bidRequested) => {
-    if (bidRequested['auctionId'] == arg['auctionId'] && Array.isArray(bidRequested['bids'])) {
+    if (bidRequested['auctionId'] === arg['auctionId'] && Array.isArray(bidRequested['bids'])) {
       bidRequested['bids'].forEach((bid) => {
-        if (bid['transactionId'] == arg['transactionId'] && bid['bidId'] == arg['requestId']) { arg['mediaTypes'] = bid['mediaTypes']; }
+        if (bid['transactionId'] === arg['transactionId'] && bid['bidId'] === arg['requestId']) { arg['mediaTypes'] = bid['mediaTypes']; }
       });
     }
   });
@@ -104,52 +104,52 @@ function enhanceMediaType(arg) {
 }
 
 function addBidResponse(args) {
-  let eventType = BID_RESPONSE;
-  let argsCleaned = cleanCreatives(args); ;
-  if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
+  const eventType = BID_RESPONSE;
+  const argsCleaned = cleanCreatives(args); ;
+  if (allEvents[eventType] === undefined) { allEvents[eventType] = [] }
   allEvents[eventType].push(argsCleaned);
 }
 
 function addBidRequested(args) {
-  let eventType = BID_REQUESTED;
-  let argsCleaned = filterAttributes(args, true);
-  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  const eventType = BID_REQUESTED;
+  const argsCleaned = filterAttributes(args, true);
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(argsCleaned);
 }
 
 function addTimeout(args) {
-  let eventType = BID_TIMEOUT;
-  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  const eventType = BID_TIMEOUT;
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
-  let argsCleaned = [];
+  const argsCleaned = [];
   let argsDereferenced = {};
-  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  const stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   argsDereferenced = stringArgs;
   argsDereferenced.forEach((attr) => {
     argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
-  if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
 
 export const dereferenceWithoutRenderer = function(args) {
   if (args.renderer) {
-    let tmp = args.renderer;
+    const tmp = args.renderer;
     delete args.renderer;
-    let stringified = JSON.stringify(args);
+    const stringified = JSON.stringify(args);
     args['renderer'] = tmp;
     return stringified;
   }
   if (args.bidsReceived) {
-    let tmp = {}
-    for (let key in args.bidsReceived) {
+    const tmp = {}
+    for (const key in args.bidsReceived) {
       if (args.bidsReceived[key].renderer) {
         tmp[key] = args.bidsReceived[key].renderer;
         delete args.bidsReceived[key].renderer;
       }
     }
-    let stringified = JSON.stringify(args);
-    for (let key in tmp) {
+    const stringified = JSON.stringify(args);
+    for (const key in tmp) {
       args.bidsReceived[key].renderer = tmp[key];
     }
     return stringified;
@@ -158,22 +158,22 @@ export const dereferenceWithoutRenderer = function(args) {
 }
 
 function addAuctionEnd(args) {
-  let eventType = AUCTION_END;
-  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  const eventType = AUCTION_END;
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
-  let argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
-  if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+  const argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
+  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
 
 function handleBidWon(args) {
   args = enhanceMediaType(filterAttributes(JSON.parse(dereferenceWithoutRenderer(args)), true));
   let increment = args['cpm'];
-  if (typeof saveEvents['auctionEnd'] == 'object') {
+  if (typeof saveEvents['auctionEnd'] === 'object') {
     saveEvents['auctionEnd'].forEach((auction) => {
-      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidsReceived'] == 'object') {
+      if (auction['auctionId'] === args['auctionId'] && typeof auction['bidsReceived'] === 'object') {
         auction['bidsReceived'].forEach((bid) => {
-          if (bid['transactionId'] == args['transactionId'] && bid['adId'] != args['adId']) {
+          if (bid['transactionId'] === args['transactionId'] && bid['adId'] !== args['adId']) {
             if (args['cpm'] < bid['cpm']) {
               increment = 0;
             } else if (increment > args['cpm'] - bid['cpm']) {
@@ -182,10 +182,10 @@ function handleBidWon(args) {
           }
         });
       }
-      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+      if (auction['auctionId'] === args['auctionId'] && typeof auction['bidderRequests'] === 'object') {
         auction['bidderRequests'].forEach((req) => {
           req.bids.forEach((bid) => {
-            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+            if (bid['bidId'] === args['requestId'] && bid['transactionId'] === args['transactionId']) {
               args['ova'] = bid['ova'];
             }
           });
@@ -195,17 +195,17 @@ function handleBidWon(args) {
   }
   args['cpmIncrement'] = increment;
   args['referer'] = encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation);
-  if (typeof saveEvents.bidRequested == 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
+  if (typeof saveEvents.bidRequested === 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
   ajax(endpoint + '.oxxion.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }
 
 function handleAuctionEnd() {
   ajax(endpoint + '.oxxion.io/analytics/auctions', function (data) {
-    let list = JSON.parse(data);
-    if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
-      let alreadyCalled = [];
+    const list = JSON.parse(data);
+    if (Array.isArray(list) && typeof allEvents['bidResponse'] !== 'undefined') {
+      const alreadyCalled = [];
       allEvents['bidResponse'].forEach((bidResponse) => {
-        let tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
+        const tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
         if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
           alreadyCalled.push(tmpId);
           ajax(endpoint + '.oxxion.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
@@ -217,7 +217,7 @@ function handleAuctionEnd() {
   auctionEnd = {};
 }
 
-let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
+const oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({
     eventType,
     args

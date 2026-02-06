@@ -8,7 +8,7 @@ import {logError} from '../../src/utils.js';
 import {PbPromise} from '../../src/utils/promise.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
-let submodules = [];
+const submodules = [];
 
 export function registerSubmodules(submodule) {
   submodules.push(submodule);
@@ -19,7 +19,7 @@ export function reset() {
 }
 
 export function processFpd({global = {}, bidder = {}} = {}) {
-  let modConf = config.getConfig('firstPartyData') || {};
+  const modConf = config.getConfig('firstPartyData') || {};
   let result = PbPromise.resolve({global, bidder});
   submodules.sort((a, b) => {
     return ((a.queue || 1) - (b.queue || 1));

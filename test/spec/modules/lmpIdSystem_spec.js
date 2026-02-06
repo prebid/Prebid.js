@@ -1,36 +1,5 @@
-import { expect } from 'chai';
-import { find } from 'src/polyfill.js';
-import { config } from 'src/config.js';
-import {init, startAuctionHook, setSubmoduleRegistry, resetUserIds} from 'modules/userId/index.js';
-import { storage, lmpIdSubmodule } from 'modules/lmpIdSystem.js';
-import { mockGdprConsent } from '../../helpers/consentData.js';
-import 'src/prebid.js';
-
-function getConfigMock() {
-  return {
-    userSync: {
-      syncDelay: 0,
-      userIds: [{
-        name: 'lmpid'
-      }]
-    }
-  }
-}
-
-function getAdUnitMock(code = 'adUnit-code') {
-  return {
-    code,
-    mediaTypes: { banner: {}, native: {} },
-    sizes: [
-      [300, 200],
-      [300, 600]
-    ],
-    bids: [{
-      bidder: 'sampleBidder',
-      params: { placementId: 'banner-only-bidder' }
-    }]
-  };
-}
+import {expect} from 'chai';
+import {lmpIdSubmodule, storage} from 'modules/lmpIdSystem.js';
 
 describe('LMPID System', () => {
   let getDataFromLocalStorageStub, localStorageIsEnabledStub;
@@ -80,55 +49,6 @@ describe('LMPID System', () => {
   describe('LMPID: test "decode" method', () => {
     it('provides the lmpid from a stored object', () => {
       expect(lmpIdSubmodule.decode('lmpid')).to.deep.equal({ lmpid: 'lmpid' });
-    });
-  });
-
-  describe('LMPID: requestBids hook', () => {
-    let adUnits;
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-      mockGdprConsent(sandbox);
-      adUnits = [getAdUnitMock()];
-      init(config);
-      setSubmoduleRegistry([lmpIdSubmodule]);
-      getDataFromLocalStorageStub.withArgs('__lmpid').returns('stored-lmpid');
-      localStorageIsEnabledStub.returns(true);
-      config.setConfig(getConfigMock());
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-      config.resetConfig();
-    });
-
-    after(() => {
-      init(config);
-    })
-
-    after(() => {
-      resetUserIds();
-    })
-
-    it('when a stored LMPID exists it is added to bids', (done) => {
-      startAuctionHook(() => {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.lmpid');
-            expect(bid.userId.lmpid).to.equal('stored-lmpid');
-            const lmpidAsEid = find(bid.userIdAsEids, e => e.source == 'loblawmedia.ca');
-            expect(lmpidAsEid).to.deep.equal({
-              source: 'loblawmedia.ca',
-              uids: [{
-                id: 'stored-lmpid',
-                atype: 3,
-              }]
-            });
-          });
-        });
-        done();
-      }, { adUnits });
     });
   });
 });

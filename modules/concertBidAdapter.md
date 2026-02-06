@@ -10,7 +10,7 @@ Maintainer: support@concert.io
 
 Module that connects to Concert demand sources
 
-# Test Paramters
+# Test Parameters
 ```
   var adUnits = [
     {

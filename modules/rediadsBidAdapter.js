@@ -57,7 +57,17 @@ export const spec = {
     const commonParams = bidRequests[0]?.params || {};
     const siteContent = bidRequests[0]?.site?.content || null;
     let data = {};
-    let FINAL_ENDPOINT_URL = commonParams.endpoint || ENDPOINT_URL
+    let FINAL_ENDPOINT_URL = ENDPOINT_URL;
+
+    if (commonParams.endpoint) {
+      // Replace subdomain in FINAL_ENDPOINT_URL with commonParams.endpoint
+      const url = new URL(FINAL_ENDPOINT_URL);
+      const hostParts = url.hostname.split('.');
+      hostParts[0] = commonParams.endpoint;
+      url.hostname = hostParts.join('.');
+      FINAL_ENDPOINT_URL = url.toString();
+    }
+
     try {
       data = converter.toORTB({ bidRequests, bidderRequest });
       const testBidsRequested = location.hash.includes('rediads-test-bids');

@@ -50,7 +50,7 @@ describe('Adloox RTD Provider', function () {
   });
 
   before(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]);
   });
 

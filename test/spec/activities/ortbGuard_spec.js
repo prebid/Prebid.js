@@ -45,7 +45,7 @@ describe('ortb2Guard', () => {
 
   function testPropertiesAreProtected(properties, allowed) {
     properties.forEach(prop => {
-      it(`should ${allowed ? 'keep' : 'undo'} additions to ${prop}`, () => {
+      it(`should ${allowed ? 'keep' : 'prevent'} additions to ${prop}`, () => {
         const orig = [{n: 'orig'}];
         const ortb2 = {};
         deepSetValue(ortb2, prop, deepClone(orig));
@@ -53,8 +53,7 @@ describe('ortb2Guard', () => {
         const mod = {};
         const insert = [{n: 'new'}];
         deepSetValue(mod, prop, insert);
-        mergeDeep(guard.obj, mod);
-        guard.verify();
+        mergeDeep(guard, mod);
         const actual = deepAccess(ortb2, prop);
         if (allowed) {
           expect(actual).to.eql(orig.concat(insert))
@@ -63,13 +62,12 @@ describe('ortb2Guard', () => {
         }
       });
 
-      it(`should ${allowed ? 'keep' : 'undo'} modifications to ${prop}`, () => {
+      it(`should ${allowed ? 'keep' : 'prevent'} modifications to ${prop}`, () => {
         const orig = [{n: 'orig'}];
         const ortb2 = {};
         deepSetValue(ortb2, prop, orig);
         const guard = ortb2Guard(ortb2, activityParams(MOD_TYPE, MOD_NAME));
-        deepSetValue(guard.obj, `${prop}.0.n`, 'new');
-        guard.verify();
+        deepSetValue(guard, `${prop}.0.n`, 'new');
         const actual = deepAccess(ortb2, prop);
         if (allowed) {
           expect(actual).to.eql([{n: 'new'}]);
@@ -102,19 +100,18 @@ describe('ortb2FragmentsGuard', () => {
     guardFragments = ortb2FragmentsGuardFactory(testGuard);
   });
 
-  it('should undo changes to global FPD', () => {
+  it('should prevent changes to global FPD', () => {
     const fragments = {
       global: {
         foo: {inner: 'val'}
       }
     }
     const guard = guardFragments(fragments);
-    guard.obj.global.foo = 'other';
-    guard.verify();
+    guard.global.foo = 'other';
     expect(fragments.global.foo).to.eql({inner: 'val'});
   });
 
-  it('should undo changes to bidder FPD', () => {
+  it('should prevent changes to bidder FPD', () => {
     const fragments = {
       bidder: {
         A: {
@@ -123,18 +120,16 @@ describe('ortb2FragmentsGuard', () => {
       }
     };
     const guard = guardFragments(fragments);
-    guard.obj.bidder.A.foo = 'denied';
-    guard.verify();
+    guard.bidder.A.foo = 'denied';
     expect(fragments.bidder.A).to.eql({foo: 'val'});
   });
 
-  it('should undo changes to bidder FPD that was not initially there', () => {
+  it('should prevent changes to bidder FPD that was not initially there', () => {
     const fragments = {
       bidder: {}
     };
     const guard = guardFragments(fragments);
-    guard.obj.bidder.A = {foo: 'denied', other: 'allowed'};
-    guard.verify();
+    guard.bidder.A = {foo: 'denied', other: 'allowed'};
     expect(fragments.bidder.A).to.eql({other: 'allowed'});
   });
 })

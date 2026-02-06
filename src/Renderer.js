@@ -2,7 +2,6 @@ import { loadExternalScript } from './adloader.js';
 import {
   logError, logWarn, logMessage
 } from './utils.js';
-import {find} from './polyfill.js';
 import {getGlobal} from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
@@ -69,6 +68,10 @@ export function Renderer(options) {
   }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
+/**
+ * @param {{}} options
+ * @return {Renderer}
+ */
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
   return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
 };
@@ -136,7 +139,7 @@ export function executeRenderer(renderer, bid, doc) {
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnits = pbjsInstance.adUnits;
-  const adUnit = find(adUnits, adUnit => {
+  const adUnit = adUnits.find(adUnit => {
     return adUnit.code === adUnitCode;
   });
 

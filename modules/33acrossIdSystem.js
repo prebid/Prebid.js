@@ -39,7 +39,7 @@ export const domainUtils = {
 
 function calculateResponseObj(response) {
   if (!response.succeeded) {
-    if (response.error == 'Cookied User') {
+    if (response.error === 'Cookied User') {
       logMessage(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
     } else {
       logError(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));

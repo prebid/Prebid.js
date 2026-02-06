@@ -189,7 +189,7 @@ describe('ringieraxelspringerBidAdapter', function () {
           }
         }
       };
-      let bidderRequest = {
+      const bidderRequest = {
         ortb2: {
           regs: {
             ext: {
@@ -236,7 +236,7 @@ describe('ringieraxelspringerBidAdapter', function () {
     });
 
     it('should handle empty ad', function () {
-      let res = {
+      const res = {
         'ads': [{
           type: 'empty'
         }]
@@ -246,7 +246,7 @@ describe('ringieraxelspringerBidAdapter', function () {
     });
 
     it('should handle empty server response', function () {
-      let res = {
+      const res = {
         'ads': []
       };
       const resp = spec.interpretResponse({ body: res }, {});
@@ -254,7 +254,7 @@ describe('ringieraxelspringerBidAdapter', function () {
     });
 
     it('should generate auctionConfig when fledge is enabled', function () {
-      let bidRequest = {
+      const bidRequest = {
         method: 'GET',
         url: 'https://example.com',
         bidIds: [{
@@ -283,7 +283,7 @@ describe('ringieraxelspringerBidAdapter', function () {
         }]
       };
 
-      let auctionConfigs = [{
+      const auctionConfigs = [{
         'bidId': '123',
         'config': {
           'seller': 'https://csr.onet.pl',
@@ -450,9 +450,9 @@ describe('ringieraxelspringerBidAdapter', function () {
               Headline: 'Headline',
               Image: '//img.url',
               adInfo: 'REKLAMA',
-              click: '//link.url',
+              Thirdpartyclicktracker: '//link.url',
               imp: '//imp.url',
-              Thirdpartyclicktracker: '//thirdPartyClickTracker.url'
+              thirdPartyClickTracker2: '//thirdPartyClickTracker.url'
             },
             meta: {
               slot: 'nativestd',
@@ -467,8 +467,84 @@ describe('ringieraxelspringerBidAdapter', function () {
         }
       ]
     };
+    const expectedTeaserStandardOrtbResponse = {
+      ver: '1.2',
+      assets: [
+        {
+          id: 0,
+          data: {
+            value: '',
+            type: 2
+          },
+        },
+        {
+          id: 1,
+          data: {
+            value: 'REKLAMA',
+            type: 10
+          },
+        },
+        {
+          id: 3,
+          img: {
+            type: 1,
+            url: '//logo.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 4,
+          img: {
+            type: 3,
+            url: '//img.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          },
+        },
+        {
+          id: 6,
+          title: {
+            text: 'Headline'
+          }
+        },
+      ],
+      link: {
+        url: '//adclick.url//link.url',
+        clicktrackers: []
+      },
+      eventtrackers: [
+        {
+          event: 1,
+          method: 1,
+          url: '//ems.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: '//impression.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: '//impression1.url'
+        },
+        {
+          event: 1,
+          method: 2,
+          url: '//impressionJs1.url'
+        }
+      ],
+      privacy: '//dsa.url'
+    };
     const expectedTeaserStandardResponse = {
-      sendTargetingKeys: false,
       title: 'Headline',
       image: {
         url: '//img.url',
@@ -485,13 +561,77 @@ describe('ringieraxelspringerBidAdapter', function () {
       body: 'BODY',
       body2: 'REKLAMA',
       sponsoredBy: 'Test Onet',
-      impressionTrackers: ['//ems.url', '//impression.url', '//impression1.url'],
-      javascriptTrackers: ['<script async src=//impressionJs1.url></script>'],
-      clickTrackers: [],
-      privacyLink: '//dsa.url',
+      ortb: expectedTeaserStandardOrtbResponse,
+      privacyLink: '//dsa.url'
+    };
+    const expectedNativeInFeedOrtbResponse = {
+      ver: '1.2',
+      assets: [
+        {
+          id: 0,
+          data: {
+            value: '',
+            type: 2
+          },
+        },
+        {
+          id: 1,
+          data: {
+            value: 'REKLAMA',
+            type: 10
+          },
+        },
+        {
+          id: 3,
+          img: {
+            type: 1,
+            url: '',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 4,
+          img: {
+            type: 3,
+            url: '//img.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          },
+        },
+        {
+          id: 6,
+          title: {
+            text: 'Headline'
+          }
+        },
+      ],
+      link: {
+        url: '//adclick.url//link.url',
+        clicktrackers: ['//thirdPartyClickTracker.url']
+      },
+      eventtrackers: [
+        {
+          event: 1,
+          method: 1,
+          url: '//ems.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: '//imp.url'
+        }
+      ],
+      privacy: '//dsa.url',
     };
     const expectedNativeInFeedResponse = {
-      sendTargetingKeys: false,
       title: 'Headline',
       image: {
         url: '//img.url',
@@ -508,9 +648,7 @@ describe('ringieraxelspringerBidAdapter', function () {
       body: 'BODY',
       body2: 'REKLAMA',
       sponsoredBy: 'Test Onet',
-      impressionTrackers: ['//ems.url', '//imp.url'],
-      javascriptTrackers: [],
-      clickTrackers: ['//thirdPartyClickTracker.url'],
+      ortb: expectedNativeInFeedOrtbResponse,
       privacyLink: '//dsa.url'
     };
 

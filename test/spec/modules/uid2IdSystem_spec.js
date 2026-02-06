@@ -2,7 +2,7 @@ import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/u
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
-import 'src/prebid.js';
+import {requestBids} from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
@@ -12,7 +12,7 @@ import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 const clearTimersAfterEachTest = true;
 const debugOutput = () => {};
@@ -47,13 +47,26 @@ const getFromAppropriateStorage = () => {
   else return coreStorage.getCookie(moduleCookieName);
 }
 
-const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2IdentityContainer(token));
-const expectLegacyToken = (bid) => expect(bid.userId).to.deep.include(makeUid2IdentityContainer(legacyToken));
-const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
-const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2OptoutContainer(token));
+const UID2_SOURCE = 'uidapi.com';
+function findUid2(bid) {
+  return (bid?.userIdAsEids ?? []).find(e => e.source === UID2_SOURCE);
+}
+const expectToken = (bid, token) => {
+  const eid = findUid2(bid);
+  expect(eid && eid.uids[0].id).to.equal(token);
+};
+const expectLegacyToken = (bid) => {
+  const eid = findUid2(bid);
+  expect(eid && eid.uids[0].id).to.equal(legacyToken);
+};
+const expectNoIdentity = (bid) => expect(findUid2(bid)).to.be.undefined;
+const expectOptout = (bid) => expect(findUid2(bid)).to.be.undefined;
 const expectGlobalToHaveToken = (token) => expect(getGlobal().getUserIds()).to.deep.include(makeUid2IdentityContainer(token));
 const expectGlobalToHaveNoUid2 = () => expect(getGlobal().getUserIds()).to.not.haveOwnProperty('uid2');
-const expectNoLegacyToken = (bid) => expect(bid.userId).to.not.deep.include(makeUid2IdentityContainer(legacyToken));
+const expectNoLegacyToken = (bid) => {
+  const eid = findUid2(bid);
+  if (eid) expect(eid.uids[0].id).to.not.equal(legacyToken);
+};
 const expectModuleStorageEmptyOrMissing = () => expect(getFromAppropriateStorage()).to.be.null;
 const expectModuleStorageToContain = (originalAdvertisingToken, latestAdvertisingToken, originalIdentity) => {
   const cookie = JSON.parse(getFromAppropriateStorage());
@@ -89,14 +102,14 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 };
 
 describe(`UID2 module`, function () {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let suiteSandbox; let testSandbox; let timerSpy; let fullTestTitle; let restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
     uninstallTcfControl();
     attachIdSystem(uid2IdSubmodule);
 
-    suiteSandbox = sinon.sandbox.create();
+    suiteSandbox = sinon.createSandbox();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
     if (typeof window.crypto.subtle === 'undefined') {
@@ -144,14 +157,14 @@ describe(`UID2 module`, function () {
     debugOutput(`----------------- START TEST ------------------`);
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
     debugOutput(fullTestTitle);
-    testSandbox = sinon.sandbox.create();
+    testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
   });
 
   afterEach(async function() {
-    $$PREBID_GLOBAL$$.requestBids.removeAll();
+    requestBids.removeAll();
     config.resetConfig();
     testSandbox.restore();
     if (timerSpy.timers.length > 0) {
@@ -224,7 +237,7 @@ describe(`UID2 module`, function () {
     it('and GDPR applies, when getId is called directly it provides no identity', () => {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       const consentConfig = setGdprApplies();
-      let configObj = makePrebidConfig(legacyConfigParams);
+      const configObj = makePrebidConfig(legacyConfigParams);
       const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], {gdpr: consentConfig.consentData});
       expect(result?.id).to.not.exist;
     });
@@ -240,12 +253,14 @@ describe(`UID2 module`, function () {
       config.setConfig(makePrebidConfig(legacyConfigParams));
       const bid2 = await runAuction();
 
-      expect(bid.userId.uid2.id).to.equal(bid2.userId.uid2.id);
+      const first = findUid2(bid);
+      const second = findUid2(bid2);
+      expect(first && second && first.uids[0].id).to.equal(second.uids[0].id);
     });
   });
 
   // This setup runs all of the functional tests with both types of config - the full token response in params, or a server cookie with the cookie name provided
-  let scenarios = [
+  const scenarios = [
     {
       name: 'Token provided in config call',
       setConfig: (token, extraConfig = {}) => {

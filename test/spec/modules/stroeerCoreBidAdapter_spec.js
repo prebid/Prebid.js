@@ -2,23 +2,22 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {find} from 'src/polyfill.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
-  let fakeServer;
   let bidderRequest;
   let clock;
 
   beforeEach(() => {
     bidderRequest = buildBidderRequest();
-    sandbox = sinon.sandbox.create();
-    fakeServer = sandbox.useFakeServer();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
   });
 
   afterEach(() => {
+    clock.restore();
     sandbox.restore();
   });
 
@@ -53,22 +52,33 @@ describe('stroeerCore bid adapter', function () {
   }
 
   // Vendor user ids and associated data
-  const userIds = Object.freeze({
-    criteoId: 'criteo-user-id',
-    digitrustid: {
-      data: {
-        id: 'encrypted-user-id==',
-        keyv: 4,
-        privacy: {optout: false},
-        producer: 'ABC',
-        version: 2
-      }
+  const eids = Object.freeze([
+    {
+      source: 'pubcid.org',
+      uids: [
+        {
+          atype: 1,
+          id: '0dc6b760-0000-4716-9999-f92afdf2afb9',
+        },
+        {
+          atype: 3,
+          id: '8263836331',
+        }
+      ],
     },
-    lipb: {
-      lipbid: 'T7JiRRvsRAmh88',
-      segments: ['999']
+    {
+      source: 'criteo.com',
+      uids: [
+        {
+          atype: 2,
+          id: 'WpgEVV9zekZDVmglMkJQQ09vN05JbWg',
+          ext: {
+            other: 'stuff'
+          }
+        }
+      ],
     }
-  });
+  ]);
 
   const buildBidderRequest = () => ({
     bidderRequestId: 'bidder-request-id-123',
@@ -91,7 +101,7 @@ describe('stroeerCore bid adapter', function () {
       params: {
         sid: 'NDA='
       },
-      userId: userIds
+      userIdAsEids: eids
     }, {
       bidId: 'bid2',
       bidder: 'stroeerCore',
@@ -104,7 +114,7 @@ describe('stroeerCore bid adapter', function () {
       params: {
         sid: 'ODA='
       },
-      userId: userIds
+      userIdAsEids: eids
     }],
   });
 
@@ -123,7 +133,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const createWindow = (href, params = {}) => {
-    let {parent, top, frameElement, placementElements = []} = params;
+    const {parent, top, frameElement, placementElements = []} = params;
 
     const protocol = href.startsWith('https') ? 'https:' : 'http:';
     const win = {
@@ -140,7 +150,7 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         },
-        getElementById: id => find(placementElements, el => el.id === id)
+        getElementById: id => placementElements.find(el => el.id === id)
       }
     };
 
@@ -332,7 +342,7 @@ describe('stroeerCore bid adapter', function () {
 
       it('should use hardcoded url as default endpoint', () => {
         const bidReq = buildBidderRequest();
-        let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
         assert.equal(serverRequestInfo.method, 'POST');
         assert.isObject(serverRequestInfo.data);
@@ -365,7 +375,7 @@ describe('stroeerCore bid adapter', function () {
               bidReq.bids[0].params = sample.params;
               bidReq.bids.length = 1;
 
-              let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+              const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
               assert.equal(serverRequestInfo.method, 'POST');
               assert.isObject(serverRequestInfo.data);
@@ -425,7 +435,10 @@ describe('stroeerCore bid adapter', function () {
             }
           }],
           'user': {
-            'euids': userIds
+            'eids': eids
+          },
+          'ver': {
+            'pb': getGlobal().version,
           }
         };
 
@@ -452,7 +465,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'NDA='
             },
-            userId: userIds
+            userIdAsEids: eids
           }];
 
           const expectedBids = [{
@@ -489,7 +502,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ODA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           const bannerBid1 = {
@@ -504,7 +517,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'NDA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           const bannerBid2 = {
@@ -519,7 +532,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ABC=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           bidderRequest.bids = [bannerBid1, videoBid, bannerBid2];
@@ -585,7 +598,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ODA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           bidderRequest.bids = [multiFormatBid];
@@ -623,6 +636,7 @@ describe('stroeerCore bid adapter', function () {
           assert.deepEqual(serverRequestInfo.data.bids, [...expectedBannerBids, ...expectedVideoBids]);
         });
       });
+
       describe('optional fields', () => {
         it('should skip viz field when unable to determine visibility of placement', () => {
           placementElements.length = 0;
@@ -631,7 +645,7 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
-          for (let bid of serverRequestInfo.data.bids) {
+          for (const bid of serverRequestInfo.data.bids) {
             assert.isUndefined(bid.viz);
           }
         });
@@ -643,7 +657,7 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
-          for (let bid of serverRequestInfo.data.bids) {
+          for (const bid of serverRequestInfo.data.bids) {
             assert.isUndefined(bid.ref);
           }
         });
@@ -680,10 +694,10 @@ describe('stroeerCore bid adapter', function () {
 
         it('should be able to build without third party user id data', () => {
           const bidReq = buildBidderRequest();
-          bidReq.bids.forEach(bid => delete bid.userId);
+          bidReq.bids.forEach(bid => delete bid.userIdAsEids);
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
-          assert.notProperty(serverRequestInfo, 'uids');
+          assert.notProperty(serverRequestInfo.data, 'user');
         });
 
         it('should add schain if available', () => {
@@ -703,7 +717,12 @@ describe('stroeerCore bid adapter', function () {
           });
 
           const bidReq = buildBidderRequest();
-          bidReq.bids.forEach(bid => bid.schain = schain);
+          bidReq.bids.forEach(bid => {
+            bid.ortb2 = bid.ortb2 || {};
+            bid.ortb2.source = bid.ortb2.source || {};
+            bid.ortb2.source.ext = bid.ortb2.source.ext || {};
+            bid.ortb2.source.ext.schain = schain;
+          });
 
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.deepEqual(serverRequestInfo.data.schain, schain);
@@ -991,19 +1010,11 @@ describe('stroeerCore bid adapter', function () {
     it('should interpret a video response', () => {
       const bidderResponse = buildBidderResponseWithVideo();
       const bidResponses = spec.interpretResponse({body: bidderResponse});
-      let videoBidResponse = bidResponses[0];
+      const videoBidResponse = bidResponses[0];
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 
-    it('should add advertiser domains to meta object', () => {
-      const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
-      const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0].meta, 'advertiserDomains', ['website.org', 'domain.com']);
-      assert.propertyVal(result[1].meta, 'advertiserDomains', undefined);
-    });
-
-    it('should add dsa info to meta object', () => {
+    it('should set meta object', () => {
       const dsaResponse = {
         behalf: 'AdvertiserA',
         paid: 'AdvertiserB',
@@ -1011,26 +1022,28 @@ describe('stroeerCore bid adapter', function () {
           domain: 'dspexample.com',
           dsaparams: [1, 2],
         }],
-        adrender: 1
+        adrender: 1,
       };
 
       const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {dsa: utils.deepClone(dsaResponse)});
+      response.bids[0] = Object.assign(response.bids[0], {
+        meta: {
+          advertiserDomains: ['website.org', 'domain.com'],
+          dsa: utils.deepClone(dsaResponse),
+          campaignType: 'RTB',
+          another: 'thing',
+        },
+      });
 
       const result = spec.interpretResponse({body: response});
 
-      assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
-      assert.propertyVal(result[1].meta, 'dsa', undefined);
-    });
+      const firstBidMeta = result[0].meta;
+      assert.deepPropertyVal(firstBidMeta, 'advertiserDomains', ['website.org', 'domain.com']);
+      assert.deepPropertyVal(firstBidMeta, 'dsa', dsaResponse);
+      assert.propertyVal(firstBidMeta, 'campaignType', 'RTB');
+      assert.propertyVal(firstBidMeta, 'another', 'thing');
 
-    it('should add campaignType to meta object', () => {
-      const response = buildBidderResponse();
-      response.bids[1] = Object.assign(response.bids[1], {campaignType: 'RTB'});
-
-      const result = spec.interpretResponse({body: response});
-
-      assert.propertyVal(result[0].meta, 'campaignType', undefined);
-      assert.propertyVal(result[1].meta, 'campaignType', 'RTB');
+      assert.isEmpty(result[1].meta)
     });
   });
 

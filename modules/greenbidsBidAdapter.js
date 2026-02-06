@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions } from '../src/utils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
@@ -10,13 +10,11 @@ import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLin
  */
 
 const BIDDER_CODE = 'greenbids';
-const GVL_ID = 1232;
 const ENDPOINT_URL = 'https://hb.greenbids.ai';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -43,7 +41,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(bids => {
       const reqObj = {};
-      let placementId = getValue(bids.params, 'placementId');
+      const placementId = getValue(bids.params, 'placementId');
       const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
       reqObj.sizes = getSizes(bids);
       reqObj.bidId = getBidIdParameter('bidId', bids);
@@ -52,6 +50,7 @@ export const spec = {
       reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
       reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
       if (gpid) { reqObj.gpid = gpid; }
+      return reqObj;
     });
     const topWindow = window.top;
 
@@ -67,7 +66,7 @@ export const spec = {
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
-      screenOrientation: screen.orientation?.type,
+      screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,
@@ -76,8 +75,9 @@ export const spec = {
 
     const firstBidRequest = validBidRequests[0];
 
-    if (firstBidRequest.schain) {
-      payload.schain = firstBidRequest.schain;
+    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     hydratePayloadWithGppConsentData(payload, bidderRequest.gppConsent);
@@ -165,8 +165,8 @@ function getSizes(bid) {
  */
 function hydratePayloadWithGppConsentData(payload, gppData) {
   if (!gppData) { return; }
-  let isValidConsentString = typeof gppData.gppString === 'string';
-  let validateApplicableSections =
+  const isValidConsentString = typeof gppData.gppString === 'string';
+  const validateApplicableSections =
       Array.isArray(gppData.applicableSections) &&
       gppData.applicableSections.every((section) => typeof (section) === 'number')
   payload.gpp = {
@@ -187,9 +187,9 @@ function hydratePayloadWithGppConsentData(payload, gppData) {
  */
 function hydratePayloadWithGdprConsentData(payload, gdprData) {
   if (!gdprData) { return; }
-  let isCmp = typeof gdprData.gdprApplies === 'boolean';
-  let isConsentString = typeof gdprData.consentString === 'string';
-  let status = isCmp
+  const isCmp = typeof gdprData.gdprApplies === 'boolean';
+  const isConsentString = typeof gdprData.consentString === 'string';
+  const status = isCmp
     ? findGdprStatus(gdprData.gdprApplies, gdprData.vendorData)
     : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
   payload.gdpr_iab = {

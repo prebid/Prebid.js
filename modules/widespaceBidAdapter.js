@@ -1,7 +1,6 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
-import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
@@ -29,7 +28,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let serverRequests = [];
+    const serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
@@ -45,7 +44,7 @@ export const spec = {
     }
 
     validBidRequests.forEach((bid, i) => {
-      let data = {
+      const data = {
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'adSpaceHttpRefUrl': getTopWindowReferrer(),
@@ -91,8 +90,8 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        data.forceAdId = (find(window.top.location.hash.split('&'),
-          val => includes(val, 'WS_DEBUG_FORCEADID')
+        data.forceAdId = (((window.top.location.hash.split('&')) || []).find(
+          val => val.includes('WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
       }
 
@@ -128,7 +127,7 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
-    let bidResponses = [];
+    const bidResponses = [];
     successBids.forEach((bid) => {
       storeData({
         'perf_status': 'OK',
@@ -185,7 +184,7 @@ function storeData(data, name, stringify = true) {
 }
 
 function getData(name, remove = true) {
-  let data = [];
+  const data = [];
   return data;
 }
 

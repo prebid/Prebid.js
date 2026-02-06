@@ -1,4 +1,3 @@
- 
 import {spec, storage, VIDEO_RENDERER_URL} from 'modules/tpmnBidAdapter.js';
 import {generateUUID} from '../../../src/utils.js';
 import {expect} from 'chai';
@@ -6,6 +5,7 @@ import * as utils from 'src/utils';
 import * as sinon from 'sinon';
 import 'modules/consentManagementTcf.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
@@ -122,27 +122,27 @@ const VIDEO_BID_RESPONSE = {
 };
 
 describe('tpmnAdapterTests', function () {
-  let sandbox = sinon.sandbox.create();
+  let sandbox = sinon.createSandbox();
   let getCookieStub;
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       tpmn: {
         storageAllowed: true
       }
     };
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     getCookieStub = sinon.stub(storage, 'getCookie');
   });
 
   afterEach(function () {
     sandbox.restore();
     getCookieStub.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
   });
 
   describe('isBidRequestValid()', function () {
     it('should accept request if placementId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: BIDDER_CODE,
         params: {
           inventoryId: 123
@@ -157,7 +157,7 @@ describe('tpmnAdapterTests', function () {
     });
 
     it('should reject requests without params', function () {
-      let bid = {
+      const bid = {
         bidder: BIDDER_CODE,
         params: {}
       };
@@ -180,7 +180,7 @@ describe('tpmnAdapterTests', function () {
           gdprApplies: true,
         }
       }));
-      let request = spec.buildRequests([bid], req)[0];
+      const request = spec.buildRequests([bid], req)[0];
 
       const payload = request.data;
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
@@ -194,7 +194,7 @@ describe('tpmnAdapterTests', function () {
         mediaTypes: { banner: { battr: [1] } }
       });
 
-      let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+      const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
 
       expect(request).to.exist.and.to.be.an('object');
       const payload = request.data;
@@ -218,7 +218,7 @@ describe('tpmnAdapterTests', function () {
       it('should create request data', function () {
         const bid = utils.deepClone(BANNER_BID);
 
-        let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+        const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;
         expect(payload.imp[0]).to.have.property('id', bid.bidId);
@@ -306,7 +306,7 @@ describe('tpmnAdapterTests', function () {
           }
 
           expect(spec.isBidRequestValid(NEW_VIDEO_BID)).to.equal(true);
-          let requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);
+          const requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);
           const request = requests[0].data;
           expect(request.imp[0].video.w).to.equal(check.w);
           expect(request.imp[0].video.h).to.equal(check.h);
@@ -325,7 +325,7 @@ describe('tpmnAdapterTests', function () {
 
       if (FEATURES.VIDEO) {
         it('should use bidder video params if they are set', () => {
-          let bid = utils.deepClone(VIDEO_BID);
+          const bid = utils.deepClone(VIDEO_BID);
           const check = {
             api: [1, 2],
             mimes: ['video/mp4', 'video/x-flv'],
@@ -380,7 +380,7 @@ describe('tpmnAdapterTests', function () {
       it('should handle empty bid response', function () {
         const bid = utils.deepClone(BANNER_BID);
 
-        let request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
+        const request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
         const EMPTY_RESP = Object.assign({}, BANNER_BID_RESPONSE, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, request);
         expect(bids).to.be.empty;

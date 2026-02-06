@@ -1,0 +1,224 @@
+<!--
+  この広告スロット用の単一の入札者を呼び出すページです。
+  Google Publisher Tagを使用したPrebidの「ハローワールド」の例と考えることができます。
+  新しいアダプターのテストページとしても適しています。
+-->
+
+<html>
+   <head>
+       <meta charset="UTF-8">
+       <title>日本の金融市場 - 株式と投資の情報</title>
+       <script async src="../../build/dev/prebid.js"></script>
+       <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+       <style>
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f9fc;
+        }
+        
+        h1, h2 {
+            text-align: center;
+            color: #006D77;
+        }
+        
+        h1 {
+            margin-bottom: 5px;
+        }
+        
+        h2 {
+            margin-top: 0;
+            font-weight: normal;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #83C5BE;
+        }
+        
+        .content-section {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 25px;
+            background-color: #EDF6F9;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        
+        .content-section h3 {
+            color: #006D77;
+            border-bottom: 2px solid #FFDDD2;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .finance-item {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #FFDDD2;
+        }
+        
+        .finance-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .finance-item h4 {
+            color: #006D77;
+            margin-bottom: 15px;
+        }
+        
+        .finance-item p {
+            line-height: 1.7;
+            color: #444;
+            text-align: justify;
+        }
+        
+        .finance-meta {
+            font-size: 0.85em;
+            color: #777;
+            margin-top: 15px;
+            font-style: italic;
+        }
+    </style>
+       <script>
+           var FAILSAFE_TIMEOUT = 3300;
+           var PREBID_TIMEOUT = 3000;
+   
+           var adUnits = [{
+               code: 'div-gpt-ad-1460505748561-0',
+               mediaTypes: {
+                   banner: {
+                       sizes: [[728,90]],
+                   }
+               },            
+               // Replace this object to test a new Adapter!
+               bids: [{
+                       bidder: 'pubmatic',
+                       params: {
+                           publisherId: '103207222',
+                           adUnit: 'TestAdUnit'
+                       },
+                   },
+                   {bidder: "appnexus",
+                   params: {placementId: '8801672114'}
+                     }
+   
+               ]
+           }];
+   
+           var pbjs = pbjs || {};
+           pbjs.que = pbjs.que || [];
+   
+       </script>
+   
+       <script>
+           var googletag = googletag || {};
+           googletag.cmd = googletag.cmd || [];
+           googletag.cmd.push(function() {
+               googletag.pubads().disableInitialLoad();
+           });
+   
+           pbjs.que.push(function() {
+   
+               pbjs.setConfig({
+                   enableTIDs: true,
+                   realTimeData: {
+                       auctionDelay: 500,
+                       dataProviders: [
+                           {
+                               name: "chromeAi",
+                               waitForIt: true,
+                               params: {
+                                   languageDetector: {
+                                        enabled: true
+                                   },
+                                   summarizer:{
+                                    enabled: false,
+                                    length: 190
+                                   }
+                               },
+                           },
+                       ],
+                   },
+               });
+               pbjs.addAdUnits(adUnits);
+               pbjs.requestBids({
+                   bidsBackHandler: sendAdserverRequest,
+                   timeout: PREBID_TIMEOUT
+               });
+           });
+   
+           function sendAdserverRequest() {
+               if (pbjs.adserverRequestSent) return;
+               pbjs.adserverRequestSent = true;
+               googletag.cmd.push(function() {
+                   pbjs.que.push(function() {
+                       pbjs.setTargetingForGPTAsync();
+                       googletag.pubads().refresh();
+                   });
+               });
+           }
+   
+           setTimeout(function() {
+               sendAdserverRequest();
+           }, FAILSAFE_TIMEOUT);
+   
+       </script>
+   
+       <script>
+           googletag.cmd.push(function () {
+               googletag.defineSlot('/199622228336/test-adunit', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+   
+               googletag.pubads().enableSingleRequest();
+               googletag.enableServices();
+           });
+       </script>
+   </head>
+   
+   <body>
+   <h1>日本の金融市場</h1>
+   <h2>株式市場と投資の最新情報</h2>
+   <div id='div-gpt-ad-1460505748561-0' style="width:100%; height:300px; background-color: #faf2f3;">
+       <script type='text/javascript'>
+           googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+       </script>
+   </div>
+   <div class="content-section">
+       <h3>金融市場の最新記事</h3>
+       
+       <article class="finance-item">
+           <h4>日経平均、5年ぶりの高値を記録</h4>
+           <p>東京証券取引所の日経平均株価は本日、5年ぶりの高値を記録しました。テクノロジーセクターの好調な業績と、日銀の金融緩和政策の継続が市場を押し上げる要因となっています。</p>
+           <p>「半導体関連企業の業績が特に好調で、市場全体を牽引しています」と三菱UFJモルガン・スタンレー証券のアナリスト、田中健太氏は述べています。「また、円安傾向も輸出企業にとって追い風となっています」</p>
+           <p>市場専門家は、今後数ヶ月間で日経平均がさらに上昇する可能性があると予測していますが、米国の金利政策や地政学的リスクには注意が必要だと警告しています。</p>
+           <p class="finance-meta">公開日: 2025年5月1日 | カテゴリ: 株式市場</p>
+       </article>
+       
+       <article class="finance-item">
+           <h4>仮想通貨市場、規制強化の中で安定成長</h4>
+           <p>日本の金融庁による仮想通貨取引所への規制強化にもかかわらず、ビットコインやイーサリアムなどの主要仮想通貨は安定した成長を続けています。日本は世界で最も進んだ仮想通貨規制フレームワークを持つ国の一つとして認識されています。</p>
+           <p>「日本の規制は厳しいですが、それが逆に市場の信頼性を高めています」とビットフライヤー取引所の広報担当、佐藤美咲氏は説明します。「機関投資家も徐々に仮想通貨市場に参入し始めています」</p>
+           <p>専門家によると、ブロックチェーン技術の実用化が進むにつれ、今後数年間で仮想通貨市場はさらに成熟すると予測されています。</p>
+           <p class="finance-meta">公開日: 2025年4月28日 | カテゴリ: 仮想通貨</p>
+       </article>
+       
+       <article class="finance-item">
+           <h4>ESG投資、日本企業の間で急速に普及</h4>
+           <p>環境（Environment）、社会（Social）、ガバナンス（Governance）を重視するESG投資が、日本企業の間で急速に普及しています。特に再生可能エネルギーセクターへの投資が増加しており、日本政府の2050年カーボンニュートラル目標と連動しています。</p>
+           <p>「日本の機関投資家は、ESG基準を投資判断に積極的に取り入れるようになっています」と野村アセットマネジメントのESG投資責任者、山田太郎氏は述べています。「特に若い世代の投資家は、収益だけでなく社会的インパクトも重視しています」</p>
+           <p>日本取引所グループ（JPX）のデータによると、ESG関連の投資信託の純資産総額は過去3年間で3倍に増加しており、この傾向は今後も続くと予測されています。</p>
+           <p class="finance-meta">公開日: 2025年4月25日 | カテゴリ: 投資戦略</p>
+       </article>
+       
+       <article class="finance-item">
+           <h4>日本銀行、デジタル円の実証実験を開始</h4>
+           <p>日本銀行は本日、中央銀行デジタル通貨（CBDC）「デジタル円」の大規模な実証実験を開始すると発表しました。この実験は主要金融機関と協力して行われ、実用化に向けた重要なステップとなります。</p>
+           <p>「デジタル通貨は将来の金融システムにおいて重要な役割を果たすでしょう」と日本銀行総裁の鈴木一郎氏は記者会見で述べました。「キャッシュレス社会への移行とともに、安全で効率的な決済手段を提供することが我々の使命です」</p>
+           <p>専門家によると、デジタル円は既存の電子マネーやクレジットカードとは異なり、法定通貨としての地位を持ち、より高いセキュリティと安定性を提供すると期待されています。実証実験は約1年間続く予定で、その後の実用化判断に影響を与えるでしょう。</p>
+           <p class="finance-meta">公開日: 2025年4月20日 | カテゴリ: 金融政策</p>
+       </article>
+   </div>
+   </body>
+   </html>

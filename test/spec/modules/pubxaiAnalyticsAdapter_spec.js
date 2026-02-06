@@ -33,14 +33,14 @@ describe('pubxai analytics adapter', () => {
 
   describe('track', () => {
     const pubxId = '6c415fc0-8b0e-4cf5-be73-01526a4db625';
-    let initOptions = {
+    const initOptions = {
       samplingRate: '1',
       pubxId: pubxId,
     };
 
     let originalVS;
 
-    let location = getWindowLocation();
+    const location = getWindowLocation();
 
     const replaceProperty = (obj, params) => {
       let strObj = JSON.stringify(obj);
@@ -53,7 +53,7 @@ describe('pubxai analytics adapter', () => {
       return JSON.parse(strObj);
     };
 
-    let prebidEvent = {
+    const prebidEvent = {
       auctionInit: {
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         timestamp: 1603865707180,
@@ -520,7 +520,7 @@ describe('pubxai analytics adapter', () => {
       },
     };
 
-    let expectedAfterBid = {
+    const expectedAfterBid = {
       bids: [
         {
           bidderCode: 'appnexus',
@@ -607,7 +607,7 @@ describe('pubxai analytics adapter', () => {
       },
     };
 
-    let expectedAfterBidWon = {
+    const expectedAfterBidWon = {
       winningBid: {
         adUnitCode: '/19968336/header-bid-tag-1',
         gptSlotCode:

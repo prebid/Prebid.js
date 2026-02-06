@@ -66,3 +66,32 @@ Module that connects to mediaforce's demand sources
         }
     ];
 ```
+
+```
+    var adUnits = [
+        {
+            code: 'test-div',
+            mediaTypes: {
+                video: {
+                    playerSize: [640, 480],
+                    context: 'instream',
+                    mimes: ['video/mp4', 'video/webm'],
+                    protocols: [2, 3, 5, 6],
+                    skip: 0,
+                    playbackmethod: [2],
+                    api: [2]
+                }
+            },
+            bids: [
+                {
+                    bidder: 'mediaforce',
+                    params: {
+                        placement_id: 'pl67890',   // required
+                        publisher_id: 'pub67890',  // required
+                        bidfloor: 1.0
+                    }
+                }
+            ]
+        }
+    ];
+```

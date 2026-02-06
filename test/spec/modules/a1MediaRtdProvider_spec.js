@@ -1,5 +1,5 @@
 import { subModuleObj } from 'modules/a1MediaRtdProvider.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { A1_AUD_KEY, A1_SEG_KEY, getStorageData, storage } from '../../../modules/a1MediaRtdProvider.js';
 import { expect } from 'chai';
 
@@ -55,15 +55,15 @@ describe('a1MediaRtdProvider', function() {
       it('successfully initialize with load script', function() {
         expect(subModuleObj.init(configWithParams)).to.be.true;
         expect(window.linkback.l).to.be.true;
-        expect(loadExternalScript.called).to.be.true;
-        expect(loadExternalScript.args[0][0]).to.deep.equal('https://linkback.contentsfeed.com/src/lb4test.min.js');
+        expect(loadExternalScriptStub.called).to.be.true;
+        expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://linkback.contentsfeed.com/src/lb4test.min.js');
       })
 
       it('successfully initialize but script is already exist', function() {
         const linkback = { l: true };
 
         expect(subModuleObj.init(configWithParams)).to.be.true;
-        expect(loadExternalScript.called).to.be.false;
+        expect(loadExternalScriptStub.called).to.be.false;
       })
     });
 
@@ -77,7 +77,7 @@ describe('a1MediaRtdProvider', function() {
         expect(subModuleObj.init(configWithoutParams)).to.be.true;
         expect(getStorageData(A1_SEG_KEY)).to.not.equal('');
       })
-      it('fails initalize publisher sied segment is not exist', function() {
+      it('fails to initialize when publisher side segment does not exist', function() {
         expect(subModuleObj.init(configWithoutParams)).to.be.false;
         expect(getStorageData(A1_SEG_KEY)).to.equal('');
       })

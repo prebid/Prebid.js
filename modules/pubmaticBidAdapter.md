@@ -16,11 +16,11 @@ PubMatic bid adapter supports Video, Banner and Native currently.
 ```
 var adUnits = [
 {
-    code: 'test-div',    
+    code: 'test-div',
     sizes: [
         [300, 250],
         [728, 90]
-    ],     
+    ],
     bids: [{
       bidder: 'pubmatic',
       params: {
@@ -84,7 +84,7 @@ var adVideoAdUnits = [
 ```
 var adUnits = [
 {
-    code: 'test-div',    
+    code: 'test-div',
     mediaTypes: {
        native: {
             image: {
@@ -203,14 +203,14 @@ For Video ads, prebid cache needs to be enabled for PubMatic adapter.
 pbjs.setConfig({
     debug: true,
     cache: {
-        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        url: 'https://prebid.example.com/pbc/v1/cache'
     }
 });
 
 ```
-Note: Combine the above the configuration with any other UserSync configuration.  Multiple setConfig() calls overwrite each other and only last call for a given attribute will take effect. 
+Note: Combine the above the configuration with any other UserSync configuration.  Multiple setConfig() calls overwrite each other and only last call for a given attribute will take effect.
 
-# Notes: 
+# Notes:
 - PubMatic will return a test-bid if "pubmaticTest=true" is present in page URL
 - PubMatic will set bid.adserverTargeting.hb_buyid_pubmatic targeting key while submitting a bid into Prebid
 

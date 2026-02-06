@@ -157,7 +157,7 @@ export const spec = {
 
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = (typeof seatbid != 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+    const bidResponses = (typeof seatbid !== 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
       result[bid.impid - 1] = bid;
       return result;
     }, []) : [];
@@ -181,6 +181,7 @@ export const spec = {
             }
           };
         }
+        return undefined;
       })
       .filter(Boolean);
   }
@@ -191,7 +192,7 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
-  let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  const clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
 
   if (link.clicktrackers) {
     link.clicktrackers.forEach(function (clicktracker, index) {

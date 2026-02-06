@@ -43,7 +43,7 @@ function buildRequestTemplate(pubId) {
   }
 }
 
-let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
+const analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
   {
     track({eventType, args}) {
       if (!analyticsAdapter.context) {
@@ -75,7 +75,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
           break;
       }
       if (handler) {
-        let events = handler(args);
+        const events = handler(args);
         if (analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
         }
@@ -113,9 +113,9 @@ adapterManager.registerAnalyticsAdapter({
 export default analyticsAdapter;
 
 function sendAll() {
-  let events = analyticsAdapter.context.queue.popAll();
+  const events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
-    let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
+    const req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
     analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
@@ -158,7 +158,7 @@ function trackBidTimeout(args) {
 }
 
 function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
-  let ev = {event: event};
+  const ev = {event: event};
   if (adapter) {
     ev.adapter = adapter
   }
@@ -181,7 +181,7 @@ const DIRECT = '(direct)';
 const REFERRAL = '(referral)';
 const ORGANIC = '(organic)';
 
-export let storage = {
+export const storage = {
   getItem: (name) => {
     return storageObj.getDataFromLocalStorage(name);
   },
@@ -191,16 +191,16 @@ export let storage = {
 };
 
 export function getUmtSource(pageUrl, referrer) {
-  let prevUtm = getPreviousTrafficSource();
-  let currUtm = getCurrentTrafficSource(pageUrl, referrer);
-  let [updated, actual] = chooseActualUtm(prevUtm, currUtm);
+  const prevUtm = getPreviousTrafficSource();
+  const currUtm = getCurrentTrafficSource(pageUrl, referrer);
+  const [updated, actual] = chooseActualUtm(prevUtm, currUtm);
   if (updated) {
     storeUtm(actual);
   }
   return actual;
 
   function getPreviousTrafficSource() {
-    let val = storage.getItem(ADKERNEL_PREBID_KEY);
+    const val = storage.getItem(ADKERNEL_PREBID_KEY);
     if (!val) {
       return getDirect();
     }
@@ -213,12 +213,12 @@ export function getUmtSource(pageUrl, referrer) {
       return source;
     }
     if (referrer) {
-      let se = getSearchEngine(referrer);
+      const se = getSearchEngine(referrer);
       if (se) {
         return asUtm(se, ORGANIC, ORGANIC);
       }
-      let parsedUrl = parseUrl(pageUrl);
-      let [refHost, refPath] = getReferrer(referrer);
+      const parsedUrl = parseUrl(pageUrl);
+      const [refHost, refPath] = getReferrer(referrer);
       if (refHost && refHost !== parsedUrl.hostname) {
         return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
       }
@@ -227,16 +227,16 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getSearchEngine(pageUrl) {
-    let engines = {
-      'google': /^https?\:\/\/(?:www\.)?(?:google\.(?:com?\.)?(?:com|cat|[a-z]{2})|g.cn)\//i,
-      'yandex': /^https?\:\/\/(?:www\.)?ya(?:ndex\.(?:com|net)?\.?(?:asia|mobi|org|[a-z]{2})?|\.ru)\//i,
-      'bing': /^https?\:\/\/(?:www\.)?bing\.com\//i,
-      'duckduckgo': /^https?\:\/\/(?:www\.)?duckduckgo\.com\//i,
-      'ask': /^https?\:\/\/(?:www\.)?ask\.com\//i,
-      'yahoo': /^https?\:\/\/(?:[-a-z]+\.)?(?:search\.)?yahoo\.com\//i
+    const engines = {
+      'google': /^https?:\/\/(?:www\.)?(?:google\.(?:com?\.)?(?:com|cat|[a-z]{2})|g.cn)\//i,
+      'yandex': /^https?:\/\/(?:www\.)?ya(?:ndex\.(?:com|net)?\.?(?:asia|mobi|org|[a-z]{2})?|\.ru)\//i,
+      'bing': /^https?:\/\/(?:www\.)?bing\.com\//i,
+      'duckduckgo': /^https?:\/\/(?:www\.)?duckduckgo\.com\//i,
+      'ask': /^https?:\/\/(?:www\.)?ask\.com\//i,
+      'yahoo': /^https?:\/\/(?:[-a-z]+\.)?(?:search\.)?yahoo\.com\//i
     };
 
-    for (let engine in engines) {
+    for (const engine in engines) {
       if (engines.hasOwnProperty(engine) && engines[engine].test(pageUrl)) {
         return engine;
       }
@@ -244,18 +244,18 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getReferrer(referrer) {
-    let ref = parseUrl(referrer);
+    const ref = parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
   function getUTM(pageUrl) {
-    let urlParameters = parseUrl(pageUrl).search;
+    const urlParameters = parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
     }
-    let utmArgs = [];
+    const utmArgs = [];
     _each(UTM_TAGS, (utmTagName) => {
-      let utmValue = urlParameters[utmTagName] || '';
+      const utmValue = urlParameters[utmTagName] || '';
       utmArgs.push(utmValue);
     });
     return asUtm.apply(this, utmArgs);
@@ -266,12 +266,12 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function storeUtm(utm) {
-    let val = JSON.stringify(utm);
+    const val = JSON.stringify(utm);
     storage.setItem(ADKERNEL_PREBID_KEY, val);
   }
 
   function asUtm(source, medium, campaign, term = '', content = '', c1 = '', c2 = '', c3 = '', c4 = '', c5 = '') {
-    let result = {
+    const result = {
       source: source,
       medium: medium,
       campaign: campaign
@@ -355,7 +355,7 @@ export function ExpiringQueue(callback, ttl) {
   };
 
   this.popAll = () => {
-    let result = queue;
+    const result = queue;
     queue = [];
     reset();
     return result;
@@ -400,7 +400,7 @@ function getLocationAndReferrer(win) {
 }
 
 function initPrivacy(template, requests) {
-  let consent = requests[0].gdprConsent;
+  const consent = requests[0].gdprConsent;
   if (consent && consent.gdprApplies) {
     template.user.gdpr = ~~consent.gdprApplies;
   }

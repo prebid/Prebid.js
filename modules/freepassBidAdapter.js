@@ -12,29 +12,29 @@ const converter = ortbConverter({
   }
 });
 
-function prepareUserInfo(user, freepassId) {
-  let userInfo = user || {};
-  let extendedUserInfo = userInfo.ext || {};
+function injectIdsToUser(user, freepassIdObj) {
+  const userInfo = user || {};
+  const extendedUserInfo = userInfo.ext || {};
 
-  if (freepassId.userId) {
-    userInfo.id = freepassId.userId;
+  if (freepassIdObj.ext.userId) {
+    userInfo.id = freepassIdObj.ext.userId;
   }
 
-  if (freepassId.commonId) {
-    extendedUserInfo.fuid = freepassId.commonId;
+  if (freepassIdObj.id) {
+    extendedUserInfo.fuid = freepassIdObj.id;
   }
   userInfo.ext = extendedUserInfo;
 
   return userInfo;
 }
 
-function prepareDeviceInfo(device, freepassId) {
-  let deviceInfo = device || {};
-  let extendedDeviceInfo = deviceInfo.ext || {};
+function injectIPtoDevice(device, freepassIdObj) {
+  const deviceInfo = device || {};
+  const extendedDeviceInfo = deviceInfo.ext || {};
 
   extendedDeviceInfo.is_accurate_ip = 0;
-  if (freepassId.userIp) {
-    deviceInfo.ip = freepassId.userIp;
+  if (freepassIdObj.ext.ip) {
+    deviceInfo.ip = freepassIdObj.ext.ip;
     extendedDeviceInfo.is_accurate_ip = 1;
   }
   deviceInfo.ext = extendedDeviceInfo;
@@ -67,10 +67,11 @@ export const spec = {
     });
     logMessage('FreePass BidAdapter interpreted ORTB bid request as ', data);
 
-    // Only freepassId is supported
-    let freepassId = (validBidRequests[0].userId && validBidRequests[0].userId.freepassId) || {};
-    data.user = prepareUserInfo(data.user, freepassId);
-    data.device = prepareDeviceInfo(data.device, freepassId);
+    const freepassIdObj = validBidRequests[0].userIdAsEids?.find(eid => eid.source === 'freepass.jp');
+    if (freepassIdObj) {
+      data.user = injectIdsToUser(data.user, freepassIdObj.uids[0]);
+      data.device = injectIPtoDevice(data.device, freepassIdObj.uids[0]);
+    }
 
     // set site.page & site.publisher
     data.site = data.site || {};
@@ -100,7 +101,7 @@ export const spec = {
       method: 'POST',
       url: BIDDER_SERVICE_URL,
       data,
-      options: { withCredentials: false }
+      options: { withCredentials: true }
     };
   },
 

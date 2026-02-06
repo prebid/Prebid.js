@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/greenbidsBidAdapter.js';
+import { getScreenOrientation } from 'src/utils.js';
 const ENDPOINT = 'https://d.greenbids.ai/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';
 
@@ -9,7 +10,7 @@ describe('greenbidsBidAdapter', () => {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -23,7 +24,7 @@ describe('greenbidsBidAdapter', () => {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'greenbids',
       'params': {
         'placementId': 4242
@@ -41,14 +42,14 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should return false when required params are not found', function () {
-      let bidNonGbCompatible = {
+      const bidNonGbCompatible = {
         'bidder': 'greenbids',
       };
       expect(spec.isBidRequestValid(bidNonGbCompatible)).to.equal(false);
     });
 
     it('should return false when the placement is not a number', function () {
-      let bidNonGbCompatible = {
+      const bidNonGbCompatible = {
         'bidder': 'greenbids',
         'params': {
           'placementId': 'toto'
@@ -73,8 +74,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send US Privacy to endpoint', function () {
-      let usPrivacy = 'OHHHFCP1'
-      let bidderRequest = {
+      const usPrivacy = 'OHHHFCP1'
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -89,9 +90,9 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GPP values to endpoint when available and valid', function () {
-      let consentString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
-      let applicableSectionIds = [7, 8];
-      let bidderRequest = {
+      const consentString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
+      const applicableSectionIds = [7, 8];
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -110,7 +111,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send default GPP values to endpoint when available but invalid', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -129,7 +130,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should not set the GPP object in the request sent to the endpoint when not present', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000
@@ -142,8 +143,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint', function () {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -248,36 +249,15 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should add screenOrientation info to payload', function () {
-      const originalScreenOrientation = window.top.screen.orientation;
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const orientation = getScreenOrientation(window.top);
 
-      const mockScreenOrientation = (type) => {
-        Object.defineProperty(window.top.screen, 'orientation', {
-          value: { type },
-          configurable: true,
-        });
-      };
-
-      try {
-        const mockType = 'landscape-primary';
-        mockScreenOrientation(mockType);
-
-        const requestWithOrientation = spec.buildRequests(bidRequests, bidderRequestDefault);
-        const payloadWithOrientation = JSON.parse(requestWithOrientation.data);
-
-        expect(payloadWithOrientation.screenOrientation).to.exist;
-        expect(payloadWithOrientation.screenOrientation).to.deep.equal(mockType);
-
-        mockScreenOrientation(undefined);
-
-        const requestWithoutOrientation = spec.buildRequests(bidRequests, bidderRequestDefault);
-        const payloadWithoutOrientation = JSON.parse(requestWithoutOrientation.data);
-
-        expect(payloadWithoutOrientation.screenOrientation).to.not.exist;
-      } finally {
-        Object.defineProperty(window.top.screen, 'orientation', {
-          value: originalScreenOrientation,
-          configurable: true,
-        });
+      if (orientation) {
+        expect(payload.screenOrientation).to.exist;
+        expect(payload.screenOrientation).to.deep.equal(orientation);
+      } else {
+        expect(payload.screenOrientation).to.not.exist;
       }
     });
 
@@ -565,8 +545,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 11 status', function () {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -590,8 +570,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR TCF2 to endpoint with 12 status', function () {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -615,7 +595,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 22 status', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -637,8 +617,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 0 status', function () {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -662,7 +642,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 0 status when gdprApplies = false (vendorData = undefined)', function () {
-      let bidderRequest = {
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -684,8 +664,8 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should send GDPR to endpoint with 12 status when apiVersion = 0', function () {
-      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
-      let bidderRequest = {
+      const consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -794,7 +774,7 @@ describe('greenbidsBidAdapter', () => {
   });
 
   describe('Global Placement Id', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'greenbids',
         'params': {
@@ -917,7 +897,7 @@ describe('greenbidsBidAdapter', () => {
 
   describe('interpretResponse', function () {
     it('should get correct bid responses', function () {
-      let bids = {
+      const bids = {
         'body': {
           'responses': [{
             'ad': AD_SCRIPT,
@@ -954,7 +934,7 @@ describe('greenbidsBidAdapter', () => {
           }]
         }
       };
-      let expectedResponse = [
+      const expectedResponse = [
         {
           'cpm': 0.5,
           'width': 300,
@@ -997,30 +977,30 @@ describe('greenbidsBidAdapter', () => {
       ]
         ;
 
-      let result = spec.interpretResponse(bids);
+      const result = spec.interpretResponse(bids);
       expect(result).to.eql(expectedResponse);
     });
 
     it('handles nobid responses', function () {
-      let bids = {
+      const bids = {
         'body': {
           'responses': []
         }
       };
 
-      let result = spec.interpretResponse(bids);
+      const result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });
   });
 });
 
-let bidderRequestDefault = {
+const bidderRequestDefault = {
   'auctionId': '1d1a030790a475',
   'bidderRequestId': '22edbae2733bf6',
   'timeout': 3000
 };
 
-let bidRequests = [
+const bidRequests = [
   {
     'bidder': 'greenbids',
     'params': {

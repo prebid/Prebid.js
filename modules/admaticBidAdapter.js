@@ -1,9 +1,11 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { Renderer } from '../src/Renderer.js';
+
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+
 import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 /**
@@ -13,6 +15,7 @@ import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
  */
 
 let SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
+
 const BIDDER_CODE = 'admatic';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -112,8 +115,9 @@ export const spec = {
       payload.regs.ext.uspIab = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         payload.schain = schain;
       }
@@ -297,13 +301,17 @@ function enrichSlotWithFloors(slot, bidRequest) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
         const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER }));
+        bannerSizes.forEach(bannerSize => {
+          slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER });
+        });
       }
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
+        videoSizes.forEach(videoSize => {
+          slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO });
+        });
       }
 
       if (bidRequest.mediaTypes?.native) {
@@ -326,7 +334,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  if (sizes === undefined) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
@@ -372,13 +380,13 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  const videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  const nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
+  const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    let mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
+    const mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
     return mediaTypesSizes
       .reduce(function (acc, currSize) {
         if (isArray(currSize)) {
@@ -398,7 +406,7 @@ function _validateId(id) {
 }
 
 function _validateString(str) {
-  return (typeof str == 'string');
+  return (typeof str === 'string');
 }
 
 registerBidder(spec);

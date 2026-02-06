@@ -69,7 +69,13 @@ describe('browsi Bid Adapter Test', function () {
               tid: '1234567-3456-4562-7689-98765434B',
             }
           },
-          'schain': {},
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {}
+              }
+            }
+          },
           'mediaTypes': {video: {playerSize: [640, 480]}}
         }
       ];
@@ -117,7 +123,7 @@ describe('browsi Bid Adapter Test', function () {
           aUCode: inputRequest.adUnitCode,
           aID: inputRequest.auctionId,
           tID: inputRequest.ortb2Imp.ext.tid,
-          schain: inputRequest.schain,
+          schain: inputRequest.ortb2?.source?.ext?.schain,
           params: inputRequest.params
         }
       }
@@ -136,13 +142,13 @@ describe('browsi Bid Adapter Test', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = {
+    const bidRequest = {
       'url': ENDPOINT,
       'data': {
         'bidId': 'bidId1',
       }
     };
-    let serverResponse = {};
+    const serverResponse = {};
     serverResponse.body = {
       bidId: 'bidId1',
       w: 300,
@@ -184,28 +190,28 @@ describe('browsi Bid Adapter Test', function () {
         {url: 'http://syncUrl2', type: 'iframe'}
       ]
     }
-    let serverResponse = [
+    const serverResponse = [
       {body: bidResponse}
     ];
     it('should return iframe type userSync', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, serverResponse[0]);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, serverResponse[0]);
       expect(userSyncs.length).to.equal(1);
-      let userSync = userSyncs[0];
+      const userSync = userSyncs[0];
       expect(userSync.url).to.equal('http://syncUrl2');
       expect(userSync.type).to.equal('iframe');
     });
     it('should return image type userSyncs', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse[0]);
-      let userSync = userSyncs[0];
+      const userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse[0]);
+      const userSync = userSyncs[0];
       expect(userSync.url).to.equal('http://syncUrl1');
       expect(userSync.type).to.equal('image');
     });
     it('should handle multiple server responses', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse);
       expect(userSyncs.length).to.equal(1);
     });
     it('should return empty userSyncs', function () {
-      let userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, serverResponse);
+      const userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, serverResponse);
       expect(userSyncs.length).to.equal(0);
     });
   });

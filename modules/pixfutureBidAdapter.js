@@ -2,11 +2,12 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {find, includes} from '../src/polyfill.js';
-import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
+import {deepAccess, isArray, isNumber, isPlainObject} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import {transformSizes} from '../libraries/sizeUtils/tranformSize.js';
+import {addUserId, hasUserInfo, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -46,7 +47,7 @@ export const spec = {
         referer = bidderRequest.refererInfo.page || '';
       }
 
-      const userObjBid = find(validBidRequests, hasUserInfo);
+      const userObjBid = ((validBidRequests) || []).find(hasUserInfo);
       let userObj = {};
       if (config.getConfig('coppa') === true) {
         userObj = {'coppa': true};
@@ -54,11 +55,11 @@ export const spec = {
 
       if (userObjBid) {
         Object.keys(userObjBid.params.user)
-          .filter(param => includes(USER_PARAMS, param))
+          .filter(param => USER_PARAMS.includes(param))
           .forEach((param) => {
-            let uparam = convertCamelToUnderscore(param);
+            const uparam = convertCamelToUnderscore(param);
             if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-              let segs = [];
+              const segs = [];
               userObjBid.params.user[param].forEach(val => {
                 if (isNumber(val)) {
                   segs.push({'id': val});
@@ -73,7 +74,7 @@ export const spec = {
           });
       }
 
-      const schain = validBidRequests[0].schain;
+      const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
 
       const payload = {
         tags: [...tags],
@@ -90,7 +91,7 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        let refererinfo = {
+        const refererinfo = {
           // TODO: this collects everything it finds, except for canonicalUrl
           rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
           rd_top: bidderRequest.refererInfo.reachedTop,
@@ -101,7 +102,7 @@ export const spec = {
       }
 
       if (validBidRequests[0].userId) {
-        let eids = [];
+        const eids = [];
 
         addUserId(eids, deepAccess(validBidRequests[0], `userId.criteoId`), 'criteo.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.unifiedId`), 'thetradedesk.com', null);
@@ -167,8 +168,8 @@ export const spec = {
     const syncs = [];
 
     let syncurl = 'pixid=' + pixID;
-    let gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
-    let consent = gdprConsent ? encodeURIComponent(gdprConsent.consentString || '') : '';
+    const gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
+    const consent = gdprConsent ? encodeURIComponent(gdprConsent.consentString || '') : '';
 
     // Attaching GDPR Consent Params in UserSync url
     syncurl += '&gdprconcent=' + gdpr + '&adsync=' + consent;
@@ -239,14 +240,14 @@ function bidToTag(bid) {
   tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
-  let bidFloor = getBidFloor(bid);
+  const bidFloor = getBidFloor(bid);
   if (bidFloor) {
     tag.reserve = bidFloor;
   }
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
   } else {
-    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
     // only support unknown, atf, and btf values for position at this time
     if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
       // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
@@ -276,7 +277,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -289,7 +290,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
   // TODO: why does this need to iterate through every adUnit?
-  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
+  const adUnit = ((auctionManager.getAdUnits()) || []).find(au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);
   }
@@ -299,59 +300,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-function addUserId(eids, id, source, rti) {
-  if (id) {
-    if (rti) {
-      eids.push({source, id, rti_partner: rti});
-    } else {
-      eids.push({source, id});
-    }
-  }
-  return eids;
-}
-
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
-
-function transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (isArray(requestSizes) && requestSizes.length === 2 &&
-            !isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
-}
-
-function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return (bid.params.reserve) ? bid.params.reserve : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
 }
 
 registerBidder(spec);

@@ -84,7 +84,7 @@ describe('GetIntent Adapter Tests:', function () {
 
   it('Verify build video request', function () {
     const serverRequests = spec.buildRequests([videoBidRequest]);
-    let serverRequest = serverRequests[0];
+    const serverRequest = serverRequests[0];
     expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_vast');
     expect(serverRequest.method).to.equal('GET');
     expect(serverRequest.data.bid_id).to.equal('bid789');
@@ -104,7 +104,7 @@ describe('GetIntent Adapter Tests:', function () {
 
   it('Verify build video request with video params', function () {
     const serverRequests = spec.buildRequests([videoBidRequestWithVideoParams]);
-    let serverRequest = serverRequests[0];
+    const serverRequest = serverRequests[0];
     expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_vast');
     expect(serverRequest.method).to.equal('GET');
     expect(serverRequest.data.bid_id).to.equal('bid789');
@@ -124,7 +124,7 @@ describe('GetIntent Adapter Tests:', function () {
     bidRequestWithFloor.params.cur = 'USD'
 
     const serverRequests = spec.buildRequests([bidRequestWithFloor]);
-    let serverRequest = serverRequests[0];
+    const serverRequest = serverRequests[0];
     expect(serverRequest.data.cur).to.equal('USD');
     expect(serverRequest.data.floor).to.equal(10);
   });
@@ -137,7 +137,7 @@ describe('GetIntent Adapter Tests:', function () {
     bidRequestWithFloor.getFloor = () => getFloorResponse;
 
     const serverRequests = spec.buildRequests([bidRequestWithFloor]);
-    let serverRequest = serverRequests[0];
+    const serverRequest = serverRequests[0];
     expect(serverRequest.data.cur).to.equal('EUR');
     expect(serverRequest.data.floor).to.equal(5);
   });

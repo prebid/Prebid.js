@@ -37,7 +37,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
-  let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
+  const setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
   if (setKeywordTargetBidders.length <= 0) {
     logMessage('[dgkeyword sub module] no dgkeyword targets.');
     callback();
@@ -50,7 +50,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         if (!isFinish) {
           logMessage('[dgkeyword sub module] get targets from profile api end.');
           if (res) {
-            let keywords = {};
+            const keywords = {};
             if (res['s'] != null && res['s'].length > 0) {
               keywords['opeaud'] = res['s'];
             }
@@ -59,7 +59,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
             }
             if (Object.keys(keywords).length > 0) {
               const targetBidKeys = {};
-              for (let bid of setKeywordTargetBidders) {
+              for (const bid of setKeywordTargetBidders) {
                 // set keywords to ortb2Imp
                 deepSetValue(bid, 'ortb2Imp.ext.data.keywords', convertKeywordsToString(keywords));
                 if (!targetBidKeys[bid.bidder]) {
@@ -118,9 +118,9 @@ export function readFpidFromLocalStrage() {
  * @param {Object} adUnits
  */
 export function getTargetBidderOfDgKeywords(adUnits) {
-  let setKeywordTargetBidders = [];
-  for (let adUnit of adUnits) {
-    for (let bid of adUnit.bids) {
+  const setKeywordTargetBidders = [];
+  for (const adUnit of adUnits) {
+    for (const bid of adUnit.bids) {
       if (bid.params && bid.params['dgkeyword'] === true) {
         delete bid.params['dgkeyword'];
         setKeywordTargetBidders.push(bid);

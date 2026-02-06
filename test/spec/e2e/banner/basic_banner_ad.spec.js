@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const {setupTest, testPageURL} = require('../../../helpers/testing-utils');
+const {setupTest, testPageURL} = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('banner.html?pbjs_debug=true');
 const SYNC_PAGE_URL = testPageURL('banner_sync.html?pbjs_debug=true');

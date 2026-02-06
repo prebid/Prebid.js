@@ -19,7 +19,7 @@ export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, coo
 
   if (syncOptions.iframeEnabled) {
     window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin != cookieOrigin) {
+      if (!event.data || event.origin !== cookieOrigin) {
         return;
       }
 

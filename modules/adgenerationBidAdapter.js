@@ -16,7 +16,7 @@ const adgLogger = prefixLog('Adgeneration: ');
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
-const ADGENE_PREBID_VERSION = '1.6.4';
+const ADGENE_PREBID_VERSION = '1.6.5';
 const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
 const URL = 'https://d.socdm.com/adgen/prebid';
 
@@ -30,7 +30,6 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.params', bidRequest.params);
     deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes);
-    deepSetValue(imp, 'ext.novatiqSyncResponse', bidRequest?.userId?.novatiq?.snowflake?.syncResponse);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -70,13 +69,6 @@ export const spec = {
       const id = getBidIdParameter('id', customParams);
       const additionalParams = JSON.parse(JSON.stringify(rest));
 
-      // hyperIDが有効ではない場合、パラメータから削除する
-      if (!impObj?.ext?.novatiqSyncResponse || impObj?.ext?.novatiqSyncResponse !== 1) {
-        if (additionalParams?.user?.ext?.eids && Array.isArray(additionalParams?.user?.ext?.eids)) {
-          additionalParams.user.ext.eids = additionalParams?.user?.ext?.eids.filter((eid) => eid?.source !== 'novatiq.com');
-        }
-      }
-
       let urlParams = ``;
       urlParams = tryAppendQueryString(urlParams, 'id', id);
       urlParams = tryAppendQueryString(urlParams, 'posall', 'SSPLOC');// not reaquired
@@ -90,7 +82,7 @@ export const spec = {
       const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
       const url = `${urlBase}?${urlParams}`;
 
-      let data = {
+      const data = {
         currency: getCurrencyType(bidderRequest),
         pbver: '$prebid.version$',
         sdkname: 'prebidjs',
@@ -147,7 +139,7 @@ export const spec = {
       height: adResult.h ? adResult.h : 1,
       creativeId: adResult.creativeid || '',
       dealId: adResult.dealid || '',
-      currency: getCurrencyType(bidRequests.bidderRequest),
+      currency: bidRequests?.data?.currency || 'JPY',
       netRevenue: true,
       ttl: adResult.ttl || 10,
     };
@@ -208,7 +200,7 @@ function isNative(adResult) {
 }
 
 function createNativeAd(nativeAd, beaconUrl) {
-  let native = {};
+  const native = {};
   if (nativeAd && nativeAd.assets.length > 0) {
     const assets = nativeAd.assets;
     for (let i = 0, len = assets.length; i < len; i++) {
@@ -247,7 +239,7 @@ function createNativeAd(nativeAd, beaconUrl) {
     native.clickUrl = nativeAd.link.url;
     native.clickTrackers = nativeAd.link.clicktrackers || [];
     native.impressionTrackers = nativeAd.imptrackers || [];
-    if (beaconUrl && beaconUrl != '') {
+    if (beaconUrl) {
       native.impressionTrackers.push(beaconUrl);
     }
   }
@@ -283,7 +275,7 @@ function createADGBrowserMTag() {
  * @return {string}
  */
 function insertVASTMethodForAPV(targetId, vastXml) {
-  let apvVideoAdParam = {
+  const apvVideoAdParam = {
     s: targetId
   };
   return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`

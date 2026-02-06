@@ -217,7 +217,7 @@ describe('kimberliteBidAdapter', function () {
             creativeId: 1,
             ttl: 300,
             netRevenue: true,
-            ad: bannerAdm + nurlPixel,
+            ad: nurlPixel + bannerAdm,
             meta: {}
           },
           {

@@ -28,7 +28,7 @@ describe('Intersection RTD Provider', function () {
   const rtdConfig = {realTimeData: {auctionDelay: 200, dataProviders: [providerConfig]}}
   describe('IntersectionObserver not supported', function() {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function() {
       sandbox.restore();
@@ -41,7 +41,7 @@ describe('Intersection RTD Provider', function () {
   });
   describe('IntersectionObserver supported', function() {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       placeholder = createDiv();
       append();
       const __config = {};
@@ -50,6 +50,25 @@ describe('Intersection RTD Provider', function () {
       });
       sandbox.stub(_config, 'setConfig').callsFake(function (obj) {
         utils.mergeDeep(__config, obj);
+      });
+      sandbox.stub(window, 'IntersectionObserver').callsFake(function (cb) {
+        return {
+          observe(el) {
+            cb([
+              {
+                target: el,
+                intersectionRatio: 1,
+                isIntersecting: true,
+                time: Date.now(),
+                boundingClientRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0},
+                intersectionRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0},
+                rootRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0}
+              }
+            ]);
+          },
+          unobserve() {},
+          disconnect() {}
+        };
       });
     });
     afterEach(function() {
@@ -133,9 +152,13 @@ describe('Intersection RTD Provider', function () {
     return div;
   }
   function append() {
-    placeholder && document.body.appendChild(placeholder);
+    if (placeholder) {
+      document.body.appendChild(placeholder);
+    }
   }
   function remove() {
-    placeholder && placeholder.parentElement && placeholder.parentElement.removeChild(placeholder);
+    if (placeholder && placeholder.parentElement) {
+      placeholder.parentElement.removeChild(placeholder);
+    }
   }
 });

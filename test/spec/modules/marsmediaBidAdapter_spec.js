@@ -1,7 +1,8 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import { config } from 'src/config.js';
-import { internal, resetWinDimensions } from '../../../src/utils';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 var marsAdapter = spec;
 
@@ -69,7 +70,7 @@ describe('marsmedia adapter tests', function () {
       }
     ];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('Unit-Code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -397,7 +398,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('dnt is correctly set to 1', function () {
-      var dntStub = sinon.stub(utils, 'getDNT').returns(1);
+      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
 
       var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
 
@@ -612,7 +613,13 @@ describe('marsmedia adapter tests', function () {
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead',
-        'schain': schain
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': schain
+            }
+          }
+        }
       }
     ];
 

@@ -2,13 +2,13 @@ import { expect } from 'chai';
 import { spec } from 'modules/beopBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 const utils = require('src/utils');
 
 const ENDPOINT = 'https://hb.collectiveaudience.co/bid';
 
-let validBid = {
+const validBid = {
   'bidder': 'beop',
   'params': {
     'accountId': '5a8af500c9e77c00017e4cad'
@@ -51,7 +51,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return true if no accountId but networkId', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.params;
       bid.params = {
         'networkId': '5a8af500c9e77c00017e4aaa'
@@ -60,7 +60,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return false if neither account or network id param found', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.params;
       bid.params = {
         'someId': '5a8af500c9e77c00017e4aaa'
@@ -69,7 +69,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return false if account Id param is not an ObjectId', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.params;
       bid.params = {
         'someId': '12345'
@@ -78,7 +78,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should return false if there is no banner media type', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       delete bid.mediaTypes;
       bid.mediaTypes = {
         'native': {
@@ -90,7 +90,7 @@ describe('BeOp Bid Adapter tests', () => {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [];
+    const bidRequests = [];
     bidRequests.push(validBid);
 
     it('should build the request', function () {
@@ -118,8 +118,8 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should call the endpoint with GDPR consent and pageURL info if found', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest =
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest =
       {
         'gdprConsent':
         {
@@ -144,7 +144,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should call the endpoint with bpsegs (stringified) data if any or [] if none', function () {
-      let bidderRequest =
+      const bidderRequest =
       {
         'ortb2': {
           'user': {
@@ -169,7 +169,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.bpsegs).to.include('910');
       expect(payload.bpsegs).to.not.include('1');
 
-      let bidderRequest2 =
+      const bidderRequest2 =
       {
         'ortb2': {}
       };
@@ -194,7 +194,7 @@ describe('BeOp Bid Adapter tests', () => {
   });
 
   describe('interpretResponse', function() {
-    let serverResponse = {
+    const serverResponse = {
       'body': {
         'bids': [
           {
@@ -236,8 +236,17 @@ describe('BeOp Bid Adapter tests', () => {
     it('should call triggerPixel utils function when timed out is filled', function () {
       spec.onTimeout({});
       spec.onTimeout();
+      spec.onTimeout(null);
+      spec.onTimeout([]);
       expect(triggerPixelStub.getCall(0)).to.be.null;
-      spec.onTimeout({params: {accountId: '5a8af500c9e77c00017e4cad'}, timeout: 2000});
+      spec.onTimeout([{
+        bidder: 'beop',
+        bidId: 'abc123',
+        params: { accountId: '5a8af500c9e77c00017e4cad' },
+        adUnitCode: 'div-1',
+        timeout: 2000,
+        auctionId: 'some-auction-id'
+      }]);
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
@@ -245,6 +254,36 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0).args[0]).to.include('pid=5a8af500c9e77c00017e4cad');
     });
 
+    it('should call triggerPixel for each entry in the timeout array', function () {
+      const timeoutData = [
+        {
+          bidder: 'beop',
+          bidId: 'abc123',
+          params: { accountId: '5a8af500c9e77c00017e4cad' },
+          adUnitCode: 'div-1',
+          timeout: 3000,
+          auctionId: 'auction-1'
+        },
+        {
+          bidder: 'beop',
+          bidId: 'def456',
+          params: { accountId: '5a8af500c9e77c00017e4cad' },
+          adUnitCode: 'div-2',
+          timeout: 3000,
+          auctionId: 'auction-2'
+        }
+      ];
+
+      spec.onTimeout(timeoutData);
+
+      expect(triggerPixelStub.callCount).to.equal(2);
+      const firstCall = triggerPixelStub.getCall(0).args[0];
+      const secondCall = triggerPixelStub.getCall(1).args[0];
+
+      expect(firstCall).to.include('se_ac=timeout');
+      expect(firstCall).to.include('bid=abc123');
+      expect(secondCall).to.include('bid=def456');
+    });
     it('should call triggerPixel utils function on bid won', function () {
       spec.onBidWon({});
       spec.onBidWon();
@@ -276,7 +315,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should work with keywords as an array', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.params.keywords = ['a', 'b'];
       bidRequests.push(bid);
       config.setConfig({
@@ -291,7 +330,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should work with keywords as a string', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.params.keywords = 'list of keywords';
       bidRequests.push(bid);
       config.setConfig({
@@ -305,7 +344,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it('should work with keywords as a string containing a comma', function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.params.keywords = 'list, of, keywords';
       bidRequests.push(bid);
       config.setConfig({
@@ -328,7 +367,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
 
     it(`should get eids from bid`, function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bid.userIdAsEids = [{source: 'provider.com', uids: [{id: 'someid', atype: 1, ext: {whatever: true}}]}];
       bidRequests.push(bid);
 
@@ -340,10 +379,10 @@ describe('BeOp Bid Adapter tests', () => {
   })
 
   describe('Ensure first party cookie is well managed', function () {
-    let bidRequests = [];
+    const bidRequests = [];
 
     it(`should generate a new uuid`, function () {
-      let bid = Object.assign({}, validBid);
+      const bid = Object.assign({}, validBid);
       bidRequests.push(bid);
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);

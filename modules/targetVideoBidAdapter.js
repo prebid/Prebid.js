@@ -1,4 +1,4 @@
-import {_each, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
@@ -38,7 +38,7 @@ export const spec = {
       version: '$prebid.version$'
     };
 
-    for (let {params, bidId, sizes, mediaTypes} of bidRequests) {
+    for (let {params, bidId, sizes, mediaTypes, ...bid} of bidRequests) {
       for (const mediaType in mediaTypes) {
         switch (mediaType) {
           case VIDEO: {
@@ -52,14 +52,21 @@ export const spec = {
               sdk,
               id: bidderRequest.bidderRequestId,
               site,
+              device: deepAccess(bidderRequest, 'ortb2.device'),
+              user: { ext: {} },
               imp: []
             }
+
+            const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+            const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
 
             const imp = {
               ext: {
                 prebid: {
                   storedrequest: { id: placementId }
-                }
+                },
+                gpid,
+                tid,
               },
               video: getDefinedParams(video, VIDEO_PARAMS)
             }
@@ -88,20 +95,41 @@ export const spec = {
               if (gdprConsent) {
                 if (typeof gdprConsent.gdprApplies !== 'undefined') {
                   payload.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-                };
+                }
 
                 if (typeof gdprConsent.consentString !== 'undefined') {
-                  payload.user = {
-                    ext: { consent: gdprConsent.consentString }
-                  };
-                };
-              };
-            };
+                  payload.user.ext.consent = gdprConsent.consentString;
+                }
+              }
+            }
 
-            if (bidRequests[0].schain) {
+            const eids = deepAccess(bidRequests[0], 'userIdAsEids');
+            if (eids) {
+              payload.user.ext.eids = eids;
+            }
+
+            const ortbUserExtData = deepAccess(bidderRequest, 'ortb2.user.data');
+            if (ortbUserExtData) {
+              payload.user.ext.data = ortbUserExtData;
+            }
+
+            const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+            if (schain) {
               payload.source = {
-                ext: { schain: bidRequests[0].schain }
+                ext: { schain: schain }
               };
+            }
+
+            const {ortb2} = bid;
+
+            if (ortb2?.source?.tid) {
+              if (!payload.source) {
+                payload.source = {
+                  tid: ortb2.source.tid
+                };
+              } else {
+                payload.source.tid = ortb2.source.tid;
+              }
             }
 
             requests.push(formatRequest({ payload, url: VIDEO_ENDPOINT_URL, bidId }));
@@ -110,7 +138,7 @@ export const spec = {
 
           case BANNER: {
             const tags = bidRequests.map(createVideoTag);
-            const schain = bidRequests[0].schain;
+            const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
 
             const payload = {
               tags,
@@ -125,8 +153,8 @@ export const spec = {
               };
 
               if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
-                let ac = bidderRequest.gdprConsent.addtlConsent;
-                let acStr = ac.substring(ac.indexOf('~') + 1);
+                const ac = bidderRequest.gdprConsent.addtlConsent;
+                const acStr = ac.substring(ac.indexOf('~') + 1);
                 payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
               }
             }
@@ -158,7 +186,7 @@ export const spec = {
     if (serverResponse.tags) {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
-        if (rtbBid && rtbBid.cpm !== 0 && rtbBid.ad_type == VIDEO) {
+        if (rtbBid && rtbBid.cpm !== 0 && rtbBid.ad_type === VIDEO) {
           bids.push(bannerBid(serverBid, rtbBid, bidderRequest, MARGIN));
         }
       });
@@ -170,7 +198,7 @@ export const spec = {
           const requestId = bidRequest.bidId;
           const params = bidRequest.params;
           const vBid = videoBid(bid, requestId, currency, params, TIME_TO_LIVE);
-          if (bids.length == 0 || bids[0].cpm < vBid.cpm) {
+          if (bids.length === 0 || bids[0].cpm < vBid.cpm) {
             bids[0] = vBid;
           }
         });

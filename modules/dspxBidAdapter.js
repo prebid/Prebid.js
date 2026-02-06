@@ -1,7 +1,7 @@
 import {deepAccess, logMessage, getBidIdParameter, logError, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {includes} from '../src/polyfill.js';
+
 import {
   fillUsersIds,
   handleSyncUrls,
@@ -62,9 +62,9 @@ export const spec = {
         }
       }
 
-      let mediaTypesInfo = getMediaTypesInfo(bidRequest);
-      let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
-      let sizes = mediaTypesInfo[type];
+      const mediaTypesInfo = getMediaTypesInfo(bidRequest);
+      const type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
+      const sizes = mediaTypesInfo[type];
 
       payload = {
         _f: 'auto',
@@ -79,10 +79,11 @@ export const spec = {
         pbver: '$prebid.version$',
       };
 
-      payload.pfilter = {};
-      if (params.pfilter !== undefined) {
-        payload.pfilter = params.pfilter;
-      }
+      payload.pfilter = params.pfilter ?? {};
+      payload.bcat = deepAccess(bidderRequest.ortb2, 'bcat') ? bidderRequest.ortb2.bcat.join(",") : (params.bcat ?? null);
+      payload.pcat = deepAccess(bidderRequest.ortb2, 'site.pagecat') ? bidderRequest.ortb2.site.pagecat.join(",") : null;
+      payload.dvt = params.dvt ?? null;
+      isDev && (payload.prebidDevMode = 1);
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (!payload.pfilter.gdpr_consent) {
@@ -91,18 +92,8 @@ export const spec = {
         }
       }
 
-      if (params.bcat !== undefined) {
-        payload.bcat = deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat;
-      }
-      if (params.dvt !== undefined) {
-        payload.dvt = params.dvt;
-      }
-      if (isDev) {
-        payload.prebidDevMode = 1;
-      }
-
       if (!payload.pfilter.floorprice) {
-        let bidFloor = getBidFloor(bidRequest);
+        const bidFloor = getBidFloor(bidRequest);
         if (bidFloor > 0) {
           payload.pfilter.floorprice = bidFloor;
         }
@@ -123,16 +114,18 @@ export const spec = {
           payload.vf = params.vastFormat;
         }
         payload.vpl = {};
-        let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+        const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
-          .filter(key => includes(VIDEO_ORTB_PARAMS, key))
-          .forEach(key => payload.vpl[key] = videoParams[key]);
+          .filter(key => VIDEO_ORTB_PARAMS.includes(key))
+          .forEach(key => {
+            payload.vpl[key] = videoParams[key];
+          });
       }
 
       // iab content
-      let content = deepAccess(bidderRequest, 'ortb2.site.content');
+      const content = deepAccess(bidderRequest, 'ortb2.site.content');
       if (content) {
-        let stringContent = siteContentToString(content);
+        const stringContent = siteContentToString(content);
         if (stringContent) {
           payload.pfilter.iab_content = stringContent;
         }
@@ -149,8 +142,20 @@ export const spec = {
       }
 
       // schain
-      if (bidRequest.schain) {
-        payload.schain = bidRequest.schain;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain && schain.ver && schain.complete && schain.nodes) {
+        let schainString = schain.ver + "," + schain.complete;
+        for (const node of schain.nodes) {
+          schainString += '!' + [
+            node.asi ?? '',
+            node.sid ?? '',
+            node.hp ?? '',
+            node.rid ?? '',
+            node.name ?? '',
+            node.domain ?? '',
+          ].join(",");
+        }
+        payload.schain = schainString;
       }
 
       // fill userId params
@@ -185,7 +190,7 @@ function outstreamRender(bid) {
     const inIframe = getBidIdParameter('iframe', bid.renderer.config);
     if (inIframe && window.document.getElementById(inIframe).nodeName === 'IFRAME') {
       const iframe = window.document.getElementById(inIframe);
-      let framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      const framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
       framedoc.body.appendChild(embedCode);
       if (typeof window.dspxRender === 'function') {
         window.dspxRender(bid);
@@ -219,7 +224,7 @@ function outstreamRender(bid) {
  */
 function createOutstreamEmbedCode(bid) {
   const fragment = window.document.createDocumentFragment();
-  let div = window.document.createElement('div');
+  const div = window.document.createElement('div');
   div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
   fragment.appendChild(div);
 

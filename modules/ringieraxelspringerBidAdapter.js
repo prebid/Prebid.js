@@ -129,6 +129,152 @@ function parseParams(params, bidderRequest) {
   return newParams;
 }
 
+/**
+ * @param url string
+ * @param type number // 1 - img, 2 - js
+ * @returns an object { event: 1, method: 1 or 2, url: 'string' }
+ */
+function prepareItemEventtrackers(url, type) {
+  return {
+    event: 1,
+    method: type,
+    url: url
+  };
+}
+
+function prepareEventtrackers(emsLink, imp, impression, impression1, impressionJs1) {
+  const eventtrackers = [prepareItemEventtrackers(emsLink, 1)];
+
+  if (imp) {
+    eventtrackers.push(prepareItemEventtrackers(imp, 1));
+  }
+
+  if (impression) {
+    eventtrackers.push(prepareItemEventtrackers(impression, 1));
+  }
+
+  if (impression1) {
+    eventtrackers.push(prepareItemEventtrackers(impression1, 1));
+  }
+
+  if (impressionJs1) {
+    eventtrackers.push(prepareItemEventtrackers(impressionJs1, 2));
+  }
+
+  return eventtrackers;
+}
+
+function parseOrtbResponse(ad) {
+  if (!(ad.data?.fields && ad.data?.meta)) {
+    return false;
+  }
+
+  const { image, Image, title, url, Headline, Thirdpartyclicktracker, thirdPartyClickTracker2, imp, impression, impression1, impressionJs1, partner_logo: partnerLogo, adInfo, body } = ad.data.fields;
+  const { dsaurl, height, width, adclick } = ad.data.meta;
+  const emsLink = ad.ems_link;
+  const link = adclick + (url || Thirdpartyclicktracker);
+  const eventtrackers = prepareEventtrackers(emsLink, imp, impression, impression1, impressionJs1);
+  const clicktrackers = thirdPartyClickTracker2 ? [thirdPartyClickTracker2] : [];
+
+  const ortb = {
+    ver: '1.2',
+    assets: [
+      {
+        id: 0,
+        data: {
+          value: body || '',
+          type: 2
+        },
+      },
+      {
+        id: 1,
+        data: {
+          value: adInfo || '',
+          // Body2 type
+          type: 10
+        },
+      },
+      {
+        id: 3,
+        img: {
+          type: 1,
+          url: partnerLogo || '',
+          w: width,
+          h: height
+        }
+      },
+      {
+        id: 4,
+        img: {
+          type: 3,
+          url: image || Image || '',
+          w: width,
+          h: height
+        }
+      },
+      {
+        id: 5,
+        data: {
+          value: deepAccess(ad, 'data.meta.advertiser_name', null),
+          type: 1
+        }
+      },
+      {
+        id: 6,
+        title: {
+          text: title || Headline || ''
+        }
+      },
+    ],
+    link: {
+      url: link,
+      clicktrackers
+    },
+    eventtrackers
+  };
+
+  if (dsaurl) {
+    ortb.privacy = dsaurl
+  }
+
+  return ortb
+}
+
+function _parseNativeResponse(ad) {
+  if (!(ad.data?.fields && ad.data?.meta)) {
+    return false;
+  }
+
+  const { image, Image, title, leadtext, url, Calltoaction, Body, Headline, Thirdpartyclicktracker, adInfo, partner_logo: partnerLogo } = ad.data.fields;
+  const { dsaurl, height, width, adclick } = ad.data.meta;
+  const link = adclick + (url || Thirdpartyclicktracker);
+  const nativeResponse = {
+    title: title || Headline || '',
+    image: {
+      url: image || Image || '',
+      width,
+      height
+    },
+    icon: {
+      url: partnerLogo || '',
+      width,
+      height
+    },
+    clickUrl: link,
+    cta: Calltoaction || '',
+    body: leadtext || Body || '',
+    body2: adInfo || '',
+    sponsoredBy: deepAccess(ad, 'data.meta.advertiser_name', null) || '',
+    ortb: parseOrtbResponse(ad)
+  };
+
+  if (dsaurl) {
+    nativeResponse.privacyLink = dsaurl;
+  }
+
+  return nativeResponse
+}
+
 const buildBid = (ad, mediaType) => {
   if (ad.type === 'empty' || mediaType === undefined) {
     return null;
@@ -150,10 +296,10 @@ const buildBid = (ad, mediaType) => {
     height: ad.height || 0
   }
 
-  if (ad.type === 'native') {
+  if (mediaType === 'native') {
     data.meta = { mediaType: NATIVE };
     data.mediaType = NATIVE;
-    data.native = parseNativeResponse(ad) || {};
+    data.native = _parseNativeResponse(ad) || {};
 
     delete data.ad;
   }
@@ -183,22 +329,19 @@ const getSlots = (bidRequests) => {
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
     const slotSequence = deepAccess(adunit, 'params.slotSequence');
-    const creFormats = getAdUnitCreFormats(adunit);
-    const sizes = parseSizesInput(getAdUnitSizes(adunit))?.filter(Boolean);
-
-    if (creFormats.includes('native') && sizes?.indexOf('fluid') === -1) {
-      sizes.push('fluid');
-    }
+    const creFormat = getAdUnitCreFormat(adunit);
+    const sizes = creFormat === 'native' ? 'fluid' : parseSizesInput(getAdUnitSizes(adunit)).join(',');
 
     queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
 
-    queryString += `&cre_format${i}=${encodeURIComponent(creFormats.join())}`;
+    if (creFormat === 'native') {
+      queryString += `&cre_format${i}=native`;
+    }
 
-    // change 'html' format to 'banner'
-    queryString += `&kvhb_format${i}=${encodeURIComponent(creFormats.map(format => format === 'html' ? 'banner' : format).join())}`;
+    queryString += `&kvhb_format${i}=${creFormat === 'native' ? 'native' : 'banner'}`;
 
-    if (Array.isArray(sizes)) {
-      queryString += `&iusizes${i}=${encodeURIComponent(sizes.join(','))}`;
+    if (sizes) {
+      queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
     }
 
     if (slotSequence !== undefined && slotSequence !== null) {
@@ -211,7 +354,7 @@ const getSlots = (bidRequests) => {
 
 const getGdprParams = (bidderRequest) => {
   const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
-  let consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+  const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
   let queryString = '';
   if (gdprApplies !== undefined) {
     queryString += `&gdpr_applies=${encodeURIComponent(gdprApplies)}`;
@@ -252,24 +395,19 @@ const parseAuctionConfigs = (serverResponse, bidRequest) => {
   }
 }
 
-const getAdUnitCreFormats = (adUnit) => {
+const getAdUnitCreFormat = (adUnit) => {
   if (!adUnit) {
     return;
   }
 
-  let creFormats = [];
+  let creFormat = 'html';
+  const mediaTypes = Object.keys(adUnit.mediaTypes);
 
-  if (adUnit.mediaTypes) {
-    if (adUnit.mediaTypes.banner) {
-      creFormats.push('html');
-    }
-
-    if (adUnit.mediaTypes.native) {
-      creFormats.push('native');
-    }
+  if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
+    creFormat = 'native';
   }
 
-  return creFormats;
+  return creFormat;
 }
 
 export const spec = {

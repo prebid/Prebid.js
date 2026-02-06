@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec, STORAGE, ENDPOINT_URL} from 'modules/bitmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import {BANNER} from '../../../src/mediaTypes';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 describe('Bitmedia Bid Adapter', function () {
   const createBidRequest = (sandbox, overrides = {}) => {

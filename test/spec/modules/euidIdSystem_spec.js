@@ -2,14 +2,14 @@ import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/u
 import {config} from 'src/config.js';
 import {euidIdSubmodule} from 'modules/euidIdSystem.js';
 import 'modules/consentManagementTcf.js';
-import 'src/prebid.js';
+import {requestBids} from '../../../src/prebid.js';
 import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 // N.B. Most of the EUID code is shared with UID2 - the tests here only cover the happy path.
 // Most of the functionality is covered by the UID2 tests.
@@ -38,12 +38,18 @@ const cstgApiUrl = 'https://prod.euid.eu/v2/token/client-generate';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = (token) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
 const makeOptoutResponseBody = (token) => btoa(JSON.stringify({ status: 'optout', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
-const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidIdentityContainer(token));
-const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidOptoutContainer(token));
-const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
+function findEuid(bid) {
+  return (bid?.userIdAsEids ?? []).find(e => e.source === 'euid.eu');
+}
+const expectToken = (bid, token) => {
+  const eid = findEuid(bid);
+  expect(eid && eid.uids[0].id).to.equal(token);
+};
+const expectOptout = (bid) => expect(findEuid(bid)).to.be.undefined;
+const expectNoIdentity = (bid) => expect(findEuid(bid)).to.be.undefined;
 
 describe('EUID module', function() {
-  let suiteSandbox, restoreSubtleToUndefined = false;
+  let suiteSandbox; let restoreSubtleToUndefined = false;
 
   const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   const configureEuidCstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
@@ -51,7 +57,7 @@ describe('EUID module', function() {
   before(function() {
     uninstallTcfControl();
     hook.ready();
-    suiteSandbox = sinon.sandbox.create();
+    suiteSandbox = sinon.createSandbox();
     if (typeof window.crypto.subtle === 'undefined') {
       restoreSubtleToUndefined = true;
       window.crypto.subtle = { importKey: () => {}, digest: () => {}, decrypt: () => {}, deriveKey: () => {}, encrypt: () => {}, generateKey: () => {}, exportKey: () => {} };
@@ -76,7 +82,7 @@ describe('EUID module', function() {
     setSubmoduleRegistry([euidIdSubmodule]);
   });
   afterEach(function() {
-    $$PREBID_GLOBAL$$.requestBids.removeAll();
+    requestBids.removeAll();
     config.resetConfig();
     cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
     coreStorage.removeDataFromLocalStorage(moduleCookieName);

@@ -144,7 +144,7 @@ describe('Adloox Analytics Adapter', function () {
 
   describe('process', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
 
       sandbox.stub(events, 'getEvents').returns([]);
 
@@ -170,7 +170,7 @@ describe('Adloox Analytics Adapter', function () {
 
         const uri = utils.parseUrl(analyticsAdapter.url(analyticsOptions.js));
         const isLinkPreloadAsScript = function(arg) {
-          const href_uri = utils.parseUrl(arg.href);	// IE11 requires normalisation (hostname always includes port)
+          const href_uri = utils.parseUrl(arg.href);  // IE11 requires normalisation (hostname always includes port)
           return arg.tagName === 'LINK' && arg.getAttribute('rel') === 'preload' && arg.getAttribute('as') === 'script' && href_uri.href === uri.href;
         };
 

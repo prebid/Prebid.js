@@ -32,8 +32,8 @@ const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
-let globals = {};
-let itemMaps = {};
+const globals = {};
+const itemMaps = {};
 
 /* ----- mguid:start ------ */
 export const COOKIE_KEY_MGUID = '__mguid_';
@@ -73,7 +73,7 @@ export const getPmgUID = () => {
 function getProperty(obj, ...keys) {
   let o = obj;
 
-  for (let key of keys) {
+  for (const key of keys) {
     // console.log(key, o);
     if (o && o[key]) {
       o = o[key];
@@ -120,13 +120,13 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-    let mediaTypes = getProperty(req, 'mediaTypes');
+    const mediaTypes = getProperty(req, 'mediaTypes');
 
-    let sizes = transformSizes(getProperty(req, 'sizes'));
+    const sizes = transformSizes(getProperty(req, 'sizes'));
     let matchSize;
 
     // 确认尺寸是否符合我们要求
-    for (let size of sizes) {
+    for (const size of sizes) {
       matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
         break;
@@ -139,7 +139,6 @@ function getItems(validBidRequests, bidderRequest) {
     const bidFloor = getBidFloor(req);
     const gpid =
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
       utils.deepAccess(req, 'params.placementId', 0);
 
     const gdprConsent = {};
@@ -157,7 +156,7 @@ function getItems(validBidRequests, bidderRequest) {
     // if (mediaTypes.native) {}
     // banner广告类型
     if (mediaTypes.banner) {
-      let id = '' + (i + 1);
+      const id = '' + (i + 1);
       ret = {
         id: id,
         bidfloor: bidFloor,
@@ -208,23 +207,18 @@ export function getCurrentTimeToUTCString() {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const sharedid =
-    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
 
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
-  const bidsUserid = validBidRequests[0].userId;
-  const eids = bidsUserIdAsEids || bidsUserid;
-  const ppuid = bidsUserid && bidsUserid.pubProvidedId;
+  const eids = bidsUserIdAsEids;
   const content = utils.deepAccess(bidderRequest, 'ortb2.site.content');
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
 
-  let isMobile = getDevice() ? 1 : 0;
+  const isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
-  let isTest = validBidRequests[0].params.test || 0;
-  let auctionId = getProperty(bidderRequest, 'auctionId');
-  let items = getItems(validBidRequests, bidderRequest);
+  const isTest = validBidRequests[0].params.test || 0;
+  const auctionId = getProperty(bidderRequest, 'auctionId');
+  const items = getItems(validBidRequests, bidderRequest);
 
   const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
   const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
@@ -238,7 +232,7 @@ function getParam(validBidRequests, bidderRequest) {
   const keywords = getPageKeywords();
 
   if (items && items.length) {
-    let c = {
+    const c = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'mgprebidjs_' + auctionId,
       test: +isTest,
@@ -258,8 +252,6 @@ function getParam(validBidRequests, bidderRequest) {
       ext: {
         eids,
         bidsUserIdAsEids,
-        bidsUserid,
-        ppuid,
         firstPartyData,
         content,
         cat,
@@ -277,7 +269,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
-        id: sharedid || pubcid,
+        id: pubcid,
       },
       eids,
       site: {
@@ -331,7 +323,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = getParam(validBidRequests, bidderRequest);
+    const payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
     return {
@@ -351,10 +343,10 @@ export const spec = {
     const cur = getProperty(serverResponse, 'body', 'cur');
 
     const bidResponses = [];
-    for (let bid of bids) {
-      let impid = getProperty(bid, 'impid');
+    for (const bid of bids) {
+      const impid = getProperty(bid, 'impid');
       if (itemMaps[impid]) {
-        let bidId = getProperty(itemMaps[impid], 'req', 'bidId');
+        const bidId = getProperty(itemMaps[impid], 'req', 'bidId');
         const bidResponse = {
           requestId: bidId,
           cpm: getProperty(bid, 'price'),
@@ -390,16 +382,16 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
-  //     // Bidder specifc code
+  //     // Bidder specific code
   //   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     // console.log('onBidWon： ', bid, config.getConfig('priceGranularity'));

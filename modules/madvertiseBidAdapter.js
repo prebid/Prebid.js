@@ -9,8 +9,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
 
+const GVLID = 153;
+
 export const spec = {
   code: 'madvertise',
+  gvlid: GVLID,
   /**
    * @param {object} bid
    * @return boolean
@@ -19,7 +22,7 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let sizes = parseSizesInput(bid.sizes);
+    const sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
@@ -27,7 +30,7 @@ export const spec = {
       return false;
     }
 
-    return typeof bid.params.s != 'undefined';
+    return typeof bid.params.s !== 'undefined';
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -42,14 +45,16 @@ export const spec = {
       var src = '?rt=bid_request&v=1.0';
 
       for (var i = 0; i < bidRequest.sizes.length; i++) {
-        if (Array.isArray(bidRequest.sizes[i]) && bidRequest.sizes[i].length == 2) {
+        if (Array.isArray(bidRequest.sizes[i]) && bidRequest.sizes[i].length === 2) {
           src = src + '&sizes[' + i + ']=' + bidRequest.sizes[i][0] + 'x' + bidRequest.sizes[i][1];
         }
       }
 
-      _each(bidRequest.params, (item, key) => src = src + '&' + key + '=' + item);
+      _each(bidRequest.params, (item, key) => {
+        src = src + '&' + key + '=' + item;
+      });
 
-      if (typeof bidRequest.params.u == 'undefined') {
+      if (typeof bidRequest.params.u === 'undefined') {
         src = src + '&u=' + navigator.userAgent;
       }
 
@@ -73,11 +78,11 @@ export const spec = {
   interpretResponse: function (responseObj, bidRequest) {
     responseObj = responseObj.body;
     // check overall response
-    if (responseObj == null || typeof responseObj !== 'object' || !responseObj.hasOwnProperty('ad')) {
+    if (responseObj === null || responseObj === undefined || typeof responseObj !== 'object' || !responseObj.hasOwnProperty('ad')) {
       return [];
     }
 
-    let bid = {
+    const bid = {
       requestId: bidRequest.bidId,
       cpm: responseObj.cpm,
       width: responseObj.Width,

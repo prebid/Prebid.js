@@ -1,65 +1,91 @@
 import { submodule } from '../src/hook.js';
-import { logMessage } from '../src/utils.js';
-import { getCoreStorageManager } from '../src/storageManager.js';
+import { logMessage, generateUUID } from '../src/utils.js';
 
 const MODULE_NAME = 'freepassId';
 
-export const FREEPASS_COOKIE_KEY = '_f_UF8cCRlr';
-export const storage = getCoreStorageManager(MODULE_NAME);
+const FREEPASS_EIDS = {
+  'freepassId': {
+    atype: 1,
+    source: "freepass.jp",
+    getValue: function(data) {
+      return data.freepassId;
+    },
+    getUidExt: function(data) {
+      const ext = {};
+      if (data.ip) {
+        ext.ip = data.ip;
+      }
+      if (data.userId && data.freepassId) {
+        ext.userId = data.userId;
+      }
+      return Object.keys(ext).length > 0 ? ext : undefined;
+    }
+  }
+};
 
 export const freepassIdSubmodule = {
   name: MODULE_NAME,
-  decode: function (value, config) {
+  decode: function (value, _) {
     logMessage('Decoding FreePass ID: ', value);
 
-    return { [MODULE_NAME]: value };
+    return { 'freepassId': value };
   },
 
-  getId: function (config, consent, cachedIdObject) {
+  getId: function (config, _, storedId) {
     logMessage('Getting FreePass ID using config: ' + JSON.stringify(config));
 
     const freepassData = config.params !== undefined ? (config.params.freepassData || {}) : {}
     const idObject = {};
 
-    const userId = storage.getCookie(FREEPASS_COOKIE_KEY);
-    if (userId !== null) {
-      idObject.userId = userId;
-    }
+    // Use stored userId or generate new one
+    idObject.userId = (storedId && storedId.userId) ? storedId.userId : generateUUID();
 
-    if (freepassData.commonId !== undefined) {
-      idObject.commonId = config.params.freepassData.commonId;
-    }
-
+    // Get IP from config
     if (freepassData.userIp !== undefined) {
-      idObject.userIp = config.params.freepassData.userIp;
+      idObject.ip = freepassData.userIp;
+    }
+
+    // Get freepassId from config
+    if (freepassData.commonId !== undefined) {
+      idObject.freepassId = freepassData.commonId;
     }
 
     return {id: idObject};
   },
 
-  extendId: function (config, consent, cachedIdObject) {
-    const freepassData = config.params.freepassData;
-    const hasFreepassData = freepassData !== undefined;
-    if (!hasFreepassData) {
-      logMessage('No Freepass Data. CachedIdObject will not be extended: ' + JSON.stringify(cachedIdObject));
+  extendId: function (config, _, storedId) {
+    const freepassData = config.params && config.params.freepassData;
+    if (!freepassData) {
+      logMessage('No Freepass Data. StoredId will not be extended: ' + JSON.stringify(storedId));
       return {
-        id: cachedIdObject
+        id: storedId
       };
     }
 
-    const currentCookieId = storage.getCookie(FREEPASS_COOKIE_KEY);
-
-    logMessage('Extending FreePass ID object: ' + JSON.stringify(cachedIdObject));
+    logMessage('Extending FreePass ID object: ' + JSON.stringify(storedId));
     logMessage('Extending FreePass ID using config: ' + JSON.stringify(config));
 
-    return {
-      id: {
-        commonId: freepassData.commonId,
-        userIp: freepassData.userIp,
-        userId: currentCookieId
-      }
+    const extendedId = {
+      // Keep existing userId or generate new one
+      userId: (storedId && storedId.userId) ? storedId.userId : generateUUID()
     };
-  }
+
+    // Add IP if provided
+    if (freepassData.userIp !== undefined) {
+      extendedId.ip = freepassData.userIp;
+    }
+
+    // Add freepassId if provided
+    if (freepassData.commonId !== undefined) {
+      extendedId.freepassId = freepassData.commonId;
+    }
+
+    return {
+      id: extendedId
+    };
+  },
+
+  eids: FREEPASS_EIDS
 };
 
 submodule('userId', freepassIdSubmodule);

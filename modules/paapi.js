@@ -274,7 +274,6 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId, bidder} = request;
 
-
     function storePendingData(store, data) {
       const target = store(auctionId);
       if (target != null) {
@@ -375,9 +374,9 @@ export function partitionBuyersByBidder(igbRequests) {
 /**
  * Expand PAAPI api filters into a map from ad unit code to auctionId.
  *
- * @param auctionId when specified, the result will have this as the value for each entry.
+ * auctionId when specified, the result will have this as the value for each entry.
  * when not specified, each ad unit will map to the latest auction that involved that ad unit.
- * @param adUnitCode when specified, the result will contain only one entry (for this ad unit) or be empty (if this ad
+ * adUnitCode when specified, the result will contain only one entry (for this ad unit) or be empty (if this ad
  * unit was never involved in an auction).
  * when not specified, the result will contain an entry for every ad unit that was involved in any auction.
  * @return {{[adUnitCode: string]: string}}
@@ -592,7 +591,7 @@ function callAdapterApi(spec, method, bids, bidderRequest) {
  */
 export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
   function makeDeferrals(defaults = {}) {
-    let promises = {};
+    const promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
       const def = defer({promiseFactory: (resolver) => new Promise(resolver)});
       def.default = defaults.hasOwnProperty(signal) ? defaults[signal] : null;

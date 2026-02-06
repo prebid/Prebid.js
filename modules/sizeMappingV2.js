@@ -14,9 +14,13 @@ import {
   logInfo,
   logWarn
 } from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import {getHook} from '../src/hook.js';
 import {adUnitSetupChecks} from '../src/prebid.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ */
 
 // Allows for stubbing of these functions while writing unit tests.
 export const internal = {
@@ -39,13 +43,13 @@ export function isUsingNewSizeMapping(adUnits) {
     if (V2_ADUNITS.has(adUnit)) return V2_ADUNITS.get(adUnit);
     if (adUnit.mediaTypes) {
       // checks for the presence of sizeConfig property at the adUnit.mediaTypes object
-      for (let mediaType of Object.keys(adUnit.mediaTypes)) {
+      for (const mediaType of Object.keys(adUnit.mediaTypes)) {
         if (adUnit.mediaTypes[mediaType].sizeConfig) {
           V2_ADUNITS.set(adUnit, true);
           return true;
         }
       }
-      for (let bid of adUnit.bids && isArray(adUnit.bids) ? adUnit.bids : []) {
+      for (const bid of adUnit.bids && isArray(adUnit.bids) ? adUnit.bids : []) {
         if (bid.sizeConfig) {
           V2_ADUNITS.set(adUnit, true);
           return true;
@@ -54,6 +58,7 @@ export function isUsingNewSizeMapping(adUnits) {
       V2_ADUNITS.set(adUnit, false);
       return false;
     }
+    return false;
   });
 }
 
@@ -61,8 +66,8 @@ export function isUsingNewSizeMapping(adUnits) {
   This hooked function executes before the function 'checkAdUnitSetup', that is defined in /src/prebid.js. It's necessary to run this funtion before
   because it applies a series of checks in order to determine the correctness of the 'sizeConfig' array, which, the original 'checkAdUnitSetup' function
   does not recognize.
-  @params {Array<AdUnits>} adUnits
-  @returns {Array<AdUnits>} validateAdUnits - Unrecognized properties are deleted.
+  @param {*} adUnits
+  @returns {*} validateAdUnits - Unrecognized properties are deleted.
  */
 export function checkAdUnitSetupHook(adUnits) {
   const validateSizeConfig = function (mediaType, sizeConfig, adUnitCode) {
@@ -86,7 +91,7 @@ export function checkAdUnitSetupHook(adUnits) {
           Verify that all config objects include 'minViewPort' and 'sizes' property.
           If they do not, return 'false'.
         */
-        if (!(includes(keys, 'minViewPort') && includes(keys, propertyName))) {
+        if (!(keys.includes('minViewPort') && keys.includes(propertyName))) {
           logError(`Ad unit ${adUnitCode}: Missing required property 'minViewPort' or 'sizes' from 'mediaTypes.${mediaType}.sizeConfig[${index}]'. ${conditionalLogMessages[mediaType]}`);
           isValid = false;
           return;
@@ -244,12 +249,12 @@ export function checkBidderSizeConfigFormat(sizeConfig) {
   if (Array.isArray(sizeConfig) && sizeConfig.length > 0) {
     sizeConfig.forEach(config => {
       const keys = Object.keys(config);
-      if ((includes(keys, 'minViewPort') &&
-        includes(keys, 'relevantMediaTypes')) &&
+      if ((keys.includes('minViewPort') &&
+        keys.includes('relevantMediaTypes')) &&
         isArrayOfNums(config.minViewPort, 2) &&
         Array.isArray(config.relevantMediaTypes) &&
         config.relevantMediaTypes.length > 0 &&
-        (config.relevantMediaTypes.length > 1 ? (config.relevantMediaTypes.every(mt => (includes(['banner', 'video', 'native'], mt))))
+        (config.relevantMediaTypes.length > 1 ? (config.relevantMediaTypes.every(mt => (['banner', 'video', 'native'].includes(mt))))
           : (['none', 'banner', 'video', 'native'].indexOf(config.relevantMediaTypes[0]) > -1))) {
         didCheckPass = didCheckPass && true;
       } else {
@@ -272,7 +277,7 @@ getHook('setupAdUnitMediaTypes').before(function (fn, adUnits, labels) {
 
 /**
  * Given an Ad Unit or a Bid as an input, returns a boolean telling if the Ad Unit/ Bid is active based on label checks
- * @param {Object<BidOrAdUnit>} bidOrAdUnit - Either the Ad Unit object or the Bid object
+ * @param {*} bidOrAdUnit - Either the Ad Unit object or the Bid object
  * @param {Array<string>} activeLabels - List of active labels passed as an argument to pbjs.requestBids function
  * @param {string} adUnitCode - Unique string identifier for an Ad Unit.
  * @param {number} adUnitInstance - Instance count of an 'Identical' ad unit.
@@ -300,13 +305,13 @@ export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitIn
       logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has declared property 'labelAll' with an empty array.`);
       return true;
     }
-    return bidOrAdUnit.labelAll.every(label => includes(activeLabels, label));
+    return bidOrAdUnit.labelAll.every(label => activeLabels.includes(label));
   } else if (labelOperator === 'labelAny' && Array.isArray(bidOrAdUnit[labelOperator])) {
     if (bidOrAdUnit.labelAny.length === 0) {
       logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has declared property 'labelAny' with an empty array.`);
       return true;
     }
-    return bidOrAdUnit.labelAny.some(label => includes(activeLabels, label));
+    return bidOrAdUnit.labelAny.some(label => activeLabels.includes(label));
   }
   return true;
 }
@@ -314,8 +319,8 @@ export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitIn
 /**
  * Processes the MediaTypes object and calculates the active size buckets for each Media Type. Uses `window.innerWidth` and `window.innerHeight`
  * to calculate the width and height of the active Viewport.
- * @param {MediaTypes} mediaTypes Contains information about supported media types for an Ad Unit and size information for each of those types
- * @returns {FilteredMediaTypes} Filtered mediaTypes object with relevant media types filtered by size buckets based on activeViewPort size
+ * @param {*} mediaTypes Contains information about supported media types for an Ad Unit and size information for each of those types
+ * @returns {*} Filtered mediaTypes object with relevant media types filtered by size buckets based on activeViewPort size
  */
 export function getFilteredMediaTypes(mediaTypes) {
   let
@@ -325,7 +330,7 @@ export function getFilteredMediaTypes(mediaTypes) {
 
   transformedMediaTypes = deepClone(mediaTypes);
 
-  let activeSizeBucket = {
+  const activeSizeBucket = {
     banner: undefined,
     video: undefined,
     native: undefined
@@ -335,7 +340,7 @@ export function getFilteredMediaTypes(mediaTypes) {
   activeViewportHeight = getWinDimensions().innerHeight;
 
   const activeViewport = [activeViewportWidth, activeViewportHeight];
-  Object.keys(mediaTypes).map(mediaType => {
+  Object.keys(mediaTypes).forEach(mediaType => {
     const sizeConfig = mediaTypes[mediaType].sizeConfig;
     if (sizeConfig) {
       activeSizeBucket[mediaType] = getActiveSizeBucket(sizeConfig, activeViewport);
@@ -388,7 +393,7 @@ export function getFilteredMediaTypes(mediaTypes) {
  * In case of a Video media type, it checks the playerSize property. If found empty, returns false, else returns true.
  * In case of a Native media type, it checks the active property. If found false, returns false, if found true, returns true.
  * @param {string} mediaType It can be 'banner', 'native' or 'video'
- * @param {Object<SizeConfig>} sizeConfig Represents the sizeConfig object which is active based on the current viewport size
+ * @param {*} sizeConfig Represents the sizeConfig object which is active based on the current viewport size
  * @returns {boolean} Represents if the size config is active or not
  */
 export function isSizeConfigActivated(mediaType, sizeConfig) {
@@ -409,7 +414,7 @@ export function isSizeConfigActivated(mediaType, sizeConfig) {
 
 /**
  * Returns the active size bucket for a given media type
- * @param {Array<SizeConfig>} sizeConfig SizeConfig defines the characteristics of an Ad Unit categorised into multiple size buckets per media type
+ * @param {*[]} sizeConfig SizeConfig defines the characteristics of an Ad Unit categorised into multiple size buckets per media type
  * @param {Array} activeViewport Viewport size of the browser in the form [w, h] (w -> width, h -> height)
  * Calculated at the time of making call to pbjs.requestBids function
  * @returns {Array} The active size bucket matching the activeViewPort, for example: [750, 0]

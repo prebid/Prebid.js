@@ -98,7 +98,7 @@ export const spec = {
   },
 
   onBidWon: function(bid) {
-    let wonBids = [];
+    const wonBids = [];
     wonBids.push(bid);
     wonBids[0].function = 'onBidWon';
     sendResponseToServer(wonBids);

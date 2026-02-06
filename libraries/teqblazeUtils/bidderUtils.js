@@ -1,5 +1,5 @@
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess } from '../../src/utils.js';
+
 import { config } from '../../src/config.js';
 
 const PROTOCOL_PATTERN = /^[a-z0-9.+-]+:/i;
@@ -35,9 +35,9 @@ const getBidFloor = (bid) => {
   }
 };
 
-const createBasePlacement = (bid) => {
-  const { bidId, mediaTypes, transactionId, userIdAsEids } = bid;
-  const schain = bid.schain || {};
+const createBasePlacement = (bid, bidderRequest) => {
+  const { bidId, mediaTypes, transactionId, userIdAsEids, ortb2Imp } = bid;
+  const schain = bidderRequest?.ortb2?.source?.ext?.schain || {};
   const bidfloor = getBidFloor(bid);
 
   const placement = {
@@ -79,6 +79,10 @@ const createBasePlacement = (bid) => {
 
   if (userIdAsEids && userIdAsEids.length) {
     placement.eids = userIdAsEids;
+  }
+
+  if (ortb2Imp?.ext?.gpid) {
+    placement.gpid = ortb2Imp.ext.gpid;
   }
 
   return placement;
@@ -132,8 +136,8 @@ export const isBidRequestValid = (keys = ['placementId', 'endpointId'], mode) =>
 export const buildRequestsBase = (config) => {
   const { adUrl, validBidRequests, bidderRequest } = config;
   const placementProcessingFunction = config.placementProcessingFunction || buildPlacementProcessingFunction();
-  const device = deepAccess(bidderRequest, 'ortb2.device');
-  const page = deepAccess(bidderRequest, 'refererInfo.page', '');
+  const device = bidderRequest?.ortb2?.device;
+  const page = bidderRequest?.refererInfo?.page || '';
 
   const proto = PROTOCOL_PATTERN.exec(page);
   const protocol = proto?.[0];
@@ -144,15 +148,15 @@ export const buildRequestsBase = (config) => {
     deviceHeight: device?.h || 0,
     language: device?.language?.split('-')[0] || '',
     secure: protocol === 'https:' ? 1 : 0,
-    host: deepAccess(bidderRequest, 'refererInfo.domain', ''),
+    host: bidderRequest?.refererInfo?.domain || '',
     page,
     placements,
-    coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
+    coppa: bidderRequest?.ortb2?.regs?.coppa ? 1 : 0,
     tmax: bidderRequest.timeout,
-    bcat: deepAccess(bidderRequest, 'ortb2.bcat'),
-    badv: deepAccess(bidderRequest, 'ortb2.badv'),
-    bapp: deepAccess(bidderRequest, 'ortb2.bapp'),
-    battr: deepAccess(bidderRequest, 'ortb2.battr')
+    bcat: bidderRequest?.ortb2?.bcat,
+    badv: bidderRequest?.ortb2?.badv,
+    bapp: bidderRequest?.ortb2?.bapp,
+    battr: bidderRequest?.ortb2?.battr
   };
 
   if (bidderRequest.uspConsent) {
@@ -198,9 +202,9 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
 
 export function interpretResponseBuilder({addtlBidValidation = (bid) => true} = {}) {
   return function (serverResponse) {
-    let response = [];
+    const response = [];
     for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
+      const resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem) && addtlBidValidation(resItem)) {
         const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
         resItem.meta = { ...resItem.meta, advertiserDomains };
@@ -253,7 +257,7 @@ export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprCons
 export const buildPlacementProcessingFunction = (config) => (bid, bidderRequest) => {
   const addPlacementType = config?.addPlacementType ?? defaultPlacementType;
 
-  const placement = createBasePlacement(bid);
+  const placement = createBasePlacement(bid, bidderRequest);
 
   addPlacementType(bid, bidderRequest, placement);
 

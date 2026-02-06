@@ -22,7 +22,6 @@ describe('relevatehealth adapter', function() {
       },
       params: {
         placement_id: 110011,
-        user_id: '11211',
         width: 160,
         height: 600,
         domain: '',
@@ -82,102 +81,73 @@ describe('relevatehealth adapter', function() {
   });
 
   describe('validations', function() {
-    it('isBidValid : placement_id and user_id are passed', function() {
-      let bid = {
-          bidder: 'relevatehealth',
-          params: {
-            placement_id: 110011,
-            user_id: '11211'
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
+    it('isBidValid : placement_id is passed', function() {
+      const bid = {
+        bidder: 'relevatehealth',
+        params: {
+          placement_id: 110011
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
-    it('isBidValid : placement_id and user_id are not passed', function() {
-      let bid = {
-          bidder: 'relevatehealth',
-          params: {
-            width: 160,
-            height: 600,
-            domain: '',
-            bid_floor: 0.5
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
-      expect(isValid).to.equals(false);
-    });
-    it('isBidValid : placement_id is passed but user_id is not passed', function() {
-      let bid = {
-          bidder: 'relevatehealth',
-          params: {
-            placement_id: 110011,
-            width: 160,
-            height: 600,
-            domain: '',
-            bid_floor: 0.5
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
-      expect(isValid).to.equals(false);
-    });
-    it('isBidValid : user_id is passed but placement_id is not passed', function() {
-      let bid = {
-          bidder: 'relevatehealth',
-          params: {
-            width: 160,
-            height: 600,
-            domain: '',
-            bid_floor: 0.5,
-            user_id: '11211'
-          }
-        },
-        isValid = spec.isBidRequestValid(bid);
+    it('isBidValid : placement_id is not passed', function() {
+      const bid = {
+        bidder: 'relevatehealth',
+        params: {
+          width: 160,
+          height: 600,
+          domain: '',
+          bid_floor: 0.5
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
   });
   describe('Validate Request', function() {
     it('Immutable bid request validate', function() {
-      let _Request = utils.deepClone(request),
-        bidRequest = spec.buildRequests(request);
+      const _Request = utils.deepClone(request);
+      const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function() {
-      let _Request = spec.buildRequests(request);
+      const _Request = spec.buildRequests(request);
       expect(_Request.url).to.equal('https://rtb.relevate.health/prebid/relevate');
       expect(_Request.method).to.equal('POST');
       expect(_Request.options.contentType).to.equal('application/json');
     });
     it('Validate bid request : Impression', function() {
-      let _Request = spec.buildRequests(request);
-      let data = JSON.parse(_Request.data);
+      const _Request = spec.buildRequests(request);
+      const data = JSON.parse(_Request.data);
       expect(data[0].imp[0].id).to.equal(request[0].bidId);
       expect(data[0].placementId).to.equal(110011);
     });
     it('Validate bid request : ad size', function() {
-      let _Request = spec.buildRequests(request);
-      let data = JSON.parse(_Request.data);
+      const _Request = spec.buildRequests(request);
+      const data = JSON.parse(_Request.data);
       expect(data[0].imp[0].banner).to.be.a('object');
       expect(data[0].imp[0].banner.w).to.equal(160);
       expect(data[0].imp[0].banner.h).to.equal(600);
     });
     it('Validate bid request : user object', function() {
-      let _Request = spec.buildRequests(request);
-      let data = JSON.parse(_Request.data);
+      const _Request = spec.buildRequests(request);
+      const data = JSON.parse(_Request.data);
       expect(data[0].user).to.be.a('object');
       expect(data[0].user.id).to.be.a('string');
     });
     it('Validate bid request : CCPA Check', function() {
-      let bidRequest = {
+      const bidRequest = {
         uspConsent: '1NYN'
       };
-      let _Request = spec.buildRequests(request, bidRequest);
-      let data = JSON.parse(_Request.data);
-      expect(data[0].us_privacy).to.equal('1NYN');
+      const _Request = spec.buildRequests(request, bidRequest);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.ext.us_privacy).to.equal('1NYN');
     });
   });
   describe('Validate response ', function() {
     it('Validate bid response : valid bid response', function() {
-      let bResponse = spec.interpretResponse(bannerResponse, request);
+      const bResponse = spec.interpretResponse(bannerResponse, request);
       expect(bResponse).to.be.an('array').with.length.above(0);
       expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
       expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w);
@@ -191,26 +161,26 @@ describe('relevatehealth adapter', function() {
       expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
     });
     it('Invalid bid response check ', function() {
-      let bRequest = spec.buildRequests(request);
-      let response = spec.interpretResponse(invalidResponse, bRequest);
+      const bRequest = spec.buildRequests(request);
+      const response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].ad).to.equal('invalid response');
     });
   });
   describe('GPP and coppa', function() {
     it('Request params check with GPP Consent', function() {
-      let bidderReq = {
+      const bidderReq = {
         gppConsent: {
           gppString: 'gpp-string-test',
           applicableSections: [5]
         }
       };
-      let _Request = spec.buildRequests(request, bidderReq);
-      let data = JSON.parse(_Request.data);
-      expect(data[0].gpp).to.equal('gpp-string-test');
-      expect(data[0].gpp_sid[0]).to.equal(5);
+      const _Request = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.gpp).to.equal('gpp-string-test');
+      expect(data[0].regs.gpp_sid[0]).to.equal(5);
     });
     it('Request params check with GPP Consent read from ortb2', function() {
-      let bidderReq = {
+      const bidderReq = {
         ortb2: {
           regs: {
             gpp: 'gpp-test-string',
@@ -218,22 +188,22 @@ describe('relevatehealth adapter', function() {
           }
         }
       };
-      let _Request = spec.buildRequests(request, bidderReq);
-      let data = JSON.parse(_Request.data);
-      expect(data[0].gpp).to.equal('gpp-test-string');
-      expect(data[0].gpp_sid[0]).to.equal(5);
+      const _Request = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.gpp).to.equal('gpp-test-string');
+      expect(data[0].regs.gpp_sid[0]).to.equal(5);
     });
     it(' Bid request should have coppa flag if its true', () => {
-      let bidderReq = {
+      const bidderReq = {
         ortb2: {
           regs: {
             coppa: 1
           }
         }
       };
-      let _Request = spec.buildRequests(request, bidderReq);
-      let data = JSON.parse(_Request.data);
-      expect(data[0].coppa).to.equal(1);
+      const _Request = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.coppa).to.equal(1);
     });
   });
 });

@@ -19,7 +19,8 @@ export const spec = {
     {code: 'bcmint'},
     {code: 'bidgency'},
     {code: 'kuantyx'},
-    {code: 'cordless'}
+    {code: 'cordless'},
+    {code: 'adklip'}
   ],
 
   isBidRequestValid: bid => {
@@ -27,7 +28,7 @@ export const spec = {
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
-    let requests = [];
+    const requests = [];
 
     bidRequests.forEach(bid => {
       const data = converter.toORTB({bidRequests: [bid], bidderRequest});
@@ -150,7 +151,7 @@ function getEndpoint(bidRequest) {
 
 function getConsentsIds(gdprConsent) {
   const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
-  let consentsIds = [];
+  const consentsIds = [];
 
   Object.keys(consents).forEach(key => {
     if (consents[key] === true) {

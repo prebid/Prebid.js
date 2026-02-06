@@ -9,7 +9,7 @@ import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 const utils = require('src/utils');
 
 describe('Adxcg adapter', function () {
-  let bids = [];
+  const bids = [];
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://usersync-url.com';
@@ -145,7 +145,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     bidId: 'bid12345',
     mediaTypes: {
       native: {
-        sendTargetingKeys: false,
         ortb: nativeOrtbRequest
       }
     },
@@ -475,8 +474,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, bidderRequest);
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.user).to.not.equal(null);
   });
@@ -502,8 +501,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, bidderRequest);
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site).to.deep.equal({
@@ -547,8 +546,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     }];
-    let request = spec.buildRequests(bidderRequests, bidderRequest);
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(bidderRequests, bidderRequest);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);

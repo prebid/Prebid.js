@@ -30,7 +30,7 @@ describe('category translation', function () {
         }
       }
     }));
-    let bid = {
+    const bid = {
       meta: {
         primaryCatId: 'iab-1'
       }
@@ -53,7 +53,7 @@ describe('category translation', function () {
         }
       }
     }));
-    let bid = {
+    const bid = {
       meta: {
         primaryCatId: 'iab-2'
       }
@@ -63,7 +63,7 @@ describe('category translation', function () {
   });
 
   it('should not make ajax call to update mapping file if data found in localstorage and is not expired', function () {
-    let clock = sinon.useFakeTimers(utils.timestamp());
+    const clock = sinon.useFakeTimers(utils.timestamp());
     getLocalStorageStub.returns(JSON.stringify({
       lastUpdated: utils.timestamp(),
       mapping: {
@@ -76,7 +76,7 @@ describe('category translation', function () {
   });
 
   it('should make ajax call to update mapping file if data found in localstorage is expired', function () {
-    let clock = sinon.useFakeTimers(utils.timestamp());
+    const clock = sinon.useFakeTimers(utils.timestamp());
     getLocalStorageStub.returns(JSON.stringify({
       lastUpdated: utils.timestamp() - 2 * 24 * 60 * 60 * 1000,
       mapping: {
