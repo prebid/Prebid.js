@@ -65,11 +65,11 @@ describe('bidResponseFilter', () => {
     })
 
     const bid = {
+      mediaType: 'banner',
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'EXAMPLE-CAT-ID',
         attr: 'attr',
-        mediaType: 'banner'
       }
     };
 
@@ -118,12 +118,12 @@ describe('bidResponseFilter', () => {
     const reject = sinon.stub();
     const call = sinon.stub();
     const bid = {
+      mediaType: 'video',
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
         attr: 'BANNED_ATTR'
       },
-      mediaType: 'video'
     };
     mockAuctionIndex.getOrtb2 = () => ({
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
@@ -144,11 +144,11 @@ describe('bidResponseFilter', () => {
   it('should omit the validation if the flag is set to false', () => {
     const call = sinon.stub();
     const bid = {
+      mediaType: 'banner',
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'BANNED_CAT1',
         attr: 'valid_attr',
-        mediaType: 'banner',
       }
     };
 
@@ -173,11 +173,11 @@ describe('bidResponseFilter', () => {
   it('should allow bid for unknown flag set to false', () => {
     const call = sinon.stub();
     const bid = {
+      mediaType: 'banner',
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: undefined,
         attr: 'valid_attr',
-        mediaType: 'banner'
       }
     };
 
@@ -203,11 +203,11 @@ describe('bidResponseFilter', () => {
     const reject = sinon.stub();
     const call = sinon.stub();
     const bid = {
+      mediaType: 'audio',
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
         attr: 6,
-        mediaType: 'audio'
       },
     };
 

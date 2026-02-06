@@ -39,11 +39,13 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   const mediaTypesConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.mediaTypes || {})};
 
   const {
-    primaryCatId, secondaryCatIds = [],
-    advertiserDomains = [],
-    attr: metaAttr,
     mediaType: metaMediaType,
-  } = bid.meta || {};
+    meta: {
+      primaryCatId, secondaryCatIds = [],
+      advertiserDomains = [],
+      attr: metaAttr
+    } = {}
+  } = bid;
 
   // checking if bid fulfills ortb2 fields rules
   if ((catConfig.enforce && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
