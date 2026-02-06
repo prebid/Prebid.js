@@ -51,6 +51,7 @@ function buildRequests(bidReqs, bidderRequest) {
 
       const imp = {
         id: bid.bidId,
+        displaymanagerver: '$prebid.version$',
         ext: {
           ...gpidData
         },
