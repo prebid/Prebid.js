@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 
 import parse from 'url-parse';
-import {buildGamVideoUrl as buildDfpVideoUrl, dep} from 'modules/gamAdServerVideo.js';
+import {buildGamVideoUrl as buildDfpVideoUrl, dep, retrieveUspInfoFromGpp} from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
@@ -869,5 +869,118 @@ describe('The DFP video support module', function () {
       })
       .finally(config.resetConfig);
     server.respond();
+  });
+
+  describe('Retrieve US Privacy string from GPP', () => {
+    function wrapParsedSectionsIntoGPPData(parsedSections) {
+      return {
+        gppData: {
+          parsedSections: parsedSections
+        }
+      }
+    }
+    it('should return undefined if GPP is not present', () => {
+      const gpp = undefined;
+      const usp = retrieveUspInfoFromGpp(gpp);
+      expect(usp).to.be.undefined;
+    });
+    it('should return undefined if GPP is null', () => {
+      const gpp = null;
+      const usp = retrieveUspInfoFromGpp(gpp);
+      expect(usp).to.be.undefined;
+    });
+    it('retrieve from usp section', () => {
+      const gpp = wrapParsedSectionsIntoGPPData({
+        "uspv1": {
+          "Version": 1,
+          "Notice": "Y",
+          "OptOutSale": "N",
+          "LspaCovered": "Y"
+        }
+      });
+      const usp = retrieveUspInfoFromGpp(gpp);
+      expect(usp).to.equal('1YNY');
+    })
+    it('retrieve from usnat section', () => {
+      const gpp = wrapParsedSectionsIntoGPPData({
+        "usnat": {
+          "Version": 1,
+          "SharingNotice": 2,
+          "SaleOptOutNotice": 1,
+          "SharingOptOutNotice": 0,
+          "TargetedAdvertisingOptOutNotice": 2,
+          "SensitiveDataProcessingOptOutNotice": 1,
+          "SensitiveDataLimitUseNotice": 1,
+          "SaleOptOut": 1,
+          "SharingOptOut": 2,
+          "TargetedAdvertisingOptOut": 2,
+          "SensitiveDataProcessing": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "KnownChildSensitiveDataConsents": [
+            0,
+            0,
+            0
+          ],
+          "PersonalDataConsents": 0,
+          "MspaCoveredTransaction": 1,
+          "MspaOptOutOptionMode": 0,
+          "MspaServiceProviderMode": 0,
+          "GpcSegmentType": 1,
+          "Gpc": false
+        }
+      });
+      const usp = retrieveUspInfoFromGpp(gpp);
+      expect(usp).to.equal('1YYY');
+    })
+    it('retrieve from usca section', () => {
+      const gpp = wrapParsedSectionsIntoGPPData({
+        "usca": {
+          "Version": 1,
+          "SaleOptOutNotice": 1,
+          "SharingOptOutNotice": 1,
+          "SensitiveDataLimitUseNotice": 1,
+          "SaleOptOut": 2,
+          "SharingOptOut": 2,
+          "SensitiveDataProcessing": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "KnownChildSensitiveDataConsents": [
+            0,
+            0
+          ],
+          "PersonalDataConsents": 0,
+          "MspaCoveredTransaction": 2,
+          "MspaOptOutOptionMode": 0,
+          "MspaServiceProviderMode": 0,
+          "GpcSegmentType": 1,
+          "Gpc": false
+        }});
+      const usp = retrieveUspInfoFromGpp(gpp);
+      expect(usp).to.equal('1YNY');
+    })
   });
 });
