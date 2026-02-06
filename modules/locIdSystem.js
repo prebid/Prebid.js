@@ -127,7 +127,7 @@ function hasPrivacySignals(consentData) {
 }
 
 function isValidId(id) {
-  return typeof id === 'string' && id.length > 0 && id.length <= MAX_ID_LENGTH;
+  return typeof id === 'string' && id.trim().length > 0 && id.length <= MAX_ID_LENGTH;
 }
 
 function isValidConnectionIp(ip) {
@@ -647,6 +647,12 @@ export const locIdSubmodule = {
         fetchLocIdFromEndpoint(config, (freshEntry) => {
           if (!freshEntry) {
             callback(undefined);
+            return;
+          }
+          // Honor empty tx_cloc: if the server returned null, use the fresh
+          // entry so stale identifiers are cleared (cached as id: null).
+          if (freshEntry.id === null) {
+            callback(freshEntry);
             return;
           }
           // IP is already cached by fetchLocIdFromEndpoint's onSuccess.

@@ -1143,6 +1143,26 @@ describe('LocID System', () => {
       });
     });
 
+    it('should cache entry with null id when tx_cloc is whitespace-only', (done) => {
+      ajaxStub.callsFake((url, callbacks, body, options) => {
+        callbacks.success(JSON.stringify({ tx_cloc: '   \n\t  ', connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: {
+          endpoint: TEST_ENDPOINT
+        }
+      };
+
+      const result = locIdSubmodule.getId(config, {});
+      result.callback((id) => {
+        expect(id).to.be.an('object');
+        expect(id.id).to.be.null;
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
+    });
+
     it('should return undefined when tx_cloc is missing', (done) => {
       ajaxStub.callsFake((url, callbacks, body, options) => {
         callbacks.success(JSON.stringify({ other_field: 'value' }));
@@ -1663,6 +1683,34 @@ describe('LocID System', () => {
       });
     });
 
+    it('should honor null tx_cloc from main endpoint even when stored entry is reusable', (done) => {
+      // Server returns connection_ip but no tx_cloc → freshEntry.id === null.
+      // The stored entry has a valid tx_cloc for the same IP, but the server
+      // now indicates no ID for this IP. The null response must be honored.
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: TEST_ID,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        // Server said no tx_cloc → stored entry must NOT be preserved
+        expect(id.id).to.be.null;
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
+    });
+
     it('should use fresh entry on first load (no stored entry)', (done) => {
       ajaxStub.callsFake((url, callbacks) => {
         callbacks.success(JSON.stringify({ tx_cloc: TEST_ID, connection_ip: TEST_CONNECTION_IP }));
@@ -1970,6 +2018,17 @@ describe('LocID System', () => {
     it('should not produce EID when decode returns undefined', () => {
       const decoded = locIdSubmodule.decode(null);
       expect(decoded).to.be.undefined;
+    });
+
+    it('should not produce EID when only stable_cloc is present', () => {
+      const decoded = locIdSubmodule.decode({
+        stable_cloc: 'stable-only-value',
+        connectionIp: TEST_CONNECTION_IP
+      });
+      expect(decoded).to.be.undefined;
+
+      const eids = createEidsArray({ locId: decoded?.locId });
+      expect(eids).to.deep.equal([]);
     });
   });
 });

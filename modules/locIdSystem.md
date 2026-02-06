@@ -92,7 +92,7 @@ The module stores a structured object (rather than a raw string) so it can track
 }
 ```
 
-When the endpoint returns a valid `connection_ip` but no `tx_cloc` (empty or missing), `id` is stored as `null`. This caches the "no location for this IP" result for the full cache period without re-fetching. The `decode()` function returns `undefined` for `null` IDs, so no EID is emitted in bid requests.
+When the endpoint returns a valid `connection_ip` but no usable `tx_cloc` (`null`, missing, empty, or whitespace-only), `id` is stored as `null`. This caches the "no location for this IP" result for the full cache period without re-fetching. The `decode()` function returns `undefined` for `null` IDs, so no EID is emitted in bid requests.
 
 **Important:** String-only stored values are treated as invalid and are not emitted.
 
@@ -112,14 +112,14 @@ This entry is managed by the module directly via Prebid's `storageManager` and i
 
 ## Operation Flow
 
-The module uses a two-tier cache: an IP cache (default 4-hour TTL) and a tx_cloc cache (default 7-day TTL). The IP is refreshed more frequently to detect network changes while keeping tx_cloc stable for its full cache period.
+The module uses a two-tier cache: an IP cache (default 4-hour TTL) and a tx_cloc cache (TTL defined by `storage.expires`). The IP is refreshed more frequently to detect network changes while keeping tx_cloc stable for its full cache period.
 
 1. The module checks the IP cache for a current connection IP.
 2. If the IP cache is valid, the module compares it against the stored tx_cloc entry's `connectionIp`.
 3. If the IPs match and the tx_cloc entry is not expired, the cached tx_cloc is reused (even if `null`).
 4. If the IP cache is expired or missing and `ipEndpoint` is configured, the module calls `ipEndpoint` to get the current IP, then compares with the stored tx_cloc. If the IPs match, the tx_cloc is reused without calling the main endpoint.
 5. If the IPs differ, or the tx_cloc is expired/missing, or `ipEndpoint` is not configured, the module calls the main endpoint to get a fresh tx_cloc and connection IP.
-6. The endpoint response may include an empty or missing `tx_cloc` (indicating no location for this IP). This is cached as `id: null` for the full cache period.
+6. The endpoint response may include a `null`, empty, whitespace-only, or missing `tx_cloc` (indicating no location for this IP). This is cached as `id: null` for the full cache period, and overrides any previously stored non-null ID for that same IP.
 7. Both the IP cache and tx_cloc cache are updated after each endpoint call.
 8. The ID is included in bid requests via the EIDs array. Entries with `null` tx_cloc are omitted from bid requests.
 
@@ -137,7 +137,7 @@ The proxy must return:
 Notes:
 
 - `connection_ip` is always required. If missing, the entire response is treated as a failure.
-- `tx_cloc` may be empty, missing, or `null` when no location is available for the IP. This is a valid response and will be cached as `id: null` for the configured cache period.
+- `tx_cloc` may be `null`, missing, empty, or whitespace-only when no location is available for the IP. This is a valid response and will be cached as `id: null` for the configured cache period.
 - `tx_cloc` is the only value the browser module will store/transmit.
 - `stable_cloc` may exist in proxy responses for server-side caching, but the client ignores it.
 
@@ -146,7 +146,7 @@ Notes:
 The module uses a two-tier cache to detect IP changes without churning the tx_cloc identifier:
 
 - **IP cache** (default 4-hour TTL): Tracks the current connection IP. Stored in a separate localStorage key (`{storage.name}_ip`).
-- **tx_cloc cache** (default 7-day TTL): Stores the LocID. Managed by Prebid's userId framework.
+- **tx_cloc cache** (`storage.expires`): Stores the LocID. Managed by Prebid's userId framework.
 
 When the IP cache expires, the module refreshes the IP. If the IP is unchanged and the tx_cloc cache is still valid, the existing tx_cloc is reused without calling the main endpoint.
 
@@ -159,7 +159,7 @@ When `ipEndpoint` is configured, the module calls it for lightweight IP-only che
 
 If `apiKey` is configured, the `x-api-key` header is included on `ipEndpoint` requests using the same `customHeaders` mechanism as the main endpoint.
 
-When `ipEndpoint` is not configured, the module falls back to calling the main endpoint to refresh the IP, but only updates the stored tx_cloc when the IP has changed or the tx_cloc cache has expired.
+When `ipEndpoint` is not configured, the module falls back to calling the main endpoint to refresh the IP, but only updates the stored tx_cloc when the IP has changed or the tx_cloc cache has expired. In this mode, IP changes are only detected when the IP cache is refreshed (for example when it expires and `getId()` runs); there is no separate lightweight proactive IP probe.
 
 ### Prebid Refresh Triggers
 
