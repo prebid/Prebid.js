@@ -339,7 +339,7 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
 /**
  * Extract a US Privacy string from the GPP data
  */
-export function retrieveUspInfoFromGpp(gpp) {
+function retrieveUspInfoFromGpp(gpp) {
   if (!gpp) {
     return undefined;
   }

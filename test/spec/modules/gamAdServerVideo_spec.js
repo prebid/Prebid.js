@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 
 import parse from 'url-parse';
-import {buildGamVideoUrl as buildDfpVideoUrl, dep, retrieveUspInfoFromGpp} from 'modules/gamAdServerVideo.js';
+import {buildGamVideoUrl as buildDfpVideoUrl, dep} from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
@@ -17,6 +17,7 @@ import {AuctionIndex} from '../../../src/auctionIndex.js';
 import { getVastXml } from '../../../modules/gamAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
 import { generateUUID } from '../../../src/utils.js';
+import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
 
 describe('The DFP video support module', function () {
   before(() => {
@@ -871,7 +872,49 @@ describe('The DFP video support module', function () {
     server.respond();
   });
 
-  describe('Retrieve US Privacy string from GPP', () => {
+  describe('Retrieve US Privacy string from GPP when using the IMA player and downloading VAST XMLs', () => {
+    beforeEach(() => {
+      config.setConfig({cache: { useLocal: true }});
+      // Install a fake IMA object, because the us_privacy is only set when IMA is available
+      window.google = {
+        ima: {
+          VERSION: '2.3.37'
+        }
+      }
+    })
+    afterEach(() => {
+      config.resetConfig();
+    })
+
+    async function obtainUsPrivacyInVastXmlRequest() {
+      const url = 'https://pubads.g.doubleclick.net/gampad/ads'
+      const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=4536229c-eddb-45b3-a919-89d889e925aa';
+      const gamWrapper = (
+        `<VAST version="3.0">` +
+          `<Ad>` +
+            `<Wrapper>` +
+             `<AdSystem>prebid.org wrapper</AdSystem>` +
+              `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+            `</Wrapper>` +
+         `</Ad>` +
+        `</VAST>`
+      );
+      server.respondWith(gamWrapper);
+
+      const result = getVastXml({url, adUnit: {}, bid: {}}, []).then(() => {
+        const request = server.requests[0];
+        const url = new URL(request.url);
+        return url.searchParams.get('us_privacy');
+      });
+      server.respond();
+
+      return result;
+    }
+
+    function mockGpp(gpp) {
+      sandbox.stub(gppDataHandler, 'getConsentData').returns(gpp)
+    }
+
     function wrapParsedSectionsIntoGPPData(parsedSections) {
       return {
         gppData: {
@@ -879,30 +922,43 @@ describe('The DFP video support module', function () {
         }
       }
     }
-    it('should return undefined if GPP is not present', () => {
-      const gpp = undefined;
-      const usp = retrieveUspInfoFromGpp(gpp);
-      expect(usp).to.be.undefined;
-    });
-    it('should return undefined if GPP is null', () => {
-      const gpp = null;
-      const usp = retrieveUspInfoFromGpp(gpp);
-      expect(usp).to.be.undefined;
-    });
-    it('retrieve from usp section', () => {
-      const gpp = wrapParsedSectionsIntoGPPData({
+
+    it('should use usp when available, even when gpp is available', async () => {
+      const usPrivacy = '1YYY';
+      sandbox.stub(uspDataHandler, 'getConsentData').returns(usPrivacy);
+      mockGpp(wrapParsedSectionsIntoGPPData({
         "uspv1": {
           "Version": 1,
           "Notice": "Y",
           "OptOutSale": "N",
           "LspaCovered": "Y"
         }
-      });
-      const usp = retrieveUspInfoFromGpp(gpp);
-      expect(usp).to.equal('1YNY');
+      }));
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.equal(usPrivacy)
     })
-    it('retrieve from usnat section', () => {
-      const gpp = wrapParsedSectionsIntoGPPData({
+
+    it('no us_privacy when neither usp nor gpp is present', async () => {
+      const usPrivacyFromRequqest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequqest).to.be.null;
+    })
+
+    it('can retrieve from usp section in gpp', async () => {
+      mockGpp(wrapParsedSectionsIntoGPPData({
+        "uspv1": {
+          "Version": 1,
+          "Notice": "Y",
+          "OptOutSale": "N",
+          "LspaCovered": "Y"
+        }
+      }));
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.equal('1YNY')
+    })
+    it('can retrieve from usnat section in gpp', async () => {
+      mockGpp(wrapParsedSectionsIntoGPPData({
         "usnat": {
           "Version": 1,
           "SharingNotice": 2,
@@ -944,12 +1000,13 @@ describe('The DFP video support module', function () {
           "GpcSegmentType": 1,
           "Gpc": false
         }
-      });
-      const usp = retrieveUspInfoFromGpp(gpp);
-      expect(usp).to.equal('1YYY');
+      }));
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.equal('1YYY');
     })
-    it('retrieve from usca section', () => {
-      const gpp = wrapParsedSectionsIntoGPPData({
+    it('can retrieve from usca section in gpp', async () => {
+      mockGpp(wrapParsedSectionsIntoGPPData({
         "usca": {
           "Version": 1,
           "SaleOptOutNotice": 1,
@@ -978,9 +1035,10 @@ describe('The DFP video support module', function () {
           "MspaServiceProviderMode": 0,
           "GpcSegmentType": 1,
           "Gpc": false
-        }});
-      const usp = retrieveUspInfoFromGpp(gpp);
-      expect(usp).to.equal('1YNY');
+        }}));
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.equal('1YNY');
     })
   });
 });
