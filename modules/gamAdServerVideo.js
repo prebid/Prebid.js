@@ -352,13 +352,15 @@ function retrieveUspInfoFromGpp(gpp) {
       let saleOptOut;
       let saleOptOutNotice;
       Object.values(parsedSections).forEach(parsedSection => {
-        if (saleOptOut === undefined) {
-          saleOptOut = parsedSection.SaleOptOut;
-        }
-        if (saleOptOutNotice === undefined) {
-          saleOptOutNotice = parsedSection.SaleOptOutNotice;
-        }
-      })
+        (Array.isArray(parsedSection) ? parsedSection : [parsedSection]).forEach(ps => {
+          if (saleOptOut === undefined) {
+            saleOptOut = ps.SaleOptOut;
+          }
+          if (saleOptOutNotice === undefined) {
+            saleOptOutNotice = ps.SaleOptOutNotice;
+          }
+        });
+      });
       if (saleOptOut !== undefined && saleOptOutNotice !== undefined) {
         const uspOptOutSale = saleOptOut === 0 ? '-' : saleOptOut === 1 ? 'Y' : 'N';
         const uspOptOutNotice = saleOptOutNotice === 0 ? '-' : saleOptOutNotice === 1 ? 'Y' : 'N';

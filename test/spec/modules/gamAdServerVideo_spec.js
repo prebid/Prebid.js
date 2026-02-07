@@ -1005,6 +1005,34 @@ describe('The DFP video support module', function () {
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YYY');
     })
+    it('can retrieve from usnat section in gpp when usnat is an array', async() => {
+      mockGpp(wrapParsedSectionsIntoGPPData({
+        "usnat": [
+          {
+            "Version": 1,
+            "SharingNotice": 2,
+            "SaleOptOutNotice": 1,
+            "SharingOptOutNotice": 1,
+            "TargetedAdvertisingOptOutNotice": 1,
+            "SensitiveDataProcessingOptOutNotice": 1,
+            "SensitiveDataLimitUseNotice": 0,
+            "SaleOptOut": 2,
+            "SharingOptOut": 2,
+            "TargetedAdvertisingOptOut": 2,
+            "PersonalDataConsents": 0,
+            "MspaCoveredTransaction": 0,
+            "MspaOptOutOptionMode": 0,
+            "MspaServiceProviderMode": 0,
+          }, {
+            "GpcSegmentType": 1,
+            "Gpc": false
+          }
+        ]
+      }))
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.equal('1YNY');
+    })
     it('can retrieve from usca section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
         "usca": {
