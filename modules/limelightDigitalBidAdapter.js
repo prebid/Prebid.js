@@ -118,11 +118,21 @@ export const spec = {
       groups[host].push(bid);
       return groups;
     }, {});
+    const enrichedBidderRequest = {
+      ...bidderRequest,
+      ortb2: {
+        ...bidderRequest.ortb2,
+        site: {
+          ...bidderRequest.ortb2?.site,
+          page: bidderRequest.ortb2?.site?.page || bidderRequest.refererInfo?.page
+        }
+      }
+    };
 
     return Object.entries(bidRequestsByHost).map(([host, bids]) => ({
       method: 'POST',
       url: `https://${host}/ortbhb`,
-      data: converter.toORTB({ bidRequests: bids, bidderRequest })
+      data: converter.toORTB({ bidRequests: bids, bidderRequest: enrichedBidderRequest })
     }));
   },
 

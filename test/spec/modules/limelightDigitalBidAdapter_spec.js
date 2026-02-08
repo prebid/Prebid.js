@@ -309,6 +309,30 @@ describe('limelightDigitalAdapter', function () {
       expect(deepAccess(imp, 'ext.c2')).to.be.undefined;
       expect(deepAccess(imp, 'ext.c3')).to.equal('custom3');
     });
+
+    it('should handle various refererInfo scenarios', function () {
+      const baseRequest = [{
+        bidder: 'limelightDigital',
+        params: { host: 'exchange.example.com', adUnitId: 'test' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: 'test-bid-id'
+      }];
+
+      let requests = spec.buildRequests(baseRequest, {
+        refererInfo: { page: 'https://test.com' },
+        ortb2: {}
+      });
+      expect(requests[0].data.site.page).to.equal('https://test.com');
+
+      requests = spec.buildRequests(baseRequest, {
+        refererInfo: { page: 'https://referer.com' },
+        ortb2: { site: { page: 'https://ortb2.com' } }
+      });
+      expect(requests[0].data.site.page).to.equal('https://ortb2.com');
+
+      requests = spec.buildRequests(baseRequest, { ortb2: {} });
+      expect(requests[0].data.site.page).to.be.undefined;
+    });
   });
 
   describe('interpretResponse - Banner', function () {
