@@ -240,7 +240,6 @@ function interpretResponse(response, bidRequest) {
     }
 
     bidResponses.push(bidResponse);
-
   }
 
   return bidResponses;

@@ -1,21 +1,24 @@
 import {
-  logInfo,
-  logError,
   deepAccess,
-  logWarn,
+  deepClone,
   deepSetValue,
+  generateUUID,
+  getBidIdParameter,
   isArray,
+  logError,
+  logInfo,
+  logWarn,
   mergeDeep,
-  parseUrl,
-  generateUUID, isInteger, deepClone, getBidIdParameter
+  parseUrl
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {toOrtb25} from '../libraries/ortb2.5Translator/translator.js';
+
 const BIDDER_CODE = 'ozone';
 const ORIGIN = 'https://elb.the-ozone-project.com';
 const AUCTIONURI = '/openrtb2/auction';

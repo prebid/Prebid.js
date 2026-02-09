@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject, getWinDimensions} from '../src/utils.js';
+import {deepSetValue, getWinDimensions, getWindowSelf, isPlainObject, replaceAuctionPrice} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
