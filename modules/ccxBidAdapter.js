@@ -104,10 +104,6 @@ function _buildBid (bid, bidderRequest) {
 
   placement.ext = {'pid': bid.params.placementId}
 
-  if (bidderRequest.paapi?.enabled) {
-    placement.ext.ae = bid?.ortb2Imp?.ext?.ae
-  }
-
   return placement
 }
 
