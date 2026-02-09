@@ -333,6 +333,125 @@ describe('limelightDigitalAdapter', function () {
       requests = spec.buildRequests(baseRequest, { ortb2: {} });
       expect(requests[0].data.site.page).to.be.undefined;
     });
+
+    describe('buildRequests - size handling', function () {
+      it('should handle mediaTypes.banner.sizes', function () {
+        const bidRequests = [{
+          bidder: 'limelightDigital',
+          params: {
+            host: 'exchange.example.com',
+            adUnitId: 'test',
+            adUnitType: 'banner'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          adUnitCode: 'test-ad-unit',
+          bidId: 'test-bid-id'
+        }];
+
+        const bidderRequest = {
+          refererInfo: { page: 'https://test.com' },
+          ortb2: { site: { domain: 'test.com' } }
+        };
+
+        const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(requests[0].data.imp[0].banner.format).to.deep.equal([
+          { w: 300, h: 250 },
+          { w: 728, h: 90 }
+        ]);
+      });
+
+      it('should handle legacy sizes without mediaTypes', function () {
+        const bidRequests = [{
+          bidder: 'limelightDigital',
+          params: {
+            host: 'exchange.example.com',
+            adUnitId: 'test',
+            adUnitType: 'banner'
+          },
+          sizes: [[300, 250], [728, 90]],
+          adUnitCode: 'test-ad-unit',
+          bidId: 'test-bid-id'
+        }];
+
+        const bidderRequest = {
+          refererInfo: { page: 'https://test.com' },
+          ortb2: { site: { domain: 'test.com' } }
+        };
+
+        const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(requests[0].data.imp[0].banner.format).to.deep.equal([
+          { w: 300, h: 250 },
+          { w: 728, h: 90 }
+        ]);
+      });
+
+      it('should merge mediaTypes sizes with bidRequest.sizes', function () {
+        const bidRequests = [{
+          bidder: 'limelightDigital',
+          params: {
+            host: 'exchange.example.com',
+            adUnitId: 'test',
+            adUnitType: 'banner'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          sizes: [[728, 90]],
+          adUnitCode: 'test-ad-unit',
+          bidId: 'test-bid-id'
+        }];
+
+        const bidderRequest = {
+          refererInfo: { page: 'https://test.com' },
+          ortb2: { site: { domain: 'test.com' } }
+        };
+
+        const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+        const formats = requests[0].data.imp[0].banner.format;
+        expect(formats).to.have.lengthOf(2);
+        expect(formats).to.deep.include({ w: 300, h: 250 });
+        expect(formats).to.deep.include({ w: 728, h: 90 });
+      });
+
+      it('should handle video with playerSize', function () {
+        const bidRequests = [{
+          bidder: 'limelightDigital',
+          params: {
+            host: 'exchange.example.com',
+            adUnitId: 'test',
+            adUnitType: 'video'
+          },
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          },
+          adUnitCode: 'test-ad-unit',
+          bidId: 'test-bid-id'
+        }];
+
+        const bidderRequest = {
+          refererInfo: { page: 'https://test.com' },
+          ortb2: { site: { domain: 'test.com' } }
+        };
+
+        const requests = spec.buildRequests(bidRequests, bidderRequest);
+        if (FEATURES.VIDEO) {
+          expect(requests[0].data.imp[0].video).to.exist;
+          expect(requests[0].data.imp[0].video.w).to.equal(640);
+          expect(requests[0].data.imp[0].video.h).to.equal(480);
+        }
+      });
+    });
   });
 
   describe('interpretResponse - Banner', function () {

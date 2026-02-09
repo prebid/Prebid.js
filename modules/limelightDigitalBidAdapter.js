@@ -112,7 +112,30 @@ export const spec = {
    * @return {Object[]} Array of server requests
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const bidRequestsByHost = validBidRequests.reduce((groups, bid) => {
+    const normalizedBids = validBidRequests.map(bid => {
+      const adUnitType = bid.params.adUnitType || BANNER
+      if (!bid.mediaTypes && bid.sizes) {
+        return { ...bid, mediaTypes: { [adUnitType]: { sizes: bid.sizes } } };
+      }
+      if (bid.mediaTypes && bid.sizes) {
+        const mediaTypes = { ...bid.mediaTypes };
+        if (adUnitType === BANNER && mediaTypes.banner) {
+          mediaTypes.banner = {
+            ...mediaTypes.banner,
+            sizes: (mediaTypes.banner.sizes || []).concat(bid.sizes)
+          };
+        }
+        if (adUnitType === VIDEO && mediaTypes.video) {
+          mediaTypes.video = {
+            ...mediaTypes.video,
+            playerSize: (mediaTypes.video.playerSize || []).concat(bid.sizes)
+          };
+        }
+        return { ...bid, mediaTypes };
+      }
+      return bid;
+    });
+    const bidRequestsByHost = normalizedBids.reduce((groups, bid) => {
       const host = bid.params.host;
       groups[host] = groups[host] || [];
       groups[host].push(bid);
