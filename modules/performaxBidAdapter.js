@@ -18,6 +18,8 @@ const LOG_EVENT_TYPE_BIDDER_ERROR = 'bidderError';
 const LOG_EVENT_TYPE_INTERVENTION = 'intervention';
 const LOG_EVENT_TYPE_TIMEOUT = 'timeout';
 
+let isUserSyncsInit = false;
+
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
@@ -81,6 +83,10 @@ export function readData(key, defaultValue) {
     logError(`Error parsing data for key "${key}": `, err);
     return defaultValue;
   }
+}
+
+export function resetUserSyncsInit() {
+  isUserSyncsInit = false;
 }
 
 export const converter = ortbConverter({
@@ -176,21 +182,24 @@ export const spec = {
       url: url
     });
 
-    window.addEventListener('message', function (event) {
-      if (!event.data || event.origin !== USER_SYNC_ORIGIN || !event.data.flexo_sync_cookie) {
-        return;
-      }
+    if (!isUserSyncsInit) {
+      window.addEventListener('message', function (event) {
+        if (!event.data || event.origin !== USER_SYNC_ORIGIN || !event.data.flexo_sync_cookie) {
+          return;
+        }
 
-      const { uid, vendor } = event.data.flexo_sync_cookie;
+        const { uid, vendor } = event.data.flexo_sync_cookie;
 
-      if (!uid || !vendor) {
-        return;
-      }
+        if (!uid || !vendor) {
+          return;
+        }
 
-      const uids = readData(UIDS_STORAGE_KEY, {});
-      uids[vendor] = uid;
-      storeData(UIDS_STORAGE_KEY, uids);
-    });
+        const uids = readData(UIDS_STORAGE_KEY, {});
+        uids[vendor] = uid;
+        storeData(UIDS_STORAGE_KEY, uids);
+      });
+      isUserSyncsInit = true;
+    }
 
     return syncs;
   },

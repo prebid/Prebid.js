@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, converter, storeData, readData, storage } from 'modules/performaxBidAdapter.js';
+import { spec, converter, storeData, readData, storage, resetUserSyncsInit } from 'modules/performaxBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import * as ajax from 'src/ajax.js';
 import sinon from 'sinon';
@@ -370,6 +370,7 @@ describe('Performax adapter', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'setDataInLocalStorage');
       sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      resetUserSyncsInit();
     });
 
     afterEach(() => {
@@ -461,6 +462,16 @@ describe('Performax adapter', function () {
         callback(mockEvent);
 
         expect(storage.setDataInLocalStorage.called).to.be.false;
+      });
+
+      it('should not register duplicate listeners on multiple calls', function () {
+        const addEventListenerStub = sandbox.stub(window, 'addEventListener');
+
+        spec.getUserSyncs({ iframeEnabled: true });
+        expect(addEventListenerStub.calledOnce).to.be.true;
+
+        spec.getUserSyncs({ iframeEnabled: true });
+        expect(addEventListenerStub.calledOnce).to.be.true;
       });
     });
   });
