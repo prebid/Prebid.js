@@ -4434,6 +4434,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "spark",
+      "aliasOf": null,
+      "gvlid": 1408,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "sparteo",
       "aliasOf": null,
       "gvlid": 1028,
