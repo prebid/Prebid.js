@@ -115,7 +115,11 @@ export const spec = {
     const normalizedBids = validBidRequests.map(bid => {
       const adUnitType = bid.params.adUnitType || BANNER
       if (!bid.mediaTypes && bid.sizes) {
-        return { ...bid, mediaTypes: { [adUnitType]: { sizes: bid.sizes } } };
+        if (adUnitType === BANNER) {
+          return { ...bid, mediaTypes: { banner: { sizes: bid.sizes } } };
+        } else {
+          return { ...bid, mediaTypes: { video: { playerSize: bid.sizes } } };
+        }
       }
       if (bid.mediaTypes && bid.sizes) {
         const mediaTypes = { ...bid.mediaTypes };
