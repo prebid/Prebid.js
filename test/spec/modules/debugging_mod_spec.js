@@ -111,8 +111,8 @@ describe('bid interceptor', () => {
   });
 
   describe('rule', () => {
-    function matchingRule({replace, options, paapi}) {
-      setRules({when: {}, then: replace, options: options, paapi});
+    function matchingRule({replace, options}) {
+      setRules({when: {}, then: replace, options: options});
       return interceptor.match({});
     }
 
@@ -172,48 +172,6 @@ describe('bid interceptor', () => {
       });
     });
 
-    describe('paapi', () => {
-      it('should accept literals', () => {
-        const mockConfig = [
-          {config: {paapi: 1}},
-          {config: {paapi: 2}}
-        ]
-        const paapi = matchingRule({paapi: mockConfig}).paapi({});
-        expect(paapi).to.eql(mockConfig);
-      });
-
-      it('should accept a function and pass extra args to it', () => {
-        const paapiDef = sinon.stub();
-        const args = [{}, {}, {}];
-        matchingRule({paapi: paapiDef}).paapi(...args);
-        expect(paapiDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
-      });
-
-      Object.entries({
-        'literal': (cfg) => [cfg],
-        'function': (cfg) => () => [cfg]
-      }).forEach(([t, makeConfigs]) => {
-        describe(`when paapi is defined as a ${t}`, () => {
-          it('should wrap top-level configs in "config"', () => {
-            const cfg = {decisionLogicURL: 'example'};
-            expect(matchingRule({paapi: makeConfigs(cfg)}).paapi({})).to.eql([{
-              config: cfg
-            }])
-          });
-
-          Object.entries({
-            'config': {config: 1},
-            'igb': {igb: 1},
-            'config and igb': {config: 1, igb: 2}
-          }).forEach(([t, cfg]) => {
-            it(`should not wrap configs that define top-level ${t}`, () => {
-              expect(matchingRule({paapi: makeConfigs(cfg)}).paapi({})).to.eql([cfg]);
-            })
-          })
-        })
-      })
-    })
-
     describe('.options', () => {
       it('should include default rule options', () => {
         const optDef = {someOption: 'value'};
@@ -231,17 +189,16 @@ describe('bid interceptor', () => {
   });
 
   describe('intercept()', () => {
-    let done, addBid, addPaapiConfig;
+    let done, addBid;
 
     function intercept(args = {}) {
       const bidRequest = {bids: args.bids || []};
-      return interceptor.intercept(Object.assign({bidRequest, done, addBid, addPaapiConfig}, args));
+      return interceptor.intercept(Object.assign({bidRequest, done, addBid}, args));
     }
 
     beforeEach(() => {
       done = sinon.spy();
       addBid = sinon.spy();
-      addPaapiConfig = sinon.spy();
     });
 
     describe('on no match', () => {
@@ -304,20 +261,6 @@ describe('bid interceptor', () => {
         });
       });
 
-      it('should call addPaapiConfigs when provided', () => {
-        const mockPaapiConfigs = [
-          {config: {paapi: 1}},
-          {config: {paapi: 2}}
-        ]
-        setRules({
-          when: {id: 2},
-          paapi: mockPaapiConfigs,
-        });
-        intercept({bidRequest: REQUEST});
-        expect(addPaapiConfig.callCount).to.eql(2);
-        mockPaapiConfigs.forEach(cfg => sinon.assert.calledWith(addPaapiConfig, cfg))
-      })
-
       it('should not call onBid when then is null', () => {
         setRules({
           when: {id: 2},
@@ -357,7 +300,7 @@ describe('Debugging config', () => {
 });
 
 describe('bidderBidInterceptor', () => {
-  let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, addPaapiConfig, wrapped, bidderBidInterceptor;
+  let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, wrapped, bidderBidInterceptor;
 
   function interceptorArgs({spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {}} = {}) {
     return [next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, Object.assign({onCompletion}, cbs)];
@@ -381,7 +324,6 @@ describe('bidderBidInterceptor', () => {
     interceptBids = sinon.stub().callsFake((opts) => {
       done = opts.done;
       addBid = opts.addBid;
-      addPaapiConfig = opts.addPaapiConfig;
       return interceptResult;
     });
     onCompletion = sinon.spy();
@@ -399,15 +341,6 @@ describe('bidderBidInterceptor', () => {
     addBid(bid);
     expect(onBid.calledWith(sinon.match.same(bid))).to.be.true;
   });
-
-  it('should pass addPaapiConfig that triggers onPaapi', () => {
-    const onPaapi = sinon.stub().callsFake(() => {
-      expect(wrapped).to.be.true;
-    });
-    bidderBidInterceptor(...interceptorArgs({cbs: {onPaapi}}));
-    addPaapiConfig({paapi: 'config'}, {bidId: 'bidId'});
-    sinon.assert.calledWith(onPaapi, {paapi: 'config', bidId: 'bidId'})
-  })
 
   describe('with no remaining bids', () => {
     it('should pass a done callback that triggers onCompletion', () => {
