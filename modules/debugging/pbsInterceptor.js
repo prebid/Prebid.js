@@ -4,7 +4,6 @@ export function makePbsInterceptor({createBid, utils}) {
     onResponse,
     onError,
     onBid,
-    onFledge,
   }) {
     let responseArgs;
     const done = delayExecution(() => onResponse(...responseArgs), bidRequests.length + 1)
