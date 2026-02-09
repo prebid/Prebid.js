@@ -1,8 +1,11 @@
 import { expect } from 'chai';
-import { spec, converter } from 'modules/performaxBidAdapter.js';
+import { spec, converter, storeData, readData, storage } from 'modules/performaxBidAdapter.js';
+import * as utils from '../../../src/utils.js';
+import * as ajax from 'src/ajax.js';
+import sinon from 'sinon';
 
 describe('Performax adapter', function () {
-  const bids = [{
+  let bids = [{
     bidder: 'performax',
     params: {
       tagid: 'sample'
@@ -67,7 +70,7 @@ describe('Performax adapter', function () {
       device: {}
     }}];
 
-  const bidderRequest = {
+  let bidderRequest = {
     bidderCode: 'performax2',
     auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
     id: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
@@ -87,7 +90,7 @@ describe('Performax adapter', function () {
       device: {}
     }};
 
-  const serverResponse = {
+  let serverResponse = {
     body: {
       cur: 'CZK',
       seatbid: [
@@ -105,7 +108,7 @@ describe('Performax adapter', function () {
   }
 
   describe('isBidRequestValid', function () {
-    const bid = {};
+    let bid = {};
     it('should return false when missing "tagid" param', function() {
       bid.params = {slotId: 'param'};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -121,47 +124,47 @@ describe('Performax adapter', function () {
 
   describe('buildRequests', function () {
     it('should set correct request method and url', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const request = requests[0];
+      let request = requests[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://dale.performax.cz/ortb');
       expect(request.data).to.be.an('object');
     });
 
     it('should pass correct imp', function () {
-      const requests = spec.buildRequests([bids[0]], bidderRequest);
-      const {data} = requests[0];
-      const {imp} = data;
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(1);
       expect(imp[0]).to.be.an('object');
-      const bid = imp[0];
+      let bid = imp[0];
       expect(bid.id).to.equal('2bc545c347dbbe');
       expect(bid.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
     });
 
     it('should process multiple bids', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
+      let requests = spec.buildRequests(bids, bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const {data} = requests[0];
-      const {imp} = data;
+      let {data} = requests[0];
+      let {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(bids.length);
-      const bid1 = imp[0];
+      let bid1 = imp[0];
       expect(bid1.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
-      const bid2 = imp[1];
+      let bid2 = imp[1];
       expect(bid2.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 600}]});
     });
   });
 
   describe('interpretResponse', function () {
     it('should map params correctly', function () {
-      const ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
+      let ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
       serverResponse.body.id = ortbRequest.data.id;
       serverResponse.body.seatbid[0].bid[0].imp_id = ortbRequest.data.imp[0].id;
 
-      const result = spec.interpretResponse(serverResponse, ortbRequest);
+      let result = spec.interpretResponse(serverResponse, ortbRequest);
       expect(result).to.be.an('array').that.has.lengthOf(1);
-      const bid = result[0];
+      let bid = result[0];
 
       expect(bid.cpm).to.equal(20);
       expect(bid.ad).to.equal('My ad');
@@ -170,6 +173,149 @@ describe('Performax adapter', function () {
       expect(bid.netRevenue).to.equal(true);
       expect(bid.ttl).to.equal(360);
       expect(bid.creativeId).to.equal('sample');
+    });
+  });
+
+  describe('Storage Helpers', () => {
+    let sandbox;
+    let logWarnSpy;
+    let logErrorSpy;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(storage, 'localStorageIsEnabled');
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage');
+
+      logWarnSpy = sandbox.stub(utils, 'logWarn');
+      logErrorSpy = sandbox.stub(utils, 'logError');
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    describe('storeData', () => {
+      it('should store serialized data when local storage is enabled', () => {
+        storage.localStorageIsEnabled.returns(true);
+        const testData = { foo: 'bar' };
+
+        storeData('testKey', testData);
+
+        sandbox.assert.calledWithExactly(
+          storage.setDataInLocalStorage,
+          'testKey',
+          JSON.stringify(testData)
+        );
+      });
+
+      it('should log a warning and exit if local storage is disabled', () => {
+        storage.localStorageIsEnabled.returns(false);
+
+        storeData('testKey', { foo: 'bar' });
+
+        expect(storage.setDataInLocalStorage.called).to.be.false;
+        sandbox.assert.calledOnce(logWarnSpy);
+      });
+
+      it('should log an error if setDataInLocalStorage throws', () => {
+        storage.localStorageIsEnabled.returns(true);
+        storage.setDataInLocalStorage.throws(new Error('QuotaExceeded'));
+
+        storeData('testKey', 'someValue');
+
+        sandbox.assert.calledOnce(logErrorSpy);
+      });
+    });
+
+    describe('readData', () => {
+      it('should return parsed data when it exists in storage', () => {
+        storage.localStorageIsEnabled.returns(true);
+        const mockValue = { id: 123 };
+        storage.getDataFromLocalStorage.withArgs('myKey').returns(JSON.stringify(mockValue));
+
+        const result = readData('myKey', {});
+
+        expect(result).to.deep.equal(mockValue);
+      });
+
+      it('should return defaultValue if local storage is disabled', () => {
+        storage.localStorageIsEnabled.returns(false);
+        const defaultValue = { status: 'default' };
+
+        const result = readData('myKey', defaultValue);
+
+        expect(result).to.equal(defaultValue);
+        sandbox.assert.calledOnce(logWarnSpy);
+      });
+
+      it('should return defaultValue if the key does not exist (returns null)', () => {
+        storage.localStorageIsEnabled.returns(true);
+        storage.getDataFromLocalStorage.returns(null);
+
+        const result = readData('missingKey', 'fallback');
+
+        expect(result).to.equal('fallback');
+      });
+
+      it('should return defaultValue and log an error if JSON is malformed', () => {
+        storage.localStorageIsEnabled.returns(true);
+        storage.getDataFromLocalStorage.returns('not-valid-json{');
+
+        const result = readData('badKey', { error: true });
+
+        expect(result).to.deep.equal({ error: true });
+        sandbox.assert.calledOnce(logErrorSpy);
+      });
+    });
+  });
+
+  describe('logging', function () {
+    let ajaxStub;
+    let randomStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(ajax, 'ajax');
+      randomStub = sinon.stub(Math, 'random').returns(0);
+    });
+
+    afterEach(() => {
+      ajaxStub.restore();
+      randomStub.restore();
+    });
+
+    it('should call ajax when onTimeout is triggered', function () {
+      const timeoutData = [{ bidId: '123' }];
+      spec.onTimeout(timeoutData);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+
+      const [url, callback, data, options] = ajaxStub.firstCall.args;
+      const parsedData = JSON.parse(data);
+
+      expect(parsedData.type).to.equal('timeout');
+      expect(parsedData.payload).to.deep.equal(timeoutData);
+      expect(options.method).to.equal('POST');
+    });
+
+    it('should call ajax when onBidderError is triggered', function () {
+      const errorData = { bidderRequest: { some: 'data' } };
+      spec.onBidderError(errorData);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+
+      const [url, callback, data] = ajaxStub.firstCall.args;
+      const parsedData = JSON.parse(data);
+
+      expect(parsedData.type).to.equal('bidderError');
+      expect(parsedData.payload).to.deep.equal(errorData.bidderRequest);
+    });
+
+    it('should NOT call ajax if sampling logic fails', function () {
+      randomStub.returns(1.1);
+
+      spec.onTimeout({});
+      expect(ajaxStub.called).to.be.false;
     });
   });
 });
