@@ -5,7 +5,7 @@ import * as ajax from 'src/ajax.js';
 import sinon from 'sinon';
 
 describe('Performax adapter', function () {
-  let bids = [{
+  const bids = [{
     bidder: 'performax',
     params: {
       tagid: 'sample'
@@ -70,7 +70,7 @@ describe('Performax adapter', function () {
       device: {}
     }}];
 
-  let bidderRequest = {
+  const bidderRequest = {
     bidderCode: 'performax2',
     auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
     id: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
@@ -90,7 +90,7 @@ describe('Performax adapter', function () {
       device: {}
     }};
 
-  let serverResponse = {
+  const serverResponse = {
     body: {
       cur: 'CZK',
       seatbid: [
@@ -108,7 +108,7 @@ describe('Performax adapter', function () {
   }
 
   describe('isBidRequestValid', function () {
-    let bid = {};
+    const bid = {};
     it('should return false when missing "tagid" param', function() {
       bid.params = {slotId: 'param'};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -123,48 +123,77 @@ describe('Performax adapter', function () {
   })
 
   describe('buildRequests', function () {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should inject stored UIDs into user.ext.uids if they exist', function() {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('px_uids') // BIDDER_SHORT_CODE + '_uids'
+        .returns(JSON.stringify({ someVendor: '12345' }));
+
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const data = requests[0].data;
+
+      expect(data.user).to.exist;
+      expect(data.user.ext).to.exist;
+      expect(data.user.ext.uids).to.deep.equal({ someVendor: '12345' });
+    });
+
     it('should set correct request method and url', function () {
-      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      const requests = spec.buildRequests([bids[0]], bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      let request = requests[0];
+      const request = requests[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://dale.performax.cz/ortb');
       expect(request.data).to.be.an('object');
     });
 
     it('should pass correct imp', function () {
-      let requests = spec.buildRequests([bids[0]], bidderRequest);
-      let {data} = requests[0];
-      let {imp} = data;
+      const requests = spec.buildRequests([bids[0]], bidderRequest);
+      const {data} = requests[0];
+      const {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(1);
       expect(imp[0]).to.be.an('object');
-      let bid = imp[0];
+      const bid = imp[0];
       expect(bid.id).to.equal('2bc545c347dbbe');
       expect(bid.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
     });
 
     it('should process multiple bids', function () {
-      let requests = spec.buildRequests(bids, bidderRequest);
+      const requests = spec.buildRequests(bids, bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      let {data} = requests[0];
-      let {imp} = data;
+      const {data} = requests[0];
+      const {imp} = data;
       expect(imp).to.be.an('array').that.has.lengthOf(bids.length);
-      let bid1 = imp[0];
+      const bid1 = imp[0];
       expect(bid1.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
-      let bid2 = imp[1];
+      const bid2 = imp[1];
       expect(bid2.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 600}]});
     });
   });
 
   describe('interpretResponse', function () {
+    it('should return an empty array if the response body is missing', function () {
+      const result = spec.interpretResponse({}, {});
+      expect(result).to.deep.equal([]);
+    });
+
     it('should map params correctly', function () {
-      let ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
+      const ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
       serverResponse.body.id = ortbRequest.data.id;
       serverResponse.body.seatbid[0].bid[0].imp_id = ortbRequest.data.imp[0].id;
 
-      let result = spec.interpretResponse(serverResponse, ortbRequest);
+      const result = spec.interpretResponse(serverResponse, ortbRequest);
       expect(result).to.be.an('array').that.has.lengthOf(1);
-      let bid = result[0];
+      const bid = result[0];
 
       expect(bid.cpm).to.equal(20);
       expect(bid.ad).to.equal('My ad');
@@ -316,6 +345,123 @@ describe('Performax adapter', function () {
 
       spec.onTimeout({});
       expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should call ajax with correct type "intervention"', function () {
+      const bidData = { bidId: 'abc' };
+      spec.onIntervention({ bid: bidData });
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [url, callback, data] = ajaxStub.firstCall.args;
+      const parsed = JSON.parse(data);
+
+      expect(parsed.type).to.equal('intervention');
+      expect(parsed.payload).to.deep.equal(bidData);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    let sandbox;
+    let logWarnSpy;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      logWarnSpy = sandbox.stub(utils, 'logWarn');
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should return empty array and log warning if iframeEnabled is false', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false });
+      expect(syncs).to.deep.equal([]);
+      expect(logWarnSpy.calledOnce).to.be.true;
+    });
+
+    it('should return correct iframe sync url without GDPR', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://cdn.performax.cz/px2/cookie_sync_bundle.html');
+    });
+
+    it('should append GDPR params when gdprApplies is a boolean', function () {
+      const consent = { gdprApplies: true, consentString: 'abc' };
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], consent);
+
+      expect(syncs[0].url).to.include('?gdpr=1&gdpr_consent=abc');
+    });
+
+    it('should append GDPR params when gdprApplies is undefined/non-boolean', function () {
+      const consent = { gdprApplies: undefined, consentString: 'abc' };
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], consent);
+
+      expect(syncs[0].url).to.include('?gdpr_consent=abc');
+    });
+
+    describe('PostMessage Listener', function () {
+      it('should store data when valid message is received', function () {
+        const addEventListenerStub = sandbox.stub(window, 'addEventListener');
+        spec.getUserSyncs({ iframeEnabled: true });
+        expect(addEventListenerStub.calledWith('message')).to.be.true;
+        const callback = addEventListenerStub.args.find(arg => arg[0] === 'message')[1];
+
+        const mockEvent = {
+          origin: 'https://cdn.performax.cz',
+          data: {
+            flexo_sync_cookie: {
+              uid: 'user123',
+              vendor: 'vendorXYZ'
+            }
+          }
+        };
+
+        callback(mockEvent);
+
+        expect(storage.setDataInLocalStorage.calledOnce).to.be.true;
+
+        const [key, value] = storage.setDataInLocalStorage.firstCall.args;
+        expect(key).to.equal('px_uids');
+        expect(JSON.parse(value)).to.deep.equal({
+          vendorXYZ: 'user123'
+        });
+      });
+
+      it('should ignore messages from invalid origins', function () {
+        const addEventListenerStub = sandbox.stub(window, 'addEventListener');
+        spec.getUserSyncs({ iframeEnabled: true });
+
+        const callback = addEventListenerStub.args.find(arg => arg[0] === 'message')[1];
+
+        const mockEvent = {
+          origin: 'https://not.cdn.performax.cz',
+          data: { flexo_sync_cookie: { uid: '1', vendor: '2' } }
+        };
+
+        callback(mockEvent);
+
+        expect(storage.setDataInLocalStorage.called).to.be.false;
+      });
+
+      it('should ignore messages with missing structure', function () {
+        const addEventListenerStub = sandbox.stub(window, 'addEventListener');
+        spec.getUserSyncs({ iframeEnabled: true });
+
+        const callback = addEventListenerStub.args.find(arg => arg[0] === 'message')[1];
+
+        const mockEvent = {
+          origin: 'https://cdn.performax.cz',
+          data: { wrong_key: 123 } // Missing flexo_sync_cookie
+        };
+
+        callback(mockEvent);
+
+        expect(storage.setDataInLocalStorage.called).to.be.false;
+      });
     });
   });
 });

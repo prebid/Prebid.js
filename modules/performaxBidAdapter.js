@@ -12,11 +12,11 @@ const ENDPOINT = 'https://dale.performax.cz/ortb'
 const USER_SYNC_URL = 'https://cdn.performax.cz/px2/cookie_sync_bundle.html';
 const USER_SYNC_ORIGIN = 'https://cdn.performax.cz';
 const UIDS_STORAGE_KEY = BIDDER_SHORT_CODE + '_uids';
-const LOG_EVENT_URL = "https://chip.performax.cz/error";
+const LOG_EVENT_URL = 'https://chip.performax.cz/error';
 const LOG_EVENT_SAMPLE_RATE = 1;
-const LOG_EVENT_TYPE_BIDDER_ERROR = "bidderError";
-const LOG_EVENT_TYPE_INTERVENTION = "intervention";
-const LOG_EVENT_TYPE_TIMEOUT = "timeout";
+const LOG_EVENT_TYPE_BIDDER_ERROR = 'bidderError';
+const LOG_EVENT_TYPE_INTERVENTION = 'intervention';
+const LOG_EVENT_TYPE_TIMEOUT = 'timeout';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -33,9 +33,54 @@ function logEvent(type, payload, sampleRate = LOG_EVENT_SAMPLE_RATE) {
   }
 
   const data = { type, payload };
-  const options = { method: 'POST', withCredentials: true, contentType: "application/json" };
+  const options = { method: 'POST', withCredentials: true, contentType: 'application/json' };
 
   ajax(LOG_EVENT_URL, undefined, safeJSONEncode(data), options);
+}
+
+/**
+ * Serializes and stores data.
+ * @param {string} key - The unique identifier
+ * @param {any} value - The data to store
+ * @returns {void}
+ */
+export function storeData(key, value) {
+  if (!storage.localStorageIsEnabled()) {
+    logWarn('Local Storage is not enabled');
+    return;
+  }
+
+  try {
+    storage.setDataInLocalStorage(key, JSON.stringify(value));
+  } catch (err) {
+    logError('Failed to store data: ', err);
+  }
+}
+
+/**
+ * Retrieves and parses data.
+ * @param {string} key - The unique identifier
+ * @param {any} defaultValue - The value to return if the key is missing or parsing fails.
+ * @returns {any} The parsed data
+ */
+export function readData(key, defaultValue) {
+  if (!storage.localStorageIsEnabled()) {
+    logWarn('Local Storage is not enabled');
+    return defaultValue;
+  }
+
+  let rawData = storage.getDataFromLocalStorage(key);
+
+  if (rawData === null) {
+    return defaultValue;
+  }
+
+  try {
+    return JSON.parse(rawData);
+  } catch (err) {
+    logError(`Error parsing data for key "${key}": `, err);
+    return defaultValue;
+  }
 }
 
 export const converter = ortbConverter({
@@ -59,51 +104,6 @@ export const converter = ortbConverter({
   }
 })
 
-/**
- * Serializes and stores data.
- * @param {string} key - The unique identifier
- * @param {any} value - The data to store
- * @returns {void}
- */
-export function storeData(key, value) {
-  if (!storage.localStorageIsEnabled()) {
-    logWarn("Local Storage is not enabled");
-    return;
-  }
-
-  try {
-    storage.setDataInLocalStorage(key, JSON.stringify(value));
-  } catch (err) {
-    logError('Failed to store data: ', err);
-  }
-}
-
-/**
- * Retrieves and parses data.
- * @param {string} key - The unique identifier
- * @param {any} defaultValue - The value to return if the key is missing or parsing fails.
- * @returns {any} The parsed data
- */
-export function readData(key, defaultValue) {
-  if (!storage.localStorageIsEnabled()) {
-    logWarn("Local Storage is not enabled");
-    return defaultValue;
-  }
-
-  let rawData = storage.getDataFromLocalStorage(key);
-
-  if (rawData === null) {
-    return defaultValue;
-  }
-
-  try {
-    return JSON.parse(rawData);
-  } catch (err) {
-    logError(`Error parsing data for key "${key}": `, err);
-    return defaultValue;
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   aliases: [BIDDER_SHORT_CODE],
@@ -115,7 +115,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    let data = converter.toORTB({bidderRequest, bidRequests})
+    const data = converter.toORTB({bidderRequest, bidRequests})
 
     const uids = readData(UIDS_STORAGE_KEY, {});
     if (Object.keys(uids).length > 0) {
