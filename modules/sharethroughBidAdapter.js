@@ -159,10 +159,6 @@ export const sharethroughAdapterSpec = {
         const nativeRequest = deepAccess(bidReq, 'mediaTypes.native');
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
-        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
-          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
-        }
-
         if (videoRequest) {
           // default playerSize, only change this if we know width and height are properly defined in the request
           let [w, h] = [640, 360];
@@ -292,8 +288,6 @@ export const sharethroughAdapterSpec = {
       return [];
     }
 
-    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
-
     const imp = req.data.imp[0];
 
     const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
@@ -340,15 +334,7 @@ export const sharethroughAdapterSpec = {
 
       return response;
     });
-
-    if (fledgeAuctionEnabled && !isEqtvTest) {
-      return {
-        bids: bidsFromExchange,
-        paapi: body.ext?.auctionConfigs || {},
-      };
-    } else {
-      return bidsFromExchange;
-    }
+    return bidsFromExchange;
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
