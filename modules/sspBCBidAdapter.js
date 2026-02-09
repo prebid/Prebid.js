@@ -672,7 +672,6 @@ const spec = {
     const { bidderRequest } = request;
     const { body: response = {} } = serverResponse;
     const { seatbid: responseSeat, ext: responseExt = {} } = response;
-    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
@@ -788,7 +787,7 @@ const spec = {
       });
     }
 
-    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
+    return bids;
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
