@@ -768,38 +768,6 @@ describe('onetag', function () {
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
     });
-    it('Should send FLEDGE eligibility flag when FLEDGE is enabled', function () {
-      const bidderRequest = {
-        'bidderCode': 'onetag',
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'paapi': {
-          'enabled': true
-        }
-      };
-      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
-      const payload = JSON.parse(serverRequest.data);
-
-      expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
-    });
-    it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
-      const bidderRequest = {
-        'bidderCode': 'onetag',
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        paapi: {
-          enabled: false
-        }
-      };
-      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
-      const payload = JSON.parse(serverRequest.data);
-
-      expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
-    });
     it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
       const bidderRequest = {
         'bidderCode': 'onetag',
@@ -821,13 +789,7 @@ describe('onetag', function () {
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
-      const fledgeInterpretedResponse = spec.interpretResponse(fledgeResponse, request);
       expect(interpretedResponse).to.be.an('array').that.is.not.empty;
-      expect(fledgeInterpretedResponse).to.be.an('object');
-      expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
-        return value === null || Array.isArray(value);
-      });
-      expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         const dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');

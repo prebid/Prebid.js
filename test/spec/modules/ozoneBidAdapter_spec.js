@@ -3154,15 +3154,6 @@ describe('ozone Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.ext.ozone.cookieDeprecationLabel).to.equal('none');
     });
-    it('should handle fledge requests', function () {
-      const bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
-      const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
-      deepSetValue(bidRequests[0], 'ortb2Imp.ext.ae', 1);
-      bidderRequest.fledgeEnabled = true;
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].ext.ae).to.equal(1);
-    });
     it('Single request: should use ortb auction ID & transaction ID values if set (this will be the case when publisher opts in with config)', function() {
       var specMock = utils.deepClone(spec);
       config.setConfig({'ozone': {'singleRequest': true}});
@@ -3423,20 +3414,6 @@ describe('ozone Adapter', function () {
       const result = spec.interpretResponse(getCleanValidVideoResponse(), instreamBidderReq);
       const bid = result[0];
       expect(bid.mediaType).to.equal('video');
-    });
-    it('should handle fledge response', function () {
-      const req = spec.buildRequests(validBidRequests, validBidderRequest);
-      const objResp = JSON.parse(JSON.stringify(validResponse));
-      objResp.body.ext = {igi: [{
-        'impid': '1',
-        'igb': [{
-          'origin': 'https://paapi.dsp.com',
-          'pbs': '{"key": "value"}'
-        }]
-      }]};
-      const result = spec.interpretResponse(objResp, req);
-      expect(result).to.be.an('object');
-      expect(result.fledgeAuctionConfigs[0]['impid']).to.equal('1');
     });
     it('should add labels in the adserver request if they are present in the auction response', function () {
       const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);

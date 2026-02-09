@@ -747,13 +747,6 @@ describe('SSPBC adapter', function () {
 
       expect(resultIncorrect.length).to.equal(0);
     });
-
-    it('should response with fledge auction configs', function () {
-      const { bids, fledgeAuctionConfigs } = spec.interpretResponse(serverResponsePaapi, requestSingle);
-
-      expect(bids.length).to.equal(1);
-      expect(fledgeAuctionConfigs.length).to.equal(1);
-    });
   });
 
   describe('getUserSyncs', function () {

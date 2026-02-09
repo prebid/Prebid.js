@@ -1,4 +1,4 @@
-import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
+import {isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import {expect} from 'chai';
@@ -1640,59 +1640,6 @@ describe('bidderFactory', () => {
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
       })
-
-      describe('when response has PAAPI config', function() {
-        let paapiStub;
-
-        function paapiHook(next, ...args) {
-          paapiStub(...args);
-        }
-
-        function runBidder(response) {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns(response);
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        }
-
-        before(() => {
-          addPaapiConfig.before(paapiHook);
-        });
-
-        after(() => {
-          addPaapiConfig.getHooks({hook: paapiHook}).remove();
-        })
-
-        beforeEach(function () {
-          paapiStub = sinon.stub();
-        });
-
-        describe(`when response has paapi`, () => {
-          it('should call paapi config hook with auction configs', function () {
-            runBidder({
-              bids: bids,
-              paapi: [paapiConfig]
-            });
-            expect(paapiStub.calledOnce).to.equal(true);
-            sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-            sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
-          });
-
-          Object.entries({
-            'missing': undefined,
-            'an empty array': []
-          }).forEach(([t, bids]) => {
-            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function () {
-              runBidder({
-                bids,
-                paapi: [paapiConfig]
-              });
-              expect(paapiStub.calledOnce).to.be.true;
-              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-              expect(addBidResponseStub.calledOnce).to.equal(false);
-            });
-          });
-        });
-      });
     });
   });
 

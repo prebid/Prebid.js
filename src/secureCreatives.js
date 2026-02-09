@@ -8,7 +8,6 @@ import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {
   deferRendering,
-  getBidToRender,
   handleCreativeEvent,
   handleNativeMessage,
   handleRender,
@@ -16,6 +15,7 @@ import {
 } from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 import {PbPromise} from './utils/promise.js';
+import {auctionManager} from './auctionManager.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -70,10 +70,8 @@ export function receiveMessage(ev, cb) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST, (adObject) => {
-      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
-      cb && cb();
-    });
+    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
+    cb && cb();
   }
 }
 

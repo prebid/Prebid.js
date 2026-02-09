@@ -145,7 +145,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = getConnectionInfo();
   payload.networkConnectionType = connection?.type || null;
   payload.networkEffectiveConnectionType = connection?.effectiveType || null;
-  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
+  payload.fledgeEnabled = false;
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -160,7 +160,7 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
+  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
     return bids;
   }
   Array.isArray(body.bids) && body.bids.forEach(bid => {
@@ -206,15 +206,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     bids.push(responseBid);
   });
 
-  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
-    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
-    return {
-      bids,
-      paapi: fledgeAuctionConfigs
-    }
-  } else {
-    return bids;
-  }
+  return bids;
 }
 
 function createRenderer(bid, rendererOptions = {}) {

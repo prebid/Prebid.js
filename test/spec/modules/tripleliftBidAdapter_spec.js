@@ -892,12 +892,6 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
-    it('should pass fledge signal when Triplelift is eligible for fledge', function() {
-      bidderRequest.paapi = {enabled: true};
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const url = request.url;
-      expect(url).to.match(/(\?|&)fledge=true/);
-    });
     it('should return coppa param when COPPA config is set to true', function() {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -1399,57 +1393,6 @@ describe('triplelift adapter', function () {
       expect(result[1].meta.networkId).to.equal('10092');
       expect(result[2].meta.networkId).to.equal('5989');
       expect(result[3].meta.networkId).to.equal('5989');
-    });
-
-    it('should return fledgeAuctionConfigs if PAAPI response is received', function() {
-      response.body.paapi = [
-        {
-          imp_id: '0',
-          auctionConfig: {
-            seller: 'https://3lift.com',
-            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
-            interestGroupBuyers: ['https://some_buyer.com'],
-            perBuyerSignals: {
-              'https://some_buyer.com': { a: 1 }
-            }
-          }
-        },
-        {
-          imp_id: '2',
-          auctionConfig: {
-            seller: 'https://3lift.com',
-            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
-            interestGroupBuyers: ['https://some_other_buyer.com'],
-            perBuyerSignals: {
-              'https://some_other_buyer.com': { b: 2 }
-            }
-          }
-        }
-      ];
-
-      const result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-
-      expect(result).to.have.property('bids');
-      expect(result).to.have.property('paapi');
-      expect(result.paapi.length).to.equal(2);
-      expect(result.paapi[0].bidId).to.equal('30b31c1838de1e');
-      expect(result.paapi[1].bidId).to.equal('73edc0ba8de203');
-      expect(result.paapi[0].config).to.deep.equal(
-        {
-          'seller': 'https://3lift.com',
-          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
-          'interestGroupBuyers': ['https://some_buyer.com'],
-          'perBuyerSignals': { 'https://some_buyer.com': { 'a': 1 } }
-        }
-      );
-      expect(result.paapi[1].config).to.deep.equal(
-        {
-          'seller': 'https://3lift.com',
-          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
-          'interestGroupBuyers': ['https://some_other_buyer.com'],
-          'perBuyerSignals': { 'https://some_other_buyer.com': { 'b': 2 } }
-        }
-      );
     });
   });
 
