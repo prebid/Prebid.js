@@ -34,33 +34,9 @@ export const spec = {
     const data = converter.toORTB({ bidRequests, bidderRequest, context: { mediaType: BANNER } });
     return { method: 'POST', url: requestURL, data }
   },
-  buildPAAPIConfigs: function(bidRequests) {
-    const origin = getOrigin();
-    return bidRequests
-      .filter(req => req.ortb2Imp?.ext?.ae)
-      .map(bid => ({
-        bidId: bid.bidId,
-        config: {
-          seller: origin,
-          decisionLogicURL: `${getBaseUrl()}/paapi/v1/ssp/decision-logic.js?origin=${bid.params.site}`,
-          interestGroupBuyers: [origin],
-          perBuyerMultiBidLimits: {
-            [origin]: 100
-          },
-          perBuyerCurrencies: {
-            [origin]: 'USD'
-          }
-        }
-      }))
-  },
   interpretResponse: function(response, request) {
     const bids = converter.fromORTB({ response: response.body, request: request.data }).bids
-    const auctionConfigs = (response.body.ext?.optable?.fledge?.auctionconfigs ?? []).map((cfg) => {
-      const { impid, ...config } = cfg;
-      return { bidId: impid, config }
-    })
-
-    return { bids, paapi: auctionConfigs }
+    return { bids }
   },
   supportedMediaTypes: [BANNER]
 }
