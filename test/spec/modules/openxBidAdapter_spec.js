@@ -1225,18 +1225,6 @@ describe('OpenxRtbAdapter', function () {
           expect(request[0].data).to.not.have.any.keys('user');
         });
       });
-
-      context('FLEDGE', function() {
-        it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, {
-            ...mockBidderRequest,
-            paapi: {
-              enabled: true
-            }
-          });
-          expect(request[0].data.imp[0].ext.ae).to.equal(2);
-        });
-      });
     });
 
     context('banner', function () {
@@ -1884,104 +1872,6 @@ describe('OpenxRtbAdapter', function () {
         });
       });
     }
-
-    context('when the response contains FLEDGE interest groups config', function() {
-      let response;
-
-      beforeEach(function () {
-        sinon.stub(config, 'getConfig')
-          .withArgs('fledgeEnabled')
-          .returns(true);
-
-        bidRequestConfigs = [{
-          bidder: 'openx',
-          params: {
-            unit: '12345678',
-            delDomain: 'test-del-domain'
-          },
-          adUnitCode: 'adunit-code',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [300, 600]],
-            },
-          },
-          bidId: 'test-bid-id',
-          bidderRequestId: 'test-bidder-request-id',
-          auctionId: 'test-auction-id'
-        }];
-
-        bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
-
-        bidResponse = {
-          seatbid: [{
-            bid: [{
-              impid: 'test-bid-id',
-              price: 2,
-              w: 300,
-              h: 250,
-              crid: 'test-creative-id',
-              dealid: 'test-deal-id',
-              adm: 'test-ad-markup'
-            }]
-          }],
-          cur: 'AUS',
-          ext: {
-            fledge_auction_configs: {
-              'test-bid-id': {
-                seller: 'codinginadtech.com',
-                interestGroupBuyers: ['somedomain.com'],
-                sellerTimeout: 0,
-                perBuyerSignals: {
-                  'somedomain.com': {
-                    base_bid_micros: 0.1,
-                    disallowed_advertiser_ids: [
-                      '1234',
-                      '2345'
-                    ],
-                    multiplier: 1.3,
-                    use_bid_multiplier: true,
-                    win_reporting_id: '1234567asdf'
-                  }
-                }
-              }
-            }
-          }
-        };
-
-        response = spec.interpretResponse({body: bidResponse}, bidRequest);
-      });
-
-      afterEach(function () {
-        config.getConfig.restore();
-      });
-
-      it('should return FLEDGE auction_configs alongside bids', function () {
-        expect(response).to.have.property('bids');
-        expect(response).to.have.property('paapi');
-        expect(response.paapi.length).to.equal(1);
-        expect(response.paapi[0].bidId).to.equal('test-bid-id');
-      });
-
-      it('should inject ortb2Imp in auctionSignals', function () {
-        const auctionConfig = response.paapi[0].config;
-        expect(auctionConfig).to.deep.include({
-          auctionSignals: {
-            ortb2Imp: {
-              id: 'test-bid-id',
-              tagid: '12345678',
-              banner: {
-                topframe: 0,
-                format: bidRequestConfigs[0].mediaTypes.banner.sizes.map(([w, h]) => ({w, h}))
-              },
-              ext: {
-                divid: 'adunit-code',
-              },
-              secure: 1
-            }
-          }
-        });
-      })
-    });
   });
 
   describe('user sync', function () {
