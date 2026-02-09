@@ -1033,6 +1033,104 @@ describe('The DFP video support module', function () {
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YNY');
     })
+    it('no us_privacy when either SaleOptOutNotice or SaleOptOut is missing', async () => {
+      // Missing SaleOptOutNotice
+      mockGpp(wrapParsedSectionsIntoGPPData({
+        "usnat": {
+          "Version": 1,
+          "SharingNotice": 2,
+          "SharingOptOutNotice": 0,
+          "TargetedAdvertisingOptOutNotice": 2,
+          "SensitiveDataProcessingOptOutNotice": 1,
+          "SensitiveDataLimitUseNotice": 1,
+          "SaleOptOut": 1,
+          "SharingOptOut": 2,
+          "TargetedAdvertisingOptOut": 2,
+          "SensitiveDataProcessing": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "KnownChildSensitiveDataConsents": [
+            0,
+            0,
+            0
+          ],
+          "PersonalDataConsents": 0,
+          "MspaCoveredTransaction": 1,
+          "MspaOptOutOptionMode": 0,
+          "MspaServiceProviderMode": 0,
+          "GpcSegmentType": 1,
+          "Gpc": false
+        }
+      }));
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.be.null;
+    })
+    it('no us_privacy when either SaleOptOutNotice or SaleOptOut is null', async () => {
+      // null SaleOptOut
+      mockGpp(wrapParsedSectionsIntoGPPData({
+        "usnat": {
+          "Version": 1,
+          "SharingNotice": 2,
+          "SaleOptOutNotice": 1,
+          "SharingOptOutNotice": 0,
+          "TargetedAdvertisingOptOutNotice": 2,
+          "SensitiveDataProcessingOptOutNotice": 1,
+          "SensitiveDataLimitUseNotice": 1,
+          "SaleOptOut": null,
+          "SharingOptOut": 2,
+          "TargetedAdvertisingOptOut": 2,
+          "SensitiveDataProcessing": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "KnownChildSensitiveDataConsents": [
+            0,
+            0,
+            0
+          ],
+          "PersonalDataConsents": 0,
+          "MspaCoveredTransaction": 1,
+          "MspaOptOutOptionMode": 0,
+          "MspaServiceProviderMode": 0,
+          "GpcSegmentType": 1,
+          "Gpc": false
+        }
+      }));
+
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+      expect(usPrivacyFromRequest).to.be.null;
+    })
+
     it('can retrieve from usca section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
         "usca": {

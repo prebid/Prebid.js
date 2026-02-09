@@ -353,11 +353,11 @@ function retrieveUspInfoFromGpp(gpp) {
       let saleOptOutNotice;
       Object.values(parsedSections).forEach(parsedSection => {
         (Array.isArray(parsedSection) ? parsedSection : [parsedSection]).forEach(ps => {
-          if (saleOptOut === undefined) {
-            saleOptOut = ps.SaleOptOut;
-          }
-          if (saleOptOutNotice === undefined) {
-            saleOptOutNotice = ps.SaleOptOutNotice;
+          const sectionSaleOptOut = ps.SaleOptOut;
+          const sectionSaleOptOutNotice = ps.SaleOptOutNotice;
+          if (saleOptOut === undefined && saleOptOutNotice === undefined && sectionSaleOptOut != null && sectionSaleOptOutNotice != null) {
+            saleOptOut = sectionSaleOptOut;
+            saleOptOutNotice = sectionSaleOptOutNotice;
           }
         });
       });
