@@ -43,7 +43,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
     advertiserDomains = [],
     attr: metaAttr,
     mediaType: metaMediaType,
-    cattax: metaCattax,
+    cattax: metaCattax = 1,
   } = bid.meta || {};
 
   // checking if bid fulfills ortb2 fields rules

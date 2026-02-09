@@ -111,7 +111,9 @@ export const DEFAULT_PROCESSORS = {
         if (bid.ext?.eventtrackers) {
           bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers);
         }
-        bidResponse.meta.cattax = bid.cattax ?? 1;
+        if (bid.cattax) {
+          bidResponse.meta.cattax = bid.cattax;
+        }
       }
     }
   }
