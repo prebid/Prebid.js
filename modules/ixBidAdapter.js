@@ -686,8 +686,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
-  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
-  const ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
+  const ixdiag = buildIXDiag(validBidRequests);
   for (const key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
@@ -954,8 +953,6 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
   const dfpAdUnitCode = impressions[impKeys[adUnitIndex]].dfp_ad_unit_code;
   const tid = impressions[impKeys[adUnitIndex]].tid;
   const sid = impressions[impKeys[adUnitIndex]].sid;
-  const auctionEnvironment = impressions[impKeys[adUnitIndex]].ae;
-  const paapi = impressions[impKeys[adUnitIndex]].paapi;
   const bannerImpressions = impressionObjects.filter(impression => BANNER in impression);
   const otherImpressions = impressionObjects.filter(impression => !(BANNER in impression));
 
@@ -1005,7 +1002,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.banner.pos = position;
       }
 
-      if (dfpAdUnitCode || gpid || tid || sid || auctionEnvironment || externalID || paapi) {
+      if (dfpAdUnitCode || gpid || tid || sid || externalID) {
         _bannerImpression.ext = {};
 
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
@@ -1013,12 +1010,6 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.ext.tid = tid;
         _bannerImpression.ext.sid = sid;
         _bannerImpression.ext.externalID = externalID;
-
-        // enable fledge auction
-        if (Number(auctionEnvironment) === 1) {
-          _bannerImpression.ext.ae = 1;
-          _bannerImpression.ext.paapi = paapi;
-        }
       }
 
       if ('bidfloor' in bannerImps[0]) {
@@ -1272,10 +1263,9 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
  * Calculates IX diagnostics values and packages them into an object
  *
  * @param {Array} validBidRequests - The valid bid requests from prebid
- * @param {boolean} fledgeEnabled - Flag indicating if protected audience (fledge) is enabled
  * @return {Object} IX diag values for ad units
  */
-function buildIXDiag(validBidRequests, fledgeEnabled) {
+function buildIXDiag(validBidRequests) {
   var adUnitMap = validBidRequests
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
@@ -1292,7 +1282,6 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     version: '$prebid.version$',
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
-    ae: fledgeEnabled,
     eidLength: allEids.length
   };
 
@@ -1416,23 +1405,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
   bannerImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
-
-  // Add Fledge flag if enabled
-  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
-  if (fledgeEnabled) {
-    const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
-    const paapi = deepAccess(validBidRequest, 'ortb2Imp.ext.paapi')
-    if (paapi) {
-      bannerImps[validBidRequest.adUnitCode].paapi = paapi
-    }
-    if (auctionEnvironment) {
-      if (isInteger(auctionEnvironment)) {
-        bannerImps[validBidRequest.adUnitCode].ae = auctionEnvironment;
-      } else {
-        logWarn('error setting auction environment flag - must be an integer')
-      }
-    }
-  }
 
   // AdUnit-Specific First Party Data
   const adUnitFPD = deepAccess(validBidRequest, 'ortb2Imp.ext.data');
@@ -1766,9 +1738,6 @@ export const spec = {
     const bids = [];
     let bid = null;
 
-    // Extract the FLEDGE auction configuration list from the response
-    let fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.protectedAudienceAuctionConfigs') || [];
-
     FEATURE_TOGGLES.setFeatureToggles(serverResponse);
 
     if (!serverResponse.hasOwnProperty('body')) {
@@ -1812,29 +1781,7 @@ export const spec = {
         }
       }
     }
-
-    if (Array.isArray(fledgeAuctionConfigs) && fledgeAuctionConfigs.length > 0) {
-      // Validate and filter fledgeAuctionConfigs
-      fledgeAuctionConfigs = fledgeAuctionConfigs.filter(config => {
-        if (!isValidAuctionConfig(config)) {
-          logWarn('Malformed auction config detected:', config);
-          return false;
-        }
-        return true;
-      });
-
-      try {
-        return {
-          bids,
-          paapi: fledgeAuctionConfigs,
-        };
-      } catch (error) {
-        logWarn('Error attaching AuctionConfigs', error);
-        return bids;
-      }
-    } else {
-      return bids;
-    }
+    return bids;
   },
 
   /**
@@ -2042,15 +1989,6 @@ function getFormatCount(imp) {
     formatCount += 1;
   }
   return formatCount;
-}
-
-/**
- * Checks if auction config is valid
- * @param {object} config
- * @returns bool
- */
-function isValidAuctionConfig(config) {
-  return typeof config === 'object' && config !== null;
 }
 
 /**
