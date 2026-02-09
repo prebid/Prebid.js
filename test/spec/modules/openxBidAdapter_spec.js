@@ -13,7 +13,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/paapi.js';
 
 import {deepClone} from 'src/utils.js';
 import {version} from 'package.json';
