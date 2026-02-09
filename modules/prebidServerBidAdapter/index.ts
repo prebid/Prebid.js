@@ -601,11 +601,8 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
             let result;
             try {
               result = JSON.parse(response);
-              const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+              const {bids} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
               bids.forEach(onBid);
-              if (paapi) {
-                paapi.forEach(onFledge);
-              }
             } catch (error) {
               logError(error);
             }
