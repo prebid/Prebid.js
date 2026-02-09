@@ -256,9 +256,6 @@ function slotParams(bidRequest, bidderRequests) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-  if (bidderRequests.paapi?.enabled) {
-    params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
-  }
   return params;
 }
 
@@ -487,7 +484,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @returns {{bids: *[], fledgeAuctionConfigs: *[]} | *[]} An object containing bids and fledgeAuctionConfigs if present, otherwise an array of bids.
+   * @returns {*[]} An array of bids.
    */
   interpretResponse: function(serverResponse, request) {
     let validBids = [];
@@ -502,18 +499,7 @@ export const spec = {
       validBids = bids.filter(bid => isValidBid(bid));
       validBids.forEach(addRenderer);
     }
-    const fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.paApiAuctionConfigs') || [];
-    const ortbAuctionConfigs = deepAccess(serverResponse, 'body.ext.igi') || [];
-    if (fledgeAuctionConfigs.length === 0 && ortbAuctionConfigs.length === 0) {
-      return validBids;
-    }
-    if (ortbAuctionConfigs.length > 0) {
-      fledgeAuctionConfigs.push(...ortbAuctionConfigs.map(({igs}) => igs || []).flat());
-    }
-    return {
-      bids: validBids,
-      paapi: fledgeAuctionConfigs,
-    }
+    return validBids;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const cookieSyncUrls = fetchCookieSyncUrls(serverResponses);
