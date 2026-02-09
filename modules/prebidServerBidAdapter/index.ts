@@ -21,7 +21,7 @@ import {
 import {DEBUG_MODE, EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
+import {isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
@@ -544,11 +544,6 @@ export function PrebidServer() {
               addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
           }
-        },
-        onFledge: (params) => {
-          config.runWithBidder(params.bidder, () => {
-            addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
-          })
         }
       })
     }

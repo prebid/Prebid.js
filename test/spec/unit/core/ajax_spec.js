@@ -186,7 +186,7 @@ describe('toFetchRequest', () => {
   });
 
   describe('chrome options', () => {
-    ['browsingTopics', 'adAuctionHeaders'].forEach(option => {
+    ['browsingTopics'].forEach(option => {
       Object.entries({
         [`${option} = true`]: [{[option]: true}, true],
         [`${option} = false`]: [{[option]: false}, false],
