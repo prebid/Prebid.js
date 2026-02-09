@@ -196,11 +196,10 @@ In strict mode, the module returns `undefined` if no privacy signals are present
 When privacy signals **are** present, the module does not fetch or return an ID if any of the following apply:
 
 - GDPR applies and vendorData is present, but consentString is missing or empty
-- GDPR applies and vendor permission is not granted for gvlid 3384 (when vendorData is available)
 - The US Privacy string indicates a global processing restriction (third character is 'Y')
 - GPP signals indicate an applicable processing restriction
 
-When GDPR applies but `vendorData` is not available in the consent object, the module logs a warning and proceeds. This allows operation in environments where TCF vendor data is not yet parsed, but publishers should verify vendor permissions are being enforced upstream.
+When GDPR applies and `consentString` is present, the module proceeds unless a framework processing restriction is signaled.
 
 ### Privacy Signals Detection
 
@@ -228,14 +227,11 @@ When available, the LocID is exposed as:
 }
 ```
 
-## Identifier Type vs Vendor ID
+## Identifier Type
 
-This module uses two numeric identifiers:
-
-- **`gvlid: 3384`** — The IAB TCF Global Vendor List ID used for consent checks (confirm the registered entity name in the GVL as needed).
 - **`atype: 1`** — The AdCOM agent type for web (`AgentTypeWeb`). This is used in EID emission.
 
-The TCF vendor ID (GVLID) is distinct from AdCOM `atype` and is not used in EID emission.
+`atype` is an OpenRTB agent type (environment), not an IAB GVL vendor ID.
 
 ## Debugging
 

@@ -23,8 +23,6 @@ const DEFAULT_TIMEOUT_MS = 800;
 const DEFAULT_EID_SOURCE = 'locid.com';
 // EID atype: 1 = AdCOM AgentTypeWeb (agent type for web environments)
 const DEFAULT_EID_ATYPE = 1;
-// IAB TCF Global Vendor List ID used for consent checks (verify vendor registration details as needed).
-const GVLID = 3384;
 const MAX_ID_LENGTH = 512;
 const MAX_CONNECTION_IP_LENGTH = 64;
 const DEFAULT_IP_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
@@ -154,58 +152,11 @@ function normalizeStoredId(storedId) {
 }
 
 /**
- * Reads a vendor flag from flags collection.
- * Supports plain object lookup (flags[id]) or function lookup (flags(id)).
- * @param {Object|Function} flags - The consents or legitimateInterests collection
- * @param {number} id - The vendor ID to look up
- * @returns {boolean|undefined} The flag value, or undefined if not accessible
- */
-function readVendorFlag(flags, id) {
-  if (typeof flags === 'function') {
-    return flags(id);
-  }
-  if (flags && typeof flags === 'object') {
-    return flags[id];
-  }
-  return undefined;
-}
-
-/**
- * Checks if vendor permission (consent or legitimate interest) is granted for our gvlid.
- * Returns true if permission is granted, false if denied, undefined if cannot be determined.
- */
-function checkVendorPermission(vendorData) {
-  if (!vendorData) {
-    return undefined;
-  }
-
-  const vendor = vendorData.vendor;
-  if (!vendor) {
-    return undefined;
-  }
-
-  // TCF v2: Check vendor consent (purpose 1 typically required for identifiers)
-  const vendorConsent = readVendorFlag(vendor.consents, GVLID);
-  if (vendorConsent === true) {
-    return true;
-  }
-
-  // TCF v2: Check legitimate interest as fallback
-  const vendorLI = readVendorFlag(vendor.legitimateInterests, GVLID);
-  if (vendorLI === true) {
-    return true;
-  }
-
-  // vendorData.vendor exists but no permission found, deny
-  return false;
-}
-
-/**
  * Checks privacy framework signals. Returns true if ID operations are allowed.
  *
  * LocID operates under Legitimate Interest and does not require a TCF consent
  * string when no privacy framework is present. When privacy signals exist,
- * vendor permission is enforced.
+ * framework processing restrictions are enforced.
  *
  * @param {Object} consentData - The consent data object from Prebid
  * @param {Object} params - config.params for privacy mode settings
@@ -242,16 +193,6 @@ function hasValidConsent(consentData, params) {
     if (!consentString || consentString.length === 0) {
       logWarn(LOG_PREFIX, 'GDPR framework data missing consent string');
       return false;
-    }
-
-    // Check vendor-level permission if vendorData is available
-    const vendorPermission = checkVendorPermission(vendorData);
-    if (vendorPermission === false) {
-      logWarn(LOG_PREFIX, 'GDPR framework indicates vendor permission restriction for gvlid', GVLID);
-      return false;
-    }
-    if (vendorPermission === undefined) {
-      logWarn(LOG_PREFIX, 'GDPR vendorData not available; vendor permission check skipped');
     }
   }
 
@@ -567,7 +508,6 @@ function fetchIpFromEndpoint(config, callback) {
 export const locIdSubmodule = {
   name: MODULE_NAME,
   aliasName: 'locid',
-  gvlid: GVLID,
 
   /**
    * Decode stored value into userId object.

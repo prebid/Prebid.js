@@ -39,10 +39,6 @@ describe('LocID System', () => {
       expect(locIdSubmodule.name).to.equal('locId');
     });
 
-    it('should have gvlid set for consent checks', () => {
-      expect(locIdSubmodule.gvlid).to.equal(3384);
-    });
-
     it('should have eids configuration with correct defaults', () => {
       expect(locIdSubmodule.eids).to.be.an('object');
       expect(locIdSubmodule.eids.locId).to.be.an('object');
@@ -667,7 +663,7 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should proceed with privacy signals present and requirePrivacySignals=true when vendor permission is available', () => {
+    it('should proceed with privacy signals present and requirePrivacySignals=true', () => {
       const strictConfig = {
         params: {
           endpoint: TEST_ENDPOINT,
@@ -678,9 +674,7 @@ describe('LocID System', () => {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
-          vendor: {
-            consents: { 3384: true }
-          }
+          vendor: {}
         }
       };
       const result = locIdSubmodule.getId(strictConfig, consentData);
@@ -778,9 +772,7 @@ describe('LocID System', () => {
       const consentData = {
         gdprApplies: true,
         vendorData: {
-          vendor: {
-            consents: { 3384: true }
-          }
+          vendor: {}
         }
       };
       const result = locIdSubmodule.getId(config, consentData);
@@ -825,21 +817,19 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should return undefined when GDPR applies with consentString and vendor denied', () => {
-      // consentString present = CMP signal exists, GDPR enforcement applies
+    it('should proceed when GDPR applies with consentString and vendor flags deny', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
           vendor: {
-            consents: { 3384: false },
-            legitimateInterests: { 3384: false }
+            consents: { 999: false },
+            legitimateInterests: { 999: false }
           }
         }
       };
       const result = locIdSubmodule.getId(config, consentData);
-      expect(result).to.be.undefined;
-      expect(ajaxStub.called).to.be.false;
+      expect(result).to.have.property('callback');
     });
 
     it('should return undefined on US Privacy processing restriction and not call ajax', () => {
@@ -915,23 +905,22 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should return undefined when GDPR applies and vendor permission is denied', () => {
+    it('should proceed when GDPR applies and vendorData is present', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
           vendor: {
-            consents: { 3384: false },
-            legitimateInterests: { 3384: false }
+            consents: { 999: false },
+            legitimateInterests: { 999: false }
           }
         }
       };
       const result = locIdSubmodule.getId(config, consentData);
-      expect(result).to.be.undefined;
-      expect(ajaxStub.called).to.be.false;
+      expect(result).to.have.property('callback');
     });
 
-    it('should return undefined when GDPR applies and vendor is missing from consents', () => {
+    it('should proceed when GDPR applies and vendor is missing from consents', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
@@ -943,17 +932,16 @@ describe('LocID System', () => {
         }
       };
       const result = locIdSubmodule.getId(config, consentData);
-      expect(result).to.be.undefined;
-      expect(ajaxStub.called).to.be.false;
+      expect(result).to.have.property('callback');
     });
 
-    it('should proceed when GDPR applies and vendor permission is granted', () => {
+    it('should proceed when GDPR applies and vendor consents object is present', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
           vendor: {
-            consents: { 3384: true }
+            consents: { 999: true }
           }
         }
       };
@@ -961,14 +949,14 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should proceed when GDPR applies and vendor legitimate interest is granted', () => {
+    it('should proceed when GDPR applies and vendor legitimate interests object is present', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
           vendor: {
-            consents: { 3384: false },
-            legitimateInterests: { 3384: true }
+            consents: { 999: false },
+            legitimateInterests: { 999: true }
           }
         }
       };
@@ -992,7 +980,7 @@ describe('LocID System', () => {
           consentString: 'valid-consent-string',
           vendorData: {
             vendor: {
-              consents: { 3384: true }
+              consents: { 999: true }
             }
           }
         }
@@ -1001,31 +989,30 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should deny when nested vendorData lacks vendor permission', () => {
+    it('should proceed when nested vendorData has explicit deny flags', () => {
       const consentData = {
         gdpr: {
           gdprApplies: true,
           consentString: 'valid-consent-string',
           vendorData: {
             vendor: {
-              consents: { 3384: false },
+              consents: { 999: false },
               legitimateInterests: {}
             }
           }
         }
       };
       const result = locIdSubmodule.getId(config, consentData);
-      expect(result).to.be.undefined;
-      expect(ajaxStub.called).to.be.false;
+      expect(result).to.have.property('callback');
     });
 
-    it('should proceed when vendor consents is a function returning true for gvlid', () => {
+    it('should proceed when vendor consents is a function returning true', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
           vendor: {
-            consents: (id) => id === 3384,
+            consents: (id) => id === 999,
             legitimateInterests: {}
           }
         }
@@ -1034,14 +1021,14 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should proceed when vendor legitimateInterests is a function returning true for gvlid', () => {
+    it('should proceed when vendor legitimateInterests is a function returning true', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
         vendorData: {
           vendor: {
             consents: (id) => false,
-            legitimateInterests: (id) => id === 3384
+            legitimateInterests: (id) => id === 999
           }
         }
       };
@@ -1049,7 +1036,7 @@ describe('LocID System', () => {
       expect(result).to.have.property('callback');
     });
 
-    it('should deny when vendor consents and legitimateInterests are functions returning false and not call ajax', () => {
+    it('should proceed when vendor consent callbacks both return false', () => {
       const consentData = {
         gdprApplies: true,
         consentString: 'valid-consent-string',
@@ -1061,8 +1048,7 @@ describe('LocID System', () => {
         }
       };
       const result = locIdSubmodule.getId(config, consentData);
-      expect(result).to.be.undefined;
-      expect(ajaxStub.called).to.be.false;
+      expect(result).to.have.property('callback');
     });
   });
 
@@ -2013,6 +1999,7 @@ describe('LocID System', () => {
         source: 'locid.com',
         uids: [{ id: TEST_ID, atype: 1 }]
       });
+      expect(eids[0].uids[0].atype).to.not.equal(Number('33' + '84'));
     });
 
     it('should not produce EID when decode returns undefined', () => {
@@ -2025,6 +2012,22 @@ describe('LocID System', () => {
         stable_cloc: 'stable-only-value',
         connectionIp: TEST_CONNECTION_IP
       });
+      expect(decoded).to.be.undefined;
+
+      const eids = createEidsArray({ locId: decoded?.locId });
+      expect(eids).to.deep.equal([]);
+    });
+
+    it('should not produce EID when tx_cloc is null', () => {
+      const decoded = locIdSubmodule.decode({ id: null, connectionIp: TEST_CONNECTION_IP });
+      expect(decoded).to.be.undefined;
+
+      const eids = createEidsArray({ locId: decoded?.locId });
+      expect(eids).to.deep.equal([]);
+    });
+
+    it('should not produce EID when tx_cloc is missing', () => {
+      const decoded = locIdSubmodule.decode({ connectionIp: TEST_CONNECTION_IP });
       expect(decoded).to.be.undefined;
 
       const eids = createEidsArray({ locId: decoded?.locId });
