@@ -168,6 +168,7 @@ When `storage.refreshInSeconds` is set, the module will reuse the cached ID unti
 ## Consent Handling
 
 LocID operates under Legitimate Interest (LI). By default, the module proceeds when no privacy framework signals are present. When privacy signals exist, they are enforced. Privacy frameworks can only stop LocID via global processing restrictions; they do not enable it.
+For TCF integration, the module declares Prebid's vendorless GVL marker so purpose-level enforcement applies without vendor-ID checks.
 
 ### Legal Basis and IP-Based Identifiers
 

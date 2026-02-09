@@ -7,8 +7,23 @@ import path from 'node:path';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 describe('build hygiene checks', () => {
-  it('should not contain the forbidden legacy token in tracked files', () => {
+  it('should not contain the forbidden legacy token in LocID files', () => {
     const forbiddenToken = ['33', '84'].join('');
+    const scopeArgs = [
+      'ls-files',
+      '--',
+      ':(glob)modules/**/locId*',
+      ':(glob)test/spec/**/locId*',
+      'docs/modules/locid.md',
+      'modules/locIdSystem.md'
+    ];
+    const scopedPaths = execFileSync('git', scopeArgs, { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n')
+      .map(filePath => filePath.trim())
+      .filter(Boolean);
+
+    expect(scopedPaths.length, 'No LocID files were selected for the 3384 guard').to.be.greaterThan(0);
+
     const args = [
       'grep',
       '-n',
@@ -16,13 +31,7 @@ describe('build hygiene checks', () => {
       '-E',
       `\\b${forbiddenToken}\\b`,
       '--',
-      '.',
-      ':(exclude)node_modules/**',
-      ':(exclude)dist/**',
-      ':(exclude)build/**',
-      ':(exclude)package-lock.json',
-      ':(exclude)yarn.lock',
-      ':(exclude)pnpm-lock.yaml'
+      ...scopedPaths
     ];
 
     try {

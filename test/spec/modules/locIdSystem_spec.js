@@ -7,6 +7,7 @@ import { locIdSubmodule, storage } from 'modules/locIdSystem.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { attachIdSystem } from 'modules/userId/index.js';
 import * as ajax from 'src/ajax.js';
+import { VENDORLESS_GVLID } from 'src/consentHandler.js';
 import { uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai/index.mjs';
 import sinon from 'sinon';
@@ -45,6 +46,10 @@ describe('LocID System', () => {
       expect(locIdSubmodule.eids.locId.source).to.equal('locid.com');
       // atype 1 = AdCOM AgentTypeWeb
       expect(locIdSubmodule.eids.locId.atype).to.equal(1);
+    });
+
+    it('should register as a vendorless TCF module', () => {
+      expect(locIdSubmodule.gvlid).to.equal(VENDORLESS_GVLID);
     });
 
     it('should have getValue function that extracts ID', () => {

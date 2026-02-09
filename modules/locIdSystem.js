@@ -15,6 +15,7 @@ import { submodule } from '../src/hook.js';
 import { gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'locId';
@@ -508,6 +509,7 @@ function fetchIpFromEndpoint(config, callback) {
 export const locIdSubmodule = {
   name: MODULE_NAME,
   aliasName: 'locid',
+  gvlid: VENDORLESS_GVLID,
 
   /**
    * Decode stored value into userId object.
