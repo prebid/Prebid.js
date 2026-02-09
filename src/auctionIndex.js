@@ -11,6 +11,7 @@
  * Bid responses are not guaranteed to have a corresponding request.
  * @property {function({ requestId?: string }): *} getBidRequest Returns bidRequest object for requestId.
  * Bid responses are not guaranteed to have a corresponding request.
+ * @property {function} getOrtb2 Returns ortb2 object for bid
  */
 
 /**
