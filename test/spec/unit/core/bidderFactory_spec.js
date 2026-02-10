@@ -779,11 +779,6 @@ describe('bidderFactory', () => {
           bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling });
         }
 
-        it('should have getStatusCode', () => {
-          const auctionBid = getAuctionBid();
-          expect(auctionBid.getStatusCode()).to.eql(1);
-        });
-
         it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
           const auctionBid = getAuctionBid();
           expect(addBidResponseStub.calledOnce).to.equal(true);

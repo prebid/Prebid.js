@@ -207,19 +207,13 @@ function Bid({src = 'client', bidder = '', bidId, transactionId, adUnitId, aucti
     adUnitId,
     auctionId,
     mediaType: 'banner',
-    source: _bidSrc,
+    source: _bidSrc
   })
 
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
-
-  this.getStatusCode = function () {
-    // getStatusCode was removed in prebid 10 as it provided no useful information (always returned 1 - "good")
-    // Reintroduced because GPT will sometimes expect to find it.
-    return 1;
-  }
 }
 
 export function createBid(identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
