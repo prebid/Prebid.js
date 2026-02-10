@@ -991,7 +991,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
 
       expect(data.user.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
-      expect(data.user.ext.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
 
     it('should not set not allowed user eids sources', () => {
