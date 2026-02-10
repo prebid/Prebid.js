@@ -429,7 +429,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
       bidRequest.ortb2.source.ext.schain = globalSchain;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      const schain = data.source.ext.schain;
+      const schain = data.source.schain;
       expect(schain).to.be.undefined;
     });
 
@@ -450,7 +450,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
       bidRequest.ortb2.source.ext.schain = globalSchain;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      const schain = data.source.ext.schain;
+      const schain = data.source.schain;
       expect(schain.nodes.length).to.equal(1);
       expect(schain).to.equal(globalSchain);
     });
@@ -760,7 +760,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
     });
 
-    // adUnit.ortb2Imp.ext.data
+    // adUnit.ortb2Imp.data (OpenRTB 2.6 moved from ext to top-level)
     it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid-request`, () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
       validBidRequests[0].ortb2Imp = {
@@ -772,7 +772,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         }
       };
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      expect(data.imp[0].ext.data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
+      expect(data.imp[0].data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
     });
     // adUnit.ortb2Imp.instl
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid-request`, () => {
@@ -844,8 +844,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const clonedBidderRequest = {...bidderRequest};
       const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
-      expect(data.regs.ext.gpp).to.equal(bidderRequest.gppConsent.gppString);
-      expect(data.regs.ext.gpp_sid).to.eql(bidderRequest.gppConsent.applicableSections);
+      expect(data.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
+      expect(data.regs.gpp_sid).to.eql(bidderRequest.gppConsent.applicableSections);
     });
 
     it('overrides the GPP consent data using data from the ortb2 config object', function () {
@@ -858,8 +858,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       };
       const clonedBidderRequest = {...bidderRequest, ortb2};
       const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
-      expect(data.regs.ext.gpp).to.equal(ortb2.regs.gpp);
-      expect(data.regs.ext.gpp_sid).to.eql(ortb2.regs.gpp_sid);
+      expect(data.regs.gpp).to.equal(ortb2.regs.gpp);
+      expect(data.regs.gpp_sid).to.eql(ortb2.regs.gpp_sid);
     });
   });
 
@@ -965,10 +965,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const options = spec.buildRequests(validBidRequests, bidderRequest)[0].options;
       expect(options).to.deep.equal(
         {
-          contentType: 'application/json',
-          customHeaders: {
-            'x-openrtb-version': '2.5'
-          },
+          contentType: 'text/plain',
           withCredentials: true
         });
     });
@@ -993,7 +990,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       ];
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
 
-      expect(data.user.ext.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
+      expect(data.user.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
 
     it('should not set not allowed user eids sources', () => {
@@ -1003,7 +1000,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
 
-      expect(data.user.ext.eids).to.deep.equal([]);
+      expect(data.user.eids).to.deep.equal([]);
     });
   });
 
@@ -1025,11 +1022,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.regs).to.deep.equal({
+        gdpr: 1,
+        gpp: bidderRequest.gppConsent.gppString,
+        gpp_sid: bidderRequest.gppConsent.applicableSections,
         ext: {
-          'us_privacy': bidderRequest.uspConsent,
-          gdpr: 1,
-          gpp: bidderRequest.gppConsent.gppString,
-          gpp_sid: bidderRequest.gppConsent.applicableSections
+          'us_privacy': bidderRequest.uspConsent
         }
       });
 
@@ -1047,10 +1044,9 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.user).to.deep.equal({
-        ext: {
-          consent: bidderRequest.gdprConsent.consentString,
-          eids: []
-        }
+        consent: bidderRequest.gdprConsent.consentString,
+        eids: [],
+        ext: {}
       });
 
       expect(data.cur).to.deep.equal(['USD']);
@@ -1695,6 +1691,82 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         expect(response[0].mediaType).to.not.equal('video');
         expect(response[0].renderer).to.be.undefined;
       });
+    });
+  });
+
+  describe('OpenRTB 2.6 compliance:', () => {
+    it('should place gdpr, gpp, gpp_sid at regs top-level (not in regs.ext)', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.gdpr).to.exist;
+      expect(data.regs.gpp).to.exist;
+      expect(data.regs.gpp_sid).to.exist;
+      expect(data.regs.ext.gdpr).to.be.undefined;
+      expect(data.regs.ext.gpp).to.be.undefined;
+      expect(data.regs.ext.gpp_sid).to.be.undefined;
+    });
+
+    it('should place user.consent and user.eids at user top-level (not in user.ext)', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = [
+        {source: 'yahoo.com', uids: [{id: 'testId', atype: 3}]}
+      ];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.user.consent).to.exist;
+      expect(data.user.eids).to.exist;
+      expect(data.user.eids).to.be.an('array').with.lengthOf(1);
+      expect(data.user.ext.consent).to.be.undefined;
+      expect(data.user.ext.eids).to.be.undefined;
+    });
+
+    it('should place source.schain at source top-level (not in source.ext)', () => {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{asi: 'test.com', sid: '111', hp: 1}]
+      };
+      bidRequest.ortb2 = { source: { schain: globalSchain } };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.source.schain).to.exist;
+      expect(data.source.schain.nodes).to.be.an('array');
+      expect(data.source.ext.schain).to.be.undefined;
+    });
+
+    it('should handle schain in 2.5 location (fallback)', () => {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const schain25 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{asi: 'legacy.com', sid: '222', hp: 1}]
+      };
+      bidRequest.ortb2 = { source: { ext: { schain: schain25 } } };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      // Should still place at top-level even when reading from ext
+      expect(data.source.schain).to.exist;
+      expect(data.source.schain.nodes[0].asi).to.equal('legacy.com');
+    });
+
+    it('should handle gpp/gpp_sid from ortb2.regs in 2.5 location (fallback)', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const ortb2 = {
+        regs: {
+          ext: {
+            gpp: 'legacy_gpp_string',
+            gpp_sid: [8, 9]
+          }
+        }
+      };
+      const clonedBidderRequest = {...bidderRequest, ortb2};
+      const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
+
+      // Should still place at top-level even when reading from ext
+      expect(data.regs.gpp).to.equal('legacy_gpp_string');
+      expect(data.regs.gpp_sid).to.eql([8, 9]);
     });
   });
 });

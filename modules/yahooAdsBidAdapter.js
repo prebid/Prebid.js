@@ -268,6 +268,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
     let outBoundBidRequest = {
       id: generateUUID(),
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
+      cattax: bidderRequest.ortb2?.cattax || 1,
+      ...(bidderRequest.ortb2?.wlangb && { wlangb: bidderRequest.ortb2.wlangb }),
       imp: [],
       site: {
         page: deepAccess(bidderRequest, 'refererInfo.page'),
@@ -277,14 +279,15 @@ function generateOpenRtbObject(bidderRequest, bid) {
         ua: navigator.userAgent,
         ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
         w: window.screen.width,
-        h: window.screen.height
+        h: window.screen.height,
+        ...(bidderRequest.ortb2?.device?.sua && { sua: bidderRequest.ortb2.device.sua })
       },
       regs: {
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        gpp: bidderRequest.gppConsent ? bidderRequest.gppConsent.gppString : '',
+        gpp_sid: bidderRequest.gppConsent ? bidderRequest.gppConsent.applicableSections : [],
         ext: {
-          'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
-          gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-          gpp: bidderRequest.gppConsent ? bidderRequest.gppConsent.gppString : '',
-          gpp_sid: bidderRequest.gppConsent ? bidderRequest.gppConsent.applicableSections : []
+          'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : ''
         }
       },
       source: {
@@ -300,11 +303,10 @@ function generateOpenRtbObject(bidderRequest, bid) {
         fd: 1
       },
       user: {
-        ext: {
-          consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies
-            ? bidderRequest.gdprConsent.consentString : '',
-          eids: getSupportedEids(bid)
-        }
+        consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies
+          ? bidderRequest.gdprConsent.consentString : '',
+        eids: getSupportedEids(bid),
+        ext: {}
       }
     };
 
@@ -319,19 +321,19 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
-    if (bidderRequest.ortb2?.regs?.gpp) {
-      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
-      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
+    if (bidderRequest.ortb2?.regs?.gpp || bidderRequest.ortb2?.regs?.ext?.gpp) {
+      outBoundBidRequest.regs.gpp = bidderRequest.ortb2.regs.gpp || bidderRequest.ortb2.regs.ext.gpp;
+      outBoundBidRequest.regs.gpp_sid = bidderRequest.ortb2.regs.gpp_sid || bidderRequest.ortb2.regs.ext.gpp_sid;
     };
 
     if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    const schain = bid?.ortb2?.source?.ext?.schain;
+    const schain = bid?.ortb2?.source?.schain || bid?.ortb2?.source?.ext?.schain;
     if (schain && isArray(schain.nodes) && schain.nodes.length > 0) {
-      outBoundBidRequest.source.ext.schain = schain;
-      outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
+      outBoundBidRequest.source.schain = schain;
+      outBoundBidRequest.source.schain.nodes[0].rid = outBoundBidRequest.id;
     };
 
     return outBoundBidRequest;
@@ -376,8 +378,23 @@ function appendImpObject(bid, openRtbObject) {
         linearity: deepAccess(bid, 'params.bidOverride.imp.video.linearity') || bid.mediaTypes.video.linearity || 1,
         protocols: deepAccess(bid, 'params.bidOverride.imp.video.protocols') || bid.mediaTypes.video.protocols || [2, 5],
         startdelay: deepAccess(bid, 'params.bidOverride.imp.video.startdelay') || bid.mediaTypes.video.startdelay || 0,
-        rewarded: deepAccess(bid, 'params.bidOverride.imp.video.rewarded') || undefined,
+        rewarded: deepAccess(bid, 'params.bidOverride.imp.video.rewarded') || undefined
       }
+
+      // Add video pod fields only if they have values (OpenRTB 2.6)
+      const podid = deepAccess(bid, 'params.bidOverride.imp.video.podid') || bid.mediaTypes.video.podid;
+      const podseq = deepAccess(bid, 'params.bidOverride.imp.video.podseq') || bid.mediaTypes.video.podseq;
+      const maxseq = deepAccess(bid, 'params.bidOverride.imp.video.maxseq') || bid.mediaTypes.video.maxseq;
+      const poddur = deepAccess(bid, 'params.bidOverride.imp.video.poddur') || bid.mediaTypes.video.poddur;
+      const slotinpod = deepAccess(bid, 'params.bidOverride.imp.video.slotinpod') || bid.mediaTypes.video.slotinpod;
+      const mincpmpersec = deepAccess(bid, 'params.bidOverride.imp.video.mincpmpersec') || bid.mediaTypes.video.mincpmpersec;
+
+      if (podid !== undefined) impObject.video.podid = podid;
+      if (podseq !== undefined) impObject.video.podseq = podseq;
+      if (maxseq !== undefined) impObject.video.maxseq = maxseq;
+      if (poddur !== undefined) impObject.video.poddur = poddur;
+      if (slotinpod !== undefined) impObject.video.slotinpod = slotinpod;
+      if (mincpmpersec !== undefined) impObject.video.mincpmpersec = mincpmpersec;
     }
 
     impObject.ext = {
@@ -398,8 +415,9 @@ function appendImpObject(bid, openRtbObject) {
       }
     };
 
-    if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data)) {
-      impObject.ext.data = bid.ortb2Imp.ext.data;
+    const impData = deepAccess(bid, 'ortb2Imp.data') || deepAccess(bid, 'ortb2Imp.ext.data');
+    if (impData && isPlainObject(impData)) {
+      impObject.data = impData;
     };
 
     if (deepAccess(bid, 'ortb2Imp.instl') && isNumber(bid.ortb2Imp.instl) && (bid.ortb2Imp.instl === 1)) {
@@ -428,7 +446,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   const userObject = deepAccess(ortb2Object, 'user') || undefined;
 
   if (siteObject && isPlainObject(siteObject)) {
-    const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search'];
+    const allowedSiteStringKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search', 'inventorypartnerdomain'];
     const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat'];
     const allowedSiteObjectKeys = ['ext'];
     outBoundBidRequest.site = validateAppendObject('string', allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
@@ -450,6 +468,30 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site.content = validateAppendObject('number', allowedContentNumberkeys, siteContentObject, outBoundBidRequest.site.content);
     outBoundBidRequest.site.content = validateAppendObject('array', allowedContentArrayKeys, siteContentObject, outBoundBidRequest.site.content);
     outBoundBidRequest.site.content = validateAppendObject('object', allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
+
+    // Transform content.network from string to object for OpenRTB 2.6
+    if (siteContentObject.network) {
+      if (isStr(siteContentObject.network)) {
+        outBoundBidRequest.site.content.network = {
+          id: siteContentObject.network,
+          name: siteContentObject.network
+        };
+      } else if (isPlainObject(siteContentObject.network)) {
+        outBoundBidRequest.site.content.network = siteContentObject.network;
+      }
+    }
+
+    // Transform content.channel from string to object for OpenRTB 2.6
+    if (siteContentObject.channel) {
+      if (isStr(siteContentObject.channel)) {
+        outBoundBidRequest.site.content.channel = {
+          id: siteContentObject.channel,
+          name: siteContentObject.channel
+        };
+      } else if (isPlainObject(siteContentObject.channel)) {
+        outBoundBidRequest.site.content.channel = siteContentObject.channel;
+      }
+    }
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
       siteContentDataArray.forEach(dataObject => {
@@ -489,15 +531,20 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   if (userObject && isPlainObject(userObject)) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     const allowedUserNumbers = ['yob'];
-    const allowedUserArrays = ['data'];
+    const allowedUserArrays = ['data', 'kwarray'];
     outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
     // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
     if (userObject.ext && isPlainObject(userObject.ext)) {
+      const extToMerge = { ...userObject.ext };
+      // Don't duplicate fields that moved to top-level in OpenRTB 2.6
+      delete extToMerge.consent;
+      delete extToMerge.eids;
+
       outBoundBidRequest.user.ext = {
         ...outBoundBidRequest.user.ext,
-        ...userObject.ext
+        ...extToMerge
       };
     }
   };
@@ -597,10 +644,7 @@ export const spec = {
     };
 
     const requestOptions = {
-      contentType: 'application/json',
-      customHeaders: {
-        'x-openrtb-version': '2.5'
-      }
+      contentType: 'text/plain'
     };
 
     requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);
