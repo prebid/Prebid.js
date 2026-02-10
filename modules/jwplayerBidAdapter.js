@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { isArray, isFn, deepAccess, deepSetValue, logError, logWarn } from '../src/utils.js';
@@ -325,7 +324,7 @@ function getBidAdapter() {
       h: screen.height,
       w: screen.width,
       ua: navigator.userAgent,
-      dnt: getDNT() ? 1 : 0,
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
       js: 1
     }, ortb2.device || {})
 

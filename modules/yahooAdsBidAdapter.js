@@ -273,7 +273,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
         page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
-        dnt: 0,
+        dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
         ua: navigator.userAgent,
         ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
         w: window.screen.width,

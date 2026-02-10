@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess,
@@ -253,7 +252,7 @@ export const spec = {
     }
     request.device.js = 1;
     if (!isInteger(deepAccess(request.device, 'dnt'))) {
-      request.device.dnt = getDNT() ? 1 : 0;
+      request.device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
     }
     if (!isInteger(deepAccess(request.device, 'h'))) {
       request.device.h = screen.height;

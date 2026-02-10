@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -164,7 +163,7 @@ export const spec = {
         h: screen.height,
         w: screen.width,
         language: (navigator.language && navigator.language.replace(/-.*/, '')) || 'en',
-        dnt: getDNT() ? 1 : 0
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */
       },
       imp: [],
       user: {},

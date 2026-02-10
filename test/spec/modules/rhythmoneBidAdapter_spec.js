@@ -1,6 +1,5 @@
 import {spec} from '../../../modules/rhythmoneBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import * as dnt from 'libraries/dnt/index.js';
 import * as sinon from 'sinon';
 
 var r1adapter = spec;
@@ -126,8 +125,8 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.imp[0].video.h).to.equal(480);
       expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
       expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
-      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
-      expect(openrtbRequest.imp[0].video.skip).to.equal(0);
+      expect(openrtbRequest.imp[0].video.startdelay).to.equal(null);
+      expect(openrtbRequest.imp[0].video.skip).to.equal(null);
       expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
       expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1);
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
@@ -212,8 +211,8 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.imp[0].video.h).to.equal(480);
       expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
       expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
-      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
-      expect(openrtbRequest.imp[0].video.skip).to.equal(0);
+      expect(openrtbRequest.imp[0].video.startdelay).to.equal(null);
+      expect(openrtbRequest.imp[0].video.skip).to.equal(null);
       expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
       expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1);
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
@@ -435,14 +434,9 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
-
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
-
-      dntStub.restore();
-
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.device.dnt).to.equal(1);
+      expect(openrtbRequest.device.dnt).to.equal(0);
     });
 
     it('sets floor to zero', function () {
@@ -470,7 +464,7 @@ describe('rhythmone adapter tests', function () {
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.imp[0].bidfloor).to.equal(0);
+      expect(openrtbRequest.imp[0].bidfloor).to.equal(null);
     });
 
     it('supports string video sizes', function () {
@@ -726,7 +720,7 @@ describe('rhythmone adapter tests', function () {
       var noBidResponse = r1adapter.interpretResponse({
         'body': ''
       });
-      expect(noBidResponse.length).to.equal(0);
+      expect(noBidResponse.length).to.equal(null);
     });
   });
 

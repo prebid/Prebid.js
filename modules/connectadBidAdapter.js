@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
@@ -41,7 +40,7 @@ export const spec = {
       url: bidderRequest.refererInfo?.page,
       referrer: bidderRequest.refererInfo?.ref,
       screensize: getScreenSize(),
-      dnt: getDNT() ? 1 : 0,
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
       language: navigator.language,
       ua: navigator.userAgent,
       pversion: '$prebid.version$',

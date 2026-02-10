@@ -1,4 +1,3 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { handleCookieSync, PID_STORAGE_NAME, prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -77,7 +76,7 @@ export const sharethroughAdapterSpec = {
         ua: navigator.userAgent,
         language: navigator.language,
         js: 1,
-        dnt: getDNT() ? 1 : 0,
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         h: window.screen.height,
         w: window.screen.width,
         ext: {},

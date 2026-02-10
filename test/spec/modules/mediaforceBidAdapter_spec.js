@@ -1,7 +1,6 @@
 import {assert} from 'chai';
 import {spec, resolveFloor} from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import { getDNT } from 'libraries/dnt/index.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('mediaforce bid adapter', function () {
@@ -126,7 +125,7 @@ describe('mediaforce bid adapter', function () {
       ]
     };
 
-    const dnt = getDNT() ? 1 : 0;
+    const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     const pageUrl = window.location.href;
     const timeout = 1500;

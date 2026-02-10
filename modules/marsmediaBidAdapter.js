@@ -1,5 +1,4 @@
 'use strict';
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -93,7 +92,7 @@ function MarsmediaAdapter() {
     return {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
-      dnt: getDNT() ? 1 : 0,
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
     }
   }
 

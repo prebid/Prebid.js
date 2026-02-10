@@ -115,7 +115,7 @@ export const spec = {
         ua: ortb2Device.ua,
         language: ortb2Device.language,
         sua: ortb2Device.sua || {},
-        dnt: ortb2Device.dnt ?? 0,
+        dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
       },
       user: {
         eids,

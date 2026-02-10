@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -100,7 +99,7 @@ export const spec = {
     payload.device.ua = navigator.userAgent;
     payload.device.height = window.screen.height;
     payload.device.width = window.screen.width;
-    payload.device.dnt = getDNT() ? 1 : 0;
+    payload.device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
     payload.device.language = navigator.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);

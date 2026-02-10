@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   generateUUID,
   _each,
@@ -38,7 +37,7 @@ export const spec = {
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
-    device.dnt = getDNT() ? 1 : 0;
+    device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const bidParams = [];
     _each(validBidRequests, function(bid) {

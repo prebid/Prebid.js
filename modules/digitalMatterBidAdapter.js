@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -188,7 +187,7 @@ function hasBannerMediaType(bidRequest) {
 function getDevice(data) {
   let dnt = data.dnt;
   if (!dnt) {
-    dnt = getDNT() ? 1 : 0;
+    dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
   }
   const { innerWidth, innerHeight } = getWinDimensions();
 

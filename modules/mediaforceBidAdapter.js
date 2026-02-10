@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -65,7 +64,7 @@ export const spec = {
     const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.ref) : '';
     const auctionId = bidderRequest && bidderRequest.auctionId;
     const timeout = bidderRequest && bidderRequest.timeout;
-    const dnt = getDNT() ? 1 : 0;
+    const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
     const requestsMap = {};
     const requests = [];
     let isTest = false;

@@ -72,7 +72,7 @@ describe('GmosspAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&im_uid=h.0a4749e7ffe09fa6&shared_id=1111&idl_env=1111&url=https%3A%2F%2Fhoge.com' + '&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&dnt=0&');
+      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&im_uid=h.0a4749e7ffe09fa6&shared_id=1111&idl_env=1111&url=https%3A%2F%2Fhoge.com' + '&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&');
     });
 
     it('should use fallback if refererInfo.referer in bid request is empty and im_uid ,shared_id, idl_env cookie is empty', function () {
@@ -86,7 +86,7 @@ describe('GmosspAdapter', function () {
       bidRequests[0].userId.idl_env = '';
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&dnt=0&';
+      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&';
       expect(requests[0].data).to.equal(result);
     });
   });

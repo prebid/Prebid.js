@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -169,7 +168,7 @@ function _createOrtbTemplate(conf) {
       ua: navigator.userAgent,
       os: platform,
       js: 1,
-      dnt: getDNT() ? 1 : 0,
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
       h: screen.height,
       w: screen.width,
       language: _getLanguage(),

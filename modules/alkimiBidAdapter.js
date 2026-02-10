@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepAccess, deepClone, generateUUID, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
@@ -92,7 +91,7 @@ export const spec = {
       schain: validBidRequests[0]?.ortb2?.source?.ext?.schain,
       cpp: config.getConfig('coppa') ? 1 : 0,
       device: {
-        dnt: getDNT() ? 1 : 0,
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         w: screen.width,
         h: screen.height
       },

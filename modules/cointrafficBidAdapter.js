@@ -4,7 +4,6 @@ import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js'
-import { getDNT } from '../libraries/dnt/index.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -79,7 +78,7 @@ export const spec = {
           width: width,
           height: height,
           user_agent: bidRequest.params.ua || navigator.userAgent,
-          dnt: getDNT() ? 1 : 0,
+          dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
           language: getLanguage(),
         },
       };

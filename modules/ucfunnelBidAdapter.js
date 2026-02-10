@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, _each, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
@@ -259,7 +258,7 @@ function getFormat(size) {
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
-  const dnt = getDNT() ? 1 : 0;
+  const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const schain = bid?.ortb2?.source?.ext?.schain;
   const supplyChain = getSupplyChain(schain);

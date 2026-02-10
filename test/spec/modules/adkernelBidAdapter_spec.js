@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import * as navigatorDnt from 'libraries/dnt/index.js';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
 import {parseDomain} from '../../../src/refererDetection.js';
@@ -342,11 +341,9 @@ describe('Adkernel adapter', function () {
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
-  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    const dntmock = sandbox.stub(navigatorDnt, 'getDNT').callsFake(() => dnt);
+  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST) {
     bidderRequest.bids = bidRequests;
     const pbRequests = spec.buildRequests(bidRequests, bidderRequest);
-    dntmock.restore();
     const rtbRequests = pbRequests.map(r => JSON.parse(r.data));
     return [pbRequests, rtbRequests];
   }
@@ -419,7 +416,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
-      expect(bidRequest.device).to.have.property('dnt', 1);
+      expect(bidRequest.device).to.have.property('dnt', 0);
     });
 
     it('should copy FPD to imp.banner', function() {
@@ -470,9 +467,9 @@ describe('Adkernel adapter', function () {
       expect(bidRequest).to.not.have.property('user');
     });
 
-    it('should\'t pass dnt if state is unknown', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST, false);
-      expect(bidRequests[0].device).to.not.have.property('dnt');
+    it('should pass dnt as 0', function () {
+      const [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST);
+      expect(bidRequests[0].device).to.have.property('dnt', 0);
     });
 
     it('should forward default bidder timeout', function() {

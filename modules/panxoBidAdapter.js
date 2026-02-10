@@ -112,7 +112,8 @@ function buildDevice() {
     ua: navigator.userAgent,
     language: navigator.language,
     js: 1,
-    dnt: navigator.doNotTrack === '1' ? 1 : 0
+    // DNT was deprecated by W3C; Prebid no longer supports DNT signals.
+    dnt: 0
   };
 
   if (typeof screen !== 'undefined') {

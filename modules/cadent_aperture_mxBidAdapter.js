@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess, getBidIdParameter,
@@ -83,7 +82,7 @@ export const cadentAdapter = {
     return {
       ua: navigator.userAgent,
       js: 1,
-      dnt: getDNT() ? 1 : 0,
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
       h: screen.height,
       w: screen.width,
       devicetype: cadentAdapter.isMobile() ? 1 : cadentAdapter.isConnectedTV() ? 3 : 2,
