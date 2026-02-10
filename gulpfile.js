@@ -53,7 +53,6 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  // codex agent: remove webpack filesystem cache to prevent stale build output after branch/version switches.
   return gulp.src(['.cache', 'build', 'dist'], {
     read: false,
     allowEmpty: true
