@@ -123,6 +123,20 @@ const mockGAM = () => {
   };
 };
 
+const regionCases = [
+  { name: 'no region (default)', region: undefined, expected: 'https://api.intentiq.com' },
+  { name: 'apac', region: 'apac', expected: 'https://api-apac.intentiq.com' },
+  { name: 'emea', region: 'emea', expected: 'https://api-emea.intentiq.com' },
+  { name: 'gdpr', region: 'gdpr', expected: 'https://api-gdpr.intentiq.com' }
+];
+
+const syncRegionCases = [
+  { name: 'default', region: undefined, expected: 'https://sync.intentiq.com' },
+  { name: 'apac', region: 'apac', expected: 'https://sync-apac.intentiq.com' },
+  { name: 'emea', region: 'emea', expected: 'https://sync-emea.intentiq.com' },
+  { name: 'gdpr', region: 'gdpr', expected: 'https://sync-gdpr.intentiq.com' },
+];
+
 describe('IntentIQ tests', function () {
   this.timeout(10000);
   let sandbox;
@@ -597,7 +611,7 @@ describe('IntentIQ tests', function () {
   it('should send AT=20 request and send spd in it', async function () {
     const spdValue = { foo: 'bar', value: 42 };
     const encodedSpd = encodeURIComponent(JSON.stringify(spdValue));
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({pcid: '123', spd: spdValue}));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({pcid: '123', spd: spdValue}));
 
     intentIqIdSubmodule.getId({params: {
       partner: 10,
@@ -615,7 +629,7 @@ describe('IntentIQ tests', function () {
   it('should send AT=20 request and send spd string in it ', async function () {
     const spdValue = 'server provided data';
     const encodedSpd = encodeURIComponent(spdValue);
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({pcid: '123', spd: spdValue}));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({pcid: '123', spd: spdValue}));
 
     intentIqIdSubmodule.getId({params: {
       partner: 10,
@@ -634,7 +648,7 @@ describe('IntentIQ tests', function () {
     const spdValue = { foo: 'bar', value: 42 };
     const encodedSpd = encodeURIComponent(JSON.stringify(spdValue));
 
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ pcid: '123', spd: spdValue }));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({ pcid: '123', spd: spdValue }));
 
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
@@ -650,7 +664,7 @@ describe('IntentIQ tests', function () {
   it('should send spd string from firstPartyData in localStorage in at=39 request', async function () {
     const spdValue = 'spd string';
     const encodedSpd = encodeURIComponent(spdValue);
-    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({ pcid: '123', spd: spdValue }));
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, JSON.stringify({ pcid: '123', spd: spdValue }));
 
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
@@ -676,7 +690,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true, spd: spdValue })
     );
 
-    const storedLs = readData(FIRST_PARTY_KEY, ['html5', 'cookie'], storage);
+    const storedLs = readData(FIRST_PARTY_KEY + '_' + partner, ['html5', 'cookie'], storage);
     const parsedLs = JSON.parse(storedLs);
 
     expect(storedLs).to.not.be.null;
@@ -738,7 +752,7 @@ describe('IntentIQ tests', function () {
       expect(result).to.equal('unknown');
     });
 
-    it("Should call the server for new partner if FPD has been updated by other partner, and 24 hours have not yet passed.", async () => {
+    it("Should call the server for new partner if FPD has been updated by other partner, and 72 hours have not yet passed.", async () => {
       const allowedStorage = ['html5']
       const newPartnerId = 12345
       const FPD = {
@@ -759,7 +773,7 @@ describe('IntentIQ tests', function () {
       expect(request.url).contain("ProfilesEngineServlet?at=39") // server was called
     })
 
-    it("Should NOT call the server if FPD has been updated user Opted Out, and 24 hours have not yet passed.", async () => {
+    it("Should NOT call the server if FPD has been updated user Opted Out, and 72 hours have not yet passed.", async () => {
       const allowedStorage = ['html5']
       const newPartnerId = 12345
       const FPD = {
@@ -906,23 +920,15 @@ describe('IntentIQ tests', function () {
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
     });
 
-    it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', async function() {
-      const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
-      mockConsentHandlers(uspData, gppData, gdprData);
-      const callBackSpy = sinon.spy();
-      const submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
-
-      submoduleCallback(callBackSpy);
-      await waitForClientHints();
-      const request = server.requests[0];
-
-      expect(request.url).to.contain(ENDPOINT_GDPR);
-    });
-
     it('should make request to correct address with iiqServerAddress parameter', async function() {
-      defaultConfigParams.params.iiqServerAddress = testAPILink
+      const customParams = {
+        params: {
+          ...defaultConfigParams.params,
+          iiqServerAddress: testAPILink
+        }
+      };
       const callBackSpy = sinon.spy();
-      const submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
+      const submoduleCallback = intentIqIdSubmodule.getId({...customParams}).callback;
 
       submoduleCallback(callBackSpy);
       await waitForClientHints();
@@ -948,6 +954,57 @@ describe('IntentIQ tests', function () {
 
       const request = server.requests[0];
       expect(request.url).to.contain(syncTestAPILink);
+    });
+
+    regionCases.forEach(({ name, region, expected }) => {
+      it(`should use region-specific api endpoint when region is "${name}"`, async function () {
+        mockConsentHandlers(uspData, gppData, gdprData); // gdprApplies = true
+
+        const callBackSpy = sinon.spy();
+        const configWithRegion = {
+          params: {
+            ...defaultConfigParams.params,
+            region
+          }
+        };
+
+        const submoduleCallback = intentIqIdSubmodule.getId(configWithRegion).callback;
+        submoduleCallback(callBackSpy);
+        await waitForClientHints();
+
+        const request = server.requests[0];
+        expect(request.url).to.contain(expected);
+      });
+    });
+
+    syncRegionCases.forEach(({ name, region, expected }) => {
+      it(`should use region-specific sync endpoint when region is "${name}"`, async function () {
+        let wasCallbackCalled = false;
+
+        const callbackConfigParams = {
+          params: {
+            partner,
+            pai,
+            partnerClientIdType,
+            partnerClientId,
+            browserBlackList: 'Chrome',
+            region,
+            callback: () => {
+              wasCallbackCalled = true;
+            }
+          }
+        };
+
+        mockConsentHandlers(uspData, gppData, gdprData);
+
+        intentIqIdSubmodule.getId(callbackConfigParams);
+
+        await waitForClientHints();
+
+        const request = server.requests[0];
+        expect(request.url).to.contain(expected);
+        expect(wasCallbackCalled).to.equal(true);
+      });
     });
   });
 

@@ -521,6 +521,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "intlscoop",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -691,7 +698,7 @@
       "componentType": "bidder",
       "componentName": "adocean",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 328,
       "disclosureURL": null
     },
     {
@@ -1210,13 +1217,6 @@
       "componentName": "appnexusAst",
       "aliasOf": "appnexus",
       "gvlid": 32,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "emetriq",
-      "aliasOf": "appnexus",
-      "gvlid": 213,
       "disclosureURL": null
     },
     {
@@ -3650,6 +3650,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "panxo",
+      "aliasOf": null,
+      "gvlid": 1527,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "performax",
       "aliasOf": null,
       "gvlid": 732,
@@ -4575,6 +4582,13 @@
     {
       "componentType": "bidder",
       "componentName": "temedya",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "teqBlazeSalesAgent",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
