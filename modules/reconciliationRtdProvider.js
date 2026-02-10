@@ -64,7 +64,7 @@ function handleAdMessage(e) {
         // 3. Get AdUnit IDs for the selected slot
         if (adSlot) {
           adUnitId = adSlot.getAdUnitPath();
-          adDeliveryId = adSlot.getTargeting('RSDK_ADID');
+          adDeliveryId = adSlot.getConfig('targeting').RSDK_ADID;
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
             : `${timestamp()}-${generateUUID()}`;

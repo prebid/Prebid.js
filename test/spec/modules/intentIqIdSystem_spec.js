@@ -109,6 +109,9 @@ const mockGAM = () => {
   const targetingObject = {};
   return {
     cmd: [],
+    setConfig: ({targeting}) => {
+      Object.assign(targetingObject, targeting);
+    },
     pubads: () => ({
       setTargeting: (key, value) => {
         targetingObject[key] = value;
@@ -360,17 +363,7 @@ describe('IntentIQ tests', function () {
     const expectedGamParameterName = 'intent_iq_group';
     defaultConfigParams.params.abPercentage = 0; // "B" provided percentage by user
 
-    const originalPubads = mockGamObject.pubads;
-    const setTargetingSpy = sinon.spy();
-    mockGamObject.pubads = function () {
-      const obj = { ...originalPubads.apply(this, arguments) };
-      const originalSetTargeting = obj.setTargeting;
-      obj.setTargeting = function (...args) {
-        setTargetingSpy(...args);
-        return originalSetTargeting.apply(this, args);
-      };
-      return obj;
-    };
+    const setConfigSpy = sinon.spy(mockGamObject, 'setConfig');
 
     defaultConfigParams.params.gamObjectReference = mockGamObject;
 
@@ -394,7 +387,7 @@ describe('IntentIQ tests', function () {
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39');
     expect(groupBeforeResponse).to.deep.equal([WITHOUT_IIQ]);
     expect(groupAfterResponse).to.deep.equal([WITH_IIQ]);
-    expect(setTargetingSpy.calledTwice).to.be.true;
+    expect(setConfigSpy.calledTwice).to.be.true;
   });
 
   it('should set GAM targeting to B when server tc=41', async () => {

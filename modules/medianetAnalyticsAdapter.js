@@ -556,9 +556,12 @@ function setupSlotResponseReceivedListener() {
         mnetGlobals.infoByAdIdMap[adId].srrEvt = slotInf;
       };
 
-      slot.getTargetingKeys()
+      const targeting = slot.getConfig('targeting');
+      const targetingKeys = Object.keys(targeting);
+
+      targetingKeys
         .filter((key) => key.startsWith(TARGETING_KEYS.AD_ID))
-        .forEach((key) => setSlotResponseInf(slot.getTargeting(key)[0]));
+        .forEach((key) => setSlotResponseInf(targeting[key][0]));
     });
   });
 }
