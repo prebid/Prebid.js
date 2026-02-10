@@ -168,8 +168,8 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].video.h).to.equal(480);
       expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
       expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
-      expect(openrtbRequest.imp[0].video.startdelay).to.equal(null);
-      expect(openrtbRequest.imp[0].video.skip).to.equal(null);
+      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
+      expect(openrtbRequest.imp[0].video.skip).to.equal(0);
       expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
       expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1);
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
@@ -294,7 +294,7 @@ describe('marsmedia adapter tests', function () {
     it('should have 0 bidfloor value', function() {
       const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
       const requestparse = JSON.parse(request.data);
-      expect(requestparse.imp[0].bidfloor).to.equal(null);
+      expect(requestparse.imp[0].bidfloor).to.equal(0);
     });
 
     it('prefer 2.0 sizes', function () {
