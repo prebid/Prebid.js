@@ -72,7 +72,6 @@ on:
         description: "Browserstack access key"
 
 
-# explicit permissions help avoid artifact API 403 in called workflows.
 permissions:
   contents: read
   actions: read

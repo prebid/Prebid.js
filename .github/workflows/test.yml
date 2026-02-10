@@ -8,7 +8,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# explicit permissions to allow artifact reads in reusable workflow jobs.
 permissions:
   contents: read
   actions: read
