@@ -71,6 +71,12 @@ on:
       BROWSERSTACK_ACCESS_KEY:
         description: "Browserstack access key"
 
+
+# codex agent note: explicit permissions help avoid artifact API 403 in called workflows.
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   checkout:
     name: "Define chunks"
