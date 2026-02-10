@@ -50,7 +50,6 @@ export const spec = {
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType(bidderRequest);
-    const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -75,7 +74,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'meta_url', urlInfo.canonicalLink);
       queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = tryAppendQueryString(queryString, 'cur', cur);
-      queryString = tryAppendQueryString(queryString, 'dnt', dnt);
 
       bidRequests.push({
         method: 'GET',
