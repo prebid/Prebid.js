@@ -516,7 +516,7 @@ describe('marsmedia adapter tests', function () {
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
-        expect(openrtbRequest.imp[0].ext.viewability).to.equal(null);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(0);
       });
     });
 
@@ -556,7 +556,7 @@ describe('marsmedia adapter tests', function () {
 
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
-        expect(openrtbRequest.imp[0].ext.viewability).to.equal(null);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(0);
       });
     });
   });
@@ -631,7 +631,7 @@ describe('marsmedia adapter tests', function () {
       var noBidResponse = marsAdapter.interpretResponse({
         'body': ''
       });
-      expect(noBidResponse.length).to.equal(null);
+      expect(noBidResponse.length).to.equal(0);
     });
   });
 
