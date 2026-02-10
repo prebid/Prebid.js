@@ -1625,6 +1625,30 @@ describe('LocID System', () => {
       });
     });
 
+    it('should use fresh non-null tx_cloc when stored entry is null for same IP', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: TEST_CONNECTION_IP }));
+      });
+
+      const config = {
+        params: { endpoint: TEST_ENDPOINT },
+        storage: { name: '_locid' }
+      };
+      const storedId = {
+        id: null,
+        connectionIp: TEST_CONNECTION_IP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 86400000
+      };
+
+      const result = locIdSubmodule.getId(config, {}, storedId);
+      result.callback((id) => {
+        expect(id.id).to.equal('fresh-id');
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
+    });
+
     it('should use fresh tx_cloc when main endpoint returns different IP', (done) => {
       ajaxStub.callsFake((url, callbacks) => {
         callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: '10.0.0.99' }));
@@ -1743,7 +1767,10 @@ describe('LocID System', () => {
       expect(result).to.deep.equal({ id: storedId });
     });
 
-    it('should return undefined when IP cache shows different IP', () => {
+    it('should return refresh callback when IP cache shows different IP', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: '10.0.0.99' }));
+      });
       storage.getDataFromLocalStorage.returns(JSON.stringify({
         ip: '10.0.0.99',
         fetchedAt: Date.now(),
@@ -1757,7 +1784,12 @@ describe('LocID System', () => {
         expiresAt: Date.now() + 86400000
       };
       const result = locIdSubmodule.extendId(config, {}, storedId);
-      expect(result).to.be.undefined;
+      expect(result).to.have.property('callback');
+      result.callback((id) => {
+        expect(id.id).to.equal('fresh-id');
+        expect(id.connectionIp).to.equal('10.0.0.99');
+        done();
+      });
     });
 
     it('should extend when IP cache matches stored entry IP', () => {
@@ -1777,7 +1809,10 @@ describe('LocID System', () => {
       expect(result).to.deep.equal({ id: storedId });
     });
 
-    it('should return undefined when IP cache is missing (force getId refresh)', () => {
+    it('should return refresh callback when IP cache is missing', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: TEST_CONNECTION_IP }));
+      });
       const storedId = {
         id: TEST_ID,
         connectionIp: TEST_CONNECTION_IP,
@@ -1785,10 +1820,18 @@ describe('LocID System', () => {
         expiresAt: Date.now() + 86400000
       };
       const result = locIdSubmodule.extendId(config, {}, storedId);
-      expect(result).to.be.undefined;
+      expect(result).to.have.property('callback');
+      result.callback((id) => {
+        expect(id.id).to.equal('fresh-id');
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
     });
 
-    it('should return undefined when IP cache is expired (force getId refresh)', () => {
+    it('should return refresh callback when IP cache is expired', (done) => {
+      ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify({ tx_cloc: 'fresh-id', connection_ip: TEST_CONNECTION_IP }));
+      });
       storage.getDataFromLocalStorage.returns(JSON.stringify({
         ip: TEST_CONNECTION_IP,
         fetchedAt: Date.now() - 14400000,
@@ -1801,7 +1844,12 @@ describe('LocID System', () => {
         expiresAt: Date.now() + 86400000
       };
       const result = locIdSubmodule.extendId(config, {}, storedId);
-      expect(result).to.be.undefined;
+      expect(result).to.have.property('callback');
+      result.callback((id) => {
+        expect(id.id).to.equal('fresh-id');
+        expect(id.connectionIp).to.equal(TEST_CONNECTION_IP);
+        done();
+      });
     });
 
     it('should return undefined for undefined id (not null, not valid string)', () => {

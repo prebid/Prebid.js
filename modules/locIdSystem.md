@@ -159,11 +159,11 @@ When `ipEndpoint` is configured, the module calls it for lightweight IP-only che
 
 If `apiKey` is configured, the `x-api-key` header is included on `ipEndpoint` requests using the same `customHeaders` mechanism as the main endpoint.
 
-When `ipEndpoint` is not configured, the module falls back to calling the main endpoint to refresh the IP, but only updates the stored tx_cloc when the IP has changed or the tx_cloc cache has expired. In this mode, IP changes are only detected when the IP cache is refreshed (for example when it expires and `getId()` runs); there is no separate lightweight proactive IP probe.
+When `ipEndpoint` is not configured, the module falls back to calling the main endpoint to refresh the IP, but only updates the stored tx_cloc when the IP has changed or the tx_cloc cache has expired. In this mode, IP changes are only detected when the IP cache is refreshed (for example when it expires and `extendId()` returns a refresh callback); there is no separate lightweight proactive IP probe.
 
 ### Prebid Refresh Triggers
 
-When `storage.refreshInSeconds` is set, the module will reuse the cached ID until `createdAt + refreshInSeconds`; once due (or if `createdAt` is missing), `extendId()` returns `undefined` to indicate the cached ID should not be reused. The `extendId()` method also checks the IP cache: if the IP cache is expired or missing, or if the cached IP differs from the stored tx_cloc's IP, it signals a refresh. This ensures the IP cache TTL (`ipCacheTtlMs`) is enforced even when the tx_cloc cache has not expired.
+When `storage.refreshInSeconds` is set, the module will reuse the cached ID until `createdAt + refreshInSeconds`; once due (or if `createdAt` is missing), `extendId()` returns `undefined` to indicate the cached ID should not be reused. The `extendId()` method also checks the IP cache: if the IP cache is expired or missing, or if the cached IP differs from the stored tx_cloc's IP, it returns a callback that refreshes via the main endpoint. This enforces the IP cache TTL (`ipCacheTtlMs`) even when the tx_cloc cache has not expired.
 
 ## Consent Handling
 

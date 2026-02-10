@@ -599,7 +599,7 @@ export const locIdSubmodule = {
           }
           // IP is already cached by fetchLocIdFromEndpoint's onSuccess.
           // Check if we should preserve the existing tx_cloc (avoid churning it).
-          if (isStoredEntryReusable(normalizedStored, freshEntry.connectionIp)) {
+          if (normalizedStored?.id !== null && isStoredEntryReusable(normalizedStored, freshEntry.connectionIp)) {
             callback(normalizedStored);
             return;
           }
@@ -611,8 +611,9 @@ export const locIdSubmodule = {
   },
 
   /**
-   * Extend existing LocID using pure logic only (no network).
+   * Extend existing LocID.
    * Accepts id: null (empty tx_cloc) as a valid cached result.
+   * If IP cache is missing/expired/mismatched, return a callback to refresh.
    */
   extendId(config, consentData, storedId) {
     const normalizedStored = normalizeStoredId(storedId);
@@ -629,11 +630,6 @@ export const locIdSubmodule = {
     if (!hasValidConsent(consentData, config?.params)) {
       return undefined;
     }
-    // Check IP cache -- if expired/missing or IP changed, trigger re-fetch
-    const cachedIp = readIpCache(config);
-    if (!cachedIp || cachedIp.ip !== normalizedStored.connectionIp) {
-      return undefined;
-    }
     const refreshInSeconds = config?.storage?.refreshInSeconds;
     if (typeof refreshInSeconds === 'number' && refreshInSeconds > 0) {
       const createdAt = normalizedStored.createdAt;
@@ -644,6 +640,15 @@ export const locIdSubmodule = {
       if (Date.now() - createdAt >= refreshAfterMs) {
         return undefined;
       }
+    }
+    // Check IP cache -- if expired/missing or IP changed, trigger re-fetch
+    const cachedIp = readIpCache(config);
+    if (!cachedIp || cachedIp.ip !== normalizedStored.connectionIp) {
+      return {
+        callback: (callback) => {
+          fetchLocIdFromEndpoint(config, callback);
+        }
+      };
     }
     return { id: normalizedStored };
   },
