@@ -521,6 +521,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "intlscoop",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -4582,6 +4589,13 @@
     {
       "componentType": "bidder",
       "componentName": "temedya",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "teqBlazeSalesAgent",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
