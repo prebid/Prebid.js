@@ -208,6 +208,12 @@ describe('storageControl', () => {
       expect(rule()).to.eql({allow: false, reason: 'denied'});
     });
 
+    it('should deny by default when enforcement is not set', () => {
+      enforcement = undefined;
+      checkResult = {disclosed: false, parent: false, reason: 'denied'};
+      expect(rule()).to.eql({allow: false, reason: 'denied'});
+    });
+
     it('should allow when enforcement is allowAliases and disclosure is done by the aliased module', () => {
       enforcement = ENFORCE_ALIAS;
       checkResult = {disclosed: false, parent: true, reason: 'allowed'};
