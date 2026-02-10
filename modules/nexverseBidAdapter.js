@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
@@ -306,7 +305,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         lon: bid.params.geoLon || 0,
       },
       language: navigator.language || DEFAULT_LANG,
-      dnt: getDNT() ? 1 : 0, // Do Not Track flag
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */, // Do Not Track flag
     },
     user: {
       id: getUid(storage),

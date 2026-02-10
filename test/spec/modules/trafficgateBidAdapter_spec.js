@@ -4,7 +4,6 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import * as dnt from 'libraries/dnt/index.js';
 import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
@@ -848,32 +847,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
 
       context('do not track (DNT)', function() {
-        let doNotTrackStub;
-
-        beforeEach(function () {
-          doNotTrackStub = sinon.stub(dnt, 'getDNT');
-        });
-        afterEach(function() {
-          doNotTrackStub.restore();
-        });
-
-        it('when there is a do not track, should send a dnt', async function () {
-          doNotTrackStub.returns(1);
-
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
-          expect(request[0].data.device.dnt).to.equal(1);
-        });
-
-        it('when there is not do not track, don\'t send dnt', async function () {
-          doNotTrackStub.returns(0);
-
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
-          expect(request[0].data.device.dnt).to.equal(0);
-        });
-
-        it('when there is no defined do not track, don\'t send dnt', async function () {
-          doNotTrackStub.returns(null);
-
+        it('always sends dnt as 0', async function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(0);
         });

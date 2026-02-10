@@ -44,12 +44,8 @@ export const spec = {
       device: {
         ua: navigator.userAgent,
         js: 1,
-        dnt:
-          navigator.doNotTrack === "yes" ||
-          navigator.doNotTrack === "1" ||
-          navigator.msDoNotTrack === "1"
-            ? 1
-            : 0,
+        // DNT was deprecated by W3C; Prebid no longer supports DNT signals.
+        dnt: 0,
         h: screen.height,
         w: screen.width,
         language: navigator.language,

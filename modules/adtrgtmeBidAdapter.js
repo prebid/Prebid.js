@@ -71,7 +71,7 @@ function createORTB(bR, bid) {
       ...site,
     },
     device: {
-      dnt: bid?.params?.dnt ? 1 : 0,
+      dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
       ua: bid?.params?.ua || navigator.userAgent,
       ip,
     },

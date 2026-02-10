@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -120,7 +119,7 @@ function getPayload (bid, bidderRequest) {
       complianceData: {
         child: '-1',
         us_privacy: uspConsent,
-        dnt: getDNT(),
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         iabConsent: {},
         mediation: {
           gdprConsent: mediation.gdprConsent,

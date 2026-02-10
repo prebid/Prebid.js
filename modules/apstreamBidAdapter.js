@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -425,7 +424,7 @@ function buildRequests(bidRequests, bidderRequest) {
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auid: bidderRequest.auctionId,
     ref: document.referrer,
-    dnt: getDNT() ? 1 : 0,
+    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
     sr: getScreenParams()
   };
 

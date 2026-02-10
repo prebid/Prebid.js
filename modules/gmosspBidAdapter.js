@@ -1,6 +1,5 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {
@@ -51,7 +50,7 @@ export const spec = {
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType(bidderRequest);
-    const dnt = getDNT() ? '1' : '0';
+    const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';

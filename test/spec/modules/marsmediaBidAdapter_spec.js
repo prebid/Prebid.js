@@ -1,6 +1,5 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
-import * as dnt from 'libraries/dnt/index.js';
 import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
 
@@ -169,8 +168,8 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].video.h).to.equal(480);
       expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
       expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
-      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
-      expect(openrtbRequest.imp[0].video.skip).to.equal(0);
+      expect(openrtbRequest.imp[0].video.startdelay).to.equal(null);
+      expect(openrtbRequest.imp[0].video.skip).to.equal(null);
       expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
       expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1);
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
@@ -295,7 +294,7 @@ describe('marsmedia adapter tests', function () {
     it('should have 0 bidfloor value', function() {
       const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
       const requestparse = JSON.parse(request.data);
-      expect(requestparse.imp[0].bidfloor).to.equal(0);
+      expect(requestparse.imp[0].bidfloor).to.equal(null);
     });
 
     it('prefer 2.0 sizes', function () {
@@ -399,15 +398,10 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
-    it('dnt is correctly set to 1', function () {
-      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
-
+    it('dnt is always 0', function () {
       var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
-
-      dntStub.restore();
-
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.device.dnt).to.equal(1);
+      expect(openrtbRequest.device.dnt).to.equal(0);
     });
 
     it('supports string video sizes', function () {
@@ -522,7 +516,7 @@ describe('marsmedia adapter tests', function () {
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
-        expect(openrtbRequest.imp[0].ext.viewability).to.equal(0);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(null);
       });
     });
 
@@ -562,7 +556,7 @@ describe('marsmedia adapter tests', function () {
 
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
-        expect(openrtbRequest.imp[0].ext.viewability).to.equal(0);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(null);
       });
     });
   });
@@ -637,7 +631,7 @@ describe('marsmedia adapter tests', function () {
       var noBidResponse = marsAdapter.interpretResponse({
         'body': ''
       });
-      expect(noBidResponse.length).to.equal(0);
+      expect(noBidResponse.length).to.equal(null);
     });
   });
 

@@ -3,7 +3,6 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
-import { getDNT } from '../libraries/dnt/index.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
 
 /**
@@ -93,7 +92,7 @@ function getDevice(firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   const device = {
     ua: navigator.userAgent,
-    dnt: getDNT() ? 1 : 0,
+    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
     language: language,
     connectiontype: getConnectionType()
   };

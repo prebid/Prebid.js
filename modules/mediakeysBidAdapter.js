@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   cleanObj,
   deepAccess,
@@ -184,7 +183,7 @@ function createOrtbTemplate() {
     device: {
       ip: '',
       js: 1,
-      dnt: getDNT(),
+      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
       ua: navigator.userAgent,
       devicetype: getDeviceType(),
       os: getOS(),

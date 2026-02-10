@@ -1,6 +1,5 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -429,7 +428,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // Optional
   device.h = screen.height;
   device.w = screen.width;
-  device.dnt = getDNT() ? 1 : 0;
+  device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
   device.language = getLanguage();
   device.make = getVendor();
 

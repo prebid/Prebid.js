@@ -280,7 +280,7 @@ function _getDeviceData(ortb2Data) {
     ipv6: _device.ipv6,
     ua: _device.ua,
     sua: _device.sua ? JSON.stringify(_device.sua) : undefined,
-    dnt: _device.dnt,
+    dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
     os: _device.os,
     osv: _device.osv,
     dt: _device.devicetype,

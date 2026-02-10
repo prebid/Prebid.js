@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { logInfo, isEmpty, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
 import {
   BANNER,
@@ -372,7 +371,7 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
     language: ('language' in navigator) ? navigator.language : null,
     ua: ('userAgent' in navigator) ? navigator.userAgent : null,
     devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
-    dnt: getDNT() ? 1 : 0,
+    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
   };
   // Include connection info if available
   const connection = getConnectionInfo();

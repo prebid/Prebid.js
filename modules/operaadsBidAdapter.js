@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
@@ -761,7 +760,7 @@ function getDevice() {
   device.ua = device.ua || navigator.userAgent;
   device.language = device.language || getLanguage();
   device.dnt = typeof device.dnt === 'number'
-    ? device.dnt : (getDNT() ? 1 : 0);
+    ? device.dnt : (0 /* DNT deprecated by W3C; Prebid no longer supports DNT */);
 
   return device;
 }

@@ -1,6 +1,5 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -155,7 +154,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,
-    dnt: getDNT() ? 1 : 0,
+    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
   request.site = { page: bidderRequest.refererInfo.page };

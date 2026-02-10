@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -107,7 +106,7 @@ export const spec = {
         effectiveType,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
         bidfloor: getBidFloor(validBidRequest),
-        dnt: getDNT() ? 1 : 0,
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         language: navigator.language,
         prebidVersion: '$prebid.version$',
         screenHeight: screen.height,

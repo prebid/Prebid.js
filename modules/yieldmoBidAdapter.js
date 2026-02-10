@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
@@ -84,7 +83,7 @@ export const spec = {
         // TODO: is 'page' the right value here?
         page_url: bidderRequest.refererInfo.page,
         bust: new Date().getTime().toString(),
-        dnt: getDNT(),
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         description: getPageDescription(),
         tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({

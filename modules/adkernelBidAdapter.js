@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   contains,
@@ -416,9 +415,8 @@ function makeDevice(fpd) {
     'js': 1,
     'language': getLanguage()
   }, fpd.device || {});
-  if (getDNT()) {
-    device.dnt = 1;
-  }
+  // DNT was deprecated by W3C; Prebid no longer supports DNT signals.
+  device.dnt = 0;
   return {device: device};
 }
 

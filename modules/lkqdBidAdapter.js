@@ -46,7 +46,7 @@ export const spec = {
       const DOMAIN = bid.params.pageurl || REFERER;
       const GDPR = BIDDER_GDPR || bid.params.gdpr || null;
       const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null;
-      const DNT = bid.params.dnt || null;
+      const DNT = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
       const BID_FLOOR = 0;
       const VIDEO_BID = bid.video ? bid.video : {};
 

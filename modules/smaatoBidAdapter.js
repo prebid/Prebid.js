@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, deepSetValue, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -321,7 +320,7 @@ const converter = ortbConverter({
       request.device = {
         language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
         ua: navigator.userAgent,
-        dnt: getDNT() ? 1 : 0,
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         h: screen.height,
         w: screen.width
       }

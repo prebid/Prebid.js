@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -108,7 +107,7 @@ function getDevice_() {
   device.w = device.w || getWinDimensions().innerWidth;
   device.h = device.h || getWinDimensions().innerHeight;
   device.ua = device.ua || navigator.userAgent;
-  device.dnt = getDNT() ? 1 : 0;
+  device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
   device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
   return device;
 }
