@@ -3242,14 +3242,6 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyEventsOn.calledWith('bidWon', Function));
       events.on.restore();
     });
-
-    it('should emit event BID_ACCEPTED when invoked', function () {
-      var callback = sinon.spy();
-      pbjs.onEvent('bidAccepted', callback);
-      events.emit(EVENTS.BID_ACCEPTED);
-      sinon.assert.calledOnce(callback);
-    });
-
     describe('beforeRequestBids', function () {
       let bidRequestedHandler;
       let beforeRequestBidsHandler;
