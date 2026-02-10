@@ -8,7 +8,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# codex agent note: explicit permissions to allow artifact reads in reusable workflow jobs.
+# explicit permissions to allow artifact reads in reusable workflow jobs.
 permissions:
   contents: read
   actions: read
