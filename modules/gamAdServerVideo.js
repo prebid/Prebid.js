@@ -183,12 +183,6 @@ export function buildGamVideoUrl(options) {
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
 }
 
-export function notifyTranslationModule(fn) {
-  fn.call(this, 'dfp');
-}
-
-if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
-
 /**
  * Builds a video url from a base dfp video url and a winning bid, appending
  * Prebid-specific key-values.
