@@ -335,6 +335,7 @@ function tryGetDivIdPosition(divIdMethod) {
   return undefined;
 }
 
+// TODO unified adUnit/element association in 11
 function tryMultipleDivIdPositions(adUnit) {
   const divMethods = [
     // ortb2\

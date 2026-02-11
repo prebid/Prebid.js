@@ -6,6 +6,7 @@ import { setConfig } from 'modules/currency.js';
 
 const events = require('src/events');
 const utils = require('src/utils');
+import * as adUnits from 'src/utils/adUnits';
 const adapterManager = require('src/adapterManager').default;
 
 const {
@@ -301,7 +302,7 @@ describe('Adnuntius analytics adapter', function () {
     }
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(utils, 'timestamp').returns(1519149562416);
-    sandbox.stub(document, 'getElementById').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
 
     clock = sandbox.useFakeTimers(1519767013781);
   });
