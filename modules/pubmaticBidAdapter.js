@@ -1,6 +1,6 @@
 import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
@@ -142,12 +142,11 @@ const converter = ortbConverter({
     if (mediaType === VIDEO) {
       if (!bidResponse.width) bidResponse.width = playerWidth;
       if (!bidResponse.height) bidResponse.height = playerHeight;
-      const { context, maxduration } = mediaTypes[mediaType];
+      const { context } = mediaTypes[mediaType];
       if (context === 'outstream' && params.outstreamAU && adUnitCode) {
         bidResponse.rendererCode = params.outstreamAU;
         bidResponse.renderer = BB_RENDERER.newRenderer(bidResponse.rendererCode, adUnitCode);
       }
-      assignDealTier(bidResponse, context, maxduration);
     }
     if (mediaType === NATIVE && bid.adm) {
       try {
@@ -522,27 +521,6 @@ const addExtenstionParams = (req, bidderRequest) => {
     },
     cpmAdjustment: cpmAdjustment
   }
-}
-
-/**
- * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
- * so that adpod module can set the hb_pb_cat_dur targetting key.
- * @param {*} bid
- * @param {*} context
- * @param {*} maxduration
- * @returns
- */
-const assignDealTier = (bid, context, maxduration) => {
-  if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
-  if (context !== ADPOD) return;
-
-  const duration = bid?.ext?.video?.duration || maxduration;
-  // if (!duration) return;
-  bid.video = {
-    context: ADPOD,
-    durationSeconds: duration,
-    dealTier: bid.ext.prebiddealpriority
-  };
 }
 
 const validateAllowedCategories = (acat) => {
