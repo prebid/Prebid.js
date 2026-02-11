@@ -681,6 +681,7 @@ describe('ShinezRtbBidAdapter', function () {
 
   describe('unique deal id', function () {
     let clock;
+    let memoryStorage;
 
     before(function () {
       getGlobal().bidderSettings = {
@@ -698,8 +699,15 @@ describe('ShinezRtbBidAdapter', function () {
       clock = useFakeTimers({
         now: Date.now()
       });
+      const inMemoryStore = {};
+      memoryStorage = {
+        getDataFromLocalStorage: (storageKey) => inMemoryStore[storageKey],
+        setDataInLocalStorage: (storageKey, value) => {
+          inMemoryStore[storageKey] = value;
+        }
+      };
       key = `myKey_${Date.now()}`;
-      uniqueDealId = getUniqueDealId(storage, key, 0);
+      uniqueDealId = getUniqueDealId(memoryStorage, key, 0);
     });
 
     afterEach(() => {
@@ -709,13 +717,13 @@ describe('ShinezRtbBidAdapter', function () {
     it('should get current unique deal id', function () {
       // advance time in a deterministic way
       clock.tick(200);
-      const current = getUniqueDealId(storage, key);
+      const current = getUniqueDealId(memoryStorage, key);
       expect(current).to.be.equal(uniqueDealId);
     });
 
     it('should get new unique deal id on expiration', function () {
       clock.tick(200);
-      const current = getUniqueDealId(storage, key, 100);
+      const current = getUniqueDealId(memoryStorage, key, 100);
       expect(current).to.not.be.equal(uniqueDealId);
     });
   });
