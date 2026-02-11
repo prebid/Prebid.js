@@ -157,8 +157,8 @@ function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, e
        *   < clear flag: indicates if existing storage item should be removed or not based on certain condition>
        * ]
        */
-      [STORAGE_HEM_KEY, hem, !envelopeAvailable], // Clear hashed email if envelope is not available
-      [STORAGE_FPID_KEY, fp, !fp]
+      [STORAGE_FPID_KEY, fp, !fp],
+      [STORAGE_HEM_KEY, hem, !envelopeAvailable] // Clear hashed email if envelope is not available
     );
   }
 
