@@ -14,17 +14,12 @@ import {
 } from '../../../src/activities/params.js';
 import {MODULE_TYPE_BIDDER} from '../../../src/activities/modules.js';
 import {STORAGE_TYPE_COOKIES} from '../../../src/storageManager.js';
-import {config} from 'src/config';
 
 // since the module is on by default, importing it here turn it on for other tests
 // that happen to run together with this suite - turn it off
 deactivate();
 
 describe('storageControl', () => {
-  after(() => {
-    config.setConfig({storageControl: 'off'})
-  });
-
   describe('getDisclosures', () => {
     let metadata;
     beforeEach(() => {
