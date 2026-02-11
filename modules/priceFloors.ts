@@ -990,7 +990,7 @@ function addFloorDataToBid(floorData, floorInfo, bid: Partial<Bid>, adjustedCpm)
 function shouldFloorBid(floorData, floorInfo, bid) {
   const enforceJS = deepAccess(floorData, 'enforcement.enforceJS') !== false;
   const enforceBidders = deepAccess(floorData, 'enforcement.enforceBidders') || ['*'];
-  const bidderCode = bid?.bidderCode || bid?.bidder;
+  const bidderCode = bid?.adapterCode || bid?.bidderCode || bid?.bidder;
   const shouldEnforceBidder = enforceBidders.includes('*') || (bidderCode != null && enforceBidders.includes(bidderCode));
   const shouldFloorDeal = deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
   const bidBelowFloor = bid.floorData.cpmAfterAdjustments < floorInfo.matchingFloor;

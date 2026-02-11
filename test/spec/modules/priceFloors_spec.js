@@ -2320,6 +2320,20 @@ describe('the price floors module', function () {
       expect(reject.calledOnce).to.be.true;
       expect(returnedBidResponse).to.equal(null);
     });
+    it('uses adapterCode when checking enforceBidders', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].enforcement.enforceBidders = ['rubicon'];
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
+
+      runBidResponse({
+        ...basicBidResponse,
+        bidderCode: 'alternateBidder',
+        adapterCode: 'rubicon'
+      });
+
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse).to.equal(null);
+    });
     it('if it finds a rule and does not floor should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 0.3 };
