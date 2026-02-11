@@ -513,12 +513,15 @@ export function newTargeting(auctionManager) {
     const customKeysByUnit = {};
     const alwaysIncludeDeals = config.getConfig('targetingControls.alwaysIncludeDeals');
 
+    const bidTargetingExclusion = config.getConfig('bidTargetingExclusion');
+
     bidsReceived.forEach(bid => {
       const adUnitIsEligible = adUnitCodes.includes(bid.adUnitCode);
       const cpmAllowed = bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
       const isPreferredDeal = alwaysIncludeDeals && bid.dealId;
+      const notExcludedByConfig = bidTargetingExclusion?.(bid) !== false;
 
-      if (adUnitIsEligible && (isPreferredDeal || cpmAllowed)) {
+      if (adUnitIsEligible && (isPreferredDeal || cpmAllowed) && notExcludedByConfig) {
         filteredBids.push(bid);
         Object.keys(bid.adserverTargeting)
           .filter(getCustomKeys())

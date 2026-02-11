@@ -254,6 +254,11 @@ export interface Config {
    * https://docs.prebid.org/features/firstPartyData.html
    */
   ortb2?: DeepPartial<ORTBRequest>;
+  /**
+   * When set, only bids for which this function returns a truthy value are included in setTargeting.
+   * Return false to exclude a bid from targeting.
+   */
+  bidTargetingExclusion?: (bid: { [key: string]: any }) => boolean;
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };
