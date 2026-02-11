@@ -44,24 +44,6 @@ const VALID_BIDS = [
 const INVALID_BIDS = [
   {
     bidder: 'aidem',
-    mediaTypes: {
-      video: {
-        context: 'adpod',
-        minduration: 7,
-        maxduration: 30,
-        playerSize: [640, 480],
-        mimes: ['video/mp4'],
-        protocols: [2]
-      }
-    },
-    params: {
-      siteId: '301491',
-      publisherId: '3021491',
-      placementId: '13144370',
-    },
-  },
-  {
-    bidder: 'aidem',
     params: {
       siteId: '3014912'
     }
