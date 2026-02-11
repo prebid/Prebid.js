@@ -1,6 +1,6 @@
 import {_map, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {chunk} from '../libraries/chunk/chunk.js';
@@ -187,14 +187,6 @@ function prepareBidRequests(bidReq) {
     bidReqParams.GPID = gpid;
   }
 
-  if (mediaType === VIDEO) {
-    const context = deepAccess(bidReq, 'mediaTypes.video.context');
-
-    if (context === ADPOD) {
-      bidReqParams.Adpod = deepAccess(bidReq, 'mediaTypes.video');
-    }
-  }
-
   return bidReqParams;
 }
 
@@ -237,18 +229,6 @@ function createBid(bidResponse, bidRequest) {
       adUrl: bidResponse.adUrl,
     });
   }
-  if (context === ADPOD) {
-    Object.assign(bid, {
-      meta: {
-        primaryCatId: bidResponse.primaryCatId,
-      },
-      video: {
-        context: ADPOD,
-        durationSeconds: bidResponse.durationSeconds
-      }
-    });
-  }
-
   Object.assign(bid, {
     vastUrl: bidResponse.vastUrl
   });
