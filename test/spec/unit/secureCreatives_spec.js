@@ -10,6 +10,7 @@ import {config as configObj} from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 import 'modules/nativeRendering.js';
+import * as adUnits from 'src/utils/adUnits';
 
 import {expect} from 'chai';
 
@@ -557,7 +558,6 @@ describe('secureCreatives', () => {
         })
       };
       sandbox.stub(document, 'getElementById');
-      sandbox.stub(document, 'querySelector');
     })
 
     it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
@@ -596,7 +596,7 @@ describe('secureCreatives', () => {
         width: 300,
         height: 250,
       });
-      sinon.assert.calledWith(document.querySelector, '#adUnit');
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
     });
 
     it('should find elements for ad units that are not apn tags', () => {
@@ -609,7 +609,7 @@ describe('secureCreatives', () => {
         height: 250,
       });
       sinon.assert.calledWith(window.apntag.getTag, 'adUnit');
-      sinon.assert.calledWith(document.querySelector, '#adUnit');
+      sinon.assert.calledWith(document.getElementById, 'adUnit');
     });
 
     it('should not resize interstitials', () => {
