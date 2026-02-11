@@ -520,6 +520,40 @@ describe('33acrossIdSystem', () => {
 
           setDataInLocalStorage.restore();
         });
+
+        it('should not store a publisher-provided hashed email in local storage', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              storeFpid: false,
+              hem: '33acrossIdHmValue+'
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setDataInLocalStorage.calledWithExactly('33acrossIdHm', '33acrossIdHmValue+')).to.be.false;
+
+          setDataInLocalStorage.restore();
+        });
       });
     });
 
@@ -1500,7 +1534,7 @@ describe('33acrossIdSystem', () => {
         domainUtils.domainOverride.restore();
       });
 
-      it('should wipe any stored hashed email when first-party ID support is disabled', () => {
+      it('should not wipe any stored hashed email when first-party ID support is disabled', () => {
         const completeCallback = () => {};
 
         const { callback } = thirtyThreeAcrossIdSubmodule.getId({
@@ -1528,7 +1562,7 @@ describe('33acrossIdSystem', () => {
           expires: 1645667805067
         }));
 
-        expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.true;
+        expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.false;
 
         removeDataFromLocalStorage.restore();
       });
