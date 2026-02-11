@@ -11,6 +11,7 @@ import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -139,9 +140,9 @@ export function getDeviceExtSignals(existingExt = {}) {
   };
 }
 
-export function getElementSignals(adUnitCode) {
+export function getElementSignals(bidRequest) {
   try {
-    const element = document.getElementById(adUnitCode);
+    const element = getAdUnitElement(bidRequest);
     if (!element) return null;
 
     const rect = getBoundingClientRect(element);
@@ -419,7 +420,7 @@ function fillTaboolaImpData(bid, imp) {
   deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
   deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
 
-  const elementSignals = getElementSignals(bid.adUnitCode);
+  const elementSignals = getElementSignals(bid);
   if (elementSignals) {
     if (elementSignals.viewability !== undefined) {
       deepSetValue(imp, 'ext.viewability', elementSignals.viewability);

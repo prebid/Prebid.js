@@ -16,6 +16,7 @@ import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
 import {getBidFloor, isIframe} from '../libraries/omsUtils/index.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -43,7 +44,7 @@ function buildRequests(bidReqs, bidderRequest) {
       bidSizes = bidSizes.filter(size => isArray(size));
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
-      const element = document.getElementById(bid.adUnitCode);
+      const element = getAdUnitElement(bid);
       const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
       const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);

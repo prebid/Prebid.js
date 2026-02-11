@@ -7,6 +7,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
@@ -308,7 +309,7 @@ function buildImpObject(bid) {
   };
 
   if (impObject.banner) {
-    impObject.ext.bidder.adslotExists = _isAdSlotExists(adUnitCode);
+    impObject.ext.bidder.adslotExists = _isAdSlotExists(bid);
   }
 
   if (bid.ortb2Imp?.ext?.gpid) {
@@ -410,12 +411,12 @@ function _isValidVideoBid(bid, logErrors = false) {
   return result;
 }
 
-function _isAdSlotExists(adUnitCode) {
-  if (document.getElementById(adUnitCode)) {
+function _isAdSlotExists(bidRequest) {
+  if (getAdUnitElement(bidRequest)) {
     return true;
   }
 
-  const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
+  const gptAdSlot = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
   if (gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
     return true;
   }
