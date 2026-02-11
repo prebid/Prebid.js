@@ -166,7 +166,7 @@ export function resizeAnchor(ins, width, height) {
   })
 }
 
-export function resizeRemoteCreative({instl, elementSelector, adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({instl, element, adId, adUnitCode, width, height}) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
@@ -189,7 +189,7 @@ export function resizeRemoteCreative({instl, elementSelector, adId, adUnitCode, 
 
   function getElementByAdUnit(elmType) {
     const id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    const parentDivEle = id == null ? getAdUnitElement({elementSelector, adUnitCode}) : document.getElementById(id);
+    const parentDivEle = id == null ? getAdUnitElement({element, adUnitCode}) : document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 

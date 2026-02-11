@@ -661,7 +661,7 @@ declare module './bidfactory' {
   }
 
   interface BaseBid {
-    elementSelector?: AdUnitDefinition['elementSelector'];
+    element?: AdUnitDefinition['element'];
     /**
      * true if this bid is for an interstitial slot.
      */
@@ -771,7 +771,7 @@ function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.ind
 
   const adUnit = index.getAdUnit(bid);
   bid.instl = adUnit?.ortb2Imp?.instl === 1;
-  bid.elementSelector = adUnit?.elementSelector;
+  bid.element = adUnit?.element;
 
   // a publisher-defined renderer can be used to render bids
   const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;

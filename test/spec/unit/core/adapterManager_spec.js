@@ -1815,14 +1815,14 @@ describe('adapterManager tests', function () {
       expect(sizes1).not.to.deep.equal(sizes2);
     });
 
-    it('should transfer elementSelector from ad unit', () => {
-      adUnits[0].elementSelector = 'test';
+    it('should transfer element from ad unit', () => {
+      adUnits[0].element = 'test';
       const requests = makeBidRequests();
       requests.flatMap(req => req.bids).forEach(bidRequest => {
         if (bidRequest.adUnitCode === adUnits[0].code) {
-          expect(bidRequest.elementSelector).to.equal('test');
+          expect(bidRequest.element).to.equal('test');
         } else {
-          expect(bidRequest.elementSelector).to.not.exist;
+          expect(bidRequest.element).to.not.exist;
         }
       });
     })

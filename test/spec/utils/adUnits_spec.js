@@ -10,32 +10,30 @@ describe('ad unit utils', () => {
   });
   describe('getAdUnitElement', () => {
     beforeEach(() => {
-      sandbox.stub(document, 'querySelector').callsFake((selector) => ({selector: selector}));
+      sandbox.stub(document, 'getElementById').callsFake((id) => ({id}));
     });
     it('should return null on invalid input', () => {
       expect(getAdUnitElement({})).to.eql(null);
     });
-    it('should prefer elementSelector', () => {
+    it('should prefer element', () => {
       expect(getAdUnitElement({
-        elementSelector: 'explicit',
+        element: 'explicit',
         code: 'ignored',
         adUnitCode: 'ignored'
-      })).to.eql({
-        selector: 'explicit'
-      });
+      })).to.eql('explicit');
     });
     it('should fallback to code as id', () => {
       expect(getAdUnitElement({
         code: 'au'
       })).to.eql({
-        selector: '#au'
+        id: 'au'
       });
     });
     it('should fallback to adUnitCode as id', () => {
       expect(getAdUnitElement({
         adUnitCode: 'au'
       })).to.eql({
-        selector: '#au'
+        id: 'au'
       })
     })
   });

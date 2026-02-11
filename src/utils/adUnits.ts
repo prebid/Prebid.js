@@ -10,14 +10,14 @@ export function getAdUnitElement(adUnit: AdUnitDefinition): HTMLElement
 export function getAdUnitElement(target: {
   code?: string,
   adUnitCode?: string,
-  elementSelector?: string
+  element?: HTMLElement
 }): HTMLElement {
-  let selector = target.elementSelector;
-  if (selector == null) {
-    const elementId = target.adUnitCode ?? target.code;
-    if (elementId) {
-      selector = `#${elementId}`;
-    }
+  if (target.element != null) {
+    return target.element;
   }
-  return selector == null ? null : document.querySelector(selector);
+  const id = target.adUnitCode ?? target.code;
+  if (id) {
+    return document.getElementById(id);
+  }
+  return null;
 }

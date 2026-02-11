@@ -89,10 +89,10 @@ export interface AdUnitDefinition {
    */
   code: AdUnitCode;
   /**
-   * A CSS selector that identifies the page element corresponding to this ad unit.
-   * By default, this is '#' + adUnit.code, an element with ID set to the ad unit's code.
+   * A DOM element corresponding to this ad unit.
+   * By default, this is `document.getElementById(adUnit.code)`.
    */
-  elementSelector?: string;
+  element?: HTMLElement;
   /**
    * Bid requests representing demand partners and associated parameters.
    */

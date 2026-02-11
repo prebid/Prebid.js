@@ -214,7 +214,7 @@ const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
   'nativeOrtbRequest',
   'renderer',
-  'elementSelector',
+  'element',
 ] as const;
 
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {

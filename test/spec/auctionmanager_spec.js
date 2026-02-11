@@ -1278,10 +1278,10 @@ describe('auctionmanager.js', function () {
         expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
       });
 
-      it('sets bidResponse.elementSelector from adUnit.elementSelector', () => {
-        adUnits[0].elementSelector = 'test';
+      it('sets bidResponse.element from adUnit.element', () => {
+        adUnits[0].element = 'test';
         auction.callBids();
-        expect(auction.getBidsReceived()[0].elementSelector).to.equal('test');
+        expect(auction.getBidsReceived()[0].element).to.equal('test');
       });
 
       [
