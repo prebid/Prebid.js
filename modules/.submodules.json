@@ -64,10 +64,6 @@
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
     ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "gamAdpod"
-    ],
     "rtdModule": [
       "1plusXRtdProvider",
       "51DegreesRtdProvider",

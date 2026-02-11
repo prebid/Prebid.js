@@ -9,7 +9,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
-import { getHook } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {
@@ -182,12 +181,6 @@ export function buildGamVideoUrl(options) {
 
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
 }
-
-export function notifyTranslationModule(fn) {
-  fn.call(this, 'dfp');
-}
-
-if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
 
 /**
  * Builds a video url from a base dfp video url and a winning bid, appending
