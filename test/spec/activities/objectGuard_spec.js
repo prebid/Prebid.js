@@ -1,5 +1,6 @@
 import {objectGuard, writeProtectRule} from '../../../libraries/objectGuard/objectGuard.js';
 import {redactRule} from '../../../src/activities/redactor.js';
+import {mergeDeep} from 'src/utils.js';
 
 describe('objectGuard', () => {
   describe('read rule', () => {
@@ -10,14 +11,23 @@ describe('objectGuard', () => {
         paths: ['foo', 'outer.inner.foo'],
         name: 'testRule',
         applies: sinon.stub().callsFake(() => applies),
-        get(val) { return `repl${val}` },
-      }
-    })
+        get(val) {
+          return `repl${val}`;
+        },
+      };
+    });
+
+    it('should reject conflicting rules', () => {
+      const crule = {...rule, paths: ['outer']};
+      expect(() => objectGuard([rule, crule])).to.throw();
+      expect(() => objectGuard([crule, rule])).to.throw();
+    });
+
     it('should preserve object identity', () => {
       const guard = objectGuard([rule])({outer: {inner: {foo: 'bar'}}});
       expect(guard.outer).to.equal(guard.outer);
       expect(guard.outer.inner).to.equal(guard.outer.inner);
-    })
+    });
     it('can prevent top level read access', () => {
       const obj = objectGuard([rule])({'foo': 1, 'other': 2});
       expect(obj).to.eql({
@@ -36,7 +46,7 @@ describe('objectGuard', () => {
       const guarded = objectGuard([rule])(obj);
       obj.foo = 'baz';
       expect(guarded.foo).to.eql('replbaz');
-    })
+    });
 
     it('does not prevent access if applies returns false', () => {
       applies = false;
@@ -44,7 +54,7 @@ describe('objectGuard', () => {
       expect(obj).to.eql({
         foo: 1
       });
-    })
+    });
 
     it('can prevent nested property access', () => {
       const obj = objectGuard([rule])({
@@ -70,13 +80,13 @@ describe('objectGuard', () => {
             foo: 3
           }
         }
-      })
+      });
     });
 
     it('prevents nested property access when a parent property is protected', () => {
       const guard = objectGuard([rule])({foo: {inner: 'value'}});
       expect(guard.inner?.value).to.not.exist;
-    })
+    });
 
     it('does not call applies more than once', () => {
       JSON.stringify(objectGuard([rule])({
@@ -88,7 +98,7 @@ describe('objectGuard', () => {
         }
       }));
       expect(rule.applies.callCount).to.equal(1);
-    })
+    });
   });
 
   describe('write protection', () => {
@@ -102,16 +112,79 @@ describe('objectGuard', () => {
       });
     });
 
+    it('should work  with mergeDeep', () => {
+      applies = false;
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      mergeDeep(guard, {foo: {nested: 'item'}});
+      expect(obj.foo).to.eql({nested: 'item'});
+    });
+
+    it('should handle circular references in guarded properties', () => {
+      applies = false;
+      const obj = {
+        foo: {}
+      };
+      const guard = objectGuard([rule])(obj);
+      guard.foo.inner = guard.foo;
+      expect(guard).to.eql({
+        foo: {
+          inner: guard.foo
+        }
+      });
+    });
+
+    it('should handle circular references in unguarded properties', () => {
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      const val = {};
+      val.circular = val;
+      guard.prop = val;
+      expect(guard).to.eql({
+        prop: val
+      })
+    });
+
+    it('should allow for deferred modification', () => {
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      const prop = {};
+      guard.prop = prop;
+      prop.val = 'foo';
+      expect(obj).to.eql({
+        prop: {
+          val: 'foo'
+        }
+      });
+    });
+
+    it('should not choke on immutable objects', () => {
+      const obj = {};
+      const guard = objectGuard([rule])(obj);
+      guard.prop = Object.freeze({val: 'foo'});
+      expect(obj).to.eql({
+        prop: {
+          val: 'foo'
+        }
+      })
+    })
+
+    it('should reject conflicting rules', () => {
+      const crule = {...rule, paths: ['outer']};
+      expect(() => objectGuard([rule, crule])).to.throw();
+      expect(() => objectGuard([crule, rule])).to.throw();
+    });
+
     it('should preserve object identity', () => {
       const guard = objectGuard([rule])({outer: {inner: {foo: 'bar'}}});
       expect(guard.outer).to.equal(guard.outer);
       expect(guard.outer.inner).to.equal(guard.outer.inner);
-    })
+    });
 
     it('does not mess up array reads', () => {
       const guard = objectGuard([rule])({foo: [{bar: 'baz'}]});
       expect(guard.foo).to.eql([{bar: 'baz'}]);
-    })
+    });
 
     it('prevents array modification', () => {
       const obj = {foo: ['value']};
@@ -119,7 +192,7 @@ describe('objectGuard', () => {
       guard.foo.pop();
       guard.foo.push('test');
       expect(obj.foo).to.eql(['value']);
-    })
+    });
 
     it('allows array modification when not applicable', () => {
       applies = false;
@@ -128,7 +201,7 @@ describe('objectGuard', () => {
       guard.foo.pop();
       guard.foo.push('test');
       expect(obj.foo).to.eql(['test']);
-    })
+    });
 
     it('should prevent top-level writes', () => {
       const obj = {bar: {nested: 'val'}, other: 'val'};
@@ -144,7 +217,7 @@ describe('objectGuard', () => {
       const guard = objectGuard([rule])({foo: {some: 'value'}});
       guard.foo = {some: 'value'};
       sinon.assert.notCalled(rule.applies);
-    })
+    });
 
     it('should prevent top-level deletes', () => {
       const obj = {foo: {nested: 'val'}, bar: 'val'};
@@ -152,7 +225,7 @@ describe('objectGuard', () => {
       delete guard.foo.nested;
       delete guard.bar;
       expect(guard).to.eql({foo: {nested: 'val'}, bar: 'val'});
-    })
+    });
 
     it('should prevent nested writes', () => {
       const obj = {outer: {inner: {bar: {nested: 'val'}, other: 'val'}}};
@@ -170,7 +243,7 @@ describe('objectGuard', () => {
             other: 'allowed'
           }
         }
-      })
+      });
     });
 
     it('should prevent writes if upper levels are protected', () => {
@@ -178,29 +251,29 @@ describe('objectGuard', () => {
       const guard = objectGuard([rule])(obj);
       guard.foo.inner.prop = 'value';
       expect(obj).to.eql({foo: {inner: {}}});
-    })
+    });
 
     it('should prevent deletes if a higher level property is protected', () => {
       const obj = {foo: {inner: {prop: 'value'}}};
       const guard = objectGuard([rule])(obj);
       delete guard.foo.inner.prop;
       expect(obj).to.eql({foo: {inner: {prop: 'value'}}});
-    })
+    });
 
     it('should clean up top-level writes that would result in inner properties changing', () => {
       const guard = objectGuard([rule])({outer: {inner: {bar: 'baz'}}});
       guard.outer = {inner: {bar: 'baz', foo: 'baz', prop: 'allowed'}};
       expect(guard).to.eql({outer: {inner: {bar: 'baz', prop: 'allowed'}}});
-    })
+    });
 
     it('should not prevent writes that are not protected', () => {
       const obj = {};
       const guard = objectGuard([rule])(obj);
       guard.outer = {
         test: 'value'
-      }
+      };
       expect(obj.outer.test).to.eql('value');
-    })
+    });
 
     it('should not choke on type mismatch: overwrite object with scalar', () => {
       const obj = {outer: {inner: {}}};
@@ -214,21 +287,21 @@ describe('objectGuard', () => {
       const guard = objectGuard([rule])(obj);
       guard.outer = {inner: {bar: 'denied', other: 'allowed'}};
       expect(obj).to.eql({outer: {inner: {other: 'allowed'}}});
-    })
+    });
 
     it('should prevent nested deletes', () => {
       const obj = {outer: {inner: {foo: {nested: 'val'}, bar: 'val'}}};
       const guard = objectGuard([rule])(obj);
       delete guard.outer.inner.foo.nested;
       delete guard.outer.inner.bar;
-      expect(guard).to.eql({outer: {inner: {foo: {nested: 'val'}, bar: 'val'}}})
+      expect(guard).to.eql({outer: {inner: {foo: {nested: 'val'}, bar: 'val'}}});
     });
 
     it('should prevent higher level deletes that would result in inner properties changing', () => {
       const guard = objectGuard([rule])({outer: {inner: {bar: 'baz'}}});
       delete guard.outer.inner;
       expect(guard).to.eql({outer: {inner: {bar: 'baz'}}});
-    })
+    });
 
     it('should work on null properties', () => {
       const obj = {foo: null};
@@ -258,22 +331,31 @@ describe('objectGuard', () => {
       expect(obj.foo).to.eql('21bar');
     });
 
-    it('can apply both redact and write protect', () => {
-      const obj = objectGuard([
-        redactRule({
-          paths: ['foo'],
-          applies: () => true,
-          get(val) {
-            return 'redact' + val;
-          },
-        }),
-        writeProtectRule({
-          paths: ['foo'],
-          applies: () => true,
-        })
-      ])({foo: 'bar'});
-      obj.foo = 'baz';
-      expect(obj.foo).to.eql('redactbar');
+    describe('when a property has both redact and write protect rules', () => {
+      let rules;
+      beforeEach(() => {
+        rules = [
+          redactRule({
+            paths: ['foo'],
+            applies: () => true,
+          }),
+          writeProtectRule({
+            paths: ['foo'],
+            applies: () => true,
+          })
+        ];
+      });
+      Object.entries({
+        'simple value': 'val',
+        'object value': {inner: 'val'}
+      }).forEach(([t, val]) => {
+        it(`can apply them both (on ${t})`, () => {
+          const obj = objectGuard(rules)({foo: val});
+          expect(obj.foo).to.not.exist;
+          obj.foo = {other: 'val'};
+          expect(obj.foo).to.not.exist;
+        });
+      });
     });
-  })
+  });
 });

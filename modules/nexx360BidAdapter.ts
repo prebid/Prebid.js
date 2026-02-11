@@ -59,9 +59,9 @@ const ALIASES = [
   { code: 'scoremedia', gvlid: 965 },
   { code: 'movingup', gvlid: 1416 },
   { code: 'glomexbidder', gvlid: 967 },
-  { code: 'revnew', gvlid: 1468 },
   { code: 'pubxai', gvlid: 1485 },
   { code: 'ybidder', gvlid: 1253 },
+  { code: 'netads', gvlid: 965 },
 ];
 
 export const STORAGE = getStorageManager({
