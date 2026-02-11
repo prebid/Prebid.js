@@ -4,6 +4,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -41,7 +42,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
-          const container = document.getElementById(bidRequest.adUnitCode);
+          const container = getAdUnitElement(bidRequest);
           let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
           adUnitId = adUnitId != null ? adUnitId : undefined;
 

@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnitCode } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnit } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
@@ -5217,15 +5217,15 @@ describe('IndexexchangeAdapter', function () {
       const el = document.createElement('div');
       el.id = adUnitCode;
       document.body.appendChild(el);
-      expect(getDivIdFromAdUnitCode(adUnitCode)).to.equal(adUnitCode);
+      expect(getDivIdFromAdUnit(adUnitCode, {code: adUnitCode})).to.equal(adUnitCode);
       document.body.removeChild(el);
     });
 
     it('retrieves divId from GPT once and caches result', () => {
       const adUnitCode = 'div-ad2';
       const stub = sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({divId: 'gpt-div'});
-      const first = getDivIdFromAdUnitCode(adUnitCode);
-      const second = getDivIdFromAdUnitCode(adUnitCode);
+      const first = getDivIdFromAdUnit(adUnitCode, {});
+      const second = getDivIdFromAdUnit(adUnitCode, {});
       expect(first).to.equal('gpt-div');
       expect(second).to.equal('gpt-div');
       expect(stub.calledOnce).to.be.true;

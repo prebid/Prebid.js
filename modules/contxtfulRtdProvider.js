@@ -292,6 +292,7 @@ function getDivIdPosition(divId) {
 
       let domElement;
 
+      // TODO: this should use getAdUnitElement
       if (inIframe() === true) {
         const ws = getWindowSelf();
         const currentElement = ws.document.getElementById(divId);

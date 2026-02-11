@@ -16,6 +16,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
 import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io',
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
@@ -250,7 +251,7 @@ function renderOutstream(bid) {
     window['GamoshiPlayer'].renderAd({
       id: unitId,
       debug: window.location.href.indexOf('pbjsDebug') >= 0,
-      placement: document.getElementById(bid.adUnitCode),
+      placement: getAdUnitElement(bid),
       width: bid.width,
       height: bid.height,
       events: {
