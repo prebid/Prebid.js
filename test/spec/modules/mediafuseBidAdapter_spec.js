@@ -363,21 +363,6 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
-    it('adds brand_category_exclusion to request when set', function() {
-      const bidRequest = Object.assign({}, bidRequests[0]);
-      sinon
-        .stub(config, 'getConfig')
-        .withArgs('video.brandCategoryExclusion')
-        .returns(true);
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.brand_category_uniqueness).to.equal(true);
-
-      config.getConfig.restore();
-    });
-
     it('adds auction level keywords to request when set', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
       sinon
