@@ -21,6 +21,10 @@ describe('33acrossIdSystem', () => {
   });
 
   describe('getId', () => {
+    afterEach(() => {
+      sinon.restore();
+    });
+
     it('should call endpoint', () => {
       const completeCallback = sinon.spy();
 
@@ -96,6 +100,7 @@ describe('33acrossIdSystem', () => {
 
         const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
         const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(storage, 'cookiesAreEnabled').returns(true);
         sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
         request.respond(200, {
@@ -110,10 +115,6 @@ describe('33acrossIdSystem', () => {
 
         expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.false;
         expect(setCookie.calledWithExactly('33acrossIdHm', '', sinon.match.string, 'Lax', 'foo.com')).to.be.false;
-
-        removeDataFromLocalStorage.restore();
-        setCookie.restore();
-        domainUtils.domainOverride.restore();
       });
     });
 
@@ -614,6 +615,7 @@ describe('33acrossIdSystem', () => {
 
         const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
         const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(storage, 'cookiesAreEnabled').returns(true);
         sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
         request.respond(200, {
@@ -630,10 +632,6 @@ describe('33acrossIdSystem', () => {
           expect(removeDataFromLocalStorage.calledWith(`33acrossId${suffix}`)).to.be.true;
           expect(setCookie.calledWithExactly(`33acrossId${suffix}`, '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
         });
-
-        removeDataFromLocalStorage.restore();
-        setCookie.restore();
-        domainUtils.domainOverride.restore();
       });
     });
 
