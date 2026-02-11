@@ -221,10 +221,6 @@ export const spec = {
     const mfKeywords = config.getConfig('mediafuseAuctionKeywords');
     payload.keywords = getANKeywordParam(bidderRequest?.ortb2, mfKeywords);
 
-    if (config.getConfig('video.brandCategoryExclusion')) {
-      payload.brand_category_uniqueness = true;
-    }
-
     if (debugObjParams.enabled) {
       payload.debug = debugObjParams;
       logInfo('MediaFuse Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
