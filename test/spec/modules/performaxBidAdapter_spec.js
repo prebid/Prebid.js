@@ -144,7 +144,33 @@ describe('Performax adapter', function () {
 
       expect(data.user).to.exist;
       expect(data.user.ext).to.exist;
-      expect(data.user.ext.uids).to.deep.equal({ someVendor: '12345' });
+      expect(data.user.ext.uids).to.deep.include({ someVendor: '12345' });
+    });
+
+    it('should merge stored UIDs with existing user.ext.uids (preserving existing)', function() {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('px_uids')
+        .returns(JSON.stringify({ storedVendor: 'storedId' }));
+
+      const requestWithUids = {
+        ...bidderRequest,
+        ortb2: {
+          user: {
+            ext: {
+              uids: { existingVendor: 'existingId' }
+            }
+          }
+        }
+      };
+
+      const requests = spec.buildRequests(bids, requestWithUids);
+      const data = requests[0].data;
+
+      expect(data.user.ext.uids).to.deep.equal({
+        existingVendor: 'existingId',
+        storedVendor: 'storedId'
+      });
     });
 
     it('should set correct request method and url', function () {
