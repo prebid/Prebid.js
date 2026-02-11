@@ -107,7 +107,7 @@ export function setCookieOnTopDomain(key, value, hostname, deleteCookie) {
     try {
       STORAGE.setCookie(key, value, expTime.toUTCString(), 'Lax', '.' + domain);
       // Try to read the cookie to check if we wrote it
-      if (STORAGE.getCookie(key) === value) return true; // Check if the cookie was set, and if so top domain was found. If deletion with expire date -1 will parse until complete host
+      if (STORAGE.getCookie(key, null) === value) return true; // Check if the cookie was set, and if so top domain was found. If deletion with expire date -1 will parse until complete host
     } catch (e) {
       logError(LOG_PREFIX, e);
     }
@@ -120,10 +120,10 @@ export function setCookieOnTopDomain(key, value, hostname, deleteCookie) {
  * @returns {Array|null} - Array of UID objects or null if no UID found
  */
 export function getUidFromStorage() {
-  let cUid = STORAGE.getCookie(EUIDS_STORAGE_NAME);
-  const lsUid = STORAGE.getDataFromLocalStorage(EUIDS_STORAGE_NAME);
+  let cUid = STORAGE.getCookie(EUIDS_STORAGE_NAME, null);
+  const lsUid = STORAGE.getDataFromLocalStorage(EUIDS_STORAGE_NAME, null);
   if (cUid && (!lsUid || cUid !== lsUid)) {
-    STORAGE.setDataInLocalStorage(EUIDS_STORAGE_NAME, cUid);
+    STORAGE.setDataInLocalStorage(EUIDS_STORAGE_NAME, cUid, null);
   } else if (lsUid && !cUid) {
     setCookieOnTopDomain(EUIDS_STORAGE_NAME, lsUid, cookieDomain, false);
     cUid = lsUid;
@@ -140,7 +140,7 @@ export function setUidInStorage(sddanId) {
   if (!sddanId) return false;
   sddanId = encodeURI(sddanId.toString());
   setCookieOnTopDomain(EUIDS_STORAGE_NAME, sddanId, cookieDomain, false);
-  STORAGE.setDataInLocalStorage(EUIDS_STORAGE_NAME, sddanId);
+  STORAGE.setDataInLocalStorage(EUIDS_STORAGE_NAME, sddanId, null);
   return true;
 }
 
