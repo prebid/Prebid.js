@@ -294,10 +294,6 @@ export const spec = {
       }
     }
 
-    if (config.getConfig('video.brandCategoryExclusion')) {
-      payload.brand_category_uniqueness = true;
-    }
-
     if (debugObjParams.enabled) {
       payload.debug = debugObjParams;
       logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
