@@ -32,7 +32,7 @@ export function getDivIdFromAdUnit(adUnitCode, target) {
     return divIdCache[adUnitCode];
   }
   const element = getAdUnitElement(target);
-  const divId = element ? element.id : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  const divId = element?.id ? element.id : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
   divIdCache[adUnitCode] = divId;
   return divId;
 }
