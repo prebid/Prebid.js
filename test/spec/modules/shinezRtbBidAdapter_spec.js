@@ -692,12 +692,13 @@ describe('ShinezRtbBidAdapter', function () {
     after(function () {
       getGlobal().bidderSettings = {};
     });
-    const key = 'myKey';
+    let key;
     let uniqueDealId;
     beforeEach(() => {
       clock = useFakeTimers({
         now: Date.now()
       });
+      key = `myKey_${Date.now()}`;
       uniqueDealId = getUniqueDealId(storage, key, 0);
     });
 
