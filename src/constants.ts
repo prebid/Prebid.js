@@ -42,7 +42,6 @@ export const EVENTS = {
   STALE_RENDER: 'staleRender',
   EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
-  BID_ACCEPTED: 'bidAccepted',
   PBS_ANALYTICS: 'pbsAnalytics',
   BEFORE_PBS_HTTP: 'beforePBSHttp',
   BROWSI_INIT: 'browsiInit',
