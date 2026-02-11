@@ -64,7 +64,7 @@ export function setStorageItem(storage, key, value, timestamp) {
 
 export function getStorageItem(storage, key) {
   try {
-    return tryParseJSON(storage.getDataFromLocalStorage(key, null));
+    return tryParseJSON(storage.getDataFromLocalStorage(key));
   } catch (e) {
   }
 
@@ -72,10 +72,10 @@ export function getStorageItem(storage, key) {
 }
 
 export function getCacheOpt(storage, useKey) {
-  let data = storage.getDataFromLocalStorage(useKey, null);
+  let data = storage.getDataFromLocalStorage(useKey);
   if (!data) {
     data = String(Date.now());
-    storage.setDataInLocalStorage(useKey, data, null);
+    storage.setDataInLocalStorage(useKey, data);
   }
 
   return data;

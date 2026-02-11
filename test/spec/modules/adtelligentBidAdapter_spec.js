@@ -52,24 +52,6 @@ const VIDEO_REQUEST = {
   'ortb2Imp': { 'ext': { 'gpid': '12345/adunit-code' } },
 };
 
-const ADPOD_REQUEST = {
-  'bidder': 'adtelligent',
-  'mediaTypes': {
-    'video': {
-      'context': 'adpod',
-      'playerSize': [[640, 480]],
-      'anyField': 10
-    }
-  },
-  'params': {
-    'aid': 12345
-  },
-  'bidderRequestId': '7101db09af0db2',
-  'auctionId': '2e41f65424c87c',
-  'adUnitCode': 'adunit-code',
-  'bidId': '2e41f65424c87c'
-};
-
 const SERVER_VIDEO_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
@@ -310,13 +292,6 @@ describe('adtelligentBidAdapter', () => {
       expect(displayRequest.every(comparator)).to.be.true;
       expect(videoAndDisplayRequests.every(comparator)).to.be.true;
     });
-    it('forms correct ADPOD request', () => {
-      const pbBidReqData = spec.buildRequests([ADPOD_REQUEST], DEFAULT_ADATPER_REQ)[0].data;
-      const impRequest = pbBidReqData.BidRequests[0]
-      expect(impRequest.AdType).to.be.equal('video');
-      expect(impRequest.Adpod).to.be.a('object');
-      expect(impRequest.Adpod.anyField).to.be.equal(10);
-    })
     it('sends correct video bid parameters', () => {
       const data = videoRequest[0].data;
 
@@ -454,12 +429,6 @@ describe('adtelligentBidAdapter', () => {
 
       nobidServerResponseCheck();
     });
-
-    it('forms correct ADPOD response', () => {
-      const videoBids = spec.interpretResponse({ body: SERVER_VIDEO_RESPONSE }, { adapterRequest: { bids: [ADPOD_REQUEST] } });
-      expect(videoBids[0].video.durationSeconds).to.be.equal(30);
-      expect(videoBids[0].video.context).to.be.equal('adpod');
-    })
     describe('outstream setup', () => {
       const videoBids = spec.interpretResponse({ body: SERVER_OUSTREAM_VIDEO_RESPONSE }, { adapterRequest: outstreamVideoBidderRequest });
       it('should return renderer with expected outstream params config', () => {

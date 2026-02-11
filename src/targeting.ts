@@ -5,7 +5,6 @@ import {config} from './config.js';
 import {BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS} from './constants.js';
 import * as events from './events.js';
 import {hook} from './hook.js';
-import {ADPOD} from './mediaTypes.js';
 import {
   deepAccess,
   deepClone,
@@ -663,7 +662,7 @@ export function newTargeting(auctionManager) {
       const cacheFilter = bidCacheEnabled || isBidFromLastAuction;
       const bidFilter = cacheFilter && filterFunctionResult;
 
-      if (bidFilter && bid?.video?.context !== ADPOD && isBidUsable(bid)) {
+      if (bidFilter && isBidUsable(bid)) {
         bid.latestTargetedAuctionId = latestAuctionForAdUnit[bid.adUnitCode];
         bids.push(bid)
       }

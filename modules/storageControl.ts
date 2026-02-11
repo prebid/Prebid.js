@@ -125,7 +125,12 @@ export function storageControlRule(getEnforcement = () => enforcement, check = c
   }
 }
 
-registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'storageControl', storageControlRule());
+const rule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'storageControl', storageControlRule());
+
+export function deactivate() {
+  // turn off this module; should only be used in testing
+  rule();
+}
 
 export type StorageControlConfig = {
   /**
