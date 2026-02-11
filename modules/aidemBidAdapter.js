@@ -194,12 +194,6 @@ function hasValidVideoParameters(bidRequest) {
     }
   }
 
-  const videoContext = adUnitsParameters.context || bidderParameter?.context;
-  if (videoContext === 'adpod') {
-    logError('AIDEM Bid Adapter: adpod video context is not supported', { bidder: BIDDER_CODE, code: ERROR_CODES.MEDIA_TYPE_NOT_SUPPORTED });
-    valid = false;
-  }
-
   return valid;
 }
 
