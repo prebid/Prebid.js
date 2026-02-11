@@ -125,7 +125,18 @@ export const spec = {
 
     const uids = readData(UIDS_STORAGE_KEY, {});
     if (Object.keys(uids).length > 0) {
-      deepSetValue(data, 'user.ext.uids', uids);
+      if (!data.user) {
+        data.user = {};
+      }
+
+      if (!data.user.ext) {
+        data.user.ext = {};
+      }
+
+      data.user.ext.uids = {
+        ...(data.user.ext.uids ?? {}),
+        ...uids
+      };
     }
 
     return [{
