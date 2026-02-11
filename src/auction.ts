@@ -101,10 +101,6 @@ declare module './events' {
      */
     [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
     /**
-     * Fired when a bid is received.
-     */
-    [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
-    /**
      * Fired when a bid is rejected.
      */
     [EVENTS.BID_REJECTED]: [Partial<Bid>];
@@ -530,7 +526,6 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
       const bidResponse = getPreparedBidForAuction(bid);
-      events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
         tryAddVideoAudioBid(auctionInstance, bidResponse, done);
       } else {
