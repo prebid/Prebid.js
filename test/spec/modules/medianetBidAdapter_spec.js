@@ -6,7 +6,7 @@ import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
 import {resetWinDimensions} from '../../../src/utils.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
-import *  as adUnits from 'src/utils/adUnits';
+import * as adUnits from 'src/utils/adUnits';
 
 getGlobal().version = getGlobal().version || 'version';
 const VALID_BID_REQUEST = [{

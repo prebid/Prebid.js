@@ -296,7 +296,7 @@ function makeVideo(videoParams = {}) {
 }
 
 function buildImpObject(bid) {
-  const { params: { uid }, bidId, mediaTypes, sizes, adUnitCode } = bid;
+  const { params: { uid }, bidId, mediaTypes, sizes } = bid;
   const video = mediaTypes && _isVideoBid(bid) && _isValidVideoBid(bid) && makeVideo(mediaTypes.video);
   const banner = makeBanner((mediaTypes && mediaTypes.banner) || (!video && { sizes }));
   const impObject = {

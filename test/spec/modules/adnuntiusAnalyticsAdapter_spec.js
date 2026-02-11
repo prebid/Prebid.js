@@ -2,11 +2,10 @@ import adnAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/adnuntiusAnalytics
 import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
-import { setConfig } from 'modules/currency.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const events = require('src/events');
 const utils = require('src/utils');
-import * as adUnits from 'src/utils/adUnits';
 const adapterManager = require('src/adapterManager').default;
 
 const {
