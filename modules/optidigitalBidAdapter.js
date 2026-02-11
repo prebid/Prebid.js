@@ -63,7 +63,8 @@ export const spec = {
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
       badv: ortb2.badv || deepAccess(validBidRequests[0], 'params.badv') || [],
       bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
-      bapp: deepAccess(validBidRequests[0], 'params.bapp') || []
+      bapp: deepAccess(validBidRequests[0], 'params.bapp') || [],
+      device: ortb2.device || {}
     }
 
     if (validBidRequests[0].auctionId) {
@@ -82,10 +83,14 @@ export const spec = {
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
     if (bidderRequest && gdpr) {
       const isConsentString = typeof gdpr.consentString === 'string';
+      const isGdprApplies = typeof gdpr.gdprApplies === 'boolean';
       payload.gdpr = {
         consent: isConsentString ? gdpr.consentString : '',
-        required: true
+        required: isGdprApplies ? gdpr.gdprApplies : false
       };
+      if (gdpr?.addtlConsent) {
+        payload.gdpr.addtlConsent = gdpr.addtlConsent;
+      }
     }
     if (bidderRequest && !gdpr) {
       payload.gdpr = {
@@ -120,10 +125,16 @@ export const spec = {
       }
     }
 
+    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');
+    if (ortb2SiteKeywords) {
+      payload.site = payload.site || {};
+      payload.site.keywords = ortb2SiteKeywords;
+    }
+
     const payloadObject = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: `${ENDPOINT_URL}/${payload.publisherId}`,
       data: payloadObject
     };
   },
@@ -228,6 +239,11 @@ function buildImp(bidRequest, ortb2) {
   const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
   if (battr && Array.isArray(battr) && battr.length) {
     imp.battr = battr;
+  }
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  if (gpid) {
+    imp.gpid = gpid;
   }
 
   return imp;
