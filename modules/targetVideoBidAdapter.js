@@ -11,7 +11,7 @@ import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_END
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return (bid.params.reserve) ? bid.params.reserve : null;
+    return (bid.params.floor) ? bid.params.floor : null;
   }
 
   const floor = bid.getFloor({
@@ -54,14 +54,15 @@ export const spec = {
       version: '$prebid.version$'
     };
 
-    for (let {params, bidId, sizes, mediaTypes, ...bid} of bidRequests) {
+    for (let {bidId, sizes, mediaTypes, ...bid} of bidRequests) {
       for (const mediaType in mediaTypes) {
         switch (mediaType) {
           case VIDEO: {
+            const params = bid.params;
             const video = mediaTypes[VIDEO];
             const placementId = params.placementId;
             const site = getSiteObj();
-            const floor = getBidFloor(bid) || params.floor;
+            const floor = getBidFloor(bid);
 
             if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
