@@ -134,8 +134,8 @@ export const spec = {
       }
 
       data.user.ext.uids = {
-        ...(data.user.ext.uids ?? {}),
-        ...uids
+        ...uids,
+        ...(data.user.ext.uids ?? {})
       };
     }
 
