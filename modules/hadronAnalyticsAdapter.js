@@ -111,11 +111,6 @@ const hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL,
         break;
       }
 
-      case EVENTS.ADD_AD_UNITS: {
-        data = args;
-        break;
-      }
-
       case EVENTS.AD_RENDER_FAILED: {
         data = args;
         break;

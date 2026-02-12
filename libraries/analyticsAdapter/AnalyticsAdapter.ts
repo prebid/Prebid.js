@@ -33,7 +33,7 @@ export function setLabels(internalLabels) {
 const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({...acc, ...curr}), {});
 
 export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
-  .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
+  .filter(ev => ev !== EVENTS.AUCTION_DEBUG && ev !== EVENTS.ADD_AD_UNITS);
 
 let debounceDelay = 100;
 
