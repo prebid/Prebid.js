@@ -2890,79 +2890,6 @@ describe('the rubicon adapter', function () {
           expect(slotParams.kw).to.equal('a,b,c');
         });
 
-        it('should pass along desired segtaxes, but not non-desired ones', () => {
-          const localBidderRequest = Object.assign({}, bidderRequest);
-          localBidderRequest.refererInfo = {domain: 'bob'};
-          config.setConfig({
-            rubicon: {
-              sendUserSegtax: [9],
-              sendSiteSegtax: [10]
-            }
-          });
-          localBidderRequest.ortb2.user = {
-            data: [{
-              ext: {
-                segtax: '404'
-              },
-              segment: [{id: 5}, {id: 6}]
-            }, {
-              ext: {
-                segtax: '508'
-              },
-              segment: [{id: 5}, {id: 2}]
-            }, {
-              ext: {
-                segtax: '9'
-              },
-              segment: [{id: 1}, {id: 2}]
-            }]
-          }
-          localBidderRequest.ortb2.site = {
-            content: {
-              data: [{
-                ext: {
-                  segtax: '10'
-                },
-                segment: [{id: 2}, {id: 3}]
-              }, {
-                ext: {
-                  segtax: '507'
-                },
-                segment: [{id: 3}, {id: 4}]
-              }]
-            }
-          }
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
-          expect(slotParams['tg_i.tax507']).is.equal('3,4');
-          expect(slotParams['tg_v.tax508']).is.equal('5,2');
-          expect(slotParams['tg_v.tax9']).is.equal('1,2');
-          expect(slotParams['tg_i.tax10']).is.equal('2,3');
-          expect(slotParams['tg_v.tax404']).is.equal(undefined);
-        });
-
-        it('should support IAB segtax 7 in site segments', () => {
-          const localBidderRequest = Object.assign({}, bidderRequest);
-          localBidderRequest.refererInfo = {domain: 'bob'};
-          config.setConfig({
-            rubicon: {
-              sendUserSegtax: [4],
-              sendSiteSegtax: [1, 2, 5, 6, 7]
-            }
-          });
-          localBidderRequest.ortb2.site = {
-            content: {
-              data: [{
-                ext: {
-                  segtax: '7'
-                },
-                segment: [{id: 8}, {id: 9}]
-              }]
-            }
-          };
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
-          expect(slotParams['tg_i.tax7']).to.equal('8,9');
-        });
-
         it('should add p_site.mobile if mobile is a number in ortb2.site', function () {
           // Set up a bidRequest with mobile property as a number
           const localBidderRequest = Object.assign({}, bidderRequest);
@@ -3931,6 +3858,98 @@ describe('the rubicon adapter', function () {
           });
           expect(bids[0].meta.mediaType).to.equal('banner');
           expect(bids[1].meta.mediaType).to.equal('video');
+        });
+
+        it('should handle primaryCatId and secondaryCatIds when bid.bid_cat is present in response', function () {
+          const response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'emulated_format': 'video',
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
+                    ]
+                  }
+                ],
+                'bid_cat': ['IAB1-1']
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ],
+                'bid_cat': ['IAB1-2', 'IAB1-3']
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 10,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+          const bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids[0].meta.primaryCatId).to.be.undefined;
+          expect(bids[0].meta.secondaryCatIds).to.be.undefined;
+          expect(bids[1].meta.primaryCatId).to.equal(response.ads[1].bid_cat[0]);
+          expect(bids[1].meta.secondaryCatIds).to.deep.equal(response.ads[1].bid_cat.slice(1));
+          expect(bids[2].meta.primaryCatId).to.equal(response.ads[0].bid_cat[0]);
+          expect(bids[2].meta.secondaryCatIds).to.be.undefined;
         });
 
         describe('singleRequest enabled', function () {

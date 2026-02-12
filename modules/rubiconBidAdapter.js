@@ -30,7 +30,7 @@ import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
+const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.3.7.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = config.getConfig('rubicon') || {};
@@ -113,8 +113,10 @@ var sizeMap = {
   195: '600x300',
   198: '640x360',
   199: '640x200',
+  210: '1080x1920',
   213: '1030x590',
   214: '980x360',
+  219: '1920x1080',
   221: '1x1',
   229: '320x180',
   230: '2000x1400',
@@ -127,7 +129,6 @@ var sizeMap = {
   259: '998x200',
   261: '480x480',
   264: '970x1000',
-  265: '1920x1080',
   274: '1800x200',
   278: '320x500',
   282: '320x400',
@@ -549,7 +550,6 @@ export const spec = {
       data['p_site.mobile'] = bidRequest.ortb2.site.mobile
     }
 
-    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest?.ortb2?.user?.ext?.eids) {
       bidRequest.ortb2.user.ext.eids.forEach(({ source, uids = [], inserter, matcher, mm, ext = {} }) => {
@@ -738,6 +738,13 @@ export const spec = {
         } else {
           bid.ad = _renderCreative(ad.script, ad.impression_id);
           [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+        }
+
+        if (ad.bid_cat && ad.bid_cat.length) {
+          bid.meta.primaryCatId = ad.bid_cat[0];
+          if (ad.bid_cat.length > 1) {
+            bid.meta.secondaryCatIds = ad.bid_cat.slice(1);
+          }
         }
 
         // add server-side targeting
@@ -1049,27 +1056,6 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
-  }
-}
-
-function addDesiredSegtaxes(bidderRequest, target) {
-  if (rubiConf.readTopics === false) {
-    return;
-  }
-  const iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
-  const vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
-  const userData = bidderRequest.ortb2?.user?.data || [];
-  const siteData = bidderRequest.ortb2?.site?.content?.data || [];
-  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
-  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
-}
-
-function iterateOverSegmentData(target, char, segments) {
-  return (topic) => {
-    const taxonomy = Number(topic.ext?.segtax);
-    if (segments.includes(taxonomy)) {
-      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
-    }
   }
 }
 

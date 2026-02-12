@@ -1,6 +1,7 @@
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {buildRequests, getUserSyncs, interpretResponse, isBidRequestValid} from '../libraries/xeUtils/bidderUtils.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const BIDDER_CODE = 'adipolo';
 const GVL_ID = 1456;
@@ -12,8 +13,7 @@ function getSubdomain() {
   };
 
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = getTimeZone().split('/')[0];
     return regionMap[region] || regionMap.America;
   } catch (err) {
     return regionMap.America;

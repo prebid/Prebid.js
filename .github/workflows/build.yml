@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Checkout
         if: ${{ inputs.build-cmd }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Restore source
         if: ${{ inputs.build-cmd }}
         uses: ./.github/actions/load

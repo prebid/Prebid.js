@@ -1030,7 +1030,7 @@ describe('permutiveIdentityManagerIdSystem', () => {
   })
 
   describe('decode', () => {
-    it('returns the input unchanged', () => {
+    it('returns the input unchanged for most IDs', () => {
       const input = {
         id5id: {
           uid: '0',
@@ -1043,6 +1043,17 @@ describe('permutiveIdentityManagerIdSystem', () => {
       }
       const result = permutiveIdentityManagerIdSubmodule.decode(input)
       expect(result).to.be.equal(input)
+    })
+
+    it('decodes the base64-encoded array for pairId', () => {
+      const input = {
+        pairId: 'WyJBeVhiNUF0dmsvVS8xQ1d2ejJuRVk5aFl4T1g3TVFPUTJVQk1BMFdiV1ZFbSJd'
+      }
+      const result = permutiveIdentityManagerIdSubmodule.decode(input)
+      const expected = {
+        pairId: ["AyXb5Atvk/U/1CWvz2nEY9hYxOX7MQOQ2UBMA0WbWVEm"]
+      }
+      expect(result).to.deep.equal(expected)
     })
   })
 
@@ -1062,6 +1073,46 @@ describe('permutiveIdentityManagerIdSystem', () => {
               'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
             }
           }
+        }
+      }
+      expect(result).to.deep.equal(expected)
+    })
+
+    it('handles idl_env without pairId', () => {
+      const data = {
+        'providers': {
+          'idl_env': {
+            'userId': 'ats_envelope_value'
+          }
+        }
+      }
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      const expected = {
+        'id': {
+          'idl_env': 'ats_envelope_value'
+        }
+      }
+      expect(result).to.deep.equal(expected)
+    })
+
+    it('handles idl_env with pairId', () => {
+      const data = {
+        'providers': {
+          'idl_env': {
+            'userId': 'ats_envelope_value',
+          },
+          'pairId': {
+            'userId': 'pair_id_encoded_value'
+          }
+        }
+      }
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      const expected = {
+        'id': {
+          'idl_env': 'ats_envelope_value',
+          'pairId': 'pair_id_encoded_value'
         }
       }
       expect(result).to.deep.equal(expected)

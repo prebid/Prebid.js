@@ -62,6 +62,40 @@ function attachProperties(config, useDefaultValues = true) {
     auctionOptions: {}
   } : {}
 
+  const validateauctionOptions = (() => {
+    const boolKeys = ['secondaryBidders', 'suppressStaleRender', 'suppressExpiredRender', 'legacyRender'];
+    const arrKeys = ['secondaryBidders']
+    const allKeys = [].concat(boolKeys).concat(arrKeys);
+
+    return function validateauctionOptions(val) {
+      if (!isPlainObject(val)) {
+        logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (const k of Object.keys(val)) {
+        if (!allKeys.includes(k)) {
+          logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (arrKeys.includes(k)) {
+          if (!isArray(val[k])) {
+            logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(isStr)) {
+            logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
+        } else if (boolKeys.includes(k)) {
+          if (!isBoolean(val[k])) {
+            logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+  })();
   function getProp(name) {
     return values[name];
   }
@@ -160,35 +194,6 @@ function attachProperties(config, useDefaultValues = true) {
       if (!isValidPriceConfig(val)) {
         logError('Invalid custom price value passed to `setPriceGranularity()`');
         return false;
-      }
-    }
-    return true;
-  }
-
-  function validateauctionOptions(val) {
-    if (!isPlainObject(val)) {
-      logWarn('Auction Options must be an object')
-      return false
-    }
-
-    for (const k of Object.keys(val)) {
-      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender' && k !== 'suppressExpiredRender') {
-        logWarn(`Auction Options given an incorrect param: ${k}`)
-        return false
-      }
-      if (k === 'secondaryBidders') {
-        if (!isArray(val[k])) {
-          logWarn(`Auction Options ${k} must be of type Array`);
-          return false
-        } else if (!val[k].every(isStr)) {
-          logWarn(`Auction Options ${k} must be only string`);
-          return false
-        }
-      } else if (k === 'suppressStaleRender' || k === 'suppressExpiredRender') {
-        if (!isBoolean(val[k])) {
-          logWarn(`Auction Options ${k} must be of type boolean`);
-          return false;
-        }
       }
     }
     return true;

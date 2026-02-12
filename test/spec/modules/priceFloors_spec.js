@@ -689,6 +689,11 @@ describe('the price floors module', function () {
       const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
       expect(skipRate).to.equal(undefined);
     });
+
+    it('should not throw when adUnit.bids is undefined', function() {
+      const adUnitsWithNoBids = [{ code: 'test-ad-unit', mediaTypes: { banner: { sizes: [[300, 250]] } } }];
+      expect(() => updateAdUnitsForAuction(adUnitsWithNoBids, inputFloorData, 'id')).to.not.throw();
+    });
   });
 
   describe('createFloorsDataForAuction', function() {

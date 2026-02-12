@@ -1446,7 +1446,7 @@ describe('getWinDimensions', () => {
   });
 
   it('should clear cache once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'reset');
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
     expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
     expect(getWinDimensions().innerHeight).to.exist;

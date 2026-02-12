@@ -4,6 +4,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'clickio';
+const IAB_GVL_ID = 1500;
 
 export const converter = ortbConverter({
   context: {
@@ -19,6 +20,7 @@ export const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: IAB_GVL_ID,
   supportedMediaTypes: [BANNER],
   buildRequests(bidRequests, bidderRequest) {
     const data = converter.toORTB({bidRequests, bidderRequest})

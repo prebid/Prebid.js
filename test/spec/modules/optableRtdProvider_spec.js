@@ -29,15 +29,15 @@ describe('Optable RTD Submodule', function () {
       expect(parseConfig(config).bundleUrl).to.equal('https://cdn.optable.co/bundle.js');
     });
 
-    it('throws an error for invalid bundleUrl format', function () {
-      expect(() => parseConfig({params: {bundleUrl: 'invalidURL'}})).to.throw();
-      expect(() => parseConfig({params: {bundleUrl: 'www.invalid.com'}})).to.throw();
+    it('returns null bundleUrl for invalid bundleUrl format', function () {
+      expect(parseConfig({params: {bundleUrl: 'invalidURL'}}).bundleUrl).to.be.null;
+      expect(parseConfig({params: {bundleUrl: 'www.invalid.com'}}).bundleUrl).to.be.null;
     });
 
-    it('throws an error for non-HTTPS bundleUrl', function () {
-      expect(() => parseConfig({params: {bundleUrl: 'http://cdn.optable.co/bundle.js'}})).to.throw();
-      expect(() => parseConfig({params: {bundleUrl: '//cdn.optable.co/bundle.js'}})).to.throw();
-      expect(() => parseConfig({params: {bundleUrl: '/bundle.js'}})).to.throw();
+    it('returns null bundleUrl for non-HTTPS bundleUrl', function () {
+      expect(parseConfig({params: {bundleUrl: 'http://cdn.optable.co/bundle.js'}}).bundleUrl).to.be.null;
+      expect(parseConfig({params: {bundleUrl: '//cdn.optable.co/bundle.js'}}).bundleUrl).to.be.null;
+      expect(parseConfig({params: {bundleUrl: '/bundle.js'}}).bundleUrl).to.be.null;
     });
 
     it('defaults adserverTargeting to true if missing', function () {
@@ -46,8 +46,8 @@ describe('Optable RTD Submodule', function () {
       ).adserverTargeting).to.be.true;
     });
 
-    it('throws an error if handleRtd is not a function', function () {
-      expect(() => parseConfig({params: {handleRtd: 'notAFunction'}})).to.throw();
+    it('returns null handleRtd if handleRtd is not a function', function () {
+      expect(parseConfig({params: {handleRtd: 'notAFunction'}}).handleRtd).to.be.null;
     });
   });
 
@@ -223,15 +223,32 @@ describe('Optable RTD Submodule', function () {
     it('getBidRequestData catches error and executes callback when something goes wrong', function (done) {
       moduleConfig.params.bundleUrl = null;
       moduleConfig.params.handleRtd = 'not a function';
+      window.optable = {
+        cmd: [],
+        instance: {
+          targetingFromCache: sandbox.stub().returns(null)
+        }
+      };
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
-      expect(window.optable.cmd.length).to.equal(0);
+      expect(window.optable.cmd.length).to.equal(1);
+
+      // Dispatch event after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: {ortb2: {user: {ext: {optable: 'testData'}}}}
+        });
+        window.dispatchEvent(event);
+      }, 10);
+
+      // Execute the queued command
+      window.optable.cmd[0]();
 
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;
         done();
-      }, 50);
+      }, 100);
     });
 
     it("doesn't fail when optable is not available", function (done) {

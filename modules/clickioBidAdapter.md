@@ -5,6 +5,8 @@ description: Clickio Bidder Adapter
 biddercode: clickio
 media_types: banner
 gdpr_supported: true
+tcfeu_supported: true
+gvl_id: 1500
 usp_supported: true
 gpp_supported: true
 schain_supported: true

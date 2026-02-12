@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adocean';
+const GVLID = 328;
 const URL_SAFE_FIELDS = {
   slaves: true
 };
@@ -117,6 +118,7 @@ function interpretResponse(placementResponse, bidRequest, bids) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {

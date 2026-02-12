@@ -55,6 +55,7 @@ export function gamPredictionReport (gamObjectReference, sendData) {
                 dataToSend.originalCurrency = bid.originalCurrency;
                 dataToSend.status = bid.status;
                 dataToSend.prebidAuctionId = element.args?.auctionId;
+                if (!dataToSend.bidderCode) dataToSend.bidderCode = 'GAM';
               };
               if (dataToSend.bidderCode) {
                 const relevantBid = element.args?.bidsReceived.find(
@@ -86,12 +87,12 @@ export function gamPredictionReport (gamObjectReference, sendData) {
       gamObjectReference.pubads().addEventListener('slotRenderEnded', (event) => {
         if (event.isEmpty) return;
         const data = extractWinData(event);
-        if (data?.cpm) {
+        if (data) {
           sendData(data);
         }
       });
     });
   } catch (error) {
-    this.logger.error('Failed to subscribe to GAM: ' + error);
+    logError('Failed to subscribe to GAM: ' + error);
   }
 };

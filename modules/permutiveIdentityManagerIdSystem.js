@@ -17,8 +17,9 @@ const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
 const ID5_DOMAIN = 'id5-sync.com'
 const LIVERAMP_DOMAIN = 'liveramp.com'
 const UID_DOMAIN = 'uidapi.com'
+const GOOGLE_DOMAIN = 'google.com'
 
-const PRIMARY_IDS = ['id5id', 'idl_env', 'uid2']
+const PRIMARY_IDS = ['id5id', 'idl_env', 'uid2', 'pairId']
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME})
 
@@ -94,7 +95,19 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    return value
+    const storedPairId = value['pairId']
+    let pairId
+    try {
+      if (storedPairId !== undefined) {
+        const decoded = safeJSONParse(atob(storedPairId))
+        if (Array.isArray(decoded)) {
+          pairId = decoded
+        }
+      }
+    } catch (e) {
+      logger.logInfo('Error parsing pairId')
+    }
+    return pairId === undefined ? value : {...value, pairId}
   },
 
   /**
@@ -155,6 +168,10 @@ export const permutiveIdentityManagerIdSubmodule = {
           return data.ext
         }
       }
+    },
+    'pairId': {
+      source: GOOGLE_DOMAIN,
+      atype: 571187
     }
   }
 }
