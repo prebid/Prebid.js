@@ -17,7 +17,7 @@ describe('InsurAds bid adapter tests', () => {
       referer: 'https://www.prebid.org',
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page',
     },
-    uspConsent: '111222333',
+    uspConsent: '1112223334',
     userId: { id5id: { uid: '1111' } },
     schain: {
       ver: '1.0',
