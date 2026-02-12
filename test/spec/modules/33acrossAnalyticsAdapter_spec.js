@@ -415,6 +415,60 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
     });
 
+    context('when a PBS_ANALYTICS event is received', function () {
+      it('marks a bid as noBid when seatnonbid contains bidId', function () {
+        this.enableAnalytics();
+        const auction = getMockEvents().prebid[0];
+
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+        events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+
+        const bidToNoBid = auction.BID_REQUESTED[0].bids[0];
+        events.emit(EVENTS.PBS_ANALYTICS, {
+          auctionId: auction.AUCTION_INIT.auctionId,
+          seatnonbid: [{
+            nonbid: [{ bidId: bidToNoBid.bidId }]
+          }]
+        });
+
+        const cachedBid = locals.cache.auctions[auction.AUCTION_INIT.auctionId]
+          .adUnits
+          .flatMap(au => au.bids)
+          .find(({ bidId }) => bidId === bidToNoBid.bidId);
+
+        assert.strictEqual(cachedBid.status, 'noBid');
+      });
+
+      it('marks matching ad unit bids as noBid when seatnonbid contains impid', function () {
+        this.enableAnalytics();
+        const auction = getMockEvents().prebid[0];
+
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+        events.emit(EVENTS.BID_REQUESTED, {
+          auctionId: auction.AUCTION_INIT.auctionId,
+          bids: [{
+            bidder: 'seatA',
+            transactionId: auction.AUCTION_INIT.adUnits[0].transactionId,
+            bidId: 'seatABid1',
+            src: 'client'
+          }]
+        });
+
+        events.emit(EVENTS.PBS_ANALYTICS, {
+          auctionId: auction.AUCTION_INIT.auctionId,
+          seatnonbid: [{
+            seat: 'seatA',
+            nonbid: [{ impid: auction.AUCTION_INIT.adUnits[0].code }]
+          }]
+        });
+
+        const cachedBid = locals.cache.auctions[auction.AUCTION_INIT.auctionId]
+          .adUnits[0].bids.find(({ bidId }) => bidId === 'seatABid1');
+
+        assert.strictEqual(cachedBid.status, 'noBid');
+      });
+    });
+
     context('when a transaction does not reach its complete state', function () {
       context('and a timeout config value has been given', function () {
         context('and the timeout value has elapsed', function () {
