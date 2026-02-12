@@ -11,12 +11,10 @@ import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'insurads';
-const ALT_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '7.1';
 const GVLID = 596;
-const ALT_GVLID = 965;
 const ALT_KEY = 'nexx360_storage';
 
 const DEFAULT_GZIP_ENABLED = false;
@@ -42,14 +40,9 @@ type InsurAdsBidParams = RequireAtLeastOne<{
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    [ALT_CODE]: InsurAdsBidParams;
+    ['nexx360']: InsurAdsBidParams;
   }
 }
-
-const ALIASES = [
-  { code: 'easybid', gvlid: 1068 },
-  { code: 'nexx360', gvlid: ALT_GVLID }
-];
 
 export const STORAGE = getStorageManager({
   bidderCode: BIDDER_CODE,
@@ -144,7 +137,6 @@ const buildRequests = (
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
