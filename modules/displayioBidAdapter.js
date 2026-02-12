@@ -1,3 +1,4 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -5,7 +6,6 @@ import {logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getDNT} from '../libraries/dnt/index.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
@@ -120,7 +120,7 @@ function getPayload (bid, bidderRequest) {
       complianceData: {
         child: '-1',
         us_privacy: uspConsent,
-        dnt: getDNT() ? 1 : 0,
+        dnt: getDNT(),
         iabConsent: {},
         mediation: {
           gdprConsent: mediation.gdprConsent,
