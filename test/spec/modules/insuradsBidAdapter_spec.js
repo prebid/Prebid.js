@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {
   spec, STORAGE, getInsurAdsLocalStorage, getGzipSetting,
-} from 'modules/insurAdsBidAdapter.js';
+} from 'modules/insuradsBidAdapter.js';
 import sinon from 'sinon';
 import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
 const sandbox = sinon.createSandbox();
