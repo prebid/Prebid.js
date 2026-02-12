@@ -71,6 +71,11 @@ on:
       BROWSERSTACK_ACCESS_KEY:
         description: "Browserstack access key"
 
+
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   checkout:
     name: "Define chunks"

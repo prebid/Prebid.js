@@ -1,74 +1,20 @@
 import {getBoundingClientRect} from '../boundingClientRect/boundingClientRect.js';
-import {canAccessWindowTop, cleanObj, getWindowSelf, getWindowTop} from '../../src/utils.js';
-import {getViewability} from '../percentInView/percentInView.js';
+import {canAccessWindowTop, cleanObj, getWinDimensions, getWindowSelf, getWindowTop} from '../../src/utils.js';
+import {getViewability, getViewportOffset} from '../percentInView/percentInView.js';
 
 export function getPlacementPositionUtils() {
   const topWin = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
   const selfWin = getWindowSelf();
 
-  const findElementWithContext = (adUnitCode) => {
-    let element = selfWin.document.getElementById(adUnitCode);
-    if (element) {
-      return {element, frameOffset: getFrameOffsetForCurrentWindow()};
-    }
-
-    const searchInIframes = (doc, accumulatedOffset = {top: 0}, iframeWindow = null) => {
-      try {
-        const element = doc.getElementById(adUnitCode);
-        if (element) {
-          return {element, frameOffset: accumulatedOffset, iframeWindow};
-        }
-
-        const frames = doc.getElementsByTagName('iframe');
-        for (const frame of frames) {
-          try {
-            const iframeDoc = frame.contentDocument || frame.contentWindow?.document;
-            if (iframeDoc) {
-              const frameRect = getBoundingClientRect(frame);
-              const newOffset = {
-                top: accumulatedOffset.top + frameRect.top
-              };
-              const result = searchInIframes(iframeDoc, newOffset, frame.contentWindow);
-              if (result) {
-                return result;
-              }
-            }
-          } catch (_e) {
-          }
-        }
-      } catch (_e) {
-      }
-      return null;
-    };
-
-    const result = searchInIframes(selfWin.document);
-    return result || {element: null, frameOffset: {top: 0}};
-  };
-
-  const getFrameOffsetForCurrentWindow = () => {
-    if (topWin === selfWin) {
-      return {top: 0};
-    }
-    try {
-      const frames = topWin.document.getElementsByTagName('iframe');
-      for (const frame of frames) {
-        if (frame.contentWindow === selfWin) {
-          return {top: getBoundingClientRect(frame).top};
-        }
-      }
-    } catch (_e) {
-      return {top: 0};
-    }
-    return {top: 0};
-  };
-
   const getViewportHeight = () => {
-    return topWin.innerHeight || topWin.document.documentElement.clientHeight || topWin.document.body.clientHeight || 0;
+    const dim = getWinDimensions();
+    return dim.innerHeight || dim.document.documentElement.clientHeight || dim.document.body.clientHeight || 0;
   };
 
   const getPageHeight = () => {
-    const body = topWin.document.body;
-    const html = topWin.document.documentElement;
+    const dim = getWinDimensions();
+    const body = dim.document.body;
+    const html = dim.document.documentElement;
     if (!body || !html) return 0;
 
     return Math.max(
@@ -86,8 +32,8 @@ export function getPlacementPositionUtils() {
     const elementRect = getBoundingClientRect(element);
     if (!elementRect) return {distanceToView: 0, elementHeight: 0};
 
-    const elementTop = elementRect.top + frameOffset.top;
-    const elementBottom = elementRect.bottom + frameOffset.top;
+    const elementTop = elementRect.top + frameOffset.y;
+    const elementBottom = elementRect.bottom + frameOffset.y;
     const viewportHeight = getViewportHeight();
 
     let distanceToView;
@@ -103,7 +49,8 @@ export function getPlacementPositionUtils() {
   };
 
   function getPlacementInfo(bidReq) {
-    const {element, frameOffset, iframeWindow} = findElementWithContext(bidReq.adUnitCode);
+    const element = selfWin.document.getElementById(bidReq.adUnitCode);
+    const frameOffset = getViewportOffset();
     const {distanceToView, elementHeight} = getViewableDistance(element, frameOffset);
 
     const sizes = (bidReq.sizes || []).map(size => ({
@@ -114,8 +61,7 @@ export function getPlacementPositionUtils() {
       ? sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min, sizes[0])
       : {};
 
-    const winForViewability = iframeWindow || topWin;
-    const placementPercentView = element ? getViewability(element, winForViewability, size) : 0;
+    const placementPercentView = element ? getViewability(element, topWin, size) : 0;
 
     return cleanObj({
       AuctionsCount: bidReq.auctionsCount,
