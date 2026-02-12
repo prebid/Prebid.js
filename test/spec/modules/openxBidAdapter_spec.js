@@ -469,6 +469,68 @@ describe('OpenxRtbAdapter', function () {
         }
       })
 
+      it('should not leak ortb2Imp.banner into the video imp for banner+video bids', () => {
+        const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0]);
+        multiformat.mediaTypes.video = {
+          context: 'outstream',
+          playerSize: [640, 480]
+        };
+        // simulate ortb2Imp carrying a stray banner object (e.g. from publisher config)
+        multiformat.ortb2Imp = {
+          ...(multiformat.ortb2Imp || {}),
+          banner: {api: [5]}
+        };
+        const requests = spec.buildRequests([multiformat], mockBidderRequest);
+        expect(requests).to.have.length(2);
+        // video request should have no banner
+        const videoImp = requests[1].data.imp[0];
+        expect(videoImp.banner).to.not.exist;
+        if (FEATURES.VIDEO) {
+          expect(videoImp.video).to.exist;
+        }
+        // banner request should still have banner
+        const bannerImp = requests[0].data.imp[0];
+        expect(bannerImp.banner).to.exist;
+        expect(bannerImp.video).to.not.exist;
+      })
+
+      it('should not leak ortb2Imp.video into the banner imp for banner+video bids', () => {
+        const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0]);
+        multiformat.mediaTypes.video = {
+          context: 'outstream',
+          playerSize: [640, 480]
+        };
+        // simulate ortb2Imp carrying a stray video object
+        multiformat.ortb2Imp = {
+          ...(multiformat.ortb2Imp || {}),
+          video: {mimes: ['video/mp4']}
+        };
+        const requests = spec.buildRequests([multiformat], mockBidderRequest);
+        expect(requests).to.have.length(2);
+        // banner request should have no video
+        const bannerImp = requests[0].data.imp[0];
+        expect(bannerImp.banner).to.exist;
+        expect(bannerImp.video).to.not.exist;
+      })
+
+      it('should not leak ortb2Imp.native into the video imp for video+native bids', () => {
+        const multiformat = utils.deepClone(nativeBidRequest);
+        multiformat.mediaTypes.video = {
+          context: 'outstream',
+          playerSize: [640, 480]
+        };
+        multiformat.ortb2Imp = {
+          ...(multiformat.ortb2Imp || {}),
+          native: {ver: '1.2'}
+        };
+        const requests = spec.buildRequests([multiformat], mockBidderRequest);
+        // video request should have no native
+        const videoReq = requests.find(r => r.data.imp[0].video);
+        if (videoReq) {
+          expect(videoReq.data.imp[0].native).to.not.exist;
+        }
+      })
+
       it('should send bid request to openx url via POST', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].url).to.equal(REQUEST_URL);

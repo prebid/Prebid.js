@@ -46,6 +46,13 @@ const converter = ortbConverter({
     if (bidRequest.params.customFloor && !imp.bidfloor) {
       imp.bidfloor = bidRequest.params.customFloor;
     }
+
+    // multi-format bids get split into separate requests, but ortb2Imp
+    // merges in everything (e.g. banner:{}) — clean out the extras
+    [BANNER, NATIVE, VIDEO]
+      .filter(mt => context.mediaType ? mt !== context.mediaType : !bidRequest.mediaTypes?.[mt])
+      .forEach(mt => delete imp[mt]);
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
