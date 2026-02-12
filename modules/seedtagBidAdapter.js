@@ -5,6 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -123,7 +124,7 @@ function buildBidRequest(validBidRequest) {
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
     adUnitCode: validBidRequest.adUnitCode,
-    geom: geom(validBidRequest.adUnitCode),
+    geom: geom(validBidRequest),
     placement: params.placement,
     requestCount: validBidRequest.bidderRequestsCount || 1,
   };
@@ -217,8 +218,8 @@ function ttfb() {
   return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
 }
 
-function geom(adunitCode) {
-  const slot = document.getElementById(adunitCode);
+function geom(bidRequest) {
+  const slot = getAdUnitElement(bidRequest);
   if (slot) {
     const { top, left, width, height } = getBoundingClientRect(slot);
     const viewport = {

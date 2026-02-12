@@ -156,6 +156,7 @@ const isMainPageAccessible = () => {
 }
 
 const elementInView = (elementId) => {
+  // TODO this should use getAdUnitElement
   const resolveElement = (elId) => {
     const win = getWindowSelf();
 

@@ -3,6 +3,7 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const URL = 'https://analytics.adnuntius.com/prebid';
 const REQUEST_SENT = 1;
@@ -36,7 +37,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
 
-          const container = document.getElementById(bidReq.adUnitCode);
+          const container = getAdUnitElement(bidReq);
           const containerAttr = container ? container.getAttribute('data-adunitid') : undefined;
           const adUnitId = containerAttr || undefined;
 

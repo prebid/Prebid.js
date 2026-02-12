@@ -6,6 +6,7 @@ import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
 import {resetWinDimensions} from '../../../src/utils.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 getGlobal().version = getGlobal().version || 'version';
 const VALID_BID_REQUEST = [{
@@ -1979,17 +1980,13 @@ describe('Media.net bid adapter', function () {
     beforeEach(function () {
       getGlobal().medianetGlobals = {};
 
-      const documentStub = sandbox.stub(document, 'getElementById');
       const boundingRect = {
         top: 50,
         left: 50,
         bottom: 100,
         right: 100
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({
         getBoundingClientRect: () => boundingRect
       });
       const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
@@ -2089,14 +2086,14 @@ describe('Media.net bid adapter', function () {
   });
 
   describe('slot visibility', function () {
-    let documentStub;
+    let elementStub;
     beforeEach(function () {
       const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
       });
-      documentStub = sandbox.stub(document, 'getElementById');
+      elementStub = sandbox.stub(adUnits, 'getAdUnitElement');
     });
     it('slot visibility should be 2 and ratio 0 when ad unit is BTF', function () {
       const boundingRect = {
@@ -2105,10 +2102,7 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
 
@@ -2124,10 +2118,7 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
       const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
@@ -2142,10 +2133,7 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
       const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
@@ -2170,12 +2158,9 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs(divId).returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
+      })
 
       const bidRequest = [{...VALID_BID_REQUEST[0], adUnitCode: code}]
       const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);

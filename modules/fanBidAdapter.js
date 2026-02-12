@@ -6,6 +6,7 @@ import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { Renderer } from '../src/Renderer.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'freedomadnetwork';
 const BIDDER_VERSION = '0.2.0';
@@ -349,8 +350,7 @@ function createRenderer(bid, videoPlayerUrl) {
 
   try {
     renderer.setRender(function (bidResponse) {
-      const divId = document.getElementById(bid.adUnitCode) ? bid.adUnitCode : getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId;
-      const adUnit = document.getElementById(divId);
+      const adUnit = getAdUnitElement(bidResponse) ?? document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId)
 
       if (!window.createOutstreamPlayer) {
         logWarn('Renderer error: outstream player is not available');

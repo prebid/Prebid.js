@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 import * as dnt from 'libraries/dnt/index.js';
 import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
+import * as adUnits from 'src/utils/adUnits';
 
 var marsAdapter = spec;
 
@@ -73,7 +74,7 @@ describe('marsmedia adapter tests', function () {
     ];
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('Unit-Code').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
