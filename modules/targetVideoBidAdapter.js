@@ -9,6 +9,22 @@ import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_END
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.reserve) ? bid.params.reserve : null;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+    return floor.floor;
+  }
+  return null;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -45,7 +61,7 @@ export const spec = {
             const video = mediaTypes[VIDEO];
             const placementId = params.placementId;
             const site = getSiteObj();
-            const floor = params.floor;
+            const floor = getBidFloor(bid) || params.floor;
 
             if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
