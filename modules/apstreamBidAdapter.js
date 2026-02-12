@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
@@ -424,7 +425,7 @@ function buildRequests(bidRequests, bidderRequest) {
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auid: bidderRequest.auctionId,
     ref: document.referrer,
-    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+    dnt: getDNT() ? 1 : 0,
     sr: getScreenParams()
   };
 

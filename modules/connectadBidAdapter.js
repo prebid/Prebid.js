@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
@@ -40,7 +41,7 @@ export const spec = {
       url: bidderRequest.refererInfo?.page,
       referrer: bidderRequest.refererInfo?.ref,
       screensize: getScreenSize(),
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      dnt: getDNT() ? 1 : 0,
       language: navigator.language,
       ua: navigator.userAgent,
       pversion: '$prebid.version$',

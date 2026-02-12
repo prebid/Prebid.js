@@ -20,6 +20,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -183,7 +184,7 @@ function createOrtbTemplate() {
     device: {
       ip: '',
       js: 1,
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      dnt: getDNT() ? 1 : 0,
       ua: navigator.userAgent,
       devicetype: getDeviceType(),
       os: getOS(),

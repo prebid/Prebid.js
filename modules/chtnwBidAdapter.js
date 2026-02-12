@@ -9,6 +9,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {getDNT} from '../libraries/dnt/index.js';
 const ENDPOINT_URL = 'https://prebid.cht.hinet.net/api/v1';
 const BIDDER_CODE = 'chtnw';
 const COOKIE_NAME = '__htid';
@@ -37,7 +38,7 @@ export const spec = {
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
-    device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+    device.dnt = getDNT() ? 1 : 0;
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const bidParams = [];
     _each(validBidRequests, function(bid) {

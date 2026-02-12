@@ -15,6 +15,7 @@ import {config} from '../../src/config.js';
 import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
 
 import {getGlobalVarName} from '../../src/buildOptions.js';
+import {getDNT} from '../dnt/index.js';
 
 export const makeBaseSpec = (baseUrl, modes) => {
   return {
@@ -376,7 +377,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
-    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+    dnt: getDNT() ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,

@@ -24,6 +24,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -252,7 +253,7 @@ export const spec = {
     }
     request.device.js = 1;
     if (!isInteger(deepAccess(request.device, 'dnt'))) {
-      request.device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+      request.device.dnt = getDNT() ? 1 : 0;
     }
     if (!isInteger(deepAccess(request.device, 'h'))) {
       request.device.h = screen.height;

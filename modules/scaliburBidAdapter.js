@@ -3,6 +3,7 @@ import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {sizesToSizeTuples} from "../src/utils.js";
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'scalibur';
 const ENDPOINT_SERVER = new URLSearchParams(window.location.search).get('sclServer') || 'srv';
@@ -115,7 +116,7 @@ export const spec = {
         ua: ortb2Device.ua,
         language: ortb2Device.language,
         sua: ortb2Device.sua || {},
-        dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
+        dnt: getDNT() ? 1 : 0,
       },
       user: {
         eids,

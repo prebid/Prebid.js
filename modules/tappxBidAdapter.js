@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -428,7 +429,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // Optional
   device.h = screen.height;
   device.w = screen.width;
-  device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+  device.dnt = getDNT() ? 1 : 0;
   device.language = getLanguage();
   device.make = getVendor();
 

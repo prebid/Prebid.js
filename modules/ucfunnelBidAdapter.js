@@ -4,6 +4,7 @@ import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -258,7 +259,7 @@ function getFormat(size) {
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
-  const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+  const dnt = getDNT() ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const schain = bid?.ortb2?.source?.ext?.schain;
   const supplyChain = getSupplyChain(schain);

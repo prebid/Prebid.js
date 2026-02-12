@@ -5,6 +5,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -76,7 +77,7 @@ export const sharethroughAdapterSpec = {
         ua: navigator.userAgent,
         language: navigator.language,
         js: 1,
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         h: window.screen.height,
         w: window.screen.width,
         ext: {},

@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getDNT} from '../libraries/dnt/index.js';
 const BIDDER_CODE = 'apacdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
 const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
@@ -99,7 +100,7 @@ export const spec = {
     payload.device.ua = navigator.userAgent;
     payload.device.height = window.screen.height;
     payload.device.width = window.screen.width;
-    payload.device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+    payload.device.dnt = getDNT() ? 1 : 0;
     payload.device.language = navigator.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);

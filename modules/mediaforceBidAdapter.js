@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -64,7 +65,7 @@ export const spec = {
     const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.ref) : '';
     const auctionId = bidderRequest && bidderRequest.auctionId;
     const timeout = bidderRequest && bidderRequest.timeout;
-    const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+    const dnt = getDNT() ? 1 : 0;
     const requestsMap = {};
     const requests = [];
     let isTest = false;

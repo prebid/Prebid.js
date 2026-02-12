@@ -12,6 +12,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -82,7 +83,7 @@ export const cadentAdapter = {
     return {
       ua: navigator.userAgent,
       js: 1,
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       devicetype: cadentAdapter.isMobile() ? 1 : cadentAdapter.isConnectedTV() ? 3 : 2,

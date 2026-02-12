@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -448,7 +449,7 @@ export var spec = {
     var params = request && request.params ? request.params : null;
     if (params) {
       return {
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         ua: navigator.userAgent,
         language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
         w: (utils.getWinDimensions().screen.width || utils.getWinDimensions().innerWidth),

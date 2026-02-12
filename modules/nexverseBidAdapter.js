@@ -8,6 +8,7 @@ import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeRespons
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { config } from '../src/config.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
@@ -305,7 +306,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         lon: bid.params.geoLon || 0,
       },
       language: navigator.language || DEFAULT_LANG,
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */, // Do Not Track flag
+      dnt: getDNT() ? 1 : 0, // Do Not Track flag
     },
     user: {
       id: getUid(storage),

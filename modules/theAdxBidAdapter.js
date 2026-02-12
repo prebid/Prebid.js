@@ -9,6 +9,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -371,7 +372,7 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
     language: ('language' in navigator) ? navigator.language : null,
     ua: ('userAgent' in navigator) ? navigator.userAgent : null,
     devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
-    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+    dnt: getDNT() ? 1 : 0,
   };
   // Include connection info if available
   const connection = getConnectionInfo();
