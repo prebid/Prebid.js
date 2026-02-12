@@ -184,7 +184,7 @@ function createOrtbTemplate() {
     device: {
       ip: '',
       js: 1,
-      dnt: getDNT() ? 1 : 0,
+      dnt: getDNT(),
       ua: navigator.userAgent,
       devicetype: getDeviceType(),
       os: getOS(),
