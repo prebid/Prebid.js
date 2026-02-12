@@ -209,7 +209,7 @@ describe('YieldmoAdapter', function () {
         expect(data.hasOwnProperty('page_url')).to.be.true;
         expect(data.hasOwnProperty('bust')).to.be.true;
         expect(data.hasOwnProperty('pr')).to.be.true;
-        expect(data.dnt).to.equal(0);
+        expect(data.dnt).to.be.false;
         expect(data.hasOwnProperty('description')).to.be.true;
         expect(data.hasOwnProperty('title')).to.be.true;
         expect(data.hasOwnProperty('h')).to.be.true;
