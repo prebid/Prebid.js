@@ -51,6 +51,13 @@
             //     }
             // });
 
+            
+            pbjs.bidderSettings = {
+                insurads: {
+                    storageAllowed : true
+                }
+            }
+
             pbjs.onEvent('bidRequested', function (bidRequest) {
                 console.log('Prebid bidRequested!!!!' + bidRequest.bidderCode);
             });
