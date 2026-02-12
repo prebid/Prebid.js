@@ -231,7 +231,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
       if (window.googletag && window.googletag.pubads && (typeof window.googletag.pubads === 'function')) {
         window.googletag.pubads().getSlots().forEach(function (n) {
           if (typeof n.setTargeting !== 'undefined' && relevadList && relevadList.length > 0) {
-            n.setTargeting('relevad_rtd', relevadList);
+            n.setConfig({targeting: {'relevad_rtd': relevadList}});
           }
         });
       }

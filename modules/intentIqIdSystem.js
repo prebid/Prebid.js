@@ -208,9 +208,7 @@ export function setGamReporting(gamObjectReference, gamParameterName, userGroup,
   if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     gamObjectReference.cmd.push(() => {
-      gamObjectReference
-        .pubads()
-        .setTargeting(gamParameterName, userGroup);
+      gamObjectReference.setConfig({targeting: {[gamParameterName]: userGroup}});
     });
   }
 }
