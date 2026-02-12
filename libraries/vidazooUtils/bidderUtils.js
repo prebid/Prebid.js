@@ -339,13 +339,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.paapi?.enabled) {
-    const fledge = bidderRequest?.ortb2Imp?.ext?.ae;
-    if (fledge) {
-      data.fledge = fledge;
-    }
-  }
-
   const api = mediaTypes?.video?.api || [];
   if (api.includes(7)) {
     const sourceExt = bidderRequest?.ortb2?.source?.ext;

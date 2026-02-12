@@ -26,7 +26,6 @@ import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {deepAccess, deepSetValue, generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
-import {getBidToRender} from '../../../src/adRendering.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 
 var assert = require('chai').assert;
@@ -3243,14 +3242,6 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyEventsOn.calledWith('bidWon', Function));
       events.on.restore();
     });
-
-    it('should emit event BID_ACCEPTED when invoked', function () {
-      var callback = sinon.spy();
-      pbjs.onEvent('bidAccepted', callback);
-      events.emit(EVENTS.BID_ACCEPTED);
-      sinon.assert.calledOnce(callback);
-    });
-
     describe('beforeRequestBids', function () {
       let bidRequestedHandler;
       let beforeRequestBidsHandler;

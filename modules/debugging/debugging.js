@@ -108,7 +108,6 @@ export function makeBidderBidInterceptor({utils}) {
       bids,
       bidRequest,
       addBid: wrapCallback(cbs.onBid),
-      addPaapiConfig: wrapCallback((config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, ...config})),
       done
     }));
     if (bids.length === 0) {

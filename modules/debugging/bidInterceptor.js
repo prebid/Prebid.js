@@ -53,7 +53,6 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
         match: this.matcher(ruleDef.when, ruleNo),
         replace: this.replacer(ruleDef.then, ruleNo),
         options: Object.assign({}, this.DEFAULT_RULE_OPTIONS, ruleDef.options),
-        paapi: this.paapiReplacer(ruleDef.paapi || [], ruleNo)
       }
     },
     /**
@@ -144,24 +143,6 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
         return response;
       }
     },
-
-    paapiReplacer(paapiDef, ruleNo) {
-      function wrap(configs = []) {
-        return configs.map(config => {
-          return Object.keys(config).some(k => !['config', 'igb'].includes(k))
-            ? {config}
-            : config
-        });
-      }
-      if (Array.isArray(paapiDef)) {
-        return () => wrap(paapiDef);
-      } else if (typeof paapiDef === 'function') {
-        return (...args) => wrap(paapiDef(...args))
-      } else {
-        this.logger.logError(`Invalid 'paapi' definition for debug bid interceptor (in rule #${ruleNo})`);
-      }
-    },
-
     responseDefaults(bid) {
       const response = {
         requestId: bid.bidId,
@@ -224,12 +205,11 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
      * {{}[]} bids?
      * {*} bidRequest
      * {function(*)} addBid called once for each mock response
-     * addPaapiConfig called once for each mock PAAPI config
      * {function()} done called once after all mock responses have been run through `addBid`
      * returns {{bids: {}[], bidRequest: {}} remaining bids that did not match any rule (this applies also to
      * bidRequest.bids)
      */
-    intercept({bids, bidRequest, addBid, addPaapiConfig, done}) {
+    intercept({bids, bidRequest, addBid, done}) {
       if (bids == null) {
         bids = bidRequest.bids;
       }
@@ -238,12 +218,10 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
         const callDone = delayExecution(done, matches.length);
         matches.forEach((match) => {
           const mockResponse = match.rule.replace(match.bid, bidRequest);
-          const mockPaapi = match.rule.paapi(match.bid, bidRequest);
           const delay = match.rule.options.delay;
-          this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response, PAAPI configs:`, match.bid, mockResponse, mockPaapi)
+          this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
           this.setTimeout(() => {
             mockResponse && addBid(mockResponse, match.bid);
-            mockPaapi.forEach(cfg => addPaapiConfig(cfg, match.bid, bidRequest));
             callDone();
           }, delay)
         });

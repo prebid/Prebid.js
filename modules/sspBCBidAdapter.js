@@ -1,11 +1,11 @@
-import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import { ajax } from '../src/ajax.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn} from '../src/utils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import {ajax} from '../src/ajax.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -671,8 +671,7 @@ const spec = {
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
     const { body: response = {} } = serverResponse;
-    const { seatbid: responseSeat, ext: responseExt = {} } = response;
-    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
+    const { seatbid: responseSeat } = response;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
@@ -788,7 +787,7 @@ const spec = {
       });
     }
 
-    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
+    return bids;
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {

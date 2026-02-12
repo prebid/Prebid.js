@@ -319,14 +319,6 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        onPaapi: (paapiConfig: any) => {
-          const bidRequest = bidRequestMap[paapiConfig.bidId];
-          if (bidRequest) {
-            addPaapiConfig(bidRequest, paapiConfig);
-          } else {
-            logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
-          }
-        },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
           if (!error.timedOut) {
@@ -390,7 +382,12 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-const RESPONSE_PROPS = ['bids', 'paapi']
+const RESPONSE_PROPS = [
+  'bids',
+  // allow bid adapters to still reply with paapi (which will be ignored).
+  'paapi',
+]
+
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
@@ -407,7 +404,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
   bidderRequest: ClientBidderRequest<B>,
   ajax: Ajax,
   wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
-  {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
+  {onRequest, onResponse, onError, onBid, onCompletion}: {
     /**
      * invoked once for each HTTP request built by the adapter - with the raw request
      */
@@ -424,10 +421,6 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
      *  invoked once for each bid in the response - with the bid as returned by interpretResponse
      */
     onBid: (bid: BidResponse) => void;
-    /**
-     * invoked once with each member of the adapter response's 'paapi' array.
-     */
-    onPaapi: (paapi: unknown) => void;
     /**
      * invoked once when all bid requests have been processed
      */
@@ -483,15 +476,11 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       // an array of bids
       // a BidderAuctionResponse object
 
-      let bids, paapiConfigs;
+      let bids
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
-        paapiConfigs = response.paapi;
       } else {
         bids = response;
-      }
-      if (isArray(paapiConfigs)) {
-        paapiConfigs.forEach(onPaapi);
       }
       if (bids) {
         if (isArray(bids)) {
@@ -615,9 +604,6 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
     }
   }
 }, 'registerSyncs')
-
-export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
-}, 'addPaapiConfig');
 
 declare module '../bidfactory' {
   interface BannerBidProperties {

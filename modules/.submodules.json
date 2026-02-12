@@ -50,7 +50,6 @@
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "pubmaticIdSystem",
-      "quantcastIdSystem",
       "rewardedInterestIdSystem",
       "sharedIdSystem",
       "taboolaIdSystem",
@@ -64,10 +63,6 @@
       "verizonMediaIdSystem",
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
-    ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "gamAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
@@ -143,10 +138,6 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
-    ],
-    "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
     ]
   }
 }

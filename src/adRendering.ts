@@ -56,15 +56,6 @@ declare module './events' {
   }
 }
 
-/**
- * NOTE: this is here to support PAAPI, which is soon to be removed;
- *  and should *not* be made asynchronous or it breaks `legacyRender` (unyielding)
- *  rendering logic
- */
-export const getBidToRender = hook('sync', function (adId, forRender, cb) {
-  cb(auctionManager.findBidByAdId(adId));
-})
-
 export const markWinningBid = hook('sync', function (bid) {
   (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_WIN]?.[TRACKER_METHOD_IMG] || [])
     .forEach(url => triggerPixel(url));
@@ -399,10 +390,8 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      getBidToRender(adId, true, (bidResponse) => {
-        bid = bidResponse;
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
-      });
+      bid = auctionManager.findBidByAdId(adId)
+      handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid, doc});
     }
   } catch (e) {
     fail(EXCEPTION, e.message);

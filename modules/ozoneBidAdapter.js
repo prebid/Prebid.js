@@ -1,21 +1,24 @@
 import {
-  logInfo,
-  logError,
   deepAccess,
-  logWarn,
+  deepClone,
   deepSetValue,
+  generateUUID,
+  getBidIdParameter,
   isArray,
+  logError,
+  logInfo,
+  logWarn,
   mergeDeep,
-  parseUrl,
-  generateUUID, isInteger, deepClone, getBidIdParameter
+  parseUrl
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {toOrtb25} from '../libraries/ortb2.5Translator/translator.js';
+
 const BIDDER_CODE = 'ozone';
 const ORIGIN = 'https://elb.the-ozone-project.com';
 const AUCTIONURI = '/openrtb2/auction';
@@ -137,7 +140,6 @@ export const spec = {
     if (this.blockTheRequest()) {
       return [];
     }
-    const fledgeEnabled = !!bidderRequest.fledgeEnabled;
     let htmlParams = {'publisherId': '', 'siteId': ''};
     if (validBidRequests.length > 0) {
       Object.assign(this.cookieSyncBag.userIdObject, this.findAllUserIdsFromEids(validBidRequests[0]));
@@ -273,14 +275,6 @@ export const spec = {
       }
       if (auctionId) {
         obj.ext.auctionId = auctionId;
-      }
-      if (fledgeEnabled) {
-        const auctionEnvironment = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.ae');
-        if (isInteger(auctionEnvironment)) {
-          deepSetValue(obj, 'ext.ae', auctionEnvironment);
-        } else {
-          logError(`ignoring ortb2Imp.ext.ae - not an integer for obj.id=${obj.id}`);
-        }
       }
       return obj;
     });
@@ -572,20 +566,6 @@ export const spec = {
       }
     }
     let ret = arrAllBids;
-    let fledgeAuctionConfigs = deepAccess(serverResponse, 'ext.igi') || [];
-    if (isArray(fledgeAuctionConfigs) && fledgeAuctionConfigs.length > 0) {
-      fledgeAuctionConfigs = fledgeAuctionConfigs.filter(cfg => {
-        if (typeof cfg !== 'object' || cfg === null) {
-          logWarn('Removing malformed fledge auction config:', cfg);
-          return false;
-        }
-        return true;
-      });
-      ret = {
-        bids: arrAllBids,
-        fledgeAuctionConfigs,
-      };
-    }
     const endTime = new Date().getTime();
     logInfo(`interpretResponse going to return at time ${endTime} (took ${endTime - startTime}ms) Time from buildRequests Start -> interpretRequests End = ${endTime - this.propertyBag.buildRequestsStart}ms`);
     logInfo('will return: ', deepClone(ret));

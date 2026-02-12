@@ -248,23 +248,6 @@ const PBS_CONVERTER = ortbConverter({
         // override to process each request
         context.actualBidderRequests.forEach(req => orig(response, ortbResponse, {...context, bidderRequest: req, bidRequests: req.bids}));
       },
-      paapiConfigs(orig, response, ortbResponse, context) {
-        const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
-            const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
-            const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
-            return {
-              adUnitCode: impCtx.adUnit.code,
-              ortb2: bidderReq?.ortb2,
-              ortb2Imp: bidReq?.ortb2Imp,
-              bidder: cfg.bidder,
-              config: cfg.config
-            };
-          }));
-        if (configs.length > 0) {
-          response.paapi = configs;
-        }
-      }
     }
   },
 });
@@ -317,9 +300,6 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
 
   const proxyBidderRequest = {
     ...Object.fromEntries(Object.entries(bidderRequests[0]).filter(([k]) => !BIDDER_SPECIFIC_REQUEST_PROPS.has(k))),
-    paapi: {
-      enabled: bidderRequests.some(br => br.paapi?.enabled)
-    }
   }
 
   return PBS_CONVERTER.toORTB({

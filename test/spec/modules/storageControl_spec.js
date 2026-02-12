@@ -4,7 +4,8 @@ import {
   ENFORCE_OFF,
   ENFORCE_STRICT,
   getDisclosures,
-  storageControlRule
+  storageControlRule,
+  deactivate
 } from '../../../modules/storageControl.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
@@ -13,6 +14,10 @@ import {
 } from '../../../src/activities/params.js';
 import {MODULE_TYPE_BIDDER} from '../../../src/activities/modules.js';
 import {STORAGE_TYPE_COOKIES} from '../../../src/storageManager.js';
+
+// since the module is on by default, importing it here turn it on for other tests
+// that happen to run together with this suite - turn it off
+deactivate();
 
 describe('storageControl', () => {
   describe('getDisclosures', () => {
@@ -205,6 +210,12 @@ describe('storageControl', () => {
     it('should deny when enforcement is strict and disclosure is done by the aliased module', () => {
       enforcement = ENFORCE_STRICT;
       checkResult = {disclosed: false, parent: true, reason: 'denied'};
+      expect(rule()).to.eql({allow: false, reason: 'denied'});
+    });
+
+    it('should deny by default when enforcement is not set', () => {
+      enforcement = undefined;
+      checkResult = {disclosed: false, parent: false, reason: 'denied'};
       expect(rule()).to.eql({allow: false, reason: 'denied'});
     });
 

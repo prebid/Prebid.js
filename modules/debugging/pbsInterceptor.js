@@ -4,7 +4,6 @@ export function makePbsInterceptor({createBid, utils}) {
     onResponse,
     onError,
     onBid,
-    onFledge,
   }) {
     let responseArgs;
     const done = delayExecution(() => onResponse(...responseArgs), bidRequests.length + 1)
@@ -22,14 +21,6 @@ export function makePbsInterceptor({createBid, utils}) {
       .map((req) => interceptBids({
         bidRequest: req,
         addBid,
-        addPaapiConfig(config, bidRequest, bidderRequest) {
-          onFledge({
-            adUnitCode: bidRequest.adUnitCode,
-            ortb2: bidderRequest.ortb2,
-            ortb2Imp: bidRequest.ortb2Imp,
-            ...config
-          })
-        },
         done
       }).bidRequest)
       .filter((req) => req.bids.length > 0)

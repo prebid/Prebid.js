@@ -58,10 +58,6 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest?.paapi?.enabled) {
-      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.paapi.enabled);
-    }
-
     if (config.getConfig('coppa') === true) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
@@ -81,26 +77,8 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
-    const paapi = serverResponse.body.paapi || [];
 
-    bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
-
-    if (paapi.length > 0) {
-      const fledgeAuctionConfigs = paapi.map(config => {
-        return {
-          bidId: bidderRequest.bids[config.imp_id].bidId,
-          config: config.auctionConfig
-        };
-      });
-
-      logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs
-      };
-    } else {
-      return bids;
-    }
+    return bids.map(bid => _buildResponseObject(bidderRequest, bid));
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {

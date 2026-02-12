@@ -116,7 +116,7 @@ export function storageControlRule(getEnforcement = () => enforcement, check = c
     const {disclosed, parent, reason} = check(params);
     if (disclosed === null) return;
     if (!disclosed) {
-      const enforcement = getEnforcement();
+      const enforcement = getEnforcement() ?? ENFORCE_STRICT;
       if (enforcement === ENFORCE_STRICT || (enforcement === ENFORCE_ALIAS && !parent)) return {allow: false, reason};
       if (reason) {
         logWarn('storageControl:', reason);
@@ -125,14 +125,19 @@ export function storageControlRule(getEnforcement = () => enforcement, check = c
   }
 }
 
-registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'storageControl', storageControlRule());
+const rule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'storageControl', storageControlRule());
+
+export function deactivate() {
+  // turn off this module; should only be used in testing
+  rule();
+}
 
 export type StorageControlConfig = {
   /**
-   * - 'off': logs a warning when an undisclosed storage key is used
-   * - 'strict': deny access to undisclosed storage keys
+   * - 'strict': deny access to undisclosed storage keys (default)
    * - 'allowAliases': deny access to undisclosed storage keys, unless the use is from an alias of a module that does
    *    disclose them
+   * - 'off': logs a warning when an undisclosed storage key is used
    */
   enforcement?: typeof ENFORCE_OFF | typeof ENFORCE_ALIAS | typeof ENFORCE_STRICT;
 }
@@ -144,7 +149,7 @@ declare module '../src/config' {
 }
 
 config.getConfig('storageControl', (cfg) => {
-  enforcement = cfg?.storageControl?.enforcement ?? ENFORCE_OFF;
+  enforcement = cfg?.storageControl?.enforcement ?? ENFORCE_STRICT;
 })
 
 export function dynamicDisclosureCollector() {
