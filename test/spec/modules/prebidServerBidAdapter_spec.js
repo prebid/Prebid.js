@@ -3311,23 +3311,6 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 60);
     });
 
-    it('handles seatnonbid responses and emits SEAT_NON_BID', function () {
-      const original = CONFIG;
-      CONFIG.extPrebid = { returnallbidstatus: true };
-      const nonbidResponse = {...RESPONSE_OPENRTB, ext: {seatnonbid: [{}]}};
-      config.setConfig({ CONFIG });
-      CONFIG = original;
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      const responding = deepClone(nonbidResponse);
-      Object.assign(responding.ext.seatnonbid, [{auctionId: 2}])
-      server.requests[0].respond(200, {}, JSON.stringify(responding));
-      const event = events.emit.thirdCall.args;
-      expect(event[0]).to.equal(EVENTS.SEAT_NON_BID);
-      expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
-      expect(event[1].requestedBidders).to.deep.equal(['appnexus']);
-      expect(event[1].response).to.deep.equal(responding);
-    });
-
     it('emits the PBS_ANALYTICS event and captures seatnonbid responses', function () {
       const original = CONFIG;
       CONFIG.extPrebid = { returnallbidstatus: true };
@@ -3338,7 +3321,7 @@ describe('S2S Adapter', function () {
       const responding = deepClone(nonbidResponse);
       Object.assign(responding.ext.seatnonbid, [{auctionId: 2}])
       server.requests[0].respond(200, {}, JSON.stringify(responding));
-      const event = events.emit.getCall(3).args;
+      const event = events.emit.getCall(2).args;
       expect(event[0]).to.equal(EVENTS.PBS_ANALYTICS);
       expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
       expect(event[1].requestedBidders).to.deep.equal(['appnexus']);

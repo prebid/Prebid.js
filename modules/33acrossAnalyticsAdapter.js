@@ -402,7 +402,6 @@ function analyticEventHandler({ eventType, args }) {
       onBidRejected(args);
       break;
     case EVENTS.NO_BID:
-    case EVENTS.SEAT_NON_BID:
       setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
       break;
     case EVENTS.BIDDER_ERROR:

@@ -25,7 +25,6 @@ export const EVENTS = {
   BID_RESPONSE: 'bidResponse',
   BID_REJECTED: 'bidRejected',
   NO_BID: 'noBid',
-  SEAT_NON_BID: 'seatNonBid',
   BID_WON: 'bidWon',
   BIDDER_DONE: 'bidderDone',
   BIDDER_ERROR: 'bidderError',
