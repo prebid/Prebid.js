@@ -84,7 +84,7 @@ export const spec = {
         // TODO: is 'page' the right value here?
         page_url: bidderRequest.refererInfo.page,
         bust: new Date().getTime().toString(),
-        dnt: getDNT() ? 1 : 0,
+        dnt: getDNT(),
         description: getPageDescription(),
         tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({
