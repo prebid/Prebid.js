@@ -93,11 +93,6 @@ const growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsTyp
         break;
       }
 
-      case EVENTS.ADD_AD_UNITS: {
-        data = eventData;
-        break;
-      }
-
       case EVENTS.NO_BID: {
         data = eventData
         break;

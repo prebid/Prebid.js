@@ -402,8 +402,11 @@ function analyticEventHandler({ eventType, args }) {
       onBidRejected(args);
       break;
     case EVENTS.NO_BID:
-    case EVENTS.SEAT_NON_BID:
       setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
+      break;
+
+    case EVENTS.PBS_ANALYTICS:
+      onPbsAnalytics(args);
       break;
     case EVENTS.BIDDER_ERROR:
       if (args.bidderRequest && args.bidderRequest.bids) {
@@ -516,6 +519,39 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
       source
     }
   );
+}
+
+/**
+ * @param {Object} args
+ * @param {string} args.auctionId
+ * @param {Array<{seat?: string, nonbid?: Array<{bidId?: string, impid?: string}>}>} args.seatnonbid
+ */
+function onPbsAnalytics({ auctionId, seatnonbid }) {
+  if (!Array.isArray(seatnonbid)) return;
+  const auction = locals.cache.auctions[auctionId];
+  if (!auction) return;
+
+  seatnonbid.forEach(({ seat, nonbid }) => {
+    if (!Array.isArray(nonbid)) return;
+    nonbid.forEach(({ bidId, impid }) => {
+      if (bidId != null) {
+        setCachedBidStatus(auctionId, bidId, BidStatus.NOBID);
+        return;
+      }
+      if (impid == null) return;
+
+      const targetUnits = auction.adUnits.filter(adUnit => adUnit.adUnitCode === impid || adUnit.slotId === impid);
+      targetUnits.forEach(adUnit => {
+        const candidateBids = adUnit.bids.filter((bid) => {
+          const seatMatches = seat == null || bid.bidder.toLowerCase() === String(seat).toLowerCase();
+          return seatMatches && [BidStatus.PENDING, BidStatus.AVAILABLE].includes(bid.status);
+        });
+        if (candidateBids.length > 0) {
+          candidateBids.forEach((bid) => setBidStatus(bid, BidStatus.NOBID));
+        }
+      });
+    });
+  });
 }
 
 /****************

@@ -836,7 +836,7 @@ describe('auctionmanager.js', function () {
       }
       const auction = auctionManager.createAuction({adUnits, ortb2Fragments});
       expect(auction.getNonBids()[0]).to.equal(undefined);
-      events.emit(EVENTS.SEAT_NON_BID, {
+      events.emit(EVENTS.PBS_ANALYTICS, {
         auctionId: auction.getAuctionId(),
         seatnonbid: ['test']
       });

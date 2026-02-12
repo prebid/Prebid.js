@@ -459,7 +459,6 @@ export type PbsAnalytics = SeatNonBid & {
 
 declare module '../../src/events' {
   interface Events {
-    [EVENTS.SEAT_NON_BID]: [SeatNonBid];
     [EVENTS.PBS_ANALYTICS]: [PbsAnalytics];
     [EVENTS.BEFORE_PBS_HTTP]: [PbsRequestData];
   }
@@ -497,15 +496,6 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
           const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response)
-          if (seatNonBidData) {
-            events.emit(EVENTS.SEAT_NON_BID, {
-              seatnonbid: response.ext.seatnonbid,
-              auctionId: bidRequests[0].auctionId,
-              requestedBidders,
-              response,
-              adapterMetrics
-            });
-          }
           // pbs analytics event
           if (seatNonBidData || atagData) {
             const data: PbsAnalytics = {
