@@ -77,7 +77,7 @@ var adUnits = [
           placementId: 13232361,
           video: {
             skippable: true,
-            playback_methods: ['auto_play_sound_off']
+            playback_method: 'auto_play_sound_off'
           }
         }
       }]
