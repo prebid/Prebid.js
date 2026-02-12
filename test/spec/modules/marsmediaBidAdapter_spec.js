@@ -32,13 +32,15 @@ describe('marsmedia adapter tests', function () {
     };
     win = {
       document: {
-        visibilityState: 'visible'
+        visibilityState: 'visible',
+        documentElement: {
+          clientWidth: 800,
+          clientHeight: 600
+        }
       },
       location: {
         href: 'http://location'
       },
-      innerWidth: 800,
-      innerHeight: 600
     };
     this.defaultBidderRequest = {
       'refererInfo': {
@@ -506,6 +508,8 @@ describe('marsmedia adapter tests', function () {
 
     context('when element is fully in view', function() {
       it('returns 100', function() {
+        sandbox.stub(internal, 'getWindowTop').returns(win);
+        resetWinDimensions();
         Object.assign(element, { width: 600, height: 400 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
@@ -530,7 +534,6 @@ describe('marsmedia adapter tests', function () {
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
         expect(openrtbRequest.imp[0].ext.viewability).to.equal(75);
-        internal.getWindowTop.restore();
       });
     });
 

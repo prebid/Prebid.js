@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT} from 'modules/taboolaBidAdapter.js';
+import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config.js'
 import * as utils from '../../../src/utils.js'
 import {server} from '../../mocks/xhr.js'
@@ -285,9 +285,13 @@ describe('Taboola Adapter', function () {
           'tagid': commonBidRequest.params.tagId,
           'bidfloor': null,
           'bidfloorcur': 'USD',
-          'ext': {}
+          'ext': {
+            'prebid': {
+              'bidId': defaultBidRequest.bidId
+            }
+          }
         }],
-        'device': {'ua': navigator.userAgent},
+        'device': res.data.device,
         'id': 'mock-uuid',
         'test': 0,
         'user': {
@@ -308,15 +312,12 @@ describe('Taboola Adapter', function () {
         'bcat': [],
         'badv': [],
         'wlang': [],
-        'ext': {
-          'prebid': {
-            'version': '$prebid.version$'
-          }
-        }
+        'ext': res.data.ext
       };
 
       expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
       expect(JSON.stringify(res.data)).to.deep.equal(JSON.stringify(expectedData));
+      expect(res.data.ext.prebid.version).to.equal('$prebid.version$');
     });
 
     it('should pass optional parameters in request', function () {
@@ -475,7 +476,12 @@ describe('Taboola Adapter', function () {
         expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv)
         expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
         expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
-        expect(res.data.device).to.deep.equal(bidderRequest.ortb2.device);
+        // Device should contain ortb2 device properties plus fraud prevention signals
+        expect(res.data.device.w).to.equal(bidderRequest.ortb2.device.w);
+        expect(res.data.device.h).to.equal(bidderRequest.ortb2.device.h);
+        expect(res.data.device.ua).to.equal(bidderRequest.ortb2.device.ua);
+        expect(res.data.device.ext.bot).to.exist;
+        expect(res.data.device.ext.visibility).to.exist;
       });
 
       it('should pass user entities', function () {
@@ -1604,6 +1610,373 @@ describe('Taboola Adapter', function () {
         };
 
         expect(internal.getReferrer(bidderRequest.refererInfo)).to.equal(bidderRequest.refererInfo.ref);
+      });
+    });
+
+    describe('detectBot', function () {
+      it('should return detected false for normal browsers', function () {
+        const result = detectBot();
+        expect(result).to.have.property('detected');
+        expect(result.detected).to.be.a('boolean');
+      });
+
+      it('should return object with detected property', function () {
+        const result = detectBot();
+        expect(result).to.be.an('object');
+        expect(result).to.have.property('detected');
+      });
+    });
+
+    describe('getPageVisibility', function () {
+      it('should return visibility state object', function () {
+        const result = getPageVisibility();
+        expect(result).to.be.an('object');
+        expect(result).to.have.property('hidden');
+        expect(result).to.have.property('state');
+        expect(result).to.have.property('hasFocus');
+      });
+
+      it('should return boolean for hidden property', function () {
+        const result = getPageVisibility();
+        expect(result.hidden).to.be.a('boolean');
+      });
+
+      it('should return string for state property', function () {
+        const result = getPageVisibility();
+        expect(result.state).to.be.a('string');
+      });
+
+      it('should return boolean for hasFocus property', function () {
+        const result = getPageVisibility();
+        expect(result.hasFocus).to.be.a('boolean');
+      });
+    });
+
+    describe('fraud signals in buildRequests', function () {
+      const defaultBidRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name'
+        },
+        bidId: 'test-bid-id',
+        auctionId: 'test-auction-id',
+        sizes: [[300, 250]]
+      };
+
+      const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
+        refererInfo: {
+          page: 'https://example.com/ref',
+          ref: 'https://ref',
+          domain: 'example.com',
+        }
+      };
+
+      it('should include bot detection in device.ext', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.bot).to.exist;
+        expect(res.data.device.ext.bot).to.have.property('detected');
+      });
+
+      it('should include visibility in device.ext', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.visibility).to.exist;
+        expect(res.data.device.ext.visibility).to.have.property('hidden');
+        expect(res.data.device.ext.visibility).to.have.property('state');
+        expect(res.data.device.ext.visibility).to.have.property('hasFocus');
+      });
+
+      it('should include scroll position in device.ext', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.ext.scroll).to.exist;
+        expect(res.data.device.ext.scroll).to.have.property('top');
+        expect(res.data.device.ext.scroll).to.have.property('left');
+        expect(res.data.device.ext.scroll.top).to.be.a('number');
+        expect(res.data.device.ext.scroll.left).to.be.a('number');
+      });
+
+      it('should include viewability in imp.ext when element exists', function () {
+        const adUnitCode = 'test-viewability-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          // Viewability should be a number between 0-100 when element exists
+          expect(res.data.imp[0].ext.viewability).to.be.a('number');
+          expect(res.data.imp[0].ext.viewability).to.be.at.least(0);
+          expect(res.data.imp[0].ext.viewability).to.be.at.most(100);
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should not include viewability when element does not exist', function () {
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: 'non-existent-element-id'
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.viewability).to.be.undefined;
+      });
+
+      it('should include placement position in imp.ext when element exists', function () {
+        const adUnitCode = 'test-placement-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        testDiv.style.position = 'absolute';
+        testDiv.style.top = '100px';
+        testDiv.style.left = '50px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          expect(res.data.imp[0].ext.placement).to.exist;
+          expect(res.data.imp[0].ext.placement).to.have.property('top');
+          expect(res.data.imp[0].ext.placement).to.have.property('left');
+          expect(res.data.imp[0].ext.placement.top).to.be.a('number');
+          expect(res.data.imp[0].ext.placement.left).to.be.a('number');
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should include fold detection in imp.ext when element exists', function () {
+        const adUnitCode = 'test-fold-div';
+        const testDiv = document.createElement('div');
+        testDiv.id = adUnitCode;
+        testDiv.style.width = '300px';
+        testDiv.style.height = '250px';
+        document.body.appendChild(testDiv);
+
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: adUnitCode
+        };
+
+        try {
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          expect(res.data.imp[0].ext.fold).to.exist;
+          expect(res.data.imp[0].ext.fold).to.be.oneOf(['above', 'below']);
+        } finally {
+          document.body.removeChild(testDiv);
+        }
+      });
+
+      it('should not include placement or fold when element does not exist', function () {
+        const bidRequest = {
+          ...defaultBidRequest,
+          adUnitCode: 'non-existent-placement-element'
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.placement).to.be.undefined;
+        expect(res.data.imp[0].ext.fold).to.be.undefined;
+      });
+
+      it('should preserve existing ortb2 device ext properties', function () {
+        const bidderRequestWithDeviceExt = {
+          ...commonBidderRequest,
+          ortb2: {
+            device: {
+              ua: 'test-ua',
+              ext: {
+                existingProp: 'existingValue'
+              }
+            }
+          }
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequestWithDeviceExt);
+        expect(res.data.device.ext.existingProp).to.equal('existingValue');
+        expect(res.data.device.ext.bot).to.exist;
+        expect(res.data.device.ext.visibility).to.exist;
+      });
+
+      it('should include device.js = 1', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.device.js).to.equal(1);
+      });
+
+      it('should include connectiontype when available', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        // connectiontype is optional - depends on navigator.connection availability
+        if (res.data.device.connectiontype !== undefined) {
+          expect(res.data.device.connectiontype).to.be.a('number');
+          expect(res.data.device.connectiontype).to.be.oneOf([0, 1, 2, 3, 4, 5, 6, 7]);
+        }
+      });
+
+      it('should not override existing ortb2 device properties', function () {
+        const bidderRequestWithDevice = {
+          ...commonBidderRequest,
+          ortb2: {
+            device: {
+              ua: 'custom-ua',
+              w: 1920,
+              h: 1080
+            }
+          }
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequestWithDevice);
+        expect(res.data.device.ua).to.equal('custom-ua');
+        expect(res.data.device.w).to.equal(1920);
+        expect(res.data.device.h).to.equal(1080);
+        expect(res.data.device.js).to.equal(1);
+      });
+    });
+
+    describe('Prebid IDs in buildRequests', function () {
+      const defaultBidRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name'
+        },
+        bidId: 'test-bid-id-123',
+        auctionId: 'test-auction-id-456',
+        adUnitCode: 'test-ad-unit-code',
+        sizes: [[300, 250]]
+      };
+
+      const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
+        auctionId: 'auction-id-789',
+        refererInfo: {
+          page: 'https://example.com/ref',
+          ref: 'https://ref',
+          domain: 'example.com',
+        }
+      };
+
+      it('should include auctionId in ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.ext.prebid.auctionId).to.equal('auction-id-789');
+      });
+
+      it('should include bidId in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidId).to.equal('test-bid-id-123');
+      });
+
+      it('should include adUnitCode in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.adUnitCode).to.equal('test-ad-unit-code');
+      });
+
+      it('should include adUnitId in imp.ext.prebid when available', function () {
+        const bidRequestWithAdUnitId = {
+          ...defaultBidRequest,
+          adUnitId: 'test-ad-unit-id'
+        };
+        const res = spec.buildRequests([bidRequestWithAdUnitId], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.adUnitId).to.equal('test-ad-unit-id');
+      });
+
+      it('should not include adUnitId when not available', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.adUnitId).to.be.undefined;
+      });
+
+      it('should include all Prebid IDs for multiple impressions', function () {
+        const bidRequest1 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-1',
+          adUnitCode: 'ad-unit-1'
+        };
+        const bidRequest2 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-2',
+          adUnitCode: 'ad-unit-2'
+        };
+        const res = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidId).to.equal('bid-id-1');
+        expect(res.data.imp[0].ext.prebid.adUnitCode).to.equal('ad-unit-1');
+        expect(res.data.imp[1].ext.prebid.bidId).to.equal('bid-id-2');
+        expect(res.data.imp[1].ext.prebid.adUnitCode).to.equal('ad-unit-2');
+      });
+    });
+
+    describe('Prebid counters in buildRequests', function () {
+      const defaultBidRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId',
+          tagId: 'placement name'
+        },
+        bidId: 'test-bid-id',
+        adUnitCode: 'test-ad-unit',
+        bidRequestsCount: 3,
+        bidderRequestsCount: 2,
+        bidderWinsCount: 1,
+        sizes: [[300, 250]]
+      };
+
+      const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
+        auctionId: 'test-auction-id',
+        refererInfo: {
+          page: 'https://example.com/ref',
+          ref: 'https://ref',
+          domain: 'example.com',
+        }
+      };
+
+      it('should include bidRequestsCount in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(3);
+      });
+
+      it('should include bidderRequestsCount in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(2);
+      });
+
+      it('should include bidderWinsCount in imp.ext.prebid', function () {
+        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(1);
+      });
+
+      it('should include all Prebid counters for multiple impressions', function () {
+        const bidRequest1 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-1',
+          adUnitCode: 'ad-unit-1',
+          bidRequestsCount: 5,
+          bidderRequestsCount: 4,
+          bidderWinsCount: 2
+        };
+        const bidRequest2 = {
+          ...defaultBidRequest,
+          bidId: 'bid-id-2',
+          adUnitCode: 'ad-unit-2',
+          bidRequestsCount: 2,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0
+        };
+        const res = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
+
+        expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(5);
+        expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(4);
+        expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(2);
+
+        expect(res.data.imp[1].ext.prebid.bidRequestsCount).to.equal(2);
+        expect(res.data.imp[1].ext.prebid.bidderRequestsCount).to.equal(1);
+        expect(res.data.imp[1].ext.prebid.bidderWinsCount).to.equal(0);
       });
     });
   })

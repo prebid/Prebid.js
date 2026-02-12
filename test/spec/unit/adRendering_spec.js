@@ -39,22 +39,21 @@ describe('adRendering', () => {
     beforeEach(() => {
       sandbox.stub(auctionManager, 'findBidByAdId').callsFake(() => 'auction-bid')
     });
-    it('should default to bid from auctionManager', () => {
-      return getBidToRender('adId', true, Promise.resolve(null)).then((res) => {
-        expect(res).to.eql('auction-bid');
-        sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
+    it('should default to bid from auctionManager', async () => {
+      await new Promise((resolve) => {
+        getBidToRender('adId', true, (res) => {
+          expect(res).to.eql('auction-bid');
+          sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
+          resolve();
+        })
+      })
+    });
+    it('should, by default, not give up the thread', () => {
+      let ran = false;
+      getBidToRender('adId', true, () => {
+        ran = true;
       });
-    });
-    it('should give precedence to override promise', () => {
-      return getBidToRender('adId', true, Promise.resolve('override')).then((res) => {
-        expect(res).to.eql('override');
-        sinon.assert.notCalled(auctionManager.findBidByAdId);
-      })
-    });
-    it('should return undef when override rejects', () => {
-      return getBidToRender('adId', true, Promise.reject(new Error('any reason'))).then(res => {
-        expect(res).to.not.exist;
-      })
+      expect(ran).to.be.true;
     })
   })
   describe('getRenderingData', () => {
