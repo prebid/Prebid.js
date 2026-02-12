@@ -40,7 +40,7 @@ type InsurAdsBidParams = RequireAtLeastOne<{
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    ['nexx360']: InsurAdsBidParams;
+    ['insurads']: InsurAdsBidParams;
   }
 }
 
