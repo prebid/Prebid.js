@@ -1,9 +1,9 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';

@@ -1,10 +1,10 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',

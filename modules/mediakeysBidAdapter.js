@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   cleanObj,
   deepAccess,
@@ -21,6 +20,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';

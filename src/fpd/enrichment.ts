@@ -12,7 +12,6 @@ import {
   mergeDeep,
   memoize
 } from '../utils.js';
-import { getDNT } from '../../libraries/dnt/index.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {PbPromise} from '../utils/promise.js';
@@ -158,7 +157,7 @@ const ENRICHMENTS = {
       const device = {
         w,
         h,
-        dnt: getDNT() ? 1 : 0,
+        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
         ext: {

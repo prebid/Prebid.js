@@ -1,9 +1,9 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
