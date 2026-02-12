@@ -20,6 +20,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -416,7 +417,7 @@ function makeDevice(fpd) {
     'language': getLanguage()
   }, fpd.device || {});
   // DNT was deprecated by W3C; Prebid no longer supports DNT signals.
-  device.dnt = 0;
+  device.dnt = getDNT() ? 1 : 0;
   return {device: device};
 }
 

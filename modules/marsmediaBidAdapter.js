@@ -5,6 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
@@ -92,7 +93,7 @@ function MarsmediaAdapter() {
     return {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      dnt: getDNT() ? 1 : 0,
     }
   }
 

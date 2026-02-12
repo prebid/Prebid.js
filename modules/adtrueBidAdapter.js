@@ -4,6 +4,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'adtrue';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -168,7 +169,7 @@ function _createOrtbTemplate(conf) {
       ua: navigator.userAgent,
       os: platform,
       js: 1,
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: _getLanguage(),

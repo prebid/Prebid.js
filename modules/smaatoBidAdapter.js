@@ -5,6 +5,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {NATIVE_IMAGE_TYPES} from '../src/constants.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -273,7 +274,7 @@ const converter = ortbConverter({
       request.device = {
         language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
         ua: navigator.userAgent,
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         h: screen.height,
         w: screen.width
       }

@@ -17,6 +17,7 @@ import {
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -83,7 +84,7 @@ export const spec = {
         // TODO: is 'page' the right value here?
         page_url: bidderRequest.refererInfo.page,
         bust: new Date().getTime().toString(),
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         description: getPageDescription(),
         tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({

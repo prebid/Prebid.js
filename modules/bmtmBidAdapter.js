@@ -2,6 +2,7 @@ import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb?sid=';
@@ -180,7 +181,7 @@ function buildDevice() {
     h: window.top.screen.height,
     js: 1,
     language: navigator.language,
-    dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+    dnt: getDNT() ? 1 : 0,
   }
 }
 

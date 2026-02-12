@@ -13,6 +13,7 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { config } from "../src/config.js";
 import { VIDEO, BANNER } from "../src/mediaTypes.js";
 import { getConnectionType } from "../libraries/connectionInfo/connectionUtils.js";
+import {getDNT} from "../libraries/dnt/index.js";
 
 export const ENDPOINT = "https://bid.virgul.com/prebid";
 
@@ -44,8 +45,7 @@ export const spec = {
       device: {
         ua: navigator.userAgent,
         js: 1,
-        // DNT was deprecated by W3C; Prebid no longer supports DNT signals.
-        dnt: 0,
+        dnt: getDNT() ? 1 : 0,
         h: screen.height,
         w: screen.width,
         language: navigator.language,

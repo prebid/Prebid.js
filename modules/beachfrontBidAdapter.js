@@ -12,6 +12,7 @@ import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const ADAPTER_VERSION = '1.21';
 const GVLID = 157;
@@ -305,7 +306,7 @@ function createVideoRequestData(bid, bidderRequest) {
       ua: navigator.userAgent,
       language: navigator.language,
       devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
-      dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
+      dnt: getDNT() ? 1 : 0,
       js: 1,
       geo: {}
     },
@@ -371,7 +372,7 @@ function createBannerRequestData(bids, bidderRequest) {
     ua: navigator.userAgent,
     deviceOs: getOsVersion(),
     isMobile: isMobile() ? 1 : 0,
-    dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
+    dnt: getDNT() ? 1 : 0,
     adapterVersion: ADAPTER_VERSION,
     adapterName: ADAPTER_NAME
   };

@@ -4,6 +4,7 @@ import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -63,7 +64,7 @@ export const spec = {
         device: {
           w,
           h,
-          dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+          dnt: getDNT() ? 1 : 0,
           language: getLanguage(),
         },
         placements: bidRequests.map((r) => {

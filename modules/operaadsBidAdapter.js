@@ -16,6 +16,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -760,7 +761,7 @@ function getDevice() {
   device.ua = device.ua || navigator.userAgent;
   device.language = device.language || getLanguage();
   device.dnt = typeof device.dnt === 'number'
-    ? device.dnt : (0 /* DNT deprecated by W3C; Prebid no longer supports DNT */);
+    ? device.dnt : (getDNT() ? 1 : 0);
 
   return device;
 }

@@ -2,6 +2,7 @@ import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deep
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {getDNT} from '../libraries/dnt/index.js';
 const BIDDER_CODE = 'distroscale';
 const SHORT_CODE = 'ds';
 const LOG_WARN_PREFIX = 'DistroScale: ';
@@ -163,7 +164,7 @@ export const spec = {
         h: screen.height,
         w: screen.width,
         language: (navigator.language && navigator.language.replace(/-.*/, '')) || 'en',
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */
+        dnt: getDNT() ? 1 : 0
       },
       imp: [],
       user: {},

@@ -6,6 +6,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const ADAPTER_VERSION = '2.1.0';
 const PREBID_VERSION = '$prebid.version$';
@@ -107,7 +108,7 @@ function getDevice_() {
   device.w = device.w || getWinDimensions().innerWidth;
   device.h = device.h || getWinDimensions().innerHeight;
   device.ua = device.ua || navigator.userAgent;
-  device.dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
+  device.dnt = getDNT() ? 1 : 0;
   device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
   return device;
 }

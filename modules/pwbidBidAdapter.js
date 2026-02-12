@@ -4,6 +4,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -511,7 +512,7 @@ function _createOrtbTemplate(conf) {
     device: {
       ua: navigator.userAgent,
       js: 1,
-      dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      dnt: getDNT() ? 1 : 0,
       h: screen.height,
       w: screen.width,
       language: navigator.language,

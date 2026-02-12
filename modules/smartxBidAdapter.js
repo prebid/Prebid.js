@@ -20,6 +20,7 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -155,7 +156,7 @@ export const spec = {
       const device = {
         h: screen.height,
         w: screen.width,
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         language: navigator[language].split('-')[0],
         make: navigator.vendor ? navigator.vendor : '',
         ua: navigator.userAgent

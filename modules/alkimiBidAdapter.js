@@ -4,6 +4,7 @@ import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {VIDEO, BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'alkimi';
 const GVLID = 1169;
@@ -91,7 +92,7 @@ export const spec = {
       schain: validBidRequests[0]?.ortb2?.source?.ext?.schain,
       cpp: config.getConfig('coppa') ? 1 : 0,
       device: {
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         w: screen.width,
         h: screen.height
       },

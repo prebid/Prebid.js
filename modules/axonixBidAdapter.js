@@ -4,6 +4,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {ajax} from '../src/ajax.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'axonix';
 const BIDDER_VERSION = '1.0.2';
@@ -106,7 +107,7 @@ export const spec = {
         effectiveType,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
         bidfloor: getBidFloor(validBidRequest),
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+        dnt: getDNT() ? 1 : 0,
         language: navigator.language,
         prebidVersion: '$prebid.version$',
         screenHeight: screen.height,

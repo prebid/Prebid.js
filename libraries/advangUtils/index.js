@@ -1,5 +1,6 @@
 import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
 import { config } from '../../src/config.js';
+import {getDNT} from '../dnt/index.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
@@ -140,7 +141,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   const o = {
     'device': {
       'langauge': (global.navigator.language).split('-')[0],
-      'dnt': 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
+      'dnt': getDNT() ? 1 : 0,
       'devicetype': isMobile() ? 4 : isConnectedTV() ? 3 : 2,
       'js': 1,
       'os': getOsVersion()
@@ -165,7 +166,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   o.site['ref'] = topReferrer;
   o.site['mobile'] = isMobile() ? 1 : 0;
   const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
-  o.device['dnt'] = 0; /* DNT deprecated by W3C; Prebid no longer supports DNT */
+  o.device['dnt'] = getDNT() ? 1 : 0;
 
   findAndFillParam(o.site, 'name', function() {
     return global.top.document.title;
