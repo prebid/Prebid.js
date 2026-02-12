@@ -4,7 +4,6 @@ import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, gen
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {getDNT} from '../libraries/dnt/index.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahooAds';
@@ -274,7 +273,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
         page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
-        dnt: getDNT() ? 1 : 0,
+        dnt: 0,
         ua: navigator.userAgent,
         ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
         w: window.screen.width,
