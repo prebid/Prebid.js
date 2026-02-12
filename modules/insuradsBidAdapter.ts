@@ -56,9 +56,11 @@ export const getInsurAdsLocalStorage = getLocalStorageFunctionGenerator<{ nexx36
 );
 
 export const getGzipSetting = (): boolean => {
-  const getBidderConfig = config.getBidderConfig();
-  if (getBidderConfig.insurads?.gzipEnabled === 'true') {
-    return getBidderConfig.insurads?.gzipEnabled === 'true';
+  const bidderConfig = config.getBidderConfig();
+  const gzipEnabled = bidderConfig.insurads?.gzipEnabled;
+
+  if (gzipEnabled === true || gzipEnabled === 'true') {
+    return true;
   }
   return DEFAULT_GZIP_ENABLED;
 }
