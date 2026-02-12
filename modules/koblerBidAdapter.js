@@ -204,7 +204,12 @@ function buildOpenRtbImpObject(validBidRequest) {
     },
     bidfloor: floorInfo.floor,
     bidfloorcur: floorInfo.currency,
-    pmp: buildPmpObject(validBidRequest)
+    pmp: buildPmpObject(validBidRequest),
+    ext: {
+      prebid: {
+        adunitcode: validBidRequest.adUnitCode
+      }
+    }
   };
 }
 
