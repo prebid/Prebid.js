@@ -2,6 +2,7 @@ import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.j
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, generateUUID, logInfo, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * Mile Bid Adapter
@@ -164,7 +165,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       device: {
         ua: navigator.userAgent,
         language: navigator.language?.split('-')[0] || 'en',
-        dnt: 0, // Prebid no longer supports DNT
+        dnt: getDNT() ? 1 : 0,
         w: window.screen?.width,
         h: window.screen?.height,
       },
