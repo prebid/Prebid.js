@@ -686,6 +686,16 @@ export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.in
     return false;
   }
 
+  if (bid.mediaType) {
+    const mediaTypes = index.getMediaTypes(bid);
+    if (mediaTypes && Object.keys(mediaTypes).length > 0) {
+      if (!mediaTypes.hasOwnProperty(bid.mediaType)) {
+        logError(errorMessage(`Bid mediaType '${bid.mediaType}' is not supported by the ad unit. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+        return false;
+      }
+    }
+  }
+
   if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
