@@ -3167,6 +3167,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mile",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "minutemedia",
       "aliasOf": null,
       "gvlid": 918,
@@ -5001,6 +5008,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "yaleo",
+      "aliasOf": null,
+      "gvlid": 783,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "yandex",
       "aliasOf": null,
       "gvlid": null,
@@ -5380,6 +5394,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "panxo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "permutive",
       "gvlid": null,
       "disclosureURL": "https://assets.permutive.app/tcf/tcf.json"
@@ -5691,6 +5711,20 @@
       "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "locId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "locid",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": "locId"
     },
     {
       "componentType": "userId",
