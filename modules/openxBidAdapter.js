@@ -4,7 +4,6 @@ import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {getDNT} from '../libraries/dnt/index.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -62,7 +61,6 @@ const converter = ortbConverter({
     if (bid.params.coppa) {
       utils.deepSetValue(req, 'regs.coppa', 1);
     }
-    utils.deepSetValue(req, 'device.dnt', getDNT() ? 1 : 0);
     if (bid.params.platform) {
       utils.deepSetValue(req, 'ext.platform', bid.params.platform);
     }
