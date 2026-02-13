@@ -213,22 +213,25 @@ const converter = ortbConverter({
 
     bidResponse.bidderCode = context.bidRequest.bidder;
 
+    // If it is a video response up the ttl
+    if (bidResponse.mediaType === VIDEO) {
+      bidResponse.ttl = 900;
+    }
+
     // Attach renderer and w and h if outstream
     if (bidResponse.mediaType === VIDEO && context.bidRequest?.mediaTypes?.video?.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse, mgniConf.rendererUrl, mgniConf.rendererConfig);
       // generate local vastUrl using createObjectURL
       bidResponse.vastUrl = URL.createObjectURL(new Blob([bidResponse.vastXml], { type: 'text/xml' }));
+      setTimeout(() => {
+        URL.revokeObjectURL(bidResponse.vastUrl);
+      }, (bidResponse.ttl + 60) * 1000);
     }
 
     // If its video and the width and height are not set
     if (bidResponse.mediaType === VIDEO && bidShouldUsePlayerWidthAndHeight(bidResponse)) {
       bidResponse.width = bidResponse.playerWidth;
       bidResponse.height = bidResponse.playerHeight;
-    }
-
-    // If it is a video response up the ttl
-    if (bidResponse.mediaType === VIDEO) {
-      bidResponse.ttl = 900;
     }
 
     return bidResponse;

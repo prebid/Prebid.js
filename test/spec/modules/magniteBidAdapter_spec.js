@@ -629,6 +629,53 @@ describe('the magnite adapter', function () {
         expect(bids[0].ttl).to.equal(900);
       });
     });
+
+    describe('outstream video', function () {
+      let sandbox;
+      let clock;
+
+      beforeEach(function () {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(globalThis.URL, 'createObjectURL').returns('blob:test-url');
+        sandbox.stub(globalThis.URL, 'revokeObjectURL');
+        clock = sandbox.useFakeTimers();
+      });
+
+      afterEach(function () {
+        sandbox.restore();
+      });
+
+      it('should create a blob URL and revoke it after TTL + 60s', function () {
+        const bidRequest = getVideoBidRequest({
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480]
+            }
+          }
+        });
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const response = getSampleOrtbBidResponse(bidRequest.bidId, {
+          mtype: 2,
+          adm: '<VAST version="3.0"></VAST>',
+          w: 640,
+          h: 480
+        });
+
+        const bids = spec.interpretResponse({body: response}, requests[0]);
+        const bid = bids[0];
+
+        expect(bid.vastUrl).to.equal('blob:test-url');
+        expect(globalThis.URL.createObjectURL.calledOnce).to.be.true;
+
+        // TTL is 900 for video
+        const ttl = 900;
+        const delay = (ttl + 60) * 1000;
+
+        clock.tick(delay);
+        expect(globalThis.URL.revokeObjectURL.calledWith('blob:test-url')).to.be.true;
+      });
+    });
   });
 
   describe('getUserSyncs()', function () {
