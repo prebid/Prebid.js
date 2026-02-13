@@ -54,7 +54,7 @@ export function renderBid(bid) {
         position: config.position || 'prepend'
       },
       closeButton: config.closeButton || false,
-      label: config.label || undefined,
+      label: config.label,
       replay: config.replay ?? true
     });
   });
