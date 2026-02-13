@@ -4,22 +4,21 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
-import { Renderer } from '../src/Renderer.js';
 import {
   deepSetValue,
   formatQS,
   mergeDeep,
-  logWarn,
   isPlainObject
 } from '../src/utils.js';
+import {
+  outstreamRenderer,
+  bidShouldUsePlayerWidthAndHeight
+} from '../libraries/magniteUtils/outstream.js';
 
 const GVL_ID = 52;
 export const REQUEST_URL = 'https://fastlane.rubiconproject.com/a/api/prebid-exchange.json';
 export const SYNC_URL = 'https://eus.rubiconproject.com/usync.html';
 const DEFAULT_INTEGRATION = 'pbjs';
-
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.3.7.js';
-// renderer code at https://github.com/rubicon-project/apex2
 
 let mgniConf = {};
 
@@ -216,7 +215,7 @@ const converter = ortbConverter({
 
     // Attach renderer and w and h if outstream
     if (bidResponse.mediaType === VIDEO && context.bidRequest?.mediaTypes?.video?.context === 'outstream') {
-      bidResponse.renderer = outstreamRenderer(bidResponse);
+      bidResponse.renderer = outstreamRenderer(bidResponse, mgniConf.rendererUrl, mgniConf.rendererConfig);
       // generate local vastUrl using createObjectURL
       bidResponse.vastUrl = URL.createObjectURL(new Blob([bidResponse.vastXml], { type: 'text/xml' }));
     }
@@ -251,81 +250,6 @@ const converter = ortbConverter({
     }
   }
 });
-
-function bidShouldUsePlayerWidthAndHeight(bidResponse) {
-  const doesNotHaveDimensions = typeof bidResponse.width !== 'number' || typeof bidResponse.height !== 'number';
-  const hasPlayerSize = typeof bidResponse.playerWidth === 'number' && typeof bidResponse.playerHeight === 'number';
-  return doesNotHaveDimensions && hasPlayerSize;
-}
-
-function hideGoogleAdsDiv(adUnit) {
-  const el = adUnit.querySelector("div[id^='google_ads']");
-  if (el) {
-    el.style.setProperty('display', 'none');
-  }
-}
-
-function hideSmartAdServerIframe(adUnit) {
-  const el = adUnit.querySelector("script[id^='sas_script']");
-  const nextSibling = el && el.nextSibling;
-  if (nextSibling && nextSibling.localName === 'iframe') {
-    nextSibling.style.setProperty('display', 'none');
-  }
-}
-
-function renderBid(bid) {
-  // hide existing ad units
-  let adUnitElement = document.getElementById(bid.adUnitCode);
-  if (!adUnitElement) {
-    logWarn(`Magnite: unable to find ad unit element with id "${bid.adUnitCode}" for rendering.`);
-    return;
-  }
-
-  // try to get child element of adunit
-  const firstChild = adUnitElement.firstElementChild;
-  if (firstChild?.tagName === 'DIV') {
-    adUnitElement = firstChild;
-  }
-
-  hideGoogleAdsDiv(adUnitElement);
-  hideSmartAdServerIframe(adUnitElement);
-
-  // configure renderer
-  const config = bid.renderer.getConfig();
-  bid.renderer.push(() => {
-    globalThis.MagniteApex.renderAd({
-      width: bid.width,
-      height: bid.height,
-      vastUrl: bid.vastUrl,
-      placement: {
-        attachTo: adUnitElement,
-        align: config.align || 'center',
-        position: config.position || 'prepend'
-      },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      replay: config.replay ?? true
-    });
-  });
-}
-
-function outstreamRenderer(rtbBid) {
-  const renderer = Renderer.install({
-    id: rtbBid.adId,
-    url: mgniConf.rendererUrl || DEFAULT_RENDERER_URL,
-    config: mgniConf.rendererConfig || {},
-    loaded: false,
-    adUnitCode: rtbBid.adUnitCode
-  });
-
-  try {
-    renderer.setRender(renderBid);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
-}
 
 function transformBidParams(params) {
   return convertTypes({
