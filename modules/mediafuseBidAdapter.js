@@ -56,6 +56,9 @@ const VIDEO_TARGETING = ['id', 'minduration', 'maxduration', 'skippable', 'playb
 const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 
+const OMID_FRAMEWORK = 6;
+const OMID_API = 7;
+
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 
@@ -415,7 +418,11 @@ const converter = ortbConverter({
     }
 
     if (bid.adomain) {
-      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+      const adomain = Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain];
+      if (adomain.length > 0) {
+        bidResponse.meta = bidResponse.meta || {};
+        bidResponse.meta.advertiserDomains = adomain;
+      }
     }
 
     // Video
@@ -540,6 +547,7 @@ function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.reserve ? bid.params.reserve : null;
   }
+  // Mediafuse/AppNexus generally expects USD for its RTB endpoints
   let floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
@@ -571,7 +579,10 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
     loaded: () => logMessage('Mediafuse outstream video loaded event'),
     ended: () => {
       logMessage('Mediafuse outstream renderer video event');
-      document.querySelector(`#${adUnitCode}`).style.display = 'none';
+      const el = document.querySelector(`#${adUnitCode}`);
+      if (el) {
+        el.style.display = 'none';
+      }
     },
   });
   return renderer;
@@ -583,7 +594,9 @@ function hidedfpContainer(elementId) {
     if (el[0]) {
       el[0].style.setProperty('display', 'none');
     }
-  } catch (e) { }
+  } catch (e) {
+    logWarn('Mediafuse: hidedfpContainer error', e);
+  }
 }
 
 function hideSASIframe(elementId) {
@@ -592,14 +605,20 @@ function hideSASIframe(elementId) {
     if (el[0]?.nextSibling?.localName === 'iframe') {
       el[0].nextSibling.style.setProperty('display', 'none');
     }
-  } catch (e) { }
+  } catch (e) {
+    logWarn('Mediafuse: hideSASIframe error', e);
+  }
 }
 
 function handleOutstreamRendererEvents(bid, id, eventName) {
-  bid.renderer.handleVideoEvent({
-    id,
-    eventName,
-  });
+  try {
+    bid.renderer.handleVideoEvent({
+      id,
+      eventName,
+    });
+  } catch (err) {
+    logWarn(`Mediafuse: handleOutstreamRendererEvents error for ${eventName}`, err);
+  }
 }
 
 function outstreamRender(bid, doc) {
@@ -608,9 +627,16 @@ function outstreamRender(bid, doc) {
   bid.renderer.push(() => {
     const win = doc?.defaultView || window;
     if (win.ANOutstreamVideo) {
+      let sizes = bid.getSize();
+      if (typeof sizes === 'string' && sizes.indexOf('x') > -1) {
+        sizes = [sizes.split('x').map(Number)];
+      } else if (!isArray(sizes) || (isArray(sizes) && !isArray(sizes[0]))) {
+        sizes = [sizes];
+      }
+
       win.ANOutstreamVideo.renderAd({
         tagId: bid.adResponse.tag_id,
-        sizes: [bid.getSize().split('x')],
+        sizes: sizes,
         targetId: bid.adUnitCode,
         uuid: bid.requestId,
         adResponse: bid.adResponse,
@@ -623,7 +649,10 @@ function outstreamRender(bid, doc) {
 }
 
 function createAdPodRequest(bidRequest) {
-  const { durationRangeSec, requireExactDuration, adPodDurationSec } = bidRequest.mediaTypes.video;
+  const { durationRangeSec = [], requireExactDuration, adPodDurationSec = 0 } = bidRequest.mediaTypes.video || {};
+  if (!isArray(durationRangeSec) || durationRangeSec.length === 0 || adPodDurationSec === 0) {
+    return [bidRequest];
+  }
   const minAllowedDuration = Math.min(...durationRangeSec);
   const numberOfPlacements = requireExactDuration
     ? Math.max(Math.floor(adPodDurationSec / minAllowedDuration), durationRangeSec.length)
@@ -657,7 +686,7 @@ function createAdPodRequest(bidRequest) {
 }
 
 function convertCamelToUnderscore(str) {
-  return str.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
+  return str.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').toLowerCase();
 }
 
 function isAdPodRequest(imps) {
@@ -669,10 +698,10 @@ function hasOmidSupport(bid) {
   const bidderParams = bid?.params;
   const videoParams = bid?.mediaTypes?.video?.api;
   if (bidderParams?.frameworks && isArray(bidderParams.frameworks)) {
-    hasOmid = bidderParams.frameworks.includes(6);
+    hasOmid = bidderParams.frameworks.includes(OMID_FRAMEWORK);
   }
   if (!hasOmid && isArray(videoParams)) {
-    hasOmid = videoParams.includes(7);
+    hasOmid = videoParams.includes(OMID_API);
   }
   return hasOmid;
 }
@@ -700,17 +729,21 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
     const frames = document.getElementsByTagName('iframe');
     let modifiedAScript = false;
     for (let i = 0; i < frames.length && !modifiedAScript; i++) {
-      const frameDoc = frames[i].contentDocument || frames[i].contentWindow.document;
-      if (frameDoc) {
-        const scripts = frameDoc.getElementsByTagName('script');
-        for (let j = 0; j < scripts.length && !modifiedAScript; j++) {
-          const dataSrc = scripts[j].getAttribute('data-src');
-          if (dataSrc && dataSrc.includes(jsTrackerSrc.replace('data-src=', 'src=').split('?')[0])) {
-            scripts[j].setAttribute('src', dataSrc.replace('dom_id=%native_dom_id%', prebidParams));
-            scripts[j].removeAttribute('data-src');
-            modifiedAScript = true;
+      try {
+        const frameDoc = frames[i].contentDocument || frames[i].contentWindow?.document;
+        if (frameDoc) {
+          const scripts = frameDoc.getElementsByTagName('script');
+          for (let j = 0; j < scripts.length && !modifiedAScript; j++) {
+            const dataSrc = scripts[j].getAttribute('data-src');
+            if (dataSrc && dataSrc.includes(jsTrackerSrc.replace('data-src=', '').replace('src=', '').split('?')[0])) {
+              scripts[j].setAttribute('src', dataSrc.replace('dom_id=%native_dom_id%', prebidParams));
+              scripts[j].removeAttribute('data-src');
+              modifiedAScript = true;
+            }
           }
         }
+      } catch (e) {
+        logWarn('Mediafuse: cannot access iframe due to cross-origin, skipping viewability script arming', e);
       }
     }
   } catch (e) { }
@@ -724,7 +757,9 @@ export const spec = {
   aliases: [{ code: 'mediafuseBidAdapter', gvlid: GVLID }],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placementId || bid.params.placement_id || (bid.params.member && (bid.params.invCode || bid.params.inv_code)));
+    const params = bid?.params;
+    if (!params) return false;
+    return !!(params.placementId || params.placement_id || (params.member && (params.invCode || params.inv_code)));
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
@@ -761,7 +796,11 @@ export const spec = {
       let debugObj = {};
       const debugCookie = storage.getCookie('apn_prebid_debug');
       if (debugCookie) {
-        try { debugObj = JSON.parse(debugCookie); } catch (e) { }
+        try {
+          debugObj = JSON.parse(debugCookie);
+        } catch (e) {
+          logWarn('Mediafuse: failed to parse debug cookie', e);
+        }
       } else {
         Object.keys(DEBUG_QUERY_PARAM_MAP).forEach(qparam => {
           const qval = getParameterByName(qparam);

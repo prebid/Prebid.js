@@ -77,6 +77,12 @@ describe('mediafuseBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return false when bid or params are missing', function () {
+      expect(spec.isBidRequestValid(null)).to.equal(false);
+      expect(spec.isBidRequestValid({})).to.equal(false);
+      expect(spec.isBidRequestValid({ bidder: 'mediafuse' })).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -231,6 +237,27 @@ describe('mediafuseBidAdapter', function () {
       expect(requests[0].data.imp[1].id).to.equal('2c5f3044f546f1_1');
     });
 
+    it('should fallback to single placement in AdPod expansion if durationRangeSec is missing', function () {
+      const bidRequests = [{
+        bidder: 'mediafuse',
+        bidId: '2c5f3044f546f1',
+        adUnitCode: 'adpod-unit',
+        mediaTypes: {
+          video: {
+            context: 'adpod',
+            adPodDurationSec: 30
+          }
+        },
+        params: { placementId: 111 }
+      }];
+      const bidderRequest = deepClone(baseBidderRequest);
+      bidderRequest.bids = bidRequests;
+
+      const imps = spec.buildRequests(bidRequests, bidderRequest)[0].data.imp;
+      expect(imps).to.have.lengthOf(1);
+      expect(imps[0].id).to.equal('2c5f3044f546f1');
+    });
+
     it('should chunk requests with more than 15 imps', function () {
       const bidRequests = [];
       for (let i = 0; i < 20; i++) {
@@ -278,6 +305,7 @@ describe('mediafuseBidAdapter', function () {
               impid: request.data.imp[0].id,
               price: 1.5,
               adm: '<html>BANNER AD</html>',
+              adomain: ['example.com'],
               w: 300,
               h: 250,
               ext: {
@@ -302,6 +330,29 @@ describe('mediafuseBidAdapter', function () {
       expect(bids[0].meta.advertiserId).to.equal(99);
       expect(bids[0].mediafuse.buyerMemberId).to.equal(77);
       expect(bids[0].mediafuse.dealCode).to.equal('abc');
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
+
+    it('should handle non-array adomain in response', function () {
+      const bidRequests = [deepClone(baseBidRequests)];
+      const bidderRequest = deepClone(baseBidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: request.data.imp[0].id,
+              price: 1.0,
+              adomain: 'single-domain.com',
+              ext: { appnexus: { bid_ad_type: 0 } }
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['single-domain.com']);
     });
 
     it('should handle in-line trackers in banner response', function () {
@@ -445,6 +496,23 @@ describe('mediafuseBidAdapter', function () {
 
     it('should have onAdRenderSucceeded', function () {
       expect(spec.onAdRenderSucceeded).to.be.a('function');
+    });
+  });
+
+  describe('convertCamelToUnderscore', function () {
+    // Access internal function via spec if not exported, or just test its effects in buildRequests
+    // Since it's internal, we'll test it by passing custom parameters in a bidRequest
+    it('should handle complex camelCase strings', function () {
+      const bidRequests = [deepClone(baseBidRequests)];
+      bidRequests[0].params.ABCValue = 'test';
+      bidRequests[0].params.customCamelCase = 'val';
+      const bidderRequest = deepClone(baseBidderRequest);
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      const ext = request.data.imp[0].ext.appnexus;
+      expect(ext.abc_value).to.equal('test');
+      expect(ext.custom_camel_case).to.equal('val');
     });
   });
 });
