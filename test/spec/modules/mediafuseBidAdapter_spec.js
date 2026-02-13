@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mediafuseBidAdapter.js';
-import { BANNER, VIDEO, NATIVE, ADPOD } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { deepClone } from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
@@ -193,13 +193,27 @@ describe('mediafuseBidAdapter', function () {
       expect(request.url).to.contain('member_id=999');
     });
 
+    it('should extract member_id from any bid in the batch', function () {
+      const bidRequests = [
+        { bidder: 'mediafuse', adUnitCode: 'u1', params: { placementId: 1 } },
+        { bidder: 'mediafuse', adUnitCode: 'u2', params: { member: 888, invCode: 'abc' } }
+      ];
+      const bidderRequest = deepClone(baseBidderRequest);
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.contain('member_id=888');
+      expect(request.data.ext.appnexus.member_id).to.equal(888);
+    });
+
     it('should handle AdPod duplication', function () {
       const bidRequests = [{
         bidder: 'mediafuse',
+        bidId: '2c5f3044f546f1',
         adUnitCode: 'adpod-unit',
         mediaTypes: {
           video: {
-            context: ADPOD,
+            context: 'adpod',
             adPodDurationSec: 30,
             durationRangeSec: [15]
           }
@@ -213,6 +227,8 @@ describe('mediafuseBidAdapter', function () {
       // 30 / 15 = 2 placements
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].data.imp).to.have.lengthOf(2);
+      expect(requests[0].data.imp[0].id).to.equal('2c5f3044f546f1_0');
+      expect(requests[0].data.imp[1].id).to.equal('2c5f3044f546f1_1');
     });
 
     it('should chunk requests with more than 15 imps', function () {
@@ -388,7 +404,23 @@ describe('mediafuseBidAdapter', function () {
       const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
-      expect(syncs[0].url).to.equal('http://sync.me/pixel&gdpr=0&gdpr_consent=test');
+      expect(syncs[0].url).to.equal('http://sync.me/pixel?gdpr=0&gdpr_consent=test');
+    });
+
+    it('should handle UserSync URL with existing query string', function () {
+      const syncOptions = { pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          ext: {
+            appnexus: {
+              userSync: { url: 'http://sync.me/pixel?foo=bar' }
+            }
+          }
+        }
+      }];
+      const gdprConsent = { gdprApplies: true, consentString: 'test' };
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      expect(syncs[0].url).to.equal('http://sync.me/pixel?foo=bar&gdpr=1&gdpr_consent=test');
     });
 
     it('should return empty sync if nothing enabled', function () {

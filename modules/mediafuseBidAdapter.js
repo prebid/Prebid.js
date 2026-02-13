@@ -1,6 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
@@ -279,7 +279,10 @@ const converter = ortbConverter({
     }
 
     // App/Device parameters
-    const commonBidderParams = bidderRequest.bids && bidderRequest.bids[0] && bidderRequest.bids[0].params;
+    const expandedBids = bidderRequest.bids || [];
+    const memberBid = expandedBids.find(bid => bid.params && bid.params.member);
+    const commonBidderParams = memberBid ? memberBid.params : (expandedBids[0] && expandedBids[0].params);
+
     if (commonBidderParams) {
       if (commonBidderParams.member) {
         extANData.member_id = parseInt(commonBidderParams.member, 10);
@@ -423,12 +426,12 @@ const converter = ortbConverter({
       }
 
       const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-      if (videoContext === ADPOD) {
+      if (videoContext === 'adpod') {
         if (extANData?.brand_category_id && APPNEXUS_CATEGORY_MAPPING[extANData.brand_category_id]) {
           bidResponse.meta.primaryCatId = APPNEXUS_CATEGORY_MAPPING[extANData.brand_category_id];
         }
         bidResponse.video = {
-          context: ADPOD,
+          context: 'adpod',
           dealTier: extANData?.deal_priority
         };
       }
@@ -627,6 +630,9 @@ function createAdPodRequest(bidRequest) {
     : Math.floor(adPodDurationSec / minAllowedDuration);
 
   const requests = fill(bidRequest, numberOfPlacements);
+  requests.forEach((req, index) => {
+    req.bidId = `${bidRequest.bidId}_${index}`;
+  });
 
   if (requireExactDuration) {
     const divider = Math.ceil(numberOfPlacements / durationRangeSec.length);
@@ -725,7 +731,7 @@ export const spec = {
     // AdPod Expansion
     let expandedBidRequests = [];
     bidRequests.forEach(bid => {
-      if (deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'adpod') {
         expandedBidRequests.push(...createAdPodRequest(bid));
       } else {
         expandedBidRequests.push(bid);
@@ -772,7 +778,8 @@ export const spec = {
       }
 
       // member_id optimization
-      const member = batch[0]?.params?.member;
+      const memberBid = batch.find(bid => bid.params && bid.params.member);
+      const member = memberBid && memberBid.params.member;
       if (member) {
         endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') + 'member_id=' + member;
       }
@@ -841,9 +848,13 @@ export const spec = {
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       const userSync = deepAccess(serverResponses[0], 'body.ext.appnexus.userSync');
       if (userSync && userSync.url) {
+        let url = userSync.url;
+        if (gdprParams) {
+          url += (url.indexOf('?') === -1 ? '?' : '&') + gdprParams.substring(1);
+        }
         syncs.push({
           type: 'image',
-          url: userSync.url + (gdprParams ? gdprParams.replace('?', '&') : '')
+          url: url
         });
       }
     }
