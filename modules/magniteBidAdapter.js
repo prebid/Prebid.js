@@ -61,7 +61,7 @@ function isBidRequestValid(bid) {
 const posMap = {
   atf: 1,
   btf: 3
-}
+};
 
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [
@@ -158,8 +158,9 @@ const converter = ortbConverter({
     }
 
     // If params has pos and not already set by ORTB Converter => set it
-    if (bidRequest.params.position && typeof imp[context.mediaType].pos !== 'number') {
-      imp[context.mediaType].pos = posMap[bidRequest.params.position];
+    const mappedPos = posMap[bidRequest.params.position];
+    if (mappedPos && typeof imp[context.mediaType].pos !== 'number') {
+      imp[context.mediaType].pos = mappedPos;
     }
 
     // Sort banner sizes
@@ -355,7 +356,7 @@ function buildRequests(bids, bidderRequest) {
     const { accountId, siteId } = bid.params;
     for (const mediaType of Object.keys(bid.mediaTypes)) {
       if (shouldAddBid(bid, mediaType)) {
-        const key = `${accountId}-${siteId}-${mediaType}`;
+        const key = `${accountId}|${siteId}|${mediaType}`;
         if (!bidsMap[key]) {
           bidsMap[key] = [];
         }
@@ -371,7 +372,7 @@ function buildRequests(bids, bidderRequest) {
   // We need to split the bids into chunks of impLimit
   // and create a request for each chunk
   for (const [key, groupBids] of Object.entries(bidsMap)) {
-    const [accountId, siteId, mediaType] = key.split('-');
+    const [accountId, siteId, mediaType] = key.split('|');
 
     for (let i = 0; i < groupBids.length; i += impLimit) {
       const chunk = groupBids.slice(i, i + impLimit);

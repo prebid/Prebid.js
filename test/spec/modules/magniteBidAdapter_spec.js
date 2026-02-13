@@ -309,6 +309,26 @@ describe('the magnite adapter', function () {
         expect(mediaTypes).to.include('banner');
         expect(mediaTypes).to.include('video');
       });
+
+      it('should correctly handle mediaType with hyphen', function () {
+        const bid = getBannerBidRequest({
+          bidId: 'bid-hyphen',
+          mediaTypes: {
+            'video-outstream': {}
+          },
+          params: {
+            accountId: 1001,
+            siteId: 2001,
+            zoneId: 3001,
+            enabledMediaTypes: ['video-outstream']
+          }
+        });
+        const requests = spec.buildRequests([bid], bidderRequest);
+        expect(requests.length).to.equal(1);
+        const url = new URL(requests[0].url);
+        expect(url.searchParams.get('m')).to.equal('video-outstream');
+        expect(url.searchParams.get('as')).to.equal('1001-2001');
+      });
     });
 
     describe('chunking', function () {
