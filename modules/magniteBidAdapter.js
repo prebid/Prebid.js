@@ -275,6 +275,10 @@ function hideSmartAdServerIframe(adUnit) {
 function renderBid(bid) {
   // hide existing ad units
   let adUnitElement = document.getElementById(bid.adUnitCode);
+  if (!adUnitElement) {
+    logWarn(`Magnite: unable to find ad unit element with id "${bid.adUnitCode}" for rendering.`);
+    return;
+  }
 
   // try to get child element of adunit
   const firstChild = adUnitElement.firstElementChild;
