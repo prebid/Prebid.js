@@ -521,4 +521,108 @@ describe('sevioBidAdapter', function () {
       expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games', 'fun']);
     });
   });
+
+  describe('native parsing', function () {
+    it('parses native assets: title, data->desc (type 2), image (asset.img), clickUrl and trackers', function () {
+      const serverResponseNative = {
+        body: {
+          bids: [
+            {
+              requestId: 'native-1',
+              cpm: 1.0,
+              currency: 'EUR',
+              width: 1,
+              height: 1,
+              creativeId: 'native-creative-1',
+              ad: JSON.stringify({
+                ver: '1.2',
+                assets: [
+                  { id: 2, title: { text: 'Native Title' } },
+                  { id: 4, data: { type: 2, value: 'Native body text' } },
+                  { id: 5, img: { type: 3, url: 'https://img.example/x.png', w: 120, h: 60 } }
+                ],
+                eventtrackers: [
+                  { event: 1, method: 1, url: 'https://impr.example/1' },
+                  { event: 2, method: 1, url: 'https://view.example/1' }
+                ],
+                link: { url: 'https://click.example', clicktrackers: ['https://clickt.example/1'] }
+              }),
+              ttl: 300,
+              netRevenue: true,
+              mediaType: 'NATIVE',
+              meta: { advertiserDomains: ['adv.example'] },
+              bidder: 'sevio'
+            }
+          ]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponseNative);
+      expect(result).to.be.an('array').with.lengthOf(1);
+
+      const out = result[0];
+      expect(out).to.have.property('native');
+
+      const native = out.native;
+      expect(native.title).to.equal('Native Title');
+      expect(native.image).to.equal('https://img.example/x.png');
+      expect(native.image_width).to.equal(120);
+      expect(native.image_height).to.equal(60);
+      expect(native.clickUrl).to.equal('https://click.example');
+
+      expect(native.impressionTrackers).to.be.an('array').that.includes('https://impr.example/1');
+      expect(native.viewableTrackers).to.be.an('array').that.includes('https://view.example/1');
+      expect(native.clickTrackers).to.be.an('array').that.includes('https://clickt.example/1');
+
+      // meta preserved
+      expect(out.meta).to.have.property('advertiserDomains').that.deep.equals(['adv.example']);
+    });
+
+    it('maps legacy asset.id -> image types (13 -> icon, 14 -> image) and sets icon fields', function () {
+      const serverResponseIcon = {
+        body: {
+          bids: [
+            {
+              requestId: 'native-icon',
+              cpm: 1.0,
+              currency: 'EUR',
+              width: 1,
+              height: 1,
+              creativeId: 'native-creative-icon',
+              ad: JSON.stringify({
+                ver: '1.2',
+                assets: [
+                  // legacy asset id 13 should map to icon (img type 1)
+                  { id: 13, img: { url: 'https://img.example/icon.png', w: 50, h: 50 } },
+                  // legacy asset id 14 should map to image (img type 3)
+                  { id: 14, img: { url: 'https://img.example/img.png', w: 200, h: 100 } },
+                  { id: 2, title: { text: 'Legacy Mapping Test' } }
+                ],
+                link: { url: 'https://click.example/leg' }
+              }),
+              ttl: 300,
+              netRevenue: true,
+              mediaType: 'NATIVE',
+              meta: { advertiserDomains: ['legacy.example'] },
+              bidder: 'sevio'
+            }
+          ]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponseIcon);
+      expect(result).to.be.an('array').with.lengthOf(1);
+      const native = result[0].native;
+
+      // icon mapped from id 13
+      expect(native.icon).to.equal('https://img.example/icon.png');
+      expect(native.icon_width).to.equal(50);
+      expect(native.icon_height).to.equal(50);
+
+      // image mapped from id 14
+      expect(native.image).to.equal('https://img.example/img.png');
+      expect(native.image_width).to.equal(200);
+      expect(native.image_height).to.equal(100);
+    });
+  });
 });

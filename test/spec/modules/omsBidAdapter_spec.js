@@ -34,7 +34,11 @@ describe('omsBidAdapter', function () {
     };
     win = {
       document: {
-        visibilityState: 'visible'
+        visibilityState: 'visible',
+        documentElement: {
+          clientWidth: 800,
+          clientHeight: 600,
+        }
       },
       location: {
         href: "http:/location"
@@ -80,6 +84,7 @@ describe('omsBidAdapter', function () {
 
     sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
+    sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
@@ -347,8 +352,6 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
-        const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions')
-        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -358,8 +361,6 @@ describe('omsBidAdapter', function () {
 
     context('when width or height of the element is zero', function () {
       it('try to use alternative values', function () {
-        const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions')
-        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 0, height: 0});
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
