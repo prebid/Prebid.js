@@ -1165,6 +1165,20 @@ describe('targeting tests', function () {
         expect(targeting['/123456/header-bid-tag-1']).to.not.contain.key('hb_adid');
         config.resetConfig();
       });
+
+      it('calls bidTargetingExclusion with (bid, initiallyFilteredBids) and uses second argument', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid, initiallyFilteredBids) => {
+            const sameUnit = initiallyFilteredBids.filter(b => b.adUnitCode === bid.adUnitCode);
+            return sameUnit.length > 1;
+          }
+        });
+        // tag-0 has bid1 and bid2 (2 bids), tag-1 has bid3 only (1 bid) → only tag-0 bids included
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1'], undefined, bidsReceived);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-1']).to.not.contain.key('hb_adid');
+        config.resetConfig();
+      });
     });
   }); // end getAllTargeting tests
 

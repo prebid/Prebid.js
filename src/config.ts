@@ -21,6 +21,7 @@ import type {UserSyncConfig} from "./userSync.ts";
 import type {DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty} from "./types/objects.d.ts";
 import type {BidderCode} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
+import { Bid } from './bidfactory.ts';
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -258,7 +259,7 @@ export interface Config {
    * When set, only bids for which this function returns a truthy value are included in setTargeting.
    * Return false to exclude a bid from targeting.
    */
-  bidTargetingExclusion?: (bid: { [key: string]: any }) => boolean;
+  bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };
