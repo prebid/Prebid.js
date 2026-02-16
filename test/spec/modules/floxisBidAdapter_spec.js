@@ -1,192 +1,418 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec } from 'modules/floxisBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
-
-const BIDDER_CODE = 'floxis';
+import * as utils from 'src/utils.js';
 
 describe('floxisBidAdapter', function () {
+  const DEFAULT_PARAMS = { seat: 'Gmtb', region: 'us-e', partner: 'floxis' };
+
   const validBannerBid = {
-    bidId: '1',
-    adUnitCode: 'adunit-1',
-    mediaTypes: { banner: { sizes: [[300, 250]] } },
-    params: { partner: 'floxis', placementId: 123 },
-    ortb2Imp: { secure: 1 }
+    bidId: 'bid-1',
+    bidder: 'floxis',
+    adUnitCode: 'adunit-banner',
+    mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
+    params: { ...DEFAULT_PARAMS }
   };
+
   const validVideoBid = {
-    bidId: '2',
-    adUnitCode: 'adunit-2',
-    mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'], protocols: [2, 3] } },
-    params: { partner: 'floxis', placementId: 456 },
-    ortb2Imp: { secure: 1 }
-  };
-  const invalidBid = {
-    bidId: '3',
-    adUnitCode: 'adunit-3',
-    mediaTypes: { banner: { sizes: [[300, 250]] } },
-    params: { partner: '', placementId: 'notanint' }
-  };
-
-  it('should validate correct banner bid', function () {
-    expect(spec.isBidRequestValid(validBannerBid)).to.be.true;
-  });
-
-  it('should validate correct video bid', function () {
-    expect(spec.isBidRequestValid(validVideoBid)).to.be.true;
-  });
-
-  it('should invalidate incorrect bid', function () {
-    expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-  });
-
-  it('should build request with correct url and payload', function () {
-    const requests = spec.buildRequests([validBannerBid], {});
-    expect(requests).to.have.lengthOf(1);
-    expect(requests[0].url).to.include('floxis-us.floxis.tech/pbjs');
-    expect(requests[0].data).to.be.an('object');
-    expect(requests[0].data.imp).to.be.an('array');
-    expect(requests[0].data.site.ext.placementId).to.equal(123);
-  });
-
-  it('should handle empty bid requests', function () {
-    const requests = spec.buildRequests([], {});
-    expect(requests).to.be.an('array').that.is.empty;
-  });
-
-  it('should invalidate bid with no media types', function () {
-    const noMediaTypeBid = {
-      bidId: '4',
-      adUnitCode: 'adunit-4',
-      params: { partner: 'floxis', placementId: 123 }
-    };
-    expect(spec.isBidRequestValid(noMediaTypeBid)).to.be.false;
-  });
-
-  it('should validate supported media types', function () {
-    expect(spec.supportedMediaTypes).to.include(BANNER);
-    expect(spec.supportedMediaTypes).to.include(VIDEO);
-    expect(spec.supportedMediaTypes).to.include(NATIVE);
-  });
-
-  it('should return empty user syncs', function () {
-    expect(spec.getUserSyncs()).to.be.an('array').that.is.empty;
-  });
-
-  it('should interpret response correctly', function () {
-    const serverResponse = {
-      body: {
-        seatbid: [{
-          bid: [{
-            impid: '1',
-            price: 1.23,
-            w: 300,
-            h: 250,
-            crid: 'creative-1',
-            adm: '<div>ad</div>',
-            cur: 'USD'
-          }]
-        }]
+    bidId: 'bid-2',
+    bidder: 'floxis',
+    adUnitCode: 'adunit-video',
+    mediaTypes: {
+      video: {
+        playerSize: [[640, 480]],
+        mimes: ['video/mp4'],
+        protocols: [2, 3],
+        context: 'instream'
       }
+    },
+    params: { ...DEFAULT_PARAMS }
+  };
+
+  const validNativeBid = {
+    bidId: 'bid-3',
+    bidder: 'floxis',
+    adUnitCode: 'adunit-native',
+    mediaTypes: {
+      native: {
+        image: { required: true, sizes: [150, 50] },
+        title: { required: true, len: 80 }
+      }
+    },
+    params: { ...DEFAULT_PARAMS }
+  };
+
+  describe('isBidRequestValid', function () {
+    it('should return true for valid banner bid', function () {
+      expect(spec.isBidRequestValid(validBannerBid)).to.be.true;
+    });
+
+    it('should return true for valid video bid', function () {
+      expect(spec.isBidRequestValid(validVideoBid)).to.be.true;
+    });
+
+    it('should return true for valid native bid', function () {
+      expect(spec.isBidRequestValid(validNativeBid)).to.be.true;
+    });
+
+    it('should return false when seat is missing', function () {
+      const bid = { ...validBannerBid, params: { region: 'us-e' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when seat is empty string', function () {
+      const bid = { ...validBannerBid, params: { seat: '', region: 'us-e' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when region is missing', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when region is empty string', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb', region: '' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when partner is missing', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb', region: 'us-e' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when partner is empty string', function () {
+      const bid = { ...validBannerBid, params: { seat: 'Gmtb', region: 'us-e', partner: '' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when params is missing', function () {
+      const bid = { bidId: 'x', mediaTypes: { banner: { sizes: [[300, 250]] } } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when seat is not a string', function () {
+      const bid = { ...validBannerBid, params: { seat: 123, region: 'us-e', partner: 'floxis' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return true with non-default partner', function () {
+      const bid = { ...validBannerBid, params: { ...DEFAULT_PARAMS, partner: 'mypartner' } };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+  });
+
+  describe('supportedMediaTypes', function () {
+    it('should include banner, video, and native', function () {
+      expect(spec.supportedMediaTypes).to.deep.equal([BANNER, VIDEO, NATIVE]);
+    });
+  });
+
+  describe('buildRequests', function () {
+    const bidderRequest = {
+      bidderCode: 'floxis',
+      auctionId: 'auction-123',
+      timeout: 3000
     };
-    const requests = spec.buildRequests([validBannerBid], {});
-    const bids = spec.interpretResponse(serverResponse, requests[0]);
-    expect(bids).to.be.an('array');
-    if (bids.length > 0) {
-      expect(bids[0]).to.have.property('cpm');
-      expect(bids[0]).to.have.property('requestId');
-      expect(bids[0].cpm).to.equal(1.23);
+
+    it('should return an array with one POST request', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].method).to.equal('POST');
+    });
+
+    it('should build URL without partner prefix when partner is floxis', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests[0].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Gmtb');
+    });
+
+    it('should build URL with partner prefix for non-floxis partner', function () {
+      const bidWithPartner = {
+        ...validBannerBid,
+        params: { ...DEFAULT_PARAMS, partner: 'mypartner' }
+      };
+      const requests = spec.buildRequests([bidWithPartner], bidderRequest);
+      expect(requests[0].url).to.equal('https://mypartner-us-e.floxis.tech/pbjs?seat=Gmtb');
+    });
+
+    it('should return empty array for empty bid requests', function () {
+      const requests = spec.buildRequests([], bidderRequest);
+      expect(requests).to.be.an('array').that.is.empty;
+    });
+
+    it('should produce valid ORTB request payload', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      const data = requests[0].data;
+      expect(data).to.be.an('object');
+      expect(data.imp).to.be.an('array').with.lengthOf(1);
+      expect(data.at).to.equal(1);
+    });
+
+    it('should set ext with adapter info', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      const data = requests[0].data;
+      expect(data.ext.prebid.adapter).to.equal('floxis');
+      expect(data.ext.prebid.adapterVersion).to.equal('2.0.0');
+    });
+
+    it('should build banner imp correctly', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      const imp = requests[0].data.imp[0];
+      expect(imp).to.have.property('banner');
+      expect(imp.banner.format).to.be.an('array');
+      expect(imp.secure).to.equal(1);
+    });
+
+    if (FEATURES.VIDEO) {
+      it('should build video imp correctly', function () {
+        const requests = spec.buildRequests([validVideoBid], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp).to.have.property('video');
+        expect(imp.video.mimes).to.deep.equal(['video/mp4']);
+        expect(imp.video.protocols).to.deep.equal([2, 3]);
+      });
     }
+
+    it('should handle multiple bids in single request', function () {
+      const requests = spec.buildRequests([validBannerBid, validVideoBid], bidderRequest);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data.imp).to.have.lengthOf(2);
+    });
+
+    it('should set withCredentials option', function () {
+      const requests = spec.buildRequests([validBannerBid], bidderRequest);
+      expect(requests[0].options.withCredentials).to.be.true;
+    });
+
+    describe('Floors Module support', function () {
+      it('should set bidfloor from getFloor', function () {
+        const bidWithFloor = {
+          ...validBannerBid,
+          getFloor: function () {
+            return { floor: 2.5, currency: 'USD' };
+          }
+        };
+        const requests = spec.buildRequests([bidWithFloor], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp.bidfloor).to.equal(2.5);
+        expect(imp.bidfloorcur).to.equal('USD');
+      });
+
+      it('should not set bidfloor when getFloor is not present', function () {
+        const requests = spec.buildRequests([validBannerBid], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp.bidfloor).to.be.undefined;
+      });
+
+      it('should handle getFloor throwing an error gracefully', function () {
+        const bidBrokenFloor = {
+          ...validBannerBid,
+          getFloor: function () {
+            throw new Error('floor error');
+          }
+        };
+        const requests = spec.buildRequests([bidBrokenFloor], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp.bidfloor).to.be.undefined;
+      });
+    });
+
+    describe('ortb2 passthrough', function () {
+      it('should merge ortb2 data into the ORTB request', function () {
+        const ortb2BidderRequest = {
+          ...bidderRequest,
+          ortb2: {
+            regs: { ext: { gdpr: 1 } },
+            user: { ext: { consent: 'consent-string-123' } }
+          }
+        };
+        const requests = spec.buildRequests([validBannerBid], ortb2BidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.ext.gdpr).to.equal(1);
+        expect(data.user.ext.consent).to.equal('consent-string-123');
+      });
+
+      it('should merge ortb2 USP data into the ORTB request', function () {
+        const uspBidderRequest = {
+          ...bidderRequest,
+          ortb2: {
+            regs: { ext: { us_privacy: '1YNN' } }
+          }
+        };
+        const requests = spec.buildRequests([validBannerBid], uspBidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      });
+    });
   });
 
-  it('should set bidfloor and bidfloorcur from Floors Module', function () {
-    const floorValue = 2.5;
-    const floorCurrency = 'USD';
-    const bidWithFloor = {
-      bidId: '10',
-      adUnitCode: 'adunit-10',
-      mediaTypes: { banner: { sizes: [[300, 250]] } },
-      params: { partner: 'floxis', placementId: 999 },
-      getFloor: function({currency, mediaType, size}) {
-        return { floor: floorValue, currency: floorCurrency };
-      }
-    };
-    const requests = spec.buildRequests([bidWithFloor], {});
-    expect(requests).to.have.lengthOf(1);
-    const imp = requests[0].data.imp[0];
-    expect(imp.bidfloor).to.equal(floorValue);
-    expect(imp.bidfloorcur).to.equal(floorCurrency);
+  describe('interpretResponse', function () {
+    function buildRequest() {
+      return spec.buildRequests([validBannerBid], {
+        bidderCode: 'floxis',
+        auctionId: 'auction-123'
+      })[0];
+    }
+
+    it('should parse valid banner ORTB response', function () {
+      const request = buildRequest();
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: validBannerBid.bidId,
+              price: 1.23,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adm: '<div>ad</div>',
+              mtype: 1
+            }]
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].width).to.equal(300);
+      expect(bids[0].height).to.equal(250);
+      expect(bids[0].creativeId).to.equal('creative-1');
+      expect(bids[0].ad).to.equal('<div>ad</div>');
+      expect(bids[0].requestId).to.equal(validBannerBid.bidId);
+      expect(bids[0].netRevenue).to.equal(true);
+      expect(bids[0].currency).to.equal('USD');
+    });
+
+    if (FEATURES.VIDEO) {
+      it('should parse valid video ORTB response', function () {
+        const videoRequest = spec.buildRequests([validVideoBid], {
+          bidderCode: 'floxis',
+          auctionId: 'auction-456'
+        })[0];
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: validVideoBid.bidId,
+                price: 5.00,
+                w: 640,
+                h: 480,
+                crid: 'video-creative-1',
+                adm: '<VAST></VAST>',
+                mtype: 2
+              }]
+            }]
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, videoRequest);
+        expect(bids).to.be.an('array').with.lengthOf(1);
+        expect(bids[0].cpm).to.equal(5.00);
+        expect(bids[0].vastXml).to.equal('<VAST></VAST>');
+        expect(bids[0].mediaType).to.equal(VIDEO);
+      });
+    }
+
+    it('should return empty array for empty response', function () {
+      const request = buildRequest();
+      const bids = spec.interpretResponse({ body: {} }, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array for null response body', function () {
+      const request = buildRequest();
+      const bids = spec.interpretResponse({ body: null }, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array for undefined response', function () {
+      const request = buildRequest();
+      const bids = spec.interpretResponse(undefined, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should handle multiple bids in seatbid', function () {
+      const bids2 = [
+        { ...validBannerBid, bidId: 'bid-a' },
+        { ...validBannerBid, bidId: 'bid-b', adUnitCode: 'adunit-2' }
+      ];
+      const request = spec.buildRequests(bids2, { bidderCode: 'floxis', auctionId: 'a1' })[0];
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [
+              { impid: 'bid-a', price: 1.0, w: 300, h: 250, crid: 'c1', adm: '<div>1</div>', mtype: 1 },
+              { impid: 'bid-b', price: 2.0, w: 300, h: 250, crid: 'c2', adm: '<div>2</div>', mtype: 1 }
+            ]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(serverResponse, request);
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].cpm).to.equal(1.0);
+      expect(result[1].cpm).to.equal(2.0);
+    });
+
+    it('should set advertiserDomains from adomain', function () {
+      const request = buildRequest();
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: validBannerBid.bidId,
+              price: 1.0,
+              w: 300,
+              h: 250,
+              crid: 'c1',
+              adm: '<div>ad</div>',
+              adomain: ['adv.com'],
+              mtype: 1
+            }]
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['adv.com']);
+    });
   });
 
-  it('should set ORTB blocking params in request and imp', function () {
-    const bidWithBlocking = {
-      bidId: '20',
-      adUnitCode: 'adunit-20',
-      mediaTypes: { banner: { sizes: [[300, 250]] } },
-      params: {
-        partner: 'floxis',
-        placementId: 555,
-        bcat: ['IAB1-1', 'IAB1-2'],
-        badv: ['example.com', 'test.com'],
-        bapp: ['com.example.app'],
-        battr: [1, 2, 3]
-      }
-    };
-    const requests = spec.buildRequests([bidWithBlocking], {});
-    expect(requests).to.have.lengthOf(1);
-    const req = requests[0].data;
-    expect(req.bcat).to.deep.equal(['IAB1-1', 'IAB1-2']);
-    expect(req.badv).to.deep.equal(['example.com', 'test.com']);
-    expect(req.bapp).to.deep.equal(['com.example.app']);
-    const imp = req.imp[0];
-    expect(imp.banner.battr).to.deep.equal([1, 2, 3]);
+  describe('getUserSyncs', function () {
+    it('should return empty array', function () {
+      expect(spec.getUserSyncs()).to.be.an('array').that.is.empty;
+    });
   });
 
-  it('should invalidate video bid with missing mimes', function () {
-    const bid = {
-      bidId: 'v1',
-      adUnitCode: 'adunit-v1',
-      mediaTypes: { video: { playerSize: [[640, 480]], protocols: [2, 3] } },
-      params: { partner: 'floxis', placementId: 123 }
-    };
-    expect(spec.isBidRequestValid(bid)).to.be.false;
-  });
+  describe('onBidWon', function () {
+    let triggerPixelStub;
 
-  it('should invalidate video bid with missing protocols', function () {
-    const bid = {
-      bidId: 'v2',
-      adUnitCode: 'adunit-v2',
-      mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'] } },
-      params: { partner: 'floxis', placementId: 123 }
-    };
-    expect(spec.isBidRequestValid(bid)).to.be.false;
-  });
+    beforeEach(function () {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    });
 
-  it('should validate correct video bid with mimes and protocols', function () {
-    const bid = {
-      bidId: 'v3',
-      adUnitCode: 'adunit-v3',
-      mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'], protocols: [2, 3] } },
-      params: { partner: 'floxis', placementId: 123 }
-    };
-    expect(spec.isBidRequestValid(bid)).to.be.true;
-  });
+    afterEach(function () {
+      triggerPixelStub.restore();
+    });
 
-  it('should invalidate native bid with no assets', function () {
-    const bid = {
-      bidId: 'n1',
-      adUnitCode: 'adunit-n1',
-      mediaTypes: { native: {} },
-      params: { partner: 'floxis', placementId: 123 }
-    };
-    expect(spec.isBidRequestValid(bid)).to.be.false;
-  });
+    it('should fire burl pixel', function () {
+      spec.onBidWon({ burl: 'https://example.com/burl' });
+      expect(triggerPixelStub.calledWith('https://example.com/burl')).to.be.true;
+    });
 
-  it('should validate native bid with assets', function () {
-    const bid = {
-      bidId: 'n2',
-      adUnitCode: 'adunit-n2',
-      mediaTypes: { native: { image: { required: true, sizes: [150, 50] }, title: { required: true, len: 80 } } },
-      params: { partner: 'floxis', placementId: 123 }
-    };
-    expect(spec.isBidRequestValid(bid)).to.be.true;
+    it('should fire nurl pixel', function () {
+      spec.onBidWon({ nurl: 'https://example.com/nurl' });
+      expect(triggerPixelStub.calledWith('https://example.com/nurl')).to.be.true;
+    });
+
+    it('should fire both burl and nurl pixels', function () {
+      spec.onBidWon({
+        burl: 'https://example.com/burl',
+        nurl: 'https://example.com/nurl'
+      });
+      expect(triggerPixelStub.callCount).to.equal(2);
+    });
+
+    it('should not fire pixels when no urls present', function () {
+      spec.onBidWon({});
+      expect(triggerPixelStub.called).to.be.false;
+    });
   });
 });
