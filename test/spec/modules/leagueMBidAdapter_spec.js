@@ -330,7 +330,7 @@ describe('leagueMBidAdapter', () => {
   });
 
   describe('getUserSyncs', function () {
-    it('shoukd handle no params', function () {
+    it('should handle no params', function () {
       const opts = spec.getUserSyncs({}, []);
       expect(opts).to.be.an('array').that.is.empty;
     });
