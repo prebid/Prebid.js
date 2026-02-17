@@ -5,6 +5,7 @@ import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import 'src/prebid.js'
+import * as dnt from 'libraries/dnt/index.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -846,7 +847,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
 
       context('do not track (DNT)', function() {
-         let doNotTrackStub;
+        let doNotTrackStub;
 
         beforeEach(function () {
           doNotTrackStub = sinon.stub(dnt, 'getDNT');
