@@ -223,7 +223,7 @@ describe('leagueMBidAdapter', () => {
       expect(request).to.have.property('video').and.to.deep.equal({
         playerSize: [640, 480],
         context: 'instream',
-        skipppable: true
+        skippable: true
       });
       expect(request).to.have.property('sizes').and.to.deep.equal(['640x480']);
     });
