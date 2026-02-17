@@ -798,7 +798,9 @@ export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() ===
  * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
-  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+  const customSlotMatching = config.getConfig('customSlotMatching');
+  const match = isFn(customSlotMatching) && customSlotMatching(slot);
+  return isFn(match) ? match : (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
 
 /**

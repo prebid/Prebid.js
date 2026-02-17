@@ -55,22 +55,6 @@ describe('#bidViewability', function() {
     pbjsWinningBid = Object.assign({}, PBJS_WINNING_BID);
   });
 
-  describe('isBidAdUnitCodeMatchingSlot', function() {
-    it('match found by GPT Slot getAdUnitPath', function() {
-      expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(true);
-    });
-
-    it('match found by GPT Slot getSlotElementId', function() {
-      pbjsWinningBid.adUnitCode = 'DIV-1';
-      expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(true);
-    });
-
-    it('match not found', function() {
-      pbjsWinningBid.adUnitCode = 'DIV-10';
-      expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(false);
-    });
-  });
-
   describe('getMatchingWinningBidForGPTSlot', function() {
     let winningBidsArray;
     let sandbox
@@ -89,44 +73,40 @@ describe('#bidViewability', function() {
       sandbox.restore();
     })
 
-    it('should find a match by using customMatchFunction provided in config', function() {
-      // Needs config to be passed with customMatchFunction
-      const bidViewabilityConfig = {
-        customMatchFunction(bid, slot) {
-          return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
+    it('should find a match by using customSlotMatching provided in config', function() {
+      config.setConfig({
+        customSlotMatching: slot => {
+          return (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode;
         }
-      };
+      });
       const newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(newWinningBid);
-      const wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
       expect(wb).to.deep.equal(newWinningBid);
+      config.resetConfig();
     });
 
-    it('should NOT find a match by using customMatchFunction provided in config', function() {
-      // Needs config to be passed with customMatchFunction
-      const bidViewabilityConfig = {
-        customMatchFunction(bid, slot) {
-          return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
-        }
-      };
-      // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
-      const wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
+    it('should NOT find a match when customSlotMatching is set and no winning bid matches', function() {
+      config.setConfig({
+        customSlotMatching: slot => (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode
+      });
+      // winningBidsArray is empty in beforeEach, so no bid matches
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
       expect(wb).to.equal(null);
+      config.resetConfig();
     });
 
     it('should find a match by using default matching function', function() {
-      // Needs config to be passed without customMatchFunction
-      // Needs pbjs.getWinningBids to be implemented with match
+      // No customSlotMatching in config; pbjs.getWinningBids returns matching bid
       winningBidsArray.push(PBJS_WINNING_BID);
-      const wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
       expect(wb).to.deep.equal(PBJS_WINNING_BID);
     });
 
     it('should NOT find a match by using default matching function', function() {
-      // Needs config to be passed without customMatchFunction
-      // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
-      const wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
+      // No customSlotMatching; winningBidsArray is empty in beforeEach
+      const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
       expect(wb).to.equal(null);
     });
   });

@@ -1641,16 +1641,16 @@ describe('targeting tests', function () {
 
     it('can find slots by ad unit path', () => {
       const paths = ['slot/1', 'slot/2']
-      expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
+      expect(getGPTSlotsForAdUnits(paths, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
     })
 
     it('can find slots by ad element ID', () => {
       const elementIds = ['div-1', 'div-2']
-      expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
+      expect(getGPTSlotsForAdUnits(elementIds, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
     })
 
     it('returns empty list on no match', () => {
-      expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], null, () => slots)).to.eql({
+      expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], () => slots)).to.eql({
         missing: [],
         'slot/2': [slots[1]]
       });
@@ -1664,10 +1664,14 @@ describe('targeting tests', function () {
           }
         }
       }
-      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], csm, () => slots)).to.eql({
+      config.setConfig({
+        customSlotMatching: csm
+      })
+      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], () => slots)).to.eql({
         'custom': [slots[0], slots[2]],
         'div-2': [slots[1]]
       })
+      config.resetConfig();
     });
 
     it('can use customSlotMatching resolving to elementIds', () => {
@@ -1678,14 +1682,18 @@ describe('targeting tests', function () {
           }
         }
       }
-      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], csm, () => slots)).to.eql({
+      config.setConfig({
+        customSlotMatching: csm
+      })
+      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], () => slots)).to.eql({
         'custom': [slots[0]],
         'div-2': [slots[1]]
       })
+      config.resetConfig();
     });
 
     it('can handle repeated adUnitCodes', () => {
-      expect(getGPTSlotsForAdUnits(['div-1', 'div-1'], null, () => slots)).to.eql({
+      expect(getGPTSlotsForAdUnits(['div-1', 'div-1'], () => slots)).to.eql({
         'div-1': [slots[0]]
       })
     })

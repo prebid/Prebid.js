@@ -181,11 +181,10 @@ describe('GPT pre-auction module', () => {
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: '/12345,21212/slotCode2' });
     });
 
-    it('should use the customGptSlotMatching function if one is given', () => {
+    it('should use the customSlotMatching function if one is given', () => {
       config.setConfig({
-        gptPreAuction: {
-          customGptSlotMatching: slot =>
-            adUnitCode => adUnitCode.toUpperCase() === slot.getAdUnitPath().toUpperCase()
+        customSlotMatching: slot => {
+          return (adUnitCode) => adUnitCode.toUpperCase() === slot.getAdUnitPath().toUpperCase();
         }
       });
 
@@ -194,6 +193,7 @@ describe('GPT pre-auction module', () => {
       appendGptSlots([adUnit]);
       expect(adUnit.ortb2Imp.ext.data.adserver).to.be.an('object');
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode1' });
+      config.resetConfig();
     });
   });
 
@@ -208,27 +208,14 @@ describe('GPT pre-auction module', () => {
       expect(_currentConfig).to.be.an('object').that.is.empty;
     });
 
-    it('should accept custom functions in config', () => {
-      config.setConfig({
-        gptPreAuction: {
-          customGptSlotMatching: () => 'customGptSlot',
-        }
-      });
-
-      expect(_currentConfig.enabled).to.equal(true);
-      expect(_currentConfig.customGptSlotMatching).to.a('function');
-      expect(_currentConfig.customGptSlotMatching()).to.equal('customGptSlot');
-    });
-
     it('should check that custom functions in config are type function', () => {
       config.setConfig({
         gptPreAuction: {
-          customGptSlotMatching: 12345,
+          customPreAuction: 12345,
         }
       });
       expect(_currentConfig).to.deep.equal({
         enabled: true,
-        customGptSlotMatching: false,
         customPreAuction: false,
         useDefaultPreAuction: true
       });

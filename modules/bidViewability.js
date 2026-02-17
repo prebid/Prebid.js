@@ -5,7 +5,7 @@
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
-import {isFn, logWarn, triggerPixel} from '../src/utils.js';
+import {isAdUnitCodeMatchingSlot, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
 import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
@@ -13,20 +13,14 @@ import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
 const CONFIG_FIRE_PIXELS = 'firePixels';
-const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
 const BID_VURL_ARRAY = 'vurls';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 
-export const isBidAdUnitCodeMatchingSlot = (bid, slot) => {
-  return (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode);
-}
-
-export const getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
+export const getMatchingWinningBidForGPTSlot = (slot) => {
+  const match = isAdUnitCodeMatchingSlot(slot);
   return getGlobal().getAllWinningBids().find(
     // supports custom match function from config
-    bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
-      ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot)
-      : isBidAdUnitCodeMatchingSlot(bid, slot)
+    ({ adUnitCode }) => match(adUnitCode)
   ) || null;
 };
 
@@ -63,7 +57,7 @@ export const logWinningBidNotFound = (slot) => {
 
 export const impressionViewableHandler = (globalModuleConfig, event) => {
   const slot = event.slot;
-  const respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
+  const respectiveBid = getMatchingWinningBidForGPTSlot(slot);
 
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
