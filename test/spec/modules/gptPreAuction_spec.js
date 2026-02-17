@@ -181,9 +181,9 @@ describe('GPT pre-auction module', () => {
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: '/12345,21212/slotCode2' });
     });
 
-    it('should use the customSlotMatching function if one is given', () => {
+    it('should use the customGptSlotMatching function if one is given', () => {
       config.setConfig({
-        customSlotMatching: slot => {
+        customGptSlotMatching: slot => {
           return (adUnitCode) => adUnitCode.toUpperCase() === slot.getAdUnitPath().toUpperCase();
         }
       });

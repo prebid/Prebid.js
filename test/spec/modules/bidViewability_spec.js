@@ -73,9 +73,9 @@ describe('#bidViewability', function() {
       sandbox.restore();
     })
 
-    it('should find a match by using customSlotMatching provided in config', function() {
+    it('should find a match by using customGptSlotMatching provided in config', function() {
       config.setConfig({
-        customSlotMatching: slot => {
+        customGptSlotMatching: slot => {
           return (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode;
         }
       });
@@ -87,9 +87,9 @@ describe('#bidViewability', function() {
       config.resetConfig();
     });
 
-    it('should NOT find a match when customSlotMatching is set and no winning bid matches', function() {
+    it('should NOT find a match when customGptSlotMatching is set and no winning bid matches', function() {
       config.setConfig({
-        customSlotMatching: slot => (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode
+        customGptSlotMatching: slot => (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode
       });
       // winningBidsArray is empty in beforeEach, so no bid matches
       const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
@@ -98,14 +98,14 @@ describe('#bidViewability', function() {
     });
 
     it('should find a match by using default matching function', function() {
-      // No customSlotMatching in config; pbjs.getWinningBids returns matching bid
+      // No customGptSlotMatching in config; pbjs.getWinningBids returns matching bid
       winningBidsArray.push(PBJS_WINNING_BID);
       const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
       expect(wb).to.deep.equal(PBJS_WINNING_BID);
     });
 
     it('should NOT find a match by using default matching function', function() {
-      // No customSlotMatching; winningBidsArray is empty in beforeEach
+      // No customGptSlotMatching; winningBidsArray is empty in beforeEach
       const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
       expect(wb).to.equal(null);
     });

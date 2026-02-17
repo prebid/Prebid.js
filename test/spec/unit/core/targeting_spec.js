@@ -1656,7 +1656,7 @@ describe('targeting tests', function () {
       });
     });
 
-    it('can use customSlotMatching resolving to ad unit codes', () => {
+    it('can use customGptSlotMatching resolving to ad unit codes', () => {
       const csm = (slot) => {
         if (slot.getAdUnitPath() === 'slot/1') {
           return (au) => {
@@ -1665,7 +1665,7 @@ describe('targeting tests', function () {
         }
       }
       config.setConfig({
-        customSlotMatching: csm
+        customGptSlotMatching: csm
       })
       expect(getGPTSlotsForAdUnits(['div-2', 'custom'], () => slots)).to.eql({
         'custom': [slots[0], slots[2]],
@@ -1674,7 +1674,7 @@ describe('targeting tests', function () {
       config.resetConfig();
     });
 
-    it('can use customSlotMatching resolving to elementIds', () => {
+    it('can use customGptSlotMatching resolving to elementIds', () => {
       const csm = (slot) => {
         if (slot.getSlotElementId() === 'div-1') {
           return (au) => {
@@ -1683,7 +1683,7 @@ describe('targeting tests', function () {
         }
       }
       config.setConfig({
-        customSlotMatching: csm
+        customGptSlotMatching: csm
       })
       expect(getGPTSlotsForAdUnits(['div-2', 'custom'], () => slots)).to.eql({
         'custom': [slots[0]],

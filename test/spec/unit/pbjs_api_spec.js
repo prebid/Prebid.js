@@ -1068,13 +1068,13 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
+    it('should set googletag targeting keys to specific slot with customGptSlotMatching', function () {
       // same ad unit code but two differnt divs
-      // we make sure we can set targeting for a specific one with customSlotMatching
+      // we make sure we can set targeting for a specific one with customGptSlotMatching
 
       pbjs.setConfig({
         enableSendAllBids: false,
-        customSlotMatching: (slot) => {
+        customGptSlotMatching: (slot) => {
           return (adUnitCode) => {
             return slots[0].getSlotElementId() === slot.getSlotElementId();
           };

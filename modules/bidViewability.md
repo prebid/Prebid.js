@@ -12,7 +12,7 @@ Maintainer: harshad.mane@pubmatic.com
 - GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent . This event is fired when an impression becomes viewable, according to the Active View criteria.
 Refer: https://support.google.com/admanager/answer/4524488
 - This module does not work with any adserver's other than GAM with GPT integration
-- Logic used to find a matching pbjs-bid for a GPT slot is ``` (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode) ``` this logic can be changed by using config param ```customSlotMatching```
+- Logic used to find a matching pbjs-bid for a GPT slot is ``` (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode) ``` this logic can be changed by using config param ```customGptSlotMatching```
 - When a rendered PBJS bid is viewable the module will trigger a BID_VIEWABLE event, which can be consumed by bidders and analytics adapters
 - If the viewable bid contains a ```vurls``` param containing URL's and the Bid Viewability module is configured with ``` firePixels: true ``` then the URLs mentioned in bid.vurls will be called. Please note that GDPR and USP related parameters will be added to the given URLs
 - This module is also compatible with Prebid core's billing deferral logic, this means that bids linked to an ad unit marked with `deferBilling: true` will trigger a bid adapter's `onBidBillable` function (if present) indicating an ad slot was viewed and also billing ready (if it were deferred).
