@@ -157,7 +157,6 @@ const ENRICHMENTS = {
       const device = {
         w,
         h,
-        dnt: 0 /* DNT deprecated by W3C; Prebid no longer supports DNT */,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
         ext: {
