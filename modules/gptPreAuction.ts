@@ -169,15 +169,9 @@ type GPTPreAuctionConfig = {
    */
   enabled?: boolean;
   /**
-   * If true, use default behavior for determining GPID and PbAdSlot. Defaults to false.
+   * If true, use default behavior for determining GPID. Defaults to false.
    */
   useDefaultPreAuction?: boolean;
-  /**
-   * @param adUnitCode Ad unit code
-   * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
-   * @returns pbadslot for the ad unit
-   */
-  customPbAdSlot?: (adUnitCode: AdUnitCode, adServerAdSlot: string) => string;
   /**
    * @param adUnit An ad unit object
    * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
