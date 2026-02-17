@@ -694,7 +694,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         const user = data.user;
         expect(user[param]).to.be.a('object');
-        expect(user[param]).to.be.deep.include({[param]: {a: '123', b: '456'}});
+        // Properties from ortb2.user.ext should be merged into user.ext, not nested
+        expect(user[param]).to.be.deep.include({a: '123', b: '456'});
       });
     });
 
@@ -991,7 +992,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         {source: 'neustar.biz', uids: [{id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1}]}
       ];
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-
       expect(data.user.ext.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
 
@@ -1033,6 +1033,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.source).to.deep.equal({
+        tid: undefined,
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,
@@ -1053,6 +1054,74 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.cur).to.deep.equal(['USD']);
+    });
+
+    it('should not include source.tid when publisher does not provide it', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.tid).to.be.undefined;
+    });
+
+    it('should include source.tid from bidderRequest.ortb2.source.tid when provided', () => {
+      const ortb2 = {
+        source: {
+          tid: 'test-transaction-id-12345'
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.tid).to.equal('test-transaction-id-12345');
+    });
+
+    it('should read source.tid from global ortb2 config when enableTids is true', () => {
+      const ortb2 = {
+        source: {
+          tid: 'global-tid-67890'
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.tid).to.equal('global-tid-67890');
+      expect(data.source.ext.hb).to.equal(1);
+      expect(data.source.fd).to.equal(1);
+    });
+
+    it('should include source.tid alongside existing source.ext properties', () => {
+      const ortb2 = {
+        source: {
+          tid: 'test-tid-with-ext'
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.source).to.have.property('tid');
+      expect(data.source.tid).to.equal('test-tid-with-ext');
+      expect(data.source.ext).to.deep.equal({
+        hb: 1,
+        adapterver: ADAPTER_VERSION,
+        prebidver: PREBID_VERSION,
+        integration: {
+          name: INTEGRATION_METHOD,
+          ver: PREBID_VERSION
+        }
+      });
+      expect(data.source.fd).to.equal(1);
+    });
+
+    it('should handle empty source.tid gracefully', () => {
+      const ortb2 = {
+        source: {
+          tid: ''
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.tid).to.equal('');
     });
 
     it('should generate a valid openRTB imp.ext object in the bid-request', () => {

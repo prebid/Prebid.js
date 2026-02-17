@@ -288,6 +288,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
         }
       },
       source: {
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,
@@ -452,7 +453,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site.content = validateAppendObject('object', allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
-      siteContentDataArray.every(dataObject => {
+      siteContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
@@ -468,7 +469,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
   if (appContentObject && isPlainObject(appContentObject)) {
     if (appContentDataArray && isArray(appContentDataArray)) {
-      appContentDataArray.every(dataObject => {
+      appContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
@@ -490,11 +491,16 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     const allowedUserNumbers = ['yob'];
     const allowedUserArrays = ['data'];
-    const allowedUserObjects = ['ext'];
     outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
+    // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
+    if (userObject.ext && isPlainObject(userObject.ext)) {
+      outBoundBidRequest.user.ext = {
+        ...outBoundBidRequest.user.ext,
+        ...userObject.ext
+      };
+    }
   };
 
   return outBoundBidRequest;

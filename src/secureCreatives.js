@@ -15,6 +15,7 @@ import {
   markWinner
 } from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
+import {PbPromise} from './utils/promise.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -59,7 +60,7 @@ function ensureAdId(adId, reply) {
   }
 }
 
-export function receiveMessage(ev) {
+export function receiveMessage(ev, cb) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
   try {
@@ -69,9 +70,10 @@ export function receiveMessage(ev) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST).then(adObject => {
+    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST, (adObject) => {
       HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
-    })
+      cb && cb();
+    });
   }
 }
 
@@ -134,13 +136,41 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
+function getDimension(value) {
+  return value ? value + 'px' : '100%';
+}
+
+export function resizeAnchor(ins, width, height) {
+  /**
+   * Special handling for google anchor ads
+   * For anchors, the element to resize is an <ins> element that is an ancestor of the creative iframe
+   * On desktop this is sized to the creative dimensions;
+   * on mobile one dimension is fixed to 100%.
+   */
+  return new PbPromise((resolve, reject) => {
+    let tryCounter = 10;
+    // wait until GPT has set dimensions on the ins, otherwise our changes will be overridden
+    const resizer = setInterval(() => {
+      let done = false;
+      Object.entries({width, height})
+        .forEach(([dimension, newValue]) => {
+          if (/\d+px/.test(ins.style[dimension])) {
+            ins.style[dimension] = getDimension(newValue);
+            done = true;
+          }
+        })
+      if (done || (tryCounter-- === 0)) {
+        clearInterval(resizer);
+        done ? resolve() : reject(new Error('Could not resize anchor'))
+      }
+    }, 50)
+  })
+}
+
 export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
-  function getDimension(value) {
-    return value ? value + 'px' : '100%';
-  }
 
   function resize(element) {
     if (element) {
@@ -154,9 +184,9 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
 
   // not select element that gets removed after dfp render
   const iframe = getElementByAdUnit('iframe:not([style*="display: none"])');
-
-  // resize both container div + iframe
-  [iframe, iframe?.parentElement].forEach(resize);
+  resize(iframe);
+  const anchorIns = iframe?.closest('ins[data-anchor-status]');
+  anchorIns ? resizeAnchor(anchorIns, width, height) : resize(iframe?.parentElement);
 
   function getElementByAdUnit(elmType) {
     const id = getElementIdBasedOnAdServer(adId, adUnitCode);

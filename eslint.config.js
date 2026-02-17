@@ -9,6 +9,7 @@ const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
 const {getSourceFolders} = require('./gulpHelpers.js');
+const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = require('./plugins/eslint/approvedLoadExternalScriptPaths.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -122,6 +123,13 @@ module.exports = [
           message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
       ],
+      'no-restricted-imports': [
+        'error', {
+          patterns: [
+            '**/src/adloader.js'
+          ]
+        }
+      ],
 
       // Exceptions below this line are temporary (TM), so that eslint can be added into the CI process.
       // Violations of these styles should be fixed, and the exceptions removed over time.
@@ -151,7 +159,6 @@ module.exports = [
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
       'no-void': 'off',
-      'array-callback-return': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',
@@ -274,4 +281,22 @@ module.exports = [
       '@typescript-eslint/no-require-imports': 'off'
     }
   },
-]
+  // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
+  {
+    files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.filter(p => !p.includes('BidAdapter')).map(p => {
+      // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs)$/)) {
+        return `${p}/**/*.{js,ts,mjs}`;
+      }
+      return p;
+    }),
+      rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: []
+        }
+      ],
+      }
+  },
+  ]

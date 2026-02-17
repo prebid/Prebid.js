@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sevioBidAdapter.js';
-
+import { config } from 'src/config.js';
 const ENDPOINT_URL = 'https://req.adx.ws/prebid';
 
 describe('sevioBidAdapter', function () {
@@ -205,5 +205,424 @@ describe('sevioBidAdapter', function () {
       let result = spec.interpretResponse(serverResponseNative);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponseNative));
     })
+
+    it('should use bidRequest.params.keywords when provided', function () {
+      const singleBidRequest = [
+        {
+          bidder: 'sevio',
+          params: {
+            zone: 'zoneId',
+            keywords: ['play', 'games']
+          },
+          mediaTypes: {
+            banner: { sizes: [[728, 90]] }
+          },
+          bidId: 'bid-kw',
+          bidderRequestId: 'br-kw',
+          auctionId: 'auc-kw'
+        }
+      ];
+      const bidderRequest = {
+        refererInfo: {
+          numIframes: 0,
+          reachedTop: true,
+          referer: 'https://example.com',
+          stack: ['https://example.com']
+        }
+      };
+
+      const requests = spec.buildRequests(singleBidRequest, bidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+      expect(requests[0].data).to.have.property('keywords');
+      expect(requests[0].data.keywords).to.have.property('tokens');
+      expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games']);
+    });
+  });
+
+  it('should prefer ortb2.site.keywords when present on bidderRequest', function () {
+    const singleBidRequest = [
+      {
+        bidder: 'sevio',
+        params: {
+          zone: 'zoneId'
+        },
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] }
+        },
+        bidId: 'bid-kw-ortb',
+        bidderRequestId: 'br-kw-ortb',
+        auctionId: 'auc-kw-ortb'
+      }
+    ];
+    const bidderRequestWithOrtb = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'https://example.com',
+        stack: ['https://example.com']
+      },
+      ortb2: {
+        site: {
+          keywords: ['keyword1', 'keyword2']
+        }
+      }
+    };
+
+    const requests = spec.buildRequests(singleBidRequest, bidderRequestWithOrtb);
+    expect(requests).to.be.an('array').that.is.not.empty;
+    expect(requests[0].data).to.have.property('keywords');
+    expect(requests[0].data.keywords).to.have.property('tokens');
+    expect(requests[0].data.keywords.tokens).to.deep.equal(['keyword1', 'keyword2']);
+  });
+
+  // Minimal env shims some helpers rely on
+  Object.defineProperty(window, 'visualViewport', {
+    value: { width: 1200, height: 800 },
+    configurable: true
+  });
+  Object.defineProperty(window, 'screen', {
+    value: { width: 1920, height: 1080 },
+    configurable: true
+  });
+
+  function mkBid(overrides) {
+    return Object.assign({
+      bidId: 'bid-1',
+      bidder: 'sevio',
+      params: { zone: 'zone-123', referenceId: 'ref-abc', keywords: ['k1', 'k2'] },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      refererInfo: { page: 'https://example.com/page', referer: 'https://referrer.example' },
+      userIdAsEids: []
+    }, overrides || {});
+  }
+
+  const baseBidderRequest = {
+    timeout: 1200,
+    refererInfo: { page: 'https://example.com/page', referer: 'https://referrer.example' },
+    gdprConsent: { consentString: 'TCF-STRING' },
+    uspConsent: { uspString: '1NYN' },
+    gppConsent: { consentString: 'GPP-STRING' },
+    ortb2: { device: {}, ext: {} }
+  };
+
+  describe('Sevio adapter helper coverage via buildRequests (JS)', () => {
+    let stubs = [];
+
+    afterEach(() => {
+      while (stubs.length) stubs.pop().restore();
+      document.title = '';
+      document.head.innerHTML = '';
+      try {
+        Object.defineProperty(navigator, 'connection', { value: undefined, configurable: true });
+      } catch (e) {}
+    });
+
+    it('getReferrerInfo → data.referer', () => {
+      const out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].data.referer).to.equal('https://example.com/page');
+    });
+
+    it('getPageTitle prefers top.title; falls back to og:title (top document)', () => {
+      window.top.document.title = 'Doc Title';
+      let out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.context[0].text).to.equal('Doc Title');
+
+      window.top.document.title = '';
+      const meta = window.top.document.createElement('meta');
+      meta.setAttribute('property', 'og:title');
+      meta.setAttribute('content', 'OG Title');
+      window.top.document.head.appendChild(meta);
+
+      out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.context[0].text).to.equal('OG Title');
+
+      meta.remove();
+    });
+
+    it('getPageTitle cross-origin fallback (window.top throws) uses local document.*', function () {
+      document.title = 'Local Title';
+
+      // In jsdom, window.top === window; try to simulate cross-origin by throwing from getter.
+      let restored = false;
+      try {
+        const original = Object.getOwnPropertyDescriptor(window, 'top');
+        Object.defineProperty(window, 'top', {
+          configurable: true,
+          get() { throw new Error('cross-origin'); }
+        });
+        const out = spec.buildRequests([mkBid()], baseBidderRequest);
+        expect(out[0].data.context[0].text).to.equal('Local Title');
+        Object.defineProperty(window, 'top', original);
+        restored = true;
+      } catch (e) {
+        // Environment didn’t allow redefining window.top; skip this case
+        this.skip();
+      } finally {
+        if (!restored) {
+          try { Object.defineProperty(window, 'top', { value: window, configurable: true }); } catch (e) {}
+        }
+      }
+    });
+
+    it('computeTTFB via navigation entries (top.performance) and cached within call', () => {
+      const perfTop = window.top.performance;
+
+      const original = perfTop.getEntriesByType;
+      Object.defineProperty(perfTop, 'getEntriesByType', {
+        configurable: true, writable: true,
+        value: (type) => (type === 'navigation' ? [{ responseStart: 152, requestStart: 100 }] : [])
+      });
+
+      const out = spec.buildRequests([mkBid({ bidId: 'A' }), mkBid({ bidId: 'B' })], baseBidderRequest);
+      expect(out).to.have.lengthOf(2);
+      expect(out[0].data.timeToFirstByte).to.equal('52');
+      expect(out[1].data.timeToFirstByte).to.equal('52');
+
+      Object.defineProperty(perfTop, 'getEntriesByType', { configurable: true, writable: true, value: original });
+    });
+
+    it('computeTTFB falls back to top.performance.timing when no navigation entries', () => {
+      const perfTop = window.top.performance;
+      const originalGetEntries = perfTop.getEntriesByType;
+      const originalTimingDesc = Object.getOwnPropertyDescriptor(perfTop, 'timing');
+
+      Object.defineProperty(perfTop, 'getEntriesByType', {
+        configurable: true, writable: true, value: () => []
+      });
+
+      Object.defineProperty(perfTop, 'timing', {
+        configurable: true,
+        value: { responseStart: 250, requestStart: 200 }
+      });
+
+      const out = spec.buildRequests([mkBid()], baseBidderRequest);
+      expect(out[0].data.timeToFirstByte).to.equal('50');
+
+      Object.defineProperty(perfTop, 'getEntriesByType', {
+        configurable: true, writable: true, value: originalGetEntries
+      });
+      if (originalTimingDesc) {
+        Object.defineProperty(perfTop, 'timing', originalTimingDesc);
+      } else {
+        Object.defineProperty(perfTop, 'timing', { configurable: true, value: undefined });
+      }
+    });
+
+    it('handles multiple sizes correctly', function () {
+      const multiSizeBidRequests = [
+        {
+          bidder: 'sevio',
+          params: { zone: 'zoneId' },
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [728, 90],
+                [160, 600],
+              ]
+            }
+          },
+          bidId: 'multi123',
+        }
+      ];
+
+      const bidderRequests = {
+        refererInfo: {
+          numIframes: 0,
+          reachedTop: true,
+          referer: 'https://example.com',
+          stack: ['https://example.com']
+        }
+      };
+
+      const request = spec.buildRequests(multiSizeBidRequests, bidderRequests);
+      const sizes = request[0].data.ads[0].sizes;
+
+      expect(sizes).to.deep.equal([
+        { width: 300, height: 250 },
+        { width: 728, height: 90 },
+        { width: 160, height: 600 },
+      ]);
+    });
+  });
+
+  describe('currency handling', function () {
+    let bidRequests;
+    let bidderRequests;
+
+    beforeEach(function () {
+      bidRequests = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidId: '123'
+      }];
+
+      bidderRequests = {
+        refererInfo: {
+          referer: 'https://example.com',
+          page: 'https://example.com',
+        }
+      };
+    });
+
+    afterEach(function () {
+      if (typeof config.resetConfig === 'function') {
+        config.resetConfig();
+      } else if (typeof config.setConfig === 'function') {
+        config.setConfig({ currency: null });
+      }
+    });
+
+    it('includes EUR currency when EUR is set in prebid config', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      });
+
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload.currency).to.equal('EUR');
+    });
+
+    it('includes GBP currency when GBP is set in prebid config', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'GBP'
+        }
+      });
+
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload.currency).to.equal('GBP');
+    });
+
+    it('does NOT include currency when no currency config is set', function () {
+      const req = spec.buildRequests(bidRequests, bidderRequests);
+      const payload = req[0].data;
+
+      expect(payload).to.not.have.property('currency');
+    });
+
+    it('parses comma-separated keywords string into tokens array', function () {
+      const singleBidRequest = [{
+        bidder: 'sevio',
+        params: { zone: 'zoneId', keywords: 'play, games,  fun ' }, // string CSV
+        mediaTypes: { banner: { sizes: [[728, 90]] } },
+        bidId: 'bid-kw-str'
+      }];
+      const requests = spec.buildRequests(singleBidRequest, baseBidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+      expect(requests[0].data).to.have.nested.property('keywords.tokens');
+      expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games', 'fun']);
+    });
+  });
+
+  describe('native parsing', function () {
+    it('parses native assets: title, data->desc (type 2), image (asset.img), clickUrl and trackers', function () {
+      const serverResponseNative = {
+        body: {
+          bids: [
+            {
+              requestId: 'native-1',
+              cpm: 1.0,
+              currency: 'EUR',
+              width: 1,
+              height: 1,
+              creativeId: 'native-creative-1',
+              ad: JSON.stringify({
+                ver: '1.2',
+                assets: [
+                  { id: 2, title: { text: 'Native Title' } },
+                  { id: 4, data: { type: 2, value: 'Native body text' } },
+                  { id: 5, img: { type: 3, url: 'https://img.example/x.png', w: 120, h: 60 } }
+                ],
+                eventtrackers: [
+                  { event: 1, method: 1, url: 'https://impr.example/1' },
+                  { event: 2, method: 1, url: 'https://view.example/1' }
+                ],
+                link: { url: 'https://click.example', clicktrackers: ['https://clickt.example/1'] }
+              }),
+              ttl: 300,
+              netRevenue: true,
+              mediaType: 'NATIVE',
+              meta: { advertiserDomains: ['adv.example'] },
+              bidder: 'sevio'
+            }
+          ]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponseNative);
+      expect(result).to.be.an('array').with.lengthOf(1);
+
+      const out = result[0];
+      expect(out).to.have.property('native');
+
+      const native = out.native;
+      expect(native.title).to.equal('Native Title');
+      expect(native.image).to.equal('https://img.example/x.png');
+      expect(native.image_width).to.equal(120);
+      expect(native.image_height).to.equal(60);
+      expect(native.clickUrl).to.equal('https://click.example');
+
+      expect(native.impressionTrackers).to.be.an('array').that.includes('https://impr.example/1');
+      expect(native.viewableTrackers).to.be.an('array').that.includes('https://view.example/1');
+      expect(native.clickTrackers).to.be.an('array').that.includes('https://clickt.example/1');
+
+      // meta preserved
+      expect(out.meta).to.have.property('advertiserDomains').that.deep.equals(['adv.example']);
+    });
+
+    it('maps legacy asset.id -> image types (13 -> icon, 14 -> image) and sets icon fields', function () {
+      const serverResponseIcon = {
+        body: {
+          bids: [
+            {
+              requestId: 'native-icon',
+              cpm: 1.0,
+              currency: 'EUR',
+              width: 1,
+              height: 1,
+              creativeId: 'native-creative-icon',
+              ad: JSON.stringify({
+                ver: '1.2',
+                assets: [
+                  // legacy asset id 13 should map to icon (img type 1)
+                  { id: 13, img: { url: 'https://img.example/icon.png', w: 50, h: 50 } },
+                  // legacy asset id 14 should map to image (img type 3)
+                  { id: 14, img: { url: 'https://img.example/img.png', w: 200, h: 100 } },
+                  { id: 2, title: { text: 'Legacy Mapping Test' } }
+                ],
+                link: { url: 'https://click.example/leg' }
+              }),
+              ttl: 300,
+              netRevenue: true,
+              mediaType: 'NATIVE',
+              meta: { advertiserDomains: ['legacy.example'] },
+              bidder: 'sevio'
+            }
+          ]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponseIcon);
+      expect(result).to.be.an('array').with.lengthOf(1);
+      const native = result[0].native;
+
+      // icon mapped from id 13
+      expect(native.icon).to.equal('https://img.example/icon.png');
+      expect(native.icon_width).to.equal(50);
+      expect(native.icon_height).to.equal(50);
+
+      // image mapped from id 14
+      expect(native.image).to.equal('https://img.example/img.png');
+      expect(native.image_width).to.equal(200);
+      expect(native.image_height).to.equal(100);
+    });
   });
 });

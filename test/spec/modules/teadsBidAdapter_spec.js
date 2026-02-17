@@ -3,6 +3,7 @@ import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { spec, storage } from 'modules/teadsBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { getScreenOrientation } from 'src/utils.js';
+import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -360,7 +361,7 @@ describe('teadsBidAdapter', () => {
     it('should add pixelRatio info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const pixelRatio = window.top.devicePixelRatio
+      const pixelRatio = getDevicePixelRatio();
 
       expect(payload.devicePixelRatio).to.exist;
       expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);
@@ -436,28 +437,6 @@ describe('teadsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.device).to.deep.equal(ortb2DeviceBidderRequest.ortb2.device);
-    });
-
-    it('should add hardwareConcurrency info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
-
-      if (hardwareConcurrency) {
-        expect(payload.hardwareConcurrency).to.exist;
-        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
-      } else expect(payload.hardwareConcurrency).to.not.exist
-    });
-
-    it('should add deviceMemory info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const deviceMemory = window.top.navigator.deviceMemory
-
-      if (deviceMemory) {
-        expect(payload.deviceMemory).to.exist;
-        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
-      } else expect(payload.deviceMemory).to.not.exist;
     });
 
     describe('pageTitle', function () {

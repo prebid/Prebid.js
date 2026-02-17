@@ -1,3 +1,4 @@
+import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   contains,
@@ -5,7 +6,6 @@ import {
   deepAccess,
   deepSetValue,
   getDefinedParams,
-  getDNT,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -104,7 +104,12 @@ export const spec = {
     {code: 'oppamedia'},
     {code: 'pixelpluses', gvlid: 1209},
     {code: 'urekamedia'},
-    {code: 'smartyexchange'}
+    {code: 'smartyexchange'},
+    {code: 'infinety'},
+    {code: 'qohere'},
+    {code: 'blutonic'},
+    {code: 'appmonsta', gvlid: 1283},
+    {code: 'intlscoop'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

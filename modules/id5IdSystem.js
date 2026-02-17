@@ -8,6 +8,7 @@
 import {
   deepAccess,
   deepClone,
+  deepEqual,
   deepSetValue,
   isEmpty,
   isEmptyStr,
@@ -118,6 +119,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {Array<Segment>} [segments] - A list of segments to push to partners. Supported only in multiplexing.
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
  * @property {string} [gamTargetingPrefix] - When set, the GAM targeting tags will be set and use the specified prefix, for example 'id5'.
+ * @property {boolean} [exposeTargeting] - When set, the ID5 targeting consumer mechanism will be enabled.
  */
 
 /**
@@ -569,37 +571,30 @@ function incrementNb(cachedObj) {
 }
 
 function updateTargeting(fetchResponse, config) {
-  if (config.params.gamTargetingPrefix) {
-    const tags = {};
-    let universalUid = fetchResponse.universal_uid;
-    if (universalUid.startsWith('ID5*')) {
-      tags.id = "y";
-    }
-    let abTestingResult = fetchResponse.ab_testing?.result;
-    switch (abTestingResult) {
-      case 'control':
-        tags.ab = 'c';
-        break;
-      case 'normal':
-        tags.ab = 'n';
-        break;
-    }
-    let enrichment = fetchResponse.enrichment;
-    if (enrichment?.enriched === true) {
-      tags.enrich = 'y';
-    } else if (enrichment?.enrichment_selected === true) {
-      tags.enrich = 's';
-    } else if (enrichment?.enrichment_selected === false) {
-      tags.enrich = 'c';
+  const tags = fetchResponse.tags;
+  if (tags) {
+    if (config.params.gamTargetingPrefix) {
+      window.googletag = window.googletag || {cmd: []};
+      window.googletag.cmd = window.googletag.cmd || [];
+      window.googletag.cmd.push(() => {
+        for (const tag in tags) {
+          window.googletag.setConfig({targeting: {[config.params.gamTargetingPrefix + '_' + tag]: tags[tag]}});
+        }
+      });
     }
 
-    window.googletag = window.googletag || {cmd: []};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      for (const tag in tags) {
-        window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
-      }
-    });
+    if (config.params.exposeTargeting && !deepEqual(window.id5tags?.tags, tags)) {
+      window.id5tags = window.id5tags || {cmd: []};
+      window.id5tags.cmd = window.id5tags.cmd || [];
+      window.id5tags.cmd.forEach(tagsCallback => {
+        setTimeout(() => tagsCallback(tags), 0);
+      });
+      window.id5tags.cmd.push = function (tagsCallback) {
+        tagsCallback(tags)
+        Array.prototype.push.call(window.id5tags.cmd, tagsCallback);
+      };
+      window.id5tags.tags = tags
+    }
   }
 }
 

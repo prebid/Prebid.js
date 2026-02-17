@@ -209,7 +209,6 @@ describe('YieldmoAdapter', function () {
         expect(data.hasOwnProperty('page_url')).to.be.true;
         expect(data.hasOwnProperty('bust')).to.be.true;
         expect(data.hasOwnProperty('pr')).to.be.true;
-        expect(data.hasOwnProperty('scrd')).to.be.true;
         expect(data.dnt).to.be.false;
         expect(data.hasOwnProperty('description')).to.be.true;
         expect(data.hasOwnProperty('title')).to.be.true;
@@ -247,6 +246,19 @@ describe('YieldmoAdapter', function () {
       it('should add unified id as parameter of request', function () {
         const unifiedIdBid = mockBannerBid({crumbs: undefined});
         expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userId.tdid);
+      });
+
+      it('should use tdid.id when userId.tdid is an object', function () {
+        const tdidObj = {
+          id: '0bf1dcc1-fa25-4aff-a9ff-26c4819dcb17',
+          ext: {
+            rtiPartner: 'TDID',
+            provider: 'www.yahoo.com'
+          }
+        };
+        const bidWithObjectTdid = mockBannerBid({ crumbs: undefined, userId: { tdid: tdidObj } });
+        const data = buildAndGetData([bidWithObjectTdid]);
+        expect(data.tdid).to.equal(tdidObj.id);
       });
 
       it('should add CRITEO RTUS id as parameter of request', function () {
@@ -519,11 +531,6 @@ describe('YieldmoAdapter', function () {
       it('should add plcmt value to the imp.video', function () {
         const videoBid = mockVideoBid({}, {}, { plcmt: 1 });
         expect(utils.deepAccess(videoBid, 'params.video')['plcmt']).to.equal(1);
-      });
-
-      it('should add start delay if plcmt value is not 1', function () {
-        const videoBid = mockVideoBid({}, {}, { plcmt: 2 });
-        expect(build([videoBid])[0].data.imp[0].video.startdelay).to.equal(0);
       });
 
       it('should override mediaTypes.video.mimes prop if params.video.mimes is present', function () {

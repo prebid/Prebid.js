@@ -548,6 +548,52 @@ describe('yieldoneBidAdapter', function () {
         expect(request[0].data.gpid).to.equal('gpid_sample');
       });
     });
+
+    describe('instl', function () {
+      it('dont send instl if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            ortb2Imp: {},
+          },
+          {
+            params: {placementId: '2'},
+            ortb2Imp: undefined,
+          },
+          {
+            params: {placementId: '3'},
+            ortb2Imp: {instl: undefined},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        bidRequests.forEach((bidRequest, ind) => {
+          expect(request[ind].data).to.not.have.property('instl');
+        })
+      });
+
+      it('should send instl if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            ortb2Imp: {instl: '1'},
+          },
+          {
+            params: {placementId: '1'},
+            ortb2Imp: {instl: 1},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        bidRequests.forEach((bidRequest, ind) => {
+          expect(request[ind].data).to.have.property('instl');
+          expect(request[ind].data.instl).to.equal(1);
+        })
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -732,6 +778,20 @@ describe('yieldoneBidAdapter', function () {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
       })).to.be.undefined;
+    });
+
+    it('should skip sync request for bot-like user agents', function () {
+      const originalUA = navigator.userAgent;
+      try {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+          configurable: true
+        });
+
+        expect(spec.getUserSyncs({'iframeEnabled': true})).to.be.undefined;
+      } finally {
+        Object.defineProperty(navigator, 'userAgent', { value: originalUA, configurable: true });
+      }
     });
   });
 });

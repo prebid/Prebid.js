@@ -8,10 +8,13 @@
 
 ## Description
 
-The WURFL RTD module enriches the OpenRTB 2.0 device data with [WURFL data](https://www.scientiamobile.com/wurfl-js-business-edition-at-the-intersection-of-javascript-and-enterprise/).
-The module sets the WURFL data in `device.ext.wurfl` and all the bidder adapters will always receive the low entry capabilities like `is_mobile`, `complete_device_name` and `form_factor`, and the `wurfl_id`.
+The WURFL RTD module enriches Prebid.js bid requests with comprehensive device detection data.
 
-For a more detailed analysis bidders can subscribe to detect iPhone and iPad models and receive additional [WURFL device capabilities](https://www.scientiamobile.com/capabilities/?products%5B%5D=wurfl-js).
+The WURFL RTD module relies on localStorage caching and local client-side detection, providing instant device enrichment on every page load.
+
+The module enriches `ortb2.device` with complete device information and adds extended WURFL capabilities to `device.ext.wurfl`, ensuring all bidder adapters have immediate access to enriched device data.
+
+**Note:** This module loads a dynamically generated JavaScript from prebid.wurflcloud.com
 
 ## User-Agent Client Hints
 
@@ -20,6 +23,7 @@ WURFL.js is fully compatible with Chromium's User-Agent Client Hints (UA-CH) ini
 ## Usage
 
 ### Build
+
 ```
 gulp build --modules="wurflRtdProvider,appnexusBidAdapter,..."
 ```
@@ -31,30 +35,53 @@ Use `setConfig` to instruct Prebid.js to initilize the WURFL RTD module, as spec
 This module is configured as part of the `realTimeData.dataProviders`
 
 ```javascript
-var TIMEOUT = 1000;
 pbjs.setConfig({
-    realTimeData: {
-        auctionDelay: TIMEOUT,
-        dataProviders: [{
-            name: 'wurfl',
-            waitForIt: true,
-            params: {
-                debug: false
-            }
-        }]
-    }
+  realTimeData: {
+    dataProviders: [
+      {
+        name: "wurfl",
+      },
+    ],
+  },
 });
 ```
 
 ### Parameters
 
-| Name                      | Type          | Description                                                      | Default           |
-| :------------------------ | :------------ | :--------------------------------------------------------------- |:----------------- |
-| name                      | String        | Real time data module name                                       | Always 'wurfl'    |
-| waitForIt                 | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`           |
-| params                    | Object        |                                                                  |                   |
-| params.altHost            | String        | Alternate host to connect to WURFL.js                            |                   |
-| params.debug              | Boolean       | Enable debug                                                     | `false`           |
+| Name           | Type    | Description                                | Default        |
+| :------------- | :------ | :----------------------------------------- | :------------- |
+| name           | String  | Real time data module name                 | Always 'wurfl' |
+| params         | Object  |                                            |                |
+| params.altHost | String  | Alternate host to connect to WURFL.js      |                |
+| params.abTest  | Boolean | Enable A/B testing mode                    | `false`        |
+| params.abName  | String  | A/B test name identifier                   | `'unknown'`    |
+| params.abSplit | Number  | Fraction of users in treatment group (0-1) | `0.5`          |
+
+### A/B Testing
+
+The WURFL RTD module supports A/B testing to measure the impact of WURFL enrichment on ad performance:
+
+```javascript
+pbjs.setConfig({
+  realTimeData: {
+    dataProviders: [
+      {
+        name: "wurfl",
+        params: {
+          abTest: true,
+          abName: "pub_test",
+          abSplit: 0.75, // 75% treatment, 25% control
+        },
+      },
+    ],
+  },
+});
+```
+
+- **Treatment group** (`abSplit` \* 100%): Module enabled, bid requests enriched with WURFL device data
+- **Control group** ((1 - `abSplit`) \* 100%): Module disabled, no enrichment occurs
+- Assignment is random on each page load based on `Math.random()`
+- Example: `abSplit: 0.75` means 75% get WURFL enrichment, 25% don't
 
 ## Testing
 

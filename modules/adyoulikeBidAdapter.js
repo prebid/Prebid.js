@@ -401,7 +401,7 @@ function getTrackers(eventsArray, jsTrackers) {
 
   if (!eventsArray) return result;
 
-  eventsArray.map((item, index) => {
+  eventsArray.forEach((item, index) => {
     if ((jsTrackers && item.Kind === 'JAVASCRIPT_URL') ||
         (!jsTrackers && item.Kind === 'PIXEL_URL')) {
       result.push(item.Url);
@@ -446,7 +446,7 @@ function getNativeAssets(response, nativeConfig) {
     native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
-  Object.keys(nativeConfig).map(function(key, index) {
+  Object.keys(nativeConfig).forEach(function(key, index) {
     switch (key) {
       case 'title':
         native[key] = textsJson.TITLE;
