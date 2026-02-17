@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {deepAccess, mergeDeep} from '../src/utils.js';
+import {deepAccess, mergeDeep, deepSetValue} from '../src/utils.js';
 
 const BIDDER_CODE = 'trafficgate';
 const URL = 'https://[HOST].bc-plugin.com/prebidjs'
@@ -43,6 +43,7 @@ const converter = ortbConverter({
       at: 1,
     })
     const bid = context.bidRequests[0];
+    utils.deepSetValue(req, 'device.dnt', 0);
     if (bid.params.test) {
       req.test = 1
     }
