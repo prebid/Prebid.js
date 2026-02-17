@@ -846,7 +846,24 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
 
       context('do not track (DNT)', function() {
-        it('always sends dnt as 0', async function () {
+         let doNotTrackStub;
+
+        beforeEach(function () {
+          doNotTrackStub = sinon.stub(dnt, 'getDNT');
+        });
+        afterEach(function() {
+          doNotTrackStub.restore();
+        });
+
+        it('when there is not do not track, don\'t send dnt', async function () {
+          doNotTrackStub.returns(0);
+
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
+          expect(request[0].data.device.dnt).to.equal(0);
+        });
+
+        it('when there is no defined do not track, don\'t send dnt', async function () {
+          doNotTrackStub.returns(null);
           const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(0);
         });
