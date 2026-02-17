@@ -38,7 +38,7 @@ var adUnits = [
             video: {
                 playerSize: [640, 480],
                 context: 'instream',
-                skipppable: true
+                skippable: true
             }
         },
         bids: [{
