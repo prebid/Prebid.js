@@ -52,16 +52,16 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     cntRequest++;
-    const request = buildRequest(imps, bidderRequest, context)
-    const siteId = bidderRequest.bids[0].params.siteId
+    const request = buildRequest(imps, bidderRequest, context);
+    const siteId = bidderRequest.bids[0].params.siteId;
     siteIds.add(siteId);
-    deepSetValue(request, 'site.publisher.id', siteId)
-    deepSetValue(request, 'test', config.getConfig('debug') ? 1 : 0)
+    deepSetValue(request, 'site.publisher.id', siteId);
+    deepSetValue(request, 'test', config.getConfig('debug') ? 1 : 0);
     deepSetValue(request, 'ext.prebid.version', getGlobal()?.version ?? 'unknown');
     deepSetValue(request, `ext.prebid.cntRequest`, cntRequest);
     deepSetValue(request, `ext.prebid.cntImp`, cntImp);
     deepSetValue(request, `ext.prebid.pVisible`, isPageVisible());
-    deepSetValue(request, `ext.prebid.uStart`, Math.trunc((performance.now() - uStart) / 1000))
+    deepSetValue(request, `ext.prebid.uStart`, Math.trunc((performance.now() - uStart) / 1000));
     return request;
   },
 });
