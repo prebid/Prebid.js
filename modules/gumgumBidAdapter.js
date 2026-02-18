@@ -332,13 +332,17 @@ function getFirstUid(eid) {
   return eid.uids.find(uid => uid && uid.id);
 }
 
-function getUserEids(bidRequest) {
+function getUserEids(bidRequest, bidderRequest) {
   const bidEids = deepAccess(bidRequest, 'userIdAsEids');
   if (Array.isArray(bidEids) && bidEids.length) {
     return bidEids;
   }
-  const ortb2Eids = deepAccess(bidRequest, 'user.ext.eids');
-  return Array.isArray(ortb2Eids) ? ortb2Eids : [];
+  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids');
+  if (Array.isArray(bidUserEids) && bidUserEids.length) {
+    return bidUserEids;
+  }
+  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
+  return Array.isArray(bidderRequestEids) ? bidderRequestEids : [];
 }
 
 function isPubProvidedIdEid(eid) {
@@ -387,7 +391,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
-    const userEids = getUserEids(bidRequest);
+    const userEids = getUserEids(bidRequest, bidderRequest);
     const eids = getEidsFromEidsArray(userEids);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     let sizes = [1, 1];
