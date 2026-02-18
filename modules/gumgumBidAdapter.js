@@ -1,12 +1,11 @@
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-
-import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -329,13 +328,17 @@ function getFirstUid(eid) {
   return eid.uids.find(uid => uid && uid.id);
 }
 
-function getUserEids(bidRequest) {
+function getUserEids(bidRequest, bidderRequest) {
   const bidEids = deepAccess(bidRequest, 'userIdAsEids');
   if (Array.isArray(bidEids) && bidEids.length) {
     return bidEids;
   }
-  const ortb2Eids = deepAccess(bidRequest, 'user.ext.eids');
-  return Array.isArray(ortb2Eids) ? ortb2Eids : [];
+  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids');
+  if (Array.isArray(bidUserEids) && bidUserEids.length) {
+    return bidUserEids;
+  }
+  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
+  return Array.isArray(bidderRequestEids) ? bidderRequestEids : [];
 }
 
 function isPubProvidedIdEid(eid) {
@@ -384,7 +387,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
-    const userEids = getUserEids(bidRequest);
+    const userEids = getUserEids(bidRequest, bidderRequest);
     const eids = getEidsFromEidsArray(userEids);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1

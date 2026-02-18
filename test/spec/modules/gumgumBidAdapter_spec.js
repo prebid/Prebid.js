@@ -256,6 +256,77 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.id5Id).to.equal(id5Eid.uids[0].id);
       expect(bidRequest.data.id5IdLinkType).to.equal(id5Eid.uids[0].ext.linkType);
     });
+    it('should use bidderRequest.ortb2.user.ext.eids when bid-level eids are not available', function () {
+      const request = { ...bidRequests[0], userIdAsEids: undefined };
+      const fakeBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          user: {
+            ext: {
+              eids: [{
+                source: 'liveramp.com',
+                uids: [{
+                  id: 'fallback-idl-env'
+                }]
+              }]
+            }
+          }
+        }
+      };
+      const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
+      expect(bidRequest.data.idl_env).to.equal('fallback-idl-env');
+    });
+    it('should keep identity output consistent for prebid10 ortb2 eids input', function () {
+      const request = { ...bidRequests[0], userIdAsEids: undefined };
+      const fakeBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          user: {
+            ext: {
+              eids: [
+                {
+                  source: 'uidapi.com',
+                  uids: [{ id: 'uid2-token', atype: 3 }]
+                },
+                {
+                  source: 'liveramp.com',
+                  uids: [{ id: 'idl-envelope', atype: 1 }]
+                },
+                {
+                  source: 'adserver.org',
+                  uids: [{ id: 'tdid-value', atype: 1, ext: { rtiPartner: 'TDID' } }]
+                },
+                {
+                  source: 'id5-sync.com',
+                  uids: [{ id: 'id5-value', atype: 1, ext: { linkType: 2 } }]
+                },
+                {
+                  source: 'audigent.com',
+                  uids: [{ id: 'ppid-1', atype: 1, ext: { stype: 'ppuid' } }]
+                },
+                {
+                  source: 'sonobi.com',
+                  uids: [{ id: 'ppid-2', atype: 1, ext: { stype: 'ppuid' } }]
+                }
+              ]
+            }
+          }
+        }
+      };
+      const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
+
+      // Expected identity payload shape from legacy GumGum request fields.
+      expect(bidRequest.data.uid2).to.equal('uid2-token');
+      expect(bidRequest.data.idl_env).to.equal('idl-envelope');
+      expect(bidRequest.data.tdid).to.equal('tdid-value');
+      expect(bidRequest.data.id5Id).to.equal('id5-value');
+      expect(bidRequest.data.id5IdLinkType).to.equal(2);
+      const pubProvidedId = JSON.parse(bidRequest.data.pubProvidedId);
+      expect(pubProvidedId.length).to.equal(1);
+      expect(pubProvidedId[0].source).to.equal('audigent.com');
+    });
 
     it('should set pubId param if found', function () {
       const request = { ...bidRequests[0], params: pubIdParam };
