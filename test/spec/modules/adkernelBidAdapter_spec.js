@@ -416,7 +416,6 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
-      expect(bidRequest.device).to.have.property('dnt', 0);
     });
 
     it('should copy FPD to imp.banner', function() {
@@ -465,11 +464,6 @@ describe('Adkernel adapter', function () {
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 0});
       expect(bidRequest).to.not.have.property('user');
-    });
-
-    it('should pass dnt as 0', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST);
-      expect(bidRequests[0].device).to.have.property('dnt', 0);
     });
 
     it('should forward default bidder timeout', function() {

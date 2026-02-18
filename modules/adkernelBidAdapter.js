@@ -416,8 +416,6 @@ function makeDevice(fpd) {
     'js': 1,
     'language': getLanguage()
   }, fpd.device || {});
-  // DNT was deprecated by W3C; Prebid no longer supports DNT signals.
-  device.dnt = getDNT() ? 1 : 0;
   return {device: device};
 }
 
