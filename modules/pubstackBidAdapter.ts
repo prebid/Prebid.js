@@ -60,7 +60,7 @@ const converter = ortbConverter({
     deepSetValue(request, 'ext.prebid.version', getGlobal()?.version ?? 'unknown');
     deepSetValue(request, `ext.prebid.cntRequest`, cntRequest);
     deepSetValue(request, `ext.prebid.cntImp`, cntImp);
-    deepSetValue(request, `ext.prebid.pVisible`, isPageVisible())
+    deepSetValue(request, `ext.prebid.pVisible`, isPageVisible());
     deepSetValue(request, `ext.prebid.uStart`, Math.trunc((performance.now() - uStart) / 1000))
     return request;
   },
