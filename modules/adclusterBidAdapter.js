@@ -54,7 +54,7 @@ export const spec = {
       method: "POST",
       url: ENDPOINT,
       data: payload,
-      options: { contentType: "application/json" },
+      options: { contentType: "text/plain" },
     };
   },
 
@@ -75,7 +75,7 @@ export const spec = {
         ttl: b.ttl,
         netRevenue: b.netRevenue,
         meta: {
-          advertiserDomains: b.meta.advertiserDomains || [],
+          advertiserDomains: b.meta?.advertiserDomains || [],
         },
         mediaType,
       };
