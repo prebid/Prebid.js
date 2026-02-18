@@ -1,6 +1,12 @@
 import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {
+  type AdapterRequest,
+  type BidderSpec,
+  type ServerResponse,
+  registerBidder
+} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { type BidRequest, type ClientBidderRequest } from '../src/adapterManager.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
@@ -23,7 +29,7 @@ const DEFAULT_INTEGRATION = 'pbjs';
 type MgniConfig = {
   int_type?: string;
   rendererUrl?: string;
-  rendererConfig?: Record<string, any>;
+  rendererConfig?: Record<string, unknown>;
   impLimit?: number;
   bidEndpoint?: string;
   syncEndpoint?: string;
@@ -45,14 +51,18 @@ export function resetMgniConf() {
   mgniConf = {};
 }
 
-export const spec: any = {
+type MagniteSpec = BidderSpec<'magnite'> & {
+  transformBidParams: (params: Record<string, unknown>) => Record<string, unknown>;
+};
+
+export const spec: MagniteSpec = {
   code: 'magnite',
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
+  getUserSyncs: getUserSyncs as any,
   transformBidParams
 };
 
@@ -106,7 +116,7 @@ function getPpuidFromEids(eids: any[]) {
   }
 }
 
-function getPpuid(req: any) {
+function getPpuid(req: { user?: { id?: string; ext?: { eids?: any[] } } }) {
   const user = req.user;
   if (user?.id) {
     return user.id;
@@ -181,7 +191,7 @@ const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest: any, imps: any, bidderRequest: any, context: any) {
+  request(buildRequest, imps, bidderRequest, context) {
     const req: any = buildRequest(imps, bidderRequest, context);
 
     // Do not send in tmax
@@ -251,7 +261,7 @@ const converter = ortbConverter({
 
     return bidResponse;
   },
-  response(buildResponse: any, bidResponses: any, ortbResponse: any, context: any) {
+  response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
     return response;
   },
@@ -269,7 +279,7 @@ const converter = ortbConverter({
   }
 });
 
-function transformBidParams(params: any) {
+function transformBidParams(params: Record<string, unknown>) {
   return convertTypes({
     'accountId': 'number',
     'siteId': 'number',
@@ -290,7 +300,7 @@ function shouldAddBid(bid: any, mediaType: string) {
  * @param bidderRequest
  * @returns Array of HTTP Request Objects
  */
-function buildRequests(bids: any[], bidderRequest: any) {
+function buildRequests(bids: BidRequest<'magnite'>[], bidderRequest: ClientBidderRequest<'magnite'>): AdapterRequest[] {
   const bidsMap: Record<string, any[]> = {};
 
   // Loop through all bids and group them by accountId, siteId, and mediaType
@@ -308,7 +318,7 @@ function buildRequests(bids: any[], bidderRequest: any) {
   }
 
   const impLimit = mgniConf.impLimit ?? 10;
-  const requests: any[] = [];
+  const requests = [];
 
   // Loop through the grouped bids and create requests
   // We need to split the bids into chunks of impLimit
@@ -325,7 +335,12 @@ function buildRequests(bids: any[], bidderRequest: any) {
   return requests;
 }
 
-function createRequest(bidRequests: any[], bidderRequest: any, acctSite: string, mediaType: string) {
+function createRequest(
+  bidRequests: BidRequest<'magnite'>[],
+  bidderRequest: ClientBidderRequest<'magnite'>,
+  acctSite: string,
+  mediaType: string,
+): AdapterRequest {
   return {
     method: 'POST',
     url: `${(mgniConf.bidEndpoint || REQUEST_URL)}?as=${acctSite}&m=${mediaType}&s=${bidRequests.length}`,
@@ -333,7 +348,7 @@ function createRequest(bidRequests: any[], bidderRequest: any, acctSite: string,
   }
 }
 
-function interpretResponse(resp: any, req: any) {
+function interpretResponse(resp: ServerResponse, req: AdapterRequest) {
   if (!resp.body) {
     resp.body = { nbr: 0 };
   }
@@ -341,14 +356,12 @@ function interpretResponse(resp: any, req: any) {
 }
 
 /**
- * @param syncOptions
- * @param responses
- * @param gdprConsent
- * @param uspConsent
- * @param gppConsent
+ * @param args
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(syncOptions: any, responses: any, gdprConsent: any, uspConsent: any, gppConsent: any) {
+function getUserSyncs(...args: Parameters<NonNullable<BidderSpec<'magnite'>['getUserSyncs']>>) {
+  const [syncOptions, responses, gdprConsent, uspConsent, gppConsent] = args;
+  void responses;
   if (!syncOptions.iframeEnabled) {
     return;
   }
