@@ -6,6 +6,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { type SyncType } from '../src/userSync.js';
 import { type BidRequest, type ClientBidderRequest } from '../src/adapterManager.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
@@ -51,7 +52,15 @@ export function resetMgniConf() {
   mgniConf = {};
 }
 
-type MagniteSpec = BidderSpec<'magnite'> & {
+type GetUserSyncsArgs = Parameters<NonNullable<BidderSpec<'magnite'>['getUserSyncs']>>;
+
+type LegacyGetUserSyncs = (...args: GetUserSyncsArgs) => {
+  type: SyncType;
+  url: string;
+} | void;
+
+type MagniteSpec = Omit<BidderSpec<'magnite'>, 'getUserSyncs'> & {
+  getUserSyncs: LegacyGetUserSyncs;
   transformBidParams: (params: Record<string, unknown>) => Record<string, unknown>;
 };
 
@@ -62,11 +71,11 @@ export const spec: MagniteSpec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs: getUserSyncs as any,
+  getUserSyncs,
   transformBidParams
 };
 
-registerBidder(spec);
+registerBidder(spec as unknown as BidderSpec<'magnite'>);
 
 /**
  * Lets Prebid-Core know if the bid is valid before sending it to the adapter
@@ -359,7 +368,7 @@ function interpretResponse(resp: ServerResponse, req: AdapterRequest) {
  * @param args
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(...args: Parameters<NonNullable<BidderSpec<'magnite'>['getUserSyncs']>>) {
+function getUserSyncs(...args: GetUserSyncsArgs): ReturnType<LegacyGetUserSyncs> {
   const [syncOptions, responses, gdprConsent, uspConsent, gppConsent] = args;
   void responses;
   if (!syncOptions.iframeEnabled) {
