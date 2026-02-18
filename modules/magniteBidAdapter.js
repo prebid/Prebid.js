@@ -209,6 +209,12 @@ const converter = ortbConverter({
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
+    // Move adm_native to adm for native responses so the ortbConverter can process it
+    if (context.mediaType === NATIVE && bid.adm_native) {
+      bid.adm = bid.adm_native;
+      delete bid.adm_native;
+    }
+
     const bidResponse = buildBidResponse(bid, context);
 
     bidResponse.bidderCode = context.bidRequest.bidder;

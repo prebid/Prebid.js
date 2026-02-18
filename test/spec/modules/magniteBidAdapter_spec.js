@@ -676,6 +676,54 @@ describe('the magnite adapter', function () {
         expect(globalThis.URL.revokeObjectURL.calledWith('blob:test-url')).to.be.true;
       });
     });
+
+    describe('adm_native handling', function () {
+      it('should move adm_native to adm when mediaType is native and adm_native is present', function () {
+        const bidRequest = getBannerBidRequest({
+          bidId: 'bid-native-1',
+          adUnitCode: 'adunit-native',
+          mediaTypes: {
+            native: {
+              ortb: {
+                assets: [{id: 0, required: 1, title: {len: 90}}]
+              }
+            }
+          }
+        });
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const nativeMarkup = '{"ver":"1.1","assets":[{"id":0,"title":{"text":"test"}}]}';
+        const response = getSampleOrtbBidResponse('bid-native-1', {
+          adm_native: nativeMarkup,
+          adm: undefined,
+          mtype: 4
+        });
+        const bids = spec.interpretResponse({body: response}, requests[0]);
+        expect(bids.length).to.be.greaterThan(0);
+        expect(bids[0].mediaType).to.equal('native');
+      });
+
+      it('should not move adm_native to adm when mediaType is not native', function () {
+        const bidRequest = getBannerBidRequest();
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const response = getSampleOrtbBidResponse(bidRequest.bidId, {
+          adm_native: '{"native":{"ver":"1.1","assets":[]}}',
+          adm: '<div>test ad</div>'
+        });
+        const bids = spec.interpretResponse({body: response}, requests[0]);
+        expect(bids.length).to.be.greaterThan(0);
+        // adm should remain unchanged since mediaType is banner, not native
+        expect(bids[0].ad).to.equal('<div>test ad</div>');
+      });
+
+      it('should not modify adm when adm_native is not present', function () {
+        const bidRequest = getBannerBidRequest();
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const response = getSampleOrtbBidResponse(bidRequest.bidId);
+        const bids = spec.interpretResponse({body: response}, requests[0]);
+        expect(bids.length).to.be.greaterThan(0);
+        expect(bids[0].ad).to.equal('<div>test ad</div>');
+      });
+    });
   });
 
   describe('getUserSyncs()', function () {
