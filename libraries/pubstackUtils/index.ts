@@ -47,4 +47,4 @@ export const getViewportDistance = (adUnitCode?: string): number | undefined => 
   } catch (_) {}
 };
 
-export const isPageVisible = (): boolean => document.visibilityState === "visible"
+export const isPageVisible = (): boolean => document.visibilityState === "visible";
