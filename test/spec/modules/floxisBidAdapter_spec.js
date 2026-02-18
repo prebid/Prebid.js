@@ -66,9 +66,9 @@ describe('floxisBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('should return false when region is missing', function () {
+    it('should return true when region is missing (default region applies)', function () {
       const bid = { ...validBannerBid, params: { seat: 'Gmtb' } };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('should return false when region is empty string', function () {
@@ -76,9 +76,9 @@ describe('floxisBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('should return false when partner is missing', function () {
+    it('should return true when partner is missing (default partner applies)', function () {
       const bid = { ...validBannerBid, params: { seat: 'Gmtb', region: 'us-e' } };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('should return false when partner is empty string', function () {
@@ -96,8 +96,18 @@ describe('floxisBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('should return true with non-default partner', function () {
+    it('should return false when region is not in whitelist', function () {
+      const bid = { ...validBannerBid, params: { ...DEFAULT_PARAMS, region: 'eu-w' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when partner is not in whitelist', function () {
       const bid = { ...validBannerBid, params: { ...DEFAULT_PARAMS, partner: 'mypartner' } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return true with default partner', function () {
+      const bid = { ...validBannerBid, params: { ...DEFAULT_PARAMS, partner: 'floxis' } };
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
   });
@@ -126,13 +136,31 @@ describe('floxisBidAdapter', function () {
       expect(requests[0].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Gmtb');
     });
 
-    it('should build URL with partner prefix for non-floxis partner', function () {
+    it('should return no requests for non-whitelisted partner', function () {
       const bidWithPartner = {
         ...validBannerBid,
         params: { ...DEFAULT_PARAMS, partner: 'mypartner' }
       };
       const requests = spec.buildRequests([bidWithPartner], bidderRequest);
-      expect(requests[0].url).to.equal('https://mypartner-us-e.floxis.tech/pbjs?seat=Gmtb');
+      expect(requests).to.be.an('array').that.is.empty;
+    });
+
+    it('should default region to us-e when missing', function () {
+      const bidWithoutRegion = {
+        ...validBannerBid,
+        params: { seat: 'Gmtb', partner: 'floxis' }
+      };
+      const requests = spec.buildRequests([bidWithoutRegion], bidderRequest);
+      expect(requests[0].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Gmtb');
+    });
+
+    it('should default partner to floxis when missing', function () {
+      const bidWithoutPartner = {
+        ...validBannerBid,
+        params: { seat: 'Gmtb', region: 'us-e' }
+      };
+      const requests = spec.buildRequests([bidWithoutPartner], bidderRequest);
+      expect(requests[0].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Gmtb');
     });
 
     it('should return empty array for empty bid requests', function () {
@@ -152,7 +180,8 @@ describe('floxisBidAdapter', function () {
       const requests = spec.buildRequests([validBannerBid], bidderRequest);
       const data = requests[0].data;
       expect(data.ext.prebid.adapter).to.equal('floxis');
-      expect(data.ext.prebid.adapterVersion).to.equal('2.0.0');
+      expect(data.ext.prebid.adapterVersion).to.be.undefined;
+      expect(data.ext.prebid.version).to.equal('$prebid.version$');
     });
 
     it('should build banner imp correctly', function () {
@@ -177,6 +206,40 @@ describe('floxisBidAdapter', function () {
       const requests = spec.buildRequests([validBannerBid, validVideoBid], bidderRequest);
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].data.imp).to.have.lengthOf(2);
+    });
+
+    it('should split requests by seat when using allowed defaults', function () {
+      const mixedBid = {
+        ...validVideoBid,
+        params: {
+          seat: 'Seat2',
+          region: 'us-e',
+          partner: 'floxis'
+        }
+      };
+
+      const requests = spec.buildRequests([validBannerBid, mixedBid], bidderRequest);
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Gmtb');
+      expect(requests[1].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Seat2');
+      expect(requests[0].data.imp).to.have.lengthOf(1);
+      expect(requests[1].data.imp).to.have.lengthOf(1);
+    });
+
+    it('should ignore non-whitelisted bids in mixed request arrays', function () {
+      const invalidBid = {
+        ...validVideoBid,
+        params: {
+          seat: 'Seat2',
+          region: 'eu-w',
+          partner: 'mypartner'
+        }
+      };
+
+      const requests = spec.buildRequests([validBannerBid, invalidBid], bidderRequest);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal('https://us-e.floxis.tech/pbjs?seat=Gmtb');
+      expect(requests[0].data.imp).to.have.lengthOf(1);
     });
 
     it('should set withCredentials option', function () {
@@ -327,6 +390,26 @@ describe('floxisBidAdapter', function () {
     it('should return empty array for undefined response', function () {
       const request = buildRequest();
       const bids = spec.interpretResponse(undefined, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array for undefined request', function () {
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: validBannerBid.bidId,
+              price: 1.23,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adm: '<div>ad</div>',
+              mtype: 1
+            }]
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse, undefined);
       expect(bids).to.be.an('array').that.is.empty;
     });
 
