@@ -896,30 +896,6 @@ describe('the magnite adapter', function () {
     });
   });
 
-  describe('transformBidParams()', function () {
-    it('should convert string params to numbers', function () {
-      const result = spec.transformBidParams({
-        accountId: '1001',
-        siteId: '2001',
-        zoneId: '3001'
-      });
-      expect(result.accountId).to.equal(1001);
-      expect(result.siteId).to.equal(2001);
-      expect(result.zoneId).to.equal(3001);
-    });
-
-    it('should keep number params as numbers', function () {
-      const result = spec.transformBidParams({
-        accountId: 1001,
-        siteId: 2001,
-        zoneId: 3001
-      });
-      expect(result.accountId).to.equal(1001);
-      expect(result.siteId).to.equal(2001);
-      expect(result.zoneId).to.equal(3001);
-    });
-  });
-
   describe('config merging', function () {
     it('should read magnite config', function () {
       config.setConfig({magnite: {int_type: 'magnite_test'}});

@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
-import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
 import {
   deepSetValue,
   formatQS,
@@ -43,8 +42,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
-  transformBidParams
+  getUserSyncs
 };
 
 registerBidder(spec);
@@ -259,14 +257,6 @@ const converter = ortbConverter({
     }
   }
 });
-
-function transformBidParams(params) {
-  return convertTypes({
-    'accountId': 'number',
-    'siteId': 'number',
-    'zoneId': 'number'
-  }, params);
-}
 
 function shouldAddBid(bid, mediaType) {
   const enabledTypes = bid.params?.enabledMediaTypes;
