@@ -215,7 +215,7 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
     .then((contextData) => {
       extendBidRequestConfig(bidReqConfig, contextData, config);
     })
-    .catch(() => { })
+    .catch(() => {})
     .finally(() => callback());
 }
 
