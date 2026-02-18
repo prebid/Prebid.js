@@ -20,7 +20,16 @@ export const REQUEST_URL = 'https://fastlane.rubiconproject.com/a/api/prebid-exc
 export const SYNC_URL = 'https://eus.rubiconproject.com/usync.html';
 const DEFAULT_INTEGRATION = 'pbjs';
 
-let mgniConf = {};
+type MgniConfig = {
+  int_type?: string;
+  rendererUrl?: string;
+  rendererConfig?: Record<string, any>;
+  impLimit?: number;
+  bidEndpoint?: string;
+  syncEndpoint?: string;
+};
+
+let mgniConf: MgniConfig = {};
 
 // For transition period we need to listen to both rubicon and magnite configs
 ['magnite', 'rubicon'].forEach(confName => {
@@ -36,7 +45,7 @@ export function resetMgniConf() {
   mgniConf = {};
 }
 
-export const spec = {
+export const spec: any = {
   code: 'magnite',
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
@@ -53,7 +62,7 @@ registerBidder(spec);
  * Lets Prebid-Core know if the bid is valid before sending it to the adapter
  * @param {object} bid
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid(bid: any) {
   return ['accountId', 'siteId', 'zoneId'].every(param => !Number.isNaN(Number.parseInt(bid?.params?.[param])));
 }
 
@@ -62,14 +71,14 @@ const posMap = {
   btf: 3
 };
 
-export function masSizeOrdering(sizes) {
+export function masSizeOrdering(sizes: Array<{ w: number; h: number }>) {
   const MAS_SIZE_PRIORITY = [
     { w: 300, h: 250 },
     { w: 728, h: 90 },
     { w: 160, h: 600 }
   ];
 
-  const compareSizes = (left, right) => left.w === right.w && left.h === right.h;
+  const compareSizes = (left: { w: number; h: number }, right: { w: number; h: number }) => left.w === right.w && left.h === right.h;
 
   return sizes.sort((first, second) => {
     // sort by MAS_SIZE_PRIORITY priority order
@@ -88,7 +97,7 @@ export function masSizeOrdering(sizes) {
   });
 }
 
-function getPpuidFromEids(eids) {
+function getPpuidFromEids(eids: any[]) {
   for (const eid of eids) {
     const ppId = eid.uids.find(uid => uid?.ext?.stype === 'ppuid' && uid?.id);
     if (ppId) {
@@ -97,7 +106,7 @@ function getPpuidFromEids(eids) {
   }
 }
 
-function getPpuid(req) {
+function getPpuid(req: any) {
   const user = req.user;
   if (user?.id) {
     return user.id;
@@ -112,7 +121,7 @@ function getPpuid(req) {
   return getPpuidFromEids(eids);
 }
 
-function cleanFpd(fpdObj) {
+function cleanFpd(fpdObj: Record<string, any>) {
   // DV+ wants first party data as object of keys / val where val is array
   Object.entries(fpdObj || {}).forEach(([key, val]) => {
     // if not array, wrap in array
@@ -129,9 +138,9 @@ const converter = ortbConverter({
     currency: 'USD'
   },
   processors: pbsExtensions,
-  imp(buildImp, bidRequest, context) {
+  imp(buildImp: any, bidRequest: any, context: any) {
     // Building imps of request
-    const imp = buildImp(bidRequest, context);
+    const imp: any = buildImp(bidRequest, context);
 
     // remove any mediaTypes on imp that are not in our context
     [BANNER, NATIVE, VIDEO].forEach(mediaType => {
@@ -172,8 +181,8 @@ const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context);
+  request(buildRequest: any, imps: any, bidderRequest: any, context: any) {
+    const req: any = buildRequest(imps, bidderRequest, context);
 
     // Do not send in tmax
     delete req.tmax;
@@ -208,14 +217,14 @@ const converter = ortbConverter({
 
     return req;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse(buildBidResponse: any, bid: any, context: any) {
     // Move adm_native to adm for native responses so the ortbConverter can process it
     if (context.mediaType === NATIVE && bid.adm_native) {
       bid.adm = bid.adm_native;
       delete bid.adm_native;
     }
 
-    const bidResponse = buildBidResponse(bid, context);
+    const bidResponse: any = buildBidResponse(bid, context);
 
     bidResponse.bidderCode = context.bidRequest.bidder;
 
@@ -242,15 +251,15 @@ const converter = ortbConverter({
 
     return bidResponse;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response(buildResponse: any, bidResponses: any, ortbResponse: any, context: any) {
     const response = buildResponse(bidResponses, ortbResponse, context);
     return response;
   },
   overrides: {
     imp: {
-      bidfloor(setBidFloor, imp, bidRequest, context) {
+      bidfloor(setBidFloor: any, imp: any, bidRequest: any, context: any) {
         // Floors should always be in USD
-        const floor = {};
+        const floor: any = {};
         setBidFloor(floor, bidRequest, { ...context, currency: 'USD' });
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
@@ -260,7 +269,7 @@ const converter = ortbConverter({
   }
 });
 
-function transformBidParams(params) {
+function transformBidParams(params: any) {
   return convertTypes({
     'accountId': 'number',
     'siteId': 'number',
@@ -268,7 +277,7 @@ function transformBidParams(params) {
   }, params);
 }
 
-function shouldAddBid(bid, mediaType) {
+function shouldAddBid(bid: any, mediaType: string) {
   const enabledTypes = bid.params?.enabledMediaTypes;
   return !Array.isArray(enabledTypes) || enabledTypes.includes(mediaType);
 }
@@ -281,8 +290,8 @@ function shouldAddBid(bid, mediaType) {
  * @param bidderRequest
  * @returns Array of HTTP Request Objects
  */
-function buildRequests(bids, bidderRequest) {
-  const bidsMap = {};
+function buildRequests(bids: any[], bidderRequest: any) {
+  const bidsMap: Record<string, any[]> = {};
 
   // Loop through all bids and group them by accountId, siteId, and mediaType
   for (const bid of bids) {
@@ -299,7 +308,7 @@ function buildRequests(bids, bidderRequest) {
   }
 
   const impLimit = mgniConf.impLimit ?? 10;
-  const requests = [];
+  const requests: any[] = [];
 
   // Loop through the grouped bids and create requests
   // We need to split the bids into chunks of impLimit
@@ -316,19 +325,19 @@ function buildRequests(bids, bidderRequest) {
   return requests;
 }
 
-function createRequest(bidRequests, bidderRequest, acctSite, mediaType) {
+function createRequest(bidRequests: any[], bidderRequest: any, acctSite: string, mediaType: string) {
   return {
     method: 'POST',
     url: `${(mgniConf.bidEndpoint || REQUEST_URL)}?as=${acctSite}&m=${mediaType}&s=${bidRequests.length}`,
-    data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
+    data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType: mediaType as any } })
   }
 }
 
-function interpretResponse(resp, req) {
+function interpretResponse(resp: any, req: any) {
   if (!resp.body) {
     resp.body = { nbr: 0 };
   }
-  return converter.fromORTB({ request: req.data, response: resp.body })?.bids;
+  return (converter.fromORTB({ request: req.data, response: resp.body }) as any)?.bids;
 }
 
 /**
@@ -339,12 +348,12 @@ function interpretResponse(resp, req) {
  * @param gppConsent
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs(syncOptions: any, responses: any, gdprConsent: any, uspConsent: any, gppConsent: any) {
   if (!syncOptions.iframeEnabled) {
     return;
   }
 
-  const params = {};
+  const params: Record<string, any> = {};
 
   if (gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
     params['gdpr'] = Number(gdprConsent.gdprApplies);

@@ -5,7 +5,7 @@ import {
   SYNC_URL,
   masSizeOrdering,
   resetMgniConf
-} from 'modules/magniteBidAdapter.js';
+} from 'modules/magniteBidAdapter.ts';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
