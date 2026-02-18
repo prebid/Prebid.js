@@ -18,6 +18,11 @@ const adUnitsRequested = {}
 const extData = {}
 const responseCache = {}
 
+// Filtering
+const adsToFilter = new Set()
+const advertisersToFilter = new Set()
+const campaignsToFilter = new Set()
+
 const converter = ortbConverter({
   context: {
     // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
@@ -28,7 +33,7 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context)
     imp.tagid = bidRequest.adUnitCode
     if (!imp.ext) imp.ext = {}
-    if (bidRequest?.params?.placementId != undefined) {
+    if (bidRequest?.params?.placementId !== undefined) {
       imp.ext.placementId = bidRequest.params.placementId
     }
 
@@ -54,11 +59,6 @@ const converter = ortbConverter({
     return request
   }
 })
-
-// Filtering
-const adsToFilter = new Set()
-const advertisersToFilter = new Set()
-const campaignsToFilter = new Set()
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -261,7 +261,7 @@ export const spec = {
       }
     }
 
-    // Get sync urls from the respnse and inject cinbsent params
+    // Get sync urls from the response and inject consent params
     const types = {
       iframe: syncOptions.iframeEnabled,
       image: syncOptions.pixelEnabled,
@@ -270,9 +270,9 @@ export const spec = {
 
     let body
     serverResponses.forEach((response) => {
-      // If the bid response was empty, return []
+      // If the bid response was empty, skip
       if (!response || !response.body || isEmpty(response.body)) {
-        return syncs
+        return
       }
 
       try {
@@ -293,18 +293,16 @@ export const spec = {
           return
         }
         // Grab the syncs for each seatbid
-        if (seatbid.syncUrls) {
-          seatbid.syncUrls.forEach((sync) => {
-            if (types[sync.type]) {
-              if (sync.url.trim() !== '') {
-                syncs.push({
-                  type: sync.type,
-                  url: sync.url.replace('{GDPR_params}', params),
-                })
-              }
+        seatbid.syncUrls.forEach((sync) => {
+          if (types[sync.type]) {
+            if (sync.url.trim() !== '') {
+              syncs.push({
+                type: sync.type,
+                url: sync.url.replace('{GDPR_params}', params),
+              })
             }
-          })
-        }
+          }
+        })
       })
     })
 

@@ -120,7 +120,7 @@ describe('nativoBidAdapterTests', function () {
         },
       })
 
-      expect(request.data.imp[0].ext.bidder.placementId).to.equal('10433394')
+      expect(request.data.imp[0].ext.placementId).to.equal('10433394')
     })
 
     it('Request should not error when placementId is not provided', function () {
