@@ -22,7 +22,7 @@ var adUnits = [{
   bids: [{
     bidder: 'pubstack',
     params: {
-      siteId: 'your-side-id',
+      siteId: 'your-site-id',
       adUnitName: 'adunit-1'
     }
   }]
