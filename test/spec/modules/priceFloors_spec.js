@@ -82,6 +82,7 @@ describe('the price floors module', function () {
     endpoint: {},
     enforcement: {
       enforceJS: true,
+      enforceBidders: ['*'],
       enforcePBS: false,
       floorDeals: false,
       bidAdjustment: true
@@ -95,6 +96,7 @@ describe('the price floors module', function () {
     endpoint: {},
     enforcement: {
       enforceJS: true,
+      enforceBidders: ['*'],
       enforcePBS: false,
       floorDeals: false,
       bidAdjustment: true
@@ -108,6 +110,7 @@ describe('the price floors module', function () {
     endpoint: {},
     enforcement: {
       enforceJS: true,
+      enforceBidders: ['*'],
       enforcePBS: false,
       floorDeals: false,
       bidAdjustment: true
@@ -688,6 +691,11 @@ describe('the price floors module', function () {
 
       const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
       expect(skipRate).to.equal(undefined);
+    });
+
+    it('should not throw when adUnit.bids is undefined', function() {
+      const adUnitsWithNoBids = [{ code: 'test-ad-unit', mediaTypes: { banner: { sizes: [[300, 250]] } } }];
+      expect(() => updateAdUnitsForAuction(adUnitsWithNoBids, inputFloorData, 'id')).to.not.throw();
     });
   });
 
@@ -2281,6 +2289,51 @@ describe('the price floors module', function () {
       expect(reject.calledOnce).to.be.true;
       expect(returnedBidResponse).to.not.exist;
     });
+    it('enforces floors for all bidders by default', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
+      returnedBidResponse = null;
+      runBidResponse({
+        ...basicBidResponse,
+        bidderCode: 'rubicon'
+      });
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse).to.equal(null);
+    });
+    it('enforces floors only for configured enforceBidders when provided', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].enforcement.enforceBidders = ['rubicon'];
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
+
+      runBidResponse({
+        ...basicBidResponse,
+        bidderCode: 'appnexus'
+      });
+      expect(reject.called).to.be.false;
+      expect(returnedBidResponse).to.haveOwnProperty('floorData');
+
+      returnedBidResponse = null;
+      runBidResponse({
+        ...basicBidResponse,
+        bidderCode: 'rubicon'
+      });
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse).to.equal(null);
+    });
+    it('uses adapterCode when checking enforceBidders', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].enforcement.enforceBidders = ['rubicon'];
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
+
+      runBidResponse({
+        ...basicBidResponse,
+        bidderCode: 'alternateBidder',
+        adapterCode: 'rubicon'
+      });
+
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse).to.equal(null);
+    });
     it('if it finds a rule and does not floor should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 0.3 };
@@ -2294,6 +2347,7 @@ describe('the price floors module', function () {
         cpmAfterAdjustments: 0.5,
         enforcements: {
           bidAdjustment: true,
+          enforceBidders: ['*'],
           enforceJS: true,
           enforcePBS: false,
           floorDeals: false
@@ -2331,6 +2385,7 @@ describe('the price floors module', function () {
         cpmAfterAdjustments: 0.5,
         enforcements: {
           bidAdjustment: true,
+          enforceBidders: ['*'],
           enforceJS: true,
           enforcePBS: false,
           floorDeals: false
@@ -2359,6 +2414,7 @@ describe('the price floors module', function () {
         cpmAfterAdjustments: 7.5,
         enforcements: {
           bidAdjustment: true,
+          enforceBidders: ['*'],
           enforceJS: true,
           enforcePBS: false,
           floorDeals: false

@@ -24,10 +24,14 @@ runs:
         rm -r "$(pwd)"/*
 
     - name: Download artifact
-      uses: actions/download-artifact@v5
+      uses: Wandalen/wretry.action@v3.8.0
       with:
-        path: '${{ runner.temp }}'
-        name: '${{ inputs.name }}'
+        action: actions/download-artifact@v7
+        attempt_limit: 2
+        attempt_delay: 10000
+        with: |
+          path: '${{ runner.temp }}'
+          name: '${{ inputs.name }}'
 
     - name: 'Untar working directory'
       shell: bash
