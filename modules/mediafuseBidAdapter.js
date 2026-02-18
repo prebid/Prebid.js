@@ -28,7 +28,7 @@ import {
   getANKewyordParamFromMaps,
   getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
-import { fill } from '../libraries/appnexusUtils/anUtils.js';
+import { convertCamelToUnderscore, fill } from '../libraries/appnexusUtils/anUtils.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'mediafuse';
@@ -52,7 +52,7 @@ const RESPONSE_MEDIA_TYPE_MAP = {
   3: NATIVE
 };
 
-const VIDEO_TARGETING = ['id', 'minduration', 'maxduration', 'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
+const VIDEO_TARGETING = ['id', 'minduration', 'maxduration', 'skippable', 'playback_method', 'frameworks', 'skipoffset'];
 const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 
@@ -62,7 +62,7 @@ const OMID_API = 7;
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Modernized Mediafuse Bid Adapter using ortbConverter.
@@ -163,7 +163,7 @@ const converter = ortbConverter({
                   const apiTmp = videoMediaType[param].map(val => {
                     const v = (val === 4) ? 5 : (val === 5) ? 4 : val;
                     return (v >= 1 && v <= 5) ? v : undefined;
-                  }).filter(v => v);
+                  }).filter(v => v !== undefined);
                   extANData.video_frameworks = apiTmp;
                 }
                 break;
@@ -200,7 +200,6 @@ const converter = ortbConverter({
       'pubClick': 'pubclick',
       'extInvCode': 'ext_inv_code',
       'externalImpId': 'ext_imp_id',
-      'publisherId': 'publisher_id',
       'supplyType': 'supply_type'
     };
 
@@ -215,7 +214,7 @@ const converter = ortbConverter({
     });
 
     // Snake-case catch-all
-    const knownParams = ['placementId', 'placement_id', 'invCode', 'inv_code', 'member', 'keywords', 'reserve', 'video', 'user', 'app', 'frameworks', 'position', ...Object.keys(optionalParamsMap), ...Object.values(optionalParamsMap), 'banner_frameworks', 'video_frameworks'];
+    const knownParams = ['placementId', 'placement_id', 'invCode', 'inv_code', 'member', 'keywords', 'reserve', 'video', 'user', 'app', 'frameworks', 'position', 'publisherId', 'publisher_id', ...Object.keys(optionalParamsMap), ...Object.values(optionalParamsMap), 'banner_frameworks', 'video_frameworks'];
     Object.keys(bidderParams)
       .filter(param => !knownParams.includes(param))
       .forEach(param => {
@@ -234,6 +233,10 @@ const converter = ortbConverter({
     const bidFloor = getBidFloor(bidRequest);
     if (bidFloor) {
       imp.bidfloor = bidFloor;
+      imp.bidfloorcur = 'USD';
+    } else {
+      delete imp.bidfloor;
+      delete imp.bidfloorcur;
     }
 
     if (Object.keys(extANData).length > 0) {
@@ -246,12 +249,13 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
 
     if (request?.user?.ext?.eids?.length > 0) {
-      request.user.ext.eids.forEach(eid => {
+      request.user.ext.eids = request.user.ext.eids.map(eid => {
         if (eid.source === 'adserver.org') {
-          eid.rti_partner = 'TDID';
+          return Object.assign({}, eid, { rti_partner: 'TDID' });
         } else if (eid.source === 'uidapi.com') {
-          eid.rti_partner = 'UID2';
+          return Object.assign({}, eid, { rti_partner: 'UID2' });
         }
+        return eid;
       });
     }
 
@@ -270,7 +274,7 @@ const converter = ortbConverter({
 
     if (bidderRequest?.refererInfo) {
       const refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
+        rd_ref: bidderRequest.refererInfo.topmostLocation ? encodeURIComponent(bidderRequest.refererInfo.topmostLocation) : '',
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack?.map((url) => encodeURIComponent(url)).join(',')
@@ -282,7 +286,7 @@ const converter = ortbConverter({
     }
 
     // App/Device parameters
-    const expandedBids = bidderRequest.bids || [];
+    const expandedBids = bidderRequest?.bids || [];
     const memberBid = expandedBids.find(bid => bid.params && bid.params.member);
     const commonBidderParams = memberBid ? memberBid.params : (expandedBids[0] && expandedBids[0].params);
 
@@ -379,7 +383,7 @@ const converter = ortbConverter({
     const bidAdType = bid?.ext?.appnexus?.bid_ad_type;
     const extANData = deepAccess(bid, 'ext.appnexus');
 
-    if (isNumber(bidAdType) && RESPONSE_MEDIA_TYPE_MAP.hasOwnProperty(bidAdType)) {
+    if (isNumber(bidAdType) && bidAdType in RESPONSE_MEDIA_TYPE_MAP) {
       mediaType = RESPONSE_MEDIA_TYPE_MAP[bidAdType];
       // Native Masquerading
       if (mediaType === NATIVE) {
@@ -545,7 +549,7 @@ const converter = ortbConverter({
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return bid.params.reserve ? bid.params.reserve : null;
+    return (bid.params.reserve != null) ? bid.params.reserve : null;
   }
   // Mediafuse/AppNexus generally expects USD for its RTB endpoints
   let floor = bid.getFloor({
@@ -685,10 +689,6 @@ function createAdPodRequest(bidRequest) {
   return requests;
 }
 
-function convertCamelToUnderscore(str) {
-  return str.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').toLowerCase();
-}
-
 function isAdPodRequest(imps) {
   return imps.some(imp => deepAccess(imp, 'ext.appnexus.hb_source') === 7);
 }
@@ -746,14 +746,15 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
         logWarn('Mediafuse: cannot access iframe due to cross-origin, skipping viewability script arming', e);
       }
     }
-  } catch (e) { }
+  } catch (e) {
+    logWarn('Mediafuse: reloadViewabilityScriptWithCorrectParameters error', e);
+  }
 }
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  alwaysHasCapacity: true,
   aliases: [{ code: 'mediafuseBidAdapter', gvlid: GVLID }],
 
   isBidRequestValid: function (bid) {
@@ -806,7 +807,7 @@ export const spec = {
           const qval = getParameterByName(qparam);
           if (qval) debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
         });
-        if (Object.keys(debugObj).length > 0 && !debugObj.hasOwnProperty('enabled')) debugObj.enabled = true;
+        if (Object.keys(debugObj).length > 0 && !('enabled' in debugObj)) debugObj.enabled = true;
       }
 
       if (debugObj.enabled) {
@@ -842,14 +843,12 @@ export const spec = {
     }).bids;
 
     // allowZeroCpmBids check
-    const filteredBids = bids.filter(bid => {
-      const allowZeroCpm = bidderSettings.get(BIDDER_CODE, 'allowZeroCpmBids') === true;
-      return allowZeroCpm ? bid.cpm >= 0 : bid.cpm > 0;
-    });
+    const allowZeroCpm = bidderSettings.get(BIDDER_CODE, 'allowZeroCpmBids') === true;
+    const filteredBids = bids.filter(bid => allowZeroCpm ? bid.cpm >= 0 : bid.cpm > 0);
 
     // Debug logging
     if (serverResponse.body?.debug?.debug_info) {
-      const debugHeader = 'MediaFuse Debug Auction for Prebid\n\n'
+      const debugHeader = 'MediaFuse Debug Auction for Prebid\n\n';
       let debugText = debugHeader + serverResponse.body.debug.debug_info;
       debugText = debugText
         .replace(/(<td>|<th>)/gm, '\t')
