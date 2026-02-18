@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {deepAccess, mergeDeep, deepSetValue} from '../src/utils.js';
+import {deepAccess, mergeDeep} from '../src/utils.js';
 
 const BIDDER_CODE = 'trafficgate';
 const URL = 'https://[HOST].bc-plugin.com/prebidjs'
