@@ -43,7 +43,7 @@ const converter = ortbConverter({
       at: 1,
     })
     const bid = context.bidRequests[0];
-    utils.deepSetValue(req, 'device.dnt', 0);
+    deepSetValue(req, 'device.dnt', 0);
     if (bid.params.test) {
       req.test = 1
     }
