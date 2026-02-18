@@ -21,6 +21,7 @@ This file contains instructions for the Codex agent and its friends when working
 
 ## General guidance
 - Node.js `>=20` is required; dependencies are managed with `npm`.
+- Whenever possible, all new files added under `/modules`, `/libraries`, and `/src` must be TypeScript files (`.ts`) instead of JavaScript files (`.js`).
 - Added or modified code must have at least 80% unit test coverage.
 - Link any required documentation PRs in the PR description.
 - Avoid modifying files in `node_modules` or generated build artifacts under `build`.
