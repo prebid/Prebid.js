@@ -1,5 +1,11 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../../src/utils.js';
+import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques, isEmpty} from '../../src/utils.js';
+
+const slotInfoCache = new Map();
+
+export function clearSlotInfoCache() {
+  slotInfoCache.clear();
+}
 
 /**
  * Returns filter function to match adUnitCode in slot
@@ -38,14 +44,19 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
  * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
  */
 export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  if (slotInfoCache.has(adUnitCode)) {
+    return slotInfoCache.get(adUnitCode);
+  }
   const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
+  let info = {};
   if (matchingSlot) {
-    return {
+    info = {
       gptSlot: matchingSlot.getAdUnitPath(),
       divId: matchingSlot.getSlotElementId()
     };
   }
-  return {};
+  !isEmpty(info) && slotInfoCache.set(adUnitCode, info);
+  return info;
 }
 
 export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];

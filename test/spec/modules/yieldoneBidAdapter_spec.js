@@ -14,7 +14,7 @@ describe('yieldoneBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'yieldone',
       'params': {
         placementId: '36891'
@@ -36,7 +36,7 @@ describe('yieldoneBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -548,10 +548,56 @@ describe('yieldoneBidAdapter', function () {
         expect(request[0].data.gpid).to.equal('gpid_sample');
       });
     });
+
+    describe('instl', function () {
+      it('dont send instl if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            ortb2Imp: {},
+          },
+          {
+            params: {placementId: '2'},
+            ortb2Imp: undefined,
+          },
+          {
+            params: {placementId: '3'},
+            ortb2Imp: {instl: undefined},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        bidRequests.forEach((bidRequest, ind) => {
+          expect(request[ind].data).to.not.have.property('instl');
+        })
+      });
+
+      it('should send instl if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            ortb2Imp: {instl: '1'},
+          },
+          {
+            params: {placementId: '1'},
+            ortb2Imp: {instl: 1},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        bidRequests.forEach((bidRequest, ind) => {
+          expect(request[ind].data).to.have.property('instl');
+          expect(request[ind].data.instl).to.equal(1);
+        })
+      });
+    });
   });
 
   describe('interpretResponse', function () {
-    let bidRequestBanner = [
+    const bidRequestBanner = [
       {
         'method': 'GET',
         'url': 'https://y.one.impact-ad.jp/h_bid',
@@ -569,7 +615,7 @@ describe('yieldoneBidAdapter', function () {
       }
     ];
 
-    let serverResponseBanner = {
+    const serverResponseBanner = {
       body: {
         'adTag': '<!-- adtag -->',
         'uid': '23beaa6af6cdde',
@@ -587,7 +633,7 @@ describe('yieldoneBidAdapter', function () {
     };
 
     it('should get the correct bid response for banner', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 300,
@@ -606,7 +652,7 @@ describe('yieldoneBidAdapter', function () {
         'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
-      let result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
@@ -620,7 +666,7 @@ describe('yieldoneBidAdapter', function () {
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
-    let serverResponseVideo = {
+    const serverResponseVideo = {
       body: {
         'uid': '23beaa6af6cdde',
         'height': 360,
@@ -634,7 +680,7 @@ describe('yieldoneBidAdapter', function () {
       }
     };
 
-    let bidRequestVideo = [
+    const bidRequestVideo = [
       {
         'method': 'GET',
         'url': 'https://y.one.impact-ad.jp/h_bid',
@@ -654,7 +700,7 @@ describe('yieldoneBidAdapter', function () {
     ];
 
     it('should get the correct bid response for video', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 640,
@@ -675,7 +721,7 @@ describe('yieldoneBidAdapter', function () {
           url: VIDEO_PLAYER_URL
         }
       }];
-      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      const result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
@@ -693,7 +739,7 @@ describe('yieldoneBidAdapter', function () {
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {
           'uid': '2c0b634db95a01',
           'height': 0,
@@ -703,7 +749,7 @@ describe('yieldoneBidAdapter', function () {
           'cpm': 0
         }
       };
-      let result = spec.interpretResponse(response, bidRequestBanner[0]);
+      const result = spec.interpretResponse(response, bidRequestBanner[0]);
       expect(result.length).to.equal(0);
     });
   });
@@ -732,6 +778,20 @@ describe('yieldoneBidAdapter', function () {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
       })).to.be.undefined;
+    });
+
+    it('should skip sync request for bot-like user agents', function () {
+      const originalUA = navigator.userAgent;
+      try {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+          configurable: true
+        });
+
+        expect(spec.getUserSyncs({'iframeEnabled': true})).to.be.undefined;
+      } finally {
+        Object.defineProperty(navigator, 'userAgent', { value: originalUA, configurable: true });
+      }
     });
   });
 });

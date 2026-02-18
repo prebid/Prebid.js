@@ -66,14 +66,14 @@ export const spec = {
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
     const kwdsFromRequest = firstSlot.kwds;
-    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
+    const keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
     let beopid = '';
     if (storage.cookiesAreEnabled) {
       beopid = storage.getCookie(COOKIE_NAME, undefined);
       if (!beopid) {
         beopid = generateUUID();
-        let expirationDate = new Date();
+        const expirationDate = new Date();
         expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
         storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
       }
@@ -114,25 +114,27 @@ export const spec = {
     return [];
   },
   onTimeout: function(timeoutData) {
-    if (timeoutData === null || typeof timeoutData === 'undefined' || Object.keys(timeoutData).length === 0) {
+    if (!Array.isArray(timeoutData) || timeoutData.length === 0) {
       return;
     }
 
-    let trackingParams = buildTrackingParams(timeoutData, 'timeout', timeoutData.timeout);
+    timeoutData.forEach((timeout) => {
+      const trackingParams = buildTrackingParams(timeout, 'timeout', timeout.timeout);
 
-    logWarn(BIDDER_CODE + ': timed out request');
-    triggerPixel(buildUrl({
-      protocol: 'https',
-      hostname: 't.collectiveaudience.co',
-      pathname: '/bid',
-      search: trackingParams
-    }));
+      logWarn(BIDDER_CODE + ': timed out request for adUnitCode ' + timeout.adUnitCode);
+      triggerPixel(buildUrl({
+        protocol: 'https',
+        hostname: 't.collectiveaudience.co',
+        pathname: '/bid',
+        search: trackingParams
+      }));
+    });
   },
   onBidWon: function(bid) {
     if (bid === null || typeof bid === 'undefined' || Object.keys(bid).length === 0) {
       return;
     }
-    let trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
+    const trackingParams = buildTrackingParams(bid, 'won', bid.cpm);
 
     logInfo(BIDDER_CODE + ': won request');
     triggerPixel(buildUrl({
@@ -174,10 +176,10 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  let params = Array.isArray(data.params) ? data.params[0] : data.params;
+  const params = Array.isArray(data.params) ? data.params[0] : data.params || {};
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: params.accountId ?? (data.ad?.match(/account: \“([a-f\d]{24})\“/)?.[1] ?? ''),
+    pid: params.accountId ?? (data.ad?.match(/account: “([a-f\d]{24})“/)?.[1] ?? ''),
     nid: params.networkId,
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
@@ -188,6 +190,40 @@ function buildTrackingParams(data, info, value) {
     url: pageUrl,
     pv: '$prebid.version$'
   };
+}
+
+function normalizeAdUnitCode(adUnitCode) {
+  if (!adUnitCode || typeof adUnitCode !== 'string') return undefined;
+
+  // Only normalize GPT auto-generated adUnitCodes (div-gpt-ad-*)
+  // For non-GPT codes, return original string unchanged to preserve case
+  if (!/^div-gpt-ad[-_]/i.test(adUnitCode)) {
+    return adUnitCode;
+  }
+
+  // GPT handling: strip prefix and random suffix
+  let slot = adUnitCode;
+  slot = slot.replace(/^div-gpt-ad[-_]?/i, '');
+
+  /**
+   * Remove only long numeric suffixes (likely auto-generated IDs).
+   * Preserve short numeric suffixes as they may be meaningful slot indices.
+   *
+   * Examples removed:
+   *   div-gpt-ad-article_top_123456 → article_top
+   *   div-gpt-ad-sidebar-1678459238475 → sidebar
+   *
+   * Examples preserved:
+   *   div-gpt-ad-topbanner-1 → topbanner-1
+   *   div-gpt-ad-topbanner-2 → topbanner-2
+   */
+  slot = slot.replace(/([_-])\d{6,}$/, '');
+
+  slot = slot.toLowerCase().trim();
+
+  if (slot.length < 3) return undefined;
+
+  return slot;
 }
 
 function beOpRequestSlotsMaker(bid, bidderRequest) {
@@ -209,7 +245,11 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
     nptnid: getValue(bid.params, 'networkPartnerId'),
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
-    name: getBidIdParameter('adUnitCode', bid),
+    name: deepAccess(bid, 'ortb2Imp.ext.gpid') ||
+      deepAccess(bid, 'ortb2Imp.ext.data.adslot') ||
+      deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
+      bid.ortb2Imp?.tagid ||
+      normalizeAdUnitCode(bid.adUnitCode),
     tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),

@@ -1,5 +1,5 @@
 import { ajax } from '../../src/ajax.js'
-import { cyrb53Hash } from '../../src/utils.js';
+import { cyrb53Hash, logError } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 
@@ -44,6 +44,7 @@ export class Uid2ApiClient {
   ResponseToRefreshResult(response) {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
+      if (response.status === 'optout') { return { status: response.status, identity: 'optout' }; }
       return response;
     } else { return prependMessage(`Response didn't contain a valid status`); }
   }
@@ -182,7 +183,7 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
       originalToken: token,
       latestToken: response.identity,
     };
-    let storedTokens = storageManager.getStoredValueWithFallback();
+    const storedTokens = storageManager.getStoredValueWithFallback();
     if (storedTokens?.originalIdentity) tokens.originalIdentity = storedTokens.originalIdentity;
     storageManager.storeValue(tokens);
     return tokens;
@@ -688,6 +689,7 @@ if (FEATURES.UID2_CSTG) {
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
+  // eslint-disable-next-line no-restricted-syntax
   const logInfo = (...args) => logInfoWrapper(_logInfo, ...args);
 
   let suppliedToken = null;
@@ -746,7 +748,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
           promise.then((result) => {
             logInfo('Token generation responded, passing the new token on.', result);
             cb(result);
-          }).catch(() => {});
+          }).catch((e) => { logError('error generating token: ', e); });
         } };
       }
     }
@@ -766,14 +768,8 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
       promise.then((result) => {
         logInfo('Refresh reponded, passing the updated token on.', result);
         cb(result);
-      }).catch(() => {});
+      }).catch((e) => { logError('error refreshing token: ', e); });
     } };
-  }
-  // If should refresh (but don't need to), refresh in the background.
-  if (Date.now() > newestAvailableToken.refresh_from) {
-    logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn)
-      .catch(() => {});
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
@@ -783,13 +779,30 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     tokens.originalIdentity = storedTokens?.originalIdentity;
   }
   storageManager.storeValue(tokens);
+
+  // If should refresh (but don't need to), refresh in the background.
+  // Return both immediate id and callback so idObj gets updated when refresh completes.
+  if (Date.now() > newestAvailableToken.refresh_from) {
+    logInfo(`Refreshing token in background with low priority.`);
+    const refreshPromise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    return {
+      id: tokens,
+      callback: (cb) => {
+        refreshPromise.then((refreshedTokens) => {
+          logInfo('Background token refresh completed, updating ID.', refreshedTokens);
+          cb(refreshedTokens);
+        }).catch((e) => { logError('error refreshing token in background: ', e); });
+      }
+    };
+  }
+
   return { id: tokens };
 }
 
 export function extractIdentityFromParams(params) {
   const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
 
-  for (let key of keysToCheck) {
+  for (const key of keysToCheck) {
     if (params.hasOwnProperty(key)) {
       return { [key]: params[key] };
     }

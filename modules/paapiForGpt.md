@@ -15,7 +15,7 @@ This is accomplished by adding the `paapiForGpt` module to the list of modules t
 gulp build --modules=paapiForGpt,...
 ```
 
-Second, they must enable PAAPI in their Prebid.js configuration. 
+Second, they must enable PAAPI in their Prebid.js configuration.
 This is done through module level configuration, but to provide a high degree of flexiblity for testing, PAAPI settings also exist the slot level.
 
 ### Module Configuration

@@ -13,11 +13,13 @@ import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
  */
 
 const BIDDER_CODE = 'between';
-let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+const GVLID = 724;
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['btw'],
   supportedMediaTypes: ['banner', 'video'],
   /**
@@ -36,14 +38,14 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    let requests = [];
+    const requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
     const refInfo = bidderRequest?.refererInfo;
 
     validBidRequests.forEach((i) => {
       const video = i.mediaTypes && i.mediaTypes.video;
 
-      let params = {
+      const params = {
         eids: getUsersIds(i),
         sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
@@ -80,13 +82,14 @@ export const spec = {
         params.click3rd = i.params.click3rd;
       }
       if (i.params.pubdata !== undefined) {
-        for (let key in i.params.pubdata) {
+        for (const key in i.params.pubdata) {
           params['pubside_macro[' + key + ']'] = encodeURIComponent(i.params.pubdata[key]);
         }
       }
 
-      if (i.schain) {
-        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      const schain = i?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(schain));
       }
 
       // TODO: is 'page' the right value here?
@@ -120,7 +123,7 @@ export const spec = {
     const bidResponses = [];
 
     for (var i = 0; i < serverResponse.body.length; i++) {
-      let bidResponse = {
+      const bidResponse = {
         requestId: serverResponse.body[i].bidid,
         cpm: serverResponse.body[i].cpm || 0,
         width: serverResponse.body[i].w,
@@ -150,7 +153,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses) {
-    let syncs = []
+    const syncs = []
     /* console.log(syncOptions,serverResponses)
      if (syncOptions.iframeEnabled) {
       syncs.push({
@@ -193,9 +196,9 @@ function getRr() {
     var rr = td.referrer;
   } catch (err) { return false }
 
-  if (typeof rr != 'undefined' && rr.length > 0) {
+  if (typeof rr !== 'undefined' && rr.length > 0) {
     return encodeURIComponent(rr);
-  } else if (typeof rr != 'undefined' && rr == '') {
+  } else if (typeof rr !== 'undefined' && rr === '') {
     return 'direct';
   }
 }
@@ -229,7 +232,7 @@ function get_pubdata(adds) {
     let index = 0;
     let url = '';
     for(var key in adds.pubdata) {
-      if (index == 0) {
+      if (index === 0) {
         url = url + encodeURIComponent('pubside_macro[' + key + ']') + '=' + encodeURIComponent(adds.pubdata[key]);
         index++;
       } else {

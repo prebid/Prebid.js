@@ -39,7 +39,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
   moduleConfig.params = moduleConfig.params || {};
   moduleConfig.params.partnerid = moduleConfig.params.partnerid ? moduleConfig.params.partnerid : 1;
 
-  let adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
+  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
   serverData.page = moduleConfig.params.actualUrl || getRefererInfo().page || '';
   const url = (RELEVAD_API_DOMAIN + '/apis/rweb2/' +
                 '?url=' + encodeURIComponent(serverData.page) +
@@ -85,7 +85,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
  */
 export function setGlobalOrtb2(ortb2, rtdData) {
   try {
-    let addOrtb2 = composeOrtb2Data(rtdData, 'site');
+    const addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(addOrtb2) && mergeDeep(ortb2, addOrtb2);
   } catch (e) {
     logError(e)
@@ -103,7 +103,7 @@ function composeOrtb2Data(rtdData, prefix) {
   const segments = rtdData.segments;
   const categories = rtdData.categories;
   const content = rtdData.content;
-  let addOrtb2 = {};
+  const addOrtb2 = {};
 
   !isEmpty(segments) && deepSetValue(addOrtb2, 'user.ext.data.relevad_rtd', segments);
   !isEmpty(categories.cat) && deepSetValue(addOrtb2, prefix + '.cat', categories.cat);
@@ -132,7 +132,7 @@ function composeOrtb2Data(rtdData, prefix) {
  */
 function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
   try {
-    let addOrtb2 = composeOrtb2Data(rtdData, 'site');
+    const addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.relevad_rtd', rtdData.segments);
     !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.segments', rtdData.segments);
     !isEmpty(rtdData.categories) && deepSetValue(addOrtb2, 'user.ext.data.contextual_categories', rtdData.categories.pagecat);
@@ -155,7 +155,7 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
  */
 function filterByScore(dict, minscore) {
   if (dict && !isEmpty(dict)) {
-    minscore = minscore && typeof minscore == 'number' ? minscore : 30;
+    minscore = minscore && typeof minscore === 'number' ? minscore : 30;
     try {
       const filteredCategories = Object.keys(Object.fromEntries(Object.entries(dict).filter(([k, v]) => v > minscore)));
       return isEmpty(filteredCategories) ? null : filteredCategories;
@@ -174,9 +174,9 @@ function filterByScore(dict, minscore) {
  * @return     {object}  Filtered RTD
  */
 function getFiltered(data, minscore) {
-  let relevadData = {'segments': []};
+  const relevadData = {'segments': []};
 
-  minscore = minscore && typeof minscore == 'number' ? minscore : 30;
+  minscore = minscore && typeof minscore === 'number' ? minscore : 30;
 
   const cats = filterByScore(data.cats, minscore);
   const pcats = filterByScore(data.pcats, minscore) || cats;
@@ -190,7 +190,7 @@ function getFiltered(data, minscore) {
 
   try {
     if (data && data.segments) {
-      for (let segId in data.segments) {
+      for (const segId in data.segments) {
         if (data.segments.hasOwnProperty(segId)) {
           relevadData.segments.push(data.segments[segId].toString());
         }
@@ -225,7 +225,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
   noWhitelists && setGlobalOrtb2(reqBids.ortb2Fragments?.global, relevadData);
 
   // Target GAM/GPT
-  let setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
+  const setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
   if (moduleConfig.dryrun || (typeof window.googletag !== 'undefined' && setgpt)) {
     try {
       if (window.googletag && window.googletag.pubads && (typeof window.googletag.pubads === 'function')) {
@@ -246,10 +246,10 @@ export function addRtdData(reqBids, data, moduleConfig) {
     noWhitelists && deepSetValue(adUnit, 'ortb2Imp.ext.data.relevad_rtd', relevadList);
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      let bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? moduleConfig.params.bidders.findIndex(function (i) {
+      const bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? moduleConfig.params.bidders.findIndex(function (i) {
         return i.bidder === bid.bidder;
       }) : false);
-      const indexFound = !!(typeof bidderIndex == 'number' && bidderIndex >= 0);
+      const indexFound = !!(typeof bidderIndex === 'number' && bidderIndex >= 0);
       try {
         if (
           !biddersParamsExist ||
@@ -263,8 +263,8 @@ export function addRtdData(reqBids, data, moduleConfig) {
           if (!wb && !isEmpty(wl[bid.bidder])) {
             wb = true;
             for (const [key, value] of entries(wl[bid.bidder])) {
-              let params = bid?.params || {};
-              wb = wb && (key in params) && params[key] == value;
+              const params = bid?.params || {};
+              wb = wb && (key in params) && params[key] === value;
             }
           }
           if (wb && !isEmpty(relevadList)) {
@@ -272,7 +272,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
             setBidderSiteAndContent(bid, 'ortb2', relevadData);
             deepSetValue(bid, 'params.keywords.relevad_rtd', relevadList);
             !(bid.params?.target || '').includes('relevad_rtd=') && deepSetValue(bid, 'params.target', [].concat(bid.params?.target ? [bid.params.target] : []).concat(relevadList.map(entry => { return 'relevad_rtd=' + entry; })).join(';'));
-            let firstPartyData = {};
+            const firstPartyData = {};
             firstPartyData[bid.bidder] = { firstPartyData: { relevad_rtd: relevadList } };
             config.setConfig(firstPartyData);
           }
@@ -294,7 +294,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
  * @param      {object}  config  Configuraion
  */
 function sendBids(data, config) {
-  let dataJson = JSON.stringify(data);
+  const dataJson = JSON.stringify(data);
 
   if (!config.dryrun) {
     ajax(RELEVAD_API_DOMAIN + '/apis/bids/', () => {}, dataJson, AJAX_OPTIONS);
@@ -310,8 +310,8 @@ function sendBids(data, config) {
  * @param      {object}  userConsent     User GDPR consent object
  */
 function onAuctionEnd(auctionDetails, config, userConsent) {
-  let adunitObj = {};
-  let adunits = [];
+  const adunitObj = {};
+  const adunits = [];
 
   // Add Bids Received
   auctionDetails.bidsReceived.forEach((bidObj) => {
@@ -332,7 +332,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     adunits.push({code: adunitCode, bids: bidsReceived});
   });
 
-  let data = {
+  const data = {
     event: 'bids',
     adunits: adunits,
     reledata: serverData.rawdata,

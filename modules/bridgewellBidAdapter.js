@@ -45,43 +45,81 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const adUnits = [];
-    var bidderUrl = REQUEST_ENDPOINT + Math.random();
-    var userIds;
+    const bidderUrl = REQUEST_ENDPOINT + Math.random();
 
     _each(validBidRequests, function (bid) {
-      userIds = bid.userId;
+      const passthrough = bid.ortb2Imp?.ext?.prebid?.passthrough;
+      const filteredPassthrough = passthrough ? Object.fromEntries(
+        Object.entries({
+          bucket: passthrough.bucket,
+          client: passthrough.client,
+          gamAdCode: passthrough.gamAdCode,
+          gamLoc: passthrough.gamLoc,
+          colo: passthrough.colo,
+          device: passthrough.device,
+          lang: passthrough.lang,
+          pt: passthrough.pt,
+          region: passthrough.region,
+          site: passthrough.site,
+          ver: passthrough.ver
+        }).filter(([_, value]) => value !== undefined)
+      ) : undefined;
 
-      if (bid.params.cid) {
-        adUnits.push({
-          cid: bid.params.cid,
-          adUnitCode: bid.adUnitCode,
-          requestId: bid.bidId,
-          mediaTypes: bid.mediaTypes || {
-            banner: {
-              sizes: bid.sizes
-            }
+      const adUnit = {
+        adUnitCode: bid.adUnitCode,
+        requestId: bid.bidId,
+        transactionId: bid.transactionId,
+        adUnitId: bid.adUnitId,
+        sizes: bid.sizes,
+        mediaTypes: bid.mediaTypes || {
+          banner: {
+            sizes: bid.sizes
+          }
+        },
+        ortb2Imp: {
+          ext: {
+            prebid: {
+              passthrough: filteredPassthrough
+            },
+            data: {
+              adserver: {
+                name: bid.ortb2Imp?.ext?.data?.adserver?.name,
+                adslot: bid.ortb2Imp?.ext?.data?.adserver?.adslot
+              },
+              pbadslot: bid.ortb2Imp?.ext?.data?.pbadslot
+            },
+            gpid: bid.ortb2Imp?.ext?.gpid
           },
-          userIds: userIds || {}
-        });
-      } else {
-        adUnits.push({
-          ChannelID: bid.params.ChannelID,
-          adUnitCode: bid.adUnitCode,
-          requestId: bid.bidId,
-          mediaTypes: bid.mediaTypes || {
-            banner: {
-              sizes: bid.sizes
-            }
-          },
-          userIds: userIds || {}
-        });
+          banner: {
+            pos: bid.ortb2Imp?.banner?.pos
+          }
+        }
+      };
+
+      if (bid.params?.cid) {
+        adUnit.cid = bid.params.cid;
+      } else if (bid.params?.ChannelID) {
+        adUnit.ChannelID = bid.params.ChannelID;
       }
+
+      let floorInfo = {};
+      if (typeof bid.getFloor === 'function') {
+        const mediaType = bid.mediaTypes?.banner ? BANNER : (bid.mediaTypes?.native ? NATIVE : '*');
+        const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
+        const size = sizes.length === 1 ? sizes[0] : '*';
+        floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+      }
+      adUnit.floor = floorInfo.floor;
+      adUnit.currency = floorInfo.currency;
+      adUnits.push(adUnit);
     });
 
     let topUrl = '';
-    if (bidderRequest && bidderRequest.refererInfo) {
+    if (bidderRequest?.refererInfo?.page) {
       topUrl = bidderRequest.refererInfo.page;
     }
+
+    const firstBid = validBidRequests[0] || {};
 
     return {
       method: 'POST',
@@ -93,10 +131,23 @@ export const spec = {
         },
         inIframe: inIframe(),
         url: topUrl,
-        referrer: bidderRequest.refererInfo.ref,
+        referrer: bidderRequest?.refererInfo?.ref,
+        auctionId: firstBid?.auctionId,
+        bidderRequestId: firstBid?.bidderRequestId,
+        src: firstBid?.src,
+        userIds: firstBid?.userId || {},
+        userIdAsEids: firstBid?.userIdAsEids || [],
+        auctionsCount: firstBid?.auctionsCount,
+        bidRequestsCount: firstBid?.bidRequestsCount,
+        bidderRequestsCount: firstBid?.bidderRequestsCount,
+        bidderWinsCount: firstBid?.bidderWinsCount,
+        deferBilling: firstBid?.deferBilling,
+        metrics: firstBid?.metrics || {},
         adUnits: adUnits,
         // TODO: please do not send internal data structures over the network
-        refererInfo: bidderRequest.refererInfo.legacy},
+        refererInfo: bidderRequest?.refererInfo?.legacy,
+        ortb2: bidderRequest?.ortb2
+      },
       validBidRequests: validBidRequests
     };
   },
@@ -119,12 +170,12 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = ((serverResponse.body) || []).find(function (res) {
+      const matchedResponse = ((serverResponse.body) || []).find(function (res) {
         let valid = false;
 
         if (res && !res.consumed) {
-          let mediaTypes = req.mediaTypes;
-          let adUnitCode = req.adUnitCode;
+          const mediaTypes = req.mediaTypes;
+          const adUnitCode = req.adUnitCode;
           if (res.adUnitCode) {
             return res.adUnitCode === adUnitCode;
           } else if (res.width && res.height && mediaTypes) {
@@ -132,9 +183,9 @@ export const spec = {
               valid = true;
             } else if (mediaTypes.banner) {
               if (mediaTypes.banner.sizes) {
-                let width = res.width;
-                let height = res.height;
-                let sizes = mediaTypes.banner.sizes;
+                const width = res.width;
+                const height = res.height;
+                const sizes = mediaTypes.banner.sizes;
                 // check response size validation
                 if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
                   valid = width === sizes[0] && height === sizes[1];
@@ -195,11 +246,11 @@ export const spec = {
               return;
             }
 
-            let reqNativeLayout = req.mediaTypes.native;
-            let resNative = matchedResponse.native;
+            const reqNativeLayout = req.mediaTypes.native;
+            const resNative = matchedResponse.native;
 
             // check title
-            let title = reqNativeLayout.title;
+            const title = reqNativeLayout.title;
             if (title && title.required) {
               if (typeof resNative.title !== 'string') {
                 return;
@@ -209,7 +260,7 @@ export const spec = {
             }
 
             // check body
-            let body = reqNativeLayout.body;
+            const body = reqNativeLayout.body;
             if (body && body.required) {
               if (typeof resNative.body !== 'string') {
                 return;
@@ -217,7 +268,7 @@ export const spec = {
             }
 
             // check image
-            let image = reqNativeLayout.image;
+            const image = reqNativeLayout.image;
             if (image && image.required) {
               if (resNative.image) {
                 if (typeof resNative.image.url !== 'string') { // check image url
@@ -233,7 +284,7 @@ export const spec = {
             }
 
             // check sponsoredBy
-            let sponsoredBy = reqNativeLayout.sponsoredBy;
+            const sponsoredBy = reqNativeLayout.sponsoredBy;
             if (sponsoredBy && sponsoredBy.required) {
               if (typeof resNative.sponsoredBy !== 'string') {
                 return;
@@ -241,7 +292,7 @@ export const spec = {
             }
 
             // check icon
-            let icon = reqNativeLayout.icon;
+            const icon = reqNativeLayout.icon;
             if (icon && icon.required) {
               if (resNative.icon) {
                 if (typeof resNative.icon.url !== 'string') { // check icon url
@@ -262,7 +313,7 @@ export const spec = {
             }
 
             // check clickTracker
-            let clickTrackers = resNative.clickTrackers;
+            const clickTrackers = resNative.clickTrackers;
             if (clickTrackers) {
               if (clickTrackers.length === 0) {
                 return;
@@ -272,7 +323,7 @@ export const spec = {
             }
 
             // check impressionTrackers
-            let impressionTrackers = resNative.impressionTrackers;
+            const impressionTrackers = resNative.impressionTrackers;
             if (impressionTrackers) {
               if (impressionTrackers.length === 0) {
                 return;

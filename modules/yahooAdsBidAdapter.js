@@ -27,7 +27,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'admixer.net',
   'adserver.org',
   'adtelligent.com',
-  'akamai.com',
   'amxdt.net',
   'audigent.com',
   'britepool.com',
@@ -78,20 +77,20 @@ function transformSizes(sizes) {
 }
 
 function extractUserSyncUrls(syncOptions, pixels) {
-  let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-  let tagNameRegExp = /\w*(?=\s)/;
-  let srcRegExp = /src=("|')(.*?)\1/;
-  let userSyncObjects = [];
+  const itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
+  const tagNameRegExp = /\w*(?=\s)/;
+  const srcRegExp = /src=("|')(.*?)\1/;
+  const userSyncObjects = [];
 
   if (pixels) {
-    let matchedItems = pixels.match(itemsRegExp);
+    const matchedItems = pixels.match(itemsRegExp);
     if (matchedItems) {
       matchedItems.forEach(item => {
-        let tagName = item.match(tagNameRegExp)[0];
-        let url = item.match(srcRegExp)[2];
+        const tagName = item.match(tagNameRegExp)[0];
+        const url = item.match(srcRegExp)[2];
 
         if (tagName && url) {
-          let tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
+          const tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
           if ((!syncOptions.iframeEnabled && tagType === 'iframe') ||
                 (!syncOptions.pixelEnabled && tagType === 'image')) {
             return;
@@ -329,9 +328,9 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    const schainData = deepAccess(bid, 'schain.nodes');
-    if (isArray(schainData) && schainData.length > 0) {
-      outBoundBidRequest.source.ext.schain = bid.schain;
+    const schain = bid?.ortb2?.source?.ext?.schain;
+    if (schain && isArray(schain.nodes) && schain.nodes.length > 0) {
+      outBoundBidRequest.source.ext.schain = schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
 
@@ -453,7 +452,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site.content = validateAppendObject('object', allowedContentObjectKeys, siteContentObject, outBoundBidRequest.site.content);
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
-      siteContentDataArray.every(dataObject => {
+      siteContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
@@ -469,7 +468,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
   if (appContentObject && isPlainObject(appContentObject)) {
     if (appContentDataArray && isArray(appContentDataArray)) {
-      appContentDataArray.every(dataObject => {
+      appContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
         const allowedContentDataArrayKeys = ['segment'];
@@ -491,11 +490,16 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     const allowedUserNumbers = ['yob'];
     const allowedUserArrays = ['data'];
-    const allowedUserObjects = ['ext'];
     outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
+    // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
+    if (userObject.ext && isPlainObject(userObject.ext)) {
+      outBoundBidRequest.user.ext = {
+        ...outBoundBidRequest.user.ext,
+        ...userObject.ext
+      };
+    }
   };
 
   return outBoundBidRequest;
@@ -623,7 +627,7 @@ export const spec = {
     if (!serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) {
       return response;
     }
-    let seatbids = serverResponse.body.seatbid;
+    const seatbids = serverResponse.body.seatbid;
     seatbids.forEach(seatbid => {
       let bid;
 
@@ -633,9 +637,9 @@ export const spec = {
         return response;
       }
 
-      let cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
+      const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
 
-      let bidResponse = {
+      const bidResponse = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         requestId: bid.impid,
         cpm: cpm,

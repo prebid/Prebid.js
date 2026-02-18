@@ -98,9 +98,6 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
-const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 // ORTB2 device types according to the OpenRTB specification
@@ -164,9 +161,9 @@ export const spec = {
       Object.keys(userObjBid.params.user)
         .filter(param => USER_PARAMS.includes(param))
         .forEach((param) => {
-          let uparam = convertCamelToUnderscore(param);
+          const uparam = convertCamelToUnderscore(param);
           if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-            let segs = [];
+            const segs = [];
             userObjBid.params.user[param].forEach(val => {
               if (isNumber(val)) {
                 segs.push({'id': val});
@@ -187,7 +184,9 @@ export const spec = {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
+        .forEach(param => {
+          appDeviceObj[param] = appDeviceObjBid.params.app[param];
+        });
     }
 
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
@@ -199,7 +198,7 @@ export const spec = {
     }
 
     let debugObj = {};
-    let debugObjParams = {};
+    const debugObjParams = {};
     const debugCookieName = 'apn_prebid_debug';
     const debugCookie = storage.getCookie(debugCookieName) || null;
 
@@ -211,7 +210,7 @@ export const spec = {
       }
     } else {
       Object.keys(DEBUG_QUERY_PARAM_MAP).forEach(qparam => {
-        let qval = getParameterByName(qparam);
+        const qval = getParameterByName(qparam);
         if (isStr(qval) && qval !== '') {
           debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
           debugObj.enabled = true;
@@ -238,7 +237,7 @@ export const spec = {
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     const omidSupport = ((bidRequests) || []).find(hasOmidSupport);
 
     const payload = {
@@ -276,12 +275,24 @@ export const spec = {
     }
 
     // grab the ortb2 keyword data (if it exists) and convert from the comma list string format to object format
-    let ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
+    const ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
 
-    let anAuctionKeywords = deepClone(config.getConfig('appnexusAuctionKeywords')) || {};
-    let auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords)
+    const anAuctionKeywords = deepClone(config.getConfig('appnexusAuctionKeywords')) || {};
+    const auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords)
     if (auctionKeywords.length > 0) {
       payload.keywords = auctionKeywords;
+    }
+
+    if (ortb2?.source?.tid) {
+      if (!payload.source) {
+        payload.source = {
+          tid: ortb2.source.tid
+        };
+      } else {
+        Object.assign({}, payload.source, {
+          tid: ortb2.source.tid
+        });
+      }
     }
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
@@ -301,9 +312,9 @@ export const spec = {
       };
 
       if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
-        let ac = bidderRequest.gdprConsent.addtlConsent;
+        const ac = bidderRequest.gdprConsent.addtlConsent;
         // pull only the ids from the string (after the ~) and convert them to an array of ints
-        let acStr = ac.substring(ac.indexOf('~') + 1);
+        const acStr = ac.substring(ac.indexOf('~') + 1);
         payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
       }
     }
@@ -325,14 +336,14 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let refererinfo = {
+      const refererinfo = {
         // TODO: are these the correct referer values?
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       };
-      let pubPageUrl = bidderRequest.refererInfo.canonicalUrl;
+      const pubPageUrl = bidderRequest.refererInfo.canonicalUrl;
       if (isStr(pubPageUrl) && pubPageUrl !== '') {
         refererinfo.rd_can = pubPageUrl;
       }
@@ -352,14 +363,14 @@ export const spec = {
     }
 
     if (bidRequests[0].userIdAsEids?.length > 0) {
-      let eids = [];
+      const eids = [];
       bidRequests[0].userIdAsEids.forEach(eid => {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
-          let tmp = {'source': eid.source, 'id': uid.id};
-          if (eid.source == 'adserver.org') {
+          const tmp = {'source': eid.source, 'id': uid.id};
+          if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
-          } else if (eid.source == 'uidapi.com') {
+          } else if (eid.source === 'uidapi.com') {
             tmp.rti_partner = 'UID2';
           }
           eids.push(tmp);
@@ -383,7 +394,7 @@ export const spec = {
       if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
         const tpData = [];
         pubDsaObj.transparency.forEach((tpObj) => {
-          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+          if (isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
             tpData.push(tpObj);
           }
         });
@@ -434,7 +445,7 @@ export const spec = {
     }
 
     if (serverResponse.debug && serverResponse.debug.debug_info) {
-      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
+      const debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
       let debugText = debugHeader + serverResponse.debug.debug_info
       debugText = debugText
         .replace(/(<td>|<th>)/gm, '\t') // Tables
@@ -470,21 +481,9 @@ export const spec = {
   }
 };
 
-function strIsAppnexusViewabilityScript(str) {
-  if (!str || str === '') return false;
-
-  let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
-  let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
-
-  let regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
-  let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
-
-  return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
-}
-
 function formatRequest(payload, bidderRequest) {
   let request = [];
-  let options = {
+  const options = {
     withCredentials: true
   };
 
@@ -595,7 +594,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   // temporary function; may remove at later date if/when adserver fully supports dchain
   function setupDChain(rtbBid) {
-    let dchain = {
+    const dchain = {
       ver: '1.0',
       complete: 0,
       nodes: [{
@@ -657,13 +656,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const nativeAd = rtbBid.rtb[NATIVE];
     let viewScript;
 
-    if (strIsAppnexusViewabilityScript(rtbBid.viewability.config)) {
-      let prebidParams = 'pbjs_adid=' + adId + ';pbjs_auc=' + bidRequest.adUnitCode;
+    if (rtbBid.viewability?.config.includes('dom_id=%native_dom_id%')) {
+      const prebidParams = 'pbjs_adid=' + adId + ';pbjs_auc=' + bidRequest.adUnitCode;
       viewScript = rtbBid.viewability.config.replace('dom_id=%native_dom_id%', prebidParams);
     }
 
     let jsTrackers = nativeAd.javascript_trackers;
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined || jsTrackers === null) {
       jsTrackers = viewScript;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, viewScript];
@@ -836,7 +835,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 function bidToTag(bid) {
   const tag = {};
   Object.keys(bid.params).forEach(paramKey => {
-    let convertedKey = convertCamelToUnderscore(paramKey);
+    const convertedKey = convertCamelToUnderscore(paramKey);
     if (convertedKey !== paramKey) {
       bid.params[convertedKey] = bid.params[paramKey];
       delete bid.params[paramKey];
@@ -868,14 +867,14 @@ function bidToTag(bid) {
     : (typeof bid.params.use_pmt_rule === 'boolean') ? bid.params.use_pmt_rule : false;
   tag.prebid = true;
   tag.disable_psa = true;
-  let bidFloor = getBidFloor(bid);
+  const bidFloor = getBidFloor(bid);
   if (bidFloor) {
     tag.reserve = bidFloor;
   }
   if (bid.params.position) {
     tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   } else {
-    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
     // only support unknown, atf, and btf values for position at this time
     if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
       // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
@@ -909,9 +908,14 @@ function bidToTag(bid) {
     tag.keywords = auKeywords;
   }
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
+  }
+
+  const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  if (tid) {
+    tag.tid = tid;
   }
 
   if (FEATURES.NATIVE && (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`))) {
@@ -1001,12 +1005,13 @@ function bidToTag(bid) {
             case 'api':
               if (!tag['video_frameworks'] && isArray(videoMediaType[param])) {
                 // need to read thru array; remove 6 (we don't support it), swap 4 <> 5 if found (to match our adserver mapping for these specific values)
-                let apiTmp = videoMediaType[param].map(val => {
-                  let v = (val === 4) ? 5 : (val === 5) ? 4 : val;
+                const apiTmp = videoMediaType[param].map(val => {
+                  const v = (val === 4) ? 5 : (val === 5) ? 4 : val;
 
                   if (v >= 1 && v <= 5) {
                     return v;
                   }
+                  return undefined;
                 }).filter(v => v);
                 tag['video_frameworks'] = apiTmp;
               }
@@ -1050,7 +1055,7 @@ function bidToTag(bid) {
 
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  let sizes = [];
+  const sizes = [];
   let sizeObj = {};
 
   if (isArray(requestSizes) && requestSizes.length === 2 &&
@@ -1060,7 +1065,7 @@ function transformSizes(requestSizes) {
     sizes.push(sizeObj);
   } else if (typeof requestSizes === 'object') {
     for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
+      const size = requestSizes[i];
       sizeObj = {};
       sizeObj.width = parseInt(size[0], 10);
       sizeObj.height = parseInt(size[1], 10);
@@ -1182,7 +1187,7 @@ function createAdPodRequest(tags, adPodBid) {
   const maxDuration = Math.max(...durationRangeSec);
 
   const tagToDuplicate = tags.filter(tag => tag.uuid === adPodBid.bidId);
-  let request = fill(...tagToDuplicate, numberOfPlacements);
+  const request = fill(...tagToDuplicate, numberOfPlacements);
 
   if (requireExactDuration) {
     const divider = Math.ceil(numberOfPlacements / durationRangeSec.length);
@@ -1190,14 +1195,14 @@ function createAdPodRequest(tags, adPodBid) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(tag => {
+      chunked[index].forEach(tag => {
         setVideoProperty(tag, 'minduration', duration);
         setVideoProperty(tag, 'maxduration', duration);
       });
     });
   } else {
     // all maxdurations should be the same
-    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+    request.forEach(tag => setVideoProperty(tag, 'maxduration', maxDuration));
   }
 
   return request;
@@ -1244,7 +1249,7 @@ function buildNativeRequest(params) {
     // convert the sizes of image/icon assets to proper format (if needed)
     const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
     if (isImageAsset && request[requestKey].sizes) {
-      let sizes = request[requestKey].sizes;
+      const sizes = request[requestKey].sizes;
       if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
         request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
@@ -1322,7 +1327,7 @@ function getBidFloor(bid) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

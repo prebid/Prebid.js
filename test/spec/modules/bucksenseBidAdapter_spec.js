@@ -31,11 +31,6 @@ describe('Bucksense Adapter', function() {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
-    it('returns false when bidder not set to "bucksense"', function() {
-      bid.bidder = 'dummy';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-
     it('returns false when params not set', function() {
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.be.false;

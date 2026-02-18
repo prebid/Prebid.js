@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -53,12 +54,9 @@ function getBidFloor(bidRequest) {
 }
 
 const getConnectionType = () => {
-  const connection =
-    navigator.connection ||
-    navigator.mozConnection ||
-    navigator.webkitConnection ||
-    {};
-  switch (connection.type || connection.effectiveType) {
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type || connection?.effectiveType;
+  switch (connectionType) {
     case 'wifi':
     case 'ethernet':
       return deviceConnection.FIXED;
@@ -98,7 +96,7 @@ function hasMandatoryDisplayParams(bid) {
 function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
-  let isValid =
+  const isValid =
     !!bid.params.publisherId &&
     !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
@@ -127,10 +125,10 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
+    requestCount: validBidRequest.bidderRequestsCount || 1,
   };
 
-  if (hasVideoMediaType(validBidRequest)) {
+  if (hasVideoMediaType(validBidRequest) && hasMandatoryVideoParams(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
   }
 
@@ -147,7 +145,7 @@ function buildBidRequest(validBidRequest) {
  */
 function getVideoParams(validBidRequest) {
   const videoParams = validBidRequest.mediaTypes.video || {};
-  if (videoParams.playerSize) {
+  if (videoParams.playerSize && isArray(videoParams.playerSize) && videoParams.playerSize.length > 0) {
     videoParams.w = videoParams.playerSize[0][0];
     videoParams.h = videoParams.playerSize[0][1];
   }
@@ -320,11 +318,12 @@ export const spec = {
       payload['uspConsent'] = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
-    let coppa = config.getConfig('coppa');
+    const coppa = config.getConfig('coppa');
     if (coppa) {
       payload.coppa = coppa;
     }

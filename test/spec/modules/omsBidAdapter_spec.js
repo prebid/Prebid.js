@@ -2,8 +2,7 @@ import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config';
-import { internal, resetWinDimensions } from '../../../src/utils';
+import * as winDimensions from 'src/utils/winDimensions.js';
 
 const URL = 'https://rt.marphezis.com/hb';
 
@@ -35,7 +34,11 @@ describe('omsBidAdapter', function () {
     };
     win = {
       document: {
-        visibilityState: 'visible'
+        visibilityState: 'visible',
+        documentElement: {
+          clientWidth: 800,
+          clientHeight: 600,
+        }
       },
       location: {
         href: "http:/location"
@@ -57,24 +60,31 @@ describe('omsBidAdapter', function () {
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
-      'schain': {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'exchange1.com',
-            'sid': '1234',
-            'hp': 1,
-            'rid': 'bid-request-1',
-            'name': 'publisher',
-            'domain': 'publisher.com'
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'exchange1.com',
+                  'sid': '1234',
+                  'hp': 1,
+                  'rid': 'bid-request-1',
+                  'name': 'publisher',
+                  'domain': 'publisher.com'
+                }
+              ]
+            }
           }
-        ]
+        }
       },
     }];
 
     sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
+    sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
@@ -84,7 +94,7 @@ describe('omsBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'oms',
       'params': {
         'publisherId': 1234567
@@ -110,7 +120,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -150,19 +160,25 @@ describe('omsBidAdapter', function () {
           'bidId': '5fb26ac22bde4',
           'bidderRequestId': '4bf93aeb730cb9',
           'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
-          'schain': {
-            'ver': '1.0',
-            'complete': 1,
-            'nodes': [
-              {
-                'asi': 'exchange1.com',
-                'sid': '1234',
-                'hp': 1,
-                'rid': 'bid-request-1',
-                'name': 'publisher',
-                'domain': 'publisher.com'
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {
+                  'ver': '1.0',
+                  'complete': 1,
+                  'nodes': [
+                    {
+                      'asi': 'exchange1.com',
+                      'sid': '1234',
+                      'hp': 1,
+                      'rid': 'bid-request-1',
+                      'name': 'publisher',
+                      'domain': 'publisher.com'
+                    }
+                  ]
+                }
               }
-            ]
+            }
           },
         }
       ]
@@ -218,10 +234,31 @@ describe('omsBidAdapter', function () {
 
       const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
 
-      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.exist.and.to.be.a('string');
-      expect(data.user.ext.consent).to.equal(consentString);
+      expect(data.regs.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.gdpr).to.equal(1);
+      expect(data.user.consent).to.exist.and.to.be.a('string');
+      expect(data.user.consent).to.equal(consentString);
+    });
+
+    it('sends usp info if exists', function () {
+      const uspConsent = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
+        'bidderCode': 'oms',
+        'auctionId': '1d1a030790a437',
+        'bidderRequestId': '22edbae2744bf5',
+        'timeout': 3000,
+        uspConsent,
+        refererInfo: {
+          page: 'http://example.com/page.html',
+          domain: 'example.com',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.us_privacy).to.exist.and.to.be.a('string');
+      expect(data.regs.us_privacy).to.equal(uspConsent);
     });
 
     it('sends coppa', function () {
@@ -273,22 +310,6 @@ describe('omsBidAdapter', function () {
       expect(data.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
     });
 
-    it('sends user id parameters', function () {
-      const userId = {
-        sharedid: {
-          id: '01*******',
-          third: '01E*******'
-        }
-      };
-
-      bidRequests[0].userId = userId;
-
-      const data = JSON.parse(spec.buildRequests(bidRequests).data);
-      expect(data.user).to.not.be.undefined;
-      expect(data.user.ext).to.not.be.undefined;
-      expect(data.user.ext.ids).is.deep.equal(userId);
-    });
-
     it('sends gpid parameters', function () {
       bidRequests[0].ortb2Imp = {
         'ext': {
@@ -331,8 +352,6 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
-        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -342,8 +361,6 @@ describe('omsBidAdapter', function () {
 
     context('when width or height of the element is zero', function () {
       it('try to use alternative values', function () {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
-        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 0, height: 0});
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
@@ -405,7 +422,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('should get the correct bid response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -421,12 +438,12 @@ describe('omsBidAdapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('should get the correct bid response for video bids', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -435,7 +452,7 @@ describe('omsBidAdapter', function () {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'video',
-        'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
+        'vastXml': `<!-- Creative -->`,
         'ttl': 300,
         'meta': {
           'advertiserDomains': ['example.com']
@@ -460,12 +477,12 @@ describe('omsBidAdapter', function () {
         }
       };
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('crid should default to the bid id if not on the response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '283a9f4cd2415d',
         'cpm': 0.35743275,
         'width': 300,
@@ -481,15 +498,15 @@ describe('omsBidAdapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: ''
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });

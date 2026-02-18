@@ -7,6 +7,7 @@ import { makeSlot } from '../integration/faker/googletag.js';
 import { mergeDeep } from '../../../src/utils.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -18,7 +19,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'visx',
       'params': {
         'uid': 903536
@@ -35,7 +36,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -44,7 +45,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when uid can not be parsed as number', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 'sdvsdv'
@@ -53,7 +54,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should fail on invalid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -65,7 +66,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should pass on valid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -142,7 +143,7 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'visx',
         'params': {
@@ -227,7 +228,7 @@ describe('VisxAdapter', function () {
     }];
 
     before(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -241,7 +242,7 @@ describe('VisxAdapter', function () {
     after(() => {
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should attach valid params to the tag', function () {
@@ -597,7 +598,7 @@ describe('VisxAdapter', function () {
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
-        Object.assign({schain: schainObject}, bidRequests[0]),
+        Object.assign({ortb2: {source: {ext: {schain: schainObject}}}}, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];
@@ -804,6 +805,17 @@ describe('VisxAdapter', function () {
         }
       });
     });
+
+    it('if gpid is present payload must have gpid param', function () {
+      const firstBid = Object.assign({}, bidRequests[0]);
+      firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } }
+      const bids = [firstBid];
+      const request = spec.buildRequests(bids, bidderRequest);
+      const postData = request.data;
+
+      expect(postData).to.be.an('object');
+      expect(postData.imp[0].ext.gpid).to.equal('adunit-gpid-1');
+    });
   });
 
   describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
@@ -884,7 +896,7 @@ describe('VisxAdapter', function () {
     ];
 
     before(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -898,7 +910,7 @@ describe('VisxAdapter', function () {
     after(() => {
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should send request for banner bid', function () {
@@ -1065,7 +1077,7 @@ describe('VisxAdapter', function () {
         id: 'visx-adunit-element-2'
       });
 
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
@@ -1080,7 +1092,7 @@ describe('VisxAdapter', function () {
       sandbox.restore();
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
 
     it('should find ad slot by ad unit code as element id', function () {
@@ -1216,9 +1228,9 @@ describe('VisxAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com'], 'ext': {'prebid': {'targeting': {'hb_visx_product': 'understitial', 'hb_visx_width': 300, 'hb_visx_height': 250}}}}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'impid': '4dff80cc4ee346', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-      {'bid': [{'price': 0.15, 'impid': '5703af74d0472a', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'adomain': ['some_domain.com'], 'ext': {'prebid': {'targeting': {'hb_visx_product': 'understitial', 'hb_visx_width': 300, 'hb_visx_height': 250}}}}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'impid': '4dff80cc4ee346', 'adm': '<div>test content 2</div>', 'auid': 903536, 'crid': 'visx_2', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'impid': '5703af74d0472a', 'adm': '<div>test content 3</div>', 'auid': 903535, 'crid': 'visx_3', 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       {'bid': [{'price': 0, 'impid': '300bfeb0d7190gf', 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       undefined,
@@ -1245,7 +1257,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1317,7 +1329,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1345,7 +1357,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '4dff80cc4ee346',
           'cpm': 0.5,
-          'creativeId': 903536,
+          'creativeId': 'visx_2',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -1361,7 +1373,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '5703af74d0472a',
           'cpm': 0.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_3',
           'dealId': undefined,
           'width': 728,
           'height': 90,
@@ -1400,7 +1412,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1477,11 +1489,11 @@ describe('VisxAdapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'impid': '2164be6358b9', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'impid': '4e111f1b66e4', 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'impid': '26d6f897b516', 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'impid': '326bde7fbf69', 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'impid': '1751cd90161', 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'impid': '2164be6358b9', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'adomain': ['some_domain.com']}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '4e111f1b66e4', 'adm': '<div>test content 2</div>', 'auid': 903536, 'crid': 'visx_1', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'impid': '26d6f897b516', 'adm': '<div>test content 3</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'impid': '326bde7fbf69', 'adm': '<div>test content 4</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '1751cd90161', 'adm': '<div>test content 5</div>', 'auid': 903536, 'crid': 'visx_1', 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1545,7 +1557,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '2164be6358b9',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1561,7 +1573,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '4e111f1b66e4',
           'cpm': 0.5,
-          'creativeId': 903536,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -1577,7 +1589,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '26d6f897b516',
           'cpm': 0.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 728,
           'height': 90,
@@ -1593,7 +1605,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '326bde7fbf69',
           'cpm': 0.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -1609,7 +1621,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '1751cd90161',
           'cpm': 0.5,
-          'creativeId': 903536,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 350,
           'height': 600,
@@ -1630,8 +1642,8 @@ describe('VisxAdapter', function () {
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'impid': '5126e301f4be', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'impid': '57b2ebe70e16', 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'impid': '5126e301f4be', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '57b2ebe70e16', 'adm': '<div>test content 2</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1673,7 +1685,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '5126e301f4be',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1689,7 +1701,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '57b2ebe70e16',
           'cpm': 0.5,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1710,7 +1722,7 @@ describe('VisxAdapter', function () {
 
     it('handles video bid', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'crid': 'visx_1', 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1739,7 +1751,7 @@ describe('VisxAdapter', function () {
           'mediaType': 'video',
           'requestId': '2164be6358b9',
           'cpm': 0.5,
-          'creativeId': 903537,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 400,
           'height': 300,
@@ -1759,7 +1771,7 @@ describe('VisxAdapter', function () {
 
     it('handles multiformat bid response with outstream+banner as banner', function () {
       const fullResponse = [
-        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'crid': 'visx_1', 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -1791,7 +1803,7 @@ describe('VisxAdapter', function () {
           'ad': '<VAST/>',
           'requestId': '2164be6358b9',
           'cpm': 0.5,
-          'creativeId': 903537,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 400,
           'height': 300,
@@ -1830,7 +1842,7 @@ describe('VisxAdapter', function () {
         {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
-          'creativeId': 903535,
+          'creativeId': 'visx_1',
           'dealId': undefined,
           'width': 300,
           'height': 250,
@@ -1952,7 +1964,7 @@ describe('VisxAdapter', function () {
       return { path, query };
     }
     it('should call iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -1968,7 +1980,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should call image', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 
@@ -2053,7 +2065,7 @@ describe('VisxAdapter', function () {
     };
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         visx: {
           storageAllowed: true
         }
@@ -2065,9 +2077,13 @@ describe('VisxAdapter', function () {
     afterEach(() => {
       cookiesAreEnabledStub.restore();
       localStorageIsEnabledStub.restore();
-      getCookieStub && getCookieStub.restore();
-      getDataFromLocalStorageStub && getDataFromLocalStorageStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      if (getCookieStub) {
+        getCookieStub.restore();
+      }
+      if (getDataFromLocalStorageStub) {
+        getDataFromLocalStorageStub.restore();
+      }
+      getGlobal().bidderSettings = {};
     });
 
     it('should not pass user id if both cookies and local storage are not available', function () {

@@ -16,7 +16,7 @@ const DEFAULT_EVENT_URL = 'https://endpt.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
 const analyticsName = 'Asteriobid PBM Analytics';
 
-let ajax = ajaxBuilder(0);
+const ajax = ajaxBuilder(0);
 
 var _VERSION = 1;
 var initOptions = null;
@@ -43,7 +43,7 @@ var _eventQueue = [
   _pageView
 ];
 
-let prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
+const prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
   track({eventType, args}) {
     handleEvent(eventType, args);
   }

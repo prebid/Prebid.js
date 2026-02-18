@@ -17,6 +17,8 @@ describe('Generic analytics', () => {
     afterEach(() => {
       adapter.disableAnalytics();
       sandbox.restore();
+      clock.runAll();
+      clock.restore();
     });
 
     describe('configuration', () => {

@@ -124,7 +124,7 @@ export const spec = {
       return impData;
     });
 
-    let payload = {
+    const payload = {
       id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
@@ -138,9 +138,10 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
-    // TODO: do the fallbacks make sense here?
-    payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
-    payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
+    if (rInfo) {
+      payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
+      payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
+    }
 
     payload.device.ua = navigator.userAgent;
     payload.device.language = navigator.language;
@@ -178,11 +179,21 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    // schain
-    if (validBidRequests[0].schain) {
+    // Attaching GPP Consent Params
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
+    // schain - check for schain in the new location
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
       payload.source = {
         ext: {
-          schain: validBidRequests[0].schain
+          schain: schain
         }
       }
     }
@@ -217,13 +228,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     const response = (serverResponse || {}).body;
     if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zetaSeatbid => {
         const seat = zetaSeatbid.seat;
         zetaSeatbid.bid.forEach(zetaBid => {
-          let bid = {
+          const bid = {
             requestId: zetaBid.impid,
             cpm: zetaBid.price,
             currency: response.cur,
@@ -256,7 +267,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     let syncurl = '';
 
     // Attaching GDPR Consent Params in UserSync url
@@ -268,6 +279,12 @@ export const spec = {
     // CCPA
     if (uspConsent) {
       syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // GPP Consent
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
     // coppa compliance
@@ -317,7 +334,7 @@ function buildBanner(request) {
 }
 
 function buildVideo(request) {
-  let video = {};
+  const video = {};
   const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
@@ -417,7 +434,7 @@ function cropPage(page) {
 }
 
 function clearEmpties(o) {
-  for (let k in o) {
+  for (const k in o) {
     if (o[k] === null) {
       delete o[k];
       continue;

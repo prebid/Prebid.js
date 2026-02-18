@@ -2,11 +2,10 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {deepClone} from '../../../src/utils';
+import {deepClone} from '../../../src/utils.js';
 import 'modules/consentManagementTcf';
 import 'modules/consentManagementUsp';
 import 'modules/userId/index';
-import 'modules/schain';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -66,7 +65,6 @@ describe('PulsePoint Adapter Tests', function () {
     bidId: 'bid12345',
     mediaTypes: {
       native: {
-        sendTargetingKeys: false,
         ortb: nativeOrtbRequest
       }
     },
@@ -136,7 +134,7 @@ describe('PulsePoint Adapter Tests', function () {
       bidfloor: 1.5,
       badv: ['cocacola.com', 'lays.com']
     },
-    schain: {
+    ortb2: {source: {ext: {schain: {
       'ver': '1.0',
       'complete': 1,
       'nodes': [
@@ -149,7 +147,7 @@ describe('PulsePoint Adapter Tests', function () {
           'domain': 'publisher.com'
         }
       ]
-    },
+    }}}}
   }];
 
   const bidderRequest = {
@@ -467,8 +465,31 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[0].ext).to.be.undefined;
   });
 
-  it('Verify schain parameters', async function () {
-    const request = spec.buildRequests(schainParamsSlotConfig, await addFPDToBidderRequest(bidderRequest));
+  it('Verify schain parameters', function () {
+    const modifiedBidderRequest = {
+      ...bidderRequest,
+      ortb2: {
+        source: {
+          ext: {
+            schain: {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'exchange1.com',
+                  'sid': '1234',
+                  'hp': 1,
+                  'rid': 'bid-request-1',
+                  'name': 'publisher',
+                  'domain': 'publisher.com'
+                }
+              ]
+            }
+          }
+        }
+      }
+    };
+    const request = spec.buildRequests(schainParamsSlotConfig, modifiedBidderRequest);
     const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.source).to.not.equal(null);
@@ -548,8 +569,8 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.user).to.not.equal(null);
     expect(ortbRequest.user).to.deep.equal({
@@ -586,8 +607,8 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site).to.deep.equal({
@@ -633,8 +654,8 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     }];
-    let request = spec.buildRequests(bidderRequests, bidderRequest);
-    let ortbRequest = request.data;
+    const request = spec.buildRequests(bidderRequests, bidderRequest);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);

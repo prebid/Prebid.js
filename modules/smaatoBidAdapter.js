@@ -1,4 +1,5 @@
-import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
+import {deepAccess, deepSetValue, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -80,7 +81,7 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
 
-    let requests = [];
+    const requests = [];
     bidRequests.forEach(bid => {
       // separate requests per mediaType
       SUPPORTED_MEDIA_TYPES.forEach(mediaType => {
@@ -128,7 +129,7 @@ export const spec = {
     const bids = [];
     response.seatbid.forEach(seatbid => {
       seatbid.bid.forEach(bid => {
-        let resultingBid = {
+        const resultingBid = {
           requestId: bid.impid,
           cpm: bid.price || 0,
           width: bid.w,
@@ -338,7 +339,7 @@ const converter = ortbConverter({
 
     request.source = {
       ext: {
-        schain: bidRequest.schain
+        schain: bidRequest?.ortb2?.source?.ext?.schain
       }
     };
     request.ext = {
@@ -438,7 +439,7 @@ function createAdPodImp(imp, videoMediaType) {
   };
 
   const numberOfPlacements = getAdPodNumberOfPlacements(videoMediaType)
-  let imps = fill(imp, numberOfPlacements)
+  const imps = fill(imp, numberOfPlacements)
 
   const durationRangeSec = videoMediaType.durationRangeSec
   if (videoMediaType.requireExactDuration) {
@@ -448,7 +449,7 @@ function createAdPodImp(imp, videoMediaType) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(imp => {
+      chunked[index].forEach(imp => {
         const sequence = index + 1;
         imp.video.minduration = duration
         imp.video.maxduration = duration
@@ -458,7 +459,7 @@ function createAdPodImp(imp, videoMediaType) {
   } else {
     // all maxdurations should be the same
     const maxDuration = Math.max(...durationRangeSec);
-    imps.map((imp, index) => {
+    imps.forEach((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
       imp.video.sequence = sequence

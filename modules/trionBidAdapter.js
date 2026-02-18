@@ -2,6 +2,7 @@ import {getBidIdParameter, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {isWebdriverEnabled} from '../libraries/webdriver/webdriver.js';
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
@@ -97,7 +98,7 @@ function getSyncUrl(gdprConsent, usPrivacy) {
 function getPublisherUrl() {
   var url = '';
   try {
-    if (window.top == window) {
+    if (window.top === window) {
       url = window.location.href;
     } else {
       try {
@@ -117,11 +118,12 @@ function buildTrionUrlParams(bid, bidderRequest) {
   var url = getPublisherUrl();
   var bidSizes = getBidSizesFromBidRequest(bid);
   var sizes = parseSizesInput(bidSizes).join(',');
-  var isAutomated = (navigator && navigator.webdriver) ? '1' : '0';
+  // Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
+  var isAutomated = isWebdriverEnabled() ? '1' : '0';
   var isHidden = (document.hidden) ? '1' : '0';
   var visibilityState = encodeURIComponent(document.visibilityState);
 
-  var intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
+  var intT = window.TR_INT_T && window.TR_INT_T !== -1 ? window.TR_INT_T : null;
   if (!intT) {
     intT = getStorageData(BASE_KEY + 'int_t');
   }

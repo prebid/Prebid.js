@@ -7,65 +7,14 @@ import 'src/prebid.js';
 import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
 import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
-
-const getBidRequestDataSpy = sinon.spy();
-
-const validSM = {
-  name: 'validSM',
-  init: () => { return true },
-  getTargetingData: (adUnitsCodes) => {
-    return {'ad2': {'key': 'validSM'}}
-  },
-  getBidRequestData: getBidRequestDataSpy
-};
-
-const validSMWait = {
-  name: 'validSMWait',
-  init: () => { return true },
-  getTargetingData: (adUnitsCodes) => {
-    return {'ad1': {'key': 'validSMWait'}}
-  },
-  getBidRequestData: getBidRequestDataSpy
-};
-
-const invalidSM = {
-  name: 'invalidSM'
-};
-
-const failureSM = {
-  name: 'failureSM',
-  init: () => { return false }
-};
-
-const nonConfSM = {
-  name: 'nonConfSM',
-  init: () => { return true }
-};
-
-const conf = {
-  'realTimeData': {
-    'auctionDelay': 100,
-    dataProviders: [
-      {
-        'name': 'validSMWait',
-        'waitForIt': true,
-      },
-      {
-        'name': 'validSM',
-        'waitForIt': false,
-      },
-      {
-        'name': 'invalidSM'
-      },
-      {
-        'name': 'failureSM'
-      }]
-  }
-};
+import {registerActivityControl} from '../../../src/activities/rules.js';
+import {ACTIVITY_ENRICH_UFPD, ACTIVITY_TRANSMIT_EIDS} from '../../../src/activities/activities.js';
 
 describe('Real time module', function () {
   let eventHandlers;
   let sandbox;
+  let validSM, validSMWait, invalidSM, failureSM, nonConfSM, conf;
+  let getBidRequestDataStub;
 
   function mockEmitEvent(event, ...args) {
     (eventHandlers[event] || []).forEach((h) => h(...args));
@@ -74,6 +23,8 @@ describe('Real time module', function () {
   before(() => {
     eventHandlers = {};
     sandbox = sinon.createSandbox();
+    getBidRequestDataStub = sinon.stub();
+
     sandbox.stub(events, 'on').callsFake((event, handler) => {
       if (!eventHandlers.hasOwnProperty(event)) {
         eventHandlers[event] = [];
@@ -85,6 +36,61 @@ describe('Real time module', function () {
   after(() => {
     sandbox.restore();
   });
+
+  beforeEach(() => {
+    validSM = {
+      name: 'validSM',
+      init: () => { return true },
+      getTargetingData: (adUnitsCodes) => {
+        return {'ad2': {'key': 'validSM'}}
+      },
+      getBidRequestData: getBidRequestDataStub
+    };
+
+    validSMWait = {
+      name: 'validSMWait',
+      init: () => { return true },
+      getTargetingData: (adUnitsCodes) => {
+        return {'ad1': {'key': 'validSMWait'}}
+      },
+      getBidRequestData: getBidRequestDataStub
+    };
+
+    invalidSM = {
+      name: 'invalidSM'
+    };
+
+    failureSM = {
+      name: 'failureSM',
+      init: () => { return false }
+    };
+
+    nonConfSM = {
+      name: 'nonConfSM',
+      init: () => { return true }
+    };
+
+    conf = {
+      'realTimeData': {
+        'auctionDelay': 100,
+        dataProviders: [
+          {
+            'name': 'validSMWait',
+            'waitForIt': true,
+          },
+          {
+            'name': 'validSM',
+            'waitForIt': false,
+          },
+          {
+            'name': 'invalidSM'
+          },
+          {
+            'name': 'failureSM'
+          }]
+      }
+    };
+  })
 
   describe('GVL IDs', () => {
     beforeEach(() => {
@@ -101,24 +107,35 @@ describe('Real time module', function () {
         mod = attachRealTimeDataProvider({name: 'mockRtd', gvlid: 123});
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
-        mod && mod();
+        if (mod) {
+          mod();
+        }
       }
     })
   })
 
   describe('', () => {
-    const PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
-    let _detachers;
+    let PROVIDERS, _detachers, rules;
 
     beforeEach(function () {
+      PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
       _detachers = PROVIDERS.map(rtdModule.attachRealTimeDataProvider);
       rtdModule.init(config);
       config.setConfig(conf);
+      rules = [
+        registerActivityControl(ACTIVITY_TRANSMIT_EIDS, 'test', (params) => {
+          return {allow: false};
+        }),
+        registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => {
+          return {allow: false};
+        })
+      ]
     });
 
     afterEach(function () {
       _detachers.forEach((f) => f());
       config.resetConfig();
+      rules.forEach(rule => rule());
     });
 
     it('should use only valid modules', function () {
@@ -126,11 +143,49 @@ describe('Real time module', function () {
     });
 
     it('should be able to modify bid request', function (done) {
+      const request = {bidRequest: {}};
+      getBidRequestDataStub.callsFake((req) => {
+        req.foo = 'bar';
+      });
       rtdModule.setBidRequestsData(() => {
-        assert(getBidRequestDataSpy.calledTwice);
-        assert(getBidRequestDataSpy.calledWith(sinon.match({bidRequest: {}})));
+        assert(getBidRequestDataStub.calledTwice);
+        assert(getBidRequestDataStub.calledWith(sinon.match({bidRequest: {}})));
+        expect(request.foo).to.eql('bar');
         done();
-      }, {bidRequest: {}})
+      }, request)
+    });
+
+    it('should apply guard to modules, but not affect ortb2Fragments otherwise', (done) => {
+      const ortb2Fragments = {
+        global: {
+          user: {
+            eids: ['id']
+          }
+        },
+        bidder: {
+          bidderA: {
+            user: {
+              eids: ['bid']
+            }
+          }
+        }
+      };
+      const request = {ortb2Fragments};
+      getBidRequestDataStub.callsFake((req) => {
+        expect(req.ortb2Fragments.global.user.eids).to.not.exist;
+        expect(req.ortb2Fragments.bidder.bidderA.eids).to.not.exist;
+        req.ortb2Fragments.global.user.yob = 123;
+        req.ortb2Fragments.bidder.bidderB = {
+          user: {
+            yob: 123
+          }
+        };
+      });
+      rtdModule.setBidRequestsData(() => {
+        expect(request.ortb2Fragments.global.user.eids).to.eql(['id']);
+        expect(request.ortb2Fragments.bidder.bidderB?.user?.yob).to.not.exist;
+        done();
+      }, request);
     });
 
     it('sould place targeting on adUnits', function (done) {
@@ -165,6 +220,36 @@ describe('Real time module', function () {
       assert.deepEqual(expectedAdUnits, adUnits)
       done();
     });
+
+    it('should isolate targeting from different submodules', () => {
+      const auction = {
+        adUnitCodes: ['ad1', 'ad2'],
+        adUnits: [
+          {
+            code: 'ad1'
+          },
+          {
+            code: 'ad2',
+          }
+        ]
+      };
+      validSM.getTargetingData = (adUnits) => {
+        const targeting = {'module1': 'targeting'}
+        return {
+          ad1: targeting,
+          ad2: targeting
+        }
+      }
+
+      rtdModule.getAdUnitTargeting(auction);
+      expect(auction.adUnits[0].adserverTargeting).to.eql({
+        module1: 'targeting',
+        key: 'validSMWait'
+      });
+      expect(auction.adUnits[1].adserverTargeting).to.eql({
+        module1: 'targeting'
+      })
+    })
 
     describe('setBidRequestData', () => {
       let withWait, withoutWait;
@@ -214,44 +299,6 @@ describe('Real time module', function () {
         });
       });
     });
-  });
-
-  it('deep merge object', function () {
-    const obj1 = {
-      id1: {
-        key: 'value',
-        key2: 'value2'
-      },
-      id2: {
-        k: 'v'
-      }
-    };
-    const obj2 = {
-      id1: {
-        key3: 'value3'
-      }
-    };
-    const obj3 = {
-      id3: {
-        key: 'value'
-      }
-    };
-    const expected = {
-      id1: {
-        key: 'value',
-        key2: 'value2',
-        key3: 'value3'
-      },
-      id2: {
-        k: 'v'
-      },
-      id3: {
-        key: 'value'
-      }
-    };
-
-    const merged = rtdModule.deepMerge([obj1, obj2, obj3]);
-    assert.deepEqual(expected, merged);
   });
 
   describe('event', () => {

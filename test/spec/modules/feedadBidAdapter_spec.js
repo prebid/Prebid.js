@@ -31,14 +31,14 @@ describe('FeedAdAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should detect missing params', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: []
       });
       expect(result).to.equal(false);
     });
     it('should detect missing client token', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
         params: {placementId: 'placement'}
@@ -46,7 +46,7 @@ describe('FeedAdAdapter', function () {
       expect(result).to.equal(false);
     });
     it('should detect zero length client token', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
         params: {clientToken: '', placementId: 'placement'}
@@ -54,7 +54,7 @@ describe('FeedAdAdapter', function () {
       expect(result).to.equal(false);
     });
     it('should detect missing placement id', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
         params: {clientToken: 'clientToken'}
@@ -62,7 +62,7 @@ describe('FeedAdAdapter', function () {
       expect(result).to.equal(false);
     });
     it('should detect zero length placement id', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
         params: {clientToken: 'clientToken', placementId: ''}
@@ -74,7 +74,7 @@ describe('FeedAdAdapter', function () {
       for (var i = 0; i < 300; i++) {
         placementId += 'a';
       }
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
         params: {clientToken: 'clientToken', placementId}
@@ -88,7 +88,7 @@ describe('FeedAdAdapter', function () {
         'PLACEMENTID',
         'placeme:ntId'
       ].forEach(id => {
-        let result = spec.isBidRequestValid({
+        const result = spec.isBidRequestValid({
           bidder: 'feedad',
           sizes: [],
           params: {clientToken: 'clientToken', placementId: id}
@@ -97,7 +97,7 @@ describe('FeedAdAdapter', function () {
       });
     });
     it('should accept valid parameters', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
@@ -115,11 +115,11 @@ describe('FeedAdAdapter', function () {
     };
 
     it('should accept empty lists', function () {
-      let result = spec.buildRequests([], bidderRequest);
+      const result = spec.buildRequests([], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should filter native media types', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           native: {
@@ -128,11 +128,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should filter video media types without outstream context', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           video: {
@@ -141,11 +141,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should pass through outstream video media', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           video: {
@@ -154,12 +154,12 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
     });
     it('should pass through banner media', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -168,12 +168,12 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
     });
     it('should pass through additional bid parameters', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -182,13 +182,13 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id', another: 'parameter', more: 'parameters'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0].params.another).to.equal('parameter');
       expect(result.data.bids[0].params.more).to.equal('parameters');
     });
     it('should detect empty media types', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: undefined,
@@ -197,11 +197,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should use POST', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -210,11 +210,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.method).to.equal('POST');
     });
     it('should use the correct URL', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -223,11 +223,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.url).to.equal('https://api.feedad.com/1/prebid/web/bids');
     });
     it('should specify the content type explicitly', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -236,13 +236,13 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.options).to.deep.equal({
         contentType: 'application/json'
       })
     });
     it('should include the bidder request', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -251,11 +251,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid, bid, bid], bidderRequest);
+      const result = spec.buildRequests([bid, bid, bid], bidderRequest);
       expect(result.data).to.deep.include(bidderRequest);
     });
     it('should detect missing bidder request parameter', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -264,11 +264,11 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid, bid, bid]);
+      const result = spec.buildRequests([bid, bid, bid]);
       expect(result).to.be.empty;
     });
     it('should not include GDPR data if the bidder request has none available', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -277,12 +277,12 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.gdprApplies).to.be.undefined;
       expect(result.data.consentIabTcf).to.be.undefined;
     });
     it('should include GDPR data if the bidder requests contains it', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -291,18 +291,18 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let request = Object.assign({}, bidderRequest, {
+      const request = Object.assign({}, bidderRequest, {
         gdprConsent: {
           consentString: 'the consent string',
           gdprApplies: true
         }
       });
-      let result = spec.buildRequests([bid], request);
+      const result = spec.buildRequests([bid], request);
       expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
       expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
     });
     it('should include adapter and prebid version', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
@@ -311,7 +311,7 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids[0].params.prebid_adapter_version).to.equal(EXPECTED_ADAPTER_VERSION);
       expect(result.data.bids[0].params.prebid_sdk_version).to.equal('$prebid.version$');
     });
@@ -322,7 +322,7 @@ describe('FeedAdAdapter', function () {
       const body = [{
         ad: 'bar',
       }];
-      let result = spec.interpretResponse({body: JSON.stringify(body)});
+      const result = spec.interpretResponse({body: JSON.stringify(body)});
       expect(result).to.deep.equal(body);
     });
 
@@ -330,7 +330,7 @@ describe('FeedAdAdapter', function () {
       const body = [{
         ad: 'bar',
       }];
-      let result = spec.interpretResponse({body});
+      const result = spec.interpretResponse({body});
       expect(result).to.deep.equal(body);
     });
 
@@ -347,7 +347,7 @@ describe('FeedAdAdapter', function () {
         ad: 'ad html',
       };
       const body = [bid1, bid2, bid3];
-      let result = spec.interpretResponse({body: JSON.stringify(body)});
+      const result = spec.interpretResponse({body: JSON.stringify(body)});
       expect(result).to.deep.equal([bid1, bid3]);
     });
 
@@ -588,7 +588,7 @@ describe('FeedAdAdapter', function () {
     ];
 
     cases.forEach(([name, data, eventKlass]) => {
-      let subject = spec[name];
+      const subject = spec[name];
       describe(name + ' handler', function () {
         it('should do nothing on empty data', function () {
           subject(undefined);
@@ -603,7 +603,7 @@ describe('FeedAdAdapter', function () {
 
         it('should send tracking params when correct metadata was set', function () {
           spec.buildRequests([bid], bidderRequest);
-          let expectedData = {
+          const expectedData = {
             app_hybrid: false,
             client_token: clientToken,
             placement_id: placementId,
@@ -617,7 +617,7 @@ describe('FeedAdAdapter', function () {
           };
           subject(data);
           expect(server.requests.length).to.equal(1);
-          let call = server.requests[0];
+          const call = server.requests[0];
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');
