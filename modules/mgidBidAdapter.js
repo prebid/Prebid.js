@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess,
@@ -25,6 +24,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

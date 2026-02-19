@@ -1,4 +1,3 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { handleCookieSync, PID_STORAGE_NAME, prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -6,6 +5,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';

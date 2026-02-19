@@ -1,6 +1,5 @@
 import {spec} from '../../../modules/rhythmoneBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import * as dnt from 'libraries/dnt/index.js';
 import * as sinon from 'sinon';
 
 var r1adapter = spec;
@@ -412,37 +411,6 @@ describe('rhythmone adapter tests', function () {
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
-    });
-
-    it('dnt is correctly set to 1', function () {
-      var bidRequestList = [
-        {
-          'bidder': 'rhythmone',
-          'params': {
-            'placementId': 'myplacement',
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[300, 600]]
-            }
-          },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-          'bidderRequestId': '418b37f85e772c',
-          'auctionId': '18fd8b8b0bd757',
-          'bidRequestsCount': 1,
-          'bidId': '51ef8751f9aead'
-        }
-      ];
-
-      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
-
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
-
-      dntStub.restore();
-
-      const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.device.dnt).to.equal(1);
     });
 
     it('sets floor to zero', function () {

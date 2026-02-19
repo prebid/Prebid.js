@@ -1,11 +1,11 @@
 'use strict';
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
