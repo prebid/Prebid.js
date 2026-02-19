@@ -1,5 +1,5 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques, isEmpty} from '../../src/utils.js';
+import {deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot} from '../../src/utils.js';
 
 const slotInfoCache = new Map();
 
@@ -13,7 +13,10 @@ export function clearSlotInfoCache() {
  * @return {function} filter function
  */
 export function isSlotMatchingAdUnitCode(adUnitCode) {
-  return (slot) => compareCodeAndSlot(slot, adUnitCode);
+  return (slot) => {
+    const match = isAdUnitCodeMatchingSlot(slot);
+    return match(adUnitCode);
+  }
 }
 
 /**
@@ -35,7 +38,10 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
-    matchingSlot = window.googletag.pubads().getSlots().find(isSlotMatchingAdUnitCode(adUnitCode));
+    matchingSlot = window.googletag.pubads().getSlots().find(slot => {
+      const match = isAdUnitCodeMatchingSlot(slot);
+      return match(adUnitCode);
+    });
   }
   return matchingSlot;
 }
