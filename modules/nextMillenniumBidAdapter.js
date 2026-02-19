@@ -22,6 +22,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const NM_VERSION = '4.5.1';
 const PBJS_VERSION = 'v$prebid.version$';
@@ -583,14 +584,16 @@ function getDeviceObj() {
 }
 
 function getDeviceConnectionType() {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (connection?.type === 'ethernet') return 1;
-  if (connection?.type === 'wifi') return 2;
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type;
+  const effectiveType = connection?.effectiveType;
+  if (connectionType === 'ethernet') return 1;
+  if (connectionType === 'wifi') return 2;
 
-  if (connection?.effectiveType === 'slow-2g') return 3;
-  if (connection?.effectiveType === '2g') return 4;
-  if (connection?.effectiveType === '3g') return 5;
-  if (connection?.effectiveType === '4g') return 6;
+  if (effectiveType === 'slow-2g') return 3;
+  if (effectiveType === '2g') return 4;
+  if (effectiveType === '3g') return 5;
+  if (effectiveType === '4g') return 6;
 
   return undefined;
 }

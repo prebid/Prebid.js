@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.3.0';
+const MODULE_VERSION = '2.4.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -915,17 +915,17 @@ const WurflLCEDevice = {
     return { deviceType: '', osName: '', osVersion: '' };
   },
 
-  _getDevicePixelRatioValue() {
-    if (window.devicePixelRatio) {
-      return window.devicePixelRatio;
+  _getDevicePixelRatioValue(osName) {
+    switch (osName) {
+      case 'Android':
+        return 2.0;
+      case 'iOS':
+        return 3.0;
+      case 'iPadOS':
+        return 2.0;
+      default:
+        return 1.0;
     }
-
-    // Assumes window.screen exists (caller checked)
-    if (window.screen.deviceXDPI && window.screen.logicalXDPI && window.screen.logicalXDPI > 0) {
-      return window.screen.deviceXDPI / window.screen.logicalXDPI;
-    }
-
-    return undefined;
   },
 
   _getMake(ua) {
@@ -967,9 +967,6 @@ const WurflLCEDevice = {
       return { js: 1 };
     }
 
-    // Check what globals are available upfront
-    const hasScreen = !!window.screen;
-
     const device = { js: 1 };
     const useragent = this._getUserAgent();
 
@@ -998,11 +995,9 @@ const WurflLCEDevice = {
         device.model = model;
         device.hwv = model;
       }
-    }
 
-    // Screen-dependent properties (independent of UA)
-    if (hasScreen) {
-      const pixelRatio = this._getDevicePixelRatioValue();
+      // Device pixel ratio based on OS
+      const pixelRatio = this._getDevicePixelRatioValue(deviceInfo.osName);
       if (pixelRatio !== undefined) {
         device.pxratio = pixelRatio;
       }
@@ -1330,7 +1325,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   for (let i = 0; i < bidsReceived.length; i++) {
     const bid = bidsReceived[i];
     const adUnitCode = bid.adUnitCode;
-    const bidderCode = bid.bidderCode || bid.bidder;
+    const bidderCode = bid.bidder || bid.bidderCode;
     const key = adUnitCode + ':' + bidderCode;
     bidResponseMap[key] = bid;
   }

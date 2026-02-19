@@ -1,7 +1,8 @@
-import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
+import { uniques, flatten, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,6 +11,9 @@ import { ajax } from '../src/ajax.js';
  */
 
 const BIDDER_CODE = 'limelightDigital';
+const DEFAULT_NET_REVENUE = true;
+const DEFAULT_TTL = 300;
+const MTYPE_MAP = { 1: BANNER, 2: VIDEO };
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -21,7 +25,7 @@ function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.meta.advertiserDomains) {
     return false;
   }
-  switch (bid.meta.mediaType) {
+  switch (bid.mediaType) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
@@ -29,6 +33,41 @@ function isBidResponseValid(bid) {
   }
   return false;
 }
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: DEFAULT_NET_REVENUE,
+    ttl: DEFAULT_TTL
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    for (let i = 1; i <= 5; i++) {
+      const customValue = bidRequest.params[`custom${i}`];
+      if (customValue !== undefined) {
+        deepSetValue(imp, `ext.c${i}`, customValue);
+      }
+    }
+    deepSetValue(imp, `ext.adUnitId`, bidRequest.params.adUnitId);
+    return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    let mediaType;
+    if (bid.mtype) {
+      mediaType = MTYPE_MAP[bid.mtype];
+    }
+    if (!mediaType && bid.ext?.mediaType) {
+      mediaType = bid.ext.mediaType;
+    }
+    if (!mediaType && context.imp) {
+      if (context.imp.banner) mediaType = BANNER;
+      else if (context.imp.video) mediaType = VIDEO;
+    }
+    if (mediaType) {
+      context.mediaType = mediaType;
+    }
+    return buildBidResponse(bid, context);
+  }
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -48,7 +87,9 @@ export const spec = {
     { code: 'adnimation' },
     { code: 'rtbdemand' },
     { code: 'altstar' },
-    { code: 'vaayaMedia' }
+    { code: 'vaayaMedia' },
+    { code: 'performist' },
+    { code: 'oveeo' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -64,22 +105,62 @@ export const spec = {
   },
 
   /**
-   * Make a server request from the list of BidRequests.
+   * Make a server request from the list of BidRequests using OpenRTB format.
    *
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - Array of valid bid requests
+   * @param {Object} bidderRequest - The bidder request object
+   * @return {Object[]} Array of server requests
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    let winTop;
-    try {
-      winTop = window.top;
-      winTop.location.toString();
-    } catch (e) {
-      logMessage(e);
-      winTop = window;
-    }
-    const placements = groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
-    return Object.keys(placements)
-      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest));
+    const normalizedBids = validBidRequests.map(bid => {
+      const adUnitType = bid.params.adUnitType || BANNER
+      if (!bid.mediaTypes && bid.sizes) {
+        if (adUnitType === BANNER) {
+          return { ...bid, mediaTypes: { banner: { sizes: bid.sizes } } };
+        } else {
+          return { ...bid, mediaTypes: { video: { playerSize: bid.sizes } } };
+        }
+      }
+      if (bid.mediaTypes && bid.sizes) {
+        const mediaTypes = { ...bid.mediaTypes };
+        if (adUnitType === BANNER && mediaTypes.banner) {
+          mediaTypes.banner = {
+            ...mediaTypes.banner,
+            sizes: (mediaTypes.banner.sizes || []).concat(bid.sizes)
+          };
+        }
+        if (adUnitType === VIDEO && mediaTypes.video) {
+          mediaTypes.video = {
+            ...mediaTypes.video,
+            playerSize: (mediaTypes.video.playerSize || []).concat(bid.sizes)
+          };
+        }
+        return { ...bid, mediaTypes };
+      }
+      return bid;
+    });
+    const bidRequestsByHost = normalizedBids.reduce((groups, bid) => {
+      const host = bid.params.host;
+      groups[host] = groups[host] || [];
+      groups[host].push(bid);
+      return groups;
+    }, {});
+    const enrichedBidderRequest = {
+      ...bidderRequest,
+      ortb2: {
+        ...bidderRequest.ortb2,
+        site: {
+          ...bidderRequest.ortb2?.site,
+          page: bidderRequest.ortb2?.site?.page || bidderRequest.refererInfo?.page
+        }
+      }
+    };
+
+    return Object.entries(bidRequestsByHost).map(([host, bids]) => ({
+      method: 'POST',
+      url: `https://${host}/ortbhb`,
+      data: converter.toORTB({ bidRequests: bids, bidderRequest: enrichedBidderRequest })
+    }));
   },
 
   /**
@@ -98,22 +179,20 @@ export const spec = {
   },
 
   /**
-   * Unpack the response from the server into a list of bids.
+   * Unpack the OpenRTB response from the server into a list of bids.
    *
-   * @param {ServerResponse} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {ServerResponse} response - A successful response from the server
+   * @param {Object} request - The request object that was sent
+   * @return {Bid[]} An array of bids
    */
-  interpretResponse: (serverResponse, bidRequest) => {
-    const bidResponses = [];
-    const serverBody = serverResponse.body;
-    const len = serverBody.length;
-    for (let i = 0; i < len; i++) {
-      const bidResponse = serverBody[i];
-      if (isBidResponseValid(bidResponse)) {
-        bidResponses.push(bidResponse);
-      }
+  interpretResponse: (response, request) => {
+    if (!response.body) {
+      return [];
     }
-    return bidResponses;
+    return converter.fromORTB({
+      response: response.body,
+      request: request.data
+    }).bids.filter(bid => isBidResponseValid(bid));
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
@@ -135,74 +214,3 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function buildRequest(winTop, host, adUnits, bidderRequest) {
-  return {
-    method: 'POST',
-    url: `https://${host}/hb`,
-    data: {
-      secure: (location.protocol === 'https:'),
-      deviceWidth: winTop.screen.width,
-      deviceHeight: winTop.screen.height,
-      adUnits: adUnits,
-      ortb2: bidderRequest?.ortb2,
-      refererInfo: bidderRequest?.refererInfo,
-      sua: bidderRequest?.ortb2?.device?.sua,
-      page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
-    }
-  }
-}
-
-function buildPlacement(bidRequest) {
-  let sizes;
-  if (bidRequest.mediaTypes) {
-    switch (bidRequest.params.adUnitType) {
-      case BANNER:
-        if (bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes) {
-          sizes = bidRequest.mediaTypes.banner.sizes;
-        }
-        break;
-      case VIDEO:
-        if (bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.playerSize) {
-          sizes = [bidRequest.mediaTypes.video.playerSize];
-        }
-        break;
-    }
-  }
-  sizes = (sizes || []).concat(bidRequest.sizes || []);
-  return {
-    host: bidRequest.params.host,
-    adUnit: {
-      id: bidRequest.params.adUnitId,
-      bidId: bidRequest.bidId,
-      transactionId: bidRequest.ortb2Imp?.ext?.tid,
-      sizes: sizes.map(size => {
-        let floorInfo = null;
-        if (typeof bidRequest.getFloor === 'function') {
-          try {
-            floorInfo = bidRequest.getFloor({
-              currency: 'USD',
-              mediaType: bidRequest.params.adUnitType,
-              size: [size[0], size[1]]
-            });
-          } catch (e) {}
-        }
-        return {
-          width: size[0],
-          height: size[1],
-          floorInfo: floorInfo
-        };
-      }),
-      type: bidRequest.params.adUnitType.toUpperCase(),
-      ortb2Imp: bidRequest.ortb2Imp,
-      publisherId: bidRequest.params.publisherId,
-      userIdAsEids: bidRequest.userIdAsEids,
-      supplyChain: bidRequest?.ortb2?.source?.ext?.schain,
-      custom1: bidRequest.params.custom1,
-      custom2: bidRequest.params.custom2,
-      custom3: bidRequest.params.custom3,
-      custom4: bidRequest.params.custom4,
-      custom5: bidRequest.params.custom5
-    }
-  }
-}
