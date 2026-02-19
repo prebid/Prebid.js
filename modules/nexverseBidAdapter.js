@@ -11,7 +11,6 @@ import { config } from '../src/config.js';
 import {getAdUnitElement} from '../src/utils/adUnits.js';
 import {getDNT} from '../libraries/dnt/index.js';
 
-
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
