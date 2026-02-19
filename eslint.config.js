@@ -209,6 +209,21 @@ module.exports = [
             object: 'navigator',
             message: 'use ajax.js instead'
           },
+          {
+            property: 'doNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'msDoNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'doNotTrack',
+            object: 'window',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
           ...['outerText', 'innerText'].map(property => ({
             property,
             message: 'use .textContent instead'

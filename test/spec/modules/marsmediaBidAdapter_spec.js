@@ -1,6 +1,5 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
-import * as dnt from 'libraries/dnt/index.js';
 import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
 import * as adUnits from 'src/utils/adUnits';
@@ -400,15 +399,10 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
-    it('dnt is correctly set to 1', function () {
-      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
-
+    it('dnt is always 0', function () {
       var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
-
-      dntStub.restore();
-
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.device.dnt).to.equal(1);
+      expect(openrtbRequest.device.dnt).to.equal(0);
     });
 
     it('supports string video sizes', function () {

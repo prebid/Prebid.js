@@ -22,7 +22,6 @@ describe('growthCode analytics adapter', () => {
           'bidResponse',
           'setTargeting',
           'requestBids',
-          'addAdUnits',
           'noBid',
           'bidWon',
           'bidderDone']

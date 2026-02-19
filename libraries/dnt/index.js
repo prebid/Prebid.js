@@ -1,11 +1,7 @@
-function _getDNT(win) {
-  return win.navigator.doNotTrack === '1' || win.doNotTrack === '1' || win.navigator.msDoNotTrack === '1' || win.navigator.doNotTrack?.toLowerCase?.() === 'yes';
-}
-
-export function getDNT(win = window) {
-  try {
-    return _getDNT(win) || (win !== win.top && _getDNT(win.top));
-  } catch (e) {
-    return false;
-  }
+/**
+ * DNT was deprecated by W3C; Prebid no longer supports DNT signals.
+ * Keep this helper for backwards compatibility with adapters that still invoke getDNT().
+ */
+export function getDNT() {
+  return false;
 }

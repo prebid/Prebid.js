@@ -424,8 +424,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
   }
 
-  events.on(EVENTS.SEAT_NON_BID, (event) => {
-    if (event.auctionId === _auctionId) {
+  events.on(EVENTS.PBS_ANALYTICS, (event) => {
+    if (event.auctionId === _auctionId && event.seatnonbid != null) {
       addNonBids(event.seatnonbid)
     }
   });

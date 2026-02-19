@@ -1,6 +1,6 @@
 import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
-import { getDNT as getNavigatorDNT } from '../dnt/index.js';
 import { config } from '../../src/config.js';
+import {getDNT} from '../dnt/index.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
@@ -44,10 +44,6 @@ export function isMobile() {
 
 export function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
-}
-
-export function getDoNotTrack(win = typeof window !== 'undefined' ? window : undefined) {
-  return getNavigatorDNT(win);
 }
 
 export function findAndFillParam(o, key, value) {
@@ -145,7 +141,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   const o = {
     'device': {
       'langauge': (global.navigator.language).split('-')[0],
-      'dnt': getDoNotTrack(global) ? 1 : 0,
+      'dnt': getDNT() ? 1 : 0,
       'devicetype': isMobile() ? 4 : isConnectedTV() ? 3 : 2,
       'js': 1,
       'os': getOsVersion()
@@ -170,7 +166,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   o.site['ref'] = topReferrer;
   o.site['mobile'] = isMobile() ? 1 : 0;
   const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
-  o.device['dnt'] = getDoNotTrack(global) ? 1 : 0;
+  o.device['dnt'] = getDNT() ? 1 : 0;
 
   findAndFillParam(o.site, 'name', function() {
     return global.top.document.title;
