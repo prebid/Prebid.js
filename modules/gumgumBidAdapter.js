@@ -303,6 +303,67 @@ function _getDeviceData(ortb2Data) {
 }
 
 /**
+ * Retrieves content metadata from the ORTB2 object
+ * Supports both site.content and app.content (site takes priority)
+ * @param {Object} ortb2Data ORTB2 object
+ * @returns {Object} Content parameters
+ */
+function _getContentParams(ortb2Data) {
+  // Check site.content first, then app.content
+  const content = deepAccess(ortb2Data, 'site.content') || deepAccess(ortb2Data, 'app.content');
+
+  if (!content) {
+    return {};
+  }
+
+  const contentParams = {};
+
+  // Basic content fields
+  if (content.id) contentParams.cid = content.id;
+  if (content.episode !== undefined && content.episode !== null) contentParams.cepisode = content.episode;
+  if (content.title) contentParams.ctitle = content.title;
+  if (content.series) contentParams.cseries = content.series;
+  if (content.season) contentParams.cseason = content.season;
+  if (content.genre) contentParams.cgenre = content.genre;
+  if (content.contentrating) contentParams.crating = content.contentrating;
+  if (content.userrating) contentParams.cur = content.userrating;
+  if (content.context !== undefined && content.context !== null) contentParams.cctx = content.context;
+  if (content.livestream !== undefined && content.livestream !== null) contentParams.clive = content.livestream;
+  if (content.len !== undefined && content.len !== null) contentParams.clen = content.len;
+  if (content.language) contentParams.clang = content.language;
+  if (content.url) contentParams.curl = content.url;
+  if (content.cattax !== undefined && content.cattax !== null) contentParams.cattax = content.cattax;
+  if (content.prodq !== undefined && content.prodq !== null) contentParams.cprodq = content.prodq;
+  if (content.qagmediarating !== undefined && content.qagmediarating !== null) contentParams.cqag = content.qagmediarating;
+
+  // Handle keywords - can be string or array
+  if (content.keywords) {
+    if (Array.isArray(content.keywords)) {
+      contentParams.ckw = content.keywords.join(',');
+    } else if (typeof content.keywords === 'string') {
+      contentParams.ckw = content.keywords;
+    }
+  }
+
+  // Handle cat array
+  if (content.cat && Array.isArray(content.cat) && content.cat.length > 0) {
+    contentParams.ccat = content.cat.join(',');
+  }
+
+  // Handle producer fields
+  if (content.producer) {
+    if (content.producer.id) contentParams.cpid = content.producer.id;
+    if (content.producer.name) contentParams.cpname = content.producer.name;
+  }
+
+  // Channel and network
+  if (content.channel) contentParams.cchannel = content.channel;
+  if (content.network) contentParams.cnetwork = content.network;
+
+  return contentParams;
+}
+
+/**
  * loops through bannerSizes array to get greatest slot dimensions
  * @param {number[][]} sizes
  * @returns {number[]}
@@ -436,9 +497,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
       setIrisId(data, bidderRequest.ortb2.site, params);
-      const curl = bidderRequest.ortb2.site.content?.url;
-      if (curl) data.curl = curl;
     }
+    // Extract content metadata from ortb2
+    const contentParams = _getContentParams(bidderRequest?.ortb2);
+    Object.assign(data, contentParams);
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
     }

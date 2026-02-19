@@ -298,6 +298,255 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('curl', 'http://pub.com/news');
     });
+
+    describe('content metadata extraction', function() {
+      it('should extract all site.content fields', function() {
+        const ortb2WithContent = {
+          site: {
+            content: {
+              id: 'content-id-123',
+              episode: 5,
+              title: 'Test Episode Title',
+              series: 'Test Series',
+              season: 'Season 2',
+              genre: 'Comedy',
+              contentrating: 'PG-13',
+              userrating: '4.5',
+              context: 1,
+              livestream: 1,
+              len: 1800,
+              language: 'en',
+              url: 'https://example.com/content',
+              cattax: 6,
+              prodq: 2,
+              qagmediarating: 1,
+              keywords: 'keyword1,keyword2,keyword3',
+              cat: ['IAB1-1', 'IAB1-2', 'IAB1-3'],
+              producer: {
+                id: 'producer-123',
+                name: 'Test Producer'
+              },
+              channel: 'Test Channel',
+              network: 'Test Network'
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ...bidderRequest, ortb2: ortb2WithContent })[0];
+
+        expect(bidRequest.data.cid).to.equal('content-id-123');
+        expect(bidRequest.data.cepisode).to.equal(5);
+        expect(bidRequest.data.ctitle).to.equal('Test Episode Title');
+        expect(bidRequest.data.cseries).to.equal('Test Series');
+        expect(bidRequest.data.cseason).to.equal('Season 2');
+        expect(bidRequest.data.cgenre).to.equal('Comedy');
+        expect(bidRequest.data.crating).to.equal('PG-13');
+        expect(bidRequest.data.cur).to.equal('4.5');
+        expect(bidRequest.data.cctx).to.equal(1);
+        expect(bidRequest.data.clive).to.equal(1);
+        expect(bidRequest.data.clen).to.equal(1800);
+        expect(bidRequest.data.clang).to.equal('en');
+        expect(bidRequest.data.curl).to.equal('https://example.com/content');
+        expect(bidRequest.data.cattax).to.equal(6);
+        expect(bidRequest.data.cprodq).to.equal(2);
+        expect(bidRequest.data.cqag).to.equal(1);
+        expect(bidRequest.data.ckw).to.equal('keyword1,keyword2,keyword3');
+        expect(bidRequest.data.ccat).to.equal('IAB1-1,IAB1-2,IAB1-3');
+        expect(bidRequest.data.cpid).to.equal('producer-123');
+        expect(bidRequest.data.cpname).to.equal('Test Producer');
+        expect(bidRequest.data.cchannel).to.equal('Test Channel');
+        expect(bidRequest.data.cnetwork).to.equal('Test Network');
+      });
+
+      it('should extract app.content fields when site.content is not present', function() {
+        const ortb2WithAppContent = {
+          app: {
+            content: {
+              id: 'app-content-id',
+              title: 'App Content Title',
+              series: 'App Series',
+              url: 'https://example.com/app-content'
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2: ortb2WithAppContent })[0];
+
+        expect(bidRequest.data.cid).to.equal('app-content-id');
+        expect(bidRequest.data.ctitle).to.equal('App Content Title');
+        expect(bidRequest.data.cseries).to.equal('App Series');
+        expect(bidRequest.data.curl).to.equal('https://example.com/app-content');
+      });
+
+      it('should prioritize site.content over app.content', function() {
+        const ortb2WithBoth = {
+          site: {
+            content: {
+              id: 'site-content-id',
+              title: 'Site Content'
+            }
+          },
+          app: {
+            content: {
+              id: 'app-content-id',
+              title: 'App Content'
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2: ortb2WithBoth })[0];
+
+        expect(bidRequest.data.cid).to.equal('site-content-id');
+        expect(bidRequest.data.ctitle).to.equal('Site Content');
+      });
+
+      it('should handle keywords as an array', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              keywords: ['keyword1', 'keyword2', 'keyword3']
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data.ckw).to.equal('keyword1,keyword2,keyword3');
+      });
+
+      it('should handle keywords as a string', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              keywords: 'keyword1,keyword2,keyword3'
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data.ckw).to.equal('keyword1,keyword2,keyword3');
+      });
+
+      it('should not include content params when content object is missing', function() {
+        const ortb2 = {
+          site: {
+            page: 'https://example.com'
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data).to.not.have.property('cid');
+        expect(bidRequest.data).to.not.have.property('ctitle');
+        expect(bidRequest.data).to.not.have.property('curl');
+      });
+
+      it('should not include undefined or null content fields', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              id: 'content-123',
+              title: undefined,
+              series: null,
+              season: ''
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data.cid).to.equal('content-123');
+        expect(bidRequest.data).to.not.have.property('ctitle');
+        expect(bidRequest.data).to.not.have.property('cseries');
+        expect(bidRequest.data).to.not.have.property('cseason');
+      });
+
+      it('should handle zero values for numeric fields', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              episode: 0,
+              context: 0,
+              livestream: 0,
+              len: 0,
+              cattax: 0,
+              prodq: 0,
+              qagmediarating: 0
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data.cepisode).to.equal(0);
+        expect(bidRequest.data.cctx).to.equal(0);
+        expect(bidRequest.data.clive).to.equal(0);
+        expect(bidRequest.data.clen).to.equal(0);
+        expect(bidRequest.data.cattax).to.equal(0);
+        expect(bidRequest.data.cprodq).to.equal(0);
+        expect(bidRequest.data.cqag).to.equal(0);
+      });
+
+      it('should handle empty arrays for cat', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              cat: []
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data).to.not.have.property('ccat');
+      });
+
+      it('should handle partial producer data', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              producer: {
+                id: 'producer-id-only'
+              }
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data.cpid).to.equal('producer-id-only');
+        expect(bidRequest.data).to.not.have.property('cpname');
+      });
+
+      it('should handle episode as string', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              episode: 'S01E05'
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
+
+        expect(bidRequest.data.cepisode).to.equal('S01E05');
+      });
+
+      it('should not override existing curl from irisid extraction', function() {
+        const ortb2 = {
+          site: {
+            content: {
+              url: 'https://content-url.com'
+            }
+          }
+        };
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request], { ...bidderRequest, ortb2 })[0];
+
+        expect(bidRequest.data.curl).to.equal('https://content-url.com');
+      });
+    });
     it('should not set the iriscat param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
