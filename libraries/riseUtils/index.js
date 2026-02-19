@@ -12,10 +12,10 @@ import {
 } from '../../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
-import { getDNT } from '../dnt/index.js';
 import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
 
 import {getGlobalVarName} from '../../src/buildOptions.js';
+import {getDNT} from '../dnt/index.js';
 
 export const makeBaseSpec = (baseUrl, modes) => {
   return {
