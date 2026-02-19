@@ -31,6 +31,7 @@ import {
 } from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -933,19 +934,18 @@ function buildNativeRequest(params) {
 
 /**
  * This function hides google div container for outstream bids to remove unwanted space on page. Mediafuse renderer creates a new iframe outside of google iframe to render the outstream creative.
- * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
-  var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+function hidedfpContainer(container) {
+  var el = container.querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }
 }
 
-function hideSASIframe(elementId) {
+function hideSASIframe(container) {
   try {
     // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
-    const el = document.getElementById(elementId).querySelectorAll("script[id^='sas_script']");
+    const el = container.querySelectorAll("script[id^='sas_script']");
     if (el[0].nextSibling && el[0].nextSibling.localName === 'iframe') {
       el[0].nextSibling.style.setProperty('display', 'none');
     }
@@ -955,8 +955,9 @@ function hideSASIframe(elementId) {
 }
 
 function outstreamRender(bid) {
-  hidedfpContainer(bid.adUnitCode);
-  hideSASIframe(bid.adUnitCode);
+  const container = getAdUnitElement(bid);
+  hidedfpContainer(container);
+  hideSASIframe(container);
   // push to render queue because ANOutstreamVideo may not be loaded
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({

@@ -5,6 +5,7 @@ import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRa
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 export const BIDDER_CODE = 'hypelab';
 export const ENDPOINT_URL = 'https://api.hypelab.com';
@@ -55,7 +56,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         winDimensions?.innerHeight || 0
       ),
     ];
-    const pp = getPosition(request.adUnitCode);
+    const pp = getPosition(request);
 
     const payload = {
       property_slug: request.params.property_slug,
@@ -121,8 +122,8 @@ function getBidFloor(bid, sizes) {
   return floor;
 }
 
-function getPosition(id) {
-  const element = document.getElementById(id);
+function getPosition(bidRequest) {
+  const element = getAdUnitElement(bidRequest);
   if (!element) return null;
   const rect = getBoundingClientRect(element);
   return [rect.left, rect.top];

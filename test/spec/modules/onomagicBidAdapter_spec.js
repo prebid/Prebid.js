@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 import { spec } from 'modules/onomagicBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://bidder.onomagic.com/hb';
 
@@ -61,7 +62,7 @@ describe('onomagicBidAdapter', function() {
 
     sandbox = sinon.createSandbox();
     sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
-    sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });

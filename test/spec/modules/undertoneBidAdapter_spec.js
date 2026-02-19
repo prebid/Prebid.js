@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/undertoneBidAdapter.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {deepClone, getWinDimensions} from '../../../src/utils.js';
+import * as adUnits from 'src/utils/adUnits';
+import {getAdUnitElement} from 'src/utils/adUnits';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -314,7 +316,7 @@ describe('Undertone Adapter', () => {
       };
 
       sandbox = sinon.createSandbox();
-      sandbox.stub(document, 'getElementById').withArgs('div-gpt-ad-1460505748561-0').returns(element);
+      sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     });
 
     afterEach(function() {

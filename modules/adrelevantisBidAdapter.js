@@ -21,6 +21,7 @@ import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 import {transformSizes} from '../libraries/sizeUtils/tranformSize.js';
 import {hasUserInfo, hasAppDeviceInfo, hasAppId} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -250,10 +251,9 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
 
 /**
  * This function hides google div container for outstream bids to remove unwanted space on page. Appnexus renderer creates a new iframe outside of google iframe to render the outstream creative.
- * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
-  var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+function hidedfpContainer(bid) {
+  var el = getAdUnitElement(bid).querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }
@@ -261,7 +261,7 @@ function hidedfpContainer(elementId) {
 
 function outstreamRender(bid) {
   // push to render queue because ANOutstreamVideo may not be loaded yet
-  hidedfpContainer(bid.adUnitCode);
+  hidedfpContainer(bid);
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
