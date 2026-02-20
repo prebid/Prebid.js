@@ -93,6 +93,9 @@ export const parseConfig = (moduleConfig) => {
 // Global session ID (generated once per page load)
 let sessionID = null;
 
+// Track if we've made a targeting API call this session (to avoid redundant calls)
+let targetingCallMade = false;
+
 /**
  * Generates a random session ID (base64url encoded 16-byte random value)
  * @returns {string} Session ID
@@ -508,42 +511,51 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     const passport = getPassport(host, node);
     logMessage(`Passport: ${passport ? 'found' : 'not found'}`);
 
-    // Check if we have cached data - if so, use it immediately and update in background
+    // Check if we have cached data - if so, use it immediately
     const cachedData = getCachedTargeting();
     if (cachedData) {
-      logMessage('Cache found, using cached data and updating in background');
+      logMessage('Cache found, using cached data');
       handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep);
       callback();
 
-      // Update cache in background (don't await)
-      callTargetingAPI({
-        host,
-        node,
-        site,
-        ids,
-        hids,
-        consent,
-        sessionId,
-        passport,
-        cookies,
-        timeout: effectiveTimeout
-      }).then(data => {
-        if (data) {
-          logMessage('Background API call completed, cache updated');
-          setCachedTargeting(data);
-          if (data.passport) {
-            setPassport(host, node, data.passport);
+      // Only refresh in background if we haven't made a call this session yet
+      if (!targetingCallMade) {
+        logMessage('First auction this session - refreshing cache in background');
+        targetingCallMade = true;
+
+        // Update cache in background (don't await)
+        callTargetingAPI({
+          host,
+          node,
+          site,
+          ids,
+          hids,
+          consent,
+          sessionId,
+          passport,
+          cookies,
+          timeout: effectiveTimeout
+        }).then(data => {
+          if (data) {
+            logMessage('Background API call completed, cache updated');
+            setCachedTargeting(data);
+            if (data.passport) {
+              setPassport(host, node, data.passport);
+            }
           }
-        }
-      }).catch(error => {
-        logWarn('Background API call failed:', error);
-      });
+        }).catch(error => {
+          logWarn('Background API call failed:', error);
+        });
+      } else {
+        logMessage('Already made a targeting call this session - skipping refresh');
+      }
 
       return;
     }
 
     // No cache - wait for API call
     logMessage('No cache found, waiting for API call');
+    targetingCallMade = true;
     const targetingData = await callTargetingAPI({
       host,
       node,
