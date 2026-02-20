@@ -447,18 +447,18 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn) => {
     logMessage(`EIDs also available in ortb2.user.ext.eids (${eidCount} EIDs)`);
   }
 
-  // Add split_test_variant to adUnits ortb2Imp.ext.optable if present
-  if (targetingData.split_test_variant) {
-    logMessage(`Split test variant detected: ${targetingData.split_test_variant}`);
+  // Add split_test_assignment to adUnits ortb2Imp.ext.optable if present
+  if (targetingData.split_test_assignment) {
+    logMessage(`Split test assignment detected: ${targetingData.split_test_assignment}`);
 
     if (reqBidsConfigObj.adUnits && Array.isArray(reqBidsConfigObj.adUnits)) {
       reqBidsConfigObj.adUnits.forEach(adUnit => {
         adUnit.ortb2Imp = adUnit.ortb2Imp || {};
         adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
         adUnit.ortb2Imp.ext.optable = adUnit.ortb2Imp.ext.optable || {};
-        adUnit.ortb2Imp.ext.optable.splitTestVariant = targetingData.split_test_variant;
+        adUnit.ortb2Imp.ext.optable.splitTestAssignment = targetingData.split_test_assignment;
       });
-      logMessage(`Split test variant added to ${reqBidsConfigObj.adUnits.length} ad units`);
+      logMessage(`Split test assignment added to ${reqBidsConfigObj.adUnits.length} ad units`);
     }
   }
 
