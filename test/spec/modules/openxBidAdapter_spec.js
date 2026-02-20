@@ -468,10 +468,12 @@ describe('OpenxRtbAdapter', function () {
         expect(request[0].data.imp).to.have.length(3);
         expect(request[0].data.imp[0].banner).to.exist;
         if (FEATURES.VIDEO) {
-          expect(request[0].data.imp[1].video).to.exist;
+          const videoImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[1].bidId);
+          expect(videoImp.video).to.exist;
         }
         if (FEATURES.NATIVE) {
-          expect(request[0].data.imp[2].native).to.exist;
+          const nativeImp = request[0].data.imp.find(imp => imp.id === nativeBidRequest.bidId);
+          expect(nativeImp.native).to.exist;
         }
       });
 
@@ -495,6 +497,13 @@ describe('OpenxRtbAdapter', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request.length).to.equal(1);
         expect(request[0].data.ext.platform).to.equal(bidRequestsWithMediaTypes[0].params.platform);
+      });
+
+      it('should send delDomain from first bid when bids have different delDomains', function () {
+        bidRequestsWithMediaTypes[0].params.delDomain = 'domain-a.test';
+        bidRequestsWithMediaTypes[1].params.delDomain = 'domain-b.test';
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+        expect(request[0].data.ext.delDomain).to.equal('domain-a.test');
       });
 
       it('should send openx adunit codes', function () {
@@ -1689,6 +1698,39 @@ describe('OpenxRtbAdapter', function () {
         });
       });
     }
+
+    context('when multiple bid requests (banner + video) are in one request and both bids are returned', function() {
+      it('should correctly return both banner and video bids', function () {
+        const bidRequestConfigs = [
+          {
+            bidder: 'openx', params: { unit: '1', delDomain: 'test-del-domain' },
+            adUnitCode: 'au-1', mediaTypes: { banner: { sizes: [[300, 250]] } },
+            bidId: 'bid-id-banner', bidderRequestId: 'br-1', auctionId: 'a-1'
+          },
+          {
+            bidder: 'openx', params: { unit: '2', delDomain: 'test-del-domain' },
+            adUnitCode: 'au-2', mediaTypes: { video: { playerSize: [640, 480] } },
+            bidId: 'bid-id-video', bidderRequestId: 'br-1', auctionId: 'a-1'
+          }
+        ];
+        const bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
+        const bidResponse = {
+          seatbid: [{
+            bid: [
+              { impid: 'bid-id-banner', price: 1, adm: '<div>ad</div>', mtype: 1 },
+              { impid: 'bid-id-video', price: 2, adm: '<VAST/>', mtype: 2 }
+            ]
+          }],
+          cur: 'USD'
+        };
+        const result = spec.interpretResponse({ body: bidResponse }, bidRequest);
+        expect(result.bids).to.have.length(2);
+        expect(result.bids[0].mediaType).to.equal(BANNER);
+        expect(result.bids[1].mediaType).to.equal(VIDEO);
+        expect(result.bids[0].requestId).to.equal('bid-id-banner');
+        expect(result.bids[1].requestId).to.equal('bid-id-video');
+      });
+    });
 
     if (FEATURES.NATIVE) {
       context('when native request and the response is a native', function() {
