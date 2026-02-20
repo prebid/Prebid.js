@@ -11,7 +11,7 @@
     "sharethroughBidAdapter",
     "riseBidAdapter",
     "medianetBidAdapter",
-    "cadentApertureMXBidAdapter",
+    "cadent_aperture_mxBidAdapter",
     "adpod",
     "consentManagementTcf",
     "consentManagementUsp",
