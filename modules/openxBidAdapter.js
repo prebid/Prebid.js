@@ -162,15 +162,11 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  return [createRequest(bidRequests, bidderRequest)];
-}
-
-function createRequest(bidRequests, bidderRequest) {
-  return {
+  return [{
     method: 'POST',
     url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
     data: converter.toORTB({bidRequests, bidderRequest})
-  }
+  }];
 }
 
 function interpretResponse(resp, req) {

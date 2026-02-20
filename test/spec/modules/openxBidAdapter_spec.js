@@ -461,16 +461,6 @@ describe('OpenxRtbAdapter', function () {
         }
       })
 
-      it('should send all bid requests in a single HTTP request', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request).to.have.length(1);
-        expect(request[0].data.imp).to.have.length(2);
-        expect(request[0].data.imp[0].banner).to.exist;
-        if (FEATURES.VIDEO) {
-          expect(request[0].data.imp[1].video).to.exist;
-        }
-      });
-
       it('should send banner, video and native bids in a single HTTP request', function () {
         const allBids = [...bidRequestsWithMediaTypes, nativeBidRequest];
         const request = spec.buildRequests(allBids, mockBidderRequest);
@@ -493,7 +483,6 @@ describe('OpenxRtbAdapter', function () {
 
       it('should send platform id, if available', function () {
         bidRequestsWithMediaTypes[0].params.platform = '1cabba9e-cafe-3665-beef-f00f00f00f00';
-        bidRequestsWithMediaTypes[1].params.platform = '51ca3159-abc2-4035-8e00-fe26eaa09397';
 
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].data.ext.platform).to.equal(bidRequestsWithMediaTypes[0].params.platform);
@@ -571,7 +560,7 @@ describe('OpenxRtbAdapter', function () {
             expect(request[0].data.imp[0].bidfloorcur).to.equal('USD');
           });
 
-          it('should send not send floors', function () {
+          it('should not send floors', function () {
             adServerCurrencyStub.returns('EUR');
             const bidRequest = Object.assign({},
               bidRequestsWithMediaTypes[0],
