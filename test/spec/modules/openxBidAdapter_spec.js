@@ -466,6 +466,13 @@ describe('OpenxRtbAdapter', function () {
         const request = spec.buildRequests(allBids, mockBidderRequest);
         expect(request).to.have.length(1);
         expect(request[0].data.imp).to.have.length(3);
+        expect(request[0].data.imp[0].banner).to.exist;
+        if (FEATURES.VIDEO) {
+          expect(request[0].data.imp[1].video).to.exist;
+        }
+        if (FEATURES.NATIVE) {
+          expect(request[0].data.imp[2].native).to.exist;
+        }
       });
 
       it('should send bid request to openx url via POST', function () {
@@ -481,10 +488,12 @@ describe('OpenxRtbAdapter', function () {
         expect(request[0].data.ext.platformId).to.be.undefined;
       });
 
-      it('should send platform id, if available', function () {
+      it('should send platform id from first bid, if available', function () {
         bidRequestsWithMediaTypes[0].params.platform = '1cabba9e-cafe-3665-beef-f00f00f00f00';
+        bidRequestsWithMediaTypes[1].params.platform = '2cabba9e-cafe-3665-beef-f00f00f00f00';
 
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+        expect(request.length).to.equal(1);
         expect(request[0].data.ext.platform).to.equal(bidRequestsWithMediaTypes[0].params.platform);
       });
 
