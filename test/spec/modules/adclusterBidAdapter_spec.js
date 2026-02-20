@@ -141,7 +141,7 @@ describe("adclusterBidAdapter", function () {
       // Assert
       expect(req.method).to.equal("POST");
       expect(req.url).to.equal(ENDPOINT);
-      expect(req.options).to.deep.equal({ contentType: "application/json" });
+      expect(req.options).to.deep.equal({ contentType: "text/plain" });
       expect(req.data).to.be.an("object");
       expect(req.data.bidderCode).to.equal(BIDDER_CODE);
       expect(req.data.auctionId).to.equal(br.auctionId);
