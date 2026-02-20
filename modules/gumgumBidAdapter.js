@@ -329,6 +329,10 @@ function getFirstUid(eid) {
 }
 
 function getUserEids(bidRequest, bidderRequest) {
+  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
+  if (Array.isArray(bidderRequestEids) && bidderRequestEids.length) {
+    return bidderRequestEids;
+  }
   const bidEids = deepAccess(bidRequest, 'userIdAsEids');
   if (Array.isArray(bidEids) && bidEids.length) {
     return bidEids;
@@ -337,8 +341,7 @@ function getUserEids(bidRequest, bidderRequest) {
   if (Array.isArray(bidUserEids) && bidUserEids.length) {
     return bidUserEids;
   }
-  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
-  return Array.isArray(bidderRequestEids) ? bidderRequestEids : [];
+  return [];
 }
 
 function isPubProvidedIdEid(eid) {

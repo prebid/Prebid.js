@@ -277,6 +277,31 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
       expect(bidRequest.data.idl_env).to.equal('fallback-idl-env');
     });
+    it('should prioritize bidderRequest.ortb2.user.ext.eids over bid-level eids', function () {
+      const request = {
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'liveramp.com',
+          uids: [{ id: 'bid-level-idl-env' }]
+        }]
+      };
+      const fakeBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          user: {
+            ext: {
+              eids: [{
+                source: 'liveramp.com',
+                uids: [{ id: 'ortb2-level-idl-env' }]
+              }]
+            }
+          }
+        }
+      };
+      const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
+      expect(bidRequest.data.idl_env).to.equal('ortb2-level-idl-env');
+    });
     it('should keep identity output consistent for prebid10 ortb2 eids input', function () {
       const request = { ...bidRequests[0], userIdAsEids: undefined };
       const fakeBidderRequest = {
