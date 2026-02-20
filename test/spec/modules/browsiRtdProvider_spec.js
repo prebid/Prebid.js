@@ -68,7 +68,7 @@ describe('browsi Real time data sub module', function () {
   it('should return correct macro values', function () {
     const slot = mockGpt.makeSlot({ code: '/123/abc', divId: 'browsiAd_1' });
 
-    slot.setTargeting('test', ['test', 'value']);
+    slot.setConfig({targeting: {'test': ['test', 'value']}});
     const macroResult = browsiUtils.getMacroId({ p: '<AD_UNIT>/<KEY_test>' }, slot);
     expect(macroResult).to.equal('/123/abc/test_value');
 

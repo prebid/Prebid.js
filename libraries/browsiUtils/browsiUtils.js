@@ -235,8 +235,7 @@ export function getMacroId(macro, slot) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
         if (!p1) return 'NA';
-        const targeting = slot.getConfig?.('targeting')?.targeting;
-        const value = targeting?.[p1] ?? slot.getTargeting?.(p1);
+        const value = slot.getConfig('targeting').targeting?.[p1];
         return (Array.isArray(value) ? value : [value]).filter(v => v != null).join('_') || 'NA';
       });
       return macroResult;
