@@ -1,7 +1,7 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -15,7 +15,8 @@ import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingCli
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const BANNER_ENDPOINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const NATIVE_ENDPOINT_URL = 'https://native.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 const USER_ID = 'user-id';
@@ -169,7 +170,6 @@ export function getElementSignals(adUnitCode) {
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    mediaType: BANNER,
     ttl: 300
   },
   imp(buildImp, bidRequest, context) {
@@ -183,12 +183,24 @@ const converter = ortbConverter({
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
+    const { mediaType } = getMediaType(context.bidRequest);
+    context.mediaType = mediaType;
+
+    if (context.mediaType === NATIVE) {
+      const admObj = safeJSONParse(bid.adm);
+      if (admObj?.native) {
+        bid.adm = JSON.stringify(admObj.native);
+      }
+    }
+
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
     if (bid.burl) {
       bidResponse.burl = bid.burl;
     }
-    bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+    if (bidResponse.mediaType !== NATIVE) {
+      bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+    }
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
     }
@@ -197,14 +209,18 @@ const converter = ortbConverter({
 });
 
 export const spec = {
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE],
   gvlid: GVLID,
   code: BIDDER_CODE,
   isBidRequestValid: (bidRequest) => {
-    return !!(bidRequest.sizes &&
-              bidRequest.params &&
+    const hasPublisherAndTag = !!(bidRequest.params &&
               bidRequest.params.publisherId &&
               bidRequest.params.tagId);
+    if (!hasPublisherAndTag) {
+      return false;
+    }
+    const { hasBanner, hasNative } = getMediaType(bidRequest);
+    return hasBanner || hasNative;
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
@@ -215,7 +231,9 @@ export const spec = {
       context: { auctionId }
     });
     const {publisherId} = bidRequest.params;
-    const url = END_POINT_URL + '?publisher=' + publisherId;
+    const { mediaType } = getMediaType(bidRequest);
+    const baseUrl = mediaType === NATIVE ? NATIVE_ENDPOINT_URL : BANNER_ENDPOINT_URL;
+    const url = baseUrl + '?publisher=' + publisherId;
 
     return {
       url,
@@ -433,12 +451,16 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
 
 function fillTaboolaImpData(bid, imp) {
   const {tagId, position} = bid.params;
-  imp.banner = getBanners(bid, position);
-  imp.tagid = tagId;
+  const { mediaType, hasBanner } = getMediaType(bid);
+  if (hasBanner) {
+    imp.banner = getBanners(bid.mediaTypes.banner.sizes, position);
+  }
 
+  imp.tagid = tagId;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: CURRENCY,
+      mediaType: mediaType,
       size: '*'
     });
     if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
@@ -476,9 +498,9 @@ function fillTaboolaImpData(bid, imp) {
   }
 }
 
-function getBanners(bid, pos) {
+function getBanners(sizes, pos) {
   return {
-    ...getSizes(bid.sizes),
+    ...getSizes(sizes),
     pos: pos
   }
 }
@@ -492,6 +514,16 @@ function getSizes(sizes) {
       }
     })
   }
+}
+
+function getMediaType(bidRequest) {
+  const hasBanner = !!bidRequest?.mediaTypes?.banner?.sizes;
+  const hasNative = !!bidRequest?.mediaTypes?.native;
+  return {
+    hasBanner,
+    hasNative,
+    mediaType: hasNative && !hasBanner ? NATIVE : BANNER
+  };
 }
 
 registerBidder(spec);
