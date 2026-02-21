@@ -2,8 +2,6 @@
 <html lang="en">
 <head>
     <title>Optable RTD submodule example - Prebid.js</title>
-    <!--Optable bundle-->
-    <script async src="https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js"></script>
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
     <script async src="../../build/dev/prebid.js"></script>
@@ -130,11 +128,6 @@
             ];
 
             pbjs.setConfig({
-                optableRtdConfig: { // optional, check the doc for explanation
-                    email: 'email-sha256-hash',
-                    phone: 'phone-sha256-hash',
-                    postal_code: 'postal_code',
-                },
                 debug: true, // use only for testing, remove in production
                 realTimeData: {
                     auctionDelay: 1000, // should be set lower in production use
@@ -143,26 +136,23 @@
                             name: 'optable',
                             waitForIt: true,
                             params: {
-                                // bundleUrl: "https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js?hello=world",
-                                // adserverTargeting: false,
-                                // handleRtd: async (reqBidsConfigObj, optableExtraData, mergeFn) => {
-                                //     const optableBundle = /** @type {Object} */ (window.optable);
-                                //     console.warn('Entering custom RTD handler');
-                                //     console.warn('reqBidsConfigObj', reqBidsConfigObj);
-                                //     console.warn('optableExtraData', optableExtraData);
-                                //     console.warn('mergeFn', mergeFn);
-                                //
-                                //     // Call Optable DCN for targeting data and return the ORTB2 object
-                                //     const targetingData = await optableBundle.instance.targeting();
-                                //
-                                //     if (!targetingData || !targetingData.ortb2) {
-                                //         return;
-                                //     }
-                                //
-                                //     mergeFn(
-                                //         reqBidsConfigObj.ortb2Fragments.global,
-                                //         targetingData.ortb2,
-                                //     );
+                                // REQUIRED PARAMETERS:
+                                host: 'na.edge.optable.co',      // Your DCN hostname
+                                node: 'prebidtest',                 // Your node identifier
+                                site: 'prebidtest-sdk',             // Your site identifier
+
+                                // OPTIONAL PARAMETERS:
+                                cookies: false,                   // Cookie mode (default: true, set to false for cookieless)
+                                // timeout: '500ms',             // API timeout hint
+                                // ids: ['i4:1.2.3.4'],          // User identifiers (also auto-extracted from Prebid userId module)
+                                // hids: ['hid1'],               // Hint identifiers
+
+                                // CUSTOM HANDLER (optional):
+                                // handleRtd: (reqBidsConfigObj, targetingData, mergeFn) => {
+                                //     console.log('Custom RTD handler');
+                                //     console.log('Targeting data:', targetingData);
+                                //     // Perform custom logic here
+                                //     mergeFn(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2);
                                 // }
                             }
                         }
@@ -172,12 +162,36 @@
 
             pbjs.addAdUnits(adUnits);
 
+            // Track if we've already displayed the data (only show once)
+            let displayedEnrichedData = false;
+
             pbjs.onEvent('bidRequested', function (data) {
                 try {
-                    window.optable.cmd.push(() => {
+                    // Display the enriched user data from Optable RTD
+                    if (!displayedEnrichedData && data.ortb2 && data.ortb2.user) {
+                        console.log('Full bid request ortb2:', data.ortb2);
+                        console.log('User data:', data.ortb2.user);
+
+                        const userData = data.ortb2.user;
+                        const eidCount = userData.eids ? userData.eids.length : 0;
+                        const dataCount = userData.data ? userData.data.length : 0;
+
+                        console.log(`Found ${eidCount} EIDs and ${dataCount} data segments`);
+
                         document.getElementById('enriched-optable').style.display = 'block';
-                        document.getElementById('enriched-optable-data').textContent = JSON.stringify(data.ortb2.user, null, 2);
-                    });
+                        document.getElementById('enriched-optable-data').textContent = JSON.stringify(userData, null, 2);
+                        displayedEnrichedData = true;
+                    }
+
+                    // Display split test variant if present in adUnit ortb2Imp
+                    if (data.bids && data.bids.length > 0) {
+                        data.bids.forEach(bid => {
+                            const splitTestVariant = bid.ortb2Imp?.ext?.optable?.splitTestVariant;
+                            if (splitTestVariant) {
+                                console.log(`Split test variant for ${bid.adUnitCode}: ${splitTestVariant}`);
+                            }
+                        });
+                    }
                 } catch (e) {
                     console.error('Exception while trying to display enriched data', e);
                 }
