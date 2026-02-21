@@ -163,8 +163,8 @@ function getFloors(bid, mediaType = "banner", size) {
 }
 
 function detectMediaType(bid) {
-  if (bid.mediaType === "banner") return BANNER;
-  else if (bid.mediaType === "video") return VIDEO;
+  if (bid.mediaType === "video") return VIDEO;
+  return BANNER;
 }
 
 function getFloorsAny(bid) {
