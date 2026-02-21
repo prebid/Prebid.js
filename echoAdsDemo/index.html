@@ -1,0 +1,1443 @@
+<!--
+  Echo Ads Module - GumGum Test Demo
+
+  This example uses GumGum's test placement credentials to demonstrate
+  the Echo Ads module with real bid responses.
+-->
+
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo Ads - GumGum Demo</title>
+  <script src="prebid.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #565959;
+      border-bottom: 3px solid #00CE7C;
+      padding-bottom: 10px;
+    }
+
+    #publisher-view h1 {
+      line-height: 1.2;
+    }
+
+    h2, h3 {
+      color: #565959;
+    }
+
+    .info-box {
+      background: #f0fdf9;
+      border-left: 4px solid #00CE7C;
+      padding: 15px;
+      margin: 20px 0;
+    }
+
+    .status {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .controls {
+      margin: 30px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    button {
+      background: #00CE7C;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 0;
+      margin-bottom: 10px;
+      display: block;
+      width: auto;
+      text-align: left;
+    }
+
+    button:last-child {
+      margin-bottom: 0;
+    }
+
+    .controls button {
+      margin-bottom: 10px;
+    }
+
+    .controls button:last-child {
+      margin-bottom: 0;
+    }
+
+    button:hover {
+      background: #00b869;
+    }
+
+    .scroll-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: #00CE7C;
+      transition: width 0.3s;
+      z-index: 1000;
+    }
+
+    .metric {
+      display: inline-block;
+      margin-right: 20px;
+      font-weight: bold;
+    }
+
+    .content {
+      margin: 40px 0;
+    }
+
+    .paragraph {
+      margin: 20px 0;
+      text-align: justify;
+    }
+
+    .skeleton {
+      background: #e8e9e9;
+      border-radius: 6px;
+      min-height: 22px;
+      height: 22px;
+      margin: 16px 0 16px 0;
+      width: 100%;
+      display: block;
+      animation: skeleton-fade 1.5s infinite alternate;
+    }
+    .skeleton.short {
+      width: 50%;
+    }
+    @keyframes skeleton-fade {
+      from { opacity: 0.9; }
+      to { opacity: 0.5; }
+    }
+
+    .mrec-image {
+      width: 300px;
+      height: 250px;
+      margin: 40px auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* Echo Ads overlay - let container fit the ad's natural size */
+    #echo-ads-overlay > div[id^="echo-ad"] {
+      width: auto !important;
+      max-width: 95vw !important;  /* Prevent overflow on small screens */
+      min-width: auto !important;
+      height: auto !important;
+      min-height: auto !important;
+      box-sizing: border-box !important;
+      padding: 10px !important;
+      position: relative !important;
+      display: inline-block !important;
+    }
+
+    /* Ensure close button stays fixed size */
+    #echo-ads-overlay > div[id^="echo-ad"] > button {
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      max-width: 28px !important;
+    }
+
+    .footer {
+      margin-top: 100px;
+      padding: 40px;
+      background: #00CE7C;
+      color: white;
+      text-align: center;
+    }
+
+    .footer h2,
+    .footer p {
+      color: white;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-top: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 10;
+      background-color: white;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #00CE7C;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    .tag-input-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .tag-input-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .tag-input-section button {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .tag-input-section textarea + button {
+      margin-top: 15px;
+    }
+
+    .tag-input-section button:last-child {
+      margin-bottom: 0;
+    }
+
+    .tag-input-section button.primary,
+    .tag-input-section button.save,
+    .tag-input-section button.save.primary {
+      background: #00CE7C;
+      color: white;
+    }
+    .tag-input-section button.primary:hover,
+    .tag-input-section button.save:hover,
+    .tag-input-section button.save.primary:hover {
+      background: #00b869;
+    }
+    .tag-input-section button.secondary {
+      background: #565959;
+    }
+
+    .tag-input-section button.secondary:hover {
+      background: #454848;
+    }
+
+    .tag-input-section input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    .tag-input-section button.save {
+      background: #4AC1E0;
+    }
+
+    .tag-input-section button.save:hover {
+      background: #3aa8c4;
+    }
+
+    .save-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      display: none;
+    }
+
+    .save-message {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .save-message.success {
+      background: #e6faf3;
+      color: #006644;
+      border: 1px solid #00CE7C;
+    }
+
+    .save-message.error {
+      background: #ffe6e6;
+      color: #8b0000;
+      border: 1px solid #ff9999;
+    }
+  </style>
+
+  <script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    // Track events
+    var triggerLog = [];
+    function logEvent(message) {
+      var timestamp = new Date().toLocaleTimeString();
+      triggerLog.push('[' + timestamp + '] ' + message);
+      updateStatus();
+      console.log(message);
+    }
+
+    function updateStatus() {
+      var statusEl = document.getElementById('status');
+      if (statusEl) {
+        statusEl.innerHTML = '<strong>Event Log:</strong><br>' + triggerLog.slice(-15).join('<br>');
+        // Auto-scroll to bottom
+        statusEl.scrollTop = statusEl.scrollHeight;
+      }
+    }
+
+    function updateScrollIndicator() {
+      var scrollDepth = calculateScrollDepth();
+      var indicator = document.getElementById('scroll-indicator');
+      if (indicator) {
+        indicator.style.width = scrollDepth + '%';
+      }
+      var scrollDisplay = document.getElementById('scroll-depth');
+      if (scrollDisplay) {
+        scrollDisplay.textContent = Math.round(scrollDepth) + '%';
+      }
+      
+      // Enhanced debug logging around thresholds
+      if (scrollDepth >= 68 && scrollDepth < 72) {
+        logEvent('📊 Scroll depth: ' + Math.round(scrollDepth) + '% - Minimum engagement threshold (70%) reached');
+      }
+      if (scrollDepth >= 88 && scrollDepth < 92) {
+        logEvent('📊 Scroll depth: ' + Math.round(scrollDepth) + '% - Trigger threshold (90%) - will trigger if scrolling down and 70% minimum met');
+        // Also check if Echo Ads module is monitoring
+        pbjs.que.push(function() {
+          if (pbjs.echoAds) {
+            logEvent('✓ Echo Ads module is active and monitoring');
+          } else {
+            logEvent('⚠ Echo Ads module not found');
+          }
+        });
+      }
+    }
+
+    function calculateScrollDepth() {
+      var windowHeight = window.innerHeight;
+      var documentHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var scrollableHeight = documentHeight - windowHeight;
+
+      // 0% at top, 100% when scrolled to bottom
+      if (scrollableHeight <= 0) return 0;
+      return (scrollTop / scrollableHeight) * 100;
+    }
+
+    window.addEventListener('scroll', updateScrollIndicator);
+    window.addEventListener('load', updateScrollIndicator);
+
+    // Scroll state tracking for custom trigger
+    var scrollState = {
+      maxScrollDepth: 0,
+      previousScrollDepth: 0,
+      hasReachedMinimum: false,
+      minScrollDepth: 70,  // Must scroll to 70% first
+      triggerDepth: 90,    // Then trigger at 90%
+      hasTriggeredThisCrossing: false  // Track if we've triggered for this crossing of 90%
+    };
+
+    // Custom scroll depth calculation that tracks state
+    // NOTE: This function is polled by the module every 1 second
+    // We also have a scroll event listener that triggers manually for better responsiveness
+    function checkScrollTrigger() {
+      // Always return false - we handle triggering via the scroll event listener instead
+      // This prevents the module from setting hasBeenTriggered=true and blocking timeOnPage
+      return false;
+    }
+    
+    // Also check trigger on scroll events (more responsive than 1-second polling)
+    var customTriggerCheckActive = false;
+    var lastScrollDepthForTrigger = 0;
+    var hasTriggeredForCurrentCrossing = false;
+    
+    window.addEventListener('scroll', function() {
+      if (!customTriggerCheckActive) return;
+      
+      var scrollDepth = calculateScrollDepth();
+      var isScrollingDown = scrollDepth > lastScrollDepthForTrigger;
+      
+      // Update max scroll depth
+      if (scrollDepth > scrollState.maxScrollDepth) {
+        scrollState.maxScrollDepth = scrollDepth;
+      }
+      
+      // Check if we've reached minimum engagement threshold
+      if (scrollState.maxScrollDepth >= scrollState.minScrollDepth) {
+        scrollState.hasReachedMinimum = true;
+      }
+      
+      // Reset trigger flag if we scroll back below 90%
+      if (scrollDepth < scrollState.triggerDepth) {
+        hasTriggeredForCurrentCrossing = false;
+      }
+      
+      // Check if we should trigger: scrolling down, reached 70% min, crossing 90% threshold
+      if (isScrollingDown && 
+          scrollState.hasReachedMinimum && 
+          scrollDepth >= scrollState.triggerDepth && 
+          lastScrollDepthForTrigger < scrollState.triggerDepth &&
+          !hasTriggeredForCurrentCrossing) {
+        hasTriggeredForCurrentCrossing = true;
+        // Trigger the ad manually since we detected the condition
+        pbjs.que.push(function() {
+          if (pbjs.echoAds && pbjs.echoAds.trigger) {
+            logEvent('🔧 Scroll trigger detected (70% min + 90% down) - triggering ad');
+            pbjs.echoAds.trigger();
+          }
+        });
+      }
+      
+      lastScrollDepthForTrigger = scrollDepth;
+    }, { passive: true });
+
+    // Configure Echo Ads with GumGum test placement
+    pbjs.que.push(function() {
+      logEvent('Configuring Echo Ads module with GumGum test placement...');
+
+      pbjs.setConfig({
+        echoAds: {
+          // Ad unit with GumGum test credentials
+          adUnit: {
+            code: 'echo-ad-gumgum',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            bids: [
+              {
+                bidder: 'gumgum',
+                params: {
+                  zone: 'dc9d6be1',    // GumGum test zone
+                  slot: '15901',       // GumGum test slot
+                  bidfloor: 0.03
+                }
+              }
+            ]
+          },
+
+          // Trigger configuration
+          trigger: {
+            custom: function() {
+              return checkScrollTrigger();
+            },
+            timeOnPage: 45000           // OR after 45 seconds
+          },
+
+          // Pre-fetch strategy
+          prefetch: {
+            mode: 'lazy',
+            lazyTriggerPoint: {
+              scroll: { depth: 70 }     // Start auction at 70% scroll
+            }
+          },
+
+          // Display configuration
+          display: {
+            type: 'overlay',
+            closeButton: true,
+            closeDelay: 3000,           // 3 second delay before close button
+            frequency: {
+              maxPerSession: 5,         // Allow multiple for testing
+              maxPerDay: 10
+            }
+          },
+
+          // Callbacks
+          onBidCached: function(bidInfo) {
+            logEvent('✓ Bid cached: ' + bidInfo.bidder + ' $' + bidInfo.cpm.toFixed(2) + ' CPM (' + bidInfo.size + ')');
+          },
+          onTrigger: function() {
+            logEvent('✓ Trigger activated! Preparing to show Echo Ad...');
+          },
+          onAdRender: function() {
+            logEvent('✓ Echo Ad rendered successfully');
+          },
+          onAdClose: function() {
+            logEvent('✓ Echo Ad closed by user');
+          },
+          onFrequencyCapReached: function() {
+            logEvent('⚠ Frequency cap reached - ad not shown');
+          }
+        }
+      });
+
+      logEvent('Echo Ads configured - scroll to 70% minimum, then 90% to trigger (downward scroll only)');
+      logEvent('Using GumGum test zone: dc9d6be1, slot: 15901');
+      logEvent('Auto-trigger enabled: 70% min + 90% scroll (downward) OR 45 seconds on page');
+      logEvent('⏱️ Time-on-page trigger will fire after 45 seconds if scroll trigger has not fired');
+      
+      // Verify Echo Ads module is initialized and check scroll configuration
+      setTimeout(function() {
+        pbjs.que.push(function() {
+          if (pbjs.echoAds) {
+            logEvent('✓ Echo Ads module initialized and monitoring triggers');
+            // Enable scroll-based trigger checking
+            customTriggerCheckActive = true;
+            // Log page dimensions for debugging
+            var docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+            var winHeight = window.innerHeight;
+            var scrollable = docHeight - winHeight;
+            logEvent('📏 Page height: ' + docHeight + 'px, Window height: ' + winHeight + 'px, Scrollable: ' + scrollable + 'px');
+            
+            // Check if there's enough content to scroll
+            if (scrollable < 100) {
+              logEvent('⚠ Warning: Page may not have enough scrollable content (' + scrollable + 'px)');
+            } else {
+              logEvent('✓ Sufficient scrollable content detected');
+            }
+          } else {
+            logEvent('⚠ Warning: Echo Ads module not found - triggers may not work');
+          }
+        });
+      }, 2000); // Increased timeout to ensure page is fully loaded
+    });
+
+    // Manual trigger
+    function manualTrigger() {
+      logEvent('Manual trigger button clicked');
+      pbjs.que.push(function() {
+        if (pbjs.echoAds) {
+          pbjs.echoAds.trigger();
+        } else {
+          logEvent('ERROR: Echo Ads module not loaded');
+        }
+      });
+    }
+
+    // Clear frequency caps
+    function clearFrequencyCaps() {
+      try {
+        sessionStorage.removeItem('echoAds_session_count');
+        localStorage.removeItem('echoAds_daily_count');
+        localStorage.removeItem('echoAds_last_shown');
+        logEvent('✓ Frequency caps cleared');
+        updateFrequencyDisplay();
+      } catch (e) {
+        logEvent('ERROR: Could not clear frequency caps - ' + e.message);
+      }
+    }
+
+    // Show current frequency cap status
+    function updateFrequencyDisplay() {
+      try {
+        const sessionCount = parseInt(sessionStorage.getItem('echoAds_session_count') || '0');
+        const dailyData = localStorage.getItem('echoAds_daily_count');
+        let dailyCount = 0;
+        if (dailyData) {
+          const { date, count } = JSON.parse(dailyData);
+          const today = new Date().toDateString();
+          if (date === today) {
+            dailyCount = count;
+          }
+        }
+
+        const freqEl = document.getElementById('frequency-status');
+        if (freqEl) {
+          freqEl.innerHTML = 'Session: ' + sessionCount + '/5 | Daily: ' + dailyCount + '/10';
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+
+    // Update frequency display immediately and then every second
+    updateFrequencyDisplay();
+    setInterval(updateFrequencyDisplay, 1000);
+
+    // Creative management
+    let availableCreatives = [];
+    let selectedCreative = null;
+    let pastedTagCreative = null;
+
+    // Load available creatives from JSON file
+    function loadCreatives() {
+      fetch('test-creatives/creatives.json')
+        .then(response => response.json())
+        .then(creatives => {
+          availableCreatives = creatives;
+          const selector = document.getElementById('creative-selector');
+
+          // Clear loading message
+          selector.innerHTML = '';
+
+          // Add options for each creative
+          creatives.forEach((creative, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = creative.name;
+            selector.appendChild(option);
+          });
+
+          // Only auto-select if in settings mode (demo mode loads from server)
+          var isSettings = getUrlParameter('settings') === 'true' || getUrlParameter('mode') === 'settings';
+          if (creatives.length > 0 && !pastedTagCreative && isSettings) {
+            // In settings mode, load from server or default to first
+            fetch('/api/selected-creative')
+              .then(response => response.json())
+              .then(data => {
+                var creativeIndex = data.creativeIndex || 0;
+                if (creativeIndex >= 0 && creativeIndex < creatives.length) {
+                  selector.value = creativeIndex.toString();
+                  selectCreative();
+                } else {
+                  selector.value = '0';
+                  selectCreative();
+                }
+              })
+              .catch(() => {
+                // Fallback to first creative if server fails
+                selector.value = '0';
+                selectCreative();
+              });
+          }
+
+          logEvent('Loaded ' + creatives.length + ' test creative(s)');
+        })
+        .catch(error => {
+          logEvent('ERROR: Failed to load creatives - ' + error.message);
+          const selector = document.getElementById('creative-selector');
+          selector.innerHTML = '<option value="">Error loading creatives</option>';
+        });
+    }
+
+    // Handle creative selection
+    function selectCreative() {
+      const selector = document.getElementById('creative-selector');
+      const index = parseInt(selector.value);
+
+      if (isNaN(index) || index < 0 || index >= availableCreatives.length) {
+        return;
+      }
+
+      // Clear pasted tag when selecting from JSON
+      pastedTagCreative = null;
+      const tagInput = document.getElementById('custom-tag-input');
+      if (tagInput) {
+        tagInput.value = '';
+      }
+      const nameInput = document.getElementById('creative-name-input');
+      if (nameInput) {
+        nameInput.value = '';
+      }
+      updatePastedTagInfo();
+
+      // Hide save section
+      const saveSection = document.querySelector('.save-section');
+      if (saveSection) {
+        saveSection.style.display = 'none';
+      }
+
+      selectedCreative = availableCreatives[index];
+
+      // Update info display
+      const infoEl = document.getElementById('creative-info');
+      infoEl.innerHTML = '<strong>Type:</strong> ' + selectedCreative.type +
+                        ' | <strong>Size:</strong> ' + selectedCreative.width + 'x' + selectedCreative.height;
+
+      // Store selected creative ID in window for gumgumBidAdapter to access
+      window.selectedTestCreative = selectedCreative;
+
+      logEvent('Selected creative: ' + selectedCreative.name);
+      
+      // Save to server if in settings mode
+      var isSettings = getUrlParameter('settings') === 'true' || getUrlParameter('mode') === 'settings';
+      if (isSettings) {
+        saveSelectedCreative(index);
+      }
+    }
+
+    // Extract dimensions from HTML tag
+    function extractDimensionsFromTag(html) {
+      // Try to find width and height attributes
+      const widthMatch = html.match(/width\s*=\s*["']?(\d+)["']?/i) || html.match(/width:\s*(\d+)/i);
+      const heightMatch = html.match(/height\s*=\s*["']?(\d+)["']?/i) || html.match(/height:\s*(\d+)/i);
+      
+      let width = 300; // default
+      let height = 250; // default
+      
+      if (widthMatch) {
+        width = parseInt(widthMatch[1]);
+      }
+      if (heightMatch) {
+        height = parseInt(heightMatch[1]);
+      }
+      
+      return { width, height };
+    }
+
+    // Use pasted tag as creative
+    function usePastedTag() {
+      const tagInput = document.getElementById('custom-tag-input');
+      const tagHtml = tagInput.value.trim();
+
+      if (!tagHtml) {
+        logEvent('ERROR: No tag pasted. Please paste an ad tag first.');
+        return;
+      }
+
+      // Extract dimensions from the tag
+      const dimensions = extractDimensionsFromTag(tagHtml);
+
+      // Create a creative object from the pasted tag
+      pastedTagCreative = {
+        id: 'pasted-tag-' + Date.now(),
+        name: 'Pasted Custom Tag (' + dimensions.width + 'x' + dimensions.height + ')',
+        type: 'third-party-tag',
+        width: dimensions.width,
+        height: dimensions.height,
+        creative: tagHtml
+      };
+
+      // Set as selected creative
+      selectedCreative = pastedTagCreative;
+      window.selectedTestCreative = pastedTagCreative;
+
+      // Update UI
+      updatePastedTagInfo();
+      const infoEl = document.getElementById('creative-info');
+      infoEl.innerHTML = '<strong>Type:</strong> ' + pastedTagCreative.type +
+                        ' | <strong>Size:</strong> ' + pastedTagCreative.width + 'x' + pastedTagCreative.height +
+                        ' | <strong>Source:</strong> Pasted Tag';
+
+      // Disable selector to show pasted tag is active
+      const selector = document.getElementById('creative-selector');
+      if (selector) {
+        selector.disabled = true;
+        selector.style.opacity = '0.5';
+      }
+
+      // Pre-fill name input if empty
+      const nameInput = document.getElementById('creative-name-input');
+      if (nameInput && !nameInput.value.trim()) {
+        nameInput.value = 'Custom Tag ' + dimensions.width + 'x' + dimensions.height;
+      }
+
+      // Show save section
+      const saveSection = document.querySelector('.save-section');
+      if (saveSection) {
+        saveSection.style.display = 'block';
+      }
+
+      logEvent('✓ Using pasted custom tag (' + dimensions.width + 'x' + dimensions.height + ')');
+    }
+
+    // Clear pasted tag and return to JSON creatives
+    function clearPastedTag() {
+      const tagInput = document.getElementById('custom-tag-input');
+      if (tagInput) {
+        tagInput.value = '';
+      }
+
+      const nameInput = document.getElementById('creative-name-input');
+      if (nameInput) {
+        nameInput.value = '';
+      }
+
+      pastedTagCreative = null;
+      updatePastedTagInfo();
+
+      // Hide save section
+      const saveSection = document.querySelector('.save-section');
+      if (saveSection) {
+        saveSection.style.display = 'none';
+      }
+
+      // Clear save message
+      const saveMessageEl = document.getElementById('save-message');
+      if (saveMessageEl) {
+        saveMessageEl.style.display = 'none';
+        saveMessageEl.textContent = '';
+      }
+
+      // Re-enable selector
+      const selector = document.getElementById('creative-selector');
+      if (selector) {
+        selector.disabled = false;
+        selector.style.opacity = '1';
+      }
+
+      // Select first JSON creative if available
+      if (availableCreatives.length > 0) {
+        selector.value = '0';
+        selectCreative();
+      } else {
+        selectedCreative = null;
+        window.selectedTestCreative = null;
+        const infoEl = document.getElementById('creative-info');
+        if (infoEl) {
+          infoEl.innerHTML = '';
+        }
+      }
+
+      logEvent('Cleared pasted tag - using JSON creatives');
+    }
+
+    // Update pasted tag info display
+    function updatePastedTagInfo() {
+      const infoEl = document.getElementById('pasted-tag-info');
+      if (infoEl) {
+        if (pastedTagCreative) {
+          infoEl.innerHTML = '<strong style="color: #00CE7C;">✓ Active:</strong> Using pasted tag (' + 
+                            pastedTagCreative.width + 'x' + pastedTagCreative.height + ')';
+        } else {
+          infoEl.innerHTML = '';
+        }
+      }
+    }
+
+    // Generate a unique ID for a creative
+    function generateCreativeId(name) {
+      const baseId = name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const timestamp = Date.now();
+      return baseId + '-' + timestamp;
+    }
+
+    // Save creative to JSON (adds to list and provides download)
+    function saveCreativeToJSON() {
+      const nameInput = document.getElementById('creative-name-input');
+      const tagInput = document.getElementById('custom-tag-input');
+      const saveMessageEl = document.getElementById('save-message');
+
+      // Validate inputs
+      const creativeName = nameInput.value.trim();
+      const tagHtml = tagInput.value.trim();
+
+      if (!creativeName) {
+        showSaveMessage('Please enter a name for the creative.', 'error');
+        return;
+      }
+
+      if (!tagHtml) {
+        showSaveMessage('Please paste an ad tag first.', 'error');
+        return;
+      }
+
+      // Extract dimensions
+      const dimensions = extractDimensionsFromTag(tagHtml);
+
+      // Create creative object
+      const newCreative = {
+        id: generateCreativeId(creativeName),
+        name: creativeName + ' (' + dimensions.width + 'x' + dimensions.height + ')',
+        type: 'third-party-tag',
+        width: dimensions.width,
+        height: dimensions.height,
+        creative: tagHtml
+      };
+
+      // Check if creative with same name already exists
+      let newIndex;
+      const existingIndex = availableCreatives.findIndex(c => c.name === newCreative.name);
+      if (existingIndex !== -1) {
+        if (!confirm('A creative with this name already exists. Do you want to replace it?')) {
+          return;
+        }
+        availableCreatives[existingIndex] = newCreative;
+        newIndex = existingIndex;
+      } else {
+        // Add to the list
+        availableCreatives.push(newCreative);
+        newIndex = availableCreatives.length - 1;
+      }
+
+      // Update dropdown
+      updateCreativeSelector();
+
+      // Select the newly saved creative
+      const selector = document.getElementById('creative-selector');
+      selector.value = newIndex.toString();
+      selectCreative();
+
+      // Clear pasted tag state
+      pastedTagCreative = null;
+      updatePastedTagInfo();
+      const selectorEl = document.getElementById('creative-selector');
+      if (selectorEl) {
+        selectorEl.disabled = false;
+        selectorEl.style.opacity = '1';
+      }
+
+      // Try to save to server first
+      saveToServer(newCreative).then(serverSuccess => {
+        if (serverSuccess) {
+          // Server save succeeded - no need to download
+          showSaveMessage('Creative saved successfully to server! It has been added to the dropdown and will be available for all users.', 'success');
+        } else {
+          // Server save failed - download JSON file as fallback
+          downloadUpdatedJSON();
+          showSaveMessage('Creative saved successfully! It has been added to the dropdown. JSON file downloaded (server save unavailable).', 'success');
+        }
+        logEvent('✓ Saved creative: ' + newCreative.name);
+
+        // Clear the inputs
+        nameInput.value = '';
+        tagInput.value = '';
+      });
+    }
+
+    // Update the creative selector dropdown
+    function updateCreativeSelector() {
+      const selector = document.getElementById('creative-selector');
+      if (!selector) return;
+
+      // Clear existing options
+      selector.innerHTML = '';
+
+      // Add options for each creative
+      availableCreatives.forEach((creative, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = creative.name;
+        selector.appendChild(option);
+      });
+    }
+
+    // Download updated JSON file
+    function downloadUpdatedJSON() {
+      try {
+        const jsonString = JSON.stringify(availableCreatives, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'creatives.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        logEvent('ERROR: Failed to download JSON - ' + error.message);
+        showSaveMessage('Failed to download JSON file: ' + error.message, 'error');
+      }
+    }
+
+    // Try to save to server endpoint
+    function saveToServer(creative) {
+      return fetch('test-creatives/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          creatives: availableCreatives
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Server responded with error: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          logEvent('✓ Creative saved to server successfully');
+          return true;
+        } else {
+          throw new Error(data.error || 'Server save failed');
+        }
+      })
+      .catch((error) => {
+        logEvent('⚠️ Server save failed: ' + error.message + ' - JSON will be downloaded instead');
+        return false;
+      });
+    }
+
+    // Show save message
+    function showSaveMessage(message, type) {
+      const saveMessageEl = document.getElementById('save-message');
+      if (saveMessageEl) {
+        saveMessageEl.textContent = message;
+        saveMessageEl.className = 'save-message ' + (type || 'success');
+        saveMessageEl.style.display = 'block';
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          saveMessageEl.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    // Load creatives on page load
+    loadCreatives();
+    
+    // After creatives are loaded, if in demo mode, load selected creative from server
+    // This is handled in loadCreatives callback for settings mode, and in initializeView for demo mode
+
+    // Reset
+    function resetEchoAds() {
+      if (pbjs.echoAds && pbjs.echoAds.reset) {
+        pbjs.echoAds.reset();
+        logEvent('Echo Ads state reset - reconfiguring...');
+
+        setTimeout(function() {
+          pbjs.que.push(function() {
+            pbjs.setConfig({
+              echoAds: {
+                adUnit: {
+                  code: 'echo-ad-gumgum',
+                  mediaTypes: {
+                    banner: {
+                      sizes: [[300, 250]]
+                    }
+                  },
+                  bids: [
+                    {
+                      bidder: 'gumgum',
+                      params: {
+                        zone: 'dc9d6be1',
+                        slot: '15901',
+                        bidfloor: 0.03
+                      }
+                    }
+                  ]
+                },
+                trigger: {
+                  custom: function() {
+                    return checkScrollTrigger();
+                  },
+                  timeOnPage: 45000
+                },
+                prefetch: {
+                  mode: 'lazy',
+                  lazyTriggerPoint: {
+                    scroll: { depth: 70 }
+                  }
+                },
+                display: {
+                  type: 'overlay',
+                  closeButton: true,
+                  closeDelay: 3000,
+                  frequency: {
+                    maxPerSession: 5,
+                    maxPerDay: 10
+                  }
+                },
+                onBidCached: function(bidInfo) {
+                  logEvent('✓ Bid cached: ' + bidInfo.bidder + ' $' + bidInfo.cpm.toFixed(2) + ' CPM (' + bidInfo.size + ')');
+                },
+                onTrigger: function() {
+                  logEvent('✓ Trigger activated!');
+                },
+                onAdRender: function() {
+                  logEvent('✓ Echo Ad rendered successfully');
+                },
+                onAdClose: function() {
+                  logEvent('✓ Echo Ad closed by user');
+                },
+                onFrequencyCapReached: function() {
+                  logEvent('⚠ Frequency cap reached - ad not shown');
+                }
+              }
+            });
+            logEvent('Echo Ads reconfigured');
+          });
+        }, 100);
+      }
+    }
+
+    // Time on page
+    var pageLoadTime = Date.now();
+    setInterval(function() {
+      var timeOnPage = Math.round((Date.now() - pageLoadTime) / 1000);
+      var timeDisplay = document.getElementById('time-on-page');
+      if (timeDisplay) {
+        timeDisplay.textContent = timeOnPage + 's';
+      }
+      // Debug: Log when approaching 45 seconds
+      if (timeOnPage === 44) {
+        logEvent('⏱️ 44 seconds elapsed - time-on-page trigger should fire in 1 second');
+      }
+      if (timeOnPage === 45) {
+        logEvent('⏱️ 45 seconds elapsed - time-on-page trigger should have fired');
+      }
+    }, 1000);
+
+    // Check URL query parameter to determine view mode
+    function getUrlParameter(name) {
+      name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+      var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+      var results = regex.exec(location.search);
+      return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    // Show demo or settings page based on URL parameter
+    function initializeView() {
+      var publisherView = document.getElementById('publisher-view');
+      var devPanel = document.getElementById('dev-panel');
+      var isSettings = getUrlParameter('settings') === 'true' || getUrlParameter('mode') === 'settings';
+      
+      if (publisherView && devPanel) {
+        if (isSettings) {
+          devPanel.style.display = 'block';
+          publisherView.style.display = 'none';
+        } else {
+          devPanel.style.display = 'none';
+          publisherView.style.display = 'block';
+          // Load selected creative from server for demo page
+          loadSelectedCreative();
+        }
+      }
+    }
+
+    // Load selected creative from server (for demo page)
+    function loadSelectedCreative() {
+      // Wait for creatives to be loaded
+      if (availableCreatives.length === 0) {
+        setTimeout(loadSelectedCreative, 100);
+        return;
+      }
+      
+      fetch('/api/selected-creative')
+        .then(response => response.json())
+        .then(data => {
+          var creativeIndex = data.creativeIndex || 0;
+          if (creativeIndex >= 0 && creativeIndex < availableCreatives.length) {
+            // Set the creative directly (for demo page where selector might not be visible)
+            selectedCreative = availableCreatives[creativeIndex];
+            window.selectedTestCreative = selectedCreative;
+            
+            // Also update selector if it exists (for settings page)
+            var selector = document.getElementById('creative-selector');
+            if (selector) {
+              selector.value = creativeIndex.toString();
+            }
+            
+            logEvent('Loaded selected creative from server: ' + selectedCreative.name);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to load selected creative:', error);
+          // Fallback to first creative
+          if (availableCreatives.length > 0) {
+            selectedCreative = availableCreatives[0];
+            window.selectedTestCreative = selectedCreative;
+          }
+        });
+    }
+
+    // Save selected creative to server
+    function saveSelectedCreative(creativeIndex) {
+      fetch('/api/selected-creative', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          creativeIndex: creativeIndex
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          logEvent('✓ Selected creative saved to server');
+        } else {
+          logEvent('⚠ Failed to save selected creative: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        logEvent('⚠ Failed to save selected creative: ' + error.message);
+      });
+    }
+
+    // Initialize view on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      initializeView();
+    });
+  </script>
+</head>
+
+<body>
+  <div class="scroll-indicator" id="scroll-indicator"></div>
+
+  <div class="container">
+    <!-- Publisher View (default, client-friendly) -->
+    <div id="publisher-view">
+      <h1>The Multiplier Effect: Inside Echo Ads</h1>
+      <div class="content">
+        <div class="paragraph">
+          To see the ad, stay idle on this page for 45 seconds, or scroll to the bottom of this article.
+        </div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <img src="creatives/mrec.png" alt="MREC Ad" class="mrec-image">
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton short"></div>
+        <div class="paragraph skeleton"></div>
+        <div class="paragraph skeleton"></div>
+      </div>
+    </div>
+
+    <!-- Dev Panel (hidden by default, toggled with SHIFT+P) -->
+    <div id="dev-panel" style="display:none;">
+    <h1>Echo Ads Module - GumGum Demo</h1>
+
+    <div class="info-box">
+      <strong>Demo Configuration</strong><br>
+      This demo uses a hardcoded bid response for testing purposes. You can configure test creatives below.<br>
+      In production, the GumGum adapter would fetch real bids using your zone credentials.
+    </div>
+
+    <div class="controls">
+      <h3>Test Creative</h3>
+      <div style="margin-bottom: 15px;">
+        <label for="creative-selector" style="display: block; margin-bottom: 5px;">Select Creative:</label>
+        <select id="creative-selector" onchange="selectCreative()">
+          <option value="">Loading creatives...</option>
+        </select>
+      </div>
+      <div id="creative-info" style="font-size: 12px; color: #565959; margin-top: 10px;"></div>
+      
+      <div class="tag-input-section">
+        <label for="custom-tag-input">Or Paste Custom Ad Tag:</label>
+        <textarea id="custom-tag-input" placeholder="Paste your ad tag HTML here..."></textarea>
+        <button class="primary" onclick="usePastedTag()">Use Pasted Tag</button>
+        <button onclick="clearPastedTag()" class="secondary">Clear & Use JSON Creatives</button>
+        <div id="pasted-tag-info" style="font-size: 12px; color: #565959; margin-top: 10px;"></div>
+        
+        <div class="save-section">
+          <label for="creative-name-input">Save Creative Name:</label>
+          <input type="text" id="creative-name-input" placeholder="Enter a name for this creative (e.g., 'My Custom Banner')" />
+          <button onclick="saveCreativeToJSON()" class="save primary">Save to JSON</button>
+          <div id="save-message"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <h3>Controls & Metrics</h3>
+      <div style="margin-bottom: 15px;">
+        <span class="metric">Scroll Depth: <span id="scroll-depth">0%</span></span>
+        <span class="metric">Time on Page: <span id="time-on-page">0s</span></span>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span class="metric">Frequency Caps: <span id="frequency-status">Session: 0/5 | Daily: 0/10</span></span>
+      </div>
+      <button onclick="manualTrigger()">Manual Trigger Echo Ad</button>
+      <button onclick="clearFrequencyCaps()">Clear Frequency Caps</button>
+    </div>
+
+    <div class="controls">
+      <h3>Logs</h3>
+      <div class="status" id="status">
+        Loading...
+      </div>
+    </div>
+
+    <h2>Current Configuration</h2>
+
+    <div class="content">
+      <div class="paragraph">
+        <strong>Trigger Conditions:</strong>
+        <ul>
+          <li>Scroll depth reaches <strong>90%</strong>, OR</li>
+          <li>Time on page reaches <strong>45 seconds</strong></li>
+        </ul>
+      </div>
+
+      <div class="paragraph">
+        <strong>Pre-fetch Strategy:</strong>
+        <ul>
+          <li>Mode: <strong>Lazy</strong> (auction starts when scroll reaches 70%)</li>
+          <li>Benefit: Bid is cached and ready when trigger activates at 90%</li>
+        </ul>
+      </div>
+
+      <div class="paragraph">
+        <strong>Display Settings:</strong>
+        <ul>
+          <li>Type: <strong>Overlay</strong> (dark background with centered ad)</li>
+          <li>Close button delay: <strong>3 seconds</strong> (ensures viewability)</li>
+          <li>Ad size: <strong>300x250</strong></li>
+        </ul>
+      </div>
+
+      <div class="paragraph">
+        <strong>Frequency Capping:</strong>
+        <ul>
+          <li>Max per session: <strong>5 ads</strong></li>
+          <li>Max per day: <strong>10 ads</strong></li>
+        </ul>
+      </div>
+
+      <h2>Testing Instructions</h2>
+
+      <ul>
+        <li>Click <strong>"Manual Trigger Echo Ad"</strong> to test immediately</li>
+        <li>Scroll to 90% to trigger automatically (watch the scroll depth meter)</li>
+        <li>Wait 45 seconds to trigger via time-on-page</li>
+        <li>Use <strong>"Clear Frequency Caps"</strong> to reset counters for repeated testing</li>
+        <li>Watch the event log to see module activity in real-time</li>
+      </ul>
+
+      <h2>Publisher Configuration Options</h2>
+
+      <div class="paragraph">
+        Publishers can customize Echo Ads behavior through the Prebid.js configuration:
+      </div>
+
+      <ul>
+        <li><strong>Bidders:</strong> Works with any Prebid bidder (GumGum, AppNexus, etc.)</li>
+        <li><strong>Ad Sizes:</strong> Configure any standard IAB sizes (300x250, 728x90, etc.)</li>
+        <li><strong>Trigger Points:</strong> Set custom scroll depth, time thresholds, or custom functions</li>
+        <li><strong>Pre-fetch Mode:</strong> Choose eager (immediate) or lazy (conditional) auction start</li>
+        <li><strong>Display Type:</strong> Overlay or interstitial formats</li>
+        <li><strong>Close Delay:</strong> Configure viewability guarantee period (0-10 seconds)</li>
+        <li><strong>Frequency Caps:</strong> Set session and daily limits to control user experience</li>
+        <li><strong>Callbacks:</strong> Hook into trigger, render, close, and frequency cap events</li>
+      </ul>
+
+      <h2>Keep Scrolling...</h2>
+
+      <div class="paragraph">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt
+        ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+        laboris nisi ut aliquip ex ea commodo consequat.
+      </div>
+
+      <div class="paragraph">
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+        mollit anim id est laborum.
+      </div>
+
+      <div class="paragraph">
+        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
+        totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae
+        dicta sunt explicabo.
+      </div>
+
+      <div class="paragraph">
+        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur
+        magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem
+        ipsum quia dolor sit amet, consectetur, adipisci velit.
+      </div>
+
+      <div class="paragraph">
+        At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum
+        deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non
+        provident.
+      </div>
+
+      <div class="paragraph">
+        Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.
+        Et harum quidem rerum facilis est et expedita distinctio.
+      </div>
+
+      <div class="paragraph">
+        Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et
+        voluptates repudiandae sint et molestiae non recusandae.
+      </div>
+    </div>
+
+    <div class="footer">
+      <h2 style="color: white;">End of Content</h2>
+      <p style="color: white;">If you've scrolled this far, the Echo Ad should have appeared!</p>
+      <p style="color: white;">Echo Ads Module v1.0.0 - GumGum Test Demo</p>
+    </div>
+    </div> <!-- End dev-panel -->
+  </div>
+</body>
+</html>
