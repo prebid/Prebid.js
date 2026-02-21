@@ -65,14 +65,16 @@ const logMessage = (...args) => {
 };
 
 function makeMemoizedFetch() {
-  let cachedResponse = null;
+  const cache = new Map();
   return async function () {
-    if (cachedResponse) {
-      return Promise.resolve(cachedResponse);
+    const pageUrl = window.location.href;
+    if (cache.has(pageUrl)) {
+      return Promise.resolve(cache.get(pageUrl));
     }
     try {
       const response = await fetchContextData();
-      cachedResponse = makeDataFromResponse(response);
+      const cachedResponse = makeDataFromResponse(response);
+      cache.set(pageUrl, cachedResponse);
       return cachedResponse;
     } catch (error) {
       logMessage('error', error);
