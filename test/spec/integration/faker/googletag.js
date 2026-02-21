@@ -6,7 +6,7 @@ var Slot = function Slot({ code, divId }) {
   divId = divId || `div-id-${randomFive()}`;
 
   var slot = {
-    targeting: [],
+    targeting: {},
     getSlotElementId: function getSlotElementId() {
       return divId;
     },
@@ -16,28 +16,26 @@ var Slot = function Slot({ code, divId }) {
     },
 
     setTargeting: function setTargeting(key, value) {
-      var obj = [];
-      obj[key] = value;
-      this.targeting.push(obj);
+      this.targeting[key] = Array.isArray(value) ? value : [value];
     },
 
-    getTargeting: function getTargeting() {
-      return this.targeting;
+    getTargeting: function getTargeting(key) {
+      return this.targeting[key] || [];
     },
 
     getTargetingKeys: function getTargetingKeys() {
-      return [];
+      return Object.keys(this.targeting);
     },
 
     getConfig: function getConfig(key) {
       if (key === 'targeting') {
-        return this.targeting;
+        return {targeting: this.targeting};
       }
     },
 
     setConfig: function setConfig(config) {
       if (config?.targeting) {
-        this.targeting = config.targeting;
+        Object.assign(this.targeting, config.targeting);
       }
     },
 

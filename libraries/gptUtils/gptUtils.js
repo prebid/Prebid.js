@@ -24,7 +24,8 @@ export function setKeyValue(key, value) {
   window.googletag = window.googletag || {cmd: []};
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
-    window.googletag.pubads().setTargeting(key, value);
+    const values = Array.isArray(value) ? value : [value];
+    window.googletag.setConfig({targeting: {[key]: values}});
   });
 }
 

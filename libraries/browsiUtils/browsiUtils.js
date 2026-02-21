@@ -234,7 +234,9 @@ export function getMacroId(macro, slot) {
   if (macro) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
-        return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
+        if (!p1) return 'NA';
+        const value = slot.getConfig('targeting').targeting?.[p1];
+        return (Array.isArray(value) ? value : [value]).filter(v => v != null).join('_') || 'NA';
       });
       return macroResult;
     } catch (e) {
