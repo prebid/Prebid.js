@@ -91,9 +91,11 @@ export const spec = {
             bidResponse.burl = rtbBid.burl;
           }
 
-          // Check if this is a video bid
+          // Determine if this is a video bid
+          // FIX: Check for VAST content in adm even for multi-format ad units
           const isVideo = (rtbBid.ext && rtbBid.ext.mediaType === 'video') ||
                          rtbBid.vastXml || rtbBid.vastUrl ||
+                         isVastAdm(rtbBid.adm) ||
                          (originalBid.mediaTypes && originalBid.mediaTypes.video &&
                           !originalBid.mediaTypes.banner);
 
@@ -208,8 +210,8 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
         minduration: video.minduration || 0,
         maxduration: video.maxduration || 60,
         protocols: video.protocols || [2, 3, 5, 6],
-        w: video.playerSize && video.playerSize[0] ? video.playerSize[0][0] : 640,
-        h: video.playerSize && video.playerSize[0] ? video.playerSize[0][1] : 360,
+        w: getVideoSize(video.playerSize, 0, 640),
+        h: getVideoSize(video.playerSize, 1, 360),
         placement: video.placement || 1,
         playbackmethod: video.playbackmethod || [1, 2],
         api: video.api || [1, 2],
@@ -318,6 +320,40 @@ function getSizes(bid) {
 function getFirstSize(bid, index, defaultVal) {
   const sizes = getSizes(bid);
   return (sizes && sizes[0] && sizes[0][index]) || defaultVal;
+}
+
+/**
+ * Safely extract video dimensions from playerSize.
+ * Handles both nested [[640, 480]] and flat [640, 480] formats.
+ * @param {Array} playerSize - video.playerSize from mediaTypes config
+ * @param {number} index - 0 for width, 1 for height
+ * @param {number} defaultVal - fallback value
+ * @returns {number}
+ */
+function getVideoSize(playerSize, index, defaultVal) {
+  if (!playerSize || !Array.isArray(playerSize) || playerSize.length === 0) {
+    return defaultVal;
+  }
+  // Nested: [[640, 480]] or [[640, 480], [320, 240]]
+  if (Array.isArray(playerSize[0])) {
+    return playerSize[0][index] || defaultVal;
+  }
+  // Flat: [640, 480]
+  if (typeof playerSize[0] === 'number') {
+    return playerSize[index] || defaultVal;
+  }
+  return defaultVal;
+}
+
+/**
+ * Detect if adm content is VAST XML (for multi-format video detection).
+ * @param {string} adm - ad markup string
+ * @returns {boolean}
+ */
+function isVastAdm(adm) {
+  if (typeof adm !== 'string') return false;
+  const trimmed = adm.trim();
+  return trimmed.startsWith('<VAST') || trimmed.startsWith('<?xml');
 }
 
 function getBidFloorEnhanced(bid) {
