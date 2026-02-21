@@ -121,14 +121,13 @@ function buildImp(bid) {
 
   // BANNER
   if (mt.banner?.sizes?.length) {
-    imp.type = "banner";
     imp.width = mt.banner.sizes[0] && mt.banner.sizes[0][0];
     imp.height = mt.banner.sizes[0] && mt.banner.sizes[0][1];
-  } else if (mt.video) {
+  }
+  if (mt.video) {
     const v = mt.video;
     const playerSize = toSizeArray(v.playerSize);
     const [vw, vh] = playerSize?.[0] || [];
-    imp.type = "video";
     imp.width = vw;
     imp.height = vh;
     imp.video = {
@@ -164,7 +163,7 @@ function getFloors(bid, mediaType = "banner", size) {
 
 function detectMediaType(bid) {
   if (bid.mediaType === "video") return VIDEO;
-  return BANNER;
+  else return BANNER;
 }
 
 function getFloorsAny(bid) {
@@ -173,7 +172,8 @@ function getFloorsAny(bid) {
   const mt = bid.mediaTypes || {};
   if (mt.banner) {
     out.banner = getFloors(bid, "banner", "*");
-  } else if (mt.video) {
+  }
+  if (mt.video) {
     const ps = toSizeArray(mt.video.playerSize);
     out.video = getFloors(bid, "video", (ps && ps[0]) || "*");
   }

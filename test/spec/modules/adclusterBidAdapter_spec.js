@@ -217,7 +217,6 @@ describe("adclusterBidAdapter", function () {
 
       // Assert
       const imp = req.data.bids[0];
-      expect(imp.type).to.equal("banner");
       expect(imp.width).to.equal(300);
       expect(imp.height).to.equal(250);
       expect(imp.ext).to.have.property("floors");
@@ -234,7 +233,6 @@ describe("adclusterBidAdapter", function () {
 
       // Assert
       const imp = req.data.bids[0];
-      expect(imp.type).to.equal("video");
       expect(imp.width).to.equal(640);
       expect(imp.height).to.equal(360);
       expect(imp.video).to.be.an("object");
