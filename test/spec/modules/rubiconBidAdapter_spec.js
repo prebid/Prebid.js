@@ -4322,14 +4322,14 @@ describe('the rubicon adapter', function () {
             const renderCall = window.MagniteApex.renderAd.getCall(0);
             expect(renderCall.args[0]).to.deep.equal({
               closeButton: true,
-              collapse: false,
               height: 320,
               label: undefined,
               placement: {
                 align: 'left',
-                attachTo: adUnitSelector,
-                position: 'append',
+                attachTo: adUnit,
+                position: 'prepend',
               },
+              replay: true,
               vastUrl: 'https://test.com/vast.xml',
               width: 640
             });
@@ -4392,14 +4392,14 @@ describe('the rubicon adapter', function () {
             const renderCall = window.MagniteApex.renderAd.getCall(0);
             expect(renderCall.args[0]).to.deep.equal({
               closeButton: true,
-              collapse: false,
               height: 480,
               label: undefined,
               placement: {
                 align: 'left',
-                attachTo: adUnitSelector,
-                position: 'append',
+                attachTo: adUnit,
+                position: 'prepend',
               },
+              replay: true,
               vastUrl: 'https://test.com/vast.xml',
               width: 640
             });
