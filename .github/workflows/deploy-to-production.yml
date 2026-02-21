@@ -27,6 +27,7 @@ jobs:
           gulp build
           gulp bundle --tag prebid-full --modules=modules-full.json
           gulp bundle --tag prebid-no-user-sync --modules=modules-no-user-sync.json
+          gulp bundle --tag prebid-adzep --modules=modules-adzep.json
 
       - name: Upload to S3 Bucket
         run: |
@@ -41,6 +42,12 @@ jobs:
                       --content-type "text/javascript; charset=UTF-8" \
                       --cache-control "public, max-age=1800, stale-while-revalidate=3600" \
                       --content-disposition 'attachment; filename="f.txt"'
+          
+          aws s3 cp build/dist/prebid.prebid-adzep.js s3://${{ vars.AWS_S3_BUCKET }}/prebid-adzep.js \
+                      --region ${{ vars.AWS_S3_REGION }} \
+                      --content-type "text/javascript; charset=UTF-8" \
+                      --cache-control "public, max-age=1800, stale-while-revalidate=3600" \
+                      --content-disposition 'attachment; filename="f.txt"'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -50,7 +57,7 @@ jobs:
           response=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ vars.CLOUDFLARE_ZONE_ID }}/purge_cache" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"files":["https://tag.adpulse.com.br/prebid.js", "https://tag.adpulse.com.br/prebid-no-user-sync.js"]}')
+            --data '{"files":["https://tag.adpulse.com.br/prebid.js", "https://tag.adpulse.com.br/prebid-no-user-sync.js", "https://tag.adpulse.com.br/prebid-adzep.js"]}')
           echo "$response"
           if ! echo "$response" | grep -q '"success":true'; then
             echo "Cloudflare cache purge failed"
