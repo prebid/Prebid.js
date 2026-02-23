@@ -92,6 +92,16 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
+            name: 'locId',
+            params: {
+                endpoint: 'https://id.example.com/locid'
+            },
+            storage: {
+                type: 'html5',
+                name: '_locid',
+                expires: 7
+            }
+        }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'cookie',

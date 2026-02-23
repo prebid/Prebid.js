@@ -254,6 +254,11 @@ export interface Config {
    * https://docs.prebid.org/features/firstPartyData.html
    */
   ortb2?: DeepPartial<ORTBRequest>;
+  /**
+   * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
+   * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
+   */
+  disableFingerprintingApis?: Array<'devicepixelratio' | 'webdriver' | 'resolvedoptions'>;
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };

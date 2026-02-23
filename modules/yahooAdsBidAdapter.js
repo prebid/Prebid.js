@@ -288,6 +288,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
         }
       },
       source: {
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,

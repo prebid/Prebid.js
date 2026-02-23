@@ -142,10 +142,12 @@ describe('connatixBidAdapter', function () {
     let element;
     let getBoundingClientRectStub;
     let topWinMock;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       element = document.createElement('div');
-      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
         document: {
@@ -154,10 +156,18 @@ describe('connatixBidAdapter', function () {
         innerWidth: 800,
         innerHeight: 600
       };
+      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => ({
+        document: {
+          documentElement: {
+            clientWidth: topWinMock.innerWidth,
+            clientHeight: topWinMock.innerHeight
+          }
+        }
+      }));
     });
 
     afterEach(() => {
-      getBoundingClientRectStub.restore();
+      sandbox.restore();
     });
 
     it('should return 0 if the document is not visible', () => {
@@ -180,25 +190,18 @@ describe('connatixBidAdapter', function () {
     it('should return the correct percentage if the element is partially in view', () => {
       const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
-      const getWinDimensionsStub = sinon.stub(winDimensions, 'getWinDimensions');
-      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
-
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
-      getWinDimensionsStub.restore();
     });
 
     it('should return 0% if the element is not in view', () => {
-      const getWinDimensionsStub = sinon.stub(winDimensions, 'getWinDimensions');
-      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
       const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
 
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(0);
-      getWinDimensionsStub.restore();
     });
 
     it('should use provided width and height if element dimensions are zero', () => {
@@ -218,10 +221,12 @@ describe('connatixBidAdapter', function () {
     let topWinMock;
     let querySelectorStub;
     let getElementByIdStub;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       element = document.createElement('div');
-      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
         document: {
@@ -231,14 +236,22 @@ describe('connatixBidAdapter', function () {
         innerHeight: 600
       };
 
-      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
-      getElementByIdStub = sinon.stub(document, 'getElementById');
+      querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
+      getElementByIdStub = sandbox.stub(document, 'getElementById');
+      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
+        {
+          document: {
+            documentElement: {
+              clientWidth: topWinMock.innerWidth,
+              clientHeight: topWinMock.innerHeight
+            }
+          }
+        }
+      ));
     });
 
     afterEach(() => {
-      getBoundingClientRectStub.restore();
-      querySelectorStub.restore();
-      getElementByIdStub.restore();
+      sandbox.restore();
     });
 
     it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {

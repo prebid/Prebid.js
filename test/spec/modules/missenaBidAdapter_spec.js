@@ -367,5 +367,69 @@ describe('Missena Adapter', function () {
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);
     });
+
+    it('sync frame url should contain gpp data when present', function () {
+      const gppConsent = {
+        gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        applicableSections: [7, 8],
+      };
+      const userSync = spec.getUserSyncs(
+        iframeEnabledOptions,
+        [],
+        {},
+        undefined,
+        gppConsent,
+      );
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      const syncUrl = new URL(userSync[0].url);
+      expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString);
+      expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7,8');
+    });
+
+    it('sync frame url should not contain gpp data when gppConsent is undefined', function () {
+      const userSync = spec.getUserSyncs(
+        iframeEnabledOptions,
+        [],
+        {},
+        undefined,
+        undefined,
+      );
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].url).to.not.contain('gpp');
+    });
+
+    it('sync frame url should not contain gpp data when gppString is empty', function () {
+      const userSync = spec.getUserSyncs(
+        iframeEnabledOptions,
+        [],
+        {},
+        undefined,
+        { gppString: '', applicableSections: [7] },
+      );
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].url).to.not.contain('gpp');
+    });
+
+    it('sync frame url should contain all consent params together', function () {
+      const gppConsent = {
+        gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        applicableSections: [7],
+      };
+      const userSync = spec.getUserSyncs(
+        iframeEnabledOptions,
+        [],
+        { gdprApplies: true, consentString },
+        '1YNN',
+        gppConsent,
+      );
+      expect(userSync.length).to.be.equal(1);
+      const syncUrl = new URL(userSync[0].url);
+      expect(syncUrl.searchParams.get('gdpr')).to.equal('1');
+      expect(syncUrl.searchParams.get('gdpr_consent')).to.equal(consentString);
+      expect(syncUrl.searchParams.get('us_privacy')).to.equal('1YNN');
+      expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString);
+      expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7');
+    });
   });
 });

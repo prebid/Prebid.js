@@ -45,3 +45,6 @@ This file contains instructions for the Codex agent and its friends when working
 - Avoid running Babel over the entire project for incremental test runs.
 - Use `gulp serve-and-test --file <spec_file.js>` or `gulp test --file` so Babel processes only the specified files.
 - Do not invoke commands that rebuild all modules when only a subset are changed.
+
+## Additional context
+- for additional context on repo history, consult https://github.com/prebid/github-activity-db/blob/main/CLAUDE.md on how to download and access repo history in a database you can search locally.

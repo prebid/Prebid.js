@@ -1,7 +1,7 @@
 import {deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
 const BIDDER_CODE = 'teal';
 const GVLID = 1378;
@@ -43,7 +43,7 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   aliases: [],
 
   isBidRequestValid: function(bid) {

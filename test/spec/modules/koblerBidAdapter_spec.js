@@ -26,9 +26,9 @@ function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}, p
   };
 }
 
-function createValidBidRequest(params, bidId, sizes) {
+function createValidBidRequest(params, bidId, sizes, adUnitCode) {
   const validBidRequest = {
-    adUnitCode: 'adunit-code',
+    adUnitCode: adUnitCode || 'adunit-code',
     bidId: bidId || '22c4871113f461',
     bidder: 'kobler',
     bidderRequestId: '15246a574e859f',
@@ -451,7 +451,8 @@ describe('KoblerAdapter', function () {
             dealIds: ['623472534328234']
           },
           '953ee65d-d18a-484f-a840-d3056185a060',
-          [[400, 600]]
+          [[400, 600]],
+          'ad-unit-1'
         ),
         createValidBidRequest(
           {
@@ -459,12 +460,14 @@ describe('KoblerAdapter', function () {
             dealIds: ['92368234753283', '263845832942']
           },
           '8320bf79-9d90-4a17-87c6-5d505706a921',
-          [[400, 500], [200, 250], [300, 350]]
+          [[400, 500], [200, 250], [300, 350]],
+          'ad-unit-2'
         ),
         createValidBidRequest(
           undefined,
           'd0de713b-32e3-4191-a2df-a007f08ffe72',
-          [[800, 900]]
+          [[800, 900]],
+          'ad-unit-3'
         )
       ];
       const bidderRequest = createBidderRequest(
@@ -520,6 +523,11 @@ describe('KoblerAdapter', function () {
                   id: '623472534328234'
                 }
               ]
+            },
+            ext: {
+              prebid: {
+                adunitcode: 'ad-unit-1'
+              }
             }
           },
           {
@@ -553,6 +561,11 @@ describe('KoblerAdapter', function () {
                   id: '263845832942'
                 }
               ]
+            },
+            ext: {
+              prebid: {
+                adunitcode: 'ad-unit-2'
+              }
             }
           },
           {
@@ -569,7 +582,12 @@ describe('KoblerAdapter', function () {
             },
             bidfloor: 0,
             bidfloorcur: 'USD',
-            pmp: {}
+            pmp: {},
+            ext: {
+              prebid: {
+                adunitcode: 'ad-unit-3'
+              }
+            }
           }
         ],
         device: {

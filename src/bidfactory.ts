@@ -135,7 +135,6 @@ export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidRespon
   height: number;
   adId: Identifier;
   getSize(): string;
-  getStatusCode(): number;
   status?: (typeof BID_STATUS)[keyof typeof BID_STATUS]
   bidderCode: BidderCode;
   adapterCode?: BidderCode;

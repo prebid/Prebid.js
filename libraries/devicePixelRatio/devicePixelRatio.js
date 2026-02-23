@@ -1,14 +1,10 @@
-import {canAccessWindowTop, internal as utilsInternals} from '../../src/utils.js';
-
-function getFallbackWindow(win) {
-  if (win) {
-    return win;
-  }
-
-  return canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
-}
+import {isFingerprintingApiDisabled} from '../fingerprinting/fingerprinting.js';
+import {getFallbackWindow} from '../../src/utils.js';
 
 export function getDevicePixelRatio(win) {
+  if (isFingerprintingApiDisabled('devicepixelratio')) {
+    return 1;
+  }
   try {
     return getFallbackWindow(win).devicePixelRatio;
   } catch (e) {

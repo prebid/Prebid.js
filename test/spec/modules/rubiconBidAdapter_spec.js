@@ -1815,7 +1815,7 @@ describe('the rubicon adapter', function () {
             })
           })
 
-          it('should send gpid and pbadslot since it is prefered over dfp code', function () {
+          it('should send gpid and pbadslot since it is preferred over dfp code', function () {
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
                 gpid: '/1233/sports&div1',
