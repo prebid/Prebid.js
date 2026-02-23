@@ -154,6 +154,10 @@ describe('the magnite adapter', function () {
     it('should support banner, native, and video media types', function () {
       expect(spec.supportedMediaTypes).to.deep.equal([BANNER, NATIVE, VIDEO]);
     });
+
+    it('should have alwaysHasCapacity set to true', function () {
+      expect(spec.alwaysHasCapacity).to.be.true;
+    });
   });
 
   describe('isBidRequestValid()', function () {

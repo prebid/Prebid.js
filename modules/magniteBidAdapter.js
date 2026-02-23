@@ -42,7 +42,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  alwaysHasCapacity: true
 };
 
 registerBidder(spec);
