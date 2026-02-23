@@ -100,8 +100,12 @@ var Slot = function Slot(elementId, pathId) {
       }
     },
 
-    clearTargeting: function clearTargeting() {
-      this.targeting = {};
+    clearTargeting: function clearTargeting(key) {
+      if (key == null) {
+        this.targeting = {};
+      } else {
+        delete this.targeting[key];
+      }
       return this;
     },
 

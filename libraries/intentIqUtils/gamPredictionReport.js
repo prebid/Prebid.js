@@ -7,8 +7,10 @@ export function gamPredictionReport (gamObjectReference, sendData) {
     const getSlotTargeting = (slot) => {
       const kvs = {};
       try {
-        (slot.getTargetingKeys() || []).forEach((k) => {
-          kvs[k] = slot.getTargeting(k);
+        const targetingConfig = slot.getConfig('targeting');
+        const targeting = targetingConfig?.targeting || targetingConfig;
+        Object.entries(targeting || {}).forEach(([key, value]) => {
+          kvs[key] = Array.isArray(value) ? value : [value];
         });
       } catch (e) {
         logError('Failed to get targeting keys: ' + e);
