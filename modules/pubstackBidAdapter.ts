@@ -1,8 +1,9 @@
-import { deepSetValue, logError } from '../src/utils.js';
+import { canAccessWindowTop, deepSetValue, getWindowSelf, getWindowTop, logError } from '../src/utils.js';
 import { AdapterRequest, BidderSpec, registerBidder, ServerResponse } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { getElementForAdUnitCode, getViewportDistance, isPageVisible } from '../libraries/pubstackUtils/index.js';
+import { getPlacementPositionUtils } from '../libraries/placementPositionInfo/placementPositionInfo.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBRequest } from '../src/prebid.public.js';
 import { config } from '../src/config.js';
@@ -37,31 +38,49 @@ type GetUserSyncFn = (
 
 const siteIds: Set<string> = new Set();
 let cntRequest = 0;
-let cntImp = 0;
-const uStart = performance.now();
+let cntTimeouts = 0;
+const { getPlacementEnv, getPlacementInfo } = getPlacementPositionUtils();
+
+const getElementForAdUnitCode = (adUnitCode: string): HTMLElement | undefined => {
+  if (!adUnitCode) return;
+  const win = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
+  const doc = win?.document;
+  let element = doc?.getElementById(adUnitCode) as HTMLElement | null;
+  if (element) return element;
+  const divId = getGptSlotInfoForAdUnitCode(adUnitCode)?.divId;
+  element = divId ? doc?.getElementById(divId) as HTMLElement | null : null;
+  if (element) return element;
+};
 
 const converter = ortbConverter({
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
-    cntImp++;
+    const element = getElementForAdUnitCode(bidRequest.adUnitCode);
+    const placementInfo = getPlacementInfo(bidRequest);
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitName`, bidRequest.params.adUnitName);
-    deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitCode`, bidRequest.adUnitCode);
-    deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.divId`, getElementForAdUnitCode(bidRequest.adUnitCode)?.id);
-    deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.vpl`, getViewportDistance(bidRequest.adUnitCode));
+    deepSetValue(imp, `ext.prebid.placement.code`, bidRequest.adUnitCode);
+    deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
+    deepSetValue(imp, `ext.prebid.placement.viewability`, placementInfo.PlacementPercentView);
+    deepSetValue(imp, `ext.prebid.placement.viewportDistance`, placementInfo.DistanceToView);
+    deepSetValue(imp, `ext.prebid.placement.height`, placementInfo.ElementHeight);
+    deepSetValue(imp, `ext.prebid.placement.auctionsCount`, placementInfo.AuctionsCount);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     cntRequest++;
-    const request = buildRequest(imps, bidderRequest, context);
-    const siteId = bidderRequest.bids[0].params.siteId;
+    const placementEnv = getPlacementEnv();
+    const request = buildRequest(imps, bidderRequest, context)
+    const siteId = bidderRequest.bids[0].params.siteId
     siteIds.add(siteId);
     deepSetValue(request, 'site.publisher.id', siteId);
     deepSetValue(request, 'test', config.getConfig('debug') ? 1 : 0);
     deepSetValue(request, 'ext.prebid.version', getGlobal()?.version ?? 'unknown');
-    deepSetValue(request, `ext.prebid.cntRequest`, cntRequest);
-    deepSetValue(request, `ext.prebid.cntImp`, cntImp);
-    deepSetValue(request, `ext.prebid.pVisible`, isPageVisible());
-    deepSetValue(request, `ext.prebid.uStart`, Math.trunc((performance.now() - uStart) / 1000));
+    deepSetValue(request, `ext.prebid.request.count`, cntRequest);
+    deepSetValue(request, `ext.prebid.request.timeoutCount`, cntTimeouts);
+    deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
+    deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
+    deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
+    deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
     return request;
   },
 });
@@ -131,6 +150,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
+  onTimeout: () => cntTimeouts++,
 };
 
 registerBidder(spec);

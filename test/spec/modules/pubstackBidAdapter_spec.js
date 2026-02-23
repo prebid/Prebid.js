@@ -114,12 +114,17 @@ describe('pubstackBidAdapter', function () {
       expect(request.data.imp).to.have.lengthOf(1);
       expect(utils.deepAccess(request, 'data.imp.0.id')).to.equal('bid-1');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.adUnitName')).to.equal('adunit-1');
-      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.adUnitCode')).to.equal('adunit-code');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.code')).to.equal('adunit-code');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.height')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.ext.prebid.version')).to.be.a('string');
-      expect(utils.deepAccess(request, 'data.ext.prebid.cntRequest')).to.be.a('number');
-      expect(utils.deepAccess(request, 'data.ext.prebid.cntImp')).to.be.a('number');
-      expect(utils.deepAccess(request, 'data.ext.prebid.pVisible')).to.be.a('boolean');
-      expect(utils.deepAccess(request, 'data.ext.prebid.uStart')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.ext.prebid.request.count')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.ext.prebid.request.timeoutCount')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.tabActive')).to.be.a('boolean');
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.height')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.viewportHeight')).to.be.a('number');
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.timeFromNavigation')).to.be.a('number');
     });
 
     it('sets test to 1 when prebid debug mode is enabled', function () {
@@ -131,7 +136,7 @@ describe('pubstackBidAdapter', function () {
       expect(utils.deepAccess(request, 'data.test')).to.equal(1);
     });
 
-    it('increments request and imp counters for each call', function () {
+    it('increments request counter for each call', function () {
       const firstBidRequest = createBidRequest({ bidId: 'bid-counter-1' });
       const firstRequest = spec.buildRequests([firstBidRequest], createBidderRequest(firstBidRequest));
       const secondBidRequest = createBidRequest({
@@ -141,10 +146,20 @@ describe('pubstackBidAdapter', function () {
       });
       const secondRequest = spec.buildRequests([secondBidRequest], createBidderRequest(secondBidRequest));
 
-      expect(utils.deepAccess(secondRequest, 'data.ext.prebid.cntRequest'))
-        .to.equal(utils.deepAccess(firstRequest, 'data.ext.prebid.cntRequest') + 1);
-      expect(utils.deepAccess(secondRequest, 'data.ext.prebid.cntImp'))
-        .to.equal(utils.deepAccess(firstRequest, 'data.ext.prebid.cntImp') + 1);
+      expect(utils.deepAccess(secondRequest, 'data.ext.prebid.request.count'))
+        .to.equal(utils.deepAccess(firstRequest, 'data.ext.prebid.request.count') + 1);
+    });
+
+    it('updates timeout count after onTimeout callback', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-timeout-rate-1' });
+      const firstRequest = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      expect(utils.deepAccess(firstRequest, 'data.ext.prebid.request.timeoutCount')).to.equal(0);
+
+      spec.onTimeout([]);
+
+      const secondBidRequest = createBidRequest({ bidId: 'bid-timeout-rate-2' });
+      const secondRequest = spec.buildRequests([secondBidRequest], createBidderRequest(secondBidRequest));
+      expect(utils.deepAccess(secondRequest, 'data.ext.prebid.request.timeoutCount')).to.equal(1);
     });
   });
 
