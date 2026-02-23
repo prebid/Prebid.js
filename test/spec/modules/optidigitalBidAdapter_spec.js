@@ -63,8 +63,7 @@ describe('optidigitalAdapterTests', function () {
                 'adserver': {
                   'name': 'gam',
                   'adslot': '/19968336/header-bid-tag-0'
-                },
-                'pbadslot': '/19968336/header-bid-tag-0'
+                }
               },
               'gpid': '/19968336/header-bid-tag-0'
             }
@@ -212,7 +211,8 @@ describe('optidigitalAdapterTests', function () {
 
     it('should send bid request to given endpoint', function() {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request.url).to.equal(ENDPOINT);
+      const finalEndpoint = `${ENDPOINT}/s123`;
+      expect(request.url).to.equal(finalEndpoint);
     });
 
     it('should be bidRequest data', function () {
@@ -282,6 +282,49 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.imp[0].adContainerHeight).to.exist;
     });
 
+    it('should read container size from DOM when divId exists', function () {
+      const containerId = 'od-test-container';
+      const el = document.createElement('div');
+      el.id = containerId;
+      el.style.width = '321px';
+      el.style.height = '111px';
+      el.style.position = 'absolute';
+      el.style.left = '0';
+      el.style.top = '0';
+      document.body.appendChild(el);
+
+      const validBidRequestsWithDivId = [
+        {
+          'bidder': 'optidigital',
+          'bidId': '51ef8751f9aead',
+          'params': {
+            'publisherId': 's123',
+            'placementId': 'Billboard_Top',
+            'divId': containerId
+          },
+          'adUnitCode': containerId,
+          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 50], [300, 250], [300, 600]]
+            }
+          },
+          'sizes': [[320, 50], [300, 250], [300, 600]],
+          'bidderRequestId': '418b37f85e772c',
+          'auctionId': '18fd8b8b0bd757'
+        }
+      ];
+
+      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
+      const payload = JSON.parse(request.data);
+      try {
+        expect(payload.imp[0].adContainerWidth).to.equal(el.offsetWidth);
+        expect(payload.imp[0].adContainerHeight).to.equal(el.offsetHeight);
+      } finally {
+        document.body.removeChild(el);
+      }
+    });
+
     it('should add pageTemplate to payload if pageTemplate exsists in parameter', function () {
       const validBidRequestsWithDivId = [
         {
@@ -325,7 +368,8 @@ describe('optidigitalAdapterTests', function () {
           'domain': 'example.com',
           'publisher': {
             'domain': 'example.com'
-          }
+          },
+          'keywords': 'key1,key2'
         },
         'device': {
           'w': 1507,
@@ -386,6 +430,12 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.bapp).to.deep.equal(validBidRequests[0].params.bapp);
     });
 
+    it('should add keywords to payload when site keywords present', function() {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.site.keywords).to.deep.equal('key1,key2');
+    });
+
     it('should send empty GDPR consent and required set to false', function() {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
@@ -401,6 +451,7 @@ describe('optidigitalAdapterTests', function () {
         'vendorData': {
           'hasGlobalConsent': false
         },
+        'addtlConsent': '1~7.12.35.62.66.70.89.93.108',
         'apiVersion': 1
       }
       const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -408,6 +459,7 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.gdpr).to.exist;
       expect(payload.gdpr.consent).to.equal(consentString);
       expect(payload.gdpr.required).to.exist.and.to.be.true;
+      expect(payload.gdpr.addtlConsent).to.exist;
     });
 
     it('should send empty GDPR consent to endpoint', function() {
@@ -423,6 +475,22 @@ describe('optidigitalAdapterTests', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr.consent).to.equal('');
+    });
+
+    it('should send GDPR consent and required set to false when gdprApplies is not boolean', function() {
+      let consentString = 'DFR8KRePoQNsRREZCADBG+A==';
+      bidderRequest.gdprConsent = {
+        'consentString': consentString,
+        'gdprApplies': "",
+        'vendorData': {
+          'hasGlobalConsent': false
+        },
+        'apiVersion': 1
+      }
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gdpr.consent).to.equal(consentString);
+      expect(payload.gdpr.required).to.exist.and.to.be.false;
     });
 
     it('should send uspConsent to given endpoint', function() {
@@ -455,6 +523,21 @@ describe('optidigitalAdapterTests', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gpp).to.exist;
+    });
+
+    it('should set testMode when optidigitalTestMode flag present in location', function() {
+      const originalUrl = window.location.href;
+      const newUrl = originalUrl.includes('optidigitalTestMode=true')
+        ? originalUrl
+        : `${window.location.pathname}${window.location.search}${window.location.search && window.location.search.length ? '&' : '?'}optidigitalTestMode=true${window.location.hash || ''}`;
+      try {
+        window.history.pushState({}, '', newUrl);
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.testMode).to.equal(true);
+      } finally {
+        window.history.replaceState({}, '', originalUrl);
+      }
     });
 
     it('should use appropriate mediaTypes banner sizes', function() {
@@ -530,6 +613,23 @@ describe('optidigitalAdapterTests', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(undefined);
+    });
+
+    it('should add gpid to payload when gpid', function() {
+      validBidRequests[0].ortb2Imp = {
+        'ext': {
+          'data': {
+            'adserver': {
+              'name': 'gam',
+              'adslot': '/19968336/header-bid-tag-0'
+            }
+          },
+          'gpid': '/19968336/header-bid-tag-0'
+        }
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].gpid).to.deep.equal('/19968336/header-bid-tag-0');
     });
 
     function returnBannerSizes(mediaTypes, expectedSizes) {
