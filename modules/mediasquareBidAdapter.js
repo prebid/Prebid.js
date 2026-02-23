@@ -192,8 +192,8 @@ export const spec = {
         bid.mediasquare.burls.forEach(burl => {
           const url = burl && burl.url;
           if (!url) return;
-          const data = burl.data ?? null;
           const method = (burl.method ?? "GET").toUpperCase();
+          const data = (method === "POST" && burl.data ? burl.data : null);
           ajax(url, null, data ? JSON.stringify(data) : null, {method: method, withCredentials: true});
         });
         return true;
