@@ -735,6 +735,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  alwaysHasCapacity: true,
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *

@@ -541,6 +541,7 @@ describe('secureCreatives', () => {
           value = Array.isArray(value) ? value : [value];
           targeting[key] = value;
         }),
+        getConfig: sinon.stub().callsFake((key) => key === 'targeting' ? targeting : null),
         getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
         getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
       }

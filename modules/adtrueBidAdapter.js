@@ -400,7 +400,7 @@ function _createImpressionObject(bid, conf) {
     }
   } else {
     // mediaTypes is not present, so this is a banner only impression
-    // this part of code is required for older testcases with no 'mediaTypes' to run succesfully.
+    // this part of code is required for older testcases with no 'mediaTypes' to run successfully.
     bannerObj = {
       pos: 0,
       w: bid.params.width,

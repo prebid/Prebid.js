@@ -268,6 +268,16 @@ describe('omsBidAdapter', function () {
       expect(data.regs.coppa).to.equal(1);
     });
 
+    it('sends instl property when ortb2Imp.instl = 1', function () {
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { instl: 1 }}]).data);
+      expect(data.imp[0].instl).to.equal(1);
+    });
+
+    it('ignores instl property when ortb2Imp.instl is falsy', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+      expect(data.imp[0].instl).to.be.undefined;
+    });
+
     it('sends schain', function () {
       const data = JSON.parse(spec.buildRequests(bidRequests).data);
       expect(data).to.not.be.undefined;
