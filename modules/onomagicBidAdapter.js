@@ -2,14 +2,12 @@ import {
   _each,
   getBidIdParameter,
   getUniqueIdentifierStr,
-  isArray,
   logError,
   logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getAdMarkup, getBidFloor, getDeviceType, getViewability, isViewabilityMeasurable} from '../libraries/omsUtils/index.js';
+import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes, getRoundedViewability} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -32,17 +30,9 @@ function buildRequests(bidReqs, bidderRequest) {
     const onomagicImps = [];
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
     _each(bidReqs, function (bid) {
-      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
-      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
-      bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
-
-      const element = document.getElementById(bid.adUnitCode);
-      const minSize = getMinSize(processedSizes);
-      const viewabilityAmount = isViewabilityMeasurable(element)
-        ? getViewability(element, minSize)
-        : 'na';
-      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      const processedSizes = getProcessedSizes(bidSizes);
+      const viewabilityAmountRounded = getRoundedViewability(bid.adUnitCode, processedSizes);
 
       const imp = {
         id: bid.bidId,

@@ -1,5 +1,6 @@
-import {createTrackPixelHtml, getWindowSelf, getWindowTop, isFn, isPlainObject} from '../../src/utils.js';
+import {createTrackPixelHtml, getWindowSelf, getWindowTop, isArray, isFn, isPlainObject} from '../../src/utils.js';
 import {percentInView} from '../percentInView/percentInView.js';
+import {getMinSize} from '../sizeUtils/sizeUtils.js';
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
@@ -23,6 +24,17 @@ export function isIframe() {
   }
 }
 
+export function getProcessedSizes(sizes = []) {
+  const bidSizes = ((isArray(sizes) && isArray(sizes[0])) ? sizes : [sizes]).filter(size => isArray(size));
+  return bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+}
+
+export function getRoundedViewability(adUnitCode, processedSizes) {
+  const element = document.getElementById(adUnitCode);
+  const minSize = getMinSize(processedSizes);
+  const viewabilityAmount = isViewabilityMeasurable(element) ? getViewability(element, minSize) : 'na';
+  return isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+}
 export function getDeviceType(ua = navigator.userAgent, sua) {
   if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
     return 1;

@@ -1,5 +1,4 @@
 import {
-  isArray,
   deepSetValue,
   logError,
   logWarn,
@@ -11,8 +10,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getAdMarkup, getBidFloor, getDeviceType, getViewability, isViewabilityMeasurable} from '../libraries/omsUtils/index.js';
+import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes, getRoundedViewability} from '../libraries/omsUtils/index.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -35,15 +33,9 @@ export const spec = {
 function buildRequests(bidReqs, bidderRequest) {
   try {
     const impressions = bidReqs.map(bid => {
-      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
-      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
-      bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
-
-      const element = document.getElementById(bid.adUnitCode);
-      const minSize = getMinSize(processedSizes);
-      const viewabilityAmount = isViewabilityMeasurable(element) ? getViewability(element, minSize) : 'na';
-      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
+      const processedSizes = getProcessedSizes(bidSizes);
+      const viewabilityAmountRounded = getRoundedViewability(bid.adUnitCode, processedSizes);
       const gpidData = _extractGpidData(bid);
 
       const imp = {
