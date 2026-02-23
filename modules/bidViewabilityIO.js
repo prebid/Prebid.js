@@ -2,6 +2,7 @@ import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
+import { fireViewabilityPixels } from '../libraries/bidViewability/index.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -42,6 +43,7 @@ export const getViewableOptions = (bid) => {
 export const markViewed = (bid, entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
+    fireViewabilityPixels(bid);
     events.emit(EVENTS.BID_VIEWABLE, bid);
     _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
   }

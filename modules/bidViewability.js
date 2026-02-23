@@ -5,16 +5,15 @@
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
-import {isFn, logWarn, triggerPixel} from '../src/utils.js';
+import {isFn, logWarn} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
-import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
+import adapterManager from '../src/adapterManager.js';
+import {fireViewabilityPixels as firePixels} from '../libraries/bidViewability/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
 const CONFIG_FIRE_PIXELS = 'firePixels';
 const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
-const BID_VURL_ARRAY = 'vurls';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 
 export const isBidAdUnitCodeMatchingSlot = (bid, slot) => {
@@ -31,31 +30,10 @@ export const getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
 };
 
 export const fireViewabilityPixels = (globalModuleConfig, bid) => {
-  if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && bid.hasOwnProperty(BID_VURL_ARRAY)) {
-    const queryParams = gdprParams();
-
-    const uspConsent = uspDataHandler.getConsentData();
-    if (uspConsent) { queryParams.us_privacy = uspConsent; }
-
-    const gppConsent = gppDataHandler.getConsentData();
-    if (gppConsent) {
-      // TODO - need to know what to set here for queryParams...
-    }
-
-    bid[BID_VURL_ARRAY].forEach(url => {
-      // add '?' if not present in URL
-      if (Object.keys(queryParams).length > 0 && url.indexOf('?') === -1) {
-        url += '?';
-      }
-      // append all query params, `&key=urlEncoded(value)`
-      url += Object.keys(queryParams).reduce((prev, key) => {
-        prev += `&${key}=${encodeURIComponent(queryParams[key])}`;
-        return prev;
-      }, '');
-      triggerPixel(url)
-    });
+  if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true) {
+    firePixels(bid, true);
   }
-};
+}
 
 export const logWinningBidNotFound = (slot) => {
   logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
