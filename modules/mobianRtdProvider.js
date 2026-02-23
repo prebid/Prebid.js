@@ -59,12 +59,14 @@ export const CONTEXT_KEYS = [
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
+const MAX_CACHE_SIZE = 10;
+
 // eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };
 
-function makeMemoizedFetch() {
+export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
   const cache = new Map();
   return async function () {
     const pageUrl = window.location.href;
@@ -74,6 +76,9 @@ function makeMemoizedFetch() {
     try {
       const response = await fetchContextData();
       const cachedResponse = makeDataFromResponse(response);
+      if (cache.size >= maxSize) {
+        cache.delete(cache.keys().next().value);
+      }
       cache.set(pageUrl, cachedResponse);
       return cachedResponse;
     } catch (error) {

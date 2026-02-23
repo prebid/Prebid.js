@@ -16,6 +16,7 @@ import {
   fetchContextData,
   getConfig,
   getContextData,
+  makeMemoizedFetch,
   makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
   setTargeting,
@@ -276,6 +277,38 @@ describe('Mobian RTD Submodule', function () {
       const keyValues = Object.entries(mockContextData).reduce(makeContextDataToKeyValuesReducer(config), []);
       const keyValuesObject = Object.fromEntries(keyValues);
       expect(keyValuesObject).to.deep.equal(mockKeyValues);
+    });
+  });
+
+  describe('makeMemoizedFetch cache eviction', function () {
+    it('should evict the oldest entry when cache exceeds maxSize', async function () {
+      const maxSize = 2;
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockResponse);
+      });
+
+      const memoizedFetch = makeMemoizedFetch(maxSize);
+
+      await memoizedFetch();
+      expect(fetchCount).to.equal(1);
+
+      await memoizedFetch();
+      expect(fetchCount).to.equal(1);
+
+      const originalHref = window.location.href;
+      history.pushState({}, '', '/page2');
+      await memoizedFetch();
+      expect(fetchCount).to.equal(2);
+
+      history.pushState({}, '', '/page3');
+      await memoizedFetch();
+      expect(fetchCount).to.equal(3);
+
+      history.pushState({}, '', originalHref);
+      await memoizedFetch();
+      expect(fetchCount).to.equal(4);
     });
   });
 });
