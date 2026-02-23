@@ -30,23 +30,26 @@ import {
 } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
+const MODULE_VERSION = "2.2.0";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Default IAB Content Taxonomy version
 const DEFAULT_IAB_CONTENT_TAXONOMY_VERSION = "2.2";
 
-// Cached API response to avoid redundant requests.
-let globalCachedResponse;
-// In-flight request promise to prevent duplicate API calls during the same request cycle.
-let pendingRequest;
+// Maximum number of cached API responses to keep. Oldest entries are evicted when exceeded.
+const MAX_CACHE_ENTRIES = 10;
+// Cached API responses keyed by full API URL to avoid redundant requests.
+let cachedResponses = {};
+// In-flight request promises keyed by full API URL to prevent duplicate API calls during the same request cycle.
+let pendingRequests = {};
 
 /**
- * Clears the cached API response and pending request. Primarily used for testing.
+ * Clears the cached API responses and pending requests. Primarily used for testing.
  * @private
  */
 export function clearCache() {
-  globalCachedResponse = undefined;
-  pendingRequest = undefined;
+  cachedResponses = {};
+  pendingRequests = {};
 }
 
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
@@ -69,7 +72,7 @@ const IAB_CONTENT_TAXONOMY_MAP = {
  * @returns {boolean} `true` if the module is configured correctly, otherwise `false`.
  */
 function init(config, userConsent) {
-  logInfo(MODULE_NAME, "init():", config, userConsent);
+  logInfo(MODULE_NAME, "init():", "Version " + MODULE_VERSION, config, userConsent);
   const params = config?.params || {};
   if (!params.neuwoApiUrl) {
     logError(MODULE_NAME, "init():", "Missing Neuwo Edge API Endpoint URL");
@@ -189,31 +192,33 @@ export function getBidRequestData(
 
   // Cache flow: cached response -> pending request -> new request
   // Each caller gets their own callback invoked when data is ready.
-  if (enableCache && globalCachedResponse) {
+  // Keyed by full API URL to ensure different parameters never share cached data.
+  if (enableCache && cachedResponses[neuwoApiUrlFull]) {
     // Previous request succeeded - use cached response immediately
     logInfo(
       MODULE_NAME,
       "getBidRequestData():",
       "Cache System:",
-      "Using cached response:",
-      globalCachedResponse
+      "Using cached response for:",
+      neuwoApiUrlFull
     );
     injectIabCategories(
-      globalCachedResponse,
+      cachedResponses[neuwoApiUrlFull],
       reqBidsConfigObj,
       iabContentTaxonomyVersion,
       enableOrtb25Fields
     );
     callback();
-  } else if (enableCache && pendingRequest) {
-    // Another caller started a request - wait for it instead of making a duplicate
+  } else if (enableCache && pendingRequests[neuwoApiUrlFull]) {
+    // Another caller started a request with the same params - wait for it
     logInfo(
       MODULE_NAME,
       "getBidRequestData():",
       "Cache System:",
-      "Waiting for pending request"
+      "Waiting for pending request for:",
+      neuwoApiUrlFull
     );
-    pendingRequest
+    pendingRequests[neuwoApiUrlFull]
       .then((responseParsed) => {
         if (responseParsed) {
           injectIabCategories(
@@ -264,9 +269,13 @@ export function getBidRequestData(
                 );
               }
 
-              // Cache response
+              // Cache response, evicting oldest entry if at capacity
               if (enableCache) {
-                globalCachedResponse = responseParsed;
+                const keys = Object.keys(cachedResponses);
+                if (keys.length >= MAX_CACHE_ENTRIES) {
+                  delete cachedResponses[keys[0]];
+                }
+                cachedResponses[neuwoApiUrlFull] = responseParsed;
               }
 
               injectIabCategories(
@@ -302,11 +311,11 @@ export function getBidRequestData(
     });
 
     if (enableCache) {
-      // Store promise so concurrent callers can wait on it
-      pendingRequest = requestPromise;
+      // Store promise so concurrent callers with same params can wait on it
+      pendingRequests[neuwoApiUrlFull] = requestPromise;
       // Clear after settling so failed requests can be retried
       requestPromise.finally(() => {
-        pendingRequest = undefined;
+        delete pendingRequests[neuwoApiUrlFull];
       });
     }
 

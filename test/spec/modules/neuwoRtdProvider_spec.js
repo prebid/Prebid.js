@@ -2356,6 +2356,112 @@ describe("neuwoRtdModule", function () {
           JSON.stringify(apiResponse)
         );
       });
+
+      it("should not share cache between requests with different parameters", function (done) {
+        const apiResponse1 = getNeuwoApiResponse();
+        const apiResponse2 = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = config();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/page-a";
+        conf1.params.enableCache = true;
+        const conf2 = config();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/page-b";
+        conf2.params.enableCache = true;
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 2) {
+            try {
+              // Both should have made separate API requests
+              expect(server.requests.length, "Should make two separate API requests for different URLs").to.equal(2);
+              expect(server.requests[0].url).to.contain("page-a");
+              expect(server.requests[1].url).to.contain("page-b");
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Two concurrent calls with different URLs
+        neuwo.getBidRequestData(bidsConfig1, callback, conf1, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf2, "consent data");
+
+        expect(server.requests.length, "Should make two separate API requests").to.equal(2);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse1)
+        );
+        server.requests[1].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse2)
+        );
+      });
+
+      it("should use cache for same URL but make new request after config change", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-a";
+        conf.params.enableCache = true;
+
+        // First call
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length).to.equal(1);
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with same URL - should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Same URL should use cache").to.equal(1);
+
+        // Third call with different URL (simulating config change) - should make new request
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-b";
+        neuwo.getBidRequestData(bidsConfig3, () => {}, conf, "consent data");
+        expect(server.requests.length, "Different URL should make new request").to.equal(2);
+        expect(server.requests[1].url).to.contain("page-b");
+      });
+
+      it("should not share cache when iabContentTaxonomyVersion changes", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf.params.enableCache = true;
+        conf.params.iabContentTaxonomyVersion = "2.2";
+
+        // First call with taxonomy 2.2
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length).to.equal(1);
+        expect(server.requests[0].url).to.contain("iabVersions=6"); // segtax 6 = taxonomy 2.2
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with same taxonomy - should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Same taxonomy version should use cache").to.equal(1);
+
+        // Third call with different taxonomy version - should make new request
+        conf.params.iabContentTaxonomyVersion = "3.0";
+        neuwo.getBidRequestData(bidsConfig3, () => {}, conf, "consent data");
+        expect(server.requests.length, "Different taxonomy version should make new request").to.equal(2);
+        expect(server.requests[1].url).to.contain("iabVersions=7"); // segtax 7 = taxonomy 3.0
+      });
     });
 
     describe("when enableCache is false", function () {
