@@ -208,16 +208,9 @@ export function setGamReporting(gamObjectReference, gamParameterName, userGroup,
   if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     gamObjectReference.cmd.push(() => {
-      if (typeof gamObjectReference.setConfig === 'function') {
-        gamObjectReference.setConfig({
-          targeting: {
-            [gamParameterName]: userGroup
-          }
-        });
-        return;
-      }
-      // Fallback in case an older version of Google Publisher Tag is used.
-      gamObjectReference?.pubads?.()?.setTargeting?.(gamParameterName, userGroup);
+      gamObjectReference
+        .pubads()
+        .setTargeting(gamParameterName, userGroup);
     });
   }
 }
