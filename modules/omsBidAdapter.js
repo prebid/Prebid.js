@@ -8,6 +8,7 @@ import {
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
+  deepAccess,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -71,6 +72,10 @@ function buildRequests(bidReqs, bidderRequest) {
         imp.video = {
           ...bid.mediaTypes.video,
         }
+      }
+
+      if (deepAccess(bid, 'ortb2Imp.instl') === 1) {
+        imp.instl = 1;
       }
 
       const bidFloor = getBidFloor(bid);
