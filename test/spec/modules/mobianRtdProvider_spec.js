@@ -298,17 +298,21 @@ describe('Mobian RTD Submodule', function () {
       expect(fetchCount).to.equal(1);
 
       const originalHref = window.location.href;
-      history.pushState({}, '', '/page2');
-      await memoizedFetch();
-      expect(fetchCount).to.equal(2);
+      try {
+        history.pushState({}, '', '/page2');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(2);
 
-      history.pushState({}, '', '/page3');
-      await memoizedFetch();
-      expect(fetchCount).to.equal(3);
+        history.pushState({}, '', '/page3');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(3);
 
-      history.pushState({}, '', originalHref);
-      await memoizedFetch();
-      expect(fetchCount).to.equal(4);
+        history.pushState({}, '', originalHref);
+        await memoizedFetch();
+        expect(fetchCount).to.equal(4);
+      } finally {
+        history.replaceState({}, '', originalHref);
+      }
     });
   });
 });
