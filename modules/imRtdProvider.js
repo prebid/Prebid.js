@@ -115,7 +115,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
       window.googletag = window.googletag || {cmd: []};
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', segments);
+        window.googletag.setConfig({targeting: {'im_segments': segments}});
       });
     }
   }
