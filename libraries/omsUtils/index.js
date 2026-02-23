@@ -1,6 +1,4 @@
 import {createTrackPixelHtml, getWindowSelf, getWindowTop, isArray, isFn, isPlainObject} from '../../src/utils.js';
-import {percentInView} from '../percentInView/percentInView.js';
-import {getMinSize} from '../sizeUtils/sizeUtils.js';
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
@@ -29,12 +27,6 @@ export function getProcessedSizes(sizes = []) {
   return bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 }
 
-export function getRoundedViewability(adUnitCode, processedSizes) {
-  const element = document.getElementById(adUnitCode);
-  const minSize = getMinSize(processedSizes);
-  const viewabilityAmount = isViewabilityMeasurable(element) ? getViewability(element, minSize) : 'na';
-  return isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
-}
 export function getDeviceType(ua = navigator.userAgent, sua) {
   if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
     return 1;
@@ -53,12 +45,4 @@ export function getAdMarkup(bid) {
     adm += createTrackPixelHtml(bid.nurl);
   }
   return adm;
-}
-
-export function isViewabilityMeasurable(element) {
-  return !isIframe() && element !== null;
-}
-
-export function getViewability(element, {w, h} = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
 }

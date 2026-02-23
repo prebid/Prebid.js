@@ -10,7 +10,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
-import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes, getRoundedViewability} from '../libraries/omsUtils/index.js';
+import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes} from '../libraries/omsUtils/index.js';
+import {getRoundedViewability} from '../libraries/omsUtils/viewability.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';

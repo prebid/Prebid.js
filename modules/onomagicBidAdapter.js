@@ -7,7 +7,8 @@ import {
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes, getRoundedViewability} from '../libraries/omsUtils/index.js';
+import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes} from '../libraries/omsUtils/index.js';
+import {getRoundedViewability} from '../libraries/omsUtils/viewability.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
