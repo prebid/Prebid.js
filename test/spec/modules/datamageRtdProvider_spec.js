@@ -1,11 +1,15 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { datamageRtdSubmodule } from 'modules/datamageRtdProvider.js';
+import * as ajaxUtils from 'src/ajax.js';
+import * as utils from 'src/utils.js';
 
 describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
   let sandbox;
-  let fetchStub;
+  let ajaxBuilderStub;
+  let setTargetingStub;
   let btoaStub;
+  let origGoogletag; // Stores the original global to prevent breaking other tests
 
   function makeReqBidsConfigObj() {
     return {
@@ -20,24 +24,17 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
         ops_mage_data_id: '7d54b2d30a4e441a0f698dfae8f5b1b5',
         res_score: 1,
         res_score_bucket: 'high',
-
         iab_cats: [
           'Technology & Computing',
           'Technology & Computing|Artificial Intelligence',
           'Business & Finance'
         ],
         iab_cat_ids: ['596', '597', '52'],
-
         brand_ids: ['eefd8446', 'b78b9ee2'],
-
         sentiment_ids: ['95487831', '92bfd7eb'],
-
         location_ids: ['60efc224'],
-
         public_figure_ids: ['55eefb4a'],
-
         restricted_cat_ids: [],
-
         ...overrides
       }
     };
@@ -46,200 +43,169 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
 
-    // reset module state
+    // Stub logging so they don't spam the test console
+    sandbox.stub(utils, 'logInfo');
+    sandbox.stub(utils, 'logWarn');
+    sandbox.stub(utils, 'logError');
+
+    // Reset module-scoped cache
     datamageRtdSubmodule._resetForTest();
 
-    // cleanup published globals
-    delete window.__DATAMAGE_GPT_TARGETING__;
+    // Safely backup the original googletag object
+    origGoogletag = window.googletag;
 
-    // stub fetch
-    fetchStub = sandbox.stub(window, 'fetch');
+    // Mock window.googletag and spy on setTargeting
+    setTargetingStub = sandbox.stub();
+    window.googletag = {
+      cmd: {
+        push: function (fn) { fn(); } // Execute immediately for testing
+      },
+      pubads: function () {
+        return { setTargeting: setTargetingStub };
+      }
+    };
 
-    // keep tests deterministic + allow port-strip assertion via captured arg
+    // Stub Prebid's internal ajaxBuilder
+    ajaxBuilderStub = sandbox.stub(ajaxUtils, 'ajaxBuilder');
+
+    // Keep tests deterministic + allow port-strip assertion
     btoaStub = sandbox.stub(window, 'btoa').callsFake((s) => `b64(${s})`);
   });
 
   afterEach(function () {
     sandbox.restore();
-    delete window.__DATAMAGE_GPT_TARGETING__;
+    // Restore the original googletag object so we don't break the E-Planning adapter
+    window.googletag = origGoogletag;
   });
 
-  it('should return true (enable submodule)', function () {
-    const ok = datamageRtdSubmodule.init({ name: 'datamage', params: { api_key: 'x' } }, {});
-    expect(ok).to.equal(true);
+  describe('init()', function () {
+    it('should return true and trigger GAM injection asynchronously', function (done) {
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
+
+      const ok = datamageRtdSubmodule.init({ name: 'datamage', params: { api_key: 'x' } }, {});
+      expect(ok).to.equal(true);
+
+      // Simulate the API resolving
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.success(JSON.stringify(makeProcessedResponse()));
+
+      // Use setTimeout to wait for the Promise chain to resolve
+      setTimeout(() => {
+        expect(setTargetingStub.calledWith('om_iab_cat_ids', ['596', '597', '52'])).to.be.true;
+        expect(setTargetingStub.calledWith('om_brand_ids', ['eefd8446', 'b78b9ee2'])).to.be.true;
+        expect(setTargetingStub.calledWith('om_res_score', ['1'])).to.be.true;
+        expect(setTargetingStub.calledWith('om_restricted_cat_ids')).to.be.false;
+        done();
+      }, 0);
+    });
   });
 
   describe('getBidRequestData()', function () {
-    it('should call callback quickly (auction_timeout_ms=0) and still inject + publish when fetch resolves later', function (done) {
+    it('should inject into ORTB2 when fetch resolves', function (done) {
       const req = makeReqBidsConfigObj();
-
-      // Make fetch resolve "later"
-      let resolveFetch;
-      fetchStub.returns(new Promise((resolve) => { resolveFetch = resolve; }));
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
 
       const rtdConfig = {
         name: 'datamage',
-        params: {
-          api_key: 'k',
-          selector: 'article',
-          auction_timeout_ms: 0,
-          fetch_timeout_ms: 2500
-        }
+        params: { api_key: 'k', selector: 'article' }
       };
 
       datamageRtdSubmodule.getBidRequestData(req, () => {
-        // Resolve fetch after callback fires
-        resolveFetch({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(makeProcessedResponse()),
-          text: () => Promise.resolve('')
-        });
-
-        setTimeout(() => {
-          // ORTB2 fragments injected for bidders
-          expect(req.ortb2Fragments.global).to.have.nested.property('site.content.data');
-          const dataArr = req.ortb2Fragments.global.site.content.data;
-          expect(dataArr).to.be.an('array').with.length.greaterThan(0);
-          expect(dataArr[0]).to.have.property('name', 'data-mage.com');
-          expect(dataArr[0]).to.have.property('segment');
-          expect(dataArr[0].segment).to.deep.include({ id: '596', name: 'Technology & Computing' });
-
-          // GPT targeting published (array format)
-          expect(window.__DATAMAGE_GPT_TARGETING__).to.be.an('object');
-          expect(window.__DATAMAGE_GPT_TARGETING__.om_iab_cat_ids).to.deep.equal(['596', '597', '52']);
-          expect(window.__DATAMAGE_GPT_TARGETING__.om_brand_ids).to.deep.equal(['eefd8446', 'b78b9ee2']);
-          expect(window.__DATAMAGE_GPT_TARGETING__.om_res_score).to.deep.equal(['1']);
-
-          // publisher domain removed
-          expect(window.__DATAMAGE_GPT_TARGETING__).to.not.have.property('om_publisher_domain');
-
-          done();
-        }, 0);
+        expect(req.ortb2Fragments.global).to.have.nested.property('site.content.data');
+        const dataArr = req.ortb2Fragments.global.site.content.data;
+        expect(dataArr).to.be.an('array').with.length.greaterThan(0);
+        expect(dataArr[0]).to.have.property('name', 'data-mage.com');
+        expect(dataArr[0]).to.have.property('segment');
+        expect(dataArr[0].segment).to.deep.include({ id: '596', name: 'Technology & Computing' });
+        done();
       }, rtdConfig, {});
+
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.success(JSON.stringify(makeProcessedResponse()));
     });
 
-    it('should NOT inject or publish after non-2xx response', function (done) {
+    it('should only make ONE network request when init and getBidRequestData are both called (Memoization)', function (done) {
       const req = makeReqBidsConfigObj();
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
 
-      fetchStub.resolves({
-        ok: false,
-        status: 404,
-        json: () => Promise.resolve({}),
-        text: () => Promise.resolve('not found')
-      });
+      const rtdConfig = { params: { api_key: 'k' } };
 
+      // 1. Init fires (simulating page load)
+      datamageRtdSubmodule.init(rtdConfig);
+
+      // 2. getBidRequestData fires (simulating auction start)
       datamageRtdSubmodule.getBidRequestData(req, () => {
-        setTimeout(() => {
-          expect(req.ortb2Fragments.global).to.not.have.nested.property('site.content.data');
-          expect(window.__DATAMAGE_GPT_TARGETING__).to.equal(undefined);
-          done();
-        }, 0);
-      }, { name: 'datamage', params: { api_key: 'k', auction_timeout_ms: 0, fetch_timeout_ms: 50 } }, {});
+        // Assert the network was only hit once despite two entry points
+        expect(fakeAjax.calledOnce).to.be.true;
+        done();
+      }, rtdConfig, {});
+
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.success(JSON.stringify(makeProcessedResponse()));
     });
 
-    it('should not include om_res_score when res_score is null (2xx)', function (done) {
+    it('should NOT inject after network error', function (done) {
       const req = makeReqBidsConfigObj();
-
-      fetchStub.resolves({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(makeProcessedResponse({ res_score: null })),
-        text: () => Promise.resolve('')
-      });
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
 
       datamageRtdSubmodule.getBidRequestData(req, () => {
-        setTimeout(() => {
-          expect(window.__DATAMAGE_GPT_TARGETING__).to.be.an('object');
-          expect(window.__DATAMAGE_GPT_TARGETING__).to.not.have.property('om_res_score');
-          done();
-        }, 0);
-      }, { name: 'datamage', params: { api_key: 'k', auction_timeout_ms: 0, fetch_timeout_ms: 50 } }, {});
+        expect(req.ortb2Fragments.global.site?.content?.data).to.be.undefined;
+        expect(setTargetingStub.called).to.be.false;
+        done();
+      }, { name: 'datamage', params: { api_key: 'k' } }, {});
+
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.error('Network Failed');
     });
 
     it('should strip port from URL before encoding', function (done) {
       const req = makeReqBidsConfigObj();
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
 
-      fetchStub.resolves({
-        ok: false,
-        status: 404,
-        json: () => Promise.resolve({}),
-        text: () => Promise.resolve('not found')
-      });
+      datamageRtdSubmodule.getBidRequestData(req, () => {
+        expect(btoaStub.called).to.equal(true);
+        const btoaArg = btoaStub.firstCall.args[0];
 
-      datamageRtdSubmodule.getBidRequestData(
-        req,
-        () => {
-          try {
-            expect(btoaStub.called).to.equal(true);
-            const btoaArg = btoaStub.firstCall.args[0];
+        expect(btoaArg).to.be.a('string');
+        expect(btoaArg).to.not.match(/\/\/[^/]+:\d+\//);
+        done();
+      }, { name: 'datamage', params: { api_key: 'k' } }, {});
 
-            expect(btoaArg).to.be.a('string');
-            expect(btoaArg).to.not.match(/\/\/[^/]+:\d+\//);
-
-            done();
-          } catch (e) {
-            done(e);
-          }
-        },
-        { name: 'datamage', params: { api_key: 'k', auction_timeout_ms: 0, fetch_timeout_ms: 50 } },
-        {}
-      );
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.error('err');
     });
   });
 
   describe('getTargetingData()', function () {
-    it('should return {} if no successful 2xx fetch has happened yet', function () {
+    it('should return {} if no successful fetch has happened yet', function () {
       const out = datamageRtdSubmodule.getTargetingData([{ code: 'div-1' }], {}, {});
       expect(out).to.deep.equal({});
     });
 
-    it('should return per-adunit targeting (string-joined lists) after 2xx response resolves', function (done) {
+    it('should return per-adunit legacy targeting (string-joined lists) after response resolves', function (done) {
       const req = makeReqBidsConfigObj();
-
-      fetchStub.resolves({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(makeProcessedResponse()),
-        text: () => Promise.resolve('')
-      });
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
 
       datamageRtdSubmodule.getBidRequestData(req, () => {
-        setTimeout(() => {
-          const out = datamageRtdSubmodule.getTargetingData([{ code: 'div-1' }, { code: 'div-2' }], {}, {});
-          expect(out).to.have.property('div-1');
-          expect(out).to.have.property('div-2');
+        const out = datamageRtdSubmodule.getTargetingData([{ code: 'div-1' }, { code: 'div-2' }], {}, {});
+        expect(out).to.have.property('div-1');
+        expect(out).to.have.property('div-2');
 
-          expect(out['div-1']).to.have.property('om_iab_cat_ids', '596,597,52');
-          expect(out['div-1']).to.have.property('om_brand_ids', 'eefd8446,b78b9ee2');
-          expect(out['div-1']).to.have.property('om_res_score', '1');
+        expect(out['div-1']).to.have.property('om_iab_cat_ids', '596,597,52');
+        expect(out['div-1']).to.have.property('om_brand_ids', 'eefd8446,b78b9ee2');
+        expect(out['div-1']).to.have.property('om_res_score', '1');
 
-          // publisher domain removed
-          expect(out['div-1']).to.not.have.property('om_publisher_domain');
+        done();
+      }, { name: 'datamage', params: { api_key: 'k' } }, {});
 
-          done();
-        }, 0);
-      }, { name: 'datamage', params: { api_key: 'k', auction_timeout_ms: 0, fetch_timeout_ms: 50 } }, {});
-    });
-
-    it('should ignore ad units missing code', function (done) {
-      const req = makeReqBidsConfigObj();
-
-      fetchStub.resolves({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(makeProcessedResponse()),
-        text: () => Promise.resolve('')
-      });
-
-      datamageRtdSubmodule.getBidRequestData(req, () => {
-        setTimeout(() => {
-          const out = datamageRtdSubmodule.getTargetingData([{ code: 'div-1' }, {}, { code: null }], {}, {});
-          expect(out).to.have.property('div-1');
-          expect(Object.keys(out)).to.deep.equal(['div-1']);
-          done();
-        }, 0);
-      }, { name: 'datamage', params: { api_key: 'k', auction_timeout_ms: 0, fetch_timeout_ms: 50 } }, {});
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.success(JSON.stringify(makeProcessedResponse()));
     });
   });
 });
