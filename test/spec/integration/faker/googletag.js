@@ -29,7 +29,7 @@ var Slot = function Slot({ code, divId }) {
 
     getConfig: function getConfig(key) {
       if (key === 'targeting') {
-        return {targeting: this.targeting};
+        return this.targeting;
       }
     },
 
