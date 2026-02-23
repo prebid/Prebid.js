@@ -171,13 +171,13 @@ describe('Seedtag Adapter', function () {
           );
           expect(isBidRequestValid).to.equal(false);
         });
-        it('does not have the AdUnitId.', function () {
+        it('should be valid with only publisherId and no adUnitId', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               publisherId: PUBLISHER_ID,
             })
           );
-          expect(isBidRequestValid).to.equal(false);
+          expect(isBidRequestValid).to.equal(true);
         });
       });
 
@@ -709,6 +709,47 @@ describe('Seedtag Adapter', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.sua).to.be.undefined;
+      });
+    });
+
+    describe('integrationType param', function () {
+      it('should default to publisherToken when integrationType is not provided', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.integrationType).to.equal('publisherToken');
+      });
+
+      it('should use the provided integrationType value', function () {
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
+        bidRequests[0].params.integrationType = 'ronId';
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.integrationType).to.equal('ronId');
+      });
+    });
+
+    describe('ortb param', function () {
+      it('should add ortb param to payload when bidderRequest has ortb2', function () {
+        const ortb2 = {
+          site: { cat: ['IAB1'] },
+          user: { data: [{ name: 'test' }] },
+          bcat: ['IAB3'],
+        };
+        bidderRequest['ortb2'] = ortb2;
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.ortb).to.exist;
+        expect(data.ortb).to.deep.equal(ortb2);
+      });
+
+      it('should not add ortb param to payload when bidderRequest does not have ortb2', function () {
+        bidderRequest['ortb2'] = undefined;
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.ortb).to.be.undefined;
       });
     });
   })
