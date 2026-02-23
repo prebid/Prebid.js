@@ -8,7 +8,7 @@ import {EVENTS} from '../src/constants.js';
 import {isFn, logWarn} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
-import {fireViewabilityPixels as firePixels} from '../libraries/bidViewability/index.js';
+import {fireViewabilityPixels as firePixels} from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
