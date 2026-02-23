@@ -81,6 +81,24 @@ var Slot = function Slot(elementId, pathId) {
       return Object.getOwnPropertyNames(this.targeting);
     },
 
+    getConfig: function getConfig(key) {
+      if (key === 'targeting') {
+        return this.targeting;
+      }
+    },
+
+    setConfig: function setConfig(config) {
+      if (config?.targeting) {
+        Object.keys(config.targeting).forEach((key) => {
+          if (config.targeting[key] == null) {
+            delete this.targeting[key];
+          } else {
+            this.setTargeting(key, config.targeting[key]);
+          }
+        });
+      }
+    },
+
     clearTargeting: function clearTargeting() {
       this.targeting = {};
       return this;
@@ -117,6 +135,24 @@ var createSlotArrayScenario2 = function createSlotArrayScenario2() {
 window.googletag = {
   _slots: [],
   _targeting: {},
+  getConfig: function (key) {
+    if (key === 'targeting') {
+      return this._targeting;
+    }
+  },
+  setConfig: function (config) {
+    if (config?.targeting) {
+      Object.keys(config.targeting).forEach((key) => {
+        if (config.targeting[key] == null) {
+          delete this._targeting[key];
+        } else {
+          this._targeting[key] = Array.isArray(config.targeting[key])
+            ? config.targeting[key]
+            : [config.targeting[key]];
+        }
+      });
+    }
+  },
   pubads: function () {
     var self = this;
     return {
