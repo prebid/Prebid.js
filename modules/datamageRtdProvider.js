@@ -8,8 +8,8 @@ let fetchPromise = null;
 let lastTargeting = null;
 
 function _resetForTest() {
-  fetchPromise = null;
-  lastTargeting = null;
+  fetchPromise = null; // Clear the network promise cache
+  lastTargeting = null; // Clear the data targeting cache
 }
 
 function asStringArray(v) {
@@ -128,7 +128,10 @@ function init(rtdConfig, userConsent) {
 
   // Start network request instantly and push to GPT regardless of bids
   fetchContextData(apiUrl, fetchTimeoutMs).then((resJson) => {
-    if (!resJson?.content_classification) return;
+    if (!resJson?.content_classification) {
+      lastTargeting = null; // FIX: Clear stale cache on empty payload
+      return;
+    }
 
     const { targetingArrays } = mapApiPayload(resJson.content_classification);
 
@@ -138,7 +141,9 @@ function init(rtdConfig, userConsent) {
         if (value.length) window.googletag.pubads().setTargeting(key, value);
       });
     });
-  }).catch(() => { });
+  }).catch(() => {
+    lastTargeting = null; // FIX: Clear stale cache on error
+  });
 
   return true;
 }
@@ -163,23 +168,35 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   // This will instantly resolve from the cache created in init()
   fetchContextData(apiUrl, fetchTimeoutMs)
     .then((resJson) => {
-      if (!resJson?.content_classification) return;
+      if (!resJson?.content_classification) {
+        lastTargeting = null; // FIX: Clear stale cache on empty payload
+        return;
+      }
 
       const { ext, segment } = mapApiPayload(resJson.content_classification);
 
       const ortbContentDataObj = { name: 'data-mage.com', segment, ext };
       ensureSiteContentData(reqBidsConfigObj.ortb2Fragments.global).push(ortbContentDataObj);
     })
-    .catch((error) => logError('DataMage: Fetch error', error))
+    .catch((error) => {
+      lastTargeting = null; // FIX: Clear stale cache on error
+      logError('DataMage: Fetch error', error);
+    })
     .finally(() => callback()); // Release the auction!
 }
 
-function getTargetingData(adUnitArray, rtdConfig, userConsent) {
+function getTargetingData(adUnitCodes, rtdConfig, userConsent) {
   if (!lastTargeting) return {};
+
   const out = {};
-  (adUnitArray || []).forEach((au) => {
-    if (au?.code) out[au.code] = { ...lastTargeting };
+
+  // Iterate over the array of string codes passed by Prebid
+  (adUnitCodes || []).forEach((code) => {
+    if (typeof code === 'string' && code) {
+      out[code] = { ...lastTargeting };
+    }
   });
+
   return out;
 }
 

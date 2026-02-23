@@ -179,11 +179,46 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
       const callbacks = fakeAjax.firstCall.args[1];
       callbacks.error('err');
     });
+
+    it('should clear stale cache (lastTargeting) if the fetch yields no payload', function (done) {
+      const req1 = makeReqBidsConfigObj();
+      const req2 = makeReqBidsConfigObj();
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
+
+      const rtdConfig = { name: 'datamage', params: { api_key: 'k' } };
+
+      // 1. First auction: successful fetch populates the cache
+      datamageRtdSubmodule.getBidRequestData(req1, () => {
+        // 2. Verify cache is populated
+        let out = datamageRtdSubmodule.getTargetingData(['div-1'], {}, {});
+        expect(out['div-1']).to.have.property('om_res_score', '1');
+
+        // 3. Reset module state safely via the internal helper
+        datamageRtdSubmodule._resetForTest();
+
+        // 4. Second auction: simulate an empty response
+        datamageRtdSubmodule.getBidRequestData(req2, () => {
+          // 5. Verify the cache was wiped out
+          out = datamageRtdSubmodule.getTargetingData(['div-1'], {}, {});
+          expect(out).to.deep.equal({});
+          done();
+        }, rtdConfig, {});
+
+        // Resolve the second auction with an empty payload
+        const callbacks2 = fakeAjax.secondCall.args[1];
+        callbacks2.success(JSON.stringify({}));
+      }, rtdConfig, {});
+
+      // Resolve the first auction with a good payload
+      const callbacks1 = fakeAjax.firstCall.args[1];
+      callbacks1.success(JSON.stringify(makeProcessedResponse()));
+    });
   });
 
   describe('getTargetingData()', function () {
     it('should return {} if no successful fetch has happened yet', function () {
-      const out = datamageRtdSubmodule.getTargetingData([{ code: 'div-1' }], {}, {});
+      const out = datamageRtdSubmodule.getTargetingData(['div-1'], {}, {});
       expect(out).to.deep.equal({});
     });
 
@@ -193,7 +228,7 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
       ajaxBuilderStub.returns(fakeAjax);
 
       datamageRtdSubmodule.getBidRequestData(req, () => {
-        const out = datamageRtdSubmodule.getTargetingData([{ code: 'div-1' }, { code: 'div-2' }], {}, {});
+        const out = datamageRtdSubmodule.getTargetingData(['div-1', 'div-2'], {}, {});
         expect(out).to.have.property('div-1');
         expect(out).to.have.property('div-2');
 

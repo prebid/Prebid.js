@@ -35,7 +35,7 @@ DataMage automatically maps and provides the following targeting keys (when avai
 ```
 pbjs.setConfig({
   realTimeData: {
-    auctionDelay: 500, // Gives the module time to fetch data before bids are sent
+    auctionDelay: 1000, // Gives the module time to fetch data before bids are sent, suggested minimum 1000
     dataProviders: [{
       name: "datamage",
       params: {
