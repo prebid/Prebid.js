@@ -467,8 +467,8 @@ describe('OpenxRtbAdapter', function () {
 
         expect(request).to.have.length(1);
         expect(request[0].data.imp).to.have.length(3);
-        
-        const bannerImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[1].bidId);
+
+        const bannerImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[0].bidId);
         expect(bannerImp.banner).to.exist;
 
         if (FEATURES.VIDEO) {
@@ -1708,22 +1708,54 @@ describe('OpenxRtbAdapter', function () {
       it('should correctly return both banner and video bids', function () {
         const bidRequestConfigs = [
           {
-            bidder: 'openx', params: { unit: '1', delDomain: 'test-del-domain' },
-            adUnitCode: 'au-1', mediaTypes: { banner: { sizes: [[300, 250]] } },
-            bidId: 'bid-id-banner', bidderRequestId: 'br-1', auctionId: 'a-1'
+            bidder: 'openx', 
+            params: { 
+              unit: '1', 
+              delDomain: 'test-del-domain' 
+            },
+            adUnitCode: 'au-1',
+            mediaTypes: { 
+              banner: { 
+                sizes: [[300, 250]] 
+              } 
+            },
+            bidId: 'bid-id-banner', 
+            bidderRequestId: 'br-1', 
+            auctionId: 'a-1'
           },
           {
-            bidder: 'openx', params: { unit: '2', delDomain: 'test-del-domain' },
-            adUnitCode: 'au-2', mediaTypes: { video: { playerSize: [640, 480] } },
-            bidId: 'bid-id-video', bidderRequestId: 'br-1', auctionId: 'a-1'
+            bidder: 'openx', 
+            params: { 
+              unit: '2', 
+              delDomain: 'test-del-domain' 
+            },
+            adUnitCode: 'au-2', 
+            mediaTypes: { 
+              video: { 
+                playerSize: [640, 480] 
+              } 
+            },
+            bidId: 'bid-id-video', 
+            bidderRequestId: 'br-1', 
+            auctionId: 'a-1'
           }
         ];
         const bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
         const bidResponse = {
           seatbid: [{
             bid: [
-              { impid: 'bid-id-banner', price: 1, adm: '<div>ad</div>', mtype: 1 },
-              { impid: 'bid-id-video', price: 2, adm: '<VAST/>', mtype: 2 }
+              { 
+                impid: 'bid-id-banner', 
+                price: 1, 
+                adm: '<div>ad</div>', 
+                mtype: 1 
+              },
+              { 
+                impid: 'bid-id-video', 
+                price: 2, 
+                adm: '<VAST/>', 
+                mtype: 2 
+              }
             ]
           }],
           cur: 'USD'
