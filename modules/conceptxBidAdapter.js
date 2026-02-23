@@ -242,6 +242,17 @@ export const spec = {
 
     return bids;
   },
+
+  /**
+   * Cookie sync for conceptx is handled by the enrichment script's runPbsCookieSync,
+   * which calls https://cxba-s2s.cncpt.dk/cookie_sync with bidders. The PBS returns
+   * bidder_status with usersync URLs, and the script runs iframe/image syncs.
+   * The adapter does not return sync URLs here since those come from the cookie_sync
+   * endpoint, not the auction response.
+   */
+  getUserSyncs: function () {
+    return [];
+  },
 };
 
 registerBidder(spec);
