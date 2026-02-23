@@ -207,6 +207,18 @@ export function canAccessWindowTop() {
 }
 
 /**
+ * Returns the window to use for fingerprinting reads: win if provided, otherwise top or self.
+ * @param {Window} [win]
+ * @returns {Window}
+ */
+export function getFallbackWindow(win) {
+  if (win) {
+    return win;
+  }
+  return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+}
+
+/**
  * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
  */
 // eslint-disable-next-line no-restricted-syntax
