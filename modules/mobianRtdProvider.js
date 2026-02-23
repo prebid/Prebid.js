@@ -59,7 +59,7 @@ export const CONTEXT_KEYS = [
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
-const MAX_CACHE_SIZE = 10;
+export const MAX_CACHE_SIZE = 10;
 
 // eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
@@ -67,6 +67,7 @@ const logMessage = (...args) => {
 };
 
 export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
+  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
   const cache = new Map();
   return async function () {
     const pageUrl = window.location.href;
@@ -76,7 +77,7 @@ export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
     try {
       const response = await fetchContextData();
       const cachedResponse = makeDataFromResponse(response);
-      if (cache.size >= maxSize) {
+      if (cache.size >= sanitizedMaxSize) {
         cache.delete(cache.keys().next().value);
       }
       cache.set(pageUrl, cachedResponse);

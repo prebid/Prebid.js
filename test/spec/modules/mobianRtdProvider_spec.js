@@ -314,5 +314,58 @@ describe('Mobian RTD Submodule', function () {
         history.replaceState({}, '', originalHref);
       }
     });
+
+    it('should fall back to MAX_CACHE_SIZE for invalid maxSize values', async function () {
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        callbacks.success(mockResponse);
+      });
+
+      const invalidValues = [NaN, Infinity, -Infinity, 0, -1, 'abc', null, undefined, {}, []];
+      const originalHref = window.location.href;
+      try {
+        for (const invalid of invalidValues) {
+          const memoizedFetch = makeMemoizedFetch(invalid);
+
+          for (let i = 0; i < MAX_CACHE_SIZE; i++) {
+            history.pushState({}, '', `/fallback-${invalid}-${i}`);
+            await memoizedFetch();
+          }
+
+          const callsBefore = ajax.ajaxBuilder.callCount;
+          history.pushState({}, '', `/fallback-${invalid}-0`);
+          await memoizedFetch();
+          expect(ajax.ajaxBuilder.callCount).to.equal(callsBefore,
+            `Expected cached hit for maxSize=${invalid}, but a new fetch was made`);
+        }
+      } finally {
+        history.pushState({}, '', originalHref);
+      }
+    });
+
+    it('should floor fractional maxSize to an integer', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockResponse);
+      });
+
+      const memoizedFetch = makeMemoizedFetch(1.9);
+      const originalHref = window.location.href;
+
+      try {
+        await memoizedFetch();
+        expect(fetchCount).to.equal(1);
+
+        history.pushState({}, '', '/fractional-page2');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(2);
+
+        history.pushState({}, '', originalHref);
+        await memoizedFetch();
+        expect(fetchCount).to.equal(3);
+      } finally {
+        history.pushState({}, '', originalHref);
+      }
+    });
   });
 });
