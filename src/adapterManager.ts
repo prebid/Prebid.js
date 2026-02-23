@@ -93,7 +93,7 @@ config.getConfig('s2sConfig', config => {
   }
 });
 
-const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
+export const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
 function getConfigName(s2sConfig) {
   // According to our docs, "module" bid (stored impressions)
@@ -506,6 +506,45 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
+    const ortb2 = ortb2Fragments.global || {};
+    const bidderOrtb2 = ortb2Fragments.bidder || {};
+
+    const getTid = tidFactory();
+
+    const getCacheKey = (bidderCode: BidderCode, s2sActivityParams?): string => {
+      const s2sName = s2sActivityParams != null ? s2sActivityParams[ACTIVITY_PARAM_S2S_NAME] : '';
+      return s2sName ? `${bidderCode}:${s2sName}` : `${bidderCode}:`;
+    };
+
+    const mergeBidderFpd = (() => {
+      const fpdCache: any = {};
+      return function(auctionId: string, bidderCode: BidderCode, s2sActivityParams?) {
+        const cacheKey = getCacheKey(bidderCode, s2sActivityParams);
+        const redact = dep.redact(
+          s2sActivityParams != null
+            ? s2sActivityParams
+            : activityParams(MODULE_TYPE_BIDDER, bidderCode)
+        );
+        if (fpdCache[cacheKey] !== undefined) {
+          return [fpdCache[cacheKey], redact];
+        }
+        const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
+        const fpd = Object.freeze(redact.ortb2(mergeDeep(
+          {},
+          ortb2,
+          bidderOrtb2[bidderCode],
+          {
+            source: {
+              tid,
+              ext: {tidSource}
+            }
+          }
+        )));
+        fpdCache[cacheKey] = fpd;
+        return [fpd, redact];
+      }
+    })();
+
     let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
     const allowedBidders = new Set();
 
@@ -513,10 +552,22 @@ const adapterManager = {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
+
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
-        isS2S: serverBidders.includes(bid.bidder) && !clientBidders.includes(bid.bidder)
-      })))
+      au.bids = au.bids.filter((bid) => {
+        if (!bid.bidder) {
+          return true;
+        }
+        const [ortb2] = mergeBidderFpd(auctionId, bid.bidder);
+        const isS2S = serverBidders.includes(bid.bidder) && !clientBidders.includes(bid.bidder);
+        return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+          bid,
+          ortb2,
+          adUnit: au,
+          auctionId,
+          isS2S
+        }));
+      });
       au.bids.forEach(bid => {
         allowedBidders.add(bid.bidder);
       });
@@ -535,29 +586,8 @@ const adapterManager = {
 
     const bidRequests: BidderRequest<any>[] = [];
 
-    const ortb2 = ortb2Fragments.global || {};
-    const bidderOrtb2 = ortb2Fragments.bidder || {};
-
-    const getTid = tidFactory();
-
     function addOrtb2<T extends BidderRequest<any>>(bidderRequest: Partial<T>, s2sActivityParams?): T {
-      const redact = dep.redact(
-        s2sActivityParams != null
-          ? s2sActivityParams
-          : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
-      );
-      const [tid, tidSource] = getTid(bidderRequest.bidderCode, bidderRequest.auctionId, bidderOrtb2[bidderRequest.bidderCode]?.source?.tid ?? ortb2.source?.tid);
-      const fpd = Object.freeze(redact.ortb2(mergeDeep(
-        {},
-        ortb2,
-        bidderOrtb2[bidderRequest.bidderCode],
-        {
-          source: {
-            tid,
-            ext: {tidSource}
-          }
-        }
-      )));
+      const [fpd, redact] = mergeBidderFpd(bidderRequest.auctionId, bidderRequest.bidderCode, s2sActivityParams);
       bidderRequest.ortb2 = fpd;
       bidderRequest.bids = bidderRequest.bids.map((bid) => {
         bid.ortb2 = fpd;
