@@ -310,8 +310,6 @@ export function newTargeting(auctionManager) {
       // get our ad unit codes
       const targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
 
-      const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
-
       Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet), customSlotMatching)).forEach(([targetId, slots]) => {
         slots.forEach(slot => {
           // now set new targeting keys
@@ -324,8 +322,8 @@ export function newTargeting(auctionManager) {
             targetingSet[targetId][key] = value;
           });
           logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingSet[targetId]);
-          const targetingMap = Object.assign({}, resetMap, targetingSet[targetId]);
-          slot.setConfig({targeting: targetingMap} as any);
+          pbTargetingKeys.forEach((key) => slot.clearTargeting(key));
+          slot.setConfig({targeting: targetingSet[targetId]} as any);
           lock.lock(targetingSet[targetId]);
         })
       })
