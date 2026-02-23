@@ -1,4 +1,5 @@
-import {getWindowSelf, getWindowTop, isFn, isPlainObject} from '../../src/utils.js';
+import {createTrackPixelHtml, getWindowSelf, getWindowTop, isFn, isPlainObject} from '../../src/utils.js';
+import {percentInView} from '../percentInView/percentInView.js';
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
@@ -20,4 +21,32 @@ export function isIframe() {
   } catch (e) {
     return true;
   }
+}
+
+export function getDeviceType(ua = navigator.userAgent, sua) {
+  if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
+    return 1;
+  }
+
+  if ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(ua)) {
+    return 3;
+  }
+
+  return 2;
+}
+
+export function getAdMarkup(bid) {
+  let adm = bid.adm;
+  if ('nurl' in bid) {
+    adm += createTrackPixelHtml(bid.nurl);
+  }
+  return adm;
+}
+
+export function isViewabilityMeasurable(element) {
+  return !isIframe() && element !== null;
+}
+
+export function getViewability(element, {w, h} = {}) {
+  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
 }
