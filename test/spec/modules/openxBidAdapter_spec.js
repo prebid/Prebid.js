@@ -464,13 +464,18 @@ describe('OpenxRtbAdapter', function () {
       it('should send banner, video and native bids in a single HTTP request', function () {
         const allBids = [...bidRequestsWithMediaTypes, nativeBidRequest];
         const request = spec.buildRequests(allBids, mockBidderRequest);
+
         expect(request).to.have.length(1);
         expect(request[0].data.imp).to.have.length(3);
-        expect(request[0].data.imp[0].banner).to.exist;
+        
+        const bannerImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[1].bidId);
+        expect(bannerImp.banner).to.exist;
+
         if (FEATURES.VIDEO) {
           const videoImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[1].bidId);
           expect(videoImp.video).to.exist;
         }
+
         if (FEATURES.NATIVE) {
           const nativeImp = request[0].data.imp.find(imp => imp.id === nativeBidRequest.bidId);
           expect(nativeImp.native).to.exist;
