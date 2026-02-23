@@ -701,7 +701,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl, eventtrackers = [] } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl, eventtrackers } = ext;
 
           // update site data
           site = {
@@ -738,10 +738,7 @@ const spec = {
               },
               netRevenue: true,
               vurls,
-              eventtrackers: [
-                ...eventtrackers,
-                ...vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
-              ],
+              eventtrackers: eventtrackers ?? vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
