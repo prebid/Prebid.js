@@ -245,7 +245,7 @@ describe('weboramaRtdProvider', function() {
                   284: true,
                 }
               },
-              outOfBand:{
+              outOfBand: {
                 vendorsDisclosed: {
                   284: false,
                 }
