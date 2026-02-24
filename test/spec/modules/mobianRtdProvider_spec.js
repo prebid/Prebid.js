@@ -388,5 +388,71 @@ describe('Mobian RTD Submodule', function () {
       expect(result2).to.deep.equal(mockContextData);
       expect(result3).to.deep.equal(mockContextData);
     });
+
+    it('should delete failed cache entries so subsequent calls refetch after an error', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.error(new Error('network error'));
+      });
+
+      const memoizedFetch = makeMemoizedFetch();
+
+      // First call should attempt a fetch and fail
+      let firstError;
+      try {
+        await memoizedFetch();
+      } catch (err) {
+        firstError = err;
+      }
+      expect(fetchCount).to.equal(1);
+      expect(firstError).to.exist;
+
+      // Second call should trigger a new fetch (no stale cache entry reused)
+      let secondError;
+      try {
+        await memoizedFetch();
+      } catch (err) {
+        secondError = err;
+      }
+      expect(fetchCount).to.equal(2);
+      expect(secondError).to.exist;
+    });
+
+    it('should share a failing in-flight request across concurrent callers and allow a new fetch afterward', async function () {
+      let fetchCount = 0;
+      let shouldError = true;
+
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        if (shouldError) {
+          setTimeout(() => callbacks.error(new Error('server error')), 10);
+        } else {
+          setTimeout(() => callbacks.success(mockResponse), 10);
+        }
+      });
+
+      const memoizedFetch = makeMemoizedFetch();
+
+      const results = await Promise.allSettled([
+        memoizedFetch(),
+        memoizedFetch(),
+        memoizedFetch(),
+      ]);
+
+      expect(fetchCount).to.equal(1);
+      results.forEach(result => {
+        expect(result.status).to.equal('rejected');
+        expect(result.reason).to.exist;
+      });
+
+      // After the failed in-flight request, the cache entry should be cleared.
+      // Switching to success should cause a new fetch and a successful result.
+      shouldError = false;
+      const value = await memoizedFetch();
+
+      expect(fetchCount).to.equal(2);
+      expect(value).to.deep.equal(mockContextData);
+    });
   });
 });
