@@ -68,19 +68,6 @@ describe('iPROM Adapter', function () {
       expect(isValid).to.equal(false);
     });
 
-    it('should reject bid if missing dimension', function () {
-      const invalidBid = {
-        bidder: 'iprom',
-        params: {
-          id: '1234',
-        }
-      };
-
-      const isValid = spec.isBidRequestValid(invalidBid);
-
-      expect(isValid).to.equal(false);
-    });
-
     it('should reject bid if dimension is not a string', function () {
       const invalidBid = {
         bidder: 'iprom',

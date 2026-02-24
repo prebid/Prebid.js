@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'iprom';
 const ENDPOINT_URL = 'https://core.iprom.net/programmatic';
-const VERSION = 'v1.0.3';
+const VERSION = 'v1.1.0';
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_NETREVENUE = true;
 const DEFAULT_TTL = 360;
@@ -22,10 +22,7 @@ export const spec = {
       return false;
     }
     // dimension parameter checks
-    if (!params.dimension) {
-      logError(`${bidder}: Required parameter 'dimension' missing`);
-      return false;
-    } else if (typeof params.dimension !== 'string') {
+    if (params.dimension && typeof params.dimension !== 'string') {
       logError(`${bidder}: Parameter 'dimension' needs to be a string`);
       return false;
     }
