@@ -71,8 +71,13 @@ function getNormalizedPageUrl() {
     const { origin, pathname } = window.location;
     return origin + pathname;
   } catch (e) {
-    // Fallback to href if origin/pathname are not available
-    return window.location.href;
+    // Fallback to href if origin/pathname are not available, but keep normalization consistent
+    const href = window.location && window.location.href;
+    if (typeof href === 'string') {
+      // Strip query string and hash to match origin + pathname behavior
+      return href.split(/[?#]/)[0];
+    }
+    return '';
   }
 }
 
