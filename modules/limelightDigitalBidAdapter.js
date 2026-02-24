@@ -84,7 +84,6 @@ export const spec = {
     { code: 'stellorMediaRtb' },
     { code: 'smootai' },
     { code: 'anzuExchange' },
-    { code: 'adnimation' },
     { code: 'rtbdemand' },
     { code: 'altstar' },
     { code: 'vaayaMedia' },
