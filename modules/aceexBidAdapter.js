@@ -9,13 +9,12 @@ import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'aceex';
 const GVLID = 1387;
-const AD_REQUEST_URL = 'http://bl-us.aceex.io/?secret_key=prebidjs';
+const AD_REQUEST_URL = 'https://bl-us.aceex.io/?secret_key=prebidjs';
 
 const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   placement.trafficType = placement.adFormat;
   placement.publisherId = bid.params.publisherId;
   placement.internalKey = bid.params.internalKey;
-  placement.bidfloor = bid.params.bidfloor;
 };
 
 const placementProcessingFunction = buildPlacementProcessingFunction({ addCustomFieldsToPlacement });
