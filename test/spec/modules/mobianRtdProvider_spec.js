@@ -339,7 +339,7 @@ describe('Mobian RTD Submodule', function () {
             `Expected cached hit for maxSize=${invalid}, but a new fetch was made`);
         }
       } finally {
-        history.pushState({}, '', originalHref);
+        history.replaceState({}, '', originalHref);
       }
     });
 
@@ -365,7 +365,7 @@ describe('Mobian RTD Submodule', function () {
         await memoizedFetch();
         expect(fetchCount).to.equal(3);
       } finally {
-        history.pushState({}, '', originalHref);
+        history.replaceState({}, '', originalHref);
       }
     });
   });
