@@ -66,11 +66,21 @@ const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };
 
+function getNormalizedPageUrl() {
+  try {
+    const { origin, pathname } = window.location;
+    return origin + pathname;
+  } catch (e) {
+    // Fallback to href if origin/pathname are not available
+    return window.location.href;
+  }
+}
+
 export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
   const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
   const cache = new Map();
   return function () {
-    const pageUrl = window.location.href;
+    const pageUrl = getNormalizedPageUrl();
     if (cache.has(pageUrl)) {
       return cache.get(pageUrl);
     }
