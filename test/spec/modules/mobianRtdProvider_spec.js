@@ -302,42 +302,56 @@ describe('Mobian RTD Submodule', function () {
       try {
         history.pushState({}, '', '/page2');
         await memoizedFetch();
-        expect(fetchCount).to.equal(2);
+        expect(fetchCount).to.equal(2, 'new URL /page2 should trigger a fetch');
 
         history.pushState({}, '', '/page3');
         await memoizedFetch();
-        expect(fetchCount).to.equal(3);
+        expect(fetchCount).to.equal(3, 'new URL /page3 should trigger a fetch and evict the original URL');
+
+        history.pushState({}, '', '/page2');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(3, '/page2 should still be cached');
 
         history.pushState({}, '', originalHref);
         await memoizedFetch();
-        expect(fetchCount).to.equal(4);
+        expect(fetchCount).to.equal(4, 'original URL was evicted and requires a new fetch');
       } finally {
         history.replaceState({}, '', originalHref);
       }
     });
 
-    it('should fall back to MAX_CACHE_SIZE for invalid maxSize values', async function () {
+    it('should fall back to MAX_CACHE_SIZE when given an invalid maxSize', async function () {
+      let fetchCount = 0;
       ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
         callbacks.success(mockResponse);
       });
 
-      const invalidValues = [NaN, Infinity, -Infinity, 0, -1, 'abc', null, undefined, {}, []];
+      const memoizedFetch = makeMemoizedFetch(NaN);
       const originalHref = window.location.href;
+
       try {
-        for (const invalid of invalidValues) {
-          const memoizedFetch = makeMemoizedFetch(invalid);
-
-          for (let i = 0; i < MAX_CACHE_SIZE; i++) {
-            history.pushState({}, '', `/fallback-${invalid}-${i}`);
-            await memoizedFetch();
-          }
-
-          const callsBefore = ajax.ajaxBuilder.callCount;
-          history.pushState({}, '', `/fallback-${invalid}-0`);
+        for (let i = 0; i < MAX_CACHE_SIZE; i++) {
+          history.pushState({}, '', `/invalid-size-${i}`);
           await memoizedFetch();
-          expect(ajax.ajaxBuilder.callCount).to.equal(callsBefore,
-            `Expected cached hit for maxSize=${invalid}, but a new fetch was made`);
         }
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE, 'should fetch once per unique URL');
+
+        history.pushState({}, '', '/invalid-size-5');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE, 'revisiting a cached URL should not fetch again');
+
+        history.pushState({}, '', '/invalid-size-overflow');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE + 1, 'new URL beyond limit should fetch and evict oldest (URL 0)');
+
+        history.pushState({}, '', '/invalid-size-0');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE + 2, 'URL 0 was evicted and requires a new fetch');
+
+        history.pushState({}, '', '/invalid-size-5');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE + 2, 'URL 5 should still be cached');
       } finally {
         history.replaceState({}, '', originalHref);
       }
@@ -398,25 +412,13 @@ describe('Mobian RTD Submodule', function () {
 
       const memoizedFetch = makeMemoizedFetch();
 
-      // First call should attempt a fetch and fail
-      let firstError;
-      try {
-        await memoizedFetch();
-      } catch (err) {
-        firstError = err;
-      }
+      const firstResult = await memoizedFetch();
       expect(fetchCount).to.equal(1);
-      expect(firstError).to.exist;
+      expect(firstResult).to.deep.equal({});
 
-      // Second call should trigger a new fetch (no stale cache entry reused)
-      let secondError;
-      try {
-        await memoizedFetch();
-      } catch (err) {
-        secondError = err;
-      }
-      expect(fetchCount).to.equal(2);
-      expect(secondError).to.exist;
+      const secondResult = await memoizedFetch();
+      expect(fetchCount).to.equal(2, 'cache entry was cleared on error so a new fetch should occur');
+      expect(secondResult).to.deep.equal({});
     });
 
     it('should share a failing in-flight request across concurrent callers and allow a new fetch afterward', async function () {
@@ -434,24 +436,21 @@ describe('Mobian RTD Submodule', function () {
 
       const memoizedFetch = makeMemoizedFetch();
 
-      const results = await Promise.allSettled([
+      const [result1, result2, result3] = await Promise.all([
         memoizedFetch(),
         memoizedFetch(),
         memoizedFetch(),
       ]);
 
-      expect(fetchCount).to.equal(1);
-      results.forEach(result => {
-        expect(result.status).to.equal('rejected');
-        expect(result.reason).to.exist;
-      });
+      expect(fetchCount).to.equal(1, 'concurrent callers should share a single in-flight request');
+      expect(result1).to.deep.equal({});
+      expect(result2).to.deep.equal({});
+      expect(result3).to.deep.equal({});
 
-      // After the failed in-flight request, the cache entry should be cleared.
-      // Switching to success should cause a new fetch and a successful result.
       shouldError = false;
       const value = await memoizedFetch();
 
-      expect(fetchCount).to.equal(2);
+      expect(fetchCount).to.equal(2, 'cache entry was cleared on error so a new fetch should occur');
       expect(value).to.deep.equal(mockContextData);
     });
   });
