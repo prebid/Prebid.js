@@ -212,12 +212,8 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
 
   function getDfpElementId(adId) {
     const slot = window.googletag.pubads().getSlots().find(slot => {
-      const targetingMap = slot.getConfig('targeting');
-      const keys = Object.keys(targetingMap);
-
-      return keys.find(key => {
-        const values = targetingMap[key];
-        return values.includes(adId);
+      return slot.getTargetingKeys().find(key => {
+        return slot.getTargeting(key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;
