@@ -420,7 +420,7 @@ class WeboramaRtdProvider {
     );
     const vendorsDisclosed =
       deepAccess(gdpr, 'vendorData.vendor.vendorsDisclosed') ||
-      deepAccess(gdpr, 'vendorData.outOfBand.vendorsDisclosed', {});
+      deepAccess(gdpr, 'vendorData.outOfBand.vendorsDisclosed');
 
     const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
     const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);
@@ -465,8 +465,8 @@ class WeboramaRtdProvider {
       }
     }
 
-    if (vendorsDisclosed[GVLID] === false) {
-      return false;
+    if (isPlainObject(vendorsDisclosed)) {
+      return vendorsDisclosed[GVLID];
     }
 
     return true;
