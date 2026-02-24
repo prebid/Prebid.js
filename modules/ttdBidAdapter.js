@@ -21,6 +21,7 @@ const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
 const BIDDER_ENDPOINT_HTTP2 = 'https://d2.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
+const TTL = 360;
 
 const MEDIA_TYPE = {
   BANNER: 1,
@@ -143,6 +144,8 @@ function getImpression(bidRequest) {
   };
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const exp = TTL;
+  impression.exp = exp;
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
     impression.tagid = tagid;
@@ -477,7 +480,7 @@ export const spec = {
           dealId: bid.dealid || null,
           currency: currency || 'USD',
           netRevenue: true,
-          ttl: bid.ttl || 360,
+          ttl: bid.ttl || TTL,
           meta: {},
         };
 
