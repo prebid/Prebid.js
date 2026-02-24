@@ -69,23 +69,23 @@ const logMessage = (...args) => {
 export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
   const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
   const cache = new Map();
-  return async function () {
+  return function () {
     const pageUrl = window.location.href;
     if (cache.has(pageUrl)) {
-      return Promise.resolve(cache.get(pageUrl));
+      return cache.get(pageUrl);
     }
-    try {
-      const response = await fetchContextData();
-      const cachedResponse = makeDataFromResponse(response);
-      if (cache.size >= sanitizedMaxSize) {
-        cache.delete(cache.keys().next().value);
-      }
-      cache.set(pageUrl, cachedResponse);
-      return cachedResponse;
-    } catch (error) {
-      logMessage('error', error);
-      return Promise.resolve({});
+    if (cache.size >= sanitizedMaxSize) {
+      cache.delete(cache.keys().next().value);
     }
+    const pending = fetchContextData()
+      .then((response) => makeDataFromResponse(response))
+      .catch((error) => {
+        logMessage('error', error);
+        cache.delete(pageUrl);
+        return {};
+      });
+    cache.set(pageUrl, pending);
+    return pending;
   }
 }
 

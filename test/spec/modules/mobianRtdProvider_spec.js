@@ -368,5 +368,25 @@ describe('Mobian RTD Submodule', function () {
         history.replaceState({}, '', originalHref);
       }
     });
+
+    it('should share a single in-flight request for concurrent calls to the same URL', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        setTimeout(() => callbacks.success(mockResponse), 10);
+      });
+
+      const memoizedFetch = makeMemoizedFetch();
+      const [result1, result2, result3] = await Promise.all([
+        memoizedFetch(),
+        memoizedFetch(),
+        memoizedFetch(),
+      ]);
+
+      expect(fetchCount).to.equal(1);
+      expect(result1).to.deep.equal(mockContextData);
+      expect(result2).to.deep.equal(mockContextData);
+      expect(result3).to.deep.equal(mockContextData);
+    });
   });
 });
