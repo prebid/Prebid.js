@@ -108,6 +108,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adcluster",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "addefend",
       "aliasOf": null,
       "gvlid": 539,
@@ -571,6 +578,13 @@
     {
       "componentType": "bidder",
       "componentName": "adt",
+      "aliasOf": "admatic",
+      "gvlid": 779,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adrubi",
       "aliasOf": "admatic",
       "gvlid": 779,
       "disclosureURL": null
@@ -2299,6 +2313,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "floxis",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "fluct",
       "aliasOf": null,
       "gvlid": null,
@@ -2488,6 +2509,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "harion",
+      "aliasOf": null,
+      "gvlid": 1406,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "holid",
       "aliasOf": null,
       "gvlid": 1177,
@@ -2589,6 +2617,13 @@
       "componentName": "insticator",
       "aliasOf": null,
       "gvlid": 910,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "insurads",
+      "aliasOf": null,
+      "gvlid": 596,
       "disclosureURL": null
     },
     {
@@ -2741,6 +2776,13 @@
     {
       "componentType": "bidder",
       "componentName": "lasso",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "leagueM",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -3986,6 +4028,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "revantage",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
@@ -4764,6 +4813,13 @@
     {
       "componentType": "bidder",
       "componentName": "ventes",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "verben",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
