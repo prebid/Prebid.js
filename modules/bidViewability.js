@@ -8,11 +8,10 @@ import {EVENTS} from '../src/constants.js';
 import {isFn, logWarn} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
-import {fireViewabilityPixels as firePixels} from '../libraries/bidViewabilityPixels/index.js';
+import {fireViewabilityPixels} from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
-const CONFIG_FIRE_PIXELS = 'firePixels';
 const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 
@@ -29,12 +28,6 @@ export const getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
   ) || null;
 };
 
-export const fireViewabilityPixels = (globalModuleConfig, bid) => {
-  if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true) {
-    firePixels(bid, true);
-  }
-}
-
 export const logWinningBidNotFound = (slot) => {
   logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
 };
@@ -46,8 +39,7 @@ export const impressionViewableHandler = (globalModuleConfig, event) => {
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
   } else {
-    // if config is enabled AND VURL array is present then execute each pixel
-    fireViewabilityPixels(globalModuleConfig, respectiveBid);
+    fireViewabilityPixels(respectiveBid);
     // trigger respective bidder's onBidViewable handler
     adapterManager.callBidViewableBidder(respectiveBid.adapterCode || respectiveBid.bidder, respectiveBid);
 
@@ -68,7 +60,6 @@ const handleSetConfig = (config) => {
   // do nothing if module-config.enabled is not set to true
   // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
   const impressionViewableHandlerWrapper = (event) => {
-    window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
     impressionViewableHandler(globalModuleConfig, event);
   };
 
