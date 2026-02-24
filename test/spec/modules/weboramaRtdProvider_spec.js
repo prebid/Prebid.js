@@ -72,7 +72,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor (without vendorsDisclosed) are ok', function() {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -114,6 +114,146 @@ describe('weboramaRtdProvider', function() {
           },
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
+      });
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor (with vendorsDisclosed) are ok', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: true,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: true,
+                },
+                vendorsDisclosed: {
+                  284: true,
+                }
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
+      });
+      it('should NOT initialize if gdpr applies and vendorsDisclosed are nok', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: true,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: true,
+                },
+                vendorsDisclosed: {
+                  284: false,
+                }
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
+      });
+      it('should NOT initialize if gdpr applies and vendorsDisclosed (on alternate location) are nok', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: true,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: true,
+                }
+              },
+              outOfBand:{
+                vendorsDisclosed: {
+                  284: false,
+                }
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
         const moduleConfig = {
