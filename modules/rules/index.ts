@@ -82,7 +82,7 @@ interface ModelGroup {
    */
   rules: [{
     /** Conditions that must be met for the rule to apply */
-    condition: string[];
+    conditions: string[];
     /** Resulting actions triggered when conditions are met */
     results: [
       {
