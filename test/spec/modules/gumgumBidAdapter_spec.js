@@ -250,6 +250,17 @@ describe('gumgumAdapter', function () {
       expect(pubProvidedIds.length).to.equal(1);
       expect(pubProvidedIds[0].source).to.equal('audigent.com');
     });
+    it('should not set pubProvidedId when all sources are filtered out', function () {
+      const filteredRequest = {
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'sonobi.com',
+          uids: [{ id: 'ppid-2', ext: { stype: 'ppuid' } }]
+        }]
+      };
+      const bidRequest = spec.buildRequests([filteredRequest])[0];
+      expect(bidRequest.data.pubProvidedId).to.equal(undefined);
+    });
     it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
@@ -843,6 +854,28 @@ describe('gumgumAdapter', function () {
       const request = Object.assign({}, bidRequests[0], { userIdAsEids: [...bidRequests[0].userIdAsEids, tdidEid] });
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.tdid).to.eq(tdidEid.uids[0].id);
+    });
+    it('should add a tdid parameter when TDID uid is not the first uid in adserver.org', function () {
+      const tdidEid = {
+        source: 'adserver.org',
+        uids: [
+          {
+            id: 'non-tdid-first',
+            ext: {
+              rtiPartner: 'NOT_TDID'
+            }
+          },
+          {
+            id: 'tradedesk-id',
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }
+        ]
+      };
+      const request = Object.assign({}, bidRequests[0], { userIdAsEids: [tdidEid] });
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.tdid).to.eq('tradedesk-id');
     });
     it('should not add a tdid parameter if unified id is not found', function () {
       const request = spec.buildRequests(bidRequests)[0];
