@@ -1,4 +1,6 @@
 import {expect} from 'chai';
+import sinon from 'sinon';
+import * as utils from 'src/utils.js';
 import {spec} from 'modules/ipromBidAdapter.js';
 
 describe('iPROM Adapter', function () {
@@ -29,15 +31,13 @@ describe('iPROM Adapter', function () {
     bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        legacy: {
-          referer: 'https://adserver.si/index.html',
-          reachedTop: true,
-          numIframes: 1,
-          stack: [
-            'https://adserver.si/index.html',
-            'https://adserver.si/iframe1.html',
-          ]
-        }
+        reachedTop: true,
+        numIframes: 1,
+        stack: [
+          'https://adserver.si/index.html',
+          'https://adserver.si/iframe1.html',
+        ],
+        topmostLocation: 'https://adserver.si/index.html',
       }
     }
   });
@@ -120,12 +120,39 @@ describe('iPROM Adapter', function () {
       expect(request.url).to.equal('https://core.iprom.net/programmatic');
     });
 
-    it('should add referer info', function () {
+    it('should add only selected referer info', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const requestparse = JSON.parse(request.data);
 
-      expect(requestparse.referer).to.exist;
-      expect(requestparse.referer.referer).to.equal('https://adserver.si/index.html');
+      expect(requestparse.referer).to.deep.equal({
+        reachedTop: true,
+        referer: 'https://adserver.si/index.html',
+        numIframes: 1,
+        stack: [
+          'https://adserver.si/index.html',
+          'https://adserver.si/iframe1.html',
+        ]
+      });
+      expect(requestparse.referer.canonicalUrl).to.be.undefined;
+      expect(requestparse.referer.legacy).to.be.undefined;
+    });
+
+    it('should warn if referer fields are missing', function () {
+      const warnSpy = sinon.spy(utils, 'logWarn');
+
+      const bidderRequestWithMissingRefererFields = {
+        ...bidderRequest,
+        refererInfo: {
+          reachedTop: true
+        }
+      };
+
+      spec.buildRequests(bidRequests, bidderRequestWithMissingRefererFields);
+
+      expect(warnSpy.calledOnce).to.equal(true);
+      expect(warnSpy.firstCall.args[0]).to.equal('iprom: Missing referer fields: referer, numIframes, stack');
+
+      warnSpy.restore();
     });
 
     it('should add adapter version', function () {
@@ -133,6 +160,133 @@ describe('iPROM Adapter', function () {
       const requestparse = JSON.parse(request.data);
 
       expect(requestparse.version).to.exist;
+    });
+
+    it('should add TCF data', function () {
+      const bidderRequestWithTcf = {
+        ...bidderRequest,
+        gdprConsent: {
+          consentString: 'consent-string',
+          gdprApplies: true,
+          addtlConsent: 'addtl-consent'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequestWithTcf);
+      const requestparse = JSON.parse(request.data);
+
+      expect(requestparse.tcf).to.deep.equal({
+        consentString: 'consent-string',
+        gdprApplies: true,
+        addtlConsent: 'addtl-consent'
+      });
+    });
+
+    it('should warn if TCF fields are missing', function () {
+      const warnSpy = sinon.spy(utils, 'logWarn');
+      const bidderRequestWithIncompleteTcf = {
+        ...bidderRequest,
+        gdprConsent: {
+          consentString: 'consent-string'
+        }
+      };
+
+      spec.buildRequests(bidRequests, bidderRequestWithIncompleteTcf);
+
+      expect(warnSpy.calledOnce).to.equal(true);
+      expect(warnSpy.firstCall.args[0]).to.equal('iprom: Missing tcf fields: gdprApplies, addtlConsent');
+
+      warnSpy.restore();
+    });
+
+    it('should add schain data', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'exchange1.com',
+          sid: '00001',
+          hp: 1
+        }]
+      };
+      const bidRequestsWithSchain = [{
+        ...bidRequests[0],
+        ortb2: {
+          source: {
+            ext: {
+              schain
+            }
+          }
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithSchain, bidderRequest);
+      const requestparse = JSON.parse(request.data);
+
+      expect(requestparse.schain).to.deep.equal(schain);
+    });
+
+    it('should keep schain only at top level', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'exchange1.com',
+          sid: '00001',
+          hp: 1
+        }]
+      };
+      const bidRequestsWithSchain = [{
+        ...bidRequests[0],
+        ortb2: {
+          source: {
+            ext: {
+              schain
+            }
+          }
+        }
+      }];
+      const bidderRequestWithFpd = {
+        ...bidderRequest,
+        ortb2: {
+          site: {
+            domain: 'adserver.si'
+          }
+        }
+      };
+      const request = spec.buildRequests(bidRequestsWithSchain, bidderRequestWithFpd);
+      const requestparse = JSON.parse(request.data);
+
+      expect(requestparse.schain).to.deep.equal(schain);
+      expect(requestparse.firstPartyData).to.be.undefined;
+    });
+
+    it('should add first party data', function () {
+      const firstPartyData = {
+        site: {
+          domain: 'adserver.si',
+          page: 'https://adserver.si/index.html'
+        },
+        user: {
+          data: [{
+            name: 'taxonomy',
+            segment: [{id: 'segment-id'}]
+          }]
+        }
+      };
+      const bidderRequestWithFpd = {
+        ...bidderRequest,
+        ortb2: firstPartyData
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequestWithFpd);
+      const requestparse = JSON.parse(request.data);
+
+      expect(requestparse.firstPartyData).to.deep.equal({
+        user: {
+          data: [{
+            name: 'taxonomy',
+            segment: [{id: 'segment-id'}]
+          }]
+        }
+      });
     });
 
     it('should contain id and dimension', function () {

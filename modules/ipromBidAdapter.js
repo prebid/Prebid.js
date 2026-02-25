@@ -1,4 +1,4 @@
-import { logError } from '../src/utils.js';
+import { deepClone, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'iprom';
@@ -8,6 +8,12 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_NETREVENUE = true;
 const DEFAULT_TTL = 360;
 const IAB_GVL_ID = 811;
+
+function logMissingFields(scope, missingFields) {
+  if (missingFields.length) {
+    logWarn(`${BIDDER_CODE}: Missing ${scope} fields: ${missingFields.join(', ')}`);
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,12 +37,81 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     const payload = {
       bids: validBidRequests,
-      // TODO: please do not send internal data structures over the network
-      referer: bidderRequest.refererInfo.legacy,
       version: VERSION
     };
+
+    if (bidderRequest?.refererInfo) {
+      const refererInfo = bidderRequest.refererInfo;
+      const refererUrl = refererInfo.topmostLocation ?? refererInfo.ref;
+      const missingRefererFields = [];
+
+      if (refererInfo.reachedTop == null) missingRefererFields.push('reachedTop');
+      if (refererUrl == null) missingRefererFields.push('referer');
+      if (refererInfo.numIframes == null) missingRefererFields.push('numIframes');
+      if (refererInfo.stack == null) missingRefererFields.push('stack');
+
+      logMissingFields('referer', missingRefererFields);
+
+      const referer = {
+        reachedTop: refererInfo.reachedTop,
+        referer: refererUrl,
+        numIframes: refererInfo.numIframes,
+        stack: refererInfo.stack
+      };
+
+      if (Object.values(referer).some(value => value != null)) {
+        payload.referer = referer;
+      }
+    }
+
+    if (bidderRequest?.gdprConsent) {
+      const tcf = {
+        consentString: bidderRequest.gdprConsent.consentString,
+        gdprApplies: bidderRequest.gdprConsent.gdprApplies,
+        addtlConsent: bidderRequest.gdprConsent.addtlConsent
+      };
+      const missingTcfFields = [];
+
+      if (tcf.consentString == null) missingTcfFields.push('consentString');
+      if (tcf.gdprApplies == null) missingTcfFields.push('gdprApplies');
+      if (tcf.addtlConsent == null) missingTcfFields.push('addtlConsent');
+
+      logMissingFields('tcf', missingTcfFields);
+
+      payload.tcf = tcf;
+    }
+
+    if (schain) {
+      payload.schain = schain;
+    }
+
+    if (bidderRequest?.ortb2) {
+      const firstPartyData = deepClone(bidderRequest.ortb2);
+
+      if (firstPartyData?.source?.ext?.schain) {
+        delete firstPartyData.source.ext.schain;
+
+        if (!Object.keys(firstPartyData.source.ext).length) {
+          delete firstPartyData.source.ext;
+        }
+
+        if (!Object.keys(firstPartyData.source).length) {
+          delete firstPartyData.source;
+        }
+      }
+
+      if (firstPartyData.site) {
+        delete firstPartyData.site;
+      }
+
+      if (Object.keys(firstPartyData).length) {
+        payload.firstPartyData = firstPartyData;
+      }
+    }
+
     const payloadString = JSON.stringify(payload);
 
     return {
