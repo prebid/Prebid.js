@@ -1,4 +1,4 @@
-import { logWarn, logError, deepSetValue, deepAccess, safeJSONEncode } from '../src/utils.js';
+import {logWarn, logError, deepSetValue, deepAccess, safeJSONEncode, debugTurnedOn} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -48,7 +48,7 @@ function logEvent(type, payload, sampleRate = LOG_EVENT_SAMPLE_RATE) {
  */
 export function storeData(key, value) {
   if (!storage.localStorageIsEnabled()) {
-    logWarn('Local Storage is not enabled');
+    if (debugTurnedOn()) logWarn('Local Storage is not enabled');
     return;
   }
 
@@ -67,7 +67,7 @@ export function storeData(key, value) {
  */
 export function readData(key, defaultValue) {
   if (!storage.localStorageIsEnabled()) {
-    logWarn('Local Storage is not enabled');
+    if (debugTurnedOn()) logWarn('Local Storage is not enabled');
     return defaultValue;
   }
 
@@ -174,7 +174,9 @@ export const spec = {
     const syncs = [];
 
     if (!syncOptions.iframeEnabled) {
-      logWarn('Please enable iframe based user sync.');
+      if (debugTurnedOn()) {
+        logWarn('User sync is supported only via iframe');
+      }
       return syncs;
     }
 
