@@ -1,6 +1,6 @@
 import {callPrebidCache} from '../../src/auction.js';
 import {VIDEO} from '../../src/mediaTypes.js';
-import {logError, isEmptyStr} from '../../src/utils.js';
+import {logError, logWarn, isEmptyStr} from '../../src/utils.js';
 import {isArray, isPlainObject, isStr} from '../../src/utils/objects.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_REPORT_ANALYTICS} from '../../src/activities/activities.js';
@@ -165,39 +165,90 @@ export function getVastTrackers(bid, {index = auctionManager.index}) {
     const auction = index.getAuction(bid).getProperties();
     const bidRequest = index.getBidRequest(bid);
     const trackersToAdd = trackerFn(bid, {auction, bidRequest});
-
-    if (isPlainObject(trackersToAdd)) {
-      if (isArray(trackersToAdd.impression)) {
-        trackersToAdd.impression.forEach(url => {
-          if (isStr(url) && !isEmptyStr(url)) {
-            mergedTrackers.impression.push(url);
-          }
-        });
-      }
-
-      if (isArray(trackersToAdd.error)) {
-        trackersToAdd.error.forEach(url => {
-          if (isStr(url) && !isEmptyStr(url)) {
-            mergedTrackers.error.push(url);
-          }
-        });
-      }
-
-      if (isArray(trackersToAdd.trackingEvents)) {
-        trackersToAdd.trackingEvents.forEach(tracker => {
-          if (isValidTrackingEvent(tracker)) {
-            mergedTrackers.trackingEvents.push(tracker);
-          }
-        });
-      }
-    }
+    mergeTrackersInto(mergedTrackers, trackersToAdd);
   });
+
+  // Include trackers from bidResponse (vastTrackers and vastImpUrl)
+  mergeTrackersInto(mergedTrackers, getTrackersFromBidResponse(bid));
 
   const hasTrackers = mergedTrackers.impression.length ||
                       mergedTrackers.error.length ||
                       mergedTrackers.trackingEvents.length;
 
   return hasTrackers ? mergedTrackers : null;
+}
+
+/**
+ * Merges source trackers into the target trackers object with validation
+ * @param {Object} target - The target trackers object to merge into
+ * @param {Object} source - The source trackers object to merge from
+ */
+function mergeTrackersInto(target, source) {
+  if (!source || !isPlainObject(source)) return;
+
+  if (isArray(source.impression)) {
+    source.impression.forEach(url => {
+      if (isStr(url) && !isEmptyStr(url)) {
+        target.impression.push(url);
+      }
+    });
+  }
+
+  if (isArray(source.error)) {
+    source.error.forEach(url => {
+      if (isStr(url) && !isEmptyStr(url)) {
+        target.error.push(url);
+      }
+    });
+  }
+
+  if (isArray(source.trackingEvents)) {
+    source.trackingEvents.forEach(tracker => {
+      if (isValidTrackingEvent(tracker)) {
+        target.trackingEvents.push(tracker);
+      }
+    });
+  }
+}
+
+/**
+ * Extracts trackers from bid response (both vastTrackers and vastImpUrl)
+ * Expected vastTrackers format: { impression: string[], error: string[], trackingEvents: Array<{event: string, url: string}> }
+ * @param {Object} bid - The bid response object
+ * @returns {Object|null} - Normalized trackers object or null if nothing present
+ */
+export function getTrackersFromBidResponse(bid) {
+  const trackers = {
+    impression: [],
+    error: [],
+    trackingEvents: []
+  };
+
+  // Extract from bid.vastTrackers if present
+  if (bid.vastTrackers && isPlainObject(bid.vastTrackers)) {
+    if (isArray(bid.vastTrackers.impression)) {
+      trackers.impression = bid.vastTrackers.impression;
+    }
+    if (isArray(bid.vastTrackers.error)) {
+      trackers.error = bid.vastTrackers.error;
+    }
+    if (isArray(bid.vastTrackers.trackingEvents)) {
+      trackers.trackingEvents = bid.vastTrackers.trackingEvents;
+    }
+  }
+
+  // Extract from bid.vastImpUrl (legacy fallback)
+  if (bid.vastImpUrl) {
+    logWarn('vastImpUrl is deprecated; use vastTrackers.impression instead');
+    const impUrls = isArray(bid.vastImpUrl) ? bid.vastImpUrl : [bid.vastImpUrl];
+    trackers.impression = trackers.impression.concat(impUrls);
+  }
+
+  const hasTrackers = trackers.impression.length ||
+                      trackers.error.length ||
+                      trackers.trackingEvents.length;
+
+  return hasTrackers ? trackers : null;
 }
 
 /**
