@@ -352,15 +352,22 @@ function isPubProvidedIdEid(eid) {
 
 function getEidsFromEidsArray(eids) {
   return (Array.isArray(eids) ? eids : []).reduce((ids, eid) => {
-    const uid = getFirstUid(eid);
-    if (!uid) return ids;
     const source = (eid.source || '').toLowerCase();
     if (source === 'uidapi.com') {
-      ids.uid2 = uid.id;
+      const uid = getFirstUid(eid);
+      if (uid) {
+        ids.uid2 = uid.id;
+      }
     } else if (source === 'liveramp.com') {
-      ids.idl_env = uid.id;
-    } else if (source === 'adserver.org' && uid.ext && uid.ext.rtiPartner === 'TDID') {
-      ids.tdid = uid.id;
+      const uid = getFirstUid(eid);
+      if (uid) {
+        ids.idl_env = uid.id;
+      }
+    } else if (source === 'adserver.org' && Array.isArray(eid.uids)) {
+      const tdidUid = eid.uids.find(uid => uid && uid.id && uid.ext && uid.ext.rtiPartner === 'TDID');
+      if (tdidUid) {
+        ids.tdid = tdidUid.id;
+      }
     }
     return ids;
   }, {});
