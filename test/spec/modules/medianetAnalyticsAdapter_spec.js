@@ -480,12 +480,12 @@ describe('Media.net Analytics Adapter', function () {
         bidRequest: VIDEO_BID_REQUESTED.bids[0]
       });
 
-      expect(trackers).to.be.an('array');
-      expect(trackers.length).to.equal(1);
-      expect(trackers[0].event).to.equal('impressions');
-      expect(trackers[0].url).to.include('https://');
+      expect(trackers).to.be.an('object');
+      expect(trackers.impression).to.be.an('array');
+      expect(trackers.impression.length).to.equal(1);
+      expect(trackers.impression[0]).to.include('https://');
 
-      const urlData = getQueryData(trackers[0].url);
+      const urlData = getQueryData(trackers.impression[0]);
       expect(urlData.lgtp).to.equal('RA');
       expect(urlData.pvnm).to.include('medianet');
       expect(urlData.bdp).to.equal('2.299');
@@ -505,9 +505,10 @@ describe('Media.net Analytics Adapter', function () {
         auction: MOCK.AUCTION_INIT
       });
 
-      expect(trackers).to.be.an('array');
-      expect(trackers.length).to.equal(1);
-      expect(trackers[0].url).to.include('vast_tracker_handler_missing_auction');
+      expect(trackers).to.be.an('object');
+      expect(trackers.impression).to.be.an('array');
+      expect(trackers.impression.length).to.equal(1);
+      expect(trackers.impression[0]).to.include('vast_tracker_handler_missing_auction');
     });
 
     it('should return error tracker when bidrequest is missing', function () {
@@ -524,9 +525,10 @@ describe('Media.net Analytics Adapter', function () {
         auction: VIDEO_AUCTION,
         bidRequest: VIDEO_BID_REQUESTED.bids[0]
       });
-      expect(trackers).to.be.an('array');
-      expect(trackers.length).to.equal(1);
-      expect(trackers[0].url).to.include('missing_bidrequest');
+      expect(trackers).to.be.an('object');
+      expect(trackers.impression).to.be.an('array');
+      expect(trackers.impression.length).to.equal(1);
+      expect(trackers.impression[0]).to.include('missing_bidrequest');
     });
   });
 
