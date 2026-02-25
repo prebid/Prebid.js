@@ -108,6 +108,48 @@ describe('iPROM Adapter', function () {
 
       expect(isValid).to.equal(false);
     });
+
+    it('should accept bid with valid endpoint url', function () {
+      const validBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          endpoint: 'https://custom.iprom.net/programmatic'
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(validBid);
+
+      expect(isValid).to.equal(true);
+    });
+
+    it('should reject bid if endpoint is not a string', function () {
+      const invalidBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          endpoint: 1234
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(invalidBid);
+
+      expect(isValid).to.equal(false);
+    });
+
+    it('should reject bid if endpoint is not a valid url', function () {
+      const invalidBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          endpoint: 'invalid-url'
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(invalidBid);
+
+      expect(isValid).to.equal(false);
+    });
   });
 
   describe('building requests', function () {
@@ -117,6 +159,49 @@ describe('iPROM Adapter', function () {
       expect(request.method).to.exist;
       expect(request.method).to.equal('POST');
       expect(request.url).to.exist;
+      expect(request.url).to.equal('https://core.iprom.net/programmatic');
+    });
+
+    it('should use custom endpoint from params when valid', function () {
+      const bidRequestsWithEndpoint = [{
+        ...bidRequests[0],
+        params: {
+          ...bidRequests[0].params,
+          endpoint: 'https://custom.iprom.net/programmatic'
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithEndpoint, bidderRequest);
+
+      expect(request.url).to.equal('https://custom.iprom.net/programmatic');
+      expect(request.ortb).to.equal(true);
+      expect(request.data).to.be.an('object');
+      expect(request.data.imp).to.be.an('array').with.lengthOf(1);
+      expect(request.data.bids).to.be.undefined;
+    });
+
+    it('should fallback to default endpoint for invalid custom endpoint', function () {
+      const bidRequestsWithInvalidEndpoint = [{
+        ...bidRequests[0],
+        params: {
+          ...bidRequests[0].params,
+          endpoint: 'invalid-url'
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithInvalidEndpoint, bidderRequest);
+
+      expect(request.url).to.equal('https://core.iprom.net/programmatic');
+    });
+
+    it('should fallback to default endpoint for non-string endpoint', function () {
+      const bidRequestsWithNonStringEndpoint = [{
+        ...bidRequests[0],
+        params: {
+          ...bidRequests[0].params,
+          endpoint: 1234
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithNonStringEndpoint, bidderRequest);
+
       expect(request.url).to.equal('https://core.iprom.net/programmatic');
     });
 
@@ -322,6 +407,43 @@ describe('iPROM Adapter', function () {
       expect(bids[0].height).to.equal('250');
       expect(bids[0].ad).to.have.length.above(1);
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['https://example.com']);
+    });
+
+    it('should parse OpenRTB response when custom endpoint is used', function () {
+      const bidRequestsWithEndpoint = [{
+        ...bidRequests[0],
+        params: {
+          ...bidRequests[0].params,
+          endpoint: 'https://custom.iprom.net/programmatic'
+        }
+      }];
+      const request = spec.buildRequests(bidRequestsWithEndpoint, bidderRequest);
+      const impId = request.data.imp[0].id;
+      const serverResponse = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            bid: [{
+              impid: impId,
+              price: 0.8,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adomain: ['example.com'],
+              adm: '<div>ad</div>',
+              mtype: 1
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, request);
+
+      expect(bids).to.be.lengthOf(1);
+      expect(bids[0].requestId).to.equal('29a72b151f7bd3');
+      expect(bids[0].cpm).to.equal(0.8);
+      expect(bids[0].currency).to.equal('EUR');
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['example.com']);
     });
 
     it('should return empty bid response', function () {

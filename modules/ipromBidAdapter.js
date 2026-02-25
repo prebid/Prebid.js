@@ -1,5 +1,6 @@
 import { deepClone, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'iprom';
 const ENDPOINT_URL = 'https://core.iprom.net/programmatic';
@@ -8,11 +9,36 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_NETREVENUE = true;
 const DEFAULT_TTL = 360;
 const IAB_GVL_ID = 811;
+const converter = ortbConverter({
+  context: {
+    netRevenue: DEFAULT_NETREVENUE,
+    ttl: DEFAULT_TTL
+  }
+});
 
 function logMissingFields(scope, missingFields) {
   if (missingFields.length) {
     logWarn(`${BIDDER_CODE}: Missing ${scope} fields: ${missingFields.join(', ')}`);
   }
+}
+
+function isValidEndpointUrl(endpoint) {
+  try {
+    const parsedEndpoint = new URL(endpoint);
+    return parsedEndpoint.protocol === 'http:' || parsedEndpoint.protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
+function getCustomEndpoint(validBidRequests) {
+  const endpoint = validBidRequests?.[0]?.params?.endpoint;
+
+  if (typeof endpoint === 'string' && isValidEndpointUrl(endpoint)) {
+    return endpoint;
+  }
+
+  return null;
 }
 
 export const spec = {
@@ -33,10 +59,38 @@ export const spec = {
       return false;
     }
 
+    if (params.endpoint != null) {
+      if (typeof params.endpoint !== 'string') {
+        logError(`${bidder}: Parameter 'endpoint' needs to be a string`);
+        return false;
+      }
+
+      if (!isValidEndpointUrl(params.endpoint)) {
+        logError(`${bidder}: Parameter 'endpoint' needs to be a valid URL`);
+        return false;
+      }
+    }
+
     return true;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    const customEndpoint = getCustomEndpoint(validBidRequests);
+
+    if (customEndpoint) {
+      const ortbRequest = converter.toORTB({
+        bidderRequest,
+        bidRequests: validBidRequests,
+      });
+
+      return {
+        method: 'POST',
+        url: customEndpoint,
+        data: ortbRequest,
+        ortb: true
+      };
+    }
+
     const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     const payload = {
       bids: validBidRequests,
@@ -122,6 +176,10 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, request) {
+    if (request?.ortb) {
+      return converter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+    }
+
     const bids = serverResponse.body;
 
     const bidResponses = [];
