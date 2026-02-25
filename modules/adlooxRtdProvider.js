@@ -36,6 +36,8 @@ import {
   safeJSONParse
 } from '../src/utils.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {viewportIntersections} from '../libraries/percentInView/percentInView.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -186,10 +188,9 @@ function getTargetingData(adUnitArray, config, userConsent, auction) {
       if (v) targeting[unit.code][`${ADSERVER_TARGETING_PREFIX}_${k}`] = v;
     });
 
-    // ATF results shamelessly exfiltrated from intersectionRtdProvider
-    const bid = unit.bids.find(bid => !!bid.intersection);
-    if (bid) {
-      const v = val(config.params.thresholds.filter(t => t <= (bid.intersection.intersectionRatio * 100)));
+    const intersection = viewportIntersections.getIntersection(getAdUnitElement(unit));
+    if (intersection) {
+      const v = val(config.params.thresholds.filter(t => t <= (intersection.intersectionRatio * 100)));
       if (v) targeting[unit.code][`${ADSERVER_TARGETING_PREFIX}_atf`] = v;
     }
   });
