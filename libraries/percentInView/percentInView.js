@@ -1,5 +1,8 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
+import {defer, PbPromise} from '../../src/utils/promise.js';
+import {startAuction} from '../../src/prebid.js';
+import {getAdUnitElement} from '../../src/utils/adUnits.js';
 
 /**
  * return the offset between the given window's viewport and the top window's.
@@ -64,7 +67,7 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-export const percentInView = (element, {w, h} = {}) => {
+const percentInViewStatic = (element, {w, h} = {}) => {
   const elementBoundingBox = getBoundingBox(element, {w, h});
 
   // when in an iframe, the bounding box is relative to the iframe's viewport
@@ -100,6 +103,67 @@ export const percentInView = (element, {w, h} = {}) => {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
+}
+
+/**
+ * A wrapper around an IntersectionObserver that keeps track of the latest IntersectionEntry that was observed
+ * for each observed element.
+ *
+ * @param mkObserver
+ */
+export function intersections(mkObserver) {
+  const intersections = new WeakMap();
+  let next = defer();
+
+  const obs = mkObserver((entries) => {
+    entries.sort((left, right) => left.time - right.time).forEach(entry => {
+      if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
+        intersections.set(entry.target, entry)
+        next.resolve();
+        next = defer();
+      }
+    })
+  })
+
+  async function observe(element) {
+    if (!intersections.has(element)) {
+      obs.observe(element);
+      intersections.set(element, null);
+      return next.promise.then(() => getIntersection(element));
+    } else {
+      return PbPromise.resolve(getIntersection(element));
+    }
+  }
+
+  function getIntersection(element) {
+    return intersections.get(element);
+  }
+
+  return {
+    observe,
+    getIntersection,
+  }
+}
+
+export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback));
+export function mkIntersectionHook(intersections = viewportIntersections) {
+  return function (next, request) {
+    PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
+      intersections.observe(getAdUnitElement(adUnit))
+    )).then(() => next.call(this, request));
+  }
+}
+
+startAuction.before(mkIntersectionHook());
+
+export function percentInView(element, {w, h} = {}) {
+  const intersection = viewportIntersections.getIntersection(element);
+  if (intersection == null) {
+    viewportIntersections.observe(element);
+    return percentInViewStatic(element, {w, h});
+  } else {
+    return intersection.isIntersecting ? intersection.intersectionRatio * 100 : 0;
+  }
 }
 
 /**
