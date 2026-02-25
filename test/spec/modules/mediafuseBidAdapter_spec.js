@@ -6,7 +6,7 @@
  */
 
 import { expect } from 'chai';
-import { spec } from 'modules/mediafuseBidAdapter.js';
+import { spec, storage } from 'modules/mediafuseBidAdapter.js';
 import { deepClone } from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
@@ -177,104 +177,80 @@ describe('mediafuseBidAdapter', function () {
   // buildRequests — video RTB targeting
   // -------------------------------------------------------------------------
   describe('buildRequests - video RTB targeting', function () {
-    it('should map skip, skipafter, playbackmethod, and api to AN fields', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = {
-        video: {
-          context: 'instream',
-          playerSize: [640, 480],
-          skip: 1,
-          skipafter: 5,
-          playbackmethod: [2],
-          api: [4]
-        }
-      };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const video = req.data.imp[0].video;
-      const extAN = req.data.imp[0].ext.appnexus;
-      expect(video.skippable).to.be.true;
-      expect(video.skipoffset).to.equal(5);
-      expect(video.playback_method).to.equal(2);
-      // api [4] maps to video_frameworks [5] (4↔5 swap)
-      expect(extAN.video_frameworks).to.include(5);
-    });
-
-    it('should set outstream placement=4 for outstream context', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.placement).to.equal(4);
-    });
-
-    it('should set require_asset_url for instream context', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].ext.appnexus.require_asset_url).to.be.true;
-    });
-
-    it('should map video params from bid.params.video (VIDEO_TARGETING fields)', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
-      bid.params.video = { minduration: 5, maxduration: 30, frameworks: [1, 2] };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.minduration).to.equal(5);
-      expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2]);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // buildRequests — AdPod requireExactDuration with multiple durations
-  // -------------------------------------------------------------------------
-  describe('buildRequests - AdPod requireExactDuration', function () {
-    it('should assign durations round-robin when requireExactDuration=true with multiple durations', function () {
-      const bid = {
-        bidder: 'mediafuse',
-        adUnitCode: 'pod',
-        bidId: 'pod-bid',
-        mediaTypes: {
+    if (FEATURES.VIDEO) {
+      it('should map skip, skipafter, playbackmethod, and api to AN fields', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = {
           video: {
-            context: 'adpod',
-            adPodDurationSec: 60,
-            durationRangeSec: [15, 30],
-            requireExactDuration: true
+            context: 'instream',
+            playerSize: [640, 480],
+            skip: 1,
+            skipafter: 5,
+            playbackmethod: [2],
+            api: [4]
           }
-        },
-        params: { placementId: 111 }
-      };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      // 60/15=4 placements, 2 durations → 2 per duration
-      expect(req.data.imp).to.have.lengthOf(4);
-      // First chunk gets duration 15
-      expect(req.data.imp[0].video.minduration).to.equal(15);
-      expect(req.data.imp[0].video.maxduration).to.equal(15);
-      // Second chunk gets duration 30
-      expect(req.data.imp[2].video.minduration).to.equal(30);
-      expect(req.data.imp[2].video.maxduration).to.equal(30);
-    });
-
-    it('should set maxduration to max of range when requireExactDuration=false', function () {
-      const bid = {
-        bidder: 'mediafuse',
-        adUnitCode: 'pod',
-        bidId: 'pod-bid-2',
-        mediaTypes: {
-          video: {
-            context: 'adpod',
-            adPodDurationSec: 30,
-            durationRangeSec: [10, 20],
-            requireExactDuration: false
-          }
-        },
-        params: { placementId: 111 }
-      };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      // 30/10=3 placements, all get maxduration=20
-      expect(req.data.imp).to.have.lengthOf(3);
-      req.data.imp.forEach(imp => {
-        expect(imp.video.maxduration).to.equal(20);
+        };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const video = req.data.imp[0].video;
+        const extAN = req.data.imp[0].ext.appnexus;
+        expect(video.skippable).to.be.true;
+        expect(video.skipoffset).to.equal(5);
+        expect(video.playback_method).to.equal(2);
+        // api [4] maps to video_frameworks [5] (4↔5 swap)
+        expect(extAN.video_frameworks).to.include(5);
       });
-    });
+
+      it('should set outstream placement=4 for outstream context', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.placement).to.equal(4);
+      });
+
+      it('should set video.ext.appnexus.context=1 for instream', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.ext.appnexus.context).to.equal(1);
+      });
+
+      it('should set video.ext.appnexus.context=4 for outstream', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.ext.appnexus.context).to.equal(4);
+      });
+
+      it('should set video.ext.appnexus.context=5 for in-banner', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'in-banner', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.ext.appnexus.context).to.equal(5);
+      });
+
+      it('should not set video.ext.appnexus.context for unknown context', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'unknown-type', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.ext?.appnexus?.context).to.be.undefined;
+      });
+
+      it('should set require_asset_url for instream context', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].ext.appnexus.require_asset_url).to.be.true;
+      });
+
+      it('should map video params from bid.params.video (VIDEO_TARGETING fields)', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        bid.params.video = { minduration: 5, maxduration: 30, frameworks: [1, 2] };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.minduration).to.equal(5);
+        expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2]);
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
@@ -302,59 +278,6 @@ describe('mediafuseBidAdapter', function () {
       bidderRequest.bids = [bid];
       const [req] = spec.buildRequests([bid], bidderRequest);
       expect(req.data.ext.appnexus.iab_support).to.exist;
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // buildRequests — brand_category_uniqueness
-  // -------------------------------------------------------------------------
-  describe('buildRequests - brand_category_uniqueness', function () {
-    it('should set brand_category_uniqueness when adpod.brandCategoryExclusion is true', function () {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        if (key === 'adpod.brandCategoryExclusion') return true;
-        return undefined;
-      });
-      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.ext.appnexus.brand_category_uniqueness).to.be.true;
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // interpretResponse — adpod video response
-  // -------------------------------------------------------------------------
-  describe('interpretResponse - adpod video', function () {
-    it('should set video.context=adpod and map primaryCatId from brand_category_id', function () {
-      const bid = {
-        bidder: 'mediafuse',
-        adUnitCode: 'pod',
-        bidId: 'pod-bid',
-        mediaTypes: { video: { context: 'adpod', adPodDurationSec: 30, durationRangeSec: [15] } },
-        params: { placementId: 111 }
-      };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
-
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 2.5,
-              ext: {
-                appnexus: {
-                  bid_ad_type: 1,
-                  brand_category_id: 1  // maps to 'IAB2' (Automotive) in APPNEXUS_CATEGORY_MAPPING
-                }
-              }
-            }]
-          }]
-        }
-      };
-
-      const bids = spec.interpretResponse(serverResponse, req);
-      expect(bids[0].video.context).to.equal('adpod');
-      // brand_category_id:1 maps to 'IAB20-3' in APPNEXUS_CATEGORY_MAPPING
-      expect(bids[0].meta.primaryCatId).to.equal('IAB20-3');
     });
   });
 
@@ -486,25 +409,28 @@ describe('mediafuseBidAdapter', function () {
       const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
       const impId = req.data.imp[0].id;
 
+      // OpenRTB 1.2 assets array format (as returned by the /openrtb2/prebidjs endpoint)
       const nativeAdm = {
         native: {
-          title: 'Title',
-          desc: 'Body',
-          desc2: 'Body2',
-          ctatext: 'Click',
-          rating: '4.5',
-          sponsored: 'Sponsor',
-          privacy_link: 'https://priv.example.com',
-          address: '123 Main St',
-          downloads: '1000',
-          likes: '500',
-          phone: '555-1234',
-          price: '$9.99',
-          saleprice: '$4.99',
-          displayurl: 'example.com',
-          link: { url: 'https://click.example.com', click_trackers: ['https://ct.example.com'] },
-          main_img: { url: 'https://img.example.com/img.jpg', width: 300, height: 250 },
-          icon: { url: 'https://img.example.com/icon.png', width: 50, height: 50 }
+          assets: [
+            { id: 1, title: { text: 'Title' } },
+            { id: 2, data: { type: 2, value: 'Body' } },
+            { id: 3, data: { type: 10, value: 'Body2' } },
+            { id: 4, data: { type: 12, value: 'Click' } },
+            { id: 5, data: { type: 3, value: '4.5' } },
+            { id: 6, data: { type: 1, value: 'Sponsor' } },
+            { id: 7, data: { type: 9, value: '123 Main St' } },
+            { id: 8, data: { type: 5, value: '1000' } },
+            { id: 9, data: { type: 4, value: '500' } },
+            { id: 10, data: { type: 8, value: '555-1234' } },
+            { id: 11, data: { type: 6, value: '$9.99' } },
+            { id: 12, data: { type: 7, value: '$4.99' } },
+            { id: 13, data: { type: 11, value: 'example.com' } },
+            { id: 14, img: { type: 3, url: 'https://img.example.com/img.jpg', w: 300, h: 250 } },
+            { id: 15, img: { type: 1, url: 'https://img.example.com/icon.png', w: 50, h: 50 } }
+          ],
+          link: { url: 'https://click.example.com', clicktrackers: ['https://ct.example.com'] },
+          privacy: 'https://priv.example.com'
         }
       };
 
@@ -542,6 +468,60 @@ describe('mediafuseBidAdapter', function () {
       expect(native.image.url).to.equal('https://img.example.com/img.jpg');
       expect(native.image.width).to.equal(300);
       expect(native.icon.url).to.equal('https://img.example.com/icon.png');
+    });
+
+    it('should map native fields using request asset IDs as type fallback when response omits type', function () {
+      // Build a real request via spec.buildRequests so ortbConverter registers it in its
+      // internal WeakMap (required by fromORTB). Then inject native.request directly on
+      // the imp — this simulates what FEATURES.NATIVE would have built without requiring it.
+      const bid = deepClone(BASE_BID);
+      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+      const impId = req.data.imp[0].id;
+
+      req.data.imp[0].native = {
+        request: JSON.stringify({
+          assets: [
+            { id: 1, title: { len: 100 } },
+            { id: 2, data: { type: 1 } },                         // sponsoredBy
+            { id: 3, data: { type: 2 } },                         // body
+            { id: 4, img: { type: 3, wmin: 1, hmin: 1 } },        // main image
+            { id: 5, img: { type: 1, wmin: 50, hmin: 50 } }       // icon
+          ]
+        })
+      };
+
+      // Response assets intentionally omit type — Xandr does this in practice
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: impId,
+              price: 1.5,
+              adm: JSON.stringify({
+                native: {
+                  assets: [
+                    { id: 1, title: { text: 'Fallback Title' } },
+                    { id: 2, data: { value: 'Fallback Sponsor' } },
+                    { id: 3, data: { value: 'Fallback Body' } },
+                    { id: 4, img: { url: 'https://img.test/img.jpg', w: 300, h: 250 } },
+                    { id: 5, img: { url: 'https://img.test/icon.png', w: 50, h: 50 } }
+                  ],
+                  link: { url: 'https://click.test' }
+                }
+              }),
+              ext: { appnexus: { bid_ad_type: 3 } }
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, req);
+      const native = bids[0].native;
+      expect(native.title).to.equal('Fallback Title');
+      expect(native.sponsoredBy).to.equal('Fallback Sponsor');
+      expect(native.body).to.equal('Fallback Body');
+      expect(native.image.url).to.equal('https://img.test/img.jpg');
+      expect(native.icon.url).to.equal('https://img.test/icon.png');
     });
 
     it('should disarm eventtrackers (trk.js) by replacing src= with data-src=', function () {
@@ -660,21 +640,6 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
   // lifecycle — onBidWon
   // -------------------------------------------------------------------------
-  describe('onBidWon', function () {
-    it('should call reloadViewabilityScript for native bids without throwing', function () {
-      const bid = {
-        adId: 'ad-1',
-        adUnitCode: 'unit-1',
-        native: { javascriptTrackers: ['//cdn.adnxs.com/v/trk.js?dom_id=%native_dom_id%'] }
-      };
-      expect(() => spec.onBidWon(bid)).to.not.throw();
-    });
-
-    it('should not throw for non-native bids', function () {
-      const bid = { adId: 'ad-2', adUnitCode: 'unit-2', ad: '<div>Banner</div>' };
-      expect(() => spec.onBidWon(bid)).to.not.throw();
-    });
-  });
 
   // -------------------------------------------------------------------------
   // lifecycle — onBidderError
@@ -840,13 +805,15 @@ describe('mediafuseBidAdapter', function () {
   // buildRequests — custom_renderer_present via bid.renderer
   // -------------------------------------------------------------------------
   describe('buildRequests - custom renderer present', function () {
-    it('should set custom_renderer_present when bid.renderer is set for video imp', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
-      bid.renderer = { id: 'custom', url: 'https://renderer.example.com/r.js' };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].ext.appnexus.custom_renderer_present).to.be.true;
-    });
+    if (FEATURES.VIDEO) {
+      it('should set custom_renderer_present when bid.renderer is set for video imp', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
+        bid.renderer = { id: 'custom', url: 'https://renderer.example.com/r.js' };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].ext.appnexus.custom_renderer_present).to.be.true;
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
@@ -954,29 +921,40 @@ describe('mediafuseBidAdapter', function () {
   });
 
   // -------------------------------------------------------------------------
-  // buildRequests — EID rti_partner mapping (TDID / UID2)
+  // buildRequests — EID rtiPartner mapping (TDID / UID2)
   // -------------------------------------------------------------------------
-  describe('buildRequests - EID rti_partner mapping', function () {
-    it('should add rti_partner=TDID to adserver.org EID', function () {
+  describe('buildRequests - EID rtiPartner mapping', function () {
+    it('should set rtiPartner=TDID inside uids[0].ext for adserver.org EID', function () {
       const bid = deepClone(BASE_BID);
-      bid.userIdAsEids = [{ source: 'adserver.org', uids: [{ id: 'tdid-value', atype: 1 }] }];
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const eid = req.data.user && req.data.user.ext && req.data.user.ext.eids &&
-        req.data.user.ext.eids.find(e => e.source === 'adserver.org');
-      if (eid) {
-        expect(eid.rti_partner).to.equal('TDID');
-      }
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.ortb2.user = { ext: { eids: [{ source: 'adserver.org', uids: [{ id: 'tdid-value', atype: 1 }] }] } };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      const eid = req.data.user?.ext?.eids?.find(e => e.source === 'adserver.org');
+      expect(eid).to.exist;
+      expect(eid.uids[0].ext.rtiPartner).to.equal('TDID');
+      expect(eid.rti_partner).to.be.undefined;
     });
 
-    it('should add rti_partner=UID2 to uidapi.com EID', function () {
+    it('should set rtiPartner=UID2 inside uids[0].ext for uidapi.com EID', function () {
       const bid = deepClone(BASE_BID);
-      bid.userIdAsEids = [{ source: 'uidapi.com', uids: [{ id: 'uid2-value', atype: 3 }] }];
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const eid = req.data.user && req.data.user.ext && req.data.user.ext.eids &&
-        req.data.user.ext.eids.find(e => e.source === 'uidapi.com');
-      if (eid) {
-        expect(eid.rti_partner).to.equal('UID2');
-      }
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.ortb2.user = { ext: { eids: [{ source: 'uidapi.com', uids: [{ id: 'uid2-value', atype: 3 }] }] } };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      const eid = req.data.user?.ext?.eids?.find(e => e.source === 'uidapi.com');
+      expect(eid).to.exist;
+      expect(eid.uids[0].ext.rtiPartner).to.equal('UID2');
+      expect(eid.rti_partner).to.be.undefined;
+    });
+
+    it('should preserve existing uid.ext fields when adding rtiPartner', function () {
+      const bid = deepClone(BASE_BID);
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.ortb2.user = { ext: { eids: [{ source: 'adserver.org', uids: [{ id: 'tdid-value', atype: 1, ext: { existing: true } }] }] } };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      const eid = req.data.user?.ext?.eids?.find(e => e.source === 'adserver.org');
+      expect(eid).to.exist;
+      expect(eid.uids[0].ext.rtiPartner).to.equal('TDID');
+      expect(eid.uids[0].ext.existing).to.be.true;
     });
   });
 
@@ -995,71 +973,62 @@ describe('mediafuseBidAdapter', function () {
   });
 
   // -------------------------------------------------------------------------
-  // buildRequests — adpod early return (no durationRangeSec)
-  // -------------------------------------------------------------------------
-  describe('buildRequests - adpod early return', function () {
-    it('should return single imp when adpod has no durationRangeSec', function () {
-      const bid = {
-        bidder: 'mediafuse',
-        adUnitCode: 'pod',
-        bidId: 'pod-bid',
-        mediaTypes: { video: { context: 'adpod', adPodDurationSec: 30 } },
-        params: { placementId: 111 }
-      };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp).to.have.lengthOf(1);
-    });
-  });
-
-  // -------------------------------------------------------------------------
   // buildRequests — video minduration already set (skip overwrite)
   // -------------------------------------------------------------------------
   describe('buildRequests - video minduration skip overwrite', function () {
-    it('should not overwrite minduration set by params.video when mediaTypes.video.minduration also present', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], minduration: 10 } };
-      bid.params.video = { minduration: 5 };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      // params.video sets minduration=5 first; mediaTypes check sees it's already a number → skips
-      expect(req.data.imp[0].video.minduration).to.equal(5);
-    });
+    if (FEATURES.VIDEO) {
+      it('should not overwrite minduration set by params.video when mediaTypes.video.minduration also present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], minduration: 10 } };
+        bid.params.video = { minduration: 5 };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        // params.video sets minduration=5 first; mediaTypes check sees it's already a number → skips
+        expect(req.data.imp[0].video.minduration).to.equal(5);
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // buildRequests — playbackmethod out of range (>4)
   // -------------------------------------------------------------------------
   describe('buildRequests - video playbackmethod out of range', function () {
-    it('should not set playback_method when playbackmethod[0] > 4', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: [5] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.playback_method).to.be.undefined;
-    });
+    if (FEATURES.VIDEO) {
+      it('should not set playback_method when playbackmethod[0] > 4', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: [5] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.playback_method).to.be.undefined;
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // buildRequests — video api val=6 filtered out
   // -------------------------------------------------------------------------
   describe('buildRequests - video api val=6 filtered', function () {
-    it('should produce empty video_frameworks when api=[6] since 6 is out of 1-5 range', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [6] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([]);
-    });
+    if (FEATURES.VIDEO) {
+      it('should produce empty video_frameworks when api=[6] since 6 is out of 1-5 range', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [6] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([]);
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // buildRequests — video_frameworks already set; api should not override
   // -------------------------------------------------------------------------
   describe('buildRequests - video_frameworks not overridden by api', function () {
-    it('should keep frameworks from params.video when mediaTypes.video.api is also present', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [4] } };
-      bid.params.video = { frameworks: [1, 2] };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2]);
-    });
+    if (FEATURES.VIDEO) {
+      it('should keep frameworks from params.video when mediaTypes.video.api is also present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [4] } };
+        bid.params.video = { frameworks: [1, 2] };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2]);
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
@@ -1257,6 +1226,43 @@ describe('mediafuseBidAdapter', function () {
       expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
       expect(trackers[1]).to.equal('https://event-tracker.com/track');
     });
+
+    it('should replace %native_dom_id% macro in eventtrackers during interpretResponse', function () {
+      const bid = deepClone(BASE_BID);
+      bid.mediaTypes = { native: { title: { required: true } } };
+      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+      const impId = req.data.imp[0].id;
+
+      const adWithMacro = {
+        native: {
+          title: 'T',
+          eventtrackers: [{
+            method: 1,
+            url: 'https://cdn.adnxs.com/v/trk.js?dom_id=%native_dom_id%&id=123'
+          }]
+        }
+      };
+
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: impId,
+              price: 1.0,
+              adm: JSON.stringify(adWithMacro),
+              ext: { appnexus: { bid_ad_type: 3 } }
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, req);
+      const parsedAdm = JSON.parse(bids[0].ad);
+      const trackers = parsedAdm.native?.eventtrackers || parsedAdm.eventtrackers;
+      expect(trackers[0].url).to.include('pbjs_adid=');
+      expect(trackers[0].url).to.include('pbjs_auc=');
+      expect(trackers[0].url).to.not.include('%native_dom_id%');
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -1296,37 +1302,6 @@ describe('mediafuseBidAdapter', function () {
       expect(syncs[0].url).to.include('existing=1');
       expect(syncs[0].url).to.include('gdpr=1');
       expect(syncs[0].url).to.match(/\?existing=1&/);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // Empty lifecycle methods — onTimeout, onSetTargeting, onAdRenderSucceeded
-  // -------------------------------------------------------------------------
-  describe('empty lifecycle methods', function () {
-    it('onTimeout should not throw', function () {
-      expect(() => spec.onTimeout({ bidderCode: 'mediafuse', timeout: 3000 })).to.not.throw();
-    });
-
-    it('onSetTargeting should not throw', function () {
-      expect(() => spec.onSetTargeting({ adUnitCode: 'au', params: {} })).to.not.throw();
-    });
-
-    it('onAdRenderSucceeded should not throw', function () {
-      expect(() => spec.onAdRenderSucceeded({ adUnitCode: 'au' })).to.not.throw();
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // onBidWon — string jsTracker
-  // -------------------------------------------------------------------------
-  describe('onBidWon - string jsTracker', function () {
-    it('should handle jsTrackers as a plain string without throwing', function () {
-      const bid = {
-        adId: 'ad-str',
-        adUnitCode: 'unit-str',
-        native: { javascriptTrackers: '//cdn.adnxs.com/v/trk.js?dom_id=%native_dom_id%' }
-      };
-      expect(() => spec.onBidWon(bid)).to.not.throw();
     });
   });
 
@@ -1379,41 +1354,6 @@ describe('mediafuseBidAdapter', function () {
         }
       };
       expect(() => spec.interpretResponse(serverResponse, req)).to.not.throw();
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // interpretResponse — adpod brand_category_id not in APPNEXUS_CATEGORY_MAPPING
-  // -------------------------------------------------------------------------
-  describe('interpretResponse - adpod brand_category_id not in mapping', function () {
-    it('should not set primaryCatId when brand_category_id has no mapping entry', function () {
-      const bid = {
-        bidder: 'mediafuse',
-        adUnitCode: 'pod',
-        bidId: 'pod-bid',
-        mediaTypes: { video: { context: 'adpod', adPodDurationSec: 30, durationRangeSec: [15] } },
-        params: { placementId: 111 }
-      };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 2.0,
-              ext: {
-                appnexus: {
-                  bid_ad_type: 1,
-                  brand_category_id: 99999
-                }
-              }
-            }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      expect(bids[0].meta && bids[0].meta.primaryCatId).to.be.undefined;
     });
   });
 
@@ -1499,36 +1439,6 @@ describe('mediafuseBidAdapter', function () {
   });
 
   // -------------------------------------------------------------------------
-  // onBidWon — no trk.js in jsTrackers
-  // -------------------------------------------------------------------------
-  describe('onBidWon - jsTrackers with no trk.js URL', function () {
-    it('should return early when no trk.js tracker is found in jsTrackers array', function () {
-      const bid = {
-        adId: 'ad-no-trk',
-        adUnitCode: 'unit-no-trk',
-        native: { javascriptTrackers: ['https://other-tracker.com/track.js', 'https://another.com/t.js'] }
-      };
-      expect(() => spec.onBidWon(bid)).to.not.throw();
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // onBidWon — HTML-snippet tracker
-  // -------------------------------------------------------------------------
-  describe('onBidWon - HTML-snippet style tracker', function () {
-    it('should extract src from HTML-snippet style tracker without throwing', function () {
-      const bid = {
-        adId: 'ad-html',
-        adUnitCode: 'unit-html',
-        native: {
-          javascriptTrackers: ['<script src="//cdn.adnxs.com/v/trk.js?dom_id=%native_dom_id%"></script>']
-        }
-      };
-      expect(() => spec.onBidWon(bid)).to.not.throw();
-    });
-  });
-
-  // -------------------------------------------------------------------------
   // buildRequests — video params frameworks type guard
   // -------------------------------------------------------------------------
   describe('buildRequests - video params frameworks', function () {
@@ -1605,83 +1515,254 @@ describe('mediafuseBidAdapter', function () {
   // buildRequests — video params.video takes priority over mediaTypes.video for maxduration
   // -------------------------------------------------------------------------
   describe('buildRequests - video maxduration skip overwrite', function () {
-    it('should not overwrite maxduration set by params.video when mediaTypes.video.maxduration also present', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], maxduration: 15 } };
-      bid.params.video = { maxduration: 30 };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.maxduration).to.equal(30);
-    });
+    if (FEATURES.VIDEO) {
+      it('should not overwrite maxduration set by params.video when mediaTypes.video.maxduration also present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], maxduration: 15 } };
+        bid.params.video = { maxduration: 30 };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.maxduration).to.equal(30);
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // buildRequests — video params.video takes priority over mediaTypes.video for skippable
   // -------------------------------------------------------------------------
   describe('buildRequests - video skippable skip overwrite', function () {
-    it('should not overwrite skippable set by params.video when mediaTypes.video.skip is also present', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], skip: 1 } };
-      bid.params.video = { skippable: false };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.skippable).to.be.false;
-    });
+    if (FEATURES.VIDEO) {
+      it('should not overwrite skippable set by params.video when mediaTypes.video.skip is also present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], skip: 1 } };
+        bid.params.video = { skippable: false };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.skippable).to.be.false;
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // buildRequests — video params.video takes priority over mediaTypes.video for skipoffset
   // -------------------------------------------------------------------------
   describe('buildRequests - video skipoffset skip overwrite', function () {
-    it('should not overwrite skipoffset set by params.video when mediaTypes.video.skipafter is also present', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], skipafter: 10 } };
-      bid.params.video = { skipoffset: 5 };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.skipoffset).to.equal(5);
-    });
+    if (FEATURES.VIDEO) {
+      it('should not overwrite skipoffset set by params.video when mediaTypes.video.skipafter is also present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], skipafter: 10 } };
+        bid.params.video = { skipoffset: 5 };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.skipoffset).to.equal(5);
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // buildRequests — video playbackmethod type guard
   // -------------------------------------------------------------------------
   describe('buildRequests - video playbackmethod', function () {
-    it('should not set playback_method when mediaTypes.video.playbackmethod is not an array', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: 2 } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].video.playback_method).to.be.undefined;
-    });
+    if (FEATURES.VIDEO) {
+      it('should not set playback_method when mediaTypes.video.playbackmethod is not an array', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: 2 } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].video.playback_method).to.be.undefined;
+      });
+    }
   });
 
   // -------------------------------------------------------------------------
   // interpretResponse — video nurl without asset_url
   // -------------------------------------------------------------------------
   describe('interpretResponse - video nurl without asset_url', function () {
-    it('should set vastImpUrl but not vastUrl when nurl present but asset_url absent', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+    if (FEATURES.VIDEO) {
+      it('should set vastImpUrl but not vastUrl when nurl present but asset_url absent', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              nurl: 'https://notify.example.com/win',
-              ext: {
-                appnexus: {
-                  bid_ad_type: 1
-                  // no asset_url, no renderer_url/renderer_id
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                nurl: 'https://notify.example.com/win',
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 1
+                    // no asset_url, no renderer_url/renderer_id
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      expect(bids[0].vastImpUrl).to.equal('https://notify.example.com/win');
-      expect(bids[0].vastUrl).to.not.include('&redir=');
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, req);
+        expect(bids[0].vastImpUrl).to.equal('https://notify.example.com/win');
+        expect(bids[0].vastUrl).to.not.include('&redir=');
+      });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // onBidWon — viewability script reload
+  // -------------------------------------------------------------------------
+  describe('onBidWon - viewability', function () {
+    it('should not throw when bid has no native property', function () {
+      expect(() => spec.onBidWon({ cpm: 1.0, adUnitCode: 'test' })).to.not.throw();
     });
+
+    it('should traverse viewability helpers for a string tracker matching cdn.adnxs.com pattern', function () {
+      const jsScript = '<script src="//cdn.adnxs.com/v/trk.js"></script>';
+      const bid = {
+        adId: 'ad-id-1',
+        adUnitCode: 'adunit-code',
+        native: { javascriptTrackers: jsScript }
+      };
+      // Exercises reloadViewabilityScriptWithCorrectParameters, strIsMediafuseViewabilityScript,
+      // getMediafuseViewabilityScriptFromJsTrackers, and getViewabilityScriptUrlFromPayload.
+      expect(() => spec.onBidWon(bid)).to.not.throw();
+    });
+
+    it('should handle array of trackers and pick the viewability one', function () {
+      const jsScript = '<script src="//cdn.adnxs.com/v/trk.js"></script>';
+      const bid = {
+        adId: 'ad-id-2',
+        adUnitCode: 'adunit-code',
+        native: { javascriptTrackers: ['<script src="//other.com/x.js"></script>', jsScript] }
+      };
+      // Exercises the array branch in getMediafuseViewabilityScriptFromJsTrackers.
+      expect(() => spec.onBidWon(bid)).to.not.throw();
+    });
+
+    it('should not throw when tracker string does not match viewability pattern', function () {
+      const bid = {
+        adId: 'ad-id-3',
+        adUnitCode: 'adunit-code',
+        native: { javascriptTrackers: '<script src="//other.example.com/track.js"></script>' }
+      };
+      expect(() => spec.onBidWon(bid)).to.not.throw();
+    });
+
+    it('should handle cdn.adnxs-simple.com pattern tracker', function () {
+      const jsScript = '<script src="//cdn.adnxs-simple.com/v/trk.js"></script>';
+      const bid = {
+        adId: 'ad-id-4',
+        adUnitCode: 'adunit-code',
+        native: { javascriptTrackers: jsScript }
+      };
+      expect(() => spec.onBidWon(bid)).to.not.throw();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // onBidderError
+  // -------------------------------------------------------------------------
+  describe('onBidderError', function () {
+    it('should log an error message via utils.logMessage', function () {
+      const logSpy = sandbox.spy(utils, 'logMessage');
+      spec.onBidderError({ error: new Error('network timeout'), bidderRequest: deepClone(BASE_BIDDER_REQUEST) });
+      expect(logSpy.called).to.be.true;
+      expect(logSpy.firstCall.args[0]).to.include('Mediafuse Bidder Error');
+    });
+
+    it('should include the error in the logged message', function () {
+      const logSpy = sandbox.spy(utils, 'logMessage');
+      spec.onBidderError({ error: new Error('timeout'), bidderRequest: deepClone(BASE_BIDDER_REQUEST) });
+      expect(logSpy.firstCall.args[0]).to.include('timeout');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // buildRequests — debug cookie
+  // -------------------------------------------------------------------------
+  describe('buildRequests - debug cookie', function () {
+    it('should append debug params to URL when valid debug cookie is set', function () {
+      sandbox.stub(storage, 'getCookie').returns(JSON.stringify({ enabled: true, dongle: 'mfd' }));
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
+      expect(req.url).to.include('debug=1');
+      expect(req.url).to.include('dongle=mfd');
+    });
+
+    it('should not crash and should skip debug URL when cookie JSON is invalid', function () {
+      sandbox.stub(storage, 'getCookie').returns('{invalid-json');
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
+      expect(req.url).to.not.include('debug=1');
+    });
+
+    it('should not append debug params when cookie is absent and no debug URL params', function () {
+      sandbox.stub(storage, 'getCookie').returns(null);
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
+      expect(req.url).to.not.include('debug=1');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // buildRequests — addtlConsent (GDPR additional consent string)
+  // -------------------------------------------------------------------------
+  describe('buildRequests - addtlConsent', function () {
+    it('should parse addtlConsent with ~ separator and set user.ext.addtl_consent', function () {
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent-string',
+        addtlConsent: 'abc~1.2.3'
+      };
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], bidderRequest);
+      expect(req.data.user.ext.addtl_consent).to.deep.equal([1, 2, 3]);
+    });
+
+    it('should not set addtl_consent when addtlConsent has no ~ separator', function () {
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent-string',
+        addtlConsent: 'abc123'
+      };
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], bidderRequest);
+      const addtlConsent = utils.deepAccess(req.data, 'user.ext.addtl_consent');
+      expect(addtlConsent).to.be.undefined;
+    });
+
+    it('should skip addtl_consent when addtlConsent segment list is empty after parsing', function () {
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent-string',
+        addtlConsent: 'abc~'
+      };
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], bidderRequest);
+      const addtlConsent = utils.deepAccess(req.data, 'user.ext.addtl_consent');
+      expect(addtlConsent).to.be.undefined;
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // buildRequests — refererInfo canonicalUrl branch
+  // -------------------------------------------------------------------------
+  describe('buildRequests - refererInfo canonicalUrl', function () {
+    it('should include rd_can when canonicalUrl is present in refererInfo', function () {
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.refererInfo.canonicalUrl = 'https://canonical.example.com/page';
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], bidderRequest);
+      expect(req.data.ext.appnexus.referrer_detection.rd_can).to.equal('https://canonical.example.com/page');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // buildRequests — video params.video.frameworks branch
+  // -------------------------------------------------------------------------
+  describe('buildRequests - video params.video.frameworks', function () {
+    if (FEATURES.VIDEO) {
+      it('should set video_frameworks from bid.params.video.frameworks', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        bid.params.video = { frameworks: [1, 2, 6], minduration: 5 };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2, 6]);
+        expect(req.data.imp[0].video.minduration).to.equal(5);
+      });
+    }
   });
 });
