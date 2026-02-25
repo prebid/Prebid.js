@@ -27,8 +27,8 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
                     params: {
                         bidfloor: 0.001,        
                         testMode: 1,
-                        sspId: 123456
-                        siteId: 987654
+                        sspId: 123456,
+                        siteId: 987654,
                         sspUserId: 'u1234'
                     }
                 }
@@ -59,10 +59,10 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
                 {   
                     bidder: 'adsmartx',
                     params: {
-                        bidfloor: 0.001
+                        bidfloor: 0.001,
                         testMode: 1,
-                        sspId: 123456
-                        siteId: 987654
+                        sspId: 123456,
+                        siteId: 987654,
                         sspUserId: 'u1234'
                     }
                 }
