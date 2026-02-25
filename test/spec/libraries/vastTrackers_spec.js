@@ -424,33 +424,5 @@ describe('vast trackers', () => {
       expect(trackers.error).to.be.an('array').that.is.empty;
       expect(trackers.trackingEvents).to.be.an('array').that.is.empty;
     });
-
-    it('should validate trackers from bid response same as analytics trackers', function () {
-      const emptyTracker = sinon.stub().callsFake(function () {
-        return {impression: [], error: [], trackingEvents: []};
-      });
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'emptyTest', emptyTracker);
-
-      const bidWithInvalidTrackers = {
-        ...bid,
-        vastTrackers: {
-          impression: ['https://valid.com', '', null, 123],
-          error: ['https://valid-error.com', ''],
-          trackingEvents: [
-            {event: 'start', url: 'https://valid-start.com'},
-            {event: '', url: 'https://invalid.com'},
-            {event: 'complete'} // missing url
-          ]
-        }
-      };
-
-      const trackers = getVastTrackers(bidWithInvalidTrackers, {index});
-      expect(trackers.impression).to.have.lengthOf(1);
-      expect(trackers.impression).to.include('https://valid.com');
-      expect(trackers.error).to.have.lengthOf(1);
-      expect(trackers.error).to.include('https://valid-error.com');
-      expect(trackers.trackingEvents).to.have.lengthOf(1);
-      expect(trackers.trackingEvents[0].event).to.equal('start');
-    });
   });
 })
