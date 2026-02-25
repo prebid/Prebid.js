@@ -125,16 +125,30 @@ export function intersections(mkObserver) {
     })
   })
 
+  async function waitFor(element) {
+    const intersection = getIntersection(element);
+    if (intersection != null) {
+      return intersection;
+    } else {
+      return next.promise.then(() => waitFor(element));
+    }
+  }
+  /**
+   * Observe the given element; returns a promise to the first available intersection observed for it.
+   */
   async function observe(element) {
     if (!intersections.has(element)) {
       obs.observe(element);
       intersections.set(element, null);
-      return next.promise.then(() => getIntersection(element));
+      return waitFor(element);
     } else {
       return PbPromise.resolve(getIntersection(element));
     }
   }
 
+  /**
+   * Return the latest intersection that was observed for the given element.
+   */
   function getIntersection(element) {
     return intersections.get(element);
   }
@@ -146,6 +160,7 @@ export function intersections(mkObserver) {
 }
 
 export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback));
+
 export function mkIntersectionHook(intersections = viewportIntersections) {
   return function (next, request) {
     PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>

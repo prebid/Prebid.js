@@ -50,6 +50,10 @@ describe('percentInView', () => {
     });
   });
 
+  async function delay() {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+
   describe('intersections', () => {
     let callback, obs, nakedObs, mkObserver, el;
     beforeEach(() => {
@@ -62,6 +66,7 @@ describe('percentInView', () => {
       })
       obs = intersections(mkObserver);
     })
+
     it('observe should reject if the element cannot be observed', async () => {
       let err = new Error();
       nakedObs.observe.throws(err);
@@ -123,6 +128,21 @@ describe('percentInView', () => {
       }]);
       expect(obs.getIntersection(el)).to.eql(entry);
     });
+
+    it('should not resolve until the targeted element has intersected', async () => {
+      const entry = {
+        target: el,
+        time: 100
+      };
+      const pm = obs.observe(el);
+      callback([{
+        target: {},
+        time: 20
+      }]);
+      await delay();
+      callback([entry]);
+      expect(await pm).to.eql(entry);
+    })
   });
 
   describe('intersection hook', () => {
@@ -135,10 +155,6 @@ describe('percentInView', () => {
       hook = mkIntersectionHook(intersections);
       request = {};
     });
-
-    async function delay() {
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
 
     it('should observe elements for every ad unit', async () => {
       request.adUnits = [{
