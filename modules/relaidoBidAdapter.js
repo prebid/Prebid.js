@@ -369,19 +369,17 @@ function getTargeting(bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
-    const pubadsTargeting = window.googletag.getConfig('targeting');
-    const keys = Object.keys(pubadsTargeting);
+    const keys = pubads.getTargetingKeys();
     for (const key of keys) {
-      const values = pubadsTargeting[key];
+      const values = pubads.getTargeting(key);
       targetings[key] = values;
     }
   }
   const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
   if (adUnitSlot) {
-    const slotTargeting = adUnitSlot.getConfig('targeting');
-    const keys = Object.keys(slotTargeting);
+    const keys = adUnitSlot.getTargetingKeys();
     for (const key of keys) {
-      const values = slotTargeting[key];
+      const values = adUnitSlot.getTargeting(key);
       targetings[key] = values;
     }
   }
