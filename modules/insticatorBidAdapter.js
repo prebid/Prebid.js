@@ -30,7 +30,7 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
   'api': (value) => isArrayOfNums(value),
-  // Ad Pod specific parameters (ORTB 2.6)
+  // ORTB 2.6 video parameters
   'podid': (value) => typeof value === 'string' && value.length > 0,
   'podseq': (value) => isInteger(value) && value >= 0,
   'poddur': (value) => isInteger(value) && value > 0,
@@ -142,20 +142,6 @@ function buildVideo(bidRequest) {
 
   if (context !== undefined) {
     optionalParams['context'] = context;
-  }
-
-  // Map Prebid.js adpod fields to ORTB 2.6 video fields
-  const adPodDurationSec = deepAccess(bidRequest, 'mediaTypes.video.adPodDurationSec');
-  if (adPodDurationSec && isInteger(adPodDurationSec) && adPodDurationSec > 0) {
-    optionalParams['poddur'] = adPodDurationSec;
-  }
-
-  const durationRangeSec = deepAccess(bidRequest, 'mediaTypes.video.durationRangeSec');
-  if (durationRangeSec && isArrayOfNums(durationRangeSec) && durationRangeSec.length > 0) {
-    const validDurations = durationRangeSec.filter(v => v > 0);
-    if (validDurations.length > 0) {
-      optionalParams['rqddurs'] = validDurations;
-    }
   }
 
   const videoObj = {

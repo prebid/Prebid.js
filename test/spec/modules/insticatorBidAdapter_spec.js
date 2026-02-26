@@ -892,43 +892,7 @@ describe('InsticatorBidAdapter', function () {
         expect(data.imp[0].video).to.have.property('rqddurs').that.deep.equals([15, 30, 60]);
       });
 
-      it('should map adPodDurationSec to poddur', function () {
-        const adPodBidRequest = {
-          ...bidRequest,
-          mediaTypes: {
-            video: {
-              mimes: ['video/mp4'],
-              w: 640,
-              h: 480,
-              adPodDurationSec: 120,
-            },
-          },
-        };
-        const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-
-        expect(data.imp[0].video).to.have.property('poddur', 120);
-      });
-
-      it('should map durationRangeSec to rqddurs', function () {
-        const adPodBidRequest = {
-          ...bidRequest,
-          mediaTypes: {
-            video: {
-              mimes: ['video/mp4'],
-              w: 640,
-              h: 480,
-              durationRangeSec: [15, 30, 45],
-            },
-          },
-        };
-        const requests = spec.buildRequests([adPodBidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-
-        expect(data.imp[0].video).to.have.property('rqddurs').that.deep.equals([15, 30, 45]);
-      });
-
-      it('should not include invalid Ad Pod params', function () {
+      it('should not include invalid ORTB 2.6 video params', function () {
         const adPodBidRequest = {
           ...bidRequest,
           mediaTypes: {
@@ -1417,7 +1381,7 @@ describe('InsticatorBidAdapter', function () {
         expect(bidResponse.video).to.have.property('durationSeconds', 30);
       });
 
-      it('should not set video.context when original request is not adpod', function () {
+      it('should set video.durationSeconds and not set video.context for instream video', function () {
         const instreamBidRequests = {
           ...ortb26BidRequests,
           bidderRequest: {
