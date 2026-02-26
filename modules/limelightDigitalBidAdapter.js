@@ -74,7 +74,6 @@ export const spec = {
   aliases: [
     { code: 'pll' },
     { code: 'iionads', gvlid: 1358 },
-    { code: 'apester' },
     { code: 'adsyield' },
     { code: 'tgm' },
     { code: 'adtg_org' },
