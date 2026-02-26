@@ -401,8 +401,8 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
 
 export function filterEventTrackers(nativeResponse, bid) {
   const DEFAULT_ALLOWED_TRACKERS = [
-    { event: EVENT_TYPE_IMPRESSION, method: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
-    { event: EVENT_TYPE_VIEWABLE, method: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
+    { event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
+    { event: EVENT_TYPE_VIEWABLE, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
   ];
   const mediaTypes = auctionManager.index.getMediaTypes(bid) || {};
   const nativeMediaType = mediaTypes.native || {};
@@ -410,7 +410,7 @@ export function filterEventTrackers(nativeResponse, bid) {
 
   const { eventtrackers = [] } = nativeResponse || {};
 
-  return eventtrackers.filter(tracker => requestEventTrackers.some(requestTracker => requestTracker.event === tracker.event && requestTracker.method.includes(tracker.method)));
+  return eventtrackers.filter(tracker => requestEventTrackers.some(requestTracker => requestTracker.event === tracker.event && requestTracker.methods.includes(tracker.method)));
 }
 
 export function setNativeResponseProperties(bid, adUnit) {

@@ -1193,7 +1193,7 @@ describe('fireImpressionTrackers', () => {
       getMediaTypesStub.returns({
         native: {
           ortb: {
-            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, method: [TRACKER_METHOD_IMG] }]
+            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_IMG] }]
           }
         }
       });
@@ -1212,7 +1212,7 @@ describe('fireImpressionTrackers', () => {
       getMediaTypesStub.returns({
         native: {
           ortb: {
-            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, method: [TRACKER_METHOD_JS] }]
+            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_JS] }]
           }
         }
       });
@@ -1231,7 +1231,7 @@ describe('fireImpressionTrackers', () => {
       getMediaTypesStub.returns({
         native: {
           ortb: {
-            eventtrackers: [{ event: 2, method: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] }]
+            eventtrackers: [{ event: 2, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] }]
           }
         }
       });
