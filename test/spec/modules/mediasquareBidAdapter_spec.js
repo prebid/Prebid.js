@@ -296,4 +296,25 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid).to.have.property('renderer');
     delete BID_RESPONSE.body.responses[0].video;
   });
+  it('Verifies burls in bid response', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].burls = [{'url': 'http://myburl.com/track?bid=1.0'}];
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    expect(response).to.have.lengthOf(1);
+    const bid = response[0];
+    expect(bid.mediasquare).to.have.property('burls');
+    expect(bid.mediasquare.burls).to.have.lengthOf(1);
+    expect(bid.mediasquare.burls[0]).to.have.property('url').and.to.equal('http://myburl.com/track?bid=1.0');
+    delete BID_RESPONSE.body.responses[0].burls;
+  });
+  it('Verifies burls bidwon', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
+    BID_RESPONSE.body.responses[0].burls = [{'url': 'http://myburl.com/track?bid=1.0'}];
+    const response = spec.interpretResponse(BID_RESPONSE, request);
+    const won = spec.onBidWon(response[0]);
+    expect(won).to.equal(true);
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('http://myburl.com/track?bid=1.0');
+    delete BID_RESPONSE.body.responses[0].burls;
+  });
 });
