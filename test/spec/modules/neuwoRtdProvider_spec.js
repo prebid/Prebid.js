@@ -1617,6 +1617,20 @@ describe("neuwoRtdModule", function () {
           expect(request.url, "should include iabVersions=4").to.include("iabVersions=4");
         });
 
+        it("should not duplicate iabVersions=1 when iabContentTaxonomyVersion is 1.0", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+          conf.params.iabContentTaxonomyVersion = "1.0";
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          const matches = request.url.match(/iabVersions=1(?!\d)/g) || [];
+          expect(matches.length, "iabVersions=1 should appear exactly once").to.equal(1);
+          expect(request.url, "should still include iabVersions=4").to.include("iabVersions=4");
+        });
+
         it("should inject category fields when API returns IAB 1.0 data", function () {
           const apiResponse = {
             "1": {

@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.2.5
+ * @version 2.2.6
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -30,7 +30,7 @@ import {
 } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
-const MODULE_VERSION = "2.2.5";
+const MODULE_VERSION = "2.2.6";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Default IAB Content Taxonomy version
@@ -183,8 +183,9 @@ export function getBidRequestData(
     urlParams.push("iabVersions=" + contentSegtax);
     urlParams.push("iabVersions=4"); // IAB Audience 1.1
 
-    // Request IAB 1.0 for OpenRTB 2.5 fields if feature enabled
-    if (enableOrtb25Fields) {
+    // Request IAB 1.0 for OpenRTB 2.5 fields if feature enabled.
+    // Skip when contentSegtax is already 1 -- already requested above.
+    if (enableOrtb25Fields && contentSegtax !== 1) {
       urlParams.push("iabVersions=1"); // IAB Content 1.0
     }
 
