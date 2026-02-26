@@ -22,6 +22,7 @@ import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from '../../src/creativeRenderers.js';
 import {deepSetValue} from '../../src/utils.js';
+import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from 'src/eventTrackers.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -1126,7 +1127,7 @@ describe('fireImpressionTrackers', () => {
   })
 
   function runTrackers(resp) {
-    fireImpressionTrackers(resp, {runMarkup, fetchURL})
+    fireImpressionTrackers(resp, {}, {runMarkup, fetchURL})
   }
 
   it('should run markup in jstracker', () => {
@@ -1173,7 +1174,108 @@ describe('fireImpressionTrackers', () => {
     });
     sinon.assert.notCalled(fetchURL);
     sinon.assert.notCalled(runMarkup);
-  })
+  });
+
+  describe('when bidResponse mediaTypes.native.ortb.eventtrackers filters allowed trackers', () => {
+    let indexStub;
+    let getMediaTypesStub;
+
+    beforeEach(() => {
+      getMediaTypesStub = sinon.stub();
+      indexStub = sinon.stub(auctionManager, 'index').get(() => ({ getMediaTypes: getMediaTypesStub }));
+    });
+
+    afterEach(() => {
+      indexStub.restore();
+    });
+
+    it('should fire only impression+IMG eventtrackers when request allows only IMG for impression', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, method: [TRACKER_METHOD_IMG] }]
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'img-url' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'js-url' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.calledOnceWithExactly(fetchURL, 'img-url');
+      sinon.assert.notCalled(runMarkup);
+    });
+
+    it('should fire only impression+JS eventtrackers when request allows only JS for impression', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, method: [TRACKER_METHOD_JS] }]
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'img-url' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'js-url' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.notCalled(fetchURL);
+      sinon.assert.calledWith(runMarkup, sinon.match('script async src="js-url"'));
+    });
+
+    it('should not fire any eventtrackers when request eventtrackers do not include impression', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: [{ event: 2, method: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] }]
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'imp-img-url' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.notCalled(fetchURL);
+      sinon.assert.notCalled(runMarkup);
+    });
+
+    it('should still fire legacy imptrackers and jstracker when eventtrackers are filtered out', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: []
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'from-eventtrackers' }],
+        imptrackers: ['legacy-imp-url'],
+        jstracker: 'legacy-js-markup'
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.calledOnceWithExactly(fetchURL, 'legacy-imp-url');
+      sinon.assert.calledWith(runMarkup, 'legacy-js-markup');
+    });
+
+    it('should use default allowed trackers when getMediaTypes returns empty', () => {
+      getMediaTypesStub.returns({});
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'default-img' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'default-js' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.calledWith(fetchURL, 'default-img');
+      sinon.assert.calledWith(runMarkup, sinon.match('script async src="default-js"'));
+    });
+  });
 })
 
 describe('fireClickTrackers', () => {
