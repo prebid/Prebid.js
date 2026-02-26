@@ -7,6 +7,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';
 import { OUTSTREAM } from '../src/video.js';
 import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -495,7 +496,7 @@ function buildRenderer(bid, mediaType) {
     ad.renderer.push(() => {
       const domContainer = container
         ? document.querySelector(container)
-        : document.getElementById(adUnitCode);
+        : getAdUnitElement(ad)
 
       const player = new window.VASTPlayer(domContainer);
 

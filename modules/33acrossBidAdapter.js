@@ -17,6 +17,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
 import {isIframe} from '../libraries/omsUtils/index.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -373,7 +374,7 @@ function _getProduct(bidRequest) {
 // BUILD REQUESTS: BANNER
 function _buildBannerORTB(bidRequest) {
   const bannerAdUnit = deepAccess(bidRequest, 'mediaTypes.banner', {});
-  const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
+  const element = _getAdSlotHTMLElement(bidRequest);
 
   const sizes = _transformSizes(bannerAdUnit.sizes);
 
@@ -478,6 +479,7 @@ function _getViewability(element, topWin, { w, h } = {}) {
     : 0;
 }
 
+// TODO use utils/adUnits once that's unified in 11
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (isGptPubadsDefined()) {
     // eslint-disable-next-line no-undef
@@ -500,9 +502,9 @@ function _mapAdUnitPathToElementId(adUnitCode) {
   return null;
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
-  return document.getElementById(adUnitCode) ||
-    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
+function _getAdSlotHTMLElement(bidRequest) {
+  return getAdUnitElement(bidRequest) ||
+    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode));
 }
 
 /**

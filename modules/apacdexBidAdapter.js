@@ -1,9 +1,9 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getDNT} from '../libraries/dnt/index.js';
 const BIDDER_CODE = 'apacdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
 const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'

@@ -13,6 +13,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {isIframe} from '../libraries/omsUtils/index.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -109,7 +110,7 @@ export const spec = {
       sizes = flatten(sizes, parseSizesInput(bidParamSizes));
       siteId = +bidParam.params.siteId;
       const adUnitCode = bidParam.adUnitCode
-      const element = _getAdSlotHTMLElement(adUnitCode)
+      const element = _getAdSlotHTMLElement(bidParam)
       const minSize = _getMinSize(bidParamSizes)
 
       placementObject.sizes = parseSizesInput(bidParamSizes)
@@ -234,9 +235,9 @@ function _getMinSize(bidParamSizes) {
   return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
-  return document.getElementById(adUnitCode) ||
-    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
+function _getAdSlotHTMLElement(bidRequest) {
+  return getAdUnitElement(bidRequest) ||
+    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode));
 }
 
 function _mapAdUnitPathToElementId(adUnitCode) {

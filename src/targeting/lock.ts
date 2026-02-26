@@ -45,7 +45,8 @@ export function targetingLock() {
   const [setupGpt, tearDownGpt] = (() => {
     let enabled = false;
     function onGptRender({slot}: SlotRenderEndedEvent) {
-      keys?.forEach(key => slot.getTargeting(key)?.forEach(locked.delete));
+      const targeting = (slot as any).getConfig('targeting');
+      keys?.forEach(key => targeting[key]?.forEach(locked.delete));
     }
     return [
       () => {

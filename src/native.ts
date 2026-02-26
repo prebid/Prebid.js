@@ -23,7 +23,7 @@ import {
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
-import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
+import {EVENT_TYPE_IMPRESSION, EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
 import type {Link, NativeRequest, NativeResponse} from "./types/ortb/native.d.ts";
 import type {Size} from "./types/common.d.ts";
 import type {Ext} from "./types/ortb/common.d.ts";
@@ -350,14 +350,15 @@ export function fireNativeTrackers(message, bidResponse) {
   if (message.action === 'click') {
     fireClickTrackers(nativeResponse, message?.assetId);
   } else {
-    fireImpressionTrackers(nativeResponse);
+    fireImpressionTrackers(nativeResponse, bidResponse);
   }
   return message.action;
 }
 
-export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
+export function fireImpressionTrackers(nativeResponse, bidResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
+  const filteredEventTrackers = filterEventTrackers(nativeResponse, bidResponse);
   let {[TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = []} = parseEventTrackers(
-    nativeResponse.eventtrackers || []
+    filteredEventTrackers || []
   )[EVENT_TYPE_IMPRESSION] || {};
 
   if (nativeResponse.imptrackers) {
@@ -396,6 +397,20 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
     }
     clickTrackers.forEach(url => fetchURL(url));
   }
+}
+
+export function filterEventTrackers(nativeResponse, bid) {
+  const DEFAULT_ALLOWED_TRACKERS = [
+    { event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
+    { event: EVENT_TYPE_VIEWABLE, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
+  ];
+  const mediaTypes = auctionManager.index.getMediaTypes(bid) || {};
+  const nativeMediaType = mediaTypes.native || {};
+  const requestEventTrackers = nativeMediaType.ortb?.eventtrackers || DEFAULT_ALLOWED_TRACKERS;
+
+  const { eventtrackers = [] } = nativeResponse || {};
+
+  return eventtrackers.filter(tracker => requestEventTrackers.some(requestTracker => requestTracker.event === tracker.event && requestTracker.methods.includes(tracker.method)));
 }
 
 export function setNativeResponseProperties(bid, adUnit) {

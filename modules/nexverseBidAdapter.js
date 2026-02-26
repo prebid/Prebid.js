@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
@@ -9,6 +8,8 @@ import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeRespons
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { config } from '../src/config.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
@@ -191,7 +192,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
   const imps = [];
 
   // Calculate viewability percentage for the ad unit
-  const adUnitElement = document.getElementById(bid.adUnitCode);
+  const adUnitElement = getAdUnitElement(bid);
   let viewabilityPercentage = 0;
   if (adUnitElement) {
     const rect = getBoundingClientRect(adUnitElement);

@@ -1,10 +1,10 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'adtrue';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -400,7 +400,7 @@ function _createImpressionObject(bid, conf) {
     }
   } else {
     // mediaTypes is not present, so this is a banner only impression
-    // this part of code is required for older testcases with no 'mediaTypes' to run succesfully.
+    // this part of code is required for older testcases with no 'mediaTypes' to run successfully.
     bannerObj = {
       pos: 0,
       w: bid.params.width,

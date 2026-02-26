@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import { getDNT } from '../libraries/dnt/index.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

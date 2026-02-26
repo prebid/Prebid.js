@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import { fireViewabilityPixels } from '../libraries/bidViewabilityPixels/index.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -82,7 +83,7 @@ export const init = () => {
       events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
         if (isSupportedMediaType(bid)) {
           const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-          const element = document.getElementById(bid.adUnitCode);
+          const element = getAdUnitElement(bid);
           viewable.observe(element);
         }
       });

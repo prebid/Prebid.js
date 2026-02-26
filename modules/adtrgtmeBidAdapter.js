@@ -11,6 +11,7 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'adtrgtme';
 const BIDDER_VERSION = '1.0.7';
@@ -71,7 +72,7 @@ function createORTB(bR, bid) {
       ...site,
     },
     device: {
-      dnt: bid?.params?.dnt ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       ua: bid?.params?.ua || navigator.userAgent,
       ip,
     },

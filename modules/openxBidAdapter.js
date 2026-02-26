@@ -61,9 +61,7 @@ const converter = ortbConverter({
     if (bid.params.coppa) {
       utils.deepSetValue(req, 'regs.coppa', 1);
     }
-    if (bid.params.doNotTrack) {
-      utils.deepSetValue(req, 'device.dnt', 1);
-    }
+    utils.deepSetValue(req, 'device.dnt', 0);
     if (bid.params.platform) {
       utils.deepSetValue(req, 'ext.platform', bid.params.platform);
     }

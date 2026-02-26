@@ -15,6 +15,7 @@ import {
 } from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 import {PbPromise} from './utils/promise.js';
+import {getAdUnitElement} from './utils/adUnits.js';
 import {auctionManager} from './auctionManager.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
@@ -165,7 +166,7 @@ export function resizeAnchor(ins, width, height) {
   })
 }
 
-export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({instl, element, adId, adUnitCode, width, height}) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
@@ -188,7 +189,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
 
   function getElementByAdUnit(elmType) {
     const id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    const parentDivEle = document.getElementById(id);
+    const parentDivEle = id == null ? getAdUnitElement({element, adUnitCode}) : document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
@@ -205,13 +206,16 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
         return apnId;
       }
     }
-    return adUnitCode;
   }
 
   function getDfpElementId(adId) {
     const slot = window.googletag.pubads().getSlots().find(slot => {
-      return slot.getTargetingKeys().find(key => {
-        return slot.getTargeting(key).includes(adId);
+      const targetingMap = slot.getConfig('targeting');
+      const keys = Object.keys(targetingMap);
+
+      return keys.find(key => {
+        const values = targetingMap[key];
+        return values.includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;

@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {deepAccess, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -7,6 +6,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const ADAPTER_VERSION = '2.1.0';
 const PREBID_VERSION = '$prebid.version$';

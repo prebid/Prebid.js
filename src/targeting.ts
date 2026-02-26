@@ -323,7 +323,8 @@ export function newTargeting(auctionManager) {
             targetingSet[targetId][key] = value;
           });
           logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingSet[targetId]);
-          slot.updateTargetingFromMap(Object.assign({}, resetMap, targetingSet[targetId]))
+          const targetingMap = Object.assign({}, resetMap, targetingSet[targetId]);
+          slot.setConfig({targeting: targetingMap} as any);
           lock.lock(targetingSet[targetId]);
         })
       })

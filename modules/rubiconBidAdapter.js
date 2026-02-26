@@ -23,6 +23,7 @@ import {
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -827,7 +828,7 @@ function hideSmartAdServerIframe(adUnit) {
 
 function renderBid(bid) {
   // hide existing ad units
-  const adUnitElement = document.getElementById(bid.adUnitCode);
+  const adUnitElement = getAdUnitElement(bid);
   hideGoogleAdsDiv(adUnitElement);
   hideSmartAdServerIframe(adUnitElement);
 

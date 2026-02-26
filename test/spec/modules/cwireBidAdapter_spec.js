@@ -6,6 +6,7 @@ import * as utils from "src/utils.js";
 import sinon, { stub } from "sinon";
 import { config } from "../../../src/config.js";
 import * as autoplayLib from "../../../libraries/autoplayDetection/autoplay.js";
+import * as adUnits from 'src/utils/adUnits';
 
 describe("C-WIRE bid adapter", () => {
   config.setConfig({ debug: true });
@@ -101,8 +102,8 @@ describe("C-WIRE bid adapter", () => {
 
   describe("buildRequests reads adUnit offsetWidth and offsetHeight", function () {
     beforeEach(function () {
-      const documentStub = sandbox.stub(document, "getElementById");
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+      const documentStub = sandbox.stub(adUnits, "getAdUnitElement");
+      documentStub.returns({
         offsetWidth: 200,
         offsetHeight: 250,
         getBoundingClientRect() {
@@ -115,11 +116,9 @@ describe("C-WIRE bid adapter", () => {
 
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
-      const el = document.getElementById(`${bidRequest.adUnitCode}`);
 
       logInfo(JSON.stringify(payload));
 
-      expect(el).to.exist;
       expect(payload.slots[0].cwExt.dimensions.width).to.equal(200);
       expect(payload.slots[0].cwExt.dimensions.height).to.equal(250);
       expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
@@ -131,8 +130,8 @@ describe("C-WIRE bid adapter", () => {
   });
   describe("buildRequests reads style attributes", function () {
     beforeEach(function () {
-      const documentStub = sandbox.stub(document, "getElementById");
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+      const documentStub = sandbox.stub(adUnits, "getAdUnitElement");
+      documentStub.returns({
         style: {
           maxWidth: "400px",
           maxHeight: "350px",
@@ -147,11 +146,8 @@ describe("C-WIRE bid adapter", () => {
 
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
-      const el = document.getElementById(`${bidRequest.adUnitCode}`);
-
       logInfo(JSON.stringify(payload));
 
-      expect(el).to.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq("400px");
       expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
     });
