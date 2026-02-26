@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.2.3
+ * @version 2.2.4
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -30,7 +30,7 @@ import {
 } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
-const MODULE_VERSION = "2.2.3";
+const MODULE_VERSION = "2.2.4";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Default IAB Content Taxonomy version
@@ -538,25 +538,31 @@ export function filterIabTaxonomyTier(iabTaxonomies, filter = {}) {
   }
 
   const { threshold, limit } = filter;
+  const hasThreshold = typeof threshold === "number" && threshold > 0;
+  const hasLimit = typeof limit === "number" && limit >= 0;
+
+  // No effective filter configured -- return original order unchanged
+  if (!hasThreshold && !hasLimit) {
+    return iabTaxonomies;
+  }
+
   let filtered = [...iabTaxonomies]; // Create copy to avoid mutating original
 
   // Filter by minimum relevance score
-  if (typeof threshold === "number" && threshold > 0) {
+  if (hasThreshold) {
     filtered = filtered.filter((item) => {
       const relevance = parseFloat(item?.relevance);
       return !isNaN(relevance) && relevance >= threshold;
     });
   }
 
-  // Sort by relevance (highest first) before limiting
-  filtered = filtered.sort((a, b) => {
-    const relA = parseFloat(a?.relevance) || 0;
-    const relB = parseFloat(b?.relevance) || 0;
-    return relB - relA; // Descending order
-  });
-
-  // Limit count (0 means suppress the tier entirely)
-  if (typeof limit === "number" && limit >= 0) {
+  // Sort by relevance (highest first) so limit keeps the most relevant items
+  if (hasLimit) {
+    filtered = filtered.sort((a, b) => {
+      const relA = parseFloat(a?.relevance) || 0;
+      const relB = parseFloat(b?.relevance) || 0;
+      return relB - relA; // Descending order
+    });
     filtered = filtered.slice(0, limit);
   }
 

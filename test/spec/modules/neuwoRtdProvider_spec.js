@@ -3372,16 +3372,40 @@ describe("neuwoRtdModule", function () {
         expect(result[1].ID, "should keep second highest relevance item").to.equal("2");
       });
 
-      it("should sort by relevance in descending order", function () {
+      it("should preserve original order when filter is empty", function () {
         const taxonomies = [
           { ID: "3", label: "Category 3", relevance: "0.3" },
           { ID: "1", label: "Category 1", relevance: "0.8" },
           { ID: "2", label: "Category 2", relevance: "0.5" }
         ];
         const result = neuwo.filterIabTaxonomyTier(taxonomies, {});
+        expect(result[0].ID, "first item should keep original position").to.equal("3");
+        expect(result[1].ID, "second item should keep original position").to.equal("1");
+        expect(result[2].ID, "third item should keep original position").to.equal("2");
+      });
+
+      it("should sort by relevance descending only when limit is set", function () {
+        const taxonomies = [
+          { ID: "3", label: "Category 3", relevance: "0.3" },
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { limit: 2 });
+        expect(result).to.have.lengthOf(2);
         expect(result[0].ID, "first item should have highest relevance").to.equal("1");
         expect(result[1].ID, "second item should have second highest relevance").to.equal("2");
-        expect(result[2].ID, "third item should have lowest relevance").to.equal("3");
+      });
+
+      it("should not sort when only threshold is set", function () {
+        const taxonomies = [
+          { ID: "3", label: "Category 3", relevance: "0.6" },
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.2" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { threshold: 0.5 });
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].ID, "should preserve original order after threshold filter").to.equal("3");
+        expect(result[1].ID, "should preserve original order after threshold filter").to.equal("1");
       });
 
       it("should handle empty array", function () {
