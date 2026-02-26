@@ -10,6 +10,7 @@ import {config as configObj} from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 import 'modules/nativeRendering.js';
+import * as adUnits from 'src/utils/adUnits';
 
 import {expect} from 'chai';
 

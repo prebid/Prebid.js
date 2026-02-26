@@ -1856,13 +1856,13 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should add viewability to imp.ext when measurable', () => {
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, {adUnitCode: 'Div1'}, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
     const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, {adUnitCode: 'Div1'}, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');
   });
@@ -1870,13 +1870,13 @@ describe('addViewabilityToImp', () => {
   it('should not add viewability if element is not found', () => {
     document.getElementById.restore();
     sandbox.stub(document, 'getElementById').returns(null);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, {adUnitCode: 'Div1'}, { w: 300, h: 250 });
     expect(imp.ext).to.not.have.property('viewability');
   });
 
   it('should create imp.ext if not present', () => {
     imp = {};
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, {adUnitCode: 'Div1'}, { w: 300, h: 250 });
     expect(imp.ext).to.exist;
     expect(imp.ext).to.have.property('viewability');
   });

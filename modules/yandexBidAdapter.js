@@ -7,6 +7,7 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -183,7 +184,7 @@ export const spec = {
         queryParams['tcf-consent'] = consentString;
       }
 
-      const adUnitElement = document.getElementById(bidRequest.params.pubcontainerid || bidRequest.adUnitCode);
+      const adUnitElement = bidRequest.params.pubcontainerid ? document.getElementById(bidRequest.params.pubcontainerid) : getAdUnitElement(bidRequest);
       const windowContext = getContext(adUnitElement);
       const isIframe = inIframe();
       const coords = isIframe ? getFramePosition() : {

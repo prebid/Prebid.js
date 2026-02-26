@@ -8,6 +8,7 @@ import { mergeDeep } from '../../../src/utils.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -1069,13 +1070,9 @@ describe('VisxAdapter', function () {
 
     before(function() {
       sandbox = sinon.createSandbox();
-      documentStub = sandbox.stub(document, 'getElementById');
-      documentStub.withArgs('visx-adunit-code-1').returns({
-        id: 'visx-adunit-code-1'
-      });
-      documentStub.withArgs('visx-adunit-element-2').returns({
-        id: 'visx-adunit-element-2'
-      });
+      sandbox.stub(adUnits, 'getAdUnitElement').callsFake(({adUnitCode}) => {
+        return ['visx-adunit-code-1', 'visx-adunit-code-2'].includes(adUnitCode);
+      })
 
       getGlobal().bidderSettings = {
         visx: {

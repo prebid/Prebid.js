@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://rt.marphezis.com/hb';
 
@@ -83,7 +84,7 @@ describe('omsBidAdapter', function () {
     }];
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
