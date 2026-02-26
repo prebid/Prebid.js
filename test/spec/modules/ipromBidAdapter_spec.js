@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
+import {config} from 'src/config.js';
 import {spec} from 'modules/ipromBidAdapter.js';
 
 describe('iPROM Adapter', function () {
@@ -8,6 +9,7 @@ describe('iPROM Adapter', function () {
   let bidderRequest;
 
   beforeEach(function () {
+    config.resetConfig();
     bidRequests = [
       {
         bidder: 'iprom',
@@ -42,13 +44,16 @@ describe('iPROM Adapter', function () {
     }
   });
 
+  afterEach(function () {
+    config.resetConfig();
+  });
+
   describe('validating bids', function () {
-    it('should accept valid bid', function () {
+    it('should accept valid bid with only id', function () {
       const validBid = {
         bidder: 'iprom',
         params: {
-          id: '1234',
-          dimension: '300x250',
+          id: '1234'
         },
       };
 
@@ -108,48 +113,6 @@ describe('iPROM Adapter', function () {
 
       expect(isValid).to.equal(false);
     });
-
-    it('should accept bid with valid endpoint url', function () {
-      const validBid = {
-        bidder: 'iprom',
-        params: {
-          id: '1234',
-          endpoint: 'https://custom.iprom.net/programmatic'
-        }
-      };
-
-      const isValid = spec.isBidRequestValid(validBid);
-
-      expect(isValid).to.equal(true);
-    });
-
-    it('should reject bid if endpoint is not a string', function () {
-      const invalidBid = {
-        bidder: 'iprom',
-        params: {
-          id: '1234',
-          endpoint: 1234
-        }
-      };
-
-      const isValid = spec.isBidRequestValid(invalidBid);
-
-      expect(isValid).to.equal(false);
-    });
-
-    it('should reject bid if endpoint is not a valid url', function () {
-      const invalidBid = {
-        bidder: 'iprom',
-        params: {
-          id: '1234',
-          endpoint: 'invalid-url'
-        }
-      };
-
-      const isValid = spec.isBidRequestValid(invalidBid);
-
-      expect(isValid).to.equal(false);
-    });
   });
 
   describe('building requests', function () {
@@ -162,47 +125,50 @@ describe('iPROM Adapter', function () {
       expect(request.url).to.equal('https://core.iprom.net/programmatic');
     });
 
-    it('should use custom endpoint from params when valid', function () {
-      const bidRequestsWithEndpoint = [{
-        ...bidRequests[0],
-        params: {
-          ...bidRequests[0].params,
-          endpoint: 'https://custom.iprom.net/programmatic'
+    it('should use custom endpoint from global bidder config', function () {
+      config.setConfig({
+        iprom: {
+          endpoint: 'https://global.iprom.net/programmatic'
         }
-      }];
-      const request = spec.buildRequests(bidRequestsWithEndpoint, bidderRequest);
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(request.url).to.equal('https://custom.iprom.net/programmatic');
+      expect(request.url).to.equal('https://global.iprom.net/programmatic');
       expect(request.ortb).to.equal(true);
       expect(request.data).to.be.an('object');
       expect(request.data.imp).to.be.an('array').with.lengthOf(1);
       expect(request.data.bids).to.be.undefined;
     });
 
-    it('should fallback to default endpoint for invalid custom endpoint', function () {
-      const bidRequestsWithInvalidEndpoint = [{
-        ...bidRequests[0],
-        params: {
-          ...bidRequests[0].params,
-          endpoint: 'invalid-url'
+    it('should include schain in ORTB request when present in bidderRequest.ortb2', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'exchange1.com',
+          sid: '00001',
+          hp: 1
+        }]
+      };
+      config.setConfig({
+        iprom: {
+          endpoint: 'https://global.iprom.net/programmatic'
         }
-      }];
-      const request = spec.buildRequests(bidRequestsWithInvalidEndpoint, bidderRequest);
-
-      expect(request.url).to.equal('https://core.iprom.net/programmatic');
-    });
-
-    it('should fallback to default endpoint for non-string endpoint', function () {
-      const bidRequestsWithNonStringEndpoint = [{
-        ...bidRequests[0],
-        params: {
-          ...bidRequests[0].params,
-          endpoint: 1234
+      });
+      const bidderRequestWithGlobalSchain = {
+        ...bidderRequest,
+        ortb2: {
+          source: {
+            ext: {
+              schain
+            }
+          }
         }
-      }];
-      const request = spec.buildRequests(bidRequestsWithNonStringEndpoint, bidderRequest);
+      };
 
-      expect(request.url).to.equal('https://core.iprom.net/programmatic');
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGlobalSchain);
+
+      expect(request.data.source.ext.schain).to.deep.equal(schain);
     });
 
     it('should add only selected referer info', function () {
@@ -293,8 +259,8 @@ describe('iPROM Adapter', function () {
           hp: 1
         }]
       };
-      const bidRequestsWithSchain = [{
-        ...bidRequests[0],
+      const bidderRequestWithSchain = {
+        ...bidderRequest,
         ortb2: {
           source: {
             ext: {
@@ -302,8 +268,8 @@ describe('iPROM Adapter', function () {
             }
           }
         }
-      }];
-      const request = spec.buildRequests(bidRequestsWithSchain, bidderRequest);
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequestWithSchain);
       const requestparse = JSON.parse(request.data);
 
       expect(requestparse.schain).to.deep.equal(schain);
@@ -319,25 +285,20 @@ describe('iPROM Adapter', function () {
           hp: 1
         }]
       };
-      const bidRequestsWithSchain = [{
-        ...bidRequests[0],
+      const bidderRequestWithFpdAndSchain = {
+        ...bidderRequest,
         ortb2: {
           source: {
             ext: {
               schain
             }
-          }
-        }
-      }];
-      const bidderRequestWithFpd = {
-        ...bidderRequest,
-        ortb2: {
+          },
           site: {
             domain: 'adserver.si'
           }
         }
       };
-      const request = spec.buildRequests(bidRequestsWithSchain, bidderRequestWithFpd);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithFpdAndSchain);
       const requestparse = JSON.parse(request.data);
 
       expect(requestparse.schain).to.deep.equal(schain);
@@ -410,14 +371,12 @@ describe('iPROM Adapter', function () {
     });
 
     it('should parse OpenRTB response when custom endpoint is used', function () {
-      const bidRequestsWithEndpoint = [{
-        ...bidRequests[0],
-        params: {
-          ...bidRequests[0].params,
-          endpoint: 'https://custom.iprom.net/programmatic'
+      config.setConfig({
+        iprom: {
+          endpoint: 'https://global.iprom.net/programmatic'
         }
-      }];
-      const request = spec.buildRequests(bidRequestsWithEndpoint, bidderRequest);
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const impId = request.data.imp[0].id;
       const serverResponse = {
         body: {

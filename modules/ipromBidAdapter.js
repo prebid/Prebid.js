@@ -1,5 +1,6 @@
 import { deepClone, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'iprom';
@@ -31,11 +32,11 @@ function isValidEndpointUrl(endpoint) {
   }
 }
 
-function getCustomEndpoint(validBidRequests) {
-  const endpoint = validBidRequests?.[0]?.params?.endpoint;
+function getCustomEndpoint() {
+  const configuredEndpoint = config.getConfig(`${BIDDER_CODE}.endpoint`);
 
-  if (typeof endpoint === 'string' && isValidEndpointUrl(endpoint)) {
-    return endpoint;
+  if (typeof configuredEndpoint === 'string' && isValidEndpointUrl(configuredEndpoint)) {
+    return configuredEndpoint;
   }
 
   return null;
@@ -59,23 +60,11 @@ export const spec = {
       return false;
     }
 
-    if (params.endpoint != null) {
-      if (typeof params.endpoint !== 'string') {
-        logError(`${bidder}: Parameter 'endpoint' needs to be a string`);
-        return false;
-      }
-
-      if (!isValidEndpointUrl(params.endpoint)) {
-        logError(`${bidder}: Parameter 'endpoint' needs to be a valid URL`);
-        return false;
-      }
-    }
-
     return true;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const customEndpoint = getCustomEndpoint(validBidRequests);
+    const customEndpoint = getCustomEndpoint();
 
     if (customEndpoint) {
       const ortbRequest = converter.toORTB({
@@ -91,7 +80,6 @@ export const spec = {
       };
     }
 
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     const payload = {
       bids: validBidRequests,
       version: VERSION
@@ -138,6 +126,7 @@ export const spec = {
       payload.tcf = tcf;
     }
 
+    const schain = bidderRequest?.ortb2?.source?.ext?.schain;
     if (schain) {
       payload.schain = schain;
     }
