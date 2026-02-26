@@ -28,17 +28,16 @@ export function getViewportOffset(win = window) {
 }
 
 function applySize(bbox, {w, h}) {
-  const {width, height, left, top} = bbox;
-  const result = Object.assign({}, bbox);
+  let {width, height, left, top, right, bottom, x, y} = bbox;
+
   if ((width === 0 || height === 0) && w && h) {
-    Object.assign(result, {
-      width: w,
-      height: h,
-      right: left + w,
-      bottom: top + h
-    })
+    width = w;
+    height = h;
+    right = left + w;
+    bottom = top + h;
   }
-  return result;
+
+  return {width, height, left, top, right, bottom, x, y};
 }
 
 export function getBoundingBox(element, {w, h} = {}) {
