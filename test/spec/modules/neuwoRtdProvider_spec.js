@@ -3771,5 +3771,168 @@ describe("neuwoRtdModule", function () {
         expect(result, "should only have segtax keys").to.have.all.keys("6", "4");
       });
     });
+
+    describe("getBidRequestData with caching (legacy cache key isolation)", function () {
+      beforeEach(function () {
+        neuwo.clearCache();
+      });
+
+      it("should not share cache between different iabContentTaxonomyVersion values", function () {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = configV1();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf1.params.enableCache = true;
+        conf1.params.iabContentTaxonomyVersion = "3.0";
+
+        const conf2 = configV1();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf2.params.enableCache = true;
+        conf2.params.iabContentTaxonomyVersion = "2.2";
+
+        // First call with taxonomy 3.0
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf1, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Verify first call has content under segtax 7 (taxonomy 3.0)
+        const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data?.[0];
+        expect(contentData1, "First call should have content data").to.exist;
+        expect(contentData1.ext.segtax, "First call should use segtax 7").to.equal(7);
+
+        // Second call with taxonomy 2.2 - should NOT use cache from taxonomy 3.0
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf2, "consent data");
+        expect(server.requests.length, "Second call should make a new API request for different taxonomy").to.equal(2);
+
+        server.requests[1].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Verify second call has content under segtax 6 (taxonomy 2.2)
+        const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+        expect(contentData2, "Second call should have content data").to.exist;
+        expect(contentData2.ext.segtax, "Second call should use segtax 6").to.equal(6);
+      });
+
+      it("should not share cache between different iabTaxonomyFilters values", function () {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = configV1();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf1.params.enableCache = true;
+        conf1.params.iabTaxonomyFilters = { ContentTier1: { limit: 1 } };
+
+        const conf2 = configV1();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf2.params.enableCache = true;
+        // No filters
+
+        // First call with filters
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf1, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call without filters - should NOT reuse filtered cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf2, "consent data");
+        expect(server.requests.length, "Second call should make a new API request for different filters").to.equal(2);
+      });
+
+      it("should share cache when legacy config is identical", function () {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = configV1();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf.params.enableCache = true;
+
+        // First call
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with same config - should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Second call should use cache for identical config").to.equal(1);
+
+        const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data?.[0];
+        const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+        expect(contentData1, "First call should have content data").to.exist;
+        expect(contentData2, "Second call should have content data from cache").to.exist;
+        expect(contentData1.segment, "Cached data should match original").to.deep.equal(contentData2.segment);
+      });
+
+      it("should not share pending requests between different taxonomy versions", function (done) {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = configV1();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf1.params.enableCache = true;
+        conf1.params.iabContentTaxonomyVersion = "3.0";
+
+        const conf2 = configV1();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf2.params.enableCache = true;
+        conf2.params.iabContentTaxonomyVersion = "2.2";
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 2) {
+            try {
+              // Both should have made separate API requests
+              expect(server.requests.length, "Should make two API requests for different taxonomies").to.equal(2);
+
+              const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data?.[0];
+              const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+              expect(contentData1, "First call should have content data").to.exist;
+              expect(contentData2, "Second call should have content data").to.exist;
+              expect(contentData1.ext.segtax, "First call should use segtax 7").to.equal(7);
+              expect(contentData2.ext.segtax, "Second call should use segtax 6").to.equal(6);
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Two concurrent calls with different taxonomy versions
+        neuwo.getBidRequestData(bidsConfig1, callback, conf1, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf2, "consent data");
+
+        // Should be two separate requests, not shared pending promise
+        expect(server.requests.length, "Should make two separate API requests").to.equal(2);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+        server.requests[1].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+      });
+    });
   });
 });

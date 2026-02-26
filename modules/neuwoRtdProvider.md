@@ -388,4 +388,4 @@ npx gulp build --modules=rtdModule,neuwoRtdProvider
 
 This command creates optimised, minified code typically used on websites.
 
-> Version **2.2.1**
+> Version **2.2.2**

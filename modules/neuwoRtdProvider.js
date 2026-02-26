@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.2.1
+ * @version 2.2.2
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -30,7 +30,7 @@ import {
 } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
-const MODULE_VERSION = "2.2.1";
+const MODULE_VERSION = "2.2.2";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Default IAB Content Taxonomy version
@@ -195,35 +195,47 @@ export function getBidRequestData(
 
   const neuwoApiUrlFull = neuwoApiUrl + joiner + urlParams.join("&");
 
+  // For /v1/iab endpoints the full URL already encodes all config (iabVersions, filters).
+  // For legacy endpoints the URL only carries token + page URL, so append config-dependent
+  // values to the cache key to prevent different configs sharing a response that was
+  // transformed/filtered for a different taxonomy version or filter set.
+  let cacheKey = neuwoApiUrlFull;
+  if (!isIabEndpoint) {
+    cacheKey += "&_segtax=" + contentSegtax;
+    if (iabTaxonomyFilters && Object.keys(iabTaxonomyFilters).length > 0) {
+      cacheKey += "&_filters=" + JSON.stringify(iabTaxonomyFilters);
+    }
+  }
+
   // Cache flow: cached response -> pending request -> new request
   // Each caller gets their own callback invoked when data is ready.
-  // Keyed by full API URL to ensure different parameters never share cached data.
-  if (enableCache && cachedResponses[neuwoApiUrlFull]) {
+  // Keyed by cacheKey to ensure different parameters never share cached data.
+  if (enableCache && cachedResponses[cacheKey]) {
     // Previous request succeeded - use cached response immediately
     logInfo(
       MODULE_NAME,
       "getBidRequestData():",
       "Cache System:",
       "Using cached response for:",
-      neuwoApiUrlFull
+      cacheKey
     );
     injectIabCategories(
-      cachedResponses[neuwoApiUrlFull],
+      cachedResponses[cacheKey],
       reqBidsConfigObj,
       iabContentTaxonomyVersion,
       enableOrtb25Fields
     );
     callback();
-  } else if (enableCache && pendingRequests[neuwoApiUrlFull]) {
+  } else if (enableCache && pendingRequests[cacheKey]) {
     // Another caller started a request with the same params - wait for it
     logInfo(
       MODULE_NAME,
       "getBidRequestData():",
       "Cache System:",
       "Waiting for pending request for:",
-      neuwoApiUrlFull
+      cacheKey
     );
-    pendingRequests[neuwoApiUrlFull]
+    pendingRequests[cacheKey]
       .then((responseParsed) => {
         if (responseParsed) {
           injectIabCategories(
@@ -300,7 +312,7 @@ export function getBidRequestData(
                 if (keys.length >= MAX_CACHE_ENTRIES) {
                   delete cachedResponses[keys[0]];
                 }
-                cachedResponses[neuwoApiUrlFull] = responseParsed;
+                cachedResponses[cacheKey] = responseParsed;
               }
 
               injectIabCategories(
@@ -337,10 +349,10 @@ export function getBidRequestData(
 
     if (enableCache) {
       // Store promise so concurrent callers with same params can wait on it
-      pendingRequests[neuwoApiUrlFull] = requestPromise;
+      pendingRequests[cacheKey] = requestPromise;
       // Clear after settling so failed requests can be retried
       requestPromise.finally(() => {
-        delete pendingRequests[neuwoApiUrlFull];
+        delete pendingRequests[cacheKey];
       });
     }
 
