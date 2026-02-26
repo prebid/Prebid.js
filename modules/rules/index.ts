@@ -55,7 +55,7 @@ interface ModelGroupSchema {
   /** Function name inside the schema */
   function: string;
   /** Arguments for the schema function */
-  args: any[];
+  args?: any[];
 }
 
 /**
@@ -66,7 +66,7 @@ interface ModelGroup {
   /** Determines selection probability; only one object within the group is chosen */
   weight: number;
   /** Indicates whether this model group is selected (set automatically based on weight) */
-  selected: boolean;
+  selected?: boolean;
   /** Optional key used to produce aTags, identifying experiments or optimization targets */
   analyticsKey: string;
   /** Version identifier for analytics */
@@ -82,7 +82,7 @@ interface ModelGroup {
    */
   rules: [{
     /** Conditions that must be met for the rule to apply */
-    condition: string[];
+    conditions: string[];
     /** Resulting actions triggered when conditions are met */
     results: [
       {
@@ -138,7 +138,7 @@ interface RulesConfig {
   /** One or more independent sets of rules */
   ruleSets: RuleSet[];
   /** Optional timestamp of the last update (ISO 8601 format: `YYYY-MM-DDThh:mm:ss[.sss][Z or ±hh:mm]`) */
-  timestamp: string;
+  timestamp?: string;
   /** Enables or disables the module. Default: `true` */
   enabled: boolean;
 }
