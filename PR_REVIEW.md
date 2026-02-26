@@ -19,7 +19,7 @@ General gulp commands include separate commands for serving the codebase on a bu
 
 ### General PR review Process
 
-- Whenever possible, all new files added under `/modules`, `/libraries`, and `/src` should be TypeScript files (`.ts`) rather than JavaScript files (`.js`).
+- Whenever possible, encourage submitters of new files added under `/modules`, `/libraries`, and `/src` to submit TypeScript files (`.ts`) rather than JavaScript files (`.js`).
 
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
 - Checkout the branch (these instructions are available on the GitHub PR page as well).
