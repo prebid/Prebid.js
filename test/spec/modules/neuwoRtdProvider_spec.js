@@ -2280,6 +2280,37 @@ describe("neuwoRtdModule", function () {
       const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
       expect(contentData.name, "Should successfully process response").to.equal(neuwo.DATA_PROVIDER);
     });
+
+    it("should treat a legacy URL with /v1/iab in query params as a legacy endpoint", function () {
+      const bidsConfig = bidsConfiglike();
+      const conf = config();
+      // Proxy URL where /v1/iab appears in query params, not the path
+      conf.params.neuwoApiUrl = "https://proxy.example.com/api?redirect=/v1/iab";
+      conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php";
+
+      neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+      const request = server.requests[0];
+
+      // Legacy endpoints should NOT include iabVersions params
+      expect(request.url, "should not include iabVersions for legacy endpoint").to.not.include("iabVersions=");
+      // Should still include token and url params
+      expect(request.url, "should include token param").to.include("token=");
+      expect(request.url, "should include url param").to.include("url=");
+    });
+
+    it("should detect /v1/iab endpoint from a malformed URL using fallback parsing", function () {
+      const bidsConfig = bidsConfiglike();
+      const conf = config();
+      // Malformed URL that causes new URL() to throw, but has /v1/iab in path
+      conf.params.neuwoApiUrl = "/v1/iab";
+      conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php";
+
+      neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+      const request = server.requests[0];
+
+      // Fallback parser should detect /v1/iab in path portion and treat as IAB endpoint
+      expect(request.url, "should include iabVersions for IAB endpoint").to.include("iabVersions=");
+    });
   });
 
   describe("getBidRequestData with caching", function () {

@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.2.4
+ * @version 2.2.5
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -30,7 +30,7 @@ import {
 } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
-const MODULE_VERSION = "2.2.4";
+const MODULE_VERSION = "2.2.5";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Default IAB Content Taxonomy version
@@ -153,8 +153,14 @@ export function getBidRequestData(
     IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
     IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION];
 
-  // Detect whether the endpoint supports multi-taxonomy responses and server-side filtering
-  const isIabEndpoint = neuwoApiUrl.includes("/v1/iab");
+  // Detect whether the endpoint supports multi-taxonomy responses and server-side filtering.
+  // Use URL pathname to avoid false positives when "/v1/iab" appears in query params.
+  let isIabEndpoint = false;
+  try {
+    isIabEndpoint = new URL(neuwoApiUrl).pathname.includes("/v1/iab");
+  } catch (e) {
+    isIabEndpoint = neuwoApiUrl.split("?")[0].includes("/v1/iab");
+  }
 
   // Warn if OpenRTB 2.5 feature enabled with legacy endpoint
   if (enableOrtb25Fields && !isIabEndpoint) {
