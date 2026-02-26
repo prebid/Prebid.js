@@ -233,9 +233,9 @@ describe('percentInView', () => {
   describe('percentInView', () => {
     let intersection;
     beforeEach(() => {
-      sinon.stub(viewportIntersections, 'getIntersection').callsFake(() => intersection);
-      sinon.stub(viewportIntersections, 'observe');
-      sinon.stub(bbox, 'getBoundingClientRect');
+      sandbox.stub(viewportIntersections, 'getIntersection').callsFake(() => intersection);
+      sandbox.stub(viewportIntersections, 'observe');
+      sandbox.stub(bbox, 'getBoundingClientRect');
     });
 
     it('does not use intersection if w/h are relevant', () => {
