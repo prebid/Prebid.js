@@ -1,8 +1,11 @@
 import {
   getViewportOffset,
-  intersections, mkIntersectionHook,
+  intersections, mkIntersectionHook, percentInView, viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
+import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
+
 import {defer} from 'src/utils/promise.js';
+import {getBoundingClientRect} from 'libraries/boundingClientRect/boundingClientRect';
 
 describe('percentInView', () => {
   let sandbox;
@@ -208,4 +211,31 @@ describe('percentInView', () => {
       });
     });
   });
+
+  describe('percentInView', () => {
+    let intersection;
+    beforeEach(() => {
+      sinon.stub(viewportIntersections, 'getIntersection').callsFake(() => intersection);
+      sinon.stub(viewportIntersections, 'observe');
+      sinon.stub(bbox, 'getBoundingClientRect');
+    });
+
+    it('does not use intersection if w/h are relevant', () => {
+      bbox.getBoundingClientRect.returns({
+        width: 0,
+        height: 0,
+        left: -50,
+        top: -100,
+      })
+      intersection = {
+        boundingClientRect: {
+          width: 0,
+          height: 0,
+        },
+        isIntersecting: true,
+        intersectionRatio: 1
+      }
+      expect(percentInView({}, {w: 100, h: 200})).to.not.eql(100);
+    })
+  })
 });

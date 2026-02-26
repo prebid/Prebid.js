@@ -27,17 +27,22 @@ export function getViewportOffset(win = window) {
   return {x, y};
 }
 
-export function getBoundingBox(element, {w, h} = {}) {
-  let {width, height, left, top, right, bottom, x, y} = getBoundingClientRect(element);
-
+function applySize(bbox, {w, h}) {
+  const {width, height, left, top} = bbox;
+  const result = Object.assign({}, bbox);
   if ((width === 0 || height === 0) && w && h) {
-    width = w;
-    height = h;
-    right = left + w;
-    bottom = top + h;
+    Object.assign(result, {
+      width: w,
+      height: h,
+      right: left + w,
+      bottom: top + h
+    })
   }
+  return result;
+}
 
-  return {width, height, left, top, right, bottom, x, y};
+export function getBoundingBox(element, {w, h} = {}) {
+  return applySize(getBoundingClientRect(element), {w, h});
 }
 
 function getIntersectionOfRects(rects) {
@@ -177,6 +182,10 @@ export function percentInView(element, {w, h} = {}) {
     viewportIntersections.observe(element);
     return percentInViewStatic(element, {w, h});
   } else {
+    if (applySize(intersection.boundingClientRect, {w, h}).width !== intersection.boundingClientRect.width) {
+      // use odd w/h override
+      return percentInViewStatic(element, {w, h});
+    }
     return intersection.isIntersecting ? intersection.intersectionRatio * 100 : 0;
   }
 }
