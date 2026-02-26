@@ -34,9 +34,9 @@ No registration for this module is required.
 | options.browserBlackList        | Optional | String   | This is the name of a browser that can be added to a blacklist.| `"chrome"`|
 | options.domainName              | Optional | String   | Specifies the domain of the page in which the IntentIQ object is currently running and serving the impression. This domain will be used later in the revenue reporting breakdown by domain. For example, cnn.com. It identifies the primary source of requests to the IntentIQ servers, even within nested web pages.| `"currentDomain.com"`|
 | options. additionalParams | Optional | Array | This parameter allows sending additional custom key-value parameters with specific destination logic (sync, VR, winreport). Each custom parameter is defined as an object in the array. | `[ { parameterName: “abc”, parameterValue: 123, destination: [1,1,0] } ]` |
-| options. additionalParams[0].parameterName | Required | String | Name of the custom parameter. This will be sent as a query parameter. | `"abc"` |
-| options. additionalParams[0].parameterValue | Required | String / Number | Value to assign to the parameter. | `123` |
-| options. additionalParams[0].destination | Required | Array | Array of numbers either `1` or `0`. Controls where this parameter is sent `[sendWithSync, sendWithVr, winreport]`. | `[1, 0, 0]` |
+| options. additionalParams[0].parameterName | Optional | String | Name of the custom parameter. This will be sent as a query parameter. | `"abc"` |
+| options. additionalParams[0].parameterValue | Optional | String / Number | Value to assign to the parameter. | `123` |
+| options. additionalParams[0].destination | Optional | Array | Array of numbers either `1` or `0`. Controls where this parameter is sent `[sendWithSync, sendWithVr, winreport]`. | `[1, 0, 0]` |
 
 #### Example Configuration
 
