@@ -10,7 +10,6 @@ import { spec, storage } from 'modules/mediafuseBidAdapter.js';
 import { deepClone } from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
-import { bidderSettings } from '../../../src/bidderSettings.js';
 import sinon from 'sinon';
 
 // ---------------------------------------------------------------------------
@@ -260,7 +259,7 @@ describe('mediafuseBidAdapter', function () {
     it('should set iab_support when bid.params.frameworks includes 6', function () {
       const bid = deepClone(BASE_BID);
       bid.params.frameworks = [6];
-      // hasOmidSupport reads bidderRequest.bids[0], so bid must be there
+      // hasOmidSupport iterates all bids via .some(), so bid must be in bidderRequest.bids
       const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
       bidderRequest.bids = [bid];
       const [req] = spec.buildRequests([bid], bidderRequest);
@@ -273,7 +272,7 @@ describe('mediafuseBidAdapter', function () {
     it('should set iab_support when mediaTypes.video.api includes 7', function () {
       const bid = deepClone(BASE_BID);
       bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [7] } };
-      // hasOmidSupport reads bidderRequest.bids[0]
+      // hasOmidSupport iterates all bids via .some(), so bid must be in bidderRequest.bids
       const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
       bidderRequest.bids = [bid];
       const [req] = spec.buildRequests([bid], bidderRequest);
@@ -342,39 +341,6 @@ describe('mediafuseBidAdapter', function () {
       const bids = spec.interpretResponse(serverResponse, req);
       expect(bids[0].vastUrl).to.include('redir=');
       expect(bids[0].vastUrl).to.include(encodeURIComponent('https://vast.example.com/vast.xml'));
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // interpretResponse — zero CPM bids
-  // -------------------------------------------------------------------------
-  describe('interpretResponse - zero CPM bids', function () {
-    it('should filter out zero CPM bids by default (allowZeroCpmBids=false)', function () {
-      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{ bid: [{ impid: impId, price: 0, ext: { appnexus: { bid_ad_type: 0 } } }] }]
-        }
-      };
-
-      const stub = sandbox.stub(bidderSettings, 'get');
-      stub.withArgs('mediafuse', 'allowZeroCpmBids').returns(false);
-      expect(spec.interpretResponse(serverResponse, req)).to.have.lengthOf(0);
-    });
-
-    it('should include zero CPM bids when allowZeroCpmBids=true', function () {
-      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{ bid: [{ impid: impId, price: 0, ext: { appnexus: { bid_ad_type: 0 } } }] }]
-        }
-      };
-
-      const stub = sandbox.stub(bidderSettings, 'get');
-      stub.withArgs('mediafuse', 'allowZeroCpmBids').returns(true);
-      expect(spec.interpretResponse(serverResponse, req)).to.have.lengthOf(1);
     });
   });
 
@@ -524,6 +490,64 @@ describe('mediafuseBidAdapter', function () {
       expect(native.icon.url).to.equal('https://img.test/icon.png');
     });
 
+    it('should handle real-world native response: top-level format (no native wrapper), non-sequential IDs, type fallback', function () {
+      // Validates the format actually returned by the Mediafuse/Xandr endpoint:
+      // ADM is top-level {ver, assets, link, eventtrackers} — no 'native' wrapper key.
+      // Asset IDs are non-sequential (id:0 for title). Data/img assets omit 'type';
+      // type is resolved from the native request's asset definitions.
+      const bid = deepClone(BASE_BID);
+      bid.mediaTypes = { native: { title: { required: true } } };
+      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+      const impId = req.data.imp[0].id;
+
+      // Inject native.request asset definitions so the type-fallback resolves correctly
+      req.data.imp[0].native = {
+        request: JSON.stringify({
+          assets: [
+            { id: 0, title: { len: 100 } },
+            { id: 1, img: { type: 3, wmin: 1, hmin: 1 } },  // main image
+            { id: 2, data: { type: 1 } }                      // sponsoredBy
+          ]
+        })
+      };
+
+      // Real-world ADM: top-level, assets lack 'type', id:0 title, two eventtrackers
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: impId,
+              price: 0.88,
+              adm: JSON.stringify({
+                ver: '1.2',
+                assets: [
+                  { id: 1, img: { url: 'https://img.example.com/img.jpg', w: 150, h: 150 } },
+                  { id: 0, title: { text: 'Discover Insights That Matter' } },
+                  { id: 2, data: { value: 'probescout' } }
+                ],
+                link: { url: 'https://click.example.com' },
+                eventtrackers: [
+                  { event: 1, method: 1, url: 'https://tracker1.example.com/it' },
+                  { event: 1, method: 1, url: 'https://tracker2.example.com/t' }
+                ]
+              }),
+              ext: { appnexus: { bid_ad_type: 3 } }
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, req);
+      const native = bids[0].native;
+      expect(native.title).to.equal('Discover Insights That Matter');
+      expect(native.sponsoredBy).to.equal('probescout');
+      expect(native.image.url).to.equal('https://img.example.com/img.jpg');
+      expect(native.image.width).to.equal(150);
+      expect(native.image.height).to.equal(150);
+      expect(native.clickUrl).to.equal('https://click.example.com');
+      expect(native.javascriptTrackers).to.be.an('array').with.lengthOf(2);
+    });
+
     it('should disarm eventtrackers (trk.js) by replacing src= with data-src=', function () {
       const bid = deepClone(BASE_BID);
       bid.mediaTypes = { native: { title: { required: true } } };
@@ -642,19 +666,6 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
 
   // -------------------------------------------------------------------------
-  // lifecycle — onBidderError
-  // -------------------------------------------------------------------------
-  describe('onBidderError', function () {
-    it('should call logMessage with error details', function () {
-      const logStub = sandbox.stub(utils, 'logMessage');
-      const error = new Error('timeout');
-      spec.onBidderError({ error, bidderRequest: { auctionId: 'x' } });
-      expect(logStub.calledOnce).to.be.true;
-      expect(logStub.firstCall.args[0]).to.include('Mediafuse Bidder Error');
-    });
-  });
-
-  // -------------------------------------------------------------------------
   // interpretResponse — dchain from buyer_member_id
   // -------------------------------------------------------------------------
   describe('interpretResponse - dchain', function () {
@@ -700,24 +711,12 @@ describe('mediafuseBidAdapter', function () {
       expect(extAN.traffic_source_code).to.equal('my-source');
     });
 
-    it('should map externalImpId to imp.id', function () {
+    it('should map externalImpId to ext.appnexus.ext_imp_id', function () {
       const bid = deepClone(BASE_BID);
       bid.params.externalImpId = 'ext-imp-123';
       const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      expect(req.data.imp[0].id).to.equal('ext-imp-123');
+      expect(req.data.imp[0].ext.appnexus.ext_imp_id).to.equal('ext-imp-123');
     });
-  });
-});
-
-describe('mediafuseBidAdapter', function () {
-  let sandbox;
-
-  beforeEach(function () {
-    sandbox = sinon.createSandbox();
-  });
-
-  afterEach(function () {
-    sandbox.restore();
   });
 
   // -------------------------------------------------------------------------
@@ -1660,15 +1659,15 @@ describe('mediafuseBidAdapter', function () {
   // onBidderError
   // -------------------------------------------------------------------------
   describe('onBidderError', function () {
-    it('should log an error message via utils.logMessage', function () {
-      const logSpy = sandbox.spy(utils, 'logMessage');
+    it('should log an error message via utils.logError', function () {
+      const logSpy = sandbox.spy(utils, 'logError');
       spec.onBidderError({ error: new Error('network timeout'), bidderRequest: deepClone(BASE_BIDDER_REQUEST) });
       expect(logSpy.called).to.be.true;
       expect(logSpy.firstCall.args[0]).to.include('Mediafuse Bidder Error');
     });
 
-    it('should include the error in the logged message', function () {
-      const logSpy = sandbox.spy(utils, 'logMessage');
+    it('should include the error message in the logged string', function () {
+      const logSpy = sandbox.spy(utils, 'logError');
       spec.onBidderError({ error: new Error('timeout'), bidderRequest: deepClone(BASE_BIDDER_REQUEST) });
       expect(logSpy.firstCall.args[0]).to.include('timeout');
     });

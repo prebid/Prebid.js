@@ -4,7 +4,6 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { bidderSettings } from '../src/bidderSettings.js';
 import {
   createTrackPixelHtml,
   deepAccess,
@@ -64,6 +63,22 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 /**
  * Modernized Mediafuse Bid Adapter using ortbConverter.
  */
+const OPTIONAL_PARAMS_MAP = {
+  'allowSmallerSizes': 'allow_smaller_sizes',
+  'usePaymentRule': 'use_pmt_rule',
+  'trafficSourceCode': 'traffic_source_code',
+  'pubClick': 'pubclick',
+  'extInvCode': 'ext_inv_code',
+  'externalImpId': 'ext_imp_id',
+  'supplyType': 'supply_type'
+};
+const KNOWN_PARAMS = new Set([
+  'placementId', 'placement_id', 'invCode', 'inv_code', 'member', 'keywords',
+  'reserve', 'video', 'user', 'app', 'frameworks', 'position', 'publisherId',
+  'publisher_id', 'banner_frameworks', 'video_frameworks',
+  ...Object.keys(OPTIONAL_PARAMS_MAP),
+  ...Object.values(OPTIONAL_PARAMS_MAP)
+]);
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -198,30 +213,14 @@ const converter = ortbConverter({
       extANData.custom_renderer_present = true;
     }
 
-    // Optional params map
-    const optionalParamsMap = {
-      'allowSmallerSizes': 'allow_smaller_sizes',
-      'usePaymentRule': 'use_pmt_rule',
-      'trafficSourceCode': 'traffic_source_code',
-      'pubClick': 'pubclick',
-      'extInvCode': 'ext_inv_code',
-      'externalImpId': 'ext_imp_id',
-      'supplyType': 'supply_type'
-    };
-
-    Object.entries(optionalParamsMap).forEach(([paramName, ortbName]) => {
+    Object.entries(OPTIONAL_PARAMS_MAP).forEach(([paramName, ortbName]) => {
       if (bidderParams[paramName] !== undefined) {
-        if (ortbName === 'ext_imp_id') {
-          imp.id = bidderParams[paramName];
-        } else {
-          extANData[ortbName] = bidderParams[paramName];
-        }
+        extANData[ortbName] = bidderParams[paramName];
       }
     });
 
-    const knownParams = ['placementId', 'placement_id', 'invCode', 'inv_code', 'member', 'keywords', 'reserve', 'video', 'user', 'app', 'frameworks', 'position', 'publisherId', 'publisher_id', ...Object.keys(optionalParamsMap), ...Object.values(optionalParamsMap), 'banner_frameworks', 'video_frameworks'];
     Object.keys(bidderParams)
-      .filter(param => !knownParams.includes(param))
+      .filter(param => !KNOWN_PARAMS.has(param))
       .forEach(param => {
         extANData[convertCamelToUnderscore(param)] = bidderParams[param];
       });
@@ -253,11 +252,13 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    // Ensure EIDs are mapped from bids if not already set by ortbConverter
+    // Ensure EIDs from the userId module are included when ortbConverter hasn't already
+    // populated user.ext.eids (e.g. when ortb2.user.ext.eids is not pre-set by the page).
+    // All bids in a request share the same user EIDs, so reading from bids[0] is correct.
     if (!deepAccess(request, 'user.ext.eids')) {
-      const bidderEids = bidderRequest.userIdAsEids || (bidderRequest.bids && bidderRequest.bids[0] && bidderRequest.bids[0].userIdAsEids);
-      if (isArray(bidderEids)) {
-        deepSetValue(request, 'user.ext.eids', bidderEids);
+      const bidEids = bidderRequest.bids?.[0]?.userIdAsEids;
+      if (isArray(bidEids) && bidEids.length > 0) {
+        deepSetValue(request, 'user.ext.eids', bidEids);
       }
     }
 
@@ -273,7 +274,7 @@ const converter = ortbConverter({
         if (rtiPartner) {
           // Set rtiPartner on the first uid's ext object
           if (isArray(eid.uids) && eid.uids[0]) {
-            eid.uids[0].ext = Object.assign({}, eid.uids[0].ext, { rtiPartner });
+            eid.uids[0] = Object.assign({}, eid.uids[0], { ext: Object.assign({}, eid.uids[0].ext, { rtiPartner }) });
           }
         }
       });
@@ -281,7 +282,7 @@ const converter = ortbConverter({
 
     const extANData = {
       prebid: true,
-      hb_source: 1,
+      hb_source: 1,  // 1 = client/web-originated header bidding request (Xandr source enum)
       sdk: {
         version: '$prebid.version$',
         source: SOURCE
@@ -308,6 +309,7 @@ const converter = ortbConverter({
 
     if (commonBidderParams) {
       if (commonBidderParams.member) {
+        // member_id in the request body routes bids to the correct Xandr seat
         extANData.member_id = parseInt(commonBidderParams.member, 10);
       }
       if (commonBidderParams.publisherId) {
@@ -315,7 +317,7 @@ const converter = ortbConverter({
       }
     }
 
-    if (hasOmidSupport(bidderRequest.bids?.[0])) {
+    if (bidderRequest.bids?.some(bid => hasOmidSupport(bid))) {
       extANData.iab_support = {
         omidpn: 'Mediafuse',
         omidpv: '$prebid.version$'
@@ -352,7 +354,9 @@ const converter = ortbConverter({
       deepSetValue(request, 'regs.coppa', 1);
     }
 
-    // User Params
+    // Legacy Xandr-specific user params (externalUid, segments, age, gender, dnt, language).
+    // These are not part of standard OpenRTB; kept for backwards compatibility with existing
+    // publisher configs. Standard OpenRTB user fields flow via bidderRequest.ortb2.user.
     const userObjBid = ((bidderRequest?.bids) || []).find(bid => bid.params?.user);
     if (userObjBid) {
       const userObj = request.user || {};
@@ -375,13 +379,14 @@ const converter = ortbConverter({
       request.user = userObj;
     }
 
-    // App Params
+    // Legacy app object from bid.params.app; backwards compatibility for publishers who pre-date
+    // the standard bidderRequest.ortb2.app first-party data path.
     const appObjBid = ((bidderRequest?.bids) || []).find(bid => bid.params?.app);
     if (appObjBid) {
       request.app = Object.assign({}, request.app, appObjBid.params.app);
     }
 
-    // Global Keywords
+    // Global Keywords — set via pbjs.setConfig({ mediafuseAuctionKeywords: { key: ['val'] } })
     const mfKeywords = config.getConfig('mediafuseAuctionKeywords');
     if (mfKeywords) {
       const keywords = getANKeywordParam(bidderRequest?.ortb2, mfKeywords);
@@ -408,6 +413,8 @@ const converter = ortbConverter({
     } catch (e) {
       if (bidAdType !== 3 && mediaType !== 'native') {
         logError('Mediafuse: buildBidResponse hook crash', e);
+      } else {
+        logWarn('Mediafuse: buildBidResponse native parse error', e);
       }
     }
     if (!bidResponse) {
@@ -432,14 +439,12 @@ const converter = ortbConverter({
     }
 
     if (extANData) {
-      bidResponse.mediafuse = {
+      bidResponse.meta = Object.assign({}, bidResponse.meta, {
+        advertiserId: extANData.advertiser_id,
+        brandId: extANData.brand_id,
         buyerMemberId: extANData.buyer_member_id,
         dealPriority: extANData.deal_priority,
         dealCode: extANData.deal_code
-      };
-      bidResponse.meta = Object.assign({}, bidResponse.meta, {
-        advertiserId: extANData.advertiser_id,
-        brandId: extANData.brand_id
       });
 
       if (extANData.buyer_member_id) {
@@ -485,7 +490,8 @@ const converter = ortbConverter({
           renderer_id: extANData.renderer_id,
         }, rendererOptions);
       } else if (bid.nurl && extANData?.asset_url) {
-        bidResponse.vastUrl = bid.nurl + '&redir=' + encodeURIComponent(extANData.asset_url);
+        const sep = bid.nurl.includes('?') ? '&' : '?';
+        bidResponse.vastUrl = bid.nurl + sep + 'redir=' + encodeURIComponent(extANData.asset_url);
       }
     }
 
@@ -629,10 +635,6 @@ const converter = ortbConverter({
         } catch (e) {
           logError('Mediafuse Native mapping error', e);
         }
-        // Ensure 'ad' field is set for native responses that lack it
-        if (bidResponse.native && !bidResponse.ad) {
-          bidResponse.ad = JSON.stringify({ native: bidResponse.native });
-        }
       } catch (e) {
         logError('Mediafuse Native JSON parse error', e);
       }
@@ -740,7 +742,7 @@ function outstreamRender(bid, doc) {
       let sizes = bid.getSize();
       if (typeof sizes === 'string' && sizes.indexOf('x') > -1) {
         sizes = [sizes.split('x').map(Number)];
-      } else if (!isArray(sizes) || (isArray(sizes) && !isArray(sizes[0]))) {
+      } else if (!isArray(sizes) || !isArray(sizes[0])) {
         sizes = [sizes];
       }
 
@@ -774,6 +776,7 @@ function hasOmidSupport(bid) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  maintainer: { email: 'indrajit@oncoredigital.com' },
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {
     const params = bid?.params;
@@ -822,10 +825,11 @@ export const spec = {
         logInfo('MediaFuse Debug Auction Settings:\n\n' + JSON.stringify(debugObj, null, 4));
         endpointUrl += (endpointUrl.indexOf('?') === -1 ? '?' : '&') +
           Object.keys(debugObj).filter(p => DEBUG_PARAMS.includes(p))
-            .map(p => (p === 'enabled') ? `debug=1` : `${p}=${debugObj[p]}`).join('&');
+            .map(p => (p === 'enabled') ? `debug=1` : `${p}=${encodeURIComponent(debugObj[p])}`).join('&');
       }
 
-      // member_id optimization
+      // member_id on the URL enables Xandr server-side routing to the correct seat;
+      // it is also present in ext.appnexus.member_id in the request body for exchange logic.
       const memberBid = batch.find(bid => bid.params && bid.params.member);
       const member = memberBid && memberBid.params.member;
       if (member) {
@@ -853,10 +857,6 @@ export const spec = {
       }
     }).bids;
 
-    // allowZeroCpmBids check
-    const allowZeroCpm = bidderSettings.get(BIDDER_CODE, 'allowZeroCpmBids') === true;
-    const filteredBids = bids.filter(bid => allowZeroCpm ? bid.cpm >= 0 : bid.cpm > 0);
-
     // Debug logging
     if (serverResponse.body?.debug?.debug_info) {
       const debugHeader = 'MediaFuse Debug Auction for Prebid\n\n';
@@ -872,7 +872,7 @@ export const spec = {
       logMessage(debugText);
     }
 
-    return filteredBids;
+    return bids;
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -917,7 +917,7 @@ export const spec = {
   },
 
   onBidderError: function ({ error, bidderRequest }) {
-    logMessage(`Mediafuse Bidder Error: ${error}`, bidderRequest);
+    logError(`Mediafuse Bidder Error: ${error.message || error}`, bidderRequest);
   }
 };
 
@@ -925,7 +925,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
   const viewJsPayload = getMediafuseViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
 
   if (viewJsPayload) {
-    const prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
+    const prebidParams = 'pbjs_adid=' + (bid.adId || bid.requestId) + ';pbjs_auc=' + bid.adUnitCode;
     const jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload);
     const newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
 
@@ -946,10 +946,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
             const currentScript = scriptArray[j];
             if (currentScript.getAttribute('data-src') === jsTrackerSrc) {
               currentScript.setAttribute('src', newJsTrackerSrc);
-              currentScript.setAttribute('data-src', '');
-              if (currentScript.removeAttribute) {
-                currentScript.removeAttribute('data-src');
-              }
+              currentScript.removeAttribute('data-src');
               modifiedAScript = true;
             }
           }
@@ -981,6 +978,7 @@ function getMediafuseViewabilityScriptFromJsTrackers(jsTrackerArray) {
       const currentJsTracker = jsTrackerArray[i];
       if (strIsMediafuseViewabilityScript(currentJsTracker)) {
         viewJsPayload = currentJsTracker;
+        break;
       }
     }
   }

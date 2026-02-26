@@ -3,7 +3,7 @@
 ```
 Module Name:  Mediafuse Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: prebid-js@xandr.com
+Maintainer: indrajit@oncoredigital.com
 ```
 
 # Description
@@ -77,7 +77,7 @@ var adUnits = [
           placementId: 13232361,
           video: {
             skippable: true,
-            playback_method: 'auto_play_sound_off'
+            playback_method: 2   // 1=auto-play sound on, 2=auto-play sound off, 3=click-to-play, 4=mouse-over
           }
         }
       }]
@@ -110,7 +110,7 @@ var adUnits = [
            placementId: 13232385,
            video: {
              skippable: true,
-             playback_method: 'auto_play_sound_off'
+             playback_method: 2   // 1=auto-play sound on, 2=auto-play sound off, 3=click-to-play, 4=mouse-over
            }
          }
        }
@@ -125,7 +125,7 @@ var adUnits = [
        banner: {
          sizes: [[300, 250], [300,600]]
        }
-     }
+     },
      bids: [{
        bidder: 'mediafuse',
        params: {
