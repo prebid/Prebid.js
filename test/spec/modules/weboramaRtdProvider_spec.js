@@ -163,7 +163,7 @@ describe('weboramaRtdProvider', function () {
           true,
         );
       });
-      it('should NOT initialize if gdpr applies and vendorsDisclosed are nok', function () {
+      it('should NOT initialize if gdpr applies and vendorsDisclosed does not allow weborama', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {},
