@@ -1,11 +1,13 @@
 import {
   getViewportOffset,
-  intersections, mkIntersectionHook, percentInView, viewportIntersections,
+  intersections,
+  mkIntersectionHook,
+  percentInView,
+  viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
 import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
 
 import {defer} from 'src/utils/promise.js';
-import {getBoundingClientRect} from 'libraries/boundingClientRect/boundingClientRect';
 
 describe('percentInView', () => {
   let sandbox;
@@ -32,6 +34,7 @@ describe('percentInView', () => {
       }
       return leaf;
     }
+
     it('returns 0, 0 for the top window', () => {
       expect(getViewportOffset(mockWindow())).to.eql({x: 0, y: 0});
     });
@@ -66,9 +69,24 @@ describe('percentInView', () => {
       mkObserver = sinon.stub().callsFake((cb) => {
         callback = cb;
         return nakedObs;
-      })
+      });
       obs = intersections(mkObserver);
-    })
+    });
+    describe('when mkObserver throws', () => {
+      beforeEach(() => {
+        mkObserver = sinon.stub().callsFake(() => {
+          throw new Error();
+        });
+        obs = intersections(mkObserver);
+      });
+      it('getIntersection should return undef', () => {
+        expect(obs.getIntersection({})).to.not.exist;
+      });
+
+      it('observe should resolve', async () => {
+        await obs.observe({});
+      });
+    });
 
     it('observe should reject if the element cannot be observed', async () => {
       let err = new Error();
@@ -88,20 +106,20 @@ describe('percentInView', () => {
     });
     it('getIntersection should return undefined if the element is not observed', () => {
       expect(obs.getIntersection(el)).to.not.exist;
-    })
+    });
     it('observe should resolve to latest intersection entry', () => {
       let pm = obs.observe(el);
       let entry = {
         target: el,
         time: 100
-      }
+      };
       callback([entry, {
         target: el,
         time: 50
       }]);
       return pm.then(result => {
         expect(result).to.eql(entry);
-      })
+      });
     });
     it('observe should resolve immediately if an entry is available', () => {
       const entry = {
@@ -116,7 +134,7 @@ describe('percentInView', () => {
       }]);
       return pm.then((result) => {
         expect(result).to.eql(entry);
-      })
+      });
     });
     it('should ignore stale entries', async () => {
       const entry = {
@@ -145,7 +163,7 @@ describe('percentInView', () => {
       await delay();
       callback([entry]);
       expect(await pm).to.eql(entry);
-    })
+    });
   });
 
   describe('intersection hook', () => {
@@ -154,7 +172,7 @@ describe('percentInView', () => {
       next = sinon.stub();
       intersections = {
         observe: sinon.stub()
-      }
+      };
       hook = mkIntersectionHook(intersections);
       request = {};
     });
@@ -165,7 +183,7 @@ describe('percentInView', () => {
       }, {
         code: 'el2'
       }];
-      sandbox.stub(document, 'getElementById').returns('el2')
+      sandbox.stub(document, 'getElementById').returns('el2');
       hook(next, request);
       sinon.assert.calledWith(intersections.observe, 'el1');
       sinon.assert.calledWith(intersections.observe, 'el2');
@@ -226,7 +244,7 @@ describe('percentInView', () => {
         height: 0,
         left: -50,
         top: -100,
-      })
+      });
       intersection = {
         boundingClientRect: {
           width: 0,
@@ -234,8 +252,8 @@ describe('percentInView', () => {
         },
         isIntersecting: true,
         intersectionRatio: 1
-      }
+      };
       expect(percentInView({}, {w: 100, h: 200})).to.not.eql(100);
-    })
-  })
+    });
+  });
 });

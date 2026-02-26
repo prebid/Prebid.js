@@ -119,8 +119,7 @@ const percentInViewStatic = (element, {w, h} = {}) => {
 export function intersections(mkObserver) {
   const intersections = new WeakMap();
   let next = defer();
-
-  const obs = mkObserver((entries) => {
+  function observerCallback(entries) {
     entries.sort((left, right) => left.time - right.time).forEach(entry => {
       if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
         intersections.set(entry.target, entry)
@@ -128,7 +127,14 @@ export function intersections(mkObserver) {
         next = defer();
       }
     })
-  })
+  }
+
+  let obs = null;
+  try {
+    obs = mkObserver(observerCallback);
+  } catch (e) {
+    // IntersectionObserver not supported
+  }
 
   async function waitFor(element) {
     const intersection = getIntersection(element);
@@ -142,7 +148,7 @@ export function intersections(mkObserver) {
    * Observe the given element; returns a promise to the first available intersection observed for it.
    */
   async function observe(element) {
-    if (!intersections.has(element)) {
+    if (obs != null && !intersections.has(element)) {
       obs.observe(element);
       intersections.set(element, null);
       return waitFor(element);
