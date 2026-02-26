@@ -140,6 +140,19 @@ describe('iPROM Adapter', function () {
       expect(request.data.bids).to.be.undefined;
     });
 
+    it('should ignore invalid custom endpoint and use default endpoint', function () {
+      config.setConfig({
+        iprom: {
+          endpoint: 'not-a-valid-url'
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.url).to.equal('https://core.iprom.net/programmatic');
+      expect(request.ortb).to.be.undefined;
+      expect(request.data).to.be.a('string');
+    });
+
     it('should include schain in ORTB request when present in bidderRequest.ortb2', function () {
       const schain = {
         ver: '1.0',
@@ -370,6 +383,30 @@ describe('iPROM Adapter', function () {
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['https://example.com']);
     });
 
+    it('should preserve false netRevenue and zero ttl from response', function () {
+      const serverResponse = {
+        body: [{
+          requestId: '29a72b151f7bd3',
+          cpm: 0.5,
+          width: 300,
+          height: 250,
+          creativeId: 1234,
+          ad: '<div>ad</div>',
+          netRevenue: false,
+          ttl: 0,
+          currency: 'USD'
+        }]
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, request);
+
+      expect(bids).to.be.lengthOf(1);
+      expect(bids[0].netRevenue).to.equal(false);
+      expect(bids[0].ttl).to.equal(0);
+      expect(bids[0].currency).to.equal('USD');
+    });
+
     it('should parse OpenRTB response when custom endpoint is used', function () {
       config.setConfig({
         iprom: {
@@ -403,6 +440,17 @@ describe('iPROM Adapter', function () {
       expect(bids[0].cpm).to.equal(0.8);
       expect(bids[0].currency).to.equal('EUR');
       expect(bids[0].meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
+
+    it('should return empty bid response when body is not an array', function () {
+      const malformedServerResponse = {
+        body: {}
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(malformedServerResponse, request);
+
+      expect(bids).to.be.lengthOf(0);
     });
 
     it('should return empty bid response', function () {

@@ -42,21 +42,145 @@ function getCustomEndpoint() {
   return null;
 }
 
+function extractReferer(refererInfo) {
+  if (!refererInfo) {
+    return null;
+  }
+
+  const refererUrl = refererInfo.topmostLocation ?? refererInfo.ref;
+  const missingRefererFields = [];
+
+  if (refererInfo.reachedTop == null) missingRefererFields.push('reachedTop');
+  if (refererUrl == null) missingRefererFields.push('referer');
+  if (refererInfo.numIframes == null) missingRefererFields.push('numIframes');
+  if (refererInfo.stack == null) missingRefererFields.push('stack');
+
+  logMissingFields('referer', missingRefererFields);
+
+  const referer = {
+    reachedTop: refererInfo.reachedTop,
+    referer: refererUrl,
+    numIframes: refererInfo.numIframes,
+    stack: refererInfo.stack
+  };
+
+  return Object.values(referer).some(value => value != null) ? referer : null;
+}
+
+function extractTcf(gdprConsent) {
+  if (!gdprConsent) {
+    return null;
+  }
+
+  const tcf = {
+    consentString: gdprConsent.consentString,
+    gdprApplies: gdprConsent.gdprApplies,
+    addtlConsent: gdprConsent.addtlConsent
+  };
+  const missingTcfFields = [];
+
+  if (tcf.consentString == null) missingTcfFields.push('consentString');
+  if (tcf.gdprApplies == null) missingTcfFields.push('gdprApplies');
+  if (tcf.addtlConsent == null) missingTcfFields.push('addtlConsent');
+
+  logMissingFields('tcf', missingTcfFields);
+
+  return tcf;
+}
+
+function removeSchainFromFirstPartyData(firstPartyData) {
+  if (!firstPartyData?.source?.ext?.schain) {
+    return;
+  }
+
+  delete firstPartyData.source.ext.schain;
+
+  if (!Object.keys(firstPartyData.source.ext).length) {
+    delete firstPartyData.source.ext;
+  }
+
+  if (!Object.keys(firstPartyData.source).length) {
+    delete firstPartyData.source;
+  }
+}
+
+function extractFirstPartyData(ortb2) {
+  if (!ortb2) {
+    return null;
+  }
+
+  const firstPartyData = deepClone(ortb2);
+
+  removeSchainFromFirstPartyData(firstPartyData);
+
+  if (firstPartyData.site) {
+    delete firstPartyData.site;
+  }
+
+  return Object.keys(firstPartyData).length ? firstPartyData : null;
+}
+
+function buildLegacyPayload(validBidRequests, bidderRequest) {
+  const payload = {
+    bids: validBidRequests,
+    version: VERSION
+  };
+
+  const referer = extractReferer(bidderRequest?.refererInfo);
+  if (referer) {
+    payload.referer = referer;
+  }
+
+  const tcf = extractTcf(bidderRequest?.gdprConsent);
+  if (tcf) {
+    payload.tcf = tcf;
+  }
+
+  const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    payload.schain = schain;
+  }
+
+  const firstPartyData = extractFirstPartyData(bidderRequest?.ortb2);
+  if (firstPartyData) {
+    payload.firstPartyData = firstPartyData;
+  }
+
+  return payload;
+}
+
+function buildOrtbRequest(validBidRequests, bidderRequest, endpoint) {
+  const ortbRequest = converter.toORTB({
+    bidderRequest,
+    bidRequests: validBidRequests,
+  });
+
+  return {
+    method: 'POST',
+    url: endpoint,
+    data: ortbRequest,
+    ortb: true
+  };
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: IAB_GVL_ID,
   isBidRequestValid: function ({ bidder, params = {} } = {}) {
-    // id parameter checks
+    const bidderName = bidder || BIDDER_CODE;
+
     if (!params.id) {
-      logError(`${bidder}: Parameter 'id' missing`);
-      return false;
-    } else if (typeof params.id !== 'string') {
-      logError(`${bidder}: Parameter 'id' needs to be a string`);
+      logError(`${bidderName}: Parameter 'id' missing`);
       return false;
     }
-    // dimension parameter checks
+
+    if (typeof params.id !== 'string') {
+      logError(`${bidderName}: Parameter 'id' needs to be a string`);
+      return false;
+    }
+
     if (params.dimension && typeof params.dimension !== 'string') {
-      logError(`${bidder}: Parameter 'dimension' needs to be a string`);
+      logError(`${bidderName}: Parameter 'dimension' needs to be a string`);
       return false;
     }
 
@@ -67,135 +191,48 @@ export const spec = {
     const customEndpoint = getCustomEndpoint();
 
     if (customEndpoint) {
-      const ortbRequest = converter.toORTB({
-        bidderRequest,
-        bidRequests: validBidRequests,
-      });
-
-      return {
-        method: 'POST',
-        url: customEndpoint,
-        data: ortbRequest,
-        ortb: true
-      };
+      // ORTB mode uses an object payload and is interpreted via converter.fromORTB.
+      return buildOrtbRequest(validBidRequests, bidderRequest, customEndpoint);
     }
 
-    const payload = {
-      bids: validBidRequests,
-      version: VERSION
-    };
-
-    if (bidderRequest?.refererInfo) {
-      const refererInfo = bidderRequest.refererInfo;
-      const refererUrl = refererInfo.topmostLocation ?? refererInfo.ref;
-      const missingRefererFields = [];
-
-      if (refererInfo.reachedTop == null) missingRefererFields.push('reachedTop');
-      if (refererUrl == null) missingRefererFields.push('referer');
-      if (refererInfo.numIframes == null) missingRefererFields.push('numIframes');
-      if (refererInfo.stack == null) missingRefererFields.push('stack');
-
-      logMissingFields('referer', missingRefererFields);
-
-      const referer = {
-        reachedTop: refererInfo.reachedTop,
-        referer: refererUrl,
-        numIframes: refererInfo.numIframes,
-        stack: refererInfo.stack
-      };
-
-      if (Object.values(referer).some(value => value != null)) {
-        payload.referer = referer;
-      }
-    }
-
-    if (bidderRequest?.gdprConsent) {
-      const tcf = {
-        consentString: bidderRequest.gdprConsent.consentString,
-        gdprApplies: bidderRequest.gdprConsent.gdprApplies,
-        addtlConsent: bidderRequest.gdprConsent.addtlConsent
-      };
-      const missingTcfFields = [];
-
-      if (tcf.consentString == null) missingTcfFields.push('consentString');
-      if (tcf.gdprApplies == null) missingTcfFields.push('gdprApplies');
-      if (tcf.addtlConsent == null) missingTcfFields.push('addtlConsent');
-
-      logMissingFields('tcf', missingTcfFields);
-
-      payload.tcf = tcf;
-    }
-
-    const schain = bidderRequest?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      payload.schain = schain;
-    }
-
-    if (bidderRequest?.ortb2) {
-      const firstPartyData = deepClone(bidderRequest.ortb2);
-
-      if (firstPartyData?.source?.ext?.schain) {
-        delete firstPartyData.source.ext.schain;
-
-        if (!Object.keys(firstPartyData.source.ext).length) {
-          delete firstPartyData.source.ext;
-        }
-
-        if (!Object.keys(firstPartyData.source).length) {
-          delete firstPartyData.source;
-        }
-      }
-
-      if (firstPartyData.site) {
-        delete firstPartyData.site;
-      }
-
-      if (Object.keys(firstPartyData).length) {
-        payload.firstPartyData = firstPartyData;
-      }
-    }
-
-    const payloadString = JSON.stringify(payload);
+    // Legacy mode uses a stringified JSON payload.
+    const payload = buildLegacyPayload(validBidRequests, bidderRequest);
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: payloadString
+      data: JSON.stringify(payload)
     };
   },
 
   interpretResponse: function (serverResponse, request) {
     if (request?.ortb) {
-      return converter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+      return converter.fromORTB({response: serverResponse?.body, request: request.data}).bids ?? [];
     }
 
-    const bids = serverResponse.body;
+    const bids = Array.isArray(serverResponse?.body) ? serverResponse.body : [];
 
-    const bidResponses = [];
-
-    bids.forEach(bid => {
-      const b = {
+    return bids.map((bid) => {
+      const responseBid = {
         ad: bid.ad,
         requestId: bid.requestId,
         cpm: bid.cpm,
         width: bid.width,
         height: bid.height,
         creativeId: bid.creativeId,
-        currency: bid.currency || DEFAULT_CURRENCY,
-        netRevenue: bid.netRevenue || DEFAULT_NETREVENUE,
-        ttl: bid.ttl || DEFAULT_TTL,
+        currency: bid.currency ?? DEFAULT_CURRENCY,
+        netRevenue: bid.netRevenue ?? DEFAULT_NETREVENUE,
+        ttl: bid.ttl ?? DEFAULT_TTL,
         meta: {},
       };
 
       if (bid.aDomains && bid.aDomains.length) {
-        b.meta.advertiserDomains = bid.aDomains;
+        responseBid.meta.advertiserDomains = bid.aDomains;
       }
 
-      bidResponses.push(b);
+      return responseBid;
     });
-
-    return bidResponses;
   },
-}
+};
 
 registerBidder(spec);
