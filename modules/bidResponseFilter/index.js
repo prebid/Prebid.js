@@ -47,7 +47,9 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } = bid.meta || {};
 
   // checking if bid fulfills ortb2 fields rules
-  const isCattaxMatch = metaCattax === cattax;
+  const normalizedMetaCattax = Number(metaCattax);
+  const normalizedRequestCattax = Number(cattax);
+  const isCattaxMatch = normalizedMetaCattax === normalizedRequestCattax;
   if ((catConfig.enforce && isCattaxMatch && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
     (catConfig.blockUnknown && (!isCattaxMatch || !primaryCatId))) {
     reject(BID_CATEGORY_REJECTION_REASON);
