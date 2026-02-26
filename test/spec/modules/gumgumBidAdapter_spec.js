@@ -334,6 +334,7 @@ describe('gumgumAdapter', function () {
         const request = { ...bidRequests[0] };
         const bidRequest = spec.buildRequests([request], { ...bidderRequest, ortb2: ortb2WithContent })[0];
 
+        expect(bidRequest.data.itype).to.equal('site');
         expect(bidRequest.data.cid).to.equal('content-id-123');
         expect(bidRequest.data.cepisode).to.equal(5);
         expect(bidRequest.data.ctitle).to.equal('Test Episode Title');
@@ -372,6 +373,7 @@ describe('gumgumAdapter', function () {
         const request = { ...bidRequests[0] };
         const bidRequest = spec.buildRequests([request], { ortb2: ortb2WithAppContent })[0];
 
+        expect(bidRequest.data.itype).to.equal('app');
         expect(bidRequest.data.cid).to.equal('app-content-id');
         expect(bidRequest.data.ctitle).to.equal('App Content Title');
         expect(bidRequest.data.cseries).to.equal('App Series');
@@ -396,6 +398,7 @@ describe('gumgumAdapter', function () {
         const request = { ...bidRequests[0] };
         const bidRequest = spec.buildRequests([request], { ortb2: ortb2WithBoth })[0];
 
+        expect(bidRequest.data.itype).to.equal('site');
         expect(bidRequest.data.cid).to.equal('site-content-id');
         expect(bidRequest.data.ctitle).to.equal('Site Content');
       });

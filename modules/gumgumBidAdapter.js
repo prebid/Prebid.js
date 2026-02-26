@@ -310,13 +310,16 @@ function _getDeviceData(ortb2Data) {
  */
 function _getContentParams(ortb2Data) {
   // Check site.content first, then app.content
-  const content = deepAccess(ortb2Data, 'site.content') || deepAccess(ortb2Data, 'app.content');
+  const siteContent = deepAccess(ortb2Data, 'site.content');
+  const appContent = deepAccess(ortb2Data, 'app.content');
+  const content = siteContent || appContent;
 
   if (!content) {
     return {};
   }
 
   const contentParams = {};
+  contentParams.itype = siteContent ? 'site' : 'app';
 
   // Basic content fields
   if (content.id) contentParams.cid = content.id;
