@@ -345,7 +345,6 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.deferBilling = bidRequest.deferBilling;
             bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
             const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
-            // codex agent bot: retain whether mediaType was explicitly set by the adapter response.
             const responseMediaType = Object.prototype.hasOwnProperty.call(bidResponse, 'mediaType')
               ? bidResponse.mediaType
               : null;
