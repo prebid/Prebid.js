@@ -765,6 +765,22 @@ describe("neuwoRtdModule", function () {
         expect(result7).to.include("filter_1_1_limit=3");
         expect(result7).to.have.lengthOf(2);
       });
+
+      it("should not produce duplicate query params when contentSegtax is 1", function () {
+        const filters = {
+          ContentTier1: { limit: 5, threshold: 0.8 },
+          ContentTier2: { limit: 3 }
+        };
+
+        const result = neuwo.buildFilterQueryParams(filters, 1);
+
+        // Count occurrences of each param to verify no duplicates
+        const countOccurrences = (arr, val) => arr.filter(p => p === val).length;
+        expect(countOccurrences(result, "filter_1_1_limit=5"), "filter_1_1_limit should appear once").to.equal(1);
+        expect(countOccurrences(result, "filter_1_1_threshold=0.8"), "filter_1_1_threshold should appear once").to.equal(1);
+        expect(countOccurrences(result, "filter_1_2_limit=3"), "filter_1_2_limit should appear once").to.equal(1);
+        expect(result, "should have exactly 3 params total").to.have.lengthOf(3);
+      });
     });
 
     describe("with enableOrtb25Fields disabled", function () {

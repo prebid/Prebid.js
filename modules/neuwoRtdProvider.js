@@ -1,6 +1,6 @@
 /**
  * @module neuwoRtdProvider
- * @version 2.2.2
+ * @version 2.2.3
  * @author Grzegorz Malisz
  * @see {project-root-directory}/integrationExamples/gpt/neuwoRtdProvider_example.html for an example/testing page.
  * @see {project-root-directory}/test/spec/modules/neuwoRtdProvider_spec.js for unit tests.
@@ -30,7 +30,7 @@ import {
 } from "../src/utils.js";
 
 const MODULE_NAME = "NeuwoRTDModule";
-const MODULE_VERSION = "2.2.2";
+const MODULE_VERSION = "2.2.3";
 export const DATA_PROVIDER = "www.neuwo.ai";
 
 // Default IAB Content Taxonomy version
@@ -761,9 +761,10 @@ export function buildFilterQueryParams(
     }
   });
 
-  // Apply same filters to IAB 1.0 (segtax 1) for OpenRTB 2.5 fields
+  // Apply same filters to IAB 1.0 (segtax 1) for OpenRTB 2.5 fields.
+  // Skip when contentSegtax is already 1 -- the first loop already emitted filter_1_* params.
   // Note: IAB 1.0 only has tiers 1 and 2 (tier 3 will be ignored if configured)
-  if (enableOrtb25Fields) {
+  if (enableOrtb25Fields && contentSegtax !== 1) {
     if (iabTaxonomyFilters.ContentTier1) {
       Object.keys(iabTaxonomyFilters.ContentTier1).forEach((prop) => {
         const value = iabTaxonomyFilters.ContentTier1[prop];
