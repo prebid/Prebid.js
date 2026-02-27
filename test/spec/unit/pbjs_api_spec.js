@@ -1104,11 +1104,18 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
+    it('should set googletag targeting keys to specific slot with customGptSlotMatching', function () {
       // same ad unit code but two differnt divs
-      // we make sure we can set targeting for a specific one with customSlotMatching
+      // we make sure we can set targeting for a specific one with customGptSlotMatching
 
-      pbjs.setConfig({ enableSendAllBids: false });
+      pbjs.setConfig({
+        enableSendAllBids: false,
+        customGptSlotMatching: (slot) => {
+          return (adUnitCode) => {
+            return slots[0].getSlotElementId() === slot.getSlotElementId();
+          };
+        }
+      });
 
       var slots = createSlotArrayScenario2();
 
@@ -1116,11 +1123,7 @@ describe('Unit: Prebid Module', function () {
       slots[1].spySetTargeting.resetHistory();
       window.googletag.pubads().setSlots(slots);
       pbjs.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
-      pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]], (slot) => {
-        return (adUnitCode) => {
-          return slots[0].getSlotElementId() === slot.getSlotElementId();
-        };
-      });
+      pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
       var expected = getTargetingKeys();
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
