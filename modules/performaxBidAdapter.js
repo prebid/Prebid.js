@@ -1,4 +1,4 @@
-import {logWarn, logError, deepSetValue, deepAccess, safeJSONEncode, debugTurnedOn} from '../src/utils.js';
+import { logWarn, logError, deepSetValue, deepAccess, safeJSONEncode, debugTurnedOn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
