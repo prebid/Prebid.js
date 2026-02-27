@@ -185,6 +185,58 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
       callbacks.error('err');
     });
 
+    it('should gracefully handle btoa encoding failures without crashing the auction', function (done) {
+      const req = makeReqBidsConfigObj();
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
+
+      // Force btoa to throw an error (simulating a Latin-1 DOMException for unhandled characters)
+      btoaStub.throws(new Error('String contains an invalid character'));
+
+      datamageRtdSubmodule.getBidRequestData(req, () => {
+        // 1. Ensure the auction still releases (callback is fired)
+        expect(fakeAjax.calledOnce).to.be.true;
+
+        // 2. Ensure the API URL was still built, just with an empty content_id
+        const ajaxUrl = fakeAjax.firstCall.args[0];
+        expect(ajaxUrl).to.include('content_id=');
+        expect(ajaxUrl).to.not.include('content_id=b64'); // Should not contain our stub's prefix
+
+        done();
+      }, { name: 'datamage', params: { api_key: 'k' } }, {});
+
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.error('err');
+    });
+
+    it('should strip common tracking parameters from the URL before encoding', function (done) {
+      const req = makeReqBidsConfigObj();
+      let fakeAjax = sinon.stub();
+      ajaxBuilderStub.returns(fakeAjax);
+
+      // 1. Store the original URL so we can restore it cleanly
+      const originalUrl = window.location.href;
+
+      // 2. Use the History API to safely append query parameters without redefining the location object
+      window.history.replaceState({}, '', '?utm_source=fb&id=42&gclid=123');
+
+      datamageRtdSubmodule.getBidRequestData(req, () => {
+        const btoaArg = btoaStub.firstCall.args[0];
+
+        // 3. Ensure tracking params are gone, but valid params remain
+        expect(btoaArg).to.not.include('utm_source');
+        expect(btoaArg).to.not.include('gclid');
+        expect(btoaArg).to.include('id=42');
+
+        // 4. Restore the original URL so we don't pollute other tests
+        window.history.replaceState({}, '', originalUrl);
+        done();
+      }, { name: 'datamage', params: { api_key: 'k' } }, {});
+
+      const callbacks = fakeAjax.firstCall.args[1];
+      callbacks.error('err');
+    });
+
     it('should clear stale cache (lastTargeting) if the fetch yields no payload', function (done) {
       const req1 = makeReqBidsConfigObj();
       const req2 = makeReqBidsConfigObj();

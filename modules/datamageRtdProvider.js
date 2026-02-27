@@ -40,12 +40,46 @@ function padBase64(b64) {
   return mod ? (b64 + '='.repeat(4 - mod)) : b64;
 }
 
-function stripPortFromUrl(urlStr) {
+function cleanPageUrl(urlStr) {
   try {
     const u = new URL(urlStr);
+
+    // 1. Strip the port (keep your existing logic)
     if (u.port) u.port = '';
+
+    // 2. Define common tracking and analytics parameters
+    const trackingParams = [
+      'fbclid',      // Facebook
+      'igshid',      // Instagram
+      'gclid',       // Google Ads
+      'wbraid',      // Google Ads (iOS)
+      'gbraid',      // Google Ads (iOS)
+      '_gl',         // Google Analytics cross-domain
+      'utm_source',  // UTMs (Google Analytics, etc.)
+      'utm_medium',
+      'utm_campaign',
+      'utm_term',
+      'utm_content',
+      'utm_id',
+      'msclkid',     // Microsoft/Bing Ads
+      'twclid',      // Twitter
+      'ttclid',      // TikTok
+      'yclid',       // Yandex
+      'mc_eid',      // Mailchimp
+      'ScCid',       // Snapchat
+      's_kwcid'      // Adobe Analytics
+    ];
+
+    // 3. Safely remove them from the query string
+    trackingParams.forEach(param => {
+      if (u.searchParams.has(param)) {
+        u.searchParams.delete(param);
+      }
+    });
+
     return u.toString();
   } catch (e) {
+    // Fallback to the raw string if URL parsing fails
     return urlStr;
   }
 }
@@ -54,10 +88,18 @@ function buildApiUrl(params) {
   const apiKey = params.api_key || '';
   const selector = params.selector || '';
   const rawPageUrl = (typeof window !== 'undefined' && window.location?.href) ? window.location.href : '';
-  const pageUrl = stripPortFromUrl(rawPageUrl);
+
+  // Use the new cleaning function here
+  const pageUrl = cleanPageUrl(rawPageUrl);
 
   let encodedUrl = '';
-  try { encodedUrl = padBase64(btoa(pageUrl)); } catch (e) { }
+  try {
+    // Safely encode UTF-8 characters before passing to btoa()
+    const utf8SafeUrl = unescape(encodeURIComponent(pageUrl));
+    encodedUrl = padBase64(btoa(utf8SafeUrl));
+  } catch (e) {
+    logWarn('DataMage: Failed to base64 encode URL', e);
+  }
 
   return `https://opsmage-api.io/context/v3/get?api_key=${encodeURIComponent(apiKey)}&content_id=${encodedUrl}&prebid=true&selector=${encodeURIComponent(selector)}`;
 }
