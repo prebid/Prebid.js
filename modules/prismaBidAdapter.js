@@ -139,7 +139,9 @@ export const spec = {
           bidResponse.cpm = value.cpm;
           bidResponse.mediaType = 'video';
           bidResponse.vastUrl = url;
-          bidResponse.vastImpUrl = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`;
+          bidResponse.vastTrackers = {
+            impression: [`${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`]
+          };
         }
         bidResponses.push(bidResponse);
       });

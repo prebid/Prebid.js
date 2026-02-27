@@ -26,36 +26,64 @@ const ttlBufferInSeconds = 15;
 export const vastLocalCache = new Map();
 
 /**
+ * VAST Trackers interface for video cache
+ */
+export interface VastTrackers {
+  impression?: string[];
+  error?: string[];
+  trackingEvents?: Array<{ event: string; url: string }>;
+}
+
+/**
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param uri The URI where the VAST content can be found.
- * @param impTrackerURLs An impression tracker URL for the delivery of the video ad
+ * @param trackers VAST trackers object containing impression, error, and trackingEvents
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri: string, impTrackerURLs: string | string[]) {
-  impTrackerURLs = impTrackerURLs && (Array.isArray(impTrackerURLs) ? impTrackerURLs : [impTrackerURLs]);
+function wrapURI(uri: string, trackers?: VastTrackers) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
-  const impressions = impTrackerURLs ? impTrackerURLs.map(trk => `<Impression><![CDATA[${trk}]]></Impression>`).join('') : '';
-  return `<VAST version="3.0">
-    <Ad>
-      <Wrapper>
-        <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[${uri}]]></VASTAdTagURI>
-        ${impressions}
-        <Creatives></Creatives>
-      </Wrapper>
-    </Ad>
-  </VAST>`;
+
+  // Build Impression tags
+  const impressions = trackers?.impression?.length
+    ? trackers.impression.map(trk => `<Impression><![CDATA[${trk}]]></Impression>`).join('')
+    : '';
+
+  // Build Error tags
+  const errors = trackers?.error?.length
+    ? trackers.error.map(trk => `<Error><![CDATA[${trk}]]></Error>`).join('')
+    : '';
+
+  // Build TrackingEvents for Linear creative
+  let trackingEventsXml = '';
+  if (trackers?.trackingEvents?.length) {
+    const trackingTags = trackers.trackingEvents
+      .map(({event, url}) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`)
+      .join('');
+    trackingEventsXml = `<Creative><Linear><TrackingEvents>${trackingTags}</TrackingEvents></Linear></Creative>`;
+  }
+
+  return '<VAST version="3.0">' +
+    '<Ad>' +
+    '<Wrapper>' +
+    '<AdSystem>prebid.org wrapper</AdSystem>' +
+    '<VASTAdTagURI><![CDATA[' + uri + ']]></VASTAdTagURI>' +
+    impressions +
+    errors +
+    '<Creatives>' + trackingEventsXml + '</Creatives>' +
+    '</Wrapper>' +
+    '</Ad>' +
+    '</VAST>';
 }
 
 declare module './bidfactory' {
   interface VideoBidResponseProperties {
     /**
-     *  VAST impression trackers to attach to this bid.
+     * VAST trackers to attach to this bid (impression, error, and tracking events).
      */
-    vastImpUrl?: string | string []
+    vastTrackers?: VastTrackers
     /**
      * Cache key to use for caching this bid's VAST.
      */
@@ -185,7 +213,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
 }
 
 function getVastXml(bid) {
-  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastTrackers);
 };
 
 /**
