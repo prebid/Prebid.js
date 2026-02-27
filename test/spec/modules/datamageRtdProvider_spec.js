@@ -7,7 +7,7 @@ import * as utils from 'src/utils.js';
 describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
   let sandbox;
   let ajaxBuilderStub;
-  let setTargetingStub;
+  let setConfigStub;
   let btoaStub;
   let origGoogletag; // Stores the original global to prevent breaking other tests
 
@@ -54,15 +54,13 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
     // Safely backup the original googletag object
     origGoogletag = window.googletag;
 
-    // Mock window.googletag and spy on setTargeting
-    setTargetingStub = sandbox.stub();
+    // Mock window.googletag and spy on setConfig
+    setConfigStub = sandbox.stub();
     window.googletag = {
       cmd: {
         push: function (fn) { fn(); } // Execute immediately for testing
       },
-      pubads: function () {
-        return { setTargeting: setTargetingStub };
-      }
+      setConfig: setConfigStub
     };
 
     // Stub Prebid's internal ajaxBuilder
@@ -79,7 +77,7 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
   });
 
   describe('init()', function () {
-    it('should return true and trigger GAM injection asynchronously', function (done) {
+    it('should return true and trigger GAM injection asynchronously via setConfig', function (done) {
       let fakeAjax = sinon.stub();
       ajaxBuilderStub.returns(fakeAjax);
 
@@ -92,10 +90,17 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
 
       // Use setTimeout to wait for the Promise chain to resolve
       setTimeout(() => {
-        expect(setTargetingStub.calledWith('om_iab_cat_ids', ['596', '597', '52'])).to.be.true;
-        expect(setTargetingStub.calledWith('om_brand_ids', ['eefd8446', 'b78b9ee2'])).to.be.true;
-        expect(setTargetingStub.calledWith('om_res_score', ['1'])).to.be.true;
-        expect(setTargetingStub.calledWith('om_restricted_cat_ids')).to.be.false;
+        expect(setConfigStub.calledOnce).to.be.true;
+
+        const configArg = setConfigStub.firstCall.args[0];
+        expect(configArg).to.have.property('targeting');
+
+        const targeting = configArg.targeting;
+        expect(targeting).to.have.property('om_iab_cat_ids').that.deep.equals(['596', '597', '52']);
+        expect(targeting).to.have.property('om_brand_ids').that.deep.equals(['eefd8446', 'b78b9ee2']);
+        expect(targeting).to.have.property('om_res_score').that.deep.equals(['1']);
+        expect(targeting).to.not.have.property('om_restricted_cat_ids');
+
         done();
       }, 0);
     });
@@ -154,7 +159,7 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
 
       datamageRtdSubmodule.getBidRequestData(req, () => {
         expect(req.ortb2Fragments.global.site?.content?.data).to.be.undefined;
-        expect(setTargetingStub.called).to.be.false;
+        expect(setConfigStub.called).to.be.false;
         done();
       }, { name: 'datamage', params: { api_key: 'k' } }, {});
 

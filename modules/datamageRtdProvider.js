@@ -117,6 +117,9 @@ function mapApiPayload(cc) {
 // ==========================================
 // 1. PUBLISHER TARGETING (Independent of Auction)
 // ==========================================
+// ==========================================
+// 1. PUBLISHER TARGETING (Independent of Auction)
+// ==========================================
 function init(rtdConfig, userConsent) {
   logInfo('DATAMAGE: init() called. Fetching data for GAM...');
 
@@ -126,10 +129,10 @@ function init(rtdConfig, userConsent) {
   const apiUrl = buildApiUrl(params);
   const fetchTimeoutMs = Number(params.fetch_timeout_ms ?? 2500);
 
-  // Start network request instantly and push to GPT regardless of bids
+  // Start network request instantly
   fetchContextData(apiUrl, fetchTimeoutMs).then((resJson) => {
     if (!resJson?.content_classification) {
-      lastTargeting = null; // FIX: Clear stale cache on empty payload
+      lastTargeting = null; // Clear stale cache on empty payload
       return;
     }
 
@@ -137,12 +140,23 @@ function init(rtdConfig, userConsent) {
 
     window.googletag = window.googletag || { cmd: [] };
     window.googletag.cmd.push(() => {
+      // --- MODERN GPT API IMPLEMENTATION ---
+      const pageTargeting = {};
+
+      // 1. Build a single object containing all valid targeting pairs
       Object.entries(targetingArrays).forEach(([key, value]) => {
-        if (value.length) window.googletag.pubads().setTargeting(key, value);
+        if (value && value.length) {
+          pageTargeting[key] = value;
+        }
       });
+
+      // 2. Apply page-level targeting in a single configuration call
+      if (Object.keys(pageTargeting).length > 0) {
+        window.googletag.setConfig({ targeting: pageTargeting });
+      }
     });
   }).catch(() => {
-    lastTargeting = null; // FIX: Clear stale cache on error
+    lastTargeting = null; // Clear stale cache on error
   });
 
   return true;

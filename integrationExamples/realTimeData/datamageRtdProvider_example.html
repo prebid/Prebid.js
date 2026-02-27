@@ -90,9 +90,10 @@
                 },
 
                 realTimeData: {
-                    auctionDelay: 1000, // Prebid will wait up to 500ms for Datamage to fetch data
+                    auctionDelay: 1000, // Prebid will wait up to 1000ms for Datamage to fetch data
                     dataProviders: [{
                         name: "datamage",
+                        waitForIt: true, // <--- CRITICAL FIX: Forces Prebid to wait for this module
                         params: {
                             api_key: '8328309832',
                             selector: 'article',
@@ -109,7 +110,7 @@
                     // Push standard header bidding keys (like hb_pb) to GPT
                     pbjs.setTargetingForGPTAsync();
 
-                    // Dump targeting to verify Datamage was successfully pushed via setKeyValue
+                    // Dump targeting to verify Datamage was successfully pushed via setConfig
                     dumpGptTargeting('[before refresh]');
 
                     // Refresh only our specific slot
