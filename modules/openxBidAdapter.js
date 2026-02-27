@@ -1,9 +1,9 @@
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {mergeDeep} from '../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { mergeDeep } from '../src/utils.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -28,7 +28,7 @@ const converter = ortbConverter({
     ttl: 300,
     nativeRequest: {
       eventtrackers: [
-        {event: 1, methods: [1, 2]},
+        { event: 1, methods: [1, 2] },
       ]
     }
   },
@@ -89,7 +89,7 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     // pass these from request to the responses for use in userSync
-    const {ortbRequest} = context;
+    const { ortbRequest } = context;
     if (ortbRequest.ext) {
       if (ortbRequest.ext.delDomain) {
         utils.deepSetValue(ortbResponse, 'ext.delDomain', ortbRequest.ext.delDomain);
@@ -126,7 +126,7 @@ const converter = ortbConverter({
         // enforce floors should always be in USD
         // TODO: does it make sense that request.cur can be any currency, but request.imp[].bidfloorcur must be USD?
         const floor = {};
-        setBidFloor(floor, bidRequest, {...context, currency: 'USD'});
+        setBidFloor(floor, bidRequest, { ...context, currency: 'USD' });
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }
@@ -139,7 +139,7 @@ const converter = ortbConverter({
           let videoParams = bidRequest.mediaTypes[VIDEO];
           if (videoParams) {
             videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-            bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
           }
           orig(imp, bidRequest, context);
         }
@@ -165,7 +165,7 @@ function buildRequests(bidRequests, bidderRequest) {
   const videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
   const bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
     // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
-    .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
+    .map(bid => ({ ...bid, mediaTypes: { ...bid.mediaTypes, video: undefined } }));
 
   const requests = bannerAndNativeRequests.length ? [createRequest(bannerAndNativeRequests, bidderRequest, null)] : [];
   videoRequests.forEach(bid => {
@@ -178,7 +178,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
-    data: converter.toORTB({bidRequests, bidderRequest, context: {mediaType}})
+    data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
   }
 }
 
@@ -197,9 +197,9 @@ function isBannerBidRequest(bidRequest) {
 
 function interpretResponse(resp, req) {
   if (!resp.body) {
-    resp.body = {nbr: 0};
+    resp.body = { nbr: 0 };
   }
-  return converter.fromORTB({request: req.data, response: resp.body});
+  return converter.fromORTB({ request: req.data, response: resp.body });
 }
 
 /**

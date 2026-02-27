@@ -1,7 +1,7 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {spec} from 'modules/omsBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/omsBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
 
 const URL = 'https://rt.marphezis.com/hb';
@@ -140,7 +140,7 @@ describe('omsBidAdapter', function () {
     it('sets the proper banner object', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
     });
 
     it('sets the proper video object when ad unit media type is video', function () {
@@ -192,7 +192,7 @@ describe('omsBidAdapter', function () {
       bidRequests[0].mediaTypes.banner.sizes = [300, 250];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
     });
 
     it('sends bidfloor param if present', function () {
@@ -262,13 +262,13 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends coppa', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, {ortb2: {regs: {coppa: 1}}}).data)
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } }).data)
       expect(data.regs).to.not.be.undefined;
       expect(data.regs.coppa).to.equal(1);
     });
 
     it('sends instl property when ortb2Imp.instl = 1', function () {
-      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { instl: 1 }}]).data);
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { instl: 1 } }]).data);
       expect(data.imp[0].instl).to.equal(1);
     });
 
@@ -344,7 +344,7 @@ describe('omsBidAdapter', function () {
 
     context('when element is fully in view', function () {
       it('returns 100', function () {
-        Object.assign(element, {width: 600, height: 400});
+        Object.assign(element, { width: 600, height: 400 });
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(100);
@@ -353,7 +353,7 @@ describe('omsBidAdapter', function () {
 
     context('when element is out of view', function () {
       it('returns 0', function () {
-        Object.assign(element, {x: -300, y: 0, width: 207, height: 320});
+        Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(0);
@@ -362,7 +362,7 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
-        Object.assign(element, {width: 800, height: 800});
+        Object.assign(element, { width: 800, height: 800 });
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(75);
@@ -371,7 +371,7 @@ describe('omsBidAdapter', function () {
 
     context('when width or height of the element is zero', function () {
       it('try to use alternative values', function () {
-        Object.assign(element, {width: 0, height: 0});
+        Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -381,7 +381,7 @@ describe('omsBidAdapter', function () {
 
     context('when nested iframes', function () {
       it('returns \'na\'', function () {
-        Object.assign(element, {width: 600, height: 400});
+        Object.assign(element, { width: 600, height: 400 });
 
         utils.getWindowTop.restore();
         utils.getWindowSelf.restore();
@@ -396,7 +396,7 @@ describe('omsBidAdapter', function () {
 
     context('when tab is inactive', function () {
       it('returns 0', function () {
-        Object.assign(element, {width: 600, height: 400});
+        Object.assign(element, { width: 600, height: 400 });
 
         utils.getWindowTop.restore();
         win.document.visibilityState = 'hidden';

@@ -1,4 +1,4 @@
-import {install} from './debugging.js';
+import { install } from './debugging.js';
 
 window._pbjsGlobals.forEach((name) => {
   if (window[name] && window[name]._installDebugging === true) {

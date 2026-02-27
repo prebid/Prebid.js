@@ -1,5 +1,5 @@
-export function makePbsInterceptor({createBid, utils}) {
-  const {deepClone, delayExecution} = utils;
+export function makePbsInterceptor({ createBid, utils }) {
+  const { deepClone, delayExecution } = utils;
   return function pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {
     onResponse,
     onError,
@@ -15,7 +15,7 @@ export function makePbsInterceptor({createBid, utils}) {
     function addBid(bid, bidRequest) {
       onBid({
         adUnit: bidRequest.adUnitCode,
-        bid: Object.assign(createBid(bidRequest), {requestBidder: bidRequest.bidder}, bid)
+        bid: Object.assign(createBid(bidRequest), { requestBidder: bidRequest.bidder }, bid)
       })
     }
     bidRequests = bidRequests
@@ -42,7 +42,7 @@ export function makePbsInterceptor({createBid, utils}) {
         unit.bids = unit.bids.filter((bid) => bidIds.has(bid.bid_id));
       })
       s2sBidRequest.ad_units = s2sBidRequest.ad_units.filter((unit) => unit.bids.length > 0);
-      next(s2sBidRequest, bidRequests, ajax, {onResponse: signalResponse, onError, onBid});
+      next(s2sBidRequest, bidRequests, ajax, { onResponse: signalResponse, onError, onBid });
     } else {
       signalResponse(true, []);
     }

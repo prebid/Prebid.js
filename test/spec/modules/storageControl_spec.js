@@ -1,4 +1,4 @@
-import {metadataRepository} from '../../../libraries/metadata/metadata.js';
+import { metadataRepository } from '../../../libraries/metadata/metadata.js';
 import {
   checkDisclosure, dynamicDisclosureCollector, ENFORCE_ALIAS,
   ENFORCE_OFF,
@@ -11,8 +11,8 @@ import {
   ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../src/activities/params.js';
-import {MODULE_TYPE_BIDDER} from '../../../src/activities/modules.js';
-import {STORAGE_TYPE_COOKIES} from '../../../src/storageManager.js';
+import { MODULE_TYPE_BIDDER } from '../../../src/activities/modules.js';
+import { STORAGE_TYPE_COOKIES } from '../../../src/storageManager.js';
 
 describe('storageControl', () => {
   describe('getDisclosures', () => {
@@ -186,31 +186,31 @@ describe('storageControl', () => {
 
     it('should allow when disclosed is null', () => {
       enforcement = ENFORCE_STRICT;
-      checkResult = {disclosed: null};
+      checkResult = { disclosed: null };
       expect(rule()).to.not.exist;
     });
 
     it('should allow when there is no disclosure, but enforcement is off', () => {
       enforcement = ENFORCE_OFF;
-      checkResult = {disclosed: false, parent: false};
+      checkResult = { disclosed: false, parent: false };
       expect(rule()).to.not.exist;
     });
 
     it('should allow when disclosed is true', () => {
       enforcement = ENFORCE_STRICT;
-      checkResult = {disclosed: true};
+      checkResult = { disclosed: true };
       expect(rule()).to.not.exist;
     });
 
     it('should deny when enforcement is strict and disclosure is done by the aliased module', () => {
       enforcement = ENFORCE_STRICT;
-      checkResult = {disclosed: false, parent: true, reason: 'denied'};
-      expect(rule()).to.eql({allow: false, reason: 'denied'});
+      checkResult = { disclosed: false, parent: true, reason: 'denied' };
+      expect(rule()).to.eql({ allow: false, reason: 'denied' });
     });
 
     it('should allow when enforcement is allowAliases and disclosure is done by the aliased module', () => {
       enforcement = ENFORCE_ALIAS;
-      checkResult = {disclosed: false, parent: true, reason: 'allowed'};
+      checkResult = { disclosed: false, parent: true, reason: 'allowed' };
       expect(rule()).to.not.exist;
     });
   });
@@ -219,10 +219,10 @@ describe('storageControl', () => {
     let next, hook, getDisclosures;
     beforeEach(() => {
       next = sinon.stub();
-      ({hook, getDisclosures} = dynamicDisclosureCollector());
+      ({ hook, getDisclosures } = dynamicDisclosureCollector());
     });
     it('should collect and return disclosures', () => {
-      const disclosure = {identifier: 'mock', type: 'web', purposes: [1]};
+      const disclosure = { identifier: 'mock', type: 'web', purposes: [1] };
       hook(next, 'module', disclosure);
       sinon.assert.calledWith(next, 'module', disclosure);
       expect(getDisclosures()).to.eql([
@@ -233,8 +233,8 @@ describe('storageControl', () => {
       ]);
     });
     it('should update disclosures for the same identifier', () => {
-      hook(next, 'module1', {identifier: 'mock', type: 'cookie', maxAgeSeconds: 10, cookieRefresh: true, purposes: [1]});
-      hook(next, 'module2', {identifier: 'mock', type: 'cookie', maxAgeSeconds: 1, cookieRefresh: true, purposes: [2]});
+      hook(next, 'module1', { identifier: 'mock', type: 'cookie', maxAgeSeconds: 10, cookieRefresh: true, purposes: [1] });
+      hook(next, 'module2', { identifier: 'mock', type: 'cookie', maxAgeSeconds: 1, cookieRefresh: true, purposes: [2] });
       expect(getDisclosures()).to.eql([{
         disclosedBy: ['module1', 'module2'],
         identifier: 'mock',
@@ -256,8 +256,8 @@ describe('storageControl', () => {
       }])
     })
     it('should treat web and cookie disclosures as separate', () => {
-      hook(next, 'module1', {identifier: 'mock', type: 'cookie', purposes: [1]});
-      hook(next, 'module2', {identifier: 'mock', type: 'web', purposes: [2]});
+      hook(next, 'module1', { identifier: 'mock', type: 'cookie', purposes: [1] });
+      hook(next, 'module2', { identifier: 'mock', type: 'web', purposes: [2] });
       expect(getDisclosures()).to.have.deep.members([
         {
           disclosedBy: ['module1'],

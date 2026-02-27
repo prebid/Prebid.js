@@ -185,7 +185,7 @@ describe('freeWheel adserver module', function() {
     server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
-      JSON.stringify({'responses': getBidsReceived().slice(0, 4)})
+      JSON.stringify({ 'responses': getBidsReceived().slice(0, 4) })
     );
 
     expect(targeting['preroll_1'].length).to.equal(3);
@@ -222,13 +222,13 @@ describe('freeWheel adserver module', function() {
     server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
-      JSON.stringify({'responses': bidsReceived.slice(1)})
+      JSON.stringify({ 'responses': bidsReceived.slice(1) })
     );
 
     expect(targeting['preroll_1'].length).to.equal(3);
-    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': 'tier6_395_15s'});
-    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': 'tier7_395_15s'});
-    expect(targeting['preroll_1']).to.deep.include({'hb_cache_id': '123'});
+    expect(targeting['preroll_1']).to.deep.include({ 'hb_pb_cat_dur': 'tier6_395_15s' });
+    expect(targeting['preroll_1']).to.deep.include({ 'hb_pb_cat_dur': 'tier7_395_15s' });
+    expect(targeting['preroll_1']).to.deep.include({ 'hb_cache_id': '123' });
   });
 
   it('should apply minDealTier to bids if configured', function() {
@@ -272,14 +272,14 @@ describe('freeWheel adserver module', function() {
     server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
-      JSON.stringify({'responses': [tier7Bid, bid]})
+      JSON.stringify({ 'responses': [tier7Bid, bid] })
     );
 
     expect(targeting['preroll_1'].length).to.equal(3);
-    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': 'tier7_395_15s'});
-    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': '15.00_395_90s'});
-    expect(targeting['preroll_1']).to.not.include({'hb_pb_cat_dur': 'tier2_395_15s'});
-    expect(targeting['preroll_1']).to.deep.include({'hb_cache_id': '123'});
+    expect(targeting['preroll_1']).to.deep.include({ 'hb_pb_cat_dur': 'tier7_395_15s' });
+    expect(targeting['preroll_1']).to.deep.include({ 'hb_pb_cat_dur': '15.00_395_90s' });
+    expect(targeting['preroll_1']).to.not.include({ 'hb_pb_cat_dur': 'tier2_395_15s' });
+    expect(targeting['preroll_1']).to.deep.include({ 'hb_cache_id': '123' });
   })
 });
 

@@ -1,9 +1,9 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
-import {deepSetValue, isEmpty, deepClone, shuffle, triggerPixel, deepAccess} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
+import { deepSetValue, isEmpty, deepClone, shuffle, triggerPixel, deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'relevantdigital';
 
@@ -111,7 +111,7 @@ export const spec = {
   buildRequests(bidRequests, bidderRequest) {
     const { bidder } = bidRequests[0];
     const cfg = getBidderConfig(bidRequests);
-    const data = converter.toORTB({bidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests, bidderRequest });
 
     /** Set tmax, in general this will be timeout - pbsBufferMs */
     const pbjsTimeout = bidderRequest.timeout || 1000;
@@ -147,11 +147,11 @@ export const spec = {
     Object.entries(MODIFIERS).forEach(([field, combineFn]) => {
       const obj = resp.ext?.[field];
       if (!isEmpty(obj)) {
-        resp.ext[field] = {[bidder]: combineFn(Object.values(obj))};
+        resp.ext[field] = { [bidder]: combineFn(Object.values(obj)) };
       }
     });
 
-    const bids = converter.fromORTB({response: resp, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: resp, request: request.data }).bids;
     return bids;
   },
 

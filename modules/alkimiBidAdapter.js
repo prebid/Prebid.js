@@ -1,16 +1,16 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone, generateUUID, replaceAuctionPrice} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {VIDEO, BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess, deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
 const GVLID = 1169;
 const USER_ID_KEY = 'alkimiUserID';
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -85,7 +85,7 @@ export const spec = {
 
     let payload = {
       requestId: generateUUID(),
-      signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
+      signRequest: { bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID },
       bidIds,
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
@@ -148,7 +148,7 @@ export const spec = {
       return [];
     }
 
-    const {prebidResponse} = serverBody;
+    const { prebidResponse } = serverBody;
     if (!Array.isArray(prebidResponse)) {
       return [];
     }
@@ -194,7 +194,7 @@ export const spec = {
 
       const urls = [];
       iframeList.forEach(url => {
-        urls.push({type: 'iframe', url});
+        urls.push({ type: 'iframe', url });
       });
 
       return urls;
@@ -204,7 +204,7 @@ export const spec = {
 };
 
 function prepareSizes(sizes) {
-  return sizes ? sizes.map(size => ({width: size[0], height: size[1]})) : [];
+  return sizes ? sizes.map(size => ({ width: size[0], height: size[1] })) : [];
 }
 
 function prepareBidFloorSize(sizes) {

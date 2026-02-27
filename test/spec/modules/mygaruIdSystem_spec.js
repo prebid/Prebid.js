@@ -21,7 +21,7 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaruId: '123'})).to.be.true;
+    expect(callBackSpy.calledWith({ mygaruId: '123' })).to.be.true;
   });
   it('should not fail on error', async () => {
     const callBackSpy = sinon.spy();
@@ -42,7 +42,7 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaruId: undefined})).to.be.true;
+    expect(callBackSpy.calledWith({ mygaruId: undefined })).to.be.true;
   });
 
   it('should not modify while decoding', () => {

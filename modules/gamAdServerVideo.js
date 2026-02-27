@@ -22,12 +22,12 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import {DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams} from '../libraries/gamUtils/gamUtils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
 import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 /**
  * @typedef {Object} DfpVideoParams
@@ -89,7 +89,7 @@ export function buildGamVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true });
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -245,7 +245,7 @@ function getCustParams(bid, options, urlCustParams) {
   );
 
   // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
-  events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+  events.emit(EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet });
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = options?.params?.cust_params;

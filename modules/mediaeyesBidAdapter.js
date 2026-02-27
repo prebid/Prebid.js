@@ -20,7 +20,7 @@ export const spec = {
     const requests = [];
 
     bidRequests.forEach(bidRequest => {
-      const {itemId} = bidRequest.params;
+      const { itemId } = bidRequest.params;
       const requestData = {
         id: generateUUID(),
         imp: [cookingImp(bidRequest)],

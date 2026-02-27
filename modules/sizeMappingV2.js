@@ -15,8 +15,8 @@ import {
   logWarn
 } from '../src/utils.js';
 
-import {getHook} from '../src/hook.js';
-import {adUnitSetupChecks} from '../src/prebid.js';
+import { getHook } from '../src/hook.js';
+import { adUnitSetupChecks } from '../src/prebid.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit

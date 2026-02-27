@@ -12,7 +12,7 @@ import {
   requestContextData,
   windowPostMessageReceived
 } from '../../../modules/qortexRtdProvider.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
 
 describe('qortexRtdProvider', () => {
@@ -71,12 +71,12 @@ describe('qortexRtdProvider', () => {
   const QortexPostMessageInitialized = {
     target: 'QORTEX-PREBIDJS-RTD-MODULE',
     message: 'CX-BID-ENRICH-INITIALIZED',
-    params: {groupConfig: {data: true}}
+    params: { groupConfig: { data: true } }
   }
   const QortexPostMessageContext = {
     target: 'QORTEX-PREBIDJS-RTD-MODULE',
     message: 'DISPATCH-CONTEXT',
-    params: {context: {data: true}}
+    params: { context: { data: true } }
   }
   const invalidTypeQortexEvent = {
     detail: {
@@ -136,7 +136,7 @@ describe('qortexRtdProvider', () => {
   }
 
   beforeEach(() => {
-    ortb2Stub = sinon.stub(reqBidsConfig, 'ortb2Fragments').value({bidder: {}, global: {}})
+    ortb2Stub = sinon.stub(reqBidsConfig, 'ortb2Fragments').value({ bidder: {}, global: {} })
     logWarnSpy = sinon.spy(utils, 'logWarn');
     logMessageSpy = sinon.spy(utils, 'logMessage');
   })
@@ -291,14 +291,14 @@ describe('qortexRtdProvider', () => {
     })
 
     it('Properly sends analytics event with valid config', () => {
-      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
+      const testData = { auctionId: reqBidsConfig.auctionId, data: 'data' };
       module.onAuctionEndEvent(testData);
     })
   })
 
   describe('requestContextData', () => {
     before(() => {
-      setContextData({data: true});
+      setContextData({ data: true });
     })
 
     after(() => {
@@ -400,11 +400,11 @@ describe('qortexRtdProvider', () => {
     })
 
     it('processes incoming qortex component "initialize" message', () => {
-      windowPostMessageReceived({data: QortexPostMessageInitialized})
+      windowPostMessageReceived({ data: QortexPostMessageInitialized })
     })
 
     it('processes incoming qortex component "context" message', () => {
-      windowPostMessageReceived({data: QortexPostMessageContext})
+      windowPostMessageReceived({ data: QortexPostMessageContext })
     })
   })
 })

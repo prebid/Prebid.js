@@ -1,6 +1,6 @@
-import {fillVideoDefaults, isValidVideoBid} from 'src/video.js';
-import {hook} from '../../src/hook.js';
-import {stubAuctionIndex} from '../helpers/indexStub.js';
+import { fillVideoDefaults, isValidVideoBid } from 'src/video.js';
+import { hook } from '../../src/hook.js';
+import { stubAuctionIndex } from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
 import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
 
@@ -24,21 +24,21 @@ describe('video.js', function () {
 
   describe('fillVideoDefaults', () => {
     function fillDefaults(videoMediaType = {}) {
-      const adUnit = {mediaTypes: {video: videoMediaType}};
+      const adUnit = { mediaTypes: { video: videoMediaType } };
       fillVideoDefaults(adUnit);
       return adUnit.mediaTypes.video;
     }
 
     describe('should set plcmt = 4 when', () => {
       it('context is "outstream"', () => {
-        expect(fillDefaults({context: 'outstream'})).to.eql({
+        expect(fillDefaults({ context: 'outstream' })).to.eql({
           context: 'outstream',
           plcmt: 4
         })
       });
       [2, 3, 4].forEach(placement => {
         it(`placemement is "${placement}"`, () => {
-          expect(fillDefaults({placement})).to.eql({
+          expect(fillDefaults({ placement })).to.eql({
             placement,
             plcmt: 4
           });
@@ -48,7 +48,7 @@ describe('video.js', function () {
     describe('should set plcmt = 2 when', () => {
       [[2], [6]].forEach(playbackmethod => {
         it(`playbackmethod is "${playbackmethod}"`, () => {
-          expect(fillDefaults({playbackmethod})).to.eql({
+          expect(fillDefaults({ playbackmethod })).to.eql({
             playbackmethod,
             plcmt: 2,
           });
@@ -84,7 +84,7 @@ describe('video.js', function () {
             playbackmethod: 2
           }
         }
-      }).forEach(([t, {expected, video}]) => {
+      }).forEach(([t, { expected, video }]) => {
         it(t, () => {
           expect(fillDefaults(video).plcmt).to.eql(expected);
         })
@@ -197,7 +197,7 @@ describe('video.js', function () {
         otherOne: 'test',
       };
 
-      const expected = {...mt};
+      const expected = { ...mt };
       delete expected.api;
 
       const adUnit = {
@@ -251,10 +251,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'instream'}
+          video: { context: 'instream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(true);
     });
 
@@ -265,10 +265,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'instream'}
+          video: { context: 'instream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(false);
     });
 
@@ -276,10 +276,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         bidder: 'vastOnlyVideoBidder',
-        mediaTypes: {video: {}},
+        mediaTypes: { video: {} },
       }];
 
-      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
 
       expect(valid).to.equal(false);
     });
@@ -295,10 +295,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'outstream'}
+          video: { context: 'outstream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(true);
     });
 
@@ -318,7 +318,7 @@ describe('video.js', function () {
           render: () => true,
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(true);
     });
 
@@ -329,10 +329,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'outstream'}
+          video: { context: 'outstream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(false);
     });
   })

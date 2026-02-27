@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {ADPLUS_ENDPOINT, BIDDER_CODE, spec,} from 'modules/adplusBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { ADPLUS_ENDPOINT, BIDDER_CODE, spec, } from 'modules/adplusBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const TEST_UID = 'test-uid-value';
 

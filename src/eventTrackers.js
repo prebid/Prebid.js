@@ -13,7 +13,7 @@ export const EVENT_TYPE_WIN = 500;
  * @returns {{[type: string]: {[method: string]: string[]}}}
  */
 export function parseEventTrackers(eventTrackers) {
-  return (eventTrackers ?? []).reduce((tally, {event, method, url}) => {
+  return (eventTrackers ?? []).reduce((tally, { event, method, url }) => {
     const trackersForType = tally[event] = tally[event] ?? {};
     const trackersForMethod = trackersForType[method] = trackersForType[method] ?? [];
     trackersForMethod.push(url);

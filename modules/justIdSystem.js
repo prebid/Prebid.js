@@ -53,7 +53,7 @@ export const justIdSubmodule = {
   decode(value) {
     utils.logInfo(LOG_PREFIX, 'decode', value);
     const justId = value && value.uid;
-    return justId && {justId: justId};
+    return justId && { justId: justId };
   },
 
   /**
@@ -89,7 +89,7 @@ export const justIdSubmodule = {
               cbFun();
               return;
             }
-            cbFun({uid: justId});
+            cbFun({ uid: justId });
           }, err => {
             utils.logError(LOG_PREFIX, 'error during fetching', err);
             cbFun();

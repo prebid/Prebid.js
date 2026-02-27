@@ -1,5 +1,5 @@
-import {isEmptyStr, isStr, isEmpty} from '../utils.js';
-import {PbPromise} from '../utils/promise.js';
+import { isEmptyStr, isStr, isEmpty } from '../utils.js';
+import { PbPromise } from '../utils/promise.js';
 
 export const SUA_SOURCE_UNKNOWN = 0;
 export const SUA_SOURCE_LOW_ENTROPY = 1;
@@ -77,19 +77,19 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
  */
 export function uaDataToSUA(source, uaData) {
   function toBrandVersion(brand, version) {
-    const bv = {brand};
+    const bv = { brand };
     if (isStr(version) && !isEmptyStr(version)) {
       bv.version = version.split('.');
     }
     return bv;
   }
 
-  const sua = {source};
+  const sua = { source };
   if (uaData.platform) {
     sua.platform = toBrandVersion(uaData.platform, uaData.platformVersion);
   }
   if (uaData.fullVersionList || uaData.brands) {
-    sua.browsers = (uaData.fullVersionList || uaData.brands).map(({brand, version}) => toBrandVersion(brand, version));
+    sua.browsers = (uaData.fullVersionList || uaData.brands).map(({ brand, version }) => toBrandVersion(brand, version));
   }
   if (typeof uaData['mobile'] !== 'undefined') {
     sua.mobile = uaData.mobile ? 1 : 0;

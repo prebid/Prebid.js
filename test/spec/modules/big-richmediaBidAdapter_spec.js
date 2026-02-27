@@ -215,7 +215,7 @@ describe('bigRichMediaAdapterTests', function () {
           adUnitCode: 'code'
         }]
       };
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -249,7 +249,7 @@ describe('bigRichMediaAdapterTests', function () {
           }]
         }
 
-        const result = spec.interpretResponse({ body: response }, {bidderRequest});
+        const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).not.to.have.property('vastXml');
         expect(result[0]).not.to.have.property('vastUrl');
         expect(result[0]).to.have.property('width', 1);

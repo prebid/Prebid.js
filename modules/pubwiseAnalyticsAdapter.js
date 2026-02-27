@@ -1,12 +1,12 @@
 import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 const MODULE_CODE = 'pubwise';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 /****
  * PubWise.io Analytics
@@ -32,10 +32,10 @@ const analyticsType = 'endpoint';
 const analyticsName = 'PubWise:';
 const prebidVersion = '$prebid.version$';
 const pubwiseVersion = '4.0.1';
-let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v5/event/add/', debug: null};
+let configOptions = { site: '', endpoint: 'https://api.pubwise.io/api/v5/event/add/', debug: null };
 let pwAnalyticsEnabled = false;
-const utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
-const sessionData = {sessionId: '', activationId: ''};
+const utmKeys = { utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: '' };
+const sessionData = { sessionId: '', activationId: '' };
 const pwNamespace = 'pubwise';
 const pwEvents = [];
 let metaData = {};
@@ -168,7 +168,7 @@ function sessionExpired() {
 
 function flushEvents() {
   if (pwEvents.length > 0) {
-    const dataBag = {metaData: metaData, eventList: pwEvents.splice(0)}; // put all the events together with the metadata and send
+    const dataBag = { metaData: metaData, eventList: pwEvents.splice(0) }; // put all the events together with the metadata and send
     ajax(configOptions.endpoint, (result) => pwInfo(`Result`, result), JSON.stringify(dataBag));
   }
 }
@@ -254,9 +254,9 @@ function filterAuctionInit(data) {
   return modified;
 }
 
-const pubwiseAnalytics = Object.assign(adapter({analyticsType}), {
+const pubwiseAnalytics = Object.assign(adapter({ analyticsType }), {
   // Override AnalyticsAdapter functions by supplying custom methods
-  track({eventType, args}) {
+  track({ eventType, args }) {
     this.handleEvent(eventType, args);
   }
 });

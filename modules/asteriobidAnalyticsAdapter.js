@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { EVENTS } from '../src/constants.js'
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
-import {getRefererInfo} from '../src/refererDetection.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { collectUtmTagData, trimAdUnit, trimBid, trimBidderRequest } from '../libraries/asteriobidUtils/asteriobidUtils.js'
 
 /**

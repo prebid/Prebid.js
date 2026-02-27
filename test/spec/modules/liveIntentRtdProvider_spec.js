@@ -1,4 +1,4 @@
-import {liveIntentRtdSubmodule} from 'modules/liveIntentRtdProvider.js';
+import { liveIntentRtdSubmodule } from 'modules/liveIntentRtdProvider.js';
 import * as utils from 'src/utils.js';
 import { expect } from 'chai';
 
@@ -63,7 +63,7 @@ describe('LiveIntent Rtd Provider', function () {
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = {user: {data: [{name: 'liveintent.com', segment: [{id: 'asa_1231'}, {id: 'lalo_4311'}, {id: 'liurl_99123'}]}]}}
+      const expectedOrtb2 = { user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
@@ -73,7 +73,7 @@ describe('LiveIntent Rtd Provider', function () {
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = {source: {}, user: {data: [{name: 'liveintent.com', segment: [{id: 'asa_1231'}, {id: 'lalo_4311'}, {id: 'liurl_99123'}]}]}}
+      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
@@ -86,7 +86,7 @@ describe('LiveIntent Rtd Provider', function () {
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = {source: {}, user: {data: [{name: 'liveintent.com', segment: [{id: 'asa_1231'}, {id: 'lalo_4311'}, {id: 'liurl_99123'}]}]}}
+      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
@@ -109,7 +109,7 @@ describe('LiveIntent Rtd Provider', function () {
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
       const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = {source: {}, user: {data: [{name: 'example.com', segment: [{id: 'a_1231'}, {id: 'b_4311'}]}, {name: 'liveintent.com', segment: [{id: 'asa_1231'}, {id: 'lalo_4311'}, {id: 'liurl_99123'}]}]}}
+      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'example.com', segment: [{ id: 'a_1231' }, { id: 'b_4311' }] }, { name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } }
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
   });

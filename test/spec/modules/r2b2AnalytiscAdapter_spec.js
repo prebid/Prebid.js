@@ -1,15 +1,16 @@
-import r2b2Analytics, {resetAnalyticAdapter} from '../../../modules/r2b2AnalyticsAdapter.js';
+import r2b2Analytics, { resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js';
 
 import { expect } from 'chai';
-import {EVENTS, AD_RENDER_FAILED_REASON, REJECTION_REASON} from 'src/constants.js';
+import { EVENTS, AD_RENDER_FAILED_REASON, REJECTION_REASON } from 'src/constants.js';
 import * as pbEvents from 'src/events.js';
 import * as ajax from 'src/ajax.js';
 import * as utils from 'src/utils';
-import {getGlobal} from 'src/prebidGlobal';
+import { getGlobal } from 'src/prebidGlobal';
 import * as prebidGlobal from 'src/prebidGlobal';
 const adapterManager = require('src/adapterManager').default;
 
-const { NO_BID, AUCTION_INIT, BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_REJECTED, BIDDER_DONE,
+const {
+  NO_BID, AUCTION_INIT, BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_REJECTED, BIDDER_DONE,
   AUCTION_END, BID_WON, SET_TARGETING, STALE_RENDER, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BID_VIEWABLE
 } = EVENTS;
 
@@ -30,10 +31,10 @@ const AD_UNIT_1 = {
   },
   'bids': [{
     'bidder': 'r2b2',
-    'params': {'pid': R2B2_PID_1}
+    'params': { 'pid': R2B2_PID_1 }
   }, {
     'bidder': 'adf',
-    'params': {'mid': 1799592}
+    'params': { 'mid': 1799592 }
   }],
   'sizes': BANNER_SETTING_1.sizes,
   'transactionId': AD_UNIT_1_TID,
@@ -50,7 +51,7 @@ const AD_UNIT_2 = {
   },
   'bids': [{
     'bidder': 'r2b2',
-    'params': {'pid': R2B2_PID_2}
+    'params': { 'pid': R2B2_PID_2 }
   }, {
     'bidder': 'stroeerCore',
     'params': { 'sid': '9532ef8d-e630-45a9-88f6-3eb3eb265d58' }
@@ -71,7 +72,7 @@ const R2B2_BIDDER_REQUEST = {
   'bids': [
     {
       'bidder': 'r2b2',
-      'params': {'pid': R2B2_PID_1},
+      'params': { 'pid': R2B2_PID_1 },
       'mediaTypes': { 'banner': BANNER_SETTING_1 },
       'adUnitCode': AD_UNIT_1_CODE,
       'transactionId': '0b3464bb-d80a-490e-8367-a65201a37ba3',
@@ -82,7 +83,7 @@ const R2B2_BIDDER_REQUEST = {
     },
     {
       'bidder': 'r2b2',
-      'params': {'pid': R2B2_PID_2},
+      'params': { 'pid': R2B2_PID_2 },
       'mediaTypes': { 'banner': BANNER_SETTING_2 },
       'adUnitCode': AD_UNIT_2_CODE,
       'transactionId': 'c8c3643c-9de0-43ea-bcd6-cc0072ec9b45',
@@ -274,7 +275,7 @@ const MOCK = {
 }
 function fireEvents(events) {
   return events.map((ev, i) => {
-    ev = Array.isArray(ev) ? ev : [ev, {i: i}];
+    ev = Array.isArray(ev) ? ev : [ev, { i: i }];
     pbEvents.emit.apply(null, ev)
     return ev;
   });
@@ -286,7 +287,7 @@ function expectEvents(events, sandbox) {
     to: {
       beTrackedBy(trackFn) {
         events.forEach(([eventType, args]) => {
-          sandbox.assert.calledWithMatch(trackFn, sandbox.match({eventType, args}));
+          sandbox.assert.calledWithMatch(trackFn, sandbox.match({ eventType, args }));
         });
       },
       beBundledTo(bundleFn) {
@@ -553,7 +554,7 @@ describe('r2b2 Analytics', function () {
         expect(adformBidRequest.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'adf',
-          u: {[AD_UNIT_1_CODE]: 1}
+          u: { [AD_UNIT_1_CODE]: 1 }
         });
 
         done();
@@ -599,7 +600,7 @@ describe('r2b2 Analytics', function () {
         expect(timeoutEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: {
-            r2b2: {[AD_UNIT_1_CODE]: 2}
+            r2b2: { [AD_UNIT_1_CODE]: 2 }
           }
         });
 
@@ -649,7 +650,7 @@ describe('r2b2 Analytics', function () {
             sz: '300x100',
             bi: R2B2_AD_UNIT_2_BID.requestId,
           }],
-          u: {[AD_UNIT_2_CODE]: {b: {r2b2: 1}}},
+          u: { [AD_UNIT_2_CODE]: { b: { r2b2: 1 } } },
           o: 1,
           bc: 1,
           nbc: 0,

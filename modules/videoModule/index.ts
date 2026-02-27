@@ -1,8 +1,8 @@
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 import * as events from '../../src/events.js';
-import {logError, logWarn, mergeDeep} from '../../src/utils.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
-import {EVENTS} from '../../src/constants.js';
+import { logError, logWarn, mergeDeep } from '../../src/utils.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import { EVENTS } from '../../src/constants.js';
 import {
   AD_ERROR,
   AD_IMPRESSION,
@@ -12,23 +12,23 @@ import {
   BID_IMPRESSION,
   videoEvents
 } from '../../libraries/video/constants/events.js'
-import {PLACEMENT} from '../../libraries/video/constants/ortb.js';
-import {videoKey} from '../../libraries/video/constants/constants.js'
-import {videoCoreFactory} from './coreVideo.js';
-import {gamSubmoduleFactory} from './gamAdServerSubmodule.js';
-import {videoImpressionVerifierFactory} from './videoImpressionVerifier.js';
-import {AdQueueCoordinator} from './adQueue.js';
-import {getExternalVideoEventName, getExternalVideoEventPayload} from '../../libraries/video/shared/helpers.js'
-import {VIDEO} from '../../src/mediaTypes.js';
-import {auctionManager} from '../../src/auctionManager.js';
-import {doRender} from '../../src/adRendering.js';
-import {getHook} from '../../src/hook.js';
-import {type VideoBid} from '../../src/bidfactory.js';
-import type {BidderCode} from "../../src/types/common.d.ts";
-import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
-import type {DeepPartial} from "../../src/types/objects.d.ts";
-import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes.ts";
-import type {VideoEvent} from "../../libraries/video/constants/events.ts";
+import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
+import { videoKey } from '../../libraries/video/constants/constants.js'
+import { videoCoreFactory } from './coreVideo.js';
+import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
+import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
+import { AdQueueCoordinator } from './adQueue.js';
+import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
+import { VIDEO } from '../../src/mediaTypes.js';
+import { auctionManager } from '../../src/auctionManager.js';
+import { doRender } from '../../src/adRendering.js';
+import { getHook } from '../../src/hook.js';
+import { type VideoBid } from '../../src/bidfactory.js';
+import type { BidderCode } from "../../src/types/common.d.ts";
+import type { ORTBImp, ORTBRequest } from "../../src/types/ortb/request.d.ts";
+import type { DeepPartial } from "../../src/types/objects.d.ts";
+import type { AdServerVendor } from "../../libraries/video/constants/vendorCodes.ts";
+import type { VideoEvent } from "../../libraries/video/constants/events.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 
@@ -293,7 +293,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
   function getWinningBid(adUnitCode) {
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
     if (!highestCpmBids.length) {
-      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, {adUnitCode}));
+      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, { adUnitCode }));
       return;
     }
     return highestCpmBids.shift();

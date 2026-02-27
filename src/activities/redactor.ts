@@ -1,6 +1,6 @@
-import {deepAccess} from '../utils.js';
-import {config} from '../config.js';
-import {isActivityAllowed, registerActivityControl} from './rules.js';
+import { deepAccess } from '../utils.js';
+import { config } from '../config.js';
+import { isActivityAllowed, registerActivityControl } from './rules.js';
 import {
   ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
@@ -224,6 +224,6 @@ declare module '../config' {
 // by default, TIDs are off since version 8
 registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {
   if (!config.getConfig('enableTIDs')) {
-    return {allow: false, reason: 'TIDs are disabled'}
+    return { allow: false, reason: 'TIDs are disabled' }
   }
 });

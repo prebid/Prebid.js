@@ -6,7 +6,7 @@ import 'modules/priceFloors.js';
 import { replaceAuctionPrice } from '../../../src/utils.js';
 
 const ortbBlockParams = {
-  battr: [ 13 ],
+  battr: [13],
   bcat: ['IAB1-1']
 };
 const getBidderRequest = (isMulti = false) => {
@@ -22,7 +22,7 @@ const getBidderRequest = (isMulti = false) => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 320, 100 ],
+              [320, 100],
             ]
           },
           ...(isMulti && {
@@ -32,7 +32,8 @@ const getBidderRequest = (isMulti = false) => {
             native: {
               title: {
                 required: true,
-              }}
+              }
+            }
           })
         },
         ...(isMulti && {

@@ -19,7 +19,7 @@ const DEFAULT_ENDPOINT = NETWORK_ENDPOINTS['fan'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {

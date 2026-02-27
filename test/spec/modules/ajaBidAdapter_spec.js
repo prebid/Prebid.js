@@ -54,9 +54,9 @@ describe('AjaAdapter', function () {
                 version: ['8', '0', '0']
               },
               browsers: [
-                {brand: 'Not_A Brand', version: ['99', '0', '0', '0']},
-                {brand: 'Google Chrome', version: ['109', '0', '5414', '119']},
-                {brand: 'Chromium', version: ['109', '0', '5414', '119']}
+                { brand: 'Not_A Brand', version: ['99', '0', '0', '0'] },
+                { brand: 'Google Chrome', version: ['109', '0', '5414', '119'] },
+                { brand: 'Chromium', version: ['109', '0', '5414', '119'] }
               ],
               mobile: 1,
               model: 'SM-G955U',
@@ -206,7 +206,7 @@ describe('AjaAdapter', function () {
       ];
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -217,7 +217,7 @@ describe('AjaAdapter', function () {
       };
 
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

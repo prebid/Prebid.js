@@ -13,7 +13,7 @@ import {
 import { newBidder } from '../../../src/adapters/bidderFactory.js';
 import { parseUrl } from 'src/utils.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -378,15 +378,15 @@ describe('Quantcast adapter', function () {
 
     it('parses multi-format bid request', function () {
       bidRequest.mediaTypes = {
-        banner: {sizes: [[300, 250], [728, 90], [250, 250], [468, 60], [320, 50]]},
+        banner: { sizes: [[300, 250], [728, 90], [250, 250], [468, 60], [320, 50]] },
         native: {
-          image: {required: true, sizes: [150, 50]},
-          title: {required: true, len: 80},
-          sponsoredBy: {required: true},
-          clickUrl: {required: true},
-          privacyLink: {required: false},
-          body: {required: true},
-          icon: {required: true, sizes: [50, 50]}
+          image: { required: true, sizes: [150, 50] },
+          title: { required: true, len: 80 },
+          sponsoredBy: { required: true },
+          clickUrl: { required: true },
+          privacyLink: { required: false },
+          body: { required: true },
+          icon: { required: true, sizes: [50, 50] }
         },
         video: {
           context: 'outstream',
@@ -402,11 +402,11 @@ describe('Quantcast adapter', function () {
           banner: {
             battr: [1, 2],
             sizes: [
-              {width: 300, height: 250},
-              {width: 728, height: 90},
-              {width: 250, height: 250},
-              {width: 468, height: 60},
-              {width: 320, height: 50}
+              { width: 300, height: 250 },
+              { width: 728, height: 90 },
+              { width: 250, height: 250 },
+              { width: 468, height: 60 },
+              { width: 320, height: 50 }
             ]
           },
           placementCode: 'div-gpt-ad-1438287399331-0',

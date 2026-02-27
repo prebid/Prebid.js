@@ -5,7 +5,7 @@ import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 

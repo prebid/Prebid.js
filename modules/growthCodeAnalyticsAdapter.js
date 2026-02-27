@@ -6,16 +6,16 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {logError, logInfo} from '../src/utils.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { logError, logInfo } from '../src/utils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'growthCodeAnalytics';
 const DEFAULT_PID = 'INVALID_PID'
 const ENDPOINT_URL = 'https://analytics.gcprivacy.com/v3/pb/analytics'
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
 
 const sessionId = utils.generateUUID();
 
@@ -29,8 +29,8 @@ let startAuction = 0;
 let bidRequestTimeout = 0;
 const analyticsType = 'endpoint';
 
-const growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}), {
-  track({eventType, args}) {
+const growthCodeAnalyticsAdapter = Object.assign(adapter({ url: url, analyticsType }), {
+  track({ eventType, args }) {
     const eventData = args ? utils.deepClone(args) : {};
     let data = {};
     if (!trackEvents.includes(eventType)) return;
@@ -159,7 +159,7 @@ function logToServer() {
       error: error => {
         logInfo(MODULE_NAME + ' Problem Send Data to Server: ' + error)
       }
-    }, JSON.stringify(data), {method: 'POST', withCredentials: true})
+    }, JSON.stringify(data), { method: 'POST', withCredentials: true })
 
     eventQueue = [
     ];

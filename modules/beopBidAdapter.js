@@ -27,7 +27,7 @@ const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -231,7 +231,7 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
   const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
+    const floorInfo = bid.getFloor({ currency: publisherCurrency, mediaType: 'banner', size: [1, 1] });
     if (isPlainObject(floorInfo) && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }

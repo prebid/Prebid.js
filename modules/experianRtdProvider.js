@@ -96,10 +96,10 @@ export const experianRtdObj = {
     if (userConsent != null) {
       if (userConsent.gdpr != null) {
         const { gdprApplies, consentString } = userConsent.gdpr;
-        mergeDeep(queryObj, {gdpr: gdprApplies, gdpr_consent: consentString})
+        mergeDeep(queryObj, { gdpr: gdprApplies, gdpr_consent: consentString })
       }
       if (userConsent.uspConsent != null) {
-        mergeDeep(queryObj, {us_privacy: userConsent.uspConsent})
+        mergeDeep(queryObj, { us_privacy: userConsent.uspConsent })
       }
     }
     const consentQueryString = Object.entries(queryObj).map(([key, val]) => `${key}=${val}`).join('&');

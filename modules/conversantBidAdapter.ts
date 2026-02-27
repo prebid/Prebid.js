@@ -10,10 +10,10 @@ import {
   mergeDeep,
   parseUrl,
 } from '../src/utils.js';
-import {type BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
+import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 // Maintainer: mediapsr@epsilon.com
 
@@ -126,7 +126,7 @@ const converter = ortbConverter({
         if (bidRequest.mediaTypes && !bidRequest.mediaTypes.banner) return;
         if (bidRequest.params.position) {
           // fillBannerImp looks for mediaTypes.banner.pos so put it under the right name here
-          mergeDeep(bidRequest, {mediaTypes: {banner: {pos: bidRequest.params.position}}});
+          mergeDeep(bidRequest, { mediaTypes: { banner: { pos: bidRequest.params.position } } });
         }
         fillBannerImp(imp, bidRequest, context);
       },
@@ -183,7 +183,7 @@ export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
-    const payload = converter.toORTB({bidderRequest, bidRequests});
+    const payload = converter.toORTB({ bidderRequest, bidRequests });
     return {
       method: 'POST',
       url: makeBidUrl(bidRequests[0]),
@@ -198,7 +198,7 @@ export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
+    return converter.fromORTB({ request: bidRequest.data, response: serverResponse.body });
   },
 
   /**
@@ -228,7 +228,7 @@ export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
       responses.forEach(response => {
         if (response?.body?.ext) {
           const ext = response.body.ext;
-          const pixels = [{urls: ext.fsyncs, type: 'iframe'}, {urls: ext.psyncs, type: 'image'}]
+          const pixels = [{ urls: ext.fsyncs, type: 'iframe' }, { urls: ext.psyncs, type: 'image' }]
             .filter((entry) => {
               return entry.urls && Array.isArray(entry.urls) &&
                 entry.urls.length > 0 &&
@@ -242,7 +242,7 @@ export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
                 if (Object.keys(urlInfo.search).length === 0) {
                   delete urlInfo.search;
                 }
-                return {type: entry.type, url: buildUrl(urlInfo)};
+                return { type: entry.type, url: buildUrl(urlInfo) };
               })
                 .reduce((x, y) => x.concat(y), []);
             })

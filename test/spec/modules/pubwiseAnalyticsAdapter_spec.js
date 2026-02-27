@@ -1,7 +1,7 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import pubwiseAnalytics from 'modules/pubwiseAnalyticsAdapter.js';
-import {expectEvents} from '../../helpers/analytics.js';
-import {server} from '../../mocks/xhr.js';
+import { expectEvents } from '../../helpers/analytics.js';
+import { server } from '../../mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
 const events = require('src/events');
@@ -17,17 +17,17 @@ describe('PubWise Prebid Analytics', function () {
     provider: 'pubwiseanalytics',
     options: {
       site: ['b1ccf317-a6fc-428d-ba69-0c9c208aa61c'],
-      custom: {'c_script_type': 'test-script-type', 'c_host': 'test-host', 'c_slot1': 'test-slot1', 'c_slot2': 'test-slot2', 'c_slot3': 'test-slot3', 'c_slot4': 'test-slot4'}
+      custom: { 'c_script_type': 'test-script-type', 'c_host': 'test-host', 'c_slot1': 'test-slot1', 'c_slot2': 'test-slot2', 'c_slot3': 'test-slot3', 'c_slot4': 'test-slot4' }
     }
   };
-  mock.AUCTION_INIT = {auctionId: '53c35d77-bd62-41e7-b920-244140e30c77'};
+  mock.AUCTION_INIT = { auctionId: '53c35d77-bd62-41e7-b920-244140e30c77' };
   mock.AUCTION_INIT_EXTRAS = {
     auctionId: '53c35d77-bd62-41e7-b920-244140e30c77',
     adUnitCodes: 'not empty',
     adUnits: '',
     bidderRequests: ['0'],
     bidsReceived: '0',
-    config: {test: 'config'},
+    config: { test: 'config' },
     noBids: 'no bids today',
     winningBids: 'winning bids',
     extraProp: 'extraProp retained'
@@ -35,7 +35,7 @@ describe('PubWise Prebid Analytics', function () {
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
-    clock = sandbox.useFakeTimers({shouldClearNativeTimers: true});
+    clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
     sandbox.stub(events, 'getEvents').returns([]);
 
     requests = server.requests;

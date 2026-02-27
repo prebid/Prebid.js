@@ -10,7 +10,7 @@ import {
 import * as utils from 'src/utils.js';
 import * as storageManager from 'src/storageManager.js';
 import { config } from 'src/config.js';
-import {init} from 'modules/rtdModule'
+import { init } from 'modules/rtdModule'
 
 describe('adlane Module', () => {
   let sandbox;

@@ -30,7 +30,7 @@ const a1TestOrtbObj = {
         ext: {
           segtax: 900
         },
-        segment: [{id: 'test'}]
+        segment: [{ id: 'test' }]
       }
     ],
     ext: {

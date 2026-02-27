@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/optoutBidAdapter.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 
 describe('optoutAdapterTest', function () {
   describe('bidRequestValidity', function () {

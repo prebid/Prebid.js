@@ -337,7 +337,7 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: [ auctions[completedAuctionId] ],
+    auctions: [auctions[completedAuctionId]],
   }
   if (uspDataHandler.getConsentData()) {
     report.usPrivacy = uspDataHandler.getConsentData();

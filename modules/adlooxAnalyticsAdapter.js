@@ -6,11 +6,11 @@
 
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {AUCTION_COMPLETED} from '../src/auction.js';
-import {EVENTS} from '../src/constants.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { AUCTION_COMPLETED } from '../src/auction.js';
+import { EVENTS } from '../src/constants.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import {
   deepAccess,
   getUniqueIdentifierStr,
@@ -26,7 +26,7 @@ import {
   mergeDeep,
   parseUrl
 } from '../src/utils.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
@@ -159,9 +159,9 @@ analyticsAdapter.enableAnalytics = function(config) {
     .keys(config.options.params)
     .forEach(k => {
       if (!Array.isArray(config.options.params[k])) {
-        config.options.params[k] = [ config.options.params[k] ];
+        config.options.params[k] = [config.options.params[k]];
       }
-      config.options.params[k].forEach(v => analyticsAdapter.context.params.push([ k, v ]));
+      config.options.params[k].forEach(v => analyticsAdapter.context.params.push([k, v]));
     });
 
   Object.keys(COMMAND_QUEUE).forEach(commandProcess);
@@ -261,11 +261,11 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   logMessage(MODULE, `measuring '${bid.mediaType}' unit at '${bid.adUnitCode}'`);
 
   const params = analyticsAdapter.context.params.concat([
-    [ 'tagid', '%%tagid%%' ],
-    [ 'platform', '%%platformid%%' ],
-    [ 'fwtype', 4 ],
-    [ 'targetelt', '%%targetelt%%' ],
-    [ 'creatype', '%%creatype%%' ]
+    ['tagid', '%%tagid%%'],
+    ['platform', '%%platformid%%'],
+    ['fwtype', 4],
+    ['targetelt', '%%targetelt%%'],
+    ['creatype', '%%creatype%%']
   ]);
 
   loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');

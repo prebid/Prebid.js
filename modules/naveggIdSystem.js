@@ -20,7 +20,7 @@ const OLD_NAVEGG_ID = 'nid';
 const NAVEGG_ID = 'nvggid';
 const BASE_URL = 'https://id.navegg.com/uid/';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function getIdFromAPI() {
   const resp = function (callback) {
@@ -50,7 +50,7 @@ function getIdFromAPI() {
         const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
         callback(fallbackValue);
       },
-      {method: 'GET', withCredentials: false});
+      { method: 'GET', withCredentials: false });
   };
   return resp;
 }
@@ -115,7 +115,7 @@ export const naveggIdSubmodule = {
    */
   getId(config, consentData) {
     const resp = getIdFromAPI()
-    return {callback: resp}
+    return { callback: resp }
   },
   eids: {
     'naveggId': {

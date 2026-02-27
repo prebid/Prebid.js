@@ -1,5 +1,5 @@
-import {isData, sessionedApplies} from '../../src/activities/redactor.js';
-import {deepEqual, logWarn} from '../../src/utils.js';
+import { isData, sessionedApplies } from '../../src/activities/redactor.js';
+import { deepEqual, logWarn } from '../../src/utils.js';
 
 /**
  * @typedef {import('../src/activities/redactor.js').TransformationRuleDef} TransformationRuleDef
@@ -178,7 +178,7 @@ export function objectGuard(rules) {
           // a parent property has write protect rules, keep guarding
           return mkGuard(val, tree, final, applies, cache)
         } else if (tree.children?.hasOwnProperty(prop)) {
-          const {children, hasWP} = tree.children[prop];
+          const { children, hasWP } = tree.children[prop];
           if (isData(val)) {
             // if this property has redact rules, apply them
             const rule = getRedactRule(tree.children[prop]);

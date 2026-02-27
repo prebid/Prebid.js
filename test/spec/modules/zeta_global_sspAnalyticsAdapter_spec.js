@@ -586,7 +586,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
       expect(requests.length).to.equal(1);
       const auctionEnd = JSON.parse(requests[0].requestBody);
       expect(auctionEnd).to.be.deep.equal({
-        zetaParams: {sid: 111, tags: {position: 'top', shortname: 'name'}},
+        zetaParams: { sid: 111, tags: { position: 'top', shortname: 'name' } },
         bidderRequests: [{
           bidderCode: 'zeta_global_ssp',
           domain: 'test-zeta-ssp.net:63342',
@@ -709,11 +709,11 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           'language': 'en',
           'sua': {
             'source': 1,
-            'platform': {'brand': 'macOS'},
-            'browsers': [{'brand': 'Google Chrome', 'version': ['123']}, {
+            'platform': { 'brand': 'macOS' },
+            'browsers': [{ 'brand': 'Google Chrome', 'version': ['123'] }, {
               'brand': 'Not:A-Brand',
               'version': ['8']
-            }, {'brand': 'Chromium', 'version': ['123']}],
+            }, { 'brand': 'Chromium', 'version': ['123'] }],
             'mobile': 0
           }
         },
@@ -736,11 +736,11 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           'language': 'en',
           'sua': {
             'source': 1,
-            'platform': {'brand': 'macOS'},
-            'browsers': [{'brand': 'Google Chrome', 'version': ['123']}, {
+            'platform': { 'brand': 'macOS' },
+            'browsers': [{ 'brand': 'Google Chrome', 'version': ['123'] }, {
               'brand': 'Not:A-Brand',
               'version': ['8']
-            }, {'brand': 'Chromium', 'version': ['123']}],
+            }, { 'brand': 'Chromium', 'version': ['123'] }],
             'mobile': 0
           }
         },

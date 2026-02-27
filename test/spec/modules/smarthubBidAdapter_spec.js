@@ -476,7 +476,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0&pid=360')
     });
     it('Should return iframe type if iframeEnabled is true', function() {
-      const syncData = spec.getUserSyncs({iframeEnabled: true}, {}, {}, undefined, {});
+      const syncData = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, undefined, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')

@@ -1,12 +1,12 @@
-import {logError} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { logError } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
-import {EVENTS} from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {config} from '../src/config.js';
-import {parseDomain} from '../src/refererDetection.js';
-import {BANNER, VIDEO} from "../src/mediaTypes.js";
+import { config } from '../src/config.js';
+import { parseDomain } from '../src/refererDetection.js';
+import { BANNER, VIDEO } from "../src/mediaTypes.js";
 
 const ZETA_GVL_ID = 833;
 const ADAPTER_CODE = 'zeta_global_ssp';
@@ -33,7 +33,7 @@ function adRenderSucceededHandler(args) {
   const page = config.getConfig('pageUrl') || args.doc?.location?.host + args.doc?.location?.pathname;
   const event = {
     zetaParams: zetaParams,
-    domain: parseDomain(page, {noLeadingWww: true}),
+    domain: parseDomain(page, { noLeadingWww: true }),
     page: page,
     bid: {
       adId: args.bid?.adId,
@@ -151,7 +151,7 @@ function bidTimeoutHandler(args) {
 
 /// /////////// ADAPTER DEFINITION ///////////////////////////
 
-const baseAdapter = adapter({analyticsType: 'endpoint'});
+const baseAdapter = adapter({ analyticsType: 'endpoint' });
 const zetaAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(config = {}) {
@@ -169,7 +169,7 @@ const zetaAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track({ eventType, args }) {
     switch (eventType) {
       case EVENTS.AD_RENDER_SUCCEEDED:
         adRenderSucceededHandler(args);

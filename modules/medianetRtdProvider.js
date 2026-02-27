@@ -1,7 +1,7 @@
-import {isEmptyStr, isFn, isStr, logError, mergeDeep} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {submodule} from '../src/hook.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { isEmptyStr, isFn, isStr, logError, mergeDeep } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { submodule } from '../src/hook.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
@@ -26,7 +26,7 @@ function init(config) {
   executeCommand(() => window.mnjs.setData({
     module: 'iref',
     name: 'initIRefresh',
-    data: {config, prebidGlobal: getGlobal()},
+    data: { config, prebidGlobal: getGlobal() },
   }, SOURCE));
   return true;
 }
@@ -34,7 +34,7 @@ function init(config) {
 function getBidRequestData(requestBidsProps, callback, config, userConsent) {
   executeCommand(() => {
     const adUnits = getAdUnits(requestBidsProps.adUnits, requestBidsProps.adUnitCodes);
-    const request = window.mnjs.onPrebidRequestBid({requestBidsProps, config, userConsent});
+    const request = window.mnjs.onPrebidRequestBid({ requestBidsProps, config, userConsent });
     if (!request) {
       callback();
       return;
@@ -56,7 +56,7 @@ function onAuctionInitEvent(auctionInit) {
   executeCommand(() => window.mnjs.setData({
     module: 'iref',
     name: 'auctionInit',
-    data: {auction: auctionInit},
+    data: { auction: auctionInit },
   }, SOURCE));
 }
 

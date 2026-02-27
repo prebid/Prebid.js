@@ -40,13 +40,13 @@ export function renderer(win) {
   } catch (e) {
   }
 
-  return function ({adId, pubUrl, clickUrl}) {
+  return function ({ adId, pubUrl, clickUrl }) {
     const pubDomain = new URL(pubUrl, window.location).origin;
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();
       channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
+      target.postMessage(JSON.stringify(Object.assign({ message: type, adId }, payload)), pubDomain, [channel.port2]);
     }
 
     function onError(e) {
@@ -88,8 +88,8 @@ export function renderer(win) {
           const W = renderer.contentWindow;
           // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
           // does not appear to work if P comes from another frame
-          W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
-            () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
+          W.Promise.resolve(W.render(data, { sendMessage, mkFrame }, win)).then(
+            () => sendMessage(MESSAGE_EVENT, { event: EVENT_AD_RENDER_SUCCEEDED }),
             onError
           );
         });
@@ -101,7 +101,7 @@ export function renderer(win) {
     }
 
     sendMessage(MESSAGE_REQUEST, {
-      options: {clickUrl}
+      options: { clickUrl }
     }, onMessage);
   };
 }

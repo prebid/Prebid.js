@@ -1,4 +1,4 @@
-import {oxxionSubmodule} from 'modules/oxxionRtdProvider.js';
+import { oxxionSubmodule } from 'modules/oxxionRtdProvider.js';
 import 'src/prebid.js';
 
 const utils = require('src/utils.js');
@@ -22,15 +22,15 @@ const request = {
     {
       'code': 'msq_tag_200124_banner',
       'mediaTypes': { 'banner': { 'sizes': [[300, 600]] } },
-      'bids': [{'bidder': 'appnexus', 'params': {'placementId': 123456}}],
+      'bids': [{ 'bidder': 'appnexus', 'params': { 'placementId': 123456 } }],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b40'
     },
     {
       'code': 'msq_tag_200125_video',
       'mediaTypes': { 'video': { 'context': 'instream' }, playerSize: [640, 480], mimes: ['video/mp4'] },
       'bids': [
-        {'bidder': 'mediasquare', 'params': {'code': 'publishername_atf_desktop_rg_video', 'owner': 'test'}},
-        {'bidder': 'appnexusAst', 'params': {'placementId': 345678}},
+        { 'bidder': 'mediasquare', 'params': { 'code': 'publishername_atf_desktop_rg_video', 'owner': 'test' } },
+        { 'bidder': 'appnexusAst', 'params': { 'placementId': 345678 } },
       ],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
     },
@@ -38,7 +38,7 @@ const request = {
       'code': 'msq_tag_200125_banner',
       'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
       'bids': [
-        {'bidder': 'appnexusAst', 'params': {'placementId': 345678}},
+        { 'bidder': 'appnexusAst', 'params': { 'placementId': 345678 } },
       ],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
     }
@@ -114,10 +114,10 @@ const bids = [{
 ];
 
 const bidInterests = [
-  {'id': 0, 'rate': 50.0, 'suggestion': true},
-  {'id': 1, 'rate': 12.0, 'suggestion': false},
-  {'id': 2, 'rate': 0.0, 'suggestion': true},
-  {'id': 3, 'rate': 0.0, 'suggestion': false},
+  { 'id': 0, 'rate': 50.0, 'suggestion': true },
+  { 'id': 1, 'rate': 12.0, 'suggestion': false },
+  { 'id': 2, 'rate': 0.0, 'suggestion': true },
+  { 'id': 3, 'rate': 0.0, 'suggestion': false },
 ];
 
 const userConsent = {

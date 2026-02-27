@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/flippBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import { expect } from 'chai';
+import { spec } from 'modules/flippBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 const ENDPOINT = 'https://ads-flipp.com/flyer-locator-service/client_bidding';
 describe('flippAdapter', function () {
   const adapter = newBidder(spec);
@@ -39,7 +39,7 @@ describe('flippAdapter', function () {
       },
       adUnitCode: '/10000/unit_code',
       sizes: [[300, 600]],
-      mediaTypes: {banner: {sizes: [[300, 600]]}},
+      mediaTypes: { banner: { sizes: [[300, 600]] } },
       bidId: '237f4d1a293f99',
       bidderRequestId: '1a857fa34c1c96',
       auctionId: 'a297d1aa-7900-4ce4-a0aa-caa8d46c4af7',
@@ -110,7 +110,7 @@ describe('flippAdapter', function () {
               }
             }]
           },
-          'location': {'city': 'Oakville'},
+          'location': { 'city': 'Oakville' },
         },
       };
 
@@ -162,7 +162,7 @@ describe('flippAdapter', function () {
           'decisions': {
             'inline': []
           },
-          'location': {'city': 'Oakville'},
+          'location': { 'city': 'Oakville' },
         },
       };
 

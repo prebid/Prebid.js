@@ -16,12 +16,12 @@ const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
 export const USER_SYNC_ENDPOINT_IMAGE = 'https://cs.gssprt.jp/yie/ld/mcs';
 export const USER_SYNC_ENDPOINT_IFRAME = 'https://aladdin.genieesspv.jp/yie/ld';
-const SUPPORTED_MEDIA_TYPES = [ BANNER ];
+const SUPPORTED_MEDIA_TYPES = [BANNER];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
 const NET_REVENUE = true;
 const MODULE_NAME = `ssp_geniee`;
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME })
 
 /**
  * List of keys for geparams (parameters we use)
@@ -124,7 +124,7 @@ function hasParamsNotBlankString(params, key) {
   );
 }
 
-export const buildExtuidQuery = ({id5, imuId}) => {
+export const buildExtuidQuery = ({ id5, imuId }) => {
   const params = [
     ...(id5 ? [`id5:${id5}`] : []),
     ...(imuId ? [`im:${imuId}`] : []),
@@ -233,7 +233,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
   // imuid, id5
   const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
   const imuId = utils.deepAccess(bid, 'userId.imuid');
-  const extuidQuery = buildExtuidQuery({id5, imuId});
+  const extuidQuery = buildExtuidQuery({ id5, imuId });
   if (extuidQuery) data.extuid = extuidQuery;
 
   // makeUAQuery

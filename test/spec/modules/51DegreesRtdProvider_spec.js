@@ -8,7 +8,7 @@ import {
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
-import {mergeDeep} from '../../../src/utils.js';
+import { mergeDeep } from '../../../src/utils.js';
 
 const inject51DegreesMeta = () => {
   const meta = document.createElement('meta');
@@ -80,7 +80,7 @@ describe('51DegreesRtdProvider', function() {
   describe('extractConfig', function() {
     it('returns the resourceKey from the moduleConfig', function() {
       const reqBidsConfigObj = {};
-      const moduleConfig = {params: {resourceKey: 'TEST_RESOURCE_KEY'}};
+      const moduleConfig = { params: { resourceKey: 'TEST_RESOURCE_KEY' } };
       expect(extractConfig(moduleConfig, reqBidsConfigObj)).to.deep.equal({
         resourceKey: 'TEST_RESOURCE_KEY',
         onPremiseJSUrl: undefined,
@@ -89,7 +89,7 @@ describe('51DegreesRtdProvider', function() {
 
     it('returns the onPremiseJSUrl from the moduleConfig', function() {
       const reqBidsConfigObj = {};
-      const moduleConfig = {params: {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'}};
+      const moduleConfig = { params: { onPremiseJSUrl: 'https://example.com/51Degrees.core.js' } };
       expect(extractConfig(moduleConfig, reqBidsConfigObj)).to.deep.equal({
         onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
         resourceKey: undefined,
@@ -98,30 +98,34 @@ describe('51DegreesRtdProvider', function() {
 
     it('throws an error if neither resourceKey nor onPremiseJSUrl is provided', function() {
       const reqBidsConfigObj = {};
-      const moduleConfig = {params: {}};
+      const moduleConfig = { params: {} };
       expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
     });
 
     it('throws an error if both resourceKey and onPremiseJSUrl are provided', function() {
       const reqBidsConfigObj = {};
-      const moduleConfig = {params: {
-        resourceKey: 'TEST_RESOURCE_KEY',
-        onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
-      }};
+      const moduleConfig = {
+        params: {
+          resourceKey: 'TEST_RESOURCE_KEY',
+          onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
+        }
+      };
       expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
     });
 
     it('throws an error if the resourceKey is equal to "<YOUR_RESOURCE_KEY>" from example', function() {
       const reqBidsConfigObj = {};
-      const moduleConfig = {params: {resourceKey: '<YOUR_RESOURCE_KEY>'}};
+      const moduleConfig = { params: { resourceKey: '<YOUR_RESOURCE_KEY>' } };
       expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
     });
 
     it('sets the resourceKey to undefined if it was set to "0"', function() {
-      const moduleConfig = {params: {
-        resourceKey: '0',
-        onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
-      }};
+      const moduleConfig = {
+        params: {
+          resourceKey: '0',
+          onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
+        }
+      };
       expect(extractConfig(moduleConfig, {})).to.deep.equal({
         resourceKey: undefined,
         onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
@@ -129,10 +133,12 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('sets the onPremiseJSUrl to undefined if it was set to "0"', function() {
-      const moduleConfig = {params: {
-        resourceKey: 'TEST_RESOURCE_KEY',
-        onPremiseJSUrl: '0',
-      }};
+      const moduleConfig = {
+        params: {
+          resourceKey: 'TEST_RESOURCE_KEY',
+          onPremiseJSUrl: '0',
+        }
+      };
       expect(extractConfig(moduleConfig, {})).to.deep.equal({
         resourceKey: 'TEST_RESOURCE_KEY',
         onPremiseJSUrl: undefined,
@@ -141,10 +147,10 @@ describe('51DegreesRtdProvider', function() {
 
     it('throws an error if the onPremiseJSUrl is not a valid URL', function() {
       expect(() => extractConfig({
-        params: {onPremiseJSUrl: 'invalid URL'}
+        params: { onPremiseJSUrl: 'invalid URL' }
       }, {})).to.throw();
       expect(() => extractConfig({
-        params: {onPremiseJSUrl: 'www.example.com/51Degrees.core.js'}
+        params: { onPremiseJSUrl: 'www.example.com/51Degrees.core.js' }
       }, {})).to.throw();
     });
 
@@ -158,7 +164,7 @@ describe('51DegreesRtdProvider', function() {
 
       VALID_URLS.forEach(url => {
         expect(() => extractConfig({
-          params: {onPremiseJSUrl: url}
+          params: { onPremiseJSUrl: url }
         }, {})).to.not.throw();
       });
     });
@@ -209,7 +215,7 @@ describe('51DegreesRtdProvider', function() {
     };
 
     it('returns the cloud URL if the resourceKey is provided', function() {
-      const config = {resourceKey: 'TEST_RESOURCE_KEY'};
+      const config = { resourceKey: 'TEST_RESOURCE_KEY' };
       expect(get51DegreesJSURL(config, mockWindow)).to.equal(
         'https://cloud.51degrees.com/api/v4/TEST_RESOURCE_KEY.js?' +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
@@ -219,7 +225,7 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('returns the on-premise URL if the onPremiseJSUrl is provided', function () {
-      const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'};
+      const config = { onPremiseJSUrl: 'https://example.com/51Degrees.core.js' };
       expect(get51DegreesJSURL(config, mockWindow)).to.equal(
         `https://example.com/51Degrees.core.js?` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
@@ -229,7 +235,7 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('doesn\'t override static query string parameters', function () {
-      const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js?test=1'};
+      const config = { onPremiseJSUrl: 'https://example.com/51Degrees.core.js?test=1' };
       expect(get51DegreesJSURL(config, mockWindow)).to.equal(
         `https://example.com/51Degrees.core.js?test=1&` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
@@ -270,7 +276,7 @@ describe('51DegreesRtdProvider', function() {
       delete mockWindow.screen;
       delete mockWindow.devicePixelRatio;
 
-      const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'};
+      const config = { onPremiseJSUrl: 'https://example.com/51Degrees.core.js' };
       expect(get51DegreesJSURL(config, mockWindow)).to.equal('https://example.com/51Degrees.core.js');
       expect(get51DegreesJSURL(config, window)).to.not.equal('https://example.com/51Degrees.core.js');
     });
@@ -315,7 +321,7 @@ describe('51DegreesRtdProvider', function() {
     it('sets value of ORTB2 key if it is not empty', function() {
       const data = {};
       deepSetNotEmptyValue(data, 'TEST_ORTB2_KEY', 'TEST_ORTB2_VALUE');
-      expect(data).to.deep.equal({TEST_ORTB2_KEY: 'TEST_ORTB2_VALUE'});
+      expect(data).to.deep.equal({ TEST_ORTB2_KEY: 'TEST_ORTB2_VALUE' });
       deepSetNotEmptyValue(data, 'test2.TEST_ORTB2_KEY_2', 'TEST_ORTB2_VALUE_2');
       expect(data).to.deep.equal({
         TEST_ORTB2_KEY: 'TEST_ORTB2_VALUE',
@@ -365,27 +371,27 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('does not set the deviceid if it is not provided', function() {
-      const device = {...fiftyOneDegreesDevice};
+      const device = { ...fiftyOneDegreesDevice };
       delete device.deviceid;
       expect(convert51DegreesDeviceToOrtb2(device).device.ext).to.not.have.any.keys('fiftyonedegrees_deviceId');
       expect(convert51DegreesDeviceToOrtb2(device).device.ext.fod).to.not.have.any.keys('deviceId');
     });
 
     it('sets the model to hardwarename if hardwaremodel is not provided', function() {
-      const device = {...fiftyOneDegreesDevice};
+      const device = { ...fiftyOneDegreesDevice };
       delete device.hardwaremodel;
-      expect(convert51DegreesDeviceToOrtb2(device).device).to.deep.include({model: 'Macintosh'});
+      expect(convert51DegreesDeviceToOrtb2(device).device).to.deep.include({ model: 'Macintosh' });
     });
 
     it('does not set the model if hardwarename is empty', function() {
-      const device = {...fiftyOneDegreesDevice};
+      const device = { ...fiftyOneDegreesDevice };
       delete device.hardwaremodel;
       device.hardwarename = [];
       expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('model');
     });
 
     it('does not set the ppi if screeninchesheight is not provided', function() {
-      const device = {...fiftyOneDegreesDevice};
+      const device = { ...fiftyOneDegreesDevice };
       delete device.screeninchesheight;
       expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('ppi');
     });
@@ -454,14 +460,14 @@ describe('51DegreesRtdProvider', function() {
 
     it('calls the callback even if submodule fails (wrong config)', function() {
       const callback = sinon.spy();
-      const moduleConfig = {params: {}};
+      const moduleConfig = { params: {} };
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(callback.calledOnce).to.be.true;
     });
 
     it('calls the callback even if submodule fails (on-premise, non-working URL)', async function() {
       const callback = sinon.spy();
-      const moduleConfig = {params: {onPremiseJSUrl: 'http://localhost:12345/test/51Degrees.core.js'}};
+      const moduleConfig = { params: { onPremiseJSUrl: 'http://localhost:12345/test/51Degrees.core.js' } };
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -470,7 +476,7 @@ describe('51DegreesRtdProvider', function() {
 
     it('calls the callback even if submodule fails (invalid resource key)', async function() {
       const callback = sinon.spy();
-      const moduleConfig = {params: {resourceKey: 'INVALID_RESOURCE_KEY'}};
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -480,7 +486,7 @@ describe('51DegreesRtdProvider', function() {
     it('works with Delegate-CH meta tag', async function() {
       inject51DegreesMeta();
       const callback = sinon.spy();
-      const moduleConfig = {params: {resourceKey: 'INVALID_RESOURCE_KEY'}};
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
@@ -488,7 +494,7 @@ describe('51DegreesRtdProvider', function() {
 
     it('has the correct ORTB2 data', async function() {
       const callback = sinon.spy();
-      const moduleConfig = {params: {resourceKey: 'INVALID_RESOURCE_KEY'}};
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;

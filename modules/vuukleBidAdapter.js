@@ -11,7 +11,7 @@ const VENDOR_ID = 1004;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
     return true
@@ -56,7 +56,7 @@ export const spec = {
         method: 'GET',
         url: URL,
         data: params,
-        options: {withCredentials: false}
+        options: { withCredentials: false }
       }
     });
 

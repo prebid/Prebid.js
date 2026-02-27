@@ -1,5 +1,5 @@
-import {UID1_EIDS} from '../uid1Eids/uid1Eids.js';
-import {UID2_EIDS} from '../uid2Eids/uid2Eids.js';
+import { UID1_EIDS } from '../uid1Eids/uid1Eids.js';
+import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { isNumber } from '../../src/utils.js'
 
@@ -17,7 +17,7 @@ export function parseRequestedAttributes(overrides) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
   if (typeof overrides === 'object') {
-    return createParameterArray({...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides});
+    return createParameterArray({ ...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides });
   } else {
     return createParameterArray(DEFAULT_REQUESTED_ATTRIBUTES);
   }
@@ -112,7 +112,7 @@ function composeIdObject(value) {
   }
 
   if (value.thetradedesk) {
-    result.lipb = {...result.lipb, tdid: value.thetradedesk}
+    result.lipb = { ...result.lipb, tdid: value.thetradedesk }
     result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
     delete result.lipb.thetradedesk
   }

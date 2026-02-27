@@ -39,7 +39,7 @@ describe('getBoundingClientRect', () => {
       adUnits: [],
       ttlBuffer: 1000,
       auctionId: '909090',
-      defer: {resolve: () => {}}
+      defer: { resolve: () => {} }
     };
 
     getBoundingClientRect(element);

@@ -1,15 +1,15 @@
 import '../../../src/prebid.js';
-import {expect} from 'chai';
-import {spec} from 'modules/adnuntiusBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/adnuntiusBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {deepClone, getUnixTimestampFromNow} from 'src/utils.js';
-import {getStorageManager} from 'src/storageManager.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
-import {getWinDimensions} from '../../../src/utils.js';
+import { deepClone, getUnixTimestampFromNow } from 'src/utils.js';
+import { getStorageManager } from 'src/storageManager.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getWinDimensions } from '../../../src/utils.js';
 
-import {getGlobalVarName} from '../../../src/buildOptions.js';
+import { getGlobalVarName } from '../../../src/buildOptions.js';
 
 describe('adnuntiusBidAdapter', function () {
   const sandbox = sinon.createSandbox();
@@ -138,51 +138,55 @@ describe('adnuntiusBidAdapter', function () {
     }
   ];
 
-  const legacyNativeBidderRequest = {bid: [
-    {
-      bidId: 'adn-0000000000000551',
-      bidder: 'adnuntius',
-      params: {
-        auId: '0000000000000551',
-        network: 'adnuntius',
-      },
-      mediaTypes: {
-        native: {
-          sizes: [[200, 200], [300, 300]],
-          image: {
-            required: true,
-            sizes: [250, 250]
+  const legacyNativeBidderRequest = {
+    bid: [
+      {
+        bidId: 'adn-0000000000000551',
+        bidder: 'adnuntius',
+        params: {
+          auId: '0000000000000551',
+          network: 'adnuntius',
+        },
+        mediaTypes: {
+          native: {
+            sizes: [[200, 200], [300, 300]],
+            image: {
+              required: true,
+              sizes: [250, 250]
+            }
           }
         }
-      }
-    }]};
+      }]
+  };
 
-  const nativeBidderRequest = {bid: [
-    {
-      bidId: 'adn-0000000000000551',
-      bidder: 'adnuntius',
-      params: {
-        auId: '0000000000000551',
-        network: 'adnuntius',
-      },
-      mediaTypes: {
-        native: {
-          sizes: [[200, 200], [300, 300]],
-          ortb: {
-            assets: [{
-              id: 1,
-              required: 1,
-              img: {
-                type: 3,
-                w: 250,
-                h: 250,
-              }
-            }]
+  const nativeBidderRequest = {
+    bid: [
+      {
+        bidId: 'adn-0000000000000551',
+        bidder: 'adnuntius',
+        params: {
+          auId: '0000000000000551',
+          network: 'adnuntius',
+        },
+        mediaTypes: {
+          native: {
+            sizes: [[200, 200], [300, 300]],
+            ortb: {
+              assets: [{
+                id: 1,
+                required: 1,
+                img: {
+                  type: 3,
+                  w: 250,
+                  h: 250,
+                }
+              }]
+            }
           }
-        }
-      },
-    }
-  ]};
+        },
+      }
+    ]
+  };
 
   const multiBidAndFormatRequest = {
     bid: [{
@@ -970,7 +974,7 @@ describe('adnuntiusBidAdapter', function () {
       dealIdRequest[0].params.dealId = 'simplestringdeal';
       dealIdRequest[0].params.inventory = {
         pmp: {
-          deals: [{id: '123', bidfloor: 12, bidfloorcur: 'USD'}]
+          deals: [{ id: '123', bidfloor: 12, bidfloorcur: 'USD' }]
         }
       };
       let request = spec.buildRequests(dealIdRequest, {});
@@ -1146,11 +1150,11 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
-      expect(countMatches(data.adUnits[0].kv, {'9090': ['take it over']})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'merge': ['this']})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '9090': ['take it over'] })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { 'merge': ['this'] })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '9090': 'should-be-retained' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '45678': 'true' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '12345': 'true' })).to.equal(1);
       expect(data.adUnits[0].kv.length).to.equal(5);
 
       delete bidderRequests[0].params.targeting;
@@ -1178,21 +1182,21 @@ describe('adnuntiusBidAdapter', function () {
       };
       bidderRequests[0].params.targeting = {
         kv: [
-          {'merge': ['this']},
-          {'9090': ['take it over']}
+          { 'merge': ['this'] },
+          { '9090': ['take it over'] }
         ]
       };
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
-      expect(countMatches(data.adUnits[0].kv, {'from': 'user'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'9090': 'from-user'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'9090': ['take it over']})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'merge': ['this']})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { 'from': 'user' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '9090': 'from-user' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '9090': ['take it over'] })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { 'merge': ['this'] })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '9090': 'should-be-retained' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '45678': 'true' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '12345': 'true' })).to.equal(1);
       expect(data.adUnits[0].kv.length).to.equal(7);
 
       delete bidderRequests[0].params.targeting;
@@ -1214,9 +1218,9 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
-      expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '9090': 'should-be-retained' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '45678': 'true' })).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, { '12345': 'true' })).to.equal(1);
       expect(data.adUnits[0].kv.length).to.equal(3);
 
       delete bidderRequests[0].params.targeting;
@@ -1368,7 +1372,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=${usi}`);
 
-      const ortb2 = {user: {ext: {eids: [{source: 'a', uids: [{id: '123', atype: 1}]}, {source: 'b', uids: [{id: '456', atype: 3, ext: {some: '1'}}]}]}}};
+      const ortb2 = { user: { ext: { eids: [{ source: 'a', uids: [{ id: '123', atype: 1 }] }, { source: 'b', uids: [{ id: '456', atype: 3, ext: { some: '1' } }] }] } } };
       request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req, ortb2: ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url');
@@ -1386,7 +1390,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=different_user_id`);
 
-      const eids = [{source: 'pubcid', uids: [{id: '123', atype: 1}]}, {source: 'otherid', uids: [{id: '456', atype: 3, ext: {some: '1'}}]}];
+      const eids = [{ source: 'pubcid', uids: [{ id: '123', atype: 1 }] }, { source: 'otherid', uids: [{ id: '456', atype: 3, ext: { some: '1' } }] }];
       req[0].params.userId = 'different_user_id';
       req[0].params.userIdAsEids = eids;
       request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));

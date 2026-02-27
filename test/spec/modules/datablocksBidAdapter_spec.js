@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, BotClientTests } from '../../../modules/datablocksBidAdapter.js';
 
 import { getStorageManager } from '../../../src/storageManager.js';
-import {deepClone} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 const bid = {
   bidId: '2dd581a2b6281d',
@@ -381,7 +381,7 @@ describe('DatablocksAdapter', function() {
 
   describe('get / store syncs', function() {
     it('Should return true / array', function() {
-      expect(spec.store_syncs([{id: 1, uid: 'test'}])).to.be.true;
+      expect(spec.store_syncs([{ id: 1, uid: 'test' }])).to.be.true;
       expect(spec.get_syncs()).to.be.a('object');
     });
   })
@@ -425,7 +425,7 @@ describe('DatablocksAdapter', function() {
 
   describe('getUserSyncs', function() {
     it('Should return array of syncs', function() {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [res_object], {gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string'}, {})).to.be.an('array');
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [res_object], { gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string' }, {})).to.be.an('array');
     });
   });
 
@@ -437,7 +437,7 @@ describe('DatablocksAdapter', function() {
 
   describe('onBidWon', function() {
     it('Should return undefined', function() {
-      const won_bid = {params: [{source_id: 1}], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: {hb_pb: 10}, timeToRespond: 10, ttl: 10};
+      const won_bid = { params: [{ source_id: 1 }], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: { hb_pb: 10 }, timeToRespond: 10, ttl: 10 };
       expect(spec.onBidWon(won_bid)).to.equal(undefined);
     });
   });

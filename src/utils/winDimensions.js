@@ -1,5 +1,5 @@
-import {canAccessWindowTop, internal as utilsInternals} from '../utils.js';
-import {CachedApiWrapper} from './cachedApiWrapper.js';
+import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
+import { CachedApiWrapper } from './cachedApiWrapper.js';
 
 const CHECK_INTERVAL_MS = 20;
 

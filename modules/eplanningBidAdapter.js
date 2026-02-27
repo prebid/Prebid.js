@@ -1,14 +1,14 @@
-import {isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { serializeSupplyChain } from '../libraries/schainSerializer/schainSerializer.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'eplanning';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const rnd = Math.random();
 const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
@@ -298,7 +298,7 @@ function getSpaces(bidRequests, ml) {
   }
 
   const spacesStruct = getSpacesStruct(bidRequests);
-  const es = {str: '', vs: '', map: {}, impType: impType};
+  const es = { str: '', vs: '', map: {}, impType: impType };
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 

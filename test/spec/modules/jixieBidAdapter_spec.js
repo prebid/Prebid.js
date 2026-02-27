@@ -89,7 +89,7 @@ describe('jixie Adapter', function () {
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
-      refererInfo: {referer: pageurl_},
+      refererInfo: { referer: pageurl_ },
       auctionId: auctionId_,
       timeout: timeout_
     };
@@ -344,7 +344,7 @@ describe('jixie Adapter', function () {
 
     it('it should popular the device info when it is available', function () {
       const getConfigStub = sinon.stub(config, 'getConfig');
-      const content = {w: 500, h: 400};
+      const content = { w: 500, h: 400 };
       getConfigStub.callsFake(function fakeFn(prop) {
         if (prop === 'device') {
           return content;
@@ -617,14 +617,14 @@ describe('jixie Adapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
     });
 
     it('should get correct bid response', function () {
       const setCookieSpy = sinon.spy(storage, 'setCookie');
       const setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
-      const result = spec.interpretResponse({body: responseBody_}, requestObj_)
+      const result = spec.interpretResponse({ body: responseBody_ }, requestObj_)
       expect(setLocalStorageSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setLocalStorageSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setCookieSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);

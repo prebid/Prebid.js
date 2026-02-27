@@ -4,16 +4,16 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import {deepSetValue, isStr, logInfo} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {enrichFPD} from '../src/fpd/enrichment.js';
-import {cmpClient} from '../libraries/cmp/cmpClient.js';
-import {configParser} from '../libraries/consentManagement/cmUtils.js';
-import {createCmpEventManager, type CmpEventManager} from '../libraries/cmp/cmpEventUtils.js';
-import {CONSENT_GDPR} from "../src/consentHandler.ts";
-import type {CMConfig} from "../libraries/consentManagement/cmUtils.ts";
+import { deepSetValue, isStr, logInfo } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { gdprDataHandler } from '../src/adapterManager.js';
+import { registerOrtbProcessor, REQUEST } from '../src/pbjsORTB.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
+import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import { configParser } from '../libraries/consentManagement/cmUtils.js';
+import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
+import { CONSENT_GDPR } from "../src/consentHandler.ts";
+import type { CMConfig } from "../libraries/consentManagement/cmUtils.ts";
 
 export let consentConfig: any = {};
 export let gdprScope;
@@ -145,7 +145,7 @@ function parseConsentData(consentObject): TCFConsentData {
   }
 
   if (checkData()) {
-    throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), {args: [consentObject]})
+    throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), { args: [consentObject] })
   } else {
     return toConsentData(consentObject);
   }
@@ -203,7 +203,7 @@ export function setConsentConfig(config) {
   }
   gdprScope = tcfConfig?.defaultGdprScope === true;
   dsaPlatform = !!tcfConfig?.dsaPlatform;
-  consentConfig = parseConfig({gdpr: tcfConfig});
+  consentConfig = parseConfig({ gdpr: tcfConfig });
   return consentConfig.loadConsentData?.()?.catch?.(() => null);
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
@@ -234,4 +234,4 @@ export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
   }
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})
+registerOrtbProcessor({ type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent })

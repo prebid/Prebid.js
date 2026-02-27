@@ -2,7 +2,7 @@ import { getAdserverCategoryHook, initTranslation, storage } from 'modules/categ
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { expect } from 'chai';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('category translation', function () {
   let getLocalStorageStub;

@@ -1,14 +1,14 @@
-import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
-import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../../src/utils.js';
-import {ConsentHandler} from '../../src/consentHandler.js';
-import {PbPromise} from '../../src/utils/promise.js';
-import {buildActivityParams} from '../../src/activities/params.js';
-import {getHook} from '../../src/hook.js';
+import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
+import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../../src/utils.js';
+import { ConsentHandler } from '../../src/consentHandler.js';
+import { PbPromise } from '../../src/utils/promise.js';
+import { buildActivityParams } from '../../src/activities/params.js';
+import { getHook } from '../../src/hook.js';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
   return timedAuctionHook(name, function requestBidsHook(fn, reqBidsConfigObj) {
-    return loadConsentData().then(({consentData, error}) => {
+    return loadConsentData().then(({ consentData, error }) => {
       if (error && (!consentData || !SEEN.has(error))) {
         SEEN.add(error);
         logWarn(error.message, ...(error.args || []));
@@ -83,14 +83,14 @@ export function lookupConsentData(
           const consentData = consentDataHandler.getConsentData() ?? (cmpLoaded ? provisionalConsent : getNullConsent());
           const message = `timeout waiting for ${cmpLoaded ? 'user action on CMP' : 'CMP to load'}`;
           consentDataHandler.setConsentData(consentData);
-          resolve({consentData, error: new Error(`${name} ${message}`)});
+          resolve({ consentData, error: new Error(`${name} ${message}`) });
         }, timeout);
       } else {
         timeoutHandle = null;
       }
     }
     setupCmp(setProvisionalConsent)
-      .then(() => resolve({consentData: consentDataHandler.getConsentData()}), reject);
+      .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
     cmpTimeout != null && resetTimeout(cmpTimeout);
   }).finally(() => {
     timeoutHandle && clearTimeout(timeoutHandle);
@@ -153,11 +153,11 @@ export function configParser(
   let requestBidsHook, cdLoader, staticConsentData;
 
   function attachActivityParams(next, params) {
-    return next(Object.assign({[`${namespace}Consent`]: consentDataHandler.getConsentData()}, params));
+    return next(Object.assign({ [`${namespace}Consent`]: consentDataHandler.getConsentData() }, params));
   }
 
   function loadConsentData() {
-    return cdLoader().then(({error}) => ({error, consentData: consentDataHandler.getConsentData()}))
+    return cdLoader().then(({ error }) => ({ error, consentData: consentDataHandler.getConsentData() }))
   }
 
   function activate() {
@@ -171,8 +171,8 @@ export function configParser(
 
   function reset() {
     if (requestBidsHook != null) {
-      getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
-      buildActivityParams.getHooks({hook: attachActivityParams}).remove();
+      getHook('requestBids').getHooks({ hook: requestBidsHook }).remove();
+      buildActivityParams.getHooks({ hook: attachActivityParams }).remove();
       requestBidsHook = null;
       logInfo(`${displayName} consentManagement module has been deactivated...`);
     }

@@ -1,5 +1,5 @@
 import * as brandmetricsRTD from '../../../modules/brandmetricsRtdProvider.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import * as events from '../../../src/events.js';
 import * as sinon from 'sinon';
 
@@ -135,7 +135,7 @@ describe('getBidRequestData', () => {
 
   it('should set targeting keys for specified bidders', () => {
     const bidderOrtb2 = {};
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments: { bidder: bidderOrtb2 } }, () => {
       const expected = VALID_CONFIG.params.bidders
 
       expected.forEach(exp => {
@@ -172,7 +172,7 @@ describe('getBidRequestData', () => {
     });
 
     const bidderOrtb2 = {};
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments: { bidder: bidderOrtb2 } }, () => {}, VALID_CONFIG);
     expect(Object.keys(bidderOrtb2).length).to.equal(0)
   });
 
@@ -190,7 +190,7 @@ describe('getBidRequestData', () => {
     });
 
     const bidderOrtb2 = {};
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments: { bidder: bidderOrtb2 } }, () => {}, VALID_CONFIG);
 
     const expected = VALID_CONFIG.params.bidders
 

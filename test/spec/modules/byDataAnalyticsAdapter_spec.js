@@ -1,6 +1,6 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
-import {EVENTS} from 'src/constants.js';
+import { EVENTS } from 'src/constants.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
@@ -36,7 +36,7 @@ const noBidArgs = {
   bidId: '14480e9832f2d2b',
   bidder: 'appnexus',
   bidderRequestId: '13b87b6c20d3636',
-  mediaTypes: {banner: {sizes: [[300, 250], [250, 250]]}},
+  mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
   sizes: [[300, 250], [250, 250]],
   src: 'client',
   transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
@@ -57,9 +57,9 @@ const auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
   adUnits: [{
     code: 'div-gpt-ad-mrec1',
-    mediaTypes: {banner: {sizes: [[300, 250], [250, 250]]}},
+    mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
     sizes: [[300, 250], [250, 250]],
-    bids: [{bidder: 'appnexus', params: {placementId: '19305195'}}],
+    bids: [{ bidder: 'appnexus', params: { placementId: '19305195' } }],
     transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
   }],
   auctionEnd: 1627973487504,
@@ -80,7 +80,7 @@ const auctionEndArgs = {
         bidder: 'appnexus',
         bidderRequestId: '13b87b6c20d3636',
         src: 'client',
-        mediaTypes: {banner: {sizes: [[300, 250], [250, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
         sizes: [[300, 250], [250, 250]],
         transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
       }
@@ -91,7 +91,7 @@ const expectedDataArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
   as: 1627973484504,
-  auctionData: [ {
+  auctionData: [{
     au: 'div-gpt-ad-mrec1',
     auc: 'div-gpt-ad-mrec1',
     aus: '300x250',

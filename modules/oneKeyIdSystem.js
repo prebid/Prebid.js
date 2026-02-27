@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import { logError, logMessage } from '../src/utils.js';
 
 /**
@@ -89,7 +89,7 @@ export const oneKeyIdSubmodule = {
       atype: 1,
       getEidExt: function(data) {
         if (data && data.preferences) {
-          return {preferences: data.preferences};
+          return { preferences: data.preferences };
         }
       },
       getUidExt: function(data) {

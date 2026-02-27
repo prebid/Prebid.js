@@ -1,16 +1,16 @@
-import {config} from './config.js';
-import {getHook, hook} from './hook.js';
-import {getGlobal} from './prebidGlobal.js';
-import {logMessage, prefixLog} from './utils.js';
-import {createBid} from './bidfactory.js';
-import {loadExternalScript} from './adloader.js';
-import {PbPromise} from './utils/promise.js';
+import { config } from './config.js';
+import { getHook, hook } from './hook.js';
+import { getGlobal } from './prebidGlobal.js';
+import { logMessage, prefixLog } from './utils.js';
+import { createBid } from './bidfactory.js';
+import { loadExternalScript } from './adloader.js';
+import { PbPromise } from './utils/promise.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 import * as utils from './utils.js';
-import {BANNER, NATIVE, VIDEO} from './mediaTypes.js';
-import {Renderer} from './Renderer.js';
+import { BANNER, NATIVE, VIDEO } from './mediaTypes.js';
+import { Renderer } from './Renderer.js';
 
-import {getDistUrlBase, getGlobalVarName} from './buildOptions.js';
+import { getDistUrlBase, getGlobalVarName } from './buildOptions.js';
 
 export const DEBUG_KEY = `__${getGlobalVarName()}_debugging__`;
 
@@ -24,7 +24,7 @@ function loadScript(url) {
   });
 }
 
-export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, script = loadScript} = {}) {
+export function debuggingModuleLoader({ alreadyInstalled = isDebuggingInstalled, script = loadScript } = {}) {
   let loading = null;
   return function () {
     if (loading == null) {
@@ -59,7 +59,7 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
   }
 }
 
-export function debuggingControls({load = debuggingModuleLoader(), hook = getHook('requestBids')} = {}) {
+export function debuggingControls({ load = debuggingModuleLoader(), hook = getHook('requestBids') } = {}) {
   let promise = null;
   let enabled = false;
   function waitForDebugging(next, ...args) {
@@ -74,14 +74,14 @@ export function debuggingControls({load = debuggingModuleLoader(), hook = getHoo
     }
   }
   function disable() {
-    hook.getHooks({hook: waitForDebugging}).remove();
+    hook.getHooks({ hook: waitForDebugging }).remove();
     enabled = false;
   }
   function reset() {
     promise = null;
     disable();
   }
-  return {enable, disable, reset};
+  return { enable, disable, reset };
 }
 
 const ctl = debuggingControls();
@@ -107,6 +107,6 @@ export function loadSession() {
   }
 }
 
-config.getConfig('debugging', function ({debugging}) {
+config.getConfig('debugging', function ({ debugging }) {
   debugging?.enabled ? ctl.enable() : ctl.disable();
 });

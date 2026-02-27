@@ -1,4 +1,4 @@
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import {
   dapUtils,
   generateRealTimeData,
@@ -6,10 +6,10 @@ import {
   onBidWonListener,
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
 } from 'modules/symitriDapRtdProvider.js';
-import {server} from 'test/mocks/xhr.js';
-import {hook} from '../../../src/hook.js';
+import { server } from 'test/mocks/xhr.js';
+import { hook } from '../../../src/hook.js';
 import { EVENTS } from 'src/constants.js';
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 
 const events = require('src/events');
 
@@ -90,10 +90,10 @@ describe('symitriDapRtdProvider', function() {
     'identity': sampleIdentity
   }
   const cacheExpiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
-  const sampleCachedToken = {'expires_at': cacheExpiry, 'token': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..6buzBd2BjtgoyaNbHN8YnQ.l38avCfm3sYNy798-ETYOugz0cOx1cCkjACkAhYszxzrZ0sUJ0AiF-NdDXVTiTyp2Ih3vCWKzS0rKJ8lbS1zhyEVWVu91QwtwseM2fBbwA5ggAgBEo5wV-IXqDLPxVnxsPF0D3hP6cNCiH9Q2c-vULfsLhMhG5zvvZDPBbn4hUY5fKB8LoCBTF9rbuuWGYK1nramnb4AlS5UK82wBsHQea1Ou_Kp5wWCMNZ6TZk5qKIuRBfPIAhQblWvHECaHXkg1wyoM9VASs_yNhne7RR-qkwzbFiPFiMJibNOt9hF3_vPDJO5-06ZBjRTP1BllYGWxI-uQX6InzN18Wtun2WHqg.63sH0SNlIRcsK57v0pMujfB_nhU8Y5CuQbsHqH5MGoM'};
-  const cachedEncryptedMembership = {'expires_at': cacheExpiry, 'encryptedSegments': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQifQ..IvnIUQDqWBVYIS0gbcE9bw.Z4NZGvtogWaWlGH4e-GdYKe_PUc15M2x3Bj85rMWsN1A17mIxQIMOfg2hsQ2tgieLu5LggWPmsFu1Wbph6P0k3kOu1dVReoIhOHzxw50rP0DLHKaEZ5mLMJ7Lcosvwh4miIfFuCHlsX7J0sFgOTAp0zGo1S_UsHLtev1JflhjoSB0AoX95ALbAnyctirPuLJM8gZ1vXTiZ01jpvucGyR1lM4cWjPOeD8jPtgwaPGgSRZXE-3X2Cqy7z4Giam5Uqu74LPWTBuKtUQTGyAXA5QJoP7xwTbsU4O1f69lu3fWNqC92GijeTH1A4Zd_C-WXxWuQlDEURjlkWQoaqTHka2OqlnwukEQIf_v0r5KQQX64CTLhEUH91jeD0-E9ClcIP7pwOLxxqiKoaBmx8Mrnm_6Agj5DtTA1rusy3AL63sI_rsUxrmLrVt0Wft4aCfRkW8QpQxu8clFdOmce0NNCGeBCyCPVw9d9izrILlXJ6rItU2cpFrcbz8uw2otamF5eOFCOY3IzHedWVNNuKHFIUVC_xYSlsYvQ8f2QIP1eiMbmukcuPzmTzjw1h1_7IKaj-jJkXrnrY-TdDgX_4-_Z3rmbpXK2yTR7dBrsg-ubqFbgbKic1b4zlQEO_LbBlgPl3DYdWEuJ8CY2NUt1GfpATQGsufS2FTY1YGw_gkPe3q04l_cgLafDoxHvHh_t_0ZgPjciW82gThB_kN4RP7Mc3krVcXl_P6N1VbV07xyx0hCyVsrrxbLslI8q9wYDiLGci7mNmByM5j7SXV9jPwwPkHtn0HfMJlw2PFbIDPjgG3h7sOyLcBIJTTvuUIgpHPIkRWLIl_4FlIucXbJ7orW2nt5BWleBVHgumzGcnl9ZNcZb3W-dsdYPSOmuj0CY28MRTP2oJ1rzLInbDDpIRffJBtR7SS4nYyy7Vi09PtBigod5YNz1Q0WDSJxr8zeH_aKFaXInw7Bfo_U0IAcLiRgcT0ogsMLeQRjRFy27mr4XNJv3NtHhbdjDAwF2aClCktXyXbQaVdsPH2W71v6m2Q9rB5GQWOktw2s5f-4N1-_EBPGq6TgjF-aJZP22MJVwp1pimT50DfOzoeEqDwi862NNwNNoHmcObH0ZfwAXlhRxsgupNBe20-MNNABj2Phlfv4DUrtQbMdfCnNiypzNCmoTb7G7c_o5_JUwoV_GVkwUtvmi_IUm05P4GeMASSUw8zDKVRAj9h31C2cabM8RjMHGhkbCWpUP2pcz9zlJ7Y76Dh3RLnctfTw7DG9U4w4UlaxNZOgLUiSrGwfyapuSiuGUpuOJkBBLiHmEqAGI5C8oJpcVRccNlHxJAYowgXyFopD5Fr-FkXmv8KMkS0h5C9F6KihmDt5sqDD0qnjM0hHJgq01l7wjVnhEmPpyD-6auFQ-xDnbh1uBOJ_0gCVbRad--FSa5p-dXenggegRxOvZXJ0iAtM6Fal5Og-RCjexIHa9WhVbXhQBJpkSTWwAajZJ64eQ.yih49XB51wE-Xob7COT9OYqBrzBmIMVCQbLFx2UdzkI'};
-  const cachedMembership = {'expires_at': cacheExpiry, 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..QwvU5h0NVJYaJbs5EqWCKA.XNaJHSlnsH8P-yBIr3gIEqavLONWDIFyj7QCHFwJVkwXH_EYkxrk0_26b0uMPzfJp5URnqxKZusMH9DzEJsmj8EMrKQv1y3IYYMsW5_0BdP5bcAWfG6fzOqtMOwLiYRkYiQOqn1ZVGzhovheHWEmNr2_oCY0LvAr3iN1eG_K-l-bBKvBWnwvuuGKquUfCqO8NMMq6wtkecEXM9blqFRZ7oNYmW2aIG7qcHUsrUW7HMr9Ev2Ik0sIeEUsOYrgf_X_VA64RgKSTRugS9FupMv1p54JkHokwduF9pOFmW8QLQi8itFogKGbbgvOTNnmahxQUX5FcrjjYLqHwKqC8htLdlHnO5LWU9l4A7vLXrRurvoSnh0cAJy0GsdoyEwTqR9bwVFHoPquxlJjQ4buEd7PIxpBj9Qg9oOPH3b2upbMTu5CQ9oj526eXPhP5G54nwGklm2AZ3Vggd7jCQJn45Jjiq0iIfsXAtpqS2BssCLBN8WhmUTnStK8m5sux6WUBdrpDESQjPj-EEHVS-DB5rA7icRUh6EzRxzen2rndvHvnwVhSG_l6cwPYuJ0HE0KBmYHOoqNpKwzoGiKFHrf4ReA06iWB3V2TEGJucGujhtQ9_18WwHCeJ1XtQiiO1eqa3tp5MwAbFXawVFl3FFOBgadrPyvGmkmUJ6FCLU2MSwHiYZmANMnJsokFX_6DwoAgO3U_QnvEHIVSvefc7ReeJ8fBDdmrH3LtuLrUpXsvLvEIMQdWQ_SXhjKIi7tOODR8CfrhUcdIjsp3PZs1DpuOcDB6YJKbGnKZTluLUJi3TyHgyi-DHXdTm-jSE5i_DYJGW-t2Gf23FoQhexv4q7gdrfsKfcRJNrZLp6Gd6jl4zHhUtY.nprKBsy9taQBk6dCPbA7BFF0CiGhQOEF_MazZ2bedqk', 'cohorts': ['9', '11', '13']};
-  const cachedMembershipWithDeals = {'expires_at': cacheExpiry, 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..QwvU5h0NVJYaJbs5EqWCKA.XNaJHSlnsH8P-yBIr3gIEqavLONWDIFyj7QCHFwJVkwXH_EYkxrk0_26b0uMPzfJp5URnqxKZusMH9DzEJsmj8EMrKQv1y3IYYMsW5_0BdP5bcAWfG6fzOqtMOwLiYRkYiQOqn1ZVGzhovheHWEmNr2_oCY0LvAr3iN1eG_K-l-bBKvBWnwvuuGKquUfCqO8NMMq6wtkecEXM9blqFRZ7oNYmW2aIG7qcHUsrUW7HMr9Ev2Ik0sIeEUsOYrgf_X_VA64RgKSTRugS9FupMv1p54JkHokwduF9pOFmW8QLQi8itFogKGbbgvOTNnmahxQUX5FcrjjYLqHwKqC8htLdlHnO5LWU9l4A7vLXrRurvoSnh0cAJy0GsdoyEwTqR9bwVFHoPquxlJjQ4buEd7PIxpBj9Qg9oOPH3b2upbMTu5CQ9oj526eXPhP5G54nwGklm2AZ3Vggd7jCQJn45Jjiq0iIfsXAtpqS2BssCLBN8WhmUTnStK8m5sux6WUBdrpDESQjPj-EEHVS-DB5rA7icRUh6EzRxzen2rndvHvnwVhSG_l6cwPYuJ0HE0KBmYHOoqNpKwzoGiKFHrf4ReA06iWB3V2TEGJucGujhtQ9_18WwHCeJ1XtQiiO1eqa3tp5MwAbFXawVFl3FFOBgadrPyvGmkmUJ6FCLU2MSwHiYZmANMnJsokFX_6DwoAgO3U_QnvEHIVSvefc7ReeJ8fBDdmrH3LtuLrUpXsvLvEIMQdWQ_SXhjKIi7tOODR8CfrhUcdIjsp3PZs1DpuOcDB6YJKbGnKZTluLUJi3TyHgyi-DHXdTm-jSE5i_DYJGW-t2Gf23FoQhexv4q7gdrfsKfcRJNrZLp6Gd6jl4zHhUtY.nprKBsy9taQBk6dCPbA7BFF0CiGhQOEF_MazZ2bedqk', 'cohorts': ['9', '11', '13'], 'deals': ['{"id":"DEMODEAL555","bidfloor":5.0,"at":1,"guar":0}', '{"id":"DEMODEAL111","bidfloor":5.0,"at":1,"guar":0}', '{"id":"DEMODEAL123","bidfloor":5.0,"at":1,"guar":0}']};
+  const sampleCachedToken = { 'expires_at': cacheExpiry, 'token': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..6buzBd2BjtgoyaNbHN8YnQ.l38avCfm3sYNy798-ETYOugz0cOx1cCkjACkAhYszxzrZ0sUJ0AiF-NdDXVTiTyp2Ih3vCWKzS0rKJ8lbS1zhyEVWVu91QwtwseM2fBbwA5ggAgBEo5wV-IXqDLPxVnxsPF0D3hP6cNCiH9Q2c-vULfsLhMhG5zvvZDPBbn4hUY5fKB8LoCBTF9rbuuWGYK1nramnb4AlS5UK82wBsHQea1Ou_Kp5wWCMNZ6TZk5qKIuRBfPIAhQblWvHECaHXkg1wyoM9VASs_yNhne7RR-qkwzbFiPFiMJibNOt9hF3_vPDJO5-06ZBjRTP1BllYGWxI-uQX6InzN18Wtun2WHqg.63sH0SNlIRcsK57v0pMujfB_nhU8Y5CuQbsHqH5MGoM' };
+  const cachedEncryptedMembership = { 'expires_at': cacheExpiry, 'encryptedSegments': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQifQ..IvnIUQDqWBVYIS0gbcE9bw.Z4NZGvtogWaWlGH4e-GdYKe_PUc15M2x3Bj85rMWsN1A17mIxQIMOfg2hsQ2tgieLu5LggWPmsFu1Wbph6P0k3kOu1dVReoIhOHzxw50rP0DLHKaEZ5mLMJ7Lcosvwh4miIfFuCHlsX7J0sFgOTAp0zGo1S_UsHLtev1JflhjoSB0AoX95ALbAnyctirPuLJM8gZ1vXTiZ01jpvucGyR1lM4cWjPOeD8jPtgwaPGgSRZXE-3X2Cqy7z4Giam5Uqu74LPWTBuKtUQTGyAXA5QJoP7xwTbsU4O1f69lu3fWNqC92GijeTH1A4Zd_C-WXxWuQlDEURjlkWQoaqTHka2OqlnwukEQIf_v0r5KQQX64CTLhEUH91jeD0-E9ClcIP7pwOLxxqiKoaBmx8Mrnm_6Agj5DtTA1rusy3AL63sI_rsUxrmLrVt0Wft4aCfRkW8QpQxu8clFdOmce0NNCGeBCyCPVw9d9izrILlXJ6rItU2cpFrcbz8uw2otamF5eOFCOY3IzHedWVNNuKHFIUVC_xYSlsYvQ8f2QIP1eiMbmukcuPzmTzjw1h1_7IKaj-jJkXrnrY-TdDgX_4-_Z3rmbpXK2yTR7dBrsg-ubqFbgbKic1b4zlQEO_LbBlgPl3DYdWEuJ8CY2NUt1GfpATQGsufS2FTY1YGw_gkPe3q04l_cgLafDoxHvHh_t_0ZgPjciW82gThB_kN4RP7Mc3krVcXl_P6N1VbV07xyx0hCyVsrrxbLslI8q9wYDiLGci7mNmByM5j7SXV9jPwwPkHtn0HfMJlw2PFbIDPjgG3h7sOyLcBIJTTvuUIgpHPIkRWLIl_4FlIucXbJ7orW2nt5BWleBVHgumzGcnl9ZNcZb3W-dsdYPSOmuj0CY28MRTP2oJ1rzLInbDDpIRffJBtR7SS4nYyy7Vi09PtBigod5YNz1Q0WDSJxr8zeH_aKFaXInw7Bfo_U0IAcLiRgcT0ogsMLeQRjRFy27mr4XNJv3NtHhbdjDAwF2aClCktXyXbQaVdsPH2W71v6m2Q9rB5GQWOktw2s5f-4N1-_EBPGq6TgjF-aJZP22MJVwp1pimT50DfOzoeEqDwi862NNwNNoHmcObH0ZfwAXlhRxsgupNBe20-MNNABj2Phlfv4DUrtQbMdfCnNiypzNCmoTb7G7c_o5_JUwoV_GVkwUtvmi_IUm05P4GeMASSUw8zDKVRAj9h31C2cabM8RjMHGhkbCWpUP2pcz9zlJ7Y76Dh3RLnctfTw7DG9U4w4UlaxNZOgLUiSrGwfyapuSiuGUpuOJkBBLiHmEqAGI5C8oJpcVRccNlHxJAYowgXyFopD5Fr-FkXmv8KMkS0h5C9F6KihmDt5sqDD0qnjM0hHJgq01l7wjVnhEmPpyD-6auFQ-xDnbh1uBOJ_0gCVbRad--FSa5p-dXenggegRxOvZXJ0iAtM6Fal5Og-RCjexIHa9WhVbXhQBJpkSTWwAajZJ64eQ.yih49XB51wE-Xob7COT9OYqBrzBmIMVCQbLFx2UdzkI' };
+  const cachedMembership = { 'expires_at': cacheExpiry, 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..QwvU5h0NVJYaJbs5EqWCKA.XNaJHSlnsH8P-yBIr3gIEqavLONWDIFyj7QCHFwJVkwXH_EYkxrk0_26b0uMPzfJp5URnqxKZusMH9DzEJsmj8EMrKQv1y3IYYMsW5_0BdP5bcAWfG6fzOqtMOwLiYRkYiQOqn1ZVGzhovheHWEmNr2_oCY0LvAr3iN1eG_K-l-bBKvBWnwvuuGKquUfCqO8NMMq6wtkecEXM9blqFRZ7oNYmW2aIG7qcHUsrUW7HMr9Ev2Ik0sIeEUsOYrgf_X_VA64RgKSTRugS9FupMv1p54JkHokwduF9pOFmW8QLQi8itFogKGbbgvOTNnmahxQUX5FcrjjYLqHwKqC8htLdlHnO5LWU9l4A7vLXrRurvoSnh0cAJy0GsdoyEwTqR9bwVFHoPquxlJjQ4buEd7PIxpBj9Qg9oOPH3b2upbMTu5CQ9oj526eXPhP5G54nwGklm2AZ3Vggd7jCQJn45Jjiq0iIfsXAtpqS2BssCLBN8WhmUTnStK8m5sux6WUBdrpDESQjPj-EEHVS-DB5rA7icRUh6EzRxzen2rndvHvnwVhSG_l6cwPYuJ0HE0KBmYHOoqNpKwzoGiKFHrf4ReA06iWB3V2TEGJucGujhtQ9_18WwHCeJ1XtQiiO1eqa3tp5MwAbFXawVFl3FFOBgadrPyvGmkmUJ6FCLU2MSwHiYZmANMnJsokFX_6DwoAgO3U_QnvEHIVSvefc7ReeJ8fBDdmrH3LtuLrUpXsvLvEIMQdWQ_SXhjKIi7tOODR8CfrhUcdIjsp3PZs1DpuOcDB6YJKbGnKZTluLUJi3TyHgyi-DHXdTm-jSE5i_DYJGW-t2Gf23FoQhexv4q7gdrfsKfcRJNrZLp6Gd6jl4zHhUtY.nprKBsy9taQBk6dCPbA7BFF0CiGhQOEF_MazZ2bedqk', 'cohorts': ['9', '11', '13'] };
+  const cachedMembershipWithDeals = { 'expires_at': cacheExpiry, 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..QwvU5h0NVJYaJbs5EqWCKA.XNaJHSlnsH8P-yBIr3gIEqavLONWDIFyj7QCHFwJVkwXH_EYkxrk0_26b0uMPzfJp5URnqxKZusMH9DzEJsmj8EMrKQv1y3IYYMsW5_0BdP5bcAWfG6fzOqtMOwLiYRkYiQOqn1ZVGzhovheHWEmNr2_oCY0LvAr3iN1eG_K-l-bBKvBWnwvuuGKquUfCqO8NMMq6wtkecEXM9blqFRZ7oNYmW2aIG7qcHUsrUW7HMr9Ev2Ik0sIeEUsOYrgf_X_VA64RgKSTRugS9FupMv1p54JkHokwduF9pOFmW8QLQi8itFogKGbbgvOTNnmahxQUX5FcrjjYLqHwKqC8htLdlHnO5LWU9l4A7vLXrRurvoSnh0cAJy0GsdoyEwTqR9bwVFHoPquxlJjQ4buEd7PIxpBj9Qg9oOPH3b2upbMTu5CQ9oj526eXPhP5G54nwGklm2AZ3Vggd7jCQJn45Jjiq0iIfsXAtpqS2BssCLBN8WhmUTnStK8m5sux6WUBdrpDESQjPj-EEHVS-DB5rA7icRUh6EzRxzen2rndvHvnwVhSG_l6cwPYuJ0HE0KBmYHOoqNpKwzoGiKFHrf4ReA06iWB3V2TEGJucGujhtQ9_18WwHCeJ1XtQiiO1eqa3tp5MwAbFXawVFl3FFOBgadrPyvGmkmUJ6FCLU2MSwHiYZmANMnJsokFX_6DwoAgO3U_QnvEHIVSvefc7ReeJ8fBDdmrH3LtuLrUpXsvLvEIMQdWQ_SXhjKIi7tOODR8CfrhUcdIjsp3PZs1DpuOcDB6YJKbGnKZTluLUJi3TyHgyi-DHXdTm-jSE5i_DYJGW-t2Gf23FoQhexv4q7gdrfsKfcRJNrZLp6Gd6jl4zHhUtY.nprKBsy9taQBk6dCPbA7BFF0CiGhQOEF_MazZ2bedqk', 'cohorts': ['9', '11', '13'], 'deals': ['{"id":"DEMODEAL555","bidfloor":5.0,"at":1,"guar":0}', '{"id":"DEMODEAL111","bidfloor":5.0,"at":1,"guar":0}', '{"id":"DEMODEAL123","bidfloor":5.0,"at":1,"guar":0}'] };
   const rtdUserObj = {
     name: 'www.dataprovider3.com',
     ext: {
@@ -154,7 +154,7 @@ describe('symitriDapRtdProvider', function() {
   let ortb2, bidConfig;
 
   beforeEach(function() {
-    bidConfig = {ortb2Fragments: {}};
+    bidConfig = { ortb2Fragments: {} };
     ortb2 = bidConfig.ortb2Fragments.global = {};
     config.resetConfig();
     storage.removeDataFromLocalStorage(DAP_TOKEN);
@@ -204,7 +204,7 @@ describe('symitriDapRtdProvider', function() {
       try {
         expect(ortb2).to.eql({});
         dapUtils.callDapAPIs(bidConfig, () => {}, cmoduleConfig, {});
-        const membership = {'cohorts': ['9', '11', '13'], 'said': 'sample-said'}
+        const membership = { 'cohorts': ['9', '11', '13'], 'said': 'sample-said' }
         const membershipRequest = server.requests[0];
         membershipRequest.respond(200, responseHeader, JSON.stringify(membership));
         const tokenWithExpiry = 'Sample-token-with-exp'
@@ -234,7 +234,7 @@ describe('symitriDapRtdProvider', function() {
         tokenizeRequest.requestHeaders['Content-Type'].should.equal('application/json');
         responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
-        const data = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, emoduleConfig.params.segtax);
+        const data = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, emoduleConfig.params.segtax);
         expect(ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
       } finally {
         dapExtractExpiryFromTokenStub.restore();
@@ -447,7 +447,7 @@ describe('symitriDapRtdProvider', function() {
         segtax: 708
       };
       expect(dapUtils.dapRefreshMembership(ortb2, config, 'token', onDone)).to.equal(undefined)
-      const membership = {cohorts: ['1', '5', '7']}
+      const membership = { cohorts: ['1', '5', '7'] }
       expect(dapUtils.dapGetRtdObj(membership, config.segtax)).to.not.equal(undefined);
     });
   });
@@ -518,7 +518,7 @@ describe('symitriDapRtdProvider', function() {
       const request = server.requests[0];
       responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
-      const rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 710)
+      const rtdObj = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, 710)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(expiry);
     });
@@ -529,7 +529,7 @@ describe('symitriDapRtdProvider', function() {
       const request = server.requests[0];
       responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
-      const rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 710)
+      const rtdObj = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, 710)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(1643830630);
     });
@@ -556,7 +556,7 @@ describe('symitriDapRtdProvider', function() {
 
   describe('dapRefreshMembership test', function () {
     it('test dapRefreshMembership success response', function () {
-      const membership = {'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..17wnrhz6FbWx0Cf6LXpm1A.m9PKVCradk3CZokNKzVHzE06TOqiXYeijgxTQUiQy5Syx-yicnO8DyYX6zQ6rgPcNgUNRt4R4XE5MXuK0laUVQJr9yc9g3vUfQfw69OMYGW_vRlLMPzoNOhF2c4gSyfkRrLr7C0qgALmZO1D11sPflaCTNmO7pmZtRaCOB5buHoWcQhp1bUSJ09DNDb31dX3llimPwjNGSrUhyq_EZl4HopnnjxbM4qVNMY2G_43C_idlVOvbFoTxcDRATd-6MplJoIOIHQLDZEetpIOVcbEYN9gQ_ndBISITwuu5YEgs5C_WPHA25nm6e4BT5R-tawSA8yPyQAupqE8gk4ZWq_2-T0cqyTstIHrMQnZ_vysYN7h6bkzE-KeZRk7GMtySN87_fiu904hLD9QentGegamX6UAbVqQh7Htj7SnMHXkEenjxXAM5mRqQvNCTlw8k-9-VPXs-vTcKLYP8VFf8gMOmuYykgWac1gX-svyAg-24mo8cUbqcsj9relx4Qj5HiXUVyDMBZxK-mHZi-Xz6uv9GlggcsjE13DSszar-j2OetigpdibnJIxRZ-4ew3-vlvZ0Dul3j0LjeWURVBWYWfMjuZ193G7lwR3ohh_NzlNfwOPBK_SYurdAnLh7jJgTW-lVLjH2Dipmi9JwX9s03IQq9opexAn7hlM9oBI6x5asByH8JF8WwZ5GhzDjpDwpSmHPQNGFRSyrx_Sh2CPWNK6C1NJmLkyqAtJ5iw0_al7vPDQyZrKXaLTjBCUnbpJhUZ8dUKtWLzGPjzFXp10muoDIutd1NfyKxk1aWGhx5aerYuLdywv6cT_M8RZTi8924NGj5VA30V5OvEwLLyX93eDhntXZSCbkPHpAfiRZNGXrPY.GhCbWGQz11mIRD4uPKmoAuFXDH7hGnils54zg7N7-TU'}
+      const membership = { 'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..17wnrhz6FbWx0Cf6LXpm1A.m9PKVCradk3CZokNKzVHzE06TOqiXYeijgxTQUiQy5Syx-yicnO8DyYX6zQ6rgPcNgUNRt4R4XE5MXuK0laUVQJr9yc9g3vUfQfw69OMYGW_vRlLMPzoNOhF2c4gSyfkRrLr7C0qgALmZO1D11sPflaCTNmO7pmZtRaCOB5buHoWcQhp1bUSJ09DNDb31dX3llimPwjNGSrUhyq_EZl4HopnnjxbM4qVNMY2G_43C_idlVOvbFoTxcDRATd-6MplJoIOIHQLDZEetpIOVcbEYN9gQ_ndBISITwuu5YEgs5C_WPHA25nm6e4BT5R-tawSA8yPyQAupqE8gk4ZWq_2-T0cqyTstIHrMQnZ_vysYN7h6bkzE-KeZRk7GMtySN87_fiu904hLD9QentGegamX6UAbVqQh7Htj7SnMHXkEenjxXAM5mRqQvNCTlw8k-9-VPXs-vTcKLYP8VFf8gMOmuYykgWac1gX-svyAg-24mo8cUbqcsj9relx4Qj5HiXUVyDMBZxK-mHZi-Xz6uv9GlggcsjE13DSszar-j2OetigpdibnJIxRZ-4ew3-vlvZ0Dul3j0LjeWURVBWYWfMjuZ193G7lwR3ohh_NzlNfwOPBK_SYurdAnLh7jJgTW-lVLjH2Dipmi9JwX9s03IQq9opexAn7hlM9oBI6x5asByH8JF8WwZ5GhzDjpDwpSmHPQNGFRSyrx_Sh2CPWNK6C1NJmLkyqAtJ5iw0_al7vPDQyZrKXaLTjBCUnbpJhUZ8dUKtWLzGPjzFXp10muoDIutd1NfyKxk1aWGhx5aerYuLdywv6cT_M8RZTi8924NGj5VA30V5OvEwLLyX93eDhntXZSCbkPHpAfiRZNGXrPY.GhCbWGQz11mIRD4uPKmoAuFXDH7hGnils54zg7N7-TU' }
       dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
@@ -565,7 +565,7 @@ describe('symitriDapRtdProvider', function() {
     });
 
     it('test dapRefreshMembership success response with exp claim', function () {
-      const membership = {'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQ3OTcxNTU4fQ..ptdM5WO-62ypXlKxFXD4FQ.waEo9MHS2NYQCi-zh_p6HgT9BdqGyQbBq4GfGLfsay4nRBgICsTS-VkV6e7xx5U1T8BgpKkRJIZBwTOY5Pkxk9FpK5nnffDSEljRrp1LXLCkNP4qwrlqHInFbZsonNWW4_mW-7aUPlTwIsTbfjTuyHdXHeQa1ALrwFFFWE7QUmPNd2RsHjDwUsxlJPEb5TnHn5W0Mgo_PQZaxvhJInMbxPgtJLoqnJvOqCBEoQY7au7ALZL_nWK8XIwPMF19J7Z3cBg9vQInhr_E3rMdQcAFHEzYfgoNcIYCCR0t1UOqUE3HNtX-E64kZAYKWdlsBb9eW5Gj9hHYyPNL_4Hntjg5eLXGpsocMg0An-qQKGC6hkrxKzeM-GrjpvSaQLNs4iqDpHUtzA02LW_vkLkMNRUiyXVJ3FUZwfyq6uHSRKWZ6UFdAfL0rfJ8q8x8Ll-qJO2Jfyvidlsi9FIs7x1WJrvDCKepfAQM1UXRTonrQljFBAk83PcL2bmWuJDgJZ0lWS4VnZbIf6A7fDourmkDxdVRptvQq5nSjtzCA6whRw0-wGz8ehNJsaJw9H_nG9k4lRKs7A5Lqsyy7TVFrAPjnA_Q1a2H6xF2ULxrtIqoNqdX7k9RjowEZSQlZgZUOAmI4wzjckdcSyC_pUlYBMcBwmlld34mmOJe9EBHAxjdci7Q_9lvj1HTcwGDcQITXnkW9Ux5Jkt9Naw-IGGrnEIADaT2guUAto8W_Gb05TmwHSd6DCmh4zepQCbqeVe6AvPILtVkTgsTTo27Q-NvS7h-XtthJy8425j5kqwxxpZFJ0l0ytc6DUyNCLJXuxi0JFU6-LoSXcROEMVrHa_Achufr9vHIELwacSAIHuwseEvg_OOu1c1WYEwZH8ynBLSjqzy8AnDj24hYgA0YanPAvDqacrYrTUFqURbHmvcQqLBTcYa_gs7uDx4a1EjtP_NvHRlvCgGAaASrjGMhTX8oJxlTqahhQ.pXm-7KqnNK8sbyyczwkVYhcjgiwkpO8LjBBVw4lcyZE'};
+      const membership = { 'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQ3OTcxNTU4fQ..ptdM5WO-62ypXlKxFXD4FQ.waEo9MHS2NYQCi-zh_p6HgT9BdqGyQbBq4GfGLfsay4nRBgICsTS-VkV6e7xx5U1T8BgpKkRJIZBwTOY5Pkxk9FpK5nnffDSEljRrp1LXLCkNP4qwrlqHInFbZsonNWW4_mW-7aUPlTwIsTbfjTuyHdXHeQa1ALrwFFFWE7QUmPNd2RsHjDwUsxlJPEb5TnHn5W0Mgo_PQZaxvhJInMbxPgtJLoqnJvOqCBEoQY7au7ALZL_nWK8XIwPMF19J7Z3cBg9vQInhr_E3rMdQcAFHEzYfgoNcIYCCR0t1UOqUE3HNtX-E64kZAYKWdlsBb9eW5Gj9hHYyPNL_4Hntjg5eLXGpsocMg0An-qQKGC6hkrxKzeM-GrjpvSaQLNs4iqDpHUtzA02LW_vkLkMNRUiyXVJ3FUZwfyq6uHSRKWZ6UFdAfL0rfJ8q8x8Ll-qJO2Jfyvidlsi9FIs7x1WJrvDCKepfAQM1UXRTonrQljFBAk83PcL2bmWuJDgJZ0lWS4VnZbIf6A7fDourmkDxdVRptvQq5nSjtzCA6whRw0-wGz8ehNJsaJw9H_nG9k4lRKs7A5Lqsyy7TVFrAPjnA_Q1a2H6xF2ULxrtIqoNqdX7k9RjowEZSQlZgZUOAmI4wzjckdcSyC_pUlYBMcBwmlld34mmOJe9EBHAxjdci7Q_9lvj1HTcwGDcQITXnkW9Ux5Jkt9Naw-IGGrnEIADaT2guUAto8W_Gb05TmwHSd6DCmh4zepQCbqeVe6AvPILtVkTgsTTo27Q-NvS7h-XtthJy8425j5kqwxxpZFJ0l0ytc6DUyNCLJXuxi0JFU6-LoSXcROEMVrHa_Achufr9vHIELwacSAIHuwseEvg_OOu1c1WYEwZH8ynBLSjqzy8AnDj24hYgA0YanPAvDqacrYrTUFqURbHmvcQqLBTcYa_gs7uDx4a1EjtP_NvHRlvCgGAaASrjGMhTX8oJxlTqahhQ.pXm-7KqnNK8sbyyczwkVYhcjgiwkpO8LjBBVw4lcyZE' };
       dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
@@ -597,7 +597,7 @@ describe('symitriDapRtdProvider', function() {
 
     it('test dapGetEncryptedMembershipFromLocalStorage function with invalid cache', function () {
       const expiry = Math.round(Date.now() / 1000.0) - 100; // in seconds
-      const encMembership = {'expiry': expiry, 'encryptedSegments': cachedEncryptedMembership.encryptedSegments}
+      const encMembership = { 'expiry': expiry, 'encryptedSegments': cachedEncryptedMembership.encryptedSegments }
       storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(encMembership))
       expect(dapUtils.dapGetEncryptedMembershipFromLocalStorage()).to.equal(null);
     });
@@ -644,11 +644,11 @@ describe('symitriDapRtdProvider', function() {
     });
 
     it('USP consent present and user have not been provided with option to opt out', function () {
-      expect(symitriDapRtdSubmodule.init(null, {'usp': '1NYY'})).to.equal(false);
+      expect(symitriDapRtdSubmodule.init(null, { 'usp': '1NYY' })).to.equal(false);
     });
 
     it('USP consent present and user have not opted out', function () {
-      expect(symitriDapRtdSubmodule.init(null, {'usp': '1YNY'})).to.equal(true);
+      expect(symitriDapRtdSubmodule.init(null, { 'usp': '1YNY' })).to.equal(true);
     });
   });
 
@@ -695,7 +695,7 @@ describe('symitriDapRtdProvider', function() {
   });
 
   describe('onBidResponseEvent', function () {
-    const bidResponse = {adId: 'ad_123', bidder: 'test_bidder', bidderCode: 'test_bidder_code', cpm: '1.5', creativeId: 'creative_123', dealId: 'DEMODEAL555', mediaType: 'banner', responseTimestamp: '1725892736147', ad: ''};
+    const bidResponse = { adId: 'ad_123', bidder: 'test_bidder', bidderCode: 'test_bidder_code', cpm: '1.5', creativeId: 'creative_123', dealId: 'DEMODEAL555', mediaType: 'banner', responseTimestamp: '1725892736147', ad: '' };
     const url = emoduleConfig.params.pixelUrl + '?token=' + sampleCachedToken.token + '&ad_id=' + bidResponse.adId + '&bidder=' + bidResponse.bidder + '&bidder_code=' + bidResponse.bidderCode + '&cpm=' + bidResponse.cpm + '&creative_id=' + bidResponse.creativeId + '&deal_id=' + bidResponse.dealId + '&media_type=' + bidResponse.mediaType + '&response_timestamp=' + bidResponse.responseTimestamp;
     const adPixel = `${bidResponse.ad}<script src="${url}"/>`;
     it('should add pixel to "BidResponse" ad', function () {

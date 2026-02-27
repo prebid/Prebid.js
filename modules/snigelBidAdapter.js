@@ -1,9 +1,9 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const BIDDER_CODE = 'snigel';
@@ -15,7 +15,7 @@ const FLOOR_MATCH_ALL_SIZES = '*';
 const SESSION_ID_KEY = '_sn_session_pba';
 
 const getConfig = config.getConfig;
-const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
+const storageManager = getStorageManager({ bidderCode: BIDDER_CODE });
 const refreshes = {};
 const placementCounters = {};
 const pageViewStart = new Date().getTime();
@@ -109,7 +109,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncUrl = getSyncUrl(responses || []);
     if (syncUrl && syncOptions.iframeEnabled) {
-      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent)}];
+      return [{ type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent) }];
     }
   },
 };

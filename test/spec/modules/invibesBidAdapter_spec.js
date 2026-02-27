@@ -1,7 +1,7 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import { config } from 'src/config.js';
-import {spec, resetInvibes, stubDomainOptions, readGdprConsent, storage} from 'modules/invibesBidAdapter.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { spec, resetInvibes, stubDomainOptions, readGdprConsent, storage } from 'modules/invibesBidAdapter.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -250,7 +250,7 @@ describe('invibesBidAdapter:', function () {
           }
         }
 
-        top.window.invibes.bidResponse = {prop: 'prop'};
+        top.window.invibes.bidResponse = { prop: 'prop' };
         expect(spec.isBidRequestValid(validBid)).to.be.true;
       });
     });
@@ -501,19 +501,19 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends query string params from localstorage 1', function () {
-      localStorage.ivbs = JSON.stringify({bvci: 1});
+      localStorage.ivbs = JSON.stringify({ bvci: 1 });
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.bvci).to.equal(1);
     });
 
     it('sends query string params from localstorage 2', function () {
-      localStorage.ivbs = JSON.stringify({invibbvlog: true});
+      localStorage.ivbs = JSON.stringify({ invibbvlog: true });
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.invibbvlog).to.equal(true);
     });
 
     it('does not send query string params from localstorage if unknwon', function () {
-      localStorage.ivbs = JSON.stringify({someparam: true});
+      localStorage.ivbs = JSON.stringify({ someparam: true });
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.someparam).to.be.undefined;
     });
@@ -620,7 +620,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -651,7 +651,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -682,7 +682,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -713,7 +713,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -768,7 +768,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -798,7 +798,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: false}},
+            vendor: { consents: { 436: false } },
             purpose: {
               consents: {
                 1: true,
@@ -828,7 +828,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: false}, legitimateInterests: {436: true}},
+            vendor: { consents: { 436: false }, legitimateInterests: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -858,7 +858,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: false}, legitimateInterests: {436: false}},
+            vendor: { consents: { 436: false }, legitimateInterests: { 436: false } },
             purpose: {
               consents: {
                 1: true,
@@ -888,7 +888,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: false}},
+            vendor: { consents: { 436: false } },
             purpose: {}
           }
         },
@@ -906,7 +906,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -937,7 +937,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
+            vendor: { consents: { 436: true } },
             purpose: {
               consents: {
                 1: true,
@@ -963,7 +963,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: null},
+            vendor: { consents: null },
             purpose: {
               consents: {
                 1: true,
@@ -994,7 +994,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendor: {consents: {436: null}},
+            vendor: { consents: { 436: null } },
             purpose: {
               consents: {
                 1: true,
@@ -1025,7 +1025,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendorConsents: {436: null},
+            vendorConsents: { 436: null },
             purposeConsents: {
               1: true,
               2: true,
@@ -1089,7 +1089,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendorConsents: {436: true},
+            vendorConsents: { 436: true },
             purposeConsents: {
               1: true,
               2: true,
@@ -1113,7 +1113,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendorConsents: {436: true},
+            vendorConsents: { 436: true },
             purposeConsents: {
               1: false,
               2: false,
@@ -1137,7 +1137,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendorConsents: {436: true},
+            vendorConsents: { 436: true },
             purposeConsents: {
               1: false,
               2: false,
@@ -1159,7 +1159,7 @@ describe('invibesBidAdapter:', function () {
           vendorData: {
             gdprApplies: true,
             hasGlobalConsent: false,
-            vendorConsents: {436: false},
+            vendorConsents: { 436: false },
             purposeConsents: {
               1: true,
               2: true,
@@ -1310,47 +1310,47 @@ describe('invibesBidAdapter:', function () {
 
     context('when the response is not valid', function () {
       it('handles response with no bids requested', function () {
-        const emptyResult = spec.interpretResponse({body: response});
+        const emptyResult = spec.interpretResponse({ body: response });
         expect(emptyResult).to.be.empty;
       });
 
       it('handles empty response', function () {
-        const emptyResult = spec.interpretResponse(null, {bidRequests});
+        const emptyResult = spec.interpretResponse(null, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
 
       it('handles response with bidding is not configured', function () {
-        const emptyResult = spec.interpretResponse({body: {Ads: [{BidPrice: 1}]}}, {bidRequests});
+        const emptyResult = spec.interpretResponse({ body: { Ads: [{ BidPrice: 1 }] } }, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
 
       it('handles response with no ads are received', function () {
         const emptyResult = spec.interpretResponse({
           body: {
-            BidModel: {PlacementId: '12345'},
+            BidModel: { PlacementId: '12345' },
             AdReason: 'No ads'
           }
-        }, {bidRequests});
+        }, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
 
       it('handles response with no ads are received - no ad reason', function () {
-        const emptyResult = spec.interpretResponse({body: {BidModel: {PlacementId: '12345'}}}, {bidRequests});
+        const emptyResult = spec.interpretResponse({ body: { BidModel: { PlacementId: '12345' } } }, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
 
       it('handles response when no placement Id matches', function () {
         const emptyResult = spec.interpretResponse({
           body: {
-            BidModel: {PlacementId: '123456'},
-            Ads: [{BidPrice: 1}]
+            BidModel: { PlacementId: '123456' },
+            Ads: [{ BidPrice: 1 }]
           }
-        }, {bidRequests});
+        }, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
 
       it('handles response when placement Id is not present', function () {
-        const emptyResult = spec.interpretResponse({BidModel: {}, Ads: [{BidPrice: 1}]}, {bidRequests});
+        const emptyResult = spec.interpretResponse({ BidModel: {}, Ads: [{ BidPrice: 1 }] }, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
 
@@ -1362,30 +1362,30 @@ describe('invibesBidAdapter:', function () {
 
     context('when the multiresponse is valid', function () {
       it('responds with a valid multiresponse bid', function () {
-        const result = spec.interpretResponse({body: multiResponse}, {bidRequests});
+        const result = spec.interpretResponse({ body: multiResponse }, { bidRequests });
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
       it('responds with a valid singleresponse bid', function () {
-        const result = spec.interpretResponse({body: response}, {bidRequests});
+        const result = spec.interpretResponse({ body: response }, { bidRequests });
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
 
       it('does not make multiple bids', function () {
-        const result = spec.interpretResponse({body: response}, {bidRequests});
-        const secondResult = spec.interpretResponse({body: response}, {bidRequests});
+        const result = spec.interpretResponse({ body: response }, { bidRequests });
+        const secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
 
       it('bids using the adUnitCode', function () {
-        const result = spec.interpretResponse({body: responseWithAdUnit}, {bidRequests});
+        const result = spec.interpretResponse({ body: responseWithAdUnit }, { bidRequests });
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
     });
 
     context('when the response has meta', function () {
       it('responds with a valid bid, with the meta info', function () {
-        const result = spec.interpretResponse({body: responseWithMeta}, {bidRequests});
+        const result = spec.interpretResponse({ body: responseWithMeta }, { bidRequests });
         expect(result[0].meta.advertiserName).to.equal('theadvertiser');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser.com');
         expect(result[0].meta.advertiserDomains).to.contain('theadvertiser_2.com');
@@ -1396,14 +1396,14 @@ describe('invibesBidAdapter:', function () {
       it('works when no LID is not sent from AdWeb', function() {
         var firstResponse = buildResponse('12345', 1, [], 123);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         expect(firstResult[0].creativeId).to.equal(123);
       });
 
       it('sets lid when AdWeb sends it', function() {
         var firstResponse = buildResponse('12345', 1, [], 123, true);
 
-        spec.interpretResponse({body: firstResponse}, {bidRequests});
+        spec.interpretResponse({ body: firstResponse }, { bidRequests });
         expect(global.document.cookie.indexOf('ivbsdid')).to.greaterThanOrEqual(0);
       });
     });
@@ -1413,8 +1413,8 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [1], 123);
         var secondResponse = buildResponse('abcde', 2, [2], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
@@ -1422,8 +1422,8 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [], 123);
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
@@ -1431,8 +1431,8 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [2], 123);
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
 
@@ -1440,8 +1440,8 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [], 123);
         var secondResponse = buildResponse('abcde', 2, [1], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
 
@@ -1449,8 +1449,8 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [1], 123);
         var secondResponse = buildResponse('abcde', 1, [1], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
     });
@@ -1459,14 +1459,14 @@ describe('invibesBidAdapter:', function () {
   describe('getUserSyncs', function () {
     it('returns undefined if disableUserSyncs not passed as bid request param ', function () {
       spec.buildRequests(bidRequestsWithUserId, bidderRequestWithPageInfo);
-      const response = spec.getUserSyncs({iframeEnabled: true});
+      const response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response).to.equal(undefined);
     });
 
     it('returns an iframe if enabled', function () {
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
 
-      const response = spec.getUserSyncs({iframeEnabled: true});
+      const response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
     });
@@ -1475,7 +1475,7 @@ describe('invibesBidAdapter:', function () {
       top.window.invibes.optIn = 1;
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
 
-      const response = spec.getUserSyncs({iframeEnabled: true});
+      const response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
@@ -1488,7 +1488,7 @@ describe('invibesBidAdapter:', function () {
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       SetBidderAccess();
 
-      const response = spec.getUserSyncs({iframeEnabled: true});
+      const response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
@@ -1502,7 +1502,7 @@ describe('invibesBidAdapter:', function () {
       localStorage.ivbsdid = 'dvdjkams6nkq';
       SetBidderAccess();
 
-      const response = spec.getUserSyncs({iframeEnabled: true});
+      const response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response.type).to.equal('iframe');
       expect(response.url).to.include(SYNC_ENDPOINT);
       expect(response.url).to.include('optIn');
@@ -1512,7 +1512,7 @@ describe('invibesBidAdapter:', function () {
     it('returns undefined if iframe not enabled ', function () {
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
 
-      const response = spec.getUserSyncs({iframeEnabled: false});
+      const response = spec.getUserSyncs({ iframeEnabled: false });
       expect(response).to.equal(undefined);
     });
 

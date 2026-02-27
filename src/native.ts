@@ -12,7 +12,7 @@ import {
   triggerPixel
 } from './utils.js';
 
-import {auctionManager} from './auctionManager.js';
+import { auctionManager } from './auctionManager.js';
 import {
   NATIVE_ASSET_TYPES,
   NATIVE_IMAGE_TYPES,
@@ -20,17 +20,17 @@ import {
   NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
   PREBID_NATIVE_DATA_KEYS_TO_ORTB
 } from './constants.js';
-import {NATIVE} from './mediaTypes.js';
-import {getRenderingData} from './adRendering.js';
-import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
-import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
-import type {Link, NativeRequest, NativeResponse} from "./types/ortb/native.d.ts";
-import type {Size} from "./types/common.d.ts";
-import type {Ext} from "./types/ortb/common.d.ts";
-import type {BidResponse, NativeBidResponse} from "./bidfactory.ts";
-import type {AdUnit} from "./adUnits.ts";
+import { NATIVE } from './mediaTypes.js';
+import { getRenderingData } from './adRendering.js';
+import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
+import { EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from './eventTrackers.js';
+import type { Link, NativeRequest, NativeResponse } from "./types/ortb/native.d.ts";
+import type { Size } from "./types/common.d.ts";
+import type { Ext } from "./types/ortb/common.d.ts";
+import type { BidResponse, NativeBidResponse } from "./bidfactory.ts";
+import type { AdUnit } from "./adUnits.ts";
 
-type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
+type LegacyAssets = Omit<{ [K in keyof (typeof NATIVE_KEYS)]: unknown }, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
 type LegacyImageAssets = { icon: unknown, image: unknown };
 
 type LegacyImageAssetResponse = {
@@ -293,7 +293,7 @@ export const hasNonNativeBidder = adUnit =>
  * bid Native bid to validate
  * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
+export function nativeBidIsValid(bid, { index = auctionManager.index } = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
   const ortbRequest = adUnit.nativeOrtbRequest
@@ -355,8 +355,8 @@ export function fireNativeTrackers(message, bidResponse) {
   return message.action;
 }
 
-export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
-  let {[TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = []} = parseEventTrackers(
+export function fireImpressionTrackers(nativeResponse, { runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel } = {}) {
+  let { [TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = [] } = parseEventTrackers(
     nativeResponse.eventtrackers || []
   )[EVENT_TYPE_IMPRESSION] || {};
 
@@ -375,7 +375,7 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
+export function fireClickTrackers(nativeResponse, assetId = null, { fetchURL = triggerPixel } = {}) {
   // legacy click tracker
   if (!assetId) {
     (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
@@ -423,7 +423,7 @@ function getNativeAssets(nativeProps, keys, ext = false) {
       if (ext === false && key === 'ext') {
         assets.push(...getNativeAssets(value, keys, true));
       } else if (ext || NATIVE_KEYS.hasOwnProperty(key)) {
-        assets.push({key, value: getAssetValue(value)});
+        assets.push({ key, value: getAssetValue(value) });
       }
     });
   return assets;
@@ -443,7 +443,7 @@ export function getNativeRenderingData(bid, adUnit, keys) {
   return data;
 }
 
-function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
+function assetsMessage(data, adObject, keys, { index = auctionManager.index } = {}) {
   const msg: any = {
     message: 'assetResponse',
     adId: data.adId,
@@ -457,7 +457,7 @@ function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}
     msg.renderer = getCreativeRendererSource(adObject);
     msg.rendererVersion = PUC_MIN_VERSION;
     if (keys != null) {
-      renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
+      renderData.assets = renderData.assets.filter(({ key }) => keys.includes(key))
     }
   } else {
     renderData = getNativeRenderingData(adObject, index.getAdUnit(adObject), keys);

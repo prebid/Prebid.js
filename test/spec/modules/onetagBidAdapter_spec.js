@@ -26,7 +26,7 @@ const getFloor = function(params) {
       floorPrice = 5.0;
       break;
   }
-  return {currency: params.currency, floor: floorPrice};
+  return { currency: params.currency, floor: floorPrice };
 };
 
 describe('onetag', function () {
@@ -110,7 +110,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'native|*': 1.10
@@ -180,7 +180,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'native|*': 1.10
@@ -201,7 +201,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'banner|300x250': 0.10
@@ -224,7 +224,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'video|640x480': 0.10
@@ -246,7 +246,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'video|640x480': 0.10
@@ -694,7 +694,7 @@ describe('onetag', function () {
                 cids: ['iris_c73g5jq96mwso4d8']
               },
               // the bare minimum are the IDs. These IDs are the ones from the new IAB Content Taxonomy v3
-              segment: [ { id: '687' }, { id: '123' } ]
+              segment: [{ id: '687' }, { id: '123' }]
             }]
           },
           ext: {
@@ -875,8 +875,8 @@ describe('onetag', function () {
         },
         'adrender': 1
       };
-      const responseWithDsa = {...response};
-      responseWithDsa.body.bids.forEach(bid => bid.dsa = {...dsaResponseObj});
+      const responseWithDsa = { ...response };
+      responseWithDsa.body.bids.forEach(bid => bid.dsa = { ...dsaResponseObj });
       const serverResponse = spec.interpretResponse(responseWithDsa, request);
       serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
     });

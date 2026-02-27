@@ -1,9 +1,9 @@
 import { quantcastIdSubmodule, storage, firePixel, hasCCPAConsent, hasGDPRConsent, checkTCFv2 } from 'modules/quantcastIdSystem.js';
 import * as utils from 'src/utils.js';
-import {coppaDataHandler} from 'src/adapterManager';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { coppaDataHandler } from 'src/adapterManager';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 describe('QuantcastId module', function () {
   beforeEach(function() {
@@ -21,13 +21,13 @@ describe('QuantcastId module', function () {
   it('getId() should return a quantcast id when the Quantcast first party cookie exists', function () {
     sinon.stub(storage, 'getCookie').returns('P0-TestFPA');
     const id = quantcastIdSubmodule.getId();
-    expect(id).to.be.deep.equal({id: {quantcastId: 'P0-TestFPA'}});
+    expect(id).to.be.deep.equal({ id: { quantcastId: 'P0-TestFPA' } });
     storage.getCookie.restore();
   });
 
   it('getId() should return an empty id when the Quantcast first party cookie is missing', function () {
     const id = quantcastIdSubmodule.getId();
-    expect(id).to.be.deep.equal({id: undefined});
+    expect(id).to.be.deep.equal({ id: undefined });
   });
 });
 
@@ -92,7 +92,7 @@ describe('Quantcast CCPA consent check', function() {
 
 describe('Quantcast GDPR consent check', function() {
   it("returns true when GDPR doesn't apply", function() {
-    expect(hasGDPRConsent({gdprApplies: false})).to.equal(true);
+    expect(hasGDPRConsent({ gdprApplies: false })).to.equal(true);
   });
 
   it('returns false if denied consent, even if special purpose 1 treatment is true in DE', function() {

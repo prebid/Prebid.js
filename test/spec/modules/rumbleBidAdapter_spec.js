@@ -1,8 +1,8 @@
-import {spec, converter} from 'modules/rumbleBidAdapter.js';
+import { spec, converter } from 'modules/rumbleBidAdapter.js';
 import { config } from '../../../src/config.js';
-import {BANNER} from "../../../src/mediaTypes.js";
-import {deepClone, getUniqueIdentifierStr} from "../../../src/utils.js";
-import {expect} from "chai";
+import { BANNER } from "../../../src/mediaTypes.js";
+import { deepClone, getUniqueIdentifierStr } from "../../../src/utils.js";
+import { expect } from "chai";
 
 const bidder = 'rumble';
 

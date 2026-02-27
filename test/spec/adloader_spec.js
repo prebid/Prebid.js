@@ -90,7 +90,7 @@ describe('adLoader', function () {
         }
       }
     };
-    const attrs = {'z': 'A', 'y': 2};
+    const attrs = { 'z': 'A', 'y': 2 };
     const script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
@@ -99,7 +99,7 @@ describe('adLoader', function () {
   it('should disable loading external script for activity rule set', function () {
     let unregisterRule;
     try {
-      unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({allow: false}));
+      unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({ allow: false }));
       adLoader.loadExternalScript(null, 'debugging');
       expect(utilsLogErrorStub.called).to.be.false;
     } finally {

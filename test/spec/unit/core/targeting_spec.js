@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   filters,
   getGPTSlotsForAdUnits,
@@ -6,16 +6,16 @@ import {
   sortByDealAndPriceBucketOrCpm,
   targeting as targetingInstance
 } from 'src/targeting.js';
-import {config} from 'src/config.js';
-import {createBidReceived} from 'test/fixtures/fixtures.js';
-import {DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS} from 'src/constants.js';
-import {auctionManager} from 'src/auctionManager.js';
+import { config } from 'src/config.js';
+import { createBidReceived } from 'test/fixtures/fixtures.js';
+import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
+import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
-import {deepClone} from 'src/utils.js';
-import {createBid} from '../../../../src/bidfactory.js';
-import {hook, setupBeforeHookFnOnce} from '../../../../src/hook.js';
-import {getHighestCpm} from '../../../../src/utils/reducers.js';
-import {getGlobal} from '../../../../src/prebidGlobal.js';
+import { deepClone } from 'src/utils.js';
+import { createBid } from '../../../../src/bidfactory.js';
+import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
+import { getHighestCpm } from '../../../../src/utils/reducers.js';
+import { getGlobal } from '../../../../src/prebidGlobal.js';
 import { getAdUnitBidLimitMap } from '../../../../src/targeting.js';
 
 function mkBid(bid) {
@@ -289,7 +289,7 @@ describe('targeting tests', function () {
         bid.ttlBuffer = ttlBuffer
       },
       'setConfig({ttlBuffer})': (_, ttlBuffer) => {
-        config.setConfig({ttlBuffer})
+        config.setConfig({ ttlBuffer })
       },
     }).forEach(([t, setup]) => {
       describe(`respects ${t}`, () => {
@@ -491,11 +491,11 @@ describe('targeting tests', function () {
       sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
         {
           code: 'au1',
-          [JSON_MAPPING.ADSERVER_TARGETING]: {'aut': 'v1'}
+          [JSON_MAPPING.ADSERVER_TARGETING]: { 'aut': 'v1' }
         },
         {
           code: 'au2',
-          [JSON_MAPPING.ADSERVER_TARGETING]: {'aut': 'v2'}
+          [JSON_MAPPING.ADSERVER_TARGETING]: { 'aut': 'v2' }
         }
       ]));
       expect(targetingInstance.getAllTargeting('au1').au2).to.not.exist;
@@ -1028,7 +1028,7 @@ describe('targeting tests', function () {
 
       it('should merge custom targeting from all bids when allBidsCustomTargeting: true', function () {
         // Default behavior - no specific configuration
-        config.setConfig({targetingControls: {allBidsCustomTargeting: true}});
+        config.setConfig({ targetingControls: { allBidsCustomTargeting: true } });
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // Custom key values from both bids should be combined to maintain existing functionality
@@ -1196,10 +1196,10 @@ describe('targeting tests', function () {
 
       it('should use bids from pool to get Winning Bid', function () {
         const bidsReceived = [
-          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
-          createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
-          createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
-          createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4'}),
+          createBidReceived({ bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1' }),
+          createBidReceived({ bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 6, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3' }),
+          createBidReceived({ bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4' }),
         ];
         const adUnitCodes = ['code-0', 'code-1'];
 
@@ -1214,8 +1214,8 @@ describe('targeting tests', function () {
         useBidCache = true;
 
         auctionManagerStub.returns([
-          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
-          createBidReceived({bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2'}),
+          createBidReceived({ bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2' }),
         ]);
 
         const adUnitCodes = ['code-0'];
@@ -1238,14 +1238,14 @@ describe('targeting tests', function () {
 
       it('should use bidCacheFilterFunction', function() {
         auctionManagerStub.returns([
-          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', mediaType: 'banner'}),
-          createBidReceived({bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2', mediaType: 'banner'}),
-          createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-3', mediaType: 'banner'}),
-          createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4', mediaType: 'banner'}),
-          createBidReceived({bidder: 'appnexus', cpm: 27, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-2', adId: 'adid-5', mediaType: 'video'}),
-          createBidReceived({bidder: 'appnexus', cpm: 25, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-2', adId: 'adid-6', mediaType: 'video'}),
-          createBidReceived({bidder: 'appnexus', cpm: 26, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-3', adId: 'adid-7', mediaType: 'video'}),
-          createBidReceived({bidder: 'appnexus', cpm: 28, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-3', adId: 'adid-8', mediaType: 'video'}),
+          createBidReceived({ bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', mediaType: 'banner' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2', mediaType: 'banner' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-3', mediaType: 'banner' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4', mediaType: 'banner' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 27, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-2', adId: 'adid-5', mediaType: 'video' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 25, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-2', adId: 'adid-6', mediaType: 'video' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 26, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-3', adId: 'adid-7', mediaType: 'video' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 28, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-3', adId: 'adid-8', mediaType: 'video' }),
         ]);
 
         const adUnitCodes = ['code-0', 'code-1', 'code-2', 'code-3'];
@@ -1345,10 +1345,10 @@ describe('targeting tests', function () {
 
       it('should not use rendered bid to get winning bid', function () {
         const bidsReceived = [
-          createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'rendered'}),
-          createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
-          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
-          createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4'}),
+          createBidReceived({ bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'rendered' }),
+          createBidReceived({ bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3' }),
+          createBidReceived({ bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4' }),
         ];
         auctionManagerStub.returns(bidsReceived);
 
@@ -1363,10 +1363,10 @@ describe('targeting tests', function () {
       it('should use highest cpm bid from bid pool to get winning bid', function () {
         // Pool is having 4 bids from 2 auctions. There are 2 bids from rubicon, #2 which is highest cpm bid will be selected to take part in auction.
         const bidsReceived = [
-          createBidReceived({bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
-          createBidReceived({bidder: 'rubicon', cpm: 9, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-0', adId: 'adid-2'}),
-          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
-          createBidReceived({bidder: 'rubicon', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-0', adId: 'adid-4'}),
+          createBidReceived({ bidder: 'appnexus', cpm: 8, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1' }),
+          createBidReceived({ bidder: 'rubicon', cpm: 9, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-0', adId: 'adid-2' }),
+          createBidReceived({ bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3' }),
+          createBidReceived({ bidder: 'rubicon', cpm: 8, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-0', adId: 'adid-4' }),
         ];
         auctionManagerStub.returns(bidsReceived);
 
@@ -1390,10 +1390,10 @@ describe('targeting tests', function () {
         timestampStub.returns(200000);
         // Pool is having 4 bids from 2 auctions. All the bids are expired and only bid #3 is passing the bidExpiry check.
         const bidsReceived = [
-          createBidReceived({bidder: 'appnexus', cpm: 18, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', ttl: 150}),
-          createBidReceived({bidder: 'sampleBidder', cpm: 16, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-0', adId: 'adid-2', ttl: 100}),
-          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3', ttl: 300}),
-          createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-0', adId: 'adid-4', ttl: 50}),
+          createBidReceived({ bidder: 'appnexus', cpm: 18, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', ttl: 150 }),
+          createBidReceived({ bidder: 'sampleBidder', cpm: 16, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-0', adId: 'adid-2', ttl: 100 }),
+          createBidReceived({ bidder: 'appnexus', cpm: 7, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3', ttl: 300 }),
+          createBidReceived({ bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-0', adId: 'adid-4', ttl: 50 }),
         ];
         auctionManagerStub.returns(bidsReceived);
 
@@ -1584,7 +1584,7 @@ describe('targeting tests', function () {
     before(() => {
       if (window.apntag?.setKeywords == null) {
         const orig = window.apntag;
-        window.apntag = {setKeywords: () => {}}
+        window.apntag = { setKeywords: () => {} }
         after(() => {
           window.apntag = orig;
         })
@@ -1603,28 +1603,28 @@ describe('targeting tests', function () {
     it('should set single addUnit code', function() {
       const adUnitCode = 'testdiv-abc-ad-123456-0';
       sandbox.stub(targetingInstance, 'getAllTargeting').returns({
-        'testdiv1-abc-ad-123456-0': {hb_bidder: 'appnexus'}
+        'testdiv1-abc-ad-123456-0': { hb_bidder: 'appnexus' }
       });
       targetingInstance.setTargetingForAst(adUnitCode);
       expect(targetingInstance.getAllTargeting.called).to.equal(true);
       expect(targetingInstance.resetPresetTargetingAST.called).to.equal(true);
       expect(apnTagStub.callCount).to.equal(1);
       expect(apnTagStub.getCall(0).args[0]).to.deep.equal('testdiv1-abc-ad-123456-0');
-      expect(apnTagStub.getCall(0).args[1]).to.deep.equal({HB_BIDDER: 'appnexus'});
+      expect(apnTagStub.getCall(0).args[1]).to.deep.equal({ HB_BIDDER: 'appnexus' });
     });
 
     it('should set array of addUnit codes', function() {
       const adUnitCodes = ['testdiv1-abc-ad-123456-0', 'testdiv2-abc-ad-123456-0']
       sandbox.stub(targetingInstance, 'getAllTargeting').returns({
-        'testdiv1-abc-ad-123456-0': {hb_bidder: 'appnexus'},
-        'testdiv2-abc-ad-123456-0': {hb_bidder: 'appnexus'}
+        'testdiv1-abc-ad-123456-0': { hb_bidder: 'appnexus' },
+        'testdiv2-abc-ad-123456-0': { hb_bidder: 'appnexus' }
       });
       targetingInstance.setTargetingForAst(adUnitCodes);
       expect(targetingInstance.getAllTargeting.called).to.equal(true);
       expect(targetingInstance.resetPresetTargetingAST.called).to.equal(true);
       expect(apnTagStub.callCount).to.equal(2);
       expect(apnTagStub.getCall(1).args[0]).to.deep.equal('testdiv2-abc-ad-123456-0');
-      expect(apnTagStub.getCall(1).args[1]).to.deep.equal({HB_BIDDER: 'appnexus'});
+      expect(apnTagStub.getCall(1).args[1]).to.deep.equal({ HB_BIDDER: 'appnexus' });
     });
   });
 
@@ -1652,12 +1652,12 @@ describe('targeting tests', function () {
 
     it('can find slots by ad unit path', () => {
       const paths = ['slot/1', 'slot/2']
-      expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
+      expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({ [paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]] });
     })
 
     it('can find slots by ad element ID', () => {
       const elementIds = ['div-1', 'div-2']
-      expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
+      expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({ [elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]] });
     })
 
     it('returns empty list on no match', () => {

@@ -5,7 +5,7 @@ import {
   splitPath,
   toOrtb25, toOrtb26
 } from '../../../libraries/ortb2.5Translator/translator.js';
-import {deepAccess, deepClone, deepSetValue} from '../../../src/utils.js';
+import { deepAccess, deepClone, deepSetValue } from '../../../src/utils.js';
 
 describe('ORTB 2.5 translation', () => {
   describe('moveRule', () => {
@@ -24,17 +24,17 @@ describe('ORTB 2.5 translation', () => {
       expect(rule({})).to.eql(undefined);
     });
     it('can copy field', () => {
-      expect(applyRule(rule, {f1: {f2: {f3: 'value'}}}, false)).to.eql({
+      expect(applyRule(rule, { f1: { f2: { f3: 'value' } } }, false)).to.eql({
         f1: {
           f2: {
             f3: 'value',
-            m1: {m2: {f3: 'value'}}
+            m1: { m2: { f3: 'value' } }
           }
         }
       });
     });
     it('can move field', () => {
-      expect(applyRule(rule, {f1: {f2: {f3: 'value'}}}, true)).to.eql({f1: {f2: {m1: {m2: {f3: 'value'}}}}});
+      expect(applyRule(rule, { f1: { f2: { f3: 'value' } } }, true)).to.eql({ f1: { f2: { m1: { m2: { f3: 'value' } } } } });
     });
   });
   describe('toOrtb25', () => {
@@ -50,13 +50,13 @@ describe('ORTB 2.5 translation', () => {
       });
     });
     it('moves kwarray into keywords', () => {
-      expect(toOrtb25({app: {keywords: 'k1,k2', kwarray: ['ka1', 'ka2']}})).to.eql({app: {keywords: 'k1,k2,ka1,ka2'}});
+      expect(toOrtb25({ app: { keywords: 'k1,k2', kwarray: ['ka1', 'ka2'] } })).to.eql({ app: { keywords: 'k1,k2,ka1,ka2' } });
     });
     it('does not choke if kwarray is not an array', () => {
-      expect(toOrtb25({site: {keywords: 'k1,k2', kwarray: 'err'}})).to.eql({site: {keywords: 'k1,k2'}});
+      expect(toOrtb25({ site: { keywords: 'k1,k2', kwarray: 'err' } })).to.eql({ site: { keywords: 'k1,k2' } });
     });
     it('does not choke if keywords is not a string', () => {
-      expect(toOrtb25({user: {keywords: {}, kwarray: ['ka1', 'ka2']}})).to.eql({
+      expect(toOrtb25({ user: { keywords: {}, kwarray: ['ka1', 'ka2'] } })).to.eql({
         user: {
           keywords: {},
           kwarray: ['ka1', 'ka2']

@@ -1,9 +1,9 @@
 import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from './activities/activities.js';
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
-import {config} from './config.js';
+import { config } from './config.js';
 import { hook } from './hook.js';
-import {buildUrl, hasDeviceAccess, logError, parseUrl} from './utils.js';
+import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -118,12 +118,12 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
  * `request` is invoked at the beginning of each request, and `done` at the end; both are passed its origin.
  *
  */
-export function fetcherFactory(timeout = 3000, {request, done}: any = {}, moduleType?: string, moduleName?: string): typeof window['fetch'] {
+export function fetcherFactory(timeout = 3000, { request, done }: any = {}, moduleType?: string, moduleName?: string): typeof window['fetch'] {
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
       to = dep.timeout(timeout, resource);
-      options = Object.assign({signal: to.signal}, options);
+      options = Object.assign({ signal: to.signal }, options);
     }
 
     processRequestOptions(options, moduleType, moduleName);
@@ -147,7 +147,7 @@ export function fetcherFactory(timeout = 3000, {request, done}: any = {}, module
 
 export type XHR = ReturnType<typeof toXHR>;
 
-function toXHR({status, statusText = '', headers, url}: {
+function toXHR({ status, statusText = '', headers, url }: {
   status: number;
   statusText?: string;
   headers?: Response['headers'];
@@ -179,7 +179,7 @@ function toXHR({status, statusText = '', headers, url}: {
     },
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
     toJSON() {
-      return Object.assign({responseXML: getXML()}, this)
+      return Object.assign({ responseXML: getXML() }, this)
     },
     timedOut: false
   }
@@ -189,7 +189,7 @@ function toXHR({status, statusText = '', headers, url}: {
  * attach legacy `ajax` callbacks to a fetch promise.
  */
 export function attachCallbacks(fetchPm: Promise<Response>, callback: AjaxCallback) {
-  const {success, error} = typeof callback === 'object' && callback != null ? callback : {
+  const { success, error } = typeof callback === 'object' && callback != null ? callback : {
     success: typeof callback === 'function' ? callback : () => null,
     error: (e, x) => logError('Network error', e, x)
   };
@@ -200,8 +200,8 @@ export function attachCallbacks(fetchPm: Promise<Response>, callback: AjaxCallba
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);
     }, (reason) => error('', Object.assign(
-      toXHR({status: 0}, ''),
-      {reason, timedOut: reason?.name === 'AbortError'}))
+      toXHR({ status: 0 }, ''),
+      { reason, timedOut: reason?.name === 'AbortError' }))
     );
 }
 
@@ -209,8 +209,8 @@ export type AjaxSuccessCallback = (responseText: string, xhr: XHR) => void;
 export type AjaxErrorCallback = (statusText: string, xhr: XHR) => void;
 export type AjaxCallback = AjaxSuccessCallback | { success?: AjaxErrorCallback; error?: AjaxSuccessCallback };
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {} as any, moduleType?: string, moduleName?: string) {
-  const fetcher = fetcherFactory(timeout, {request, done}, moduleType, moduleName);
+export function ajaxBuilder(timeout = 3000, { request, done } = {} as any, moduleType?: string, moduleName?: string) {
+  const fetcher = fetcherFactory(timeout, { request, done }, moduleType, moduleName);
   return function (url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
   };

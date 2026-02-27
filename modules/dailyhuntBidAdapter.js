@@ -1,10 +1,10 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
-import {_map, deepAccess, isEmpty} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {parseNativeResponse, getBidFloor} from '../libraries/nexverseUtils/index.js';
+import { _map, deepAccess, isEmpty } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { parseNativeResponse, getBidFloor } from '../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -47,7 +47,8 @@ const ORTB_NATIVE_PARAMS = {
     id: 4,
     name: 'data',
     type: 10
-  }};
+  }
+};
 
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
@@ -212,17 +213,17 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
   return obj;
 }
 
-export function getProtocols({protocols}) {
+export function getProtocols({ protocols }) {
   const defaultValue = [2, 3, 5, 6, 7, 8];
   const listProtocols = [
-    {key: 'VAST_1_0', value: 1},
-    {key: 'VAST_2_0', value: 2},
-    {key: 'VAST_3_0', value: 3},
-    {key: 'VAST_1_0_WRAPPER', value: 4},
-    {key: 'VAST_2_0_WRAPPER', value: 5},
-    {key: 'VAST_3_0_WRAPPER', value: 6},
-    {key: 'VAST_4_0', value: 7},
-    {key: 'VAST_4_0_WRAPPER', value: 8}
+    { key: 'VAST_1_0', value: 1 },
+    { key: 'VAST_2_0', value: 2 },
+    { key: 'VAST_3_0', value: 3 },
+    { key: 'VAST_1_0_WRAPPER', value: 4 },
+    { key: 'VAST_2_0_WRAPPER', value: 5 },
+    { key: 'VAST_3_0_WRAPPER', value: 6 },
+    { key: 'VAST_4_0', value: 7 },
+    { key: 'VAST_4_0_WRAPPER', value: 8 }
   ];
   if (protocols) {
     return listProtocols.filter(p => {

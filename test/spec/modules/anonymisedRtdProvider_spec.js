@@ -1,5 +1,5 @@
-import {config} from 'src/config.js';
-import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
+import { config } from 'src/config.js';
+import { getRealTimeData, anonymisedRtdSubmodule, storage } from 'modules/anonymisedRtdProvider.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('anonymisedRtdProvider', function() {

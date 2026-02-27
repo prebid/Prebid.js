@@ -18,10 +18,10 @@ import {
 import { NATIVE_KEYS } from 'src/constants.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
-import {auctionManager} from '../../src/auctionManager.js';
-import {getRenderingData} from '../../src/adRendering.js';
-import {getCreativeRendererSource, PUC_MIN_VERSION} from '../../src/creativeRenderers.js';
-import {deepSetValue} from '../../src/utils.js';
+import { auctionManager } from '../../src/auctionManager.js';
+import { getRenderingData } from '../../src/adRendering.js';
+import { getCreativeRendererSource, PUC_MIN_VERSION } from '../../src/creativeRenderers.js';
+import { deepSetValue } from '../../src/utils.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -248,15 +248,15 @@ describe('native.js', function () {
         },
         withRenderer: false
       }
-    }).forEach(([t, {renderDataHook, renderSourceHook, withRenderer}]) => {
+    }).forEach(([t, { renderDataHook, renderSourceHook, withRenderer }]) => {
       describe(`when getRenderingData ${t}`, () => {
         before(() => {
           getRenderingData.before(renderDataHook, 100);
           getCreativeRendererSource.before(renderSourceHook, 100);
         });
         after(() => {
-          getRenderingData.getHooks({hook: renderDataHook}).remove();
-          getCreativeRendererSource.getHooks({hook: renderSourceHook}).remove();
+          getRenderingData.getHooks({ hook: renderDataHook }).remove();
+          getCreativeRendererSource.getHooks({ hook: renderSourceHook }).remove();
         });
 
         function checkRenderer(message) {
@@ -440,7 +440,7 @@ describe('native.js', function () {
             action: 'allAssetRequest',
             adId: '123',
           };
-          adUnit = {mediaTypes: {native: {ortb: ortbRequest}}, nativeOrtbRequest: ortbRequest}
+          adUnit = { mediaTypes: { native: { ortb: ortbRequest } }, nativeOrtbRequest: ortbRequest }
           const message = getAllAssetsMessage(messageRequest, bid);
           const expected = toOrtbNativeResponse(bid.native, ortbRequest)
           expect(message.ortb).to.eql(expected);
@@ -476,7 +476,7 @@ describe('native.js', function () {
       { event: 1, method: 1, url: 'https://sampleurl.com' },
       { event: 1, method: 2, url: 'https://sampleurljs.com' }
     ],
-    imptrackers: [ 'https://sample-imp.com' ]
+    imptrackers: ['https://sample-imp.com']
   }
   describe('toLegacyResponse', () => {
     it('returns assets in legacy format for ortb responses', () => {
@@ -491,8 +491,8 @@ describe('native.js', function () {
     });
     ['img.type', 'title.text', 'data.type'].forEach(prop => {
       it(`does not choke when the request does not have ${prop}, but the response does`, () => {
-        const request = {ortb: {assets: [{id: 1}]}};
-        const response = {ortb: {assets: [{id: 1}]}};
+        const request = { ortb: { assets: [{ id: 1 }] } };
+        const response = { ortb: { assets: [{ id: 1 }] } };
         deepSetValue(response, `assets.0.${prop}`, 'value');
         toLegacyResponse(response, request);
       })
@@ -540,7 +540,7 @@ describe('native.js', function () {
     });
 
     it('sets rendererUrl', () => {
-      adUnit.nativeParams.rendererUrl = {url: 'renderer'};
+      adUnit.nativeParams.rendererUrl = { url: 'renderer' };
       setNativeResponseProperties(bid, adUnit);
       expect(bid.native.rendererUrl).to.eql('renderer');
     });
@@ -1055,17 +1055,17 @@ describe('validate native', function () {
 describe('legacyPropertiesToOrtbNative', () => {
   describe('click trakckers', () => {
     it('should convert clickUrl to link.url', () => {
-      const native = legacyPropertiesToOrtbNative({clickUrl: 'some-url'});
+      const native = legacyPropertiesToOrtbNative({ clickUrl: 'some-url' });
       expect(native.link.url).to.eql('some-url');
     });
     it('should convert single clickTrackers to link.clicktrackers', () => {
-      const native = legacyPropertiesToOrtbNative({clickTrackers: 'some-url'});
+      const native = legacyPropertiesToOrtbNative({ clickTrackers: 'some-url' });
       expect(native.link.clicktrackers).to.eql([
         'some-url'
       ])
     });
     it('should convert multiple clickTrackers into link.clicktrackers', () => {
-      const native = legacyPropertiesToOrtbNative({clickTrackers: ['url1', 'url2']});
+      const native = legacyPropertiesToOrtbNative({ clickTrackers: ['url1', 'url2'] });
       expect(native.link.clicktrackers).to.eql([
         'url1',
         'url2'
@@ -1074,7 +1074,7 @@ describe('legacyPropertiesToOrtbNative', () => {
   });
   describe('impressionTrackers', () => {
     it('should convert a single tracker into an eventtracker entry', () => {
-      const native = legacyPropertiesToOrtbNative({impressionTrackers: 'some-url'});
+      const native = legacyPropertiesToOrtbNative({ impressionTrackers: 'some-url' });
       expect(native.eventtrackers).to.eql([
         {
           event: 1,
@@ -1085,7 +1085,7 @@ describe('legacyPropertiesToOrtbNative', () => {
     });
 
     it('should convert an array into corresponding eventtracker entries', () => {
-      const native = legacyPropertiesToOrtbNative({impressionTrackers: ['url1', 'url2']});
+      const native = legacyPropertiesToOrtbNative({ impressionTrackers: ['url1', 'url2'] });
       expect(native.eventtrackers).to.eql([
         {
           event: 1,
@@ -1102,17 +1102,17 @@ describe('legacyPropertiesToOrtbNative', () => {
   });
   describe('javascriptTrackers', () => {
     it('should convert a single value into jstracker', () => {
-      const native = legacyPropertiesToOrtbNative({javascriptTrackers: 'some-markup'});
+      const native = legacyPropertiesToOrtbNative({ javascriptTrackers: 'some-markup' });
       expect(native.jstracker).to.eql('some-markup');
     })
     it('should merge multiple values into a single jstracker', () => {
-      const native = legacyPropertiesToOrtbNative({javascriptTrackers: ['some-markup', 'some-other-markup']});
+      const native = legacyPropertiesToOrtbNative({ javascriptTrackers: ['some-markup', 'some-other-markup'] });
       expect(native.jstracker).to.eql('some-markupsome-other-markup');
     })
   });
   describe('privacylink', () => {
     it('should convert privacyLink to privacy', () => {
-      const native = legacyPropertiesToOrtbNative({privacyLink: 'https:/my-privacy-link.com'});
+      const native = legacyPropertiesToOrtbNative({ privacyLink: 'https:/my-privacy-link.com' });
       expect(native.privacy).to.eql('https:/my-privacy-link.com');
     })
   })
@@ -1126,7 +1126,7 @@ describe('fireImpressionTrackers', () => {
   })
 
   function runTrackers(resp) {
-    fireImpressionTrackers(resp, {runMarkup, fetchURL})
+    fireImpressionTrackers(resp, { runMarkup, fetchURL })
   }
 
   it('should run markup in jstracker', () => {
@@ -1147,7 +1147,7 @@ describe('fireImpressionTrackers', () => {
   it('should fetch each url in eventtrackers that use the image method', () => {
     const urls = ['url1', 'url2'];
     runTrackers({
-      eventtrackers: urls.map(url => ({event: 1, method: 1, url}))
+      eventtrackers: urls.map(url => ({ event: 1, method: 1, url }))
     });
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url))
   });
@@ -1155,7 +1155,7 @@ describe('fireImpressionTrackers', () => {
   it('should load as a script each url in eventtrackers that use the js method', () => {
     const urls = ['url1', 'url2'];
     runTrackers({
-      eventtrackers: urls.map(url => ({event: 1, method: 2, url}))
+      eventtrackers: urls.map(url => ({ event: 1, method: 2, url }))
     });
     urls.forEach(url => sinon.assert.calledWith(runMarkup, sinon.match(`script async src="${url}"`)))
   });
@@ -1183,7 +1183,7 @@ describe('fireClickTrackers', () => {
   });
 
   function runTrackers(resp, assetId = null) {
-    fireClickTrackers(resp, assetId, {fetchURL});
+    fireClickTrackers(resp, assetId, { fetchURL });
   }
 
   it('should load each URL in link.clicktrackers', () => {

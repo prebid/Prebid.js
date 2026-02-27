@@ -3,5 +3,5 @@
 // to get around this problem.
 import './types/summary/core.d.ts';
 import './types/summary/global.d.ts';
-export {default} from './prebid.ts';
+export { default } from './prebid.ts';
 export type * from './types/summary/exports.d.ts';

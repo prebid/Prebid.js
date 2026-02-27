@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/craftBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { expect } from 'chai';
+import { spec } from 'modules/craftBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('craftAdapter', function () {
   const adapter = newBidder(spec);
@@ -101,8 +101,8 @@ describe('craftAdapter', function () {
         },
       },
       userIdAsEids: [
-        {source: 'foobar1.com', uids: [{id: 'xxxxxxx', atype: 1}]},
-        {source: 'foobar2.com', uids: [{id: 'yyyyyyy', atype: 1}]},
+        { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
+        { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
       ],
     }];
     const bidderRequest = {
@@ -134,8 +134,8 @@ describe('craftAdapter', function () {
       });
       expect(data.user).to.deep.equals({
         eids: [
-          {source: 'foobar1.com', uids: [{id: 'xxxxxxx', atype: 1}]},
-          {source: 'foobar2.com', uids: [{id: 'yyyyyyy', atype: 1}]},
+          { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
+          { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
         ]
       });
     });
@@ -172,7 +172,7 @@ describe('craftAdapter', function () {
       }]
     };
     it('should get correct bid response', function() {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest: bidderRequest});
+      const bids = spec.interpretResponse(serverResponse, { bidderRequest: bidderRequest });
       expect(bids).to.have.lengthOf(1);
       expect(bids[0]).to.deep.equals({
         _adUnitCode: 'craft-prebid-example',

@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {makebidInterceptor} from '../../../modules/debugging/bidInterceptor.js';
+import { expect } from 'chai';
+import { makebidInterceptor } from '../../../modules/debugging/bidInterceptor.js';
 import {
   makeBidderBidInterceptor,
   disableDebugging,
@@ -7,9 +7,9 @@ import {
   sessionLoader,
 } from '../../../modules/debugging/debugging.js';
 import '../../../modules/debugging/index.js';
-import {makePbsInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
-import {config} from '../../../src/config.js';
-import {hook} from '../../../src/hook.js';
+import { makePbsInterceptor } from '../../../modules/debugging/pbsInterceptor.js';
+import { config } from '../../../src/config.js';
+import { hook } from '../../../src/hook.js';
 import {
   addBidderRequestsBound,
   addBidderRequestsHook,
@@ -17,18 +17,18 @@ import {
   addBidResponseHook,
 } from '../../../modules/debugging/legacy.js';
 import * as utils from '../../../src/utils.js';
-import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
-import {prefixLog} from '../../../src/utils.js';
-import {createBid} from '../../../src/bidfactory.js';
-import {VIDEO, BANNER, NATIVE} from '../../../src/mediaTypes.js';
-import {Renderer} from '../../../src/Renderer.js';
+import { addBidderRequests, addBidResponse } from '../../../src/auction.js';
+import { prefixLog } from '../../../src/utils.js';
+import { createBid } from '../../../src/bidfactory.js';
+import { VIDEO, BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { Renderer } from '../../../src/Renderer.js';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;
   beforeEach(() => {
     mockSetTimeout = sinon.stub().callsFake((fn) => fn());
-    const BidInterceptor = makebidInterceptor({utils, VIDEO, BANNER, NATIVE, Renderer})
-    interceptor = new BidInterceptor({setTimeout: mockSetTimeout, logger: prefixLog('TEST')});
+    const BidInterceptor = makebidInterceptor({ utils, VIDEO, BANNER, NATIVE, Renderer })
+    interceptor = new BidInterceptor({ setTimeout: mockSetTimeout, logger: prefixLog('TEST') });
   });
 
   function setRules(...rules) {
@@ -48,8 +48,8 @@ describe('bid interceptor', () => {
       set: new Set(),
     }).forEach(([test, arg]) => {
       it(`should filter out ${test}`, () => {
-        const valid = [{key1: 'value'}, {key2: 'value'}];
-        const ser = interceptor.serializeConfig([...valid, {outer: {inner: arg}}]);
+        const valid = [{ key1: 'value' }, { key2: 'value' }];
+        const ser = interceptor.serializeConfig([...valid, { outer: { inner: arg } }]);
         expect(ser).to.eql(valid);
       });
     });
@@ -57,33 +57,33 @@ describe('bid interceptor', () => {
 
   describe('match()', () => {
     Object.entries({
-      value: {key: 'value'},
-      regex: {key: /^value$/},
+      value: { key: 'value' },
+      regex: { key: /^value$/ },
       'function': (o) => o.key === 'value'
     }).forEach(([test, matcher]) => {
       describe(`by ${test}`, () => {
         it('should work on matching top-level properties', () => {
-          setRules({when: matcher});
-          const rule = interceptor.match({key: 'value'});
+          setRules({ when: matcher });
+          const rule = interceptor.match({ key: 'value' });
           expect(rule).to.not.eql(null);
         });
 
         it('should work on matching nested properties', () => {
-          setRules({when: {outer: {inner: matcher}}});
-          const rule = interceptor.match({outer: {inner: {key: 'value'}}});
+          setRules({ when: { outer: { inner: matcher } } });
+          const rule = interceptor.match({ outer: { inner: { key: 'value' } } });
           expect(rule).to.not.eql(null);
         });
 
         it('should not work on non-matching inputs', () => {
-          setRules({when: matcher});
-          expect(interceptor.match({key: 'different-value'})).to.not.be.ok;
-          expect(interceptor.match({differentKey: 'value'})).to.not.be.ok;
+          setRules({ when: matcher });
+          expect(interceptor.match({ key: 'different-value' })).to.not.be.ok;
+          expect(interceptor.match({ differentKey: 'value' })).to.not.be.ok;
         });
       });
     });
 
     it('should respect rule order', () => {
-      setRules({when: {key: 'value'}}, {when: {}}, {when: {}});
+      setRules({ when: { key: 'value' } }, { when: {} }, { when: {} });
       const rule = interceptor.match({});
       expect(rule.no).to.equal(2);
     });
@@ -91,11 +91,11 @@ describe('bid interceptor', () => {
     it('should pass extra arguments to property function matchers', () => {
       const matchDef = {
         key: sinon.stub(),
-        outer: {inner: {key: sinon.stub()}}
+        outer: { inner: { key: sinon.stub() } }
       };
       const extraArgs = [{}, {}];
-      setRules({when: matchDef});
-      interceptor.match({key: {}, outer: {inner: {key: {}}}}, ...extraArgs);
+      setRules({ when: matchDef });
+      interceptor.match({ key: {}, outer: { inner: { key: {} } } }, ...extraArgs);
       [matchDef.key, matchDef.outer.inner.key].forEach((fn) => {
         expect(fn.calledOnceWith(sinon.match.any, ...extraArgs.map(sinon.match.same))).to.be.true;
       });
@@ -103,7 +103,7 @@ describe('bid interceptor', () => {
 
     it('should pass extra arguments to single-function matcher', () => {
       const matchDef = sinon.stub();
-      setRules({when: matchDef});
+      setRules({ when: matchDef });
       const args = [{}, {}, {}];
       interceptor.match(...args);
       expect(matchDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
@@ -111,8 +111,8 @@ describe('bid interceptor', () => {
   });
 
   describe('rule', () => {
-    function matchingRule({replace, options, paapi}) {
-      setRules({when: {}, then: replace, options: options, paapi});
+    function matchingRule({ replace, options, paapi }) {
+      setRules({ when: {}, then: replace, options: options, paapi });
       return interceptor.match({});
     }
 
@@ -127,27 +127,27 @@ describe('bid interceptor', () => {
       });
 
       Object.entries({
-        value: {key: 'value'},
-        'function': () => ({key: 'value'})
+        value: { key: 'value' },
+        'function': () => ({ key: 'value' })
       }).forEach(([test, replDef]) => {
         describe(`by ${test}`, () => {
           it('should merge top-level properties with replace definition', () => {
-            const result = matchingRule({replace: replDef}).replace({});
+            const result = matchingRule({ replace: replDef }).replace({});
             expect(result).to.include.keys(REQUIRED_KEYS);
             expect(result.key).to.equal('value');
           });
 
           it('should merge nested properties with replace definition', () => {
-            const result = matchingRule({replace: {outer: {inner: replDef}}}).replace({});
+            const result = matchingRule({ replace: { outer: { inner: replDef } } }).replace({});
             expect(result).to.include.keys(REQUIRED_KEYS);
-            expect(result.outer.inner).to.eql({key: 'value'});
+            expect(result.outer.inner).to.eql({ key: 'value' });
           });
 
           it('should respect array vs object definitions', () => {
-            const result = matchingRule({replace: {item: [replDef]}}).replace({});
+            const result = matchingRule({ replace: { item: [replDef] } }).replace({});
             expect(result.item).to.be.an('array');
             expect(result.item.length).to.equal(1);
-            expect(result.item[0]).to.eql({key: 'value'});
+            expect(result.item[0]).to.eql({ key: 'value' });
           });
         });
       });
@@ -155,17 +155,17 @@ describe('bid interceptor', () => {
       it('should pass extra arguments to single function replacer', () => {
         const replDef = sinon.stub();
         const args = [{}, {}, {}];
-        matchingRule({replace: replDef}).replace(...args);
+        matchingRule({ replace: replDef }).replace(...args);
         expect(replDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
       });
 
       it('should pass extra arguments to function property replacers', () => {
         const replDef = {
           key: sinon.stub(),
-          outer: {inner: {key: sinon.stub()}}
+          outer: { inner: { key: sinon.stub() } }
         };
         const args = [{}, {}, {}];
-        matchingRule({replace: replDef}).replace(...args);
+        matchingRule({ replace: replDef }).replace(...args);
         [replDef.key, replDef.outer.inner.key].forEach((repl) => {
           expect(repl.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
         });
@@ -175,17 +175,17 @@ describe('bid interceptor', () => {
     describe('paapi', () => {
       it('should accept literals', () => {
         const mockConfig = [
-          {config: {paapi: 1}},
-          {config: {paapi: 2}}
+          { config: { paapi: 1 } },
+          { config: { paapi: 2 } }
         ]
-        const paapi = matchingRule({paapi: mockConfig}).paapi({});
+        const paapi = matchingRule({ paapi: mockConfig }).paapi({});
         expect(paapi).to.eql(mockConfig);
       });
 
       it('should accept a function and pass extra args to it', () => {
         const paapiDef = sinon.stub();
         const args = [{}, {}, {}];
-        matchingRule({paapi: paapiDef}).paapi(...args);
+        matchingRule({ paapi: paapiDef }).paapi(...args);
         expect(paapiDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
       });
 
@@ -195,19 +195,19 @@ describe('bid interceptor', () => {
       }).forEach(([t, makeConfigs]) => {
         describe(`when paapi is defined as a ${t}`, () => {
           it('should wrap top-level configs in "config"', () => {
-            const cfg = {decisionLogicURL: 'example'};
-            expect(matchingRule({paapi: makeConfigs(cfg)}).paapi({})).to.eql([{
+            const cfg = { decisionLogicURL: 'example' };
+            expect(matchingRule({ paapi: makeConfigs(cfg) }).paapi({})).to.eql([{
               config: cfg
             }])
           });
 
           Object.entries({
-            'config': {config: 1},
-            'igb': {igb: 1},
-            'config and igb': {config: 1, igb: 2}
+            'config': { config: 1 },
+            'igb': { igb: 1 },
+            'config and igb': { config: 1, igb: 2 }
           }).forEach(([t, cfg]) => {
             it(`should not wrap configs that define top-level ${t}`, () => {
-              expect(matchingRule({paapi: makeConfigs(cfg)}).paapi({})).to.eql([cfg]);
+              expect(matchingRule({ paapi: makeConfigs(cfg) }).paapi({})).to.eql([cfg]);
             })
           })
         })
@@ -216,15 +216,15 @@ describe('bid interceptor', () => {
 
     describe('.options', () => {
       it('should include default rule options', () => {
-        const optDef = {someOption: 'value'};
-        const ruleOptions = matchingRule({options: optDef}).options;
+        const optDef = { someOption: 'value' };
+        const ruleOptions = matchingRule({ options: optDef }).options;
         expect(ruleOptions).to.include(optDef);
         expect(ruleOptions).to.include(interceptor.DEFAULT_RULE_OPTIONS);
       });
 
       it('should override defaults', () => {
-        const optDef = {delay: 123};
-        const ruleOptions = matchingRule({options: optDef}).options;
+        const optDef = { delay: 123 };
+        const ruleOptions = matchingRule({ options: optDef }).options;
         expect(ruleOptions).to.eql(optDef);
       });
     });
@@ -234,8 +234,8 @@ describe('bid interceptor', () => {
     let done, addBid, addPaapiConfig;
 
     function intercept(args = {}) {
-      const bidRequest = {bids: args.bids || []};
-      return interceptor.intercept(Object.assign({bidRequest, done, addBid, addPaapiConfig}, args));
+      const bidRequest = { bids: args.bids || [] };
+      return interceptor.intercept(Object.assign({ bidRequest, done, addBid, addPaapiConfig }, args));
     }
 
     beforeEach(() => {
@@ -248,7 +248,7 @@ describe('bid interceptor', () => {
       it('should return untouched bids and bidRequest', () => {
         const bids = [{}, {}];
         const bidRequest = {};
-        const result = intercept({bids, bidRequest});
+        const result = intercept({ bids, bidRequest });
         expect(result.bids).to.equal(bids);
         expect(result.bidRequest).to.equal(bidRequest);
       });
@@ -271,34 +271,34 @@ describe('bid interceptor', () => {
       const DELAY_2 = 321;
       const REQUEST = {
         bids: [
-          {id: 1, match: false},
-          {id: 2, match: 1},
-          {id: 3, match: 2}
+          { id: 1, match: false },
+          { id: 2, match: 1 },
+          { id: 3, match: 2 }
         ]
       };
 
       beforeEach(() => {
         match1 = sinon.stub().callsFake((bid) => bid.match === 1);
         match2 = sinon.stub().callsFake((bid) => bid.match === 2);
-        repl1 = sinon.stub().returns({replace: 1});
-        repl2 = sinon.stub().returns({replace: 2});
+        repl1 = sinon.stub().returns({ replace: 1 });
+        repl2 = sinon.stub().returns({ replace: 2 });
         setRules(
-          {when: match1, then: repl1, options: {delay: DELAY_1}},
-          {when: match2, then: repl2, options: {delay: DELAY_2}},
+          { when: match1, then: repl1, options: { delay: DELAY_1 } },
+          { when: match2, then: repl2, options: { delay: DELAY_2 } },
         );
       });
 
       it('should return only non-matching bids', () => {
-        const {bids, bidRequest} = intercept({bidRequest: REQUEST});
+        const { bids, bidRequest } = intercept({ bidRequest: REQUEST });
         expect(bids).to.eql([REQUEST.bids[0]]);
         expect(bidRequest.bids).to.eql([REQUEST.bids[0]]);
       });
 
       it('should call addBid for each matching bid', () => {
-        intercept({bidRequest: REQUEST});
+        intercept({ bidRequest: REQUEST });
         expect(addBid.callCount).to.equal(2);
-        expect(addBid.calledWith(sinon.match({replace: 1, isDebug: true}), REQUEST.bids[1])).to.be.true;
-        expect(addBid.calledWith(sinon.match({replace: 2, isDebug: true}), REQUEST.bids[2])).to.be.true;
+        expect(addBid.calledWith(sinon.match({ replace: 1, isDebug: true }), REQUEST.bids[1])).to.be.true;
+        expect(addBid.calledWith(sinon.match({ replace: 2, isDebug: true }), REQUEST.bids[2])).to.be.true;
         [DELAY_1, DELAY_2].forEach((delay) => {
           expect(mockSetTimeout.calledWith(sinon.match.any, delay)).to.be.true;
         });
@@ -306,34 +306,34 @@ describe('bid interceptor', () => {
 
       it('should call addPaapiConfigs when provided', () => {
         const mockPaapiConfigs = [
-          {config: {paapi: 1}},
-          {config: {paapi: 2}}
+          { config: { paapi: 1 } },
+          { config: { paapi: 2 } }
         ]
         setRules({
-          when: {id: 2},
+          when: { id: 2 },
           paapi: mockPaapiConfigs,
         });
-        intercept({bidRequest: REQUEST});
+        intercept({ bidRequest: REQUEST });
         expect(addPaapiConfig.callCount).to.eql(2);
         mockPaapiConfigs.forEach(cfg => sinon.assert.calledWith(addPaapiConfig, cfg))
       })
 
       it('should not call onBid when then is null', () => {
         setRules({
-          when: {id: 2},
+          when: { id: 2 },
           then: null
         });
-        intercept({bidRequest: REQUEST});
+        intercept({ bidRequest: REQUEST });
         sinon.assert.notCalled(addBid);
       })
 
       it('should call done()', () => {
-        intercept({bidRequest: REQUEST});
+        intercept({ bidRequest: REQUEST });
         expect(done.calledOnce).to.be.true;
       });
 
       it('should pass bid and bidRequest to match and replace functions', () => {
-        intercept({bidRequest: REQUEST});
+        intercept({ bidRequest: REQUEST });
         Object.entries({
           1: [match1, repl1],
           2: [match2, repl2]
@@ -351,7 +351,7 @@ describe('Debugging config', () => {
   it('should behave gracefully when sessionStorage throws', () => {
     const logError = sinon.stub();
     const getStorage = () => { throw new Error() };
-    getConfig({enabled: false}, {getStorage, logger: {logError}, hook, utils});
+    getConfig({ enabled: false }, { getStorage, logger: { logError }, hook, utils });
     expect(logError.called).to.be.true;
   });
 });
@@ -359,12 +359,12 @@ describe('Debugging config', () => {
 describe('bidderBidInterceptor', () => {
   let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, addPaapiConfig, wrapped, bidderBidInterceptor;
 
-  function interceptorArgs({spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {}} = {}) {
-    return [next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, Object.assign({onCompletion}, cbs)];
+  function interceptorArgs({ spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {} } = {}) {
+    return [next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, Object.assign({ onCompletion }, cbs)];
   }
 
   beforeEach(() => {
-    bidderBidInterceptor = makeBidderBidInterceptor({utils});
+    bidderBidInterceptor = makeBidderBidInterceptor({ utils });
     next = sinon.spy();
     wrapped = false;
     wrapCallback = sinon.stub().callsFake(cb => {
@@ -385,14 +385,14 @@ describe('bidderBidInterceptor', () => {
       return interceptResult;
     });
     onCompletion = sinon.spy();
-    interceptResult = {bids: [], bidRequest: {}};
+    interceptResult = { bids: [], bidRequest: {} };
   });
 
   it('should pass to interceptBid an addBid that triggers onBid', () => {
     const onBid = sinon.stub().callsFake(() => {
       expect(wrapped).to.be.true;
     });
-    bidderBidInterceptor(...interceptorArgs({cbs: {onBid}}));
+    bidderBidInterceptor(...interceptorArgs({ cbs: { onBid } }));
     const bid = {
       bidder: 'bidder'
     };
@@ -404,9 +404,9 @@ describe('bidderBidInterceptor', () => {
     const onPaapi = sinon.stub().callsFake(() => {
       expect(wrapped).to.be.true;
     });
-    bidderBidInterceptor(...interceptorArgs({cbs: {onPaapi}}));
-    addPaapiConfig({paapi: 'config'}, {bidId: 'bidId'});
-    sinon.assert.calledWith(onPaapi, {paapi: 'config', bidId: 'bidId'})
+    bidderBidInterceptor(...interceptorArgs({ cbs: { onPaapi } }));
+    addPaapiConfig({ paapi: 'config' }, { bidId: 'bidId' });
+    sinon.assert.calledWith(onPaapi, { paapi: 'config', bidId: 'bidId' })
   })
 
   describe('with no remaining bids', () => {
@@ -419,7 +419,7 @@ describe('bidderBidInterceptor', () => {
 
     it('should call onResponse', () => {
       const onResponse = sinon.stub();
-      bidderBidInterceptor(...interceptorArgs({cbs: {onResponse}}));
+      bidderBidInterceptor(...interceptorArgs({ cbs: { onResponse } }));
       sinon.assert.called(onResponse);
     })
 
@@ -430,9 +430,9 @@ describe('bidderBidInterceptor', () => {
   });
 
   describe('with remaining bids', () => {
-    const REMAINING_BIDS = [{id: 1}, {id: 2}];
+    const REMAINING_BIDS = [{ id: 1 }, { id: 2 }];
     beforeEach(() => {
-      interceptResult = {bids: REMAINING_BIDS, bidRequest: {bids: REMAINING_BIDS}};
+      interceptResult = { bids: REMAINING_BIDS, bidRequest: { bids: REMAINING_BIDS } };
     });
 
     it('should call next', () => {
@@ -441,7 +441,7 @@ describe('bidderBidInterceptor', () => {
         onRequest: {},
         onBid: {}
       };
-      const args = interceptorArgs({cbs: callbacks});
+      const args = interceptorArgs({ cbs: callbacks });
       const expectedNextArgs = [
         args[2],
         interceptResult.bids,
@@ -469,7 +469,7 @@ describe('bidderBidInterceptor', () => {
 });
 
 describe('pbsBidInterceptor', () => {
-  const EMPTY_INT_RES = {bids: [], bidRequest: {bids: []}};
+  const EMPTY_INT_RES = { bids: [], bidRequest: { bids: [] } };
   let next, interceptBids, s2sBidRequest, bidRequests, ajax, onResponse, onError, onBid, interceptResults,
     addBids, dones, reqIdx;
 
@@ -487,22 +487,22 @@ describe('pbsBidInterceptor', () => {
       return interceptResults[reqIdx++];
     });
     s2sBidRequest = {};
-    bidRequests = [{bids: []}, {bids: []}];
+    bidRequests = [{ bids: [] }, { bids: [] }];
     interceptResults = [EMPTY_INT_RES, EMPTY_INT_RES];
   });
 
-  const pbsBidInterceptor = makePbsInterceptor({createBid, utils});
+  const pbsBidInterceptor = makePbsInterceptor({ createBid, utils });
   function callInterceptor() {
-    return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid});
+    return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, { onResponse, onError, onBid });
   }
 
   it('passes addBids that trigger onBid', () => {
     callInterceptor();
     bidRequests.forEach((_, i) => {
-      const bid = {adUnitCode: i, prop: i};
-      const bidRequest = {req: i};
+      const bid = { adUnitCode: i, prop: i };
+      const bidRequest = { req: i };
       addBids[i](bid, bidRequest);
-      expect(onBid.calledWith({adUnit: i, bid: sinon.match(bid)}));
+      expect(onBid.calledWith({ adUnit: i, bid: sinon.match(bid) }));
     });
   });
 
@@ -527,21 +527,21 @@ describe('pbsBidInterceptor', () => {
     let matchingBids;
     beforeEach(() => {
       matchingBids = [
-        [{bidId: 1, matching: true}, {bidId: 2, matching: true}],
+        [{ bidId: 1, matching: true }, { bidId: 2, matching: true }],
         [],
-        [{bidId: 3, matching: true}]
+        [{ bidId: 3, matching: true }]
       ];
-      interceptResults = matchingBids.map((bids) => ({bids, bidRequest: {bids}}));
+      interceptResults = matchingBids.map((bids) => ({ bids, bidRequest: { bids } }));
       s2sBidRequest = {
         ad_units: [
-          {bids: [{bid_id: 1, matching: true}, {bid_id: 3, matching: true}, {bid_id: 100}, {bid_id: 101}]},
-          {bids: [{bid_id: 2, matching: true}, {bid_id: 110}, {bid_id: 111}]},
-          {bids: [{bid_id: 120}]}
+          { bids: [{ bid_id: 1, matching: true }, { bid_id: 3, matching: true }, { bid_id: 100 }, { bid_id: 101 }] },
+          { bids: [{ bid_id: 2, matching: true }, { bid_id: 110 }, { bid_id: 111 }] },
+          { bids: [{ bid_id: 120 }] }
         ]
       };
       bidRequests = matchingBids.map((mBids, i) => [
-        {bidId: 100 + (i * 10)},
-        {bidId: 101 + (i * 10)},
+        { bidId: 100 + (i * 10) },
+        { bidId: 101 + (i * 10) },
         ...mBids
       ]);
     });
@@ -571,7 +571,7 @@ describe('pbsBidInterceptor', () => {
       const passedBidReqs = next.args[0][1];
       interceptResults
         .filter((r) => r.bids.length > 0)
-        .forEach(({bidRequest}, i) => {
+        .forEach(({ bidRequest }, i) => {
           expect(passedBidReqs[i]).to.equal(bidRequest);
         });
     });
@@ -612,20 +612,20 @@ describe('bid overrides', function () {
     });
 
     afterEach(function () {
-      disableDebugging({hook, logger});
+      disableDebugging({ hook, logger });
     });
 
     it('should happen when enabled with setConfig', function () {
       getConfig({
         enabled: true
-      }, {config, hook, logger, utils});
+      }, { config, hook, logger, utils });
 
       expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
       expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
     });
     it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
-        storage: {getItem: () => ('{"enabled": true}')},
+        storage: { getItem: () => ('{"enabled": true}') },
         config,
         hook,
         logger
@@ -677,7 +677,7 @@ describe('bid overrides', function () {
         const next = (adUnitCode, bid) => {
           bids.push(bid);
         };
-        addBidResponseHook.bind({overrides, logger})(next, bid.adUnitCode, bid);
+        addBidResponseHook.bind({ overrides, logger })(next, bid.adUnitCode, bid);
       });
     }
 
@@ -786,7 +786,7 @@ describe('bid overrides', function () {
       const next = (b) => {
         bidderRequests = b;
       };
-      addBidderRequestsHook.bind({overrides, logger})(next, mockBidRequests);
+      addBidderRequestsHook.bind({ overrides, logger })(next, mockBidRequests);
     }
 
     it('should allow us to exclude bidders', function () {

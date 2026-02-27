@@ -1,11 +1,11 @@
-import {submodule} from '../src/hook.js';
-import {isFn, logError, deepAccess, deepSetValue, logInfo, logWarn, timestamp} from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { isFn, logError, deepAccess, deepSetValue, logInfo, logWarn, timestamp } from '../src/utils.js';
 import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../src/activities/activities.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
 import { activityParams } from '../src/activities/activityParams.js';
-import {VENDORLESS_GVLID} from '../src/consentHandler.js';
-import type {RtdProviderSpec} from "./rtdModule/spec.ts";
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
+import type { RtdProviderSpec } from "./rtdModule/spec.ts";
 
 let permissionsAvailable = true;
 let geolocation;

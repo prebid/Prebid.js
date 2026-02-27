@@ -1,4 +1,4 @@
-import {CachedApiWrapper} from '../../../src/utils/cachedApiWrapper.js';
+import { CachedApiWrapper } from '../../../src/utils/cachedApiWrapper.js';
 
 describe('cachedApiWrapper', () => {
   let target, child, grandchild, wrapper;

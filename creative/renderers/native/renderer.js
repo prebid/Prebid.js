@@ -1,9 +1,9 @@
 import { registerReportingObserver } from '../../reporting.js';
 import { BROWSER_INTERVENTION, MESSAGE_EVENT } from '../../constants.js';
-import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS} from './constants.js';
+import { ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS } from './constants.js';
 
-export function getReplacer(adId, {assets = [], ortb, nativeKeys = {}}) {
-  const assetValues = Object.fromEntries((assets).map(({key, value}) => [key, value]));
+export function getReplacer(adId, { assets = [], ortb, nativeKeys = {} }) {
+  const assetValues = Object.fromEntries((assets).map(({ key, value }) => [key, value]));
   let repl = Object.fromEntries(
     Object.entries(nativeKeys).flatMap(([name, key]) => {
       const value = assetValues.hasOwnProperty(name) ? assetValues[name] : undefined;
@@ -58,7 +58,7 @@ function getInnerHTML(node) {
 }
 
 export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) {
-  const {rendererUrl, assets, ortb, adTemplate} = nativeData;
+  const { rendererUrl, assets, ortb, adTemplate } = nativeData;
   const doc = win.document;
   if (rendererUrl) {
     return load(rendererUrl, doc).then(() => {
@@ -74,14 +74,14 @@ export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) 
   }
 }
 
-export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
+export function render({ adId, native }, { sendMessage }, win, getMarkup = getAdMarkup) {
   registerReportingObserver((report) => {
     sendMessage(MESSAGE_EVENT, {
       event: BROWSER_INTERVENTION,
       intervention: report
     });
   }, ['intervention']);
-  const {head, body} = win.document;
+  const { head, body } = win.document;
   const resize = () => {
     // force redraw - for some reason this is needed to get the right dimensions
     body.style.display = 'none';
@@ -103,13 +103,13 @@ export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMark
   return getMarkup(adId, native, replacer, win).then(markup => {
     replaceMarkup(body, markup);
     if (typeof win.postRenderAd === 'function') {
-      win.postRenderAd({adId, ...native});
+      win.postRenderAd({ adId, ...native });
     }
     win.document.querySelectorAll('.pb-click').forEach(el => {
       const assetId = el.getAttribute('hb_native_asset_id');
-      el.addEventListener('click', () => sendMessage(MESSAGE_NATIVE, {action: ACTION_CLICK, assetId}));
+      el.addEventListener('click', () => sendMessage(MESSAGE_NATIVE, { action: ACTION_CLICK, assetId }));
     });
-    sendMessage(MESSAGE_NATIVE, {action: ACTION_IMP});
+    sendMessage(MESSAGE_NATIVE, { action: ACTION_IMP });
     win.document.readyState === 'complete' ? resize() : win.onload = resize;
   });
 }

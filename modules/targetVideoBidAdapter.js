@@ -1,8 +1,8 @@
-import {_each, deepAccess, getDefinedParams, isFn, isPlainObject, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
-import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
+import { _each, deepAccess, getDefinedParams, isFn, isPlainObject, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag } from '../libraries/targetVideoUtils/bidderUtils.js';
+import { SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE } from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -54,7 +54,7 @@ export const spec = {
       version: '$prebid.version$'
     };
 
-    for (let {bidId, sizes, mediaTypes, ...bid} of bidRequests) {
+    for (let { bidId, sizes, mediaTypes, ...bid } of bidRequests) {
       for (const mediaType in mediaTypes) {
         switch (mediaType) {
           case VIDEO: {
@@ -144,7 +144,7 @@ export const spec = {
               };
             }
 
-            const {ortb2} = bid;
+            const { ortb2 } = bid;
 
             if (ortb2?.source?.tid) {
               if (!payload.source) {

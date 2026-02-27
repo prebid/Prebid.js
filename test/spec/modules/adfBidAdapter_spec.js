@@ -129,7 +129,7 @@ describe('Adf adapter', function () {
       });
 
       it('should transfer DSA info', function () {
-        const validBidRequests = [ { bidId: 'bidId', params: { siteId: 'siteId' } } ];
+        const validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId' } }];
 
         const request = JSON.parse(
           spec.buildRequests(validBidRequests, {
@@ -201,8 +201,8 @@ describe('Adf adapter', function () {
         params: { siteId: 'siteId' },
       }];
       const request = JSON.parse(spec.buildRequests(validBidRequests, {
-        refererInfo: {page: 'page'},
-        ortb2: {source: {tid: 'tid'}}
+        refererInfo: { page: 'page' },
+        ortb2: { source: { tid: 'tid' } }
       }).data);
 
       assert.equal(request.source.tid, 'tid');
@@ -278,8 +278,8 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: {},
         userIdAsEids: [
-          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+          { source: 'adserver.org', uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] }
         ]
       }];
 
@@ -294,7 +294,7 @@ describe('Adf adapter', function () {
       setCurrencyConfig({ adServerCurrency: 'EUR' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
-        assert.deepEqual(request.cur, [ 'EUR' ]);
+        assert.deepEqual(request.cur, ['EUR']);
         setCurrencyConfig({});
       });
     });
@@ -364,15 +364,15 @@ describe('Adf adapter', function () {
         const validBidRequests = [{
           bidId: 'bidId',
           params: { mid: '1000' },
-          mediaTypes: {video: {}}
+          mediaTypes: { video: {} }
         }, {
           bidId: 'bidId2',
           params: { mid: '1000' },
-          mediaTypes: {video: {}}
+          mediaTypes: { video: {} }
         }, {
           bidId: 'bidId3',
           params: { mid: '1000' },
-          mediaTypes: {video: {}}
+          mediaTypes: { video: {} }
         }];
         const imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
@@ -382,9 +382,9 @@ describe('Adf adapter', function () {
       });
 
       it('should add mid', function () {
-        const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} },
-          { bidId: 'bidId2', params: {mid: 1001}, mediaTypes: {video: {}} },
-          { bidId: 'bidId3', params: {mid: 1002}, mediaTypes: {video: {}} }];
+        const validBidRequests = [{ bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} } },
+          { bidId: 'bidId2', params: { mid: 1001 }, mediaTypes: { video: {} } },
+          { bidId: 'bidId3', params: { mid: 1002 }, mediaTypes: { video: {} } }];
         const imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
@@ -411,11 +411,11 @@ describe('Adf adapter', function () {
       describe('dynamic placement tag', function () {
         it('should add imp parameters correctly', function () {
           const validBidRequests = [
-            { bidId: 'bidId', params: { inv: 1000, mname: 'placement' }, mediaTypes: {video: {}} },
-            { bidId: 'bidId', params: { mid: 1234, inv: 1002, mname: 'placement2' }, mediaTypes: {video: {}} },
-            { bidId: 'bidId', params: { mid: 1234 }, mediaTypes: {video: {}} }
+            { bidId: 'bidId', params: { inv: 1000, mname: 'placement' }, mediaTypes: { video: {} } },
+            { bidId: 'bidId', params: { mid: 1234, inv: 1002, mname: 'placement2' }, mediaTypes: { video: {} } },
+            { bidId: 'bidId', params: { mid: 1234 }, mediaTypes: { video: {} } }
           ];
-          const [ imp1, imp2, imp3 ] = getRequestImps(validBidRequests);
+          const [imp1, imp2, imp3] = getRequestImps(validBidRequests);
 
           assert.equal(imp1.ext.bidder.inv, 1000);
           assert.equal(imp1.ext.bidder.mname, 'placement');
@@ -434,7 +434,7 @@ describe('Adf adapter', function () {
 
       describe('price floors', function () {
         it('should not add if floors module not configured', function () {
-          const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
+          const validBidRequests = [{ bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} } }];
           const imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
@@ -442,7 +442,7 @@ describe('Adf adapter', function () {
         });
 
         it('should not add if floor price not defined', function () {
-          const validBidRequests = [ getBidWithFloor() ];
+          const validBidRequests = [getBidWithFloor()];
           const imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
@@ -451,7 +451,7 @@ describe('Adf adapter', function () {
 
         it('should request floor price in adserver currency', function () {
           setCurrencyConfig({ adServerCurrency: 'DKK' })
-          const validBidRequests = [ getBidWithFloor() ];
+          const validBidRequests = [getBidWithFloor()];
           return addFPDToBidderRequest(validBidRequests[0]).then(res => {
             const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ...res }).data).imp[0];
             assert.equal(imp.bidfloor, undefined);
@@ -461,7 +461,7 @@ describe('Adf adapter', function () {
         });
 
         it('should add correct floor values', function () {
-          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const expectedFloors = [1, 1.3, 0.5];
           const validBidRequests = expectedFloors.map(getBidWithFloor);
           const imps = getRequestImps(validBidRequests);
 
@@ -473,18 +473,22 @@ describe('Adf adapter', function () {
 
         it('should add correct params to getFloor', function () {
           let result;
-          let mediaTypes = { video: {
-            playerSize: [ 100, 200 ]
-          } };
-          const expectedFloors = [ 1, 1.3, 0.5 ];
+          let mediaTypes = {
+            video: {
+              playerSize: [100, 200]
+            }
+          };
+          const expectedFloors = [1, 1.3, 0.5];
           setCurrencyConfig({ adServerCurrency: 'DKK' });
           const validBidRequests = expectedFloors.map(getBidWithFloorTest);
           return addFPDToBidderRequest(validBidRequests[0]).then(res => {
             getRequestImps(validBidRequests, res);
             assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' })
-            mediaTypes = { banner: {
-              sizes: [ [100, 200], [300, 400] ]
-            }};
+            mediaTypes = {
+              banner: {
+                sizes: [[100, 200], [300, 400]]
+              }
+            };
             getRequestImps(validBidRequests, res);
 
             assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
@@ -573,7 +577,7 @@ describe('Adf adapter', function () {
               video: {}
             }
           }];
-          const [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+          const [first, second, third] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
           assert.ok(first.banner);
           assert.ok(first.video);
@@ -602,7 +606,7 @@ describe('Adf adapter', function () {
           }];
           const { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
           assert.deepEqual(banner, {
-            format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
+            format: [{ w: 100, h: 100 }, { w: 200, h: 300 }]
           });
         });
       });
@@ -709,7 +713,7 @@ describe('Adf adapter', function () {
                       hmin: 627,
                       w: 325,
                       h: 300,
-                      mimes: [ 'image/jpg', 'image/gif' ]
+                      mimes: ['image/jpg', 'image/gif']
                     }
                   },
                   {
@@ -900,9 +904,9 @@ describe('Adf adapter', function () {
       const serverResponse = {
         body: {
           seatbid: [{
-            bid: [{impid: '1', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 0, title: {text: 'Asset title text'}}]}}]
+            bid: [{ impid: '1', native: { ver: '1.1', link: { url: 'link' }, assets: [{ id: 0, title: { text: 'Asset title text' } }] } }]
           }, {
-            bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 1, data: {value: 'Asset title text'}}]}}]
+            bid: [{ impid: '2', native: { ver: '1.1', link: { url: 'link' }, assets: [{ id: 1, data: { value: 'Asset title text' } }] } }]
           }]
         }
       };
@@ -943,11 +947,11 @@ describe('Adf adapter', function () {
         body: {
           seatbid: [{
             bid: [
-              {impid: '1', native: {ver: '1.1', link: { url: 'link1' }, assets: [{id: 0, title: {text: 'Asset title text'}}]}},
-              {impid: '4', native: {ver: '1.1', link: { url: 'link4' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}}
+              { impid: '1', native: { ver: '1.1', link: { url: 'link1' }, assets: [{ id: 0, title: { text: 'Asset title text' } }] } },
+              { impid: '4', native: { ver: '1.1', link: { url: 'link4' }, assets: [{ id: 1, title: { text: 'Asset title text' } }] } }
             ]
           }, {
-            bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link2' }, assets: [{id: 0, data: {value: 'Asset title text'}}]}}]
+            bid: [{ impid: '2', native: { ver: '1.1', link: { url: 'link2' }, assets: [{ id: 0, data: { value: 'Asset title text' } }] } }]
           }]
         }
       };
@@ -1003,11 +1007,11 @@ describe('Adf adapter', function () {
 
       bids = spec.interpretResponse(serverResponse, bidRequest).map(bid => {
         const { requestId, native: { ortb: { link: { url } } } } = bid;
-        return [ requestId, url ];
+        return [requestId, url];
       });
 
       assert.equal(bids.length, 3);
-      assert.deepEqual(bids, [[ 'bidId1', 'link1' ], [ 'bidId2', 'link2' ], [ 'bidId4', 'link4' ]]);
+      assert.deepEqual(bids, [['bidId1', 'link1'], ['bidId2', 'link2'], ['bidId4', 'link4']]);
     });
 
     it('should set correct values to bid', function () {
@@ -1027,7 +1031,7 @@ describe('Adf adapter', function () {
                   imptrackers: ['imptrackers url1', 'imptrackers url2']
                 },
                 dealid: 'deal-id',
-                adomain: [ 'demo.com' ],
+                adomain: ['demo.com'],
                 ext: {
                   prebid: {
                     type: 'native',
@@ -1042,7 +1046,7 @@ describe('Adf adapter', function () {
                     adrender: 1
                   }
                 },
-                cat: [ 'IAB1', 'IAB2' ]
+                cat: ['IAB1', 'IAB2']
               }
             ]
           }],
@@ -1103,8 +1107,8 @@ describe('Adf adapter', function () {
       assert.deepEqual(bids[0].mediaType, 'native');
       assert.deepEqual(bids[0].meta.mediaType, 'native');
       assert.deepEqual(bids[0].meta.primaryCatId, 'IAB1');
-      assert.deepEqual(bids[0].meta.secondaryCatIds, [ 'IAB2' ]);
-      assert.deepEqual(bids[0].meta.advertiserDomains, [ 'demo.com' ]);
+      assert.deepEqual(bids[0].meta.secondaryCatIds, ['IAB2']);
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['demo.com']);
       assert.deepEqual(bids[0].meta.dsa, {
         behalf: 'some-behalf',
         paid: 'some-paid',
@@ -1156,7 +1160,7 @@ describe('Adf adapter', function () {
               img: { url: 'test.url.com/Files/58345/308200.jpg?bv=1', w: 300, h: 300 }
             }],
             link: {
-              url: 'clickUrl', clicktrackers: [ 'clickTracker1', 'clickTracker2' ]
+              url: 'clickUrl', clicktrackers: ['clickTracker1', 'clickTracker2']
             },
             imptrackers: ['imptracker url1', 'imptracker url2'],
             jstracker: 'jstracker'
@@ -1232,7 +1236,7 @@ describe('Adf adapter', function () {
       const native = bid[0].native;
       const assets = native.assets;
 
-      assert.deepEqual(result, {ortb: native});
+      assert.deepEqual(result, { ortb: native });
     });
     it('should return empty when there is no bids in response', function () {
       const serverResponse = {

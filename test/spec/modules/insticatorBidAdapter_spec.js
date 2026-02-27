@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { getWinDimensions } from '../../../src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -520,7 +520,7 @@ describe('InsticatorBidAdapter', function () {
           }
         }
       }
-      const requests = spec.buildRequests([bidRequest], {...bidRequestWithDsa});
+      const requests = spec.buildRequests([bidRequest], { ...bidRequestWithDsa });
       const data = JSON.parse(requests[0].data);
       expect(data.regs).to.be.an('object');
       expect(data.regs.ext).to.be.an('object');
@@ -619,7 +619,7 @@ describe('InsticatorBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
       expect(data.imp[0].bidfloor).to.equal(1);
 
-      tempBiddRequest.mediaTypes.banner.format = [ { w: 300, h: 600 },
+      tempBiddRequest.mediaTypes.banner.format = [{ w: 300, h: 600 },
       ];
       const request2 = spec.buildRequests([tempBiddRequest], bidderRequest);
       const data2 = JSON.parse(request2[0].data);
@@ -1799,7 +1799,8 @@ describe('InsticatorBidAdapter', function () {
                   dsaparams: [1, 2]
                 }]
               }
-            }}
+            }
+          }
         },
       }
     };

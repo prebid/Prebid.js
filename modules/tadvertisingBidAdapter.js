@@ -10,11 +10,11 @@ import {
   isPlainObject,
   isInteger
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from "../src/mediaTypes.js";
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {ajax, sendBeacon} from "../src/ajax.js";
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from "../src/mediaTypes.js";
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { ajax, sendBeacon } from "../src/ajax.js";
 
 const BIDDER_CODE = 'tadvertising';
 const GVL_ID = 213;
@@ -185,7 +185,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let data = converter.toORTB({validBidRequests, bidderRequest})
+    let data = converter.toORTB({ validBidRequests, bidderRequest })
     deepSetValue(data, 'site.publisher.id', bidderRequest.bids[0].params.publisherId)
 
     const bidFloor = getBidFloor(bidderRequest.bids[0])
@@ -215,7 +215,7 @@ export const spec = {
     }
     deepSetValue(response, 'body.seatbid.0.bid.0.impid', deepAccess(serverRequest, 'data.imp.0.id'))
 
-    const bids = converter.fromORTB({response: response.body, request: serverRequest.data}).bids;
+    const bids = converter.fromORTB({ response: response.body, request: serverRequest.data }).bids;
 
     bids.forEach(bid => {
       bid.ttl = BID_TTL;
@@ -270,7 +270,7 @@ export const spec = {
     sendNotification(spec.notify_url, 'timeout', payload)
   },
 
-  onBidderError: function ({error, bidderRequest}) {
+  onBidderError: function ({ error, bidderRequest }) {
     const payload = buildErrorNotification(bidderRequest, error)
     sendNotification(spec.notify_url, 'error', payload)
   }

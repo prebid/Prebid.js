@@ -30,7 +30,7 @@ describe('GPT pre-auction module', () => {
     makeSlot({ code: 'slotCode4', divId: 'div5' })
   ];
 
-  const mockTargeting = {'/123456/header-bid-tag-0': {'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus'}}
+  const mockTargeting = { '/123456/header-bid-tag-0': { 'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus' } }
 
   const mockAuctionManager = {
     findBidByAdId(adId) {
@@ -163,7 +163,7 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
       ]);
-      const adUnit = {code: '/12345,21212/slot'};
+      const adUnit = { code: '/12345,21212/slot' };
       expect(appendGptSlots([adUnit])).to.eql({
         '/12345,21212/slot': '/12345,21212/slot'
       })
@@ -339,7 +339,7 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
       ]);
-      const adUnit = {code: '/12345,21212/slot'};
+      const adUnit = { code: '/12345,21212/slot' };
       makeBidRequestsHook(sinon.stub(), [adUnit]);
       sinon.assert.calledWith(customPreAuction, adUnit, '/12345/slot', adUnit.code);
     });
@@ -436,7 +436,7 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
       ]);
-      const adUnit = {code: '/12345,21212/slot'};
+      const adUnit = { code: '/12345,21212/slot' };
       makeBidRequestsHook(sinon.stub(), [adUnit]);
       expect(adUnit.ortb2Imp.ext.gpid).to.eql('/12345/slot');
     });
@@ -464,7 +464,7 @@ describe('GPT pre-auction module', () => {
     it('should filter out adIds that do not map to any auction', () => {
       const auctionsIds = getAuctionsIdsFromTargeting({
         ...mockTargeting,
-        'au': {'hb_adid': 'missing'},
+        'au': { 'hb_adid': 'missing' },
       }, mockAuctionManager);
       expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]);
     })
@@ -473,7 +473,7 @@ describe('GPT pre-auction module', () => {
       let auctionsIds = getAuctionsIdsFromTargeting({}, mockAuctionManager);
       expect(Array.isArray(auctionsIds)).to.equal(true);
       expect(auctionsIds).to.length(0);
-      auctionsIds = getAuctionsIdsFromTargeting({'/123456/header-bid-tag-0/bg': {'invalidContent': '123'}}, mockAuctionManager);
+      auctionsIds = getAuctionsIdsFromTargeting({ '/123456/header-bid-tag-0/bg': { 'invalidContent': '123' } }, mockAuctionManager);
       expect(Array.isArray(auctionsIds)).to.equal(true);
       expect(auctionsIds).to.length(0);
     });
