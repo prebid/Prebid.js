@@ -1,10 +1,10 @@
-import {expect} from 'chai';
-import {setEndPoints, spec} from 'modules/aidemBidAdapter.js';
+import { expect } from 'chai';
+import { setEndPoints, spec } from 'modules/aidemBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import {deepSetValue} from '../../../src/utils.js';
-import {server} from '../../mocks/xhr.js';
-import {config} from '../../../src/config.js';
-import {NATIVE} from '../../../src/mediaTypes.js';
+import { deepSetValue } from '../../../src/utils.js';
+import { server } from '../../mocks/xhr.js';
+import { config } from '../../../src/config.js';
+import { NATIVE } from '../../../src/mediaTypes.js';
 
 // Full banner + Full Video + Basic Banner + Basic Video
 const VALID_BIDS = [
@@ -161,8 +161,8 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
     mediaTypes: {
       banner: {
         sizes: [
-          [ 300, 250 ],
-          [ 300, 600 ]
+          [300, 250],
+          [300, 600]
         ]
       }
     },
@@ -448,7 +448,7 @@ describe('Aidem adapter', () => {
     });
 
     it('should have a well formatted banner payload', () => {
-      const {data} = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       expect(data).to.be.a('object').that.has.all.keys(
         'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
       )
@@ -464,7 +464,7 @@ describe('Aidem adapter', () => {
 
     if (FEATURES.VIDEO) {
       it('should have a well formatted video payload', () => {
-        const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+        const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
         expect(data).to.be.a('object').that.has.all.keys(
           'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
         )
@@ -480,7 +480,7 @@ describe('Aidem adapter', () => {
     }
 
     it('should hav wpar keys in environment object', function () {
-      const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
       expect(data).to.have.property('environment')
       expect(data.environment).to.be.a('object').that.have.property('wpar')
       expect(data.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
@@ -489,8 +489,8 @@ describe('Aidem adapter', () => {
 
   describe('interpretResponse', () => {
     it('should return a valid bid array with a banner bid', () => {
-      const {data} = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
-      const bids = spec.interpretResponse({body: SERVER_RESPONSE_BANNER}, { data })
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data })
       expect(bids).to.be.a('array').that.has.lengthOf(1)
       bids.forEach(value => {
         expect(value).to.be.a('object').that.has.all.keys(
@@ -501,8 +501,8 @@ describe('Aidem adapter', () => {
 
     if (FEATURES.VIDEO) {
       it('should return a valid bid array with a video bid', () => {
-        const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
-        const bids = spec.interpretResponse({body: SERVER_RESPONSE_VIDEO}, { data })
+        const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
+        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data })
         expect(bids).to.be.a('array').that.has.lengthOf(1)
         bids.forEach(value => {
           expect(value).to.be.a('object').that.has.all.keys(
@@ -513,8 +513,8 @@ describe('Aidem adapter', () => {
     }
 
     it('should return a valid bid array with netRevenue', () => {
-      const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
-      const bids = spec.interpretResponse({body: SERVER_RESPONSE_VIDEO}, { data })
+      const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data })
       expect(bids).to.be.a('array').that.has.lengthOf(1)
       expect(bids[0].netRevenue).to.be.true
     });

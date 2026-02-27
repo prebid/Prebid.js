@@ -257,7 +257,7 @@ describe('33acrossBidAdapter:', function () {
             return Object.assign(fm, {
               ext: {
                 ttx: {
-                  bidfloors: [ floors[i] ]
+                  bidfloors: [floors[i]]
                 }
               }
             })
@@ -482,7 +482,7 @@ describe('33acrossBidAdapter:', function () {
     }
 
     this.buildBidderRequest = (bidRequests, additionalProps) => {
-      const [ bidRequest ] = bidRequests;
+      const [bidRequest] = bidRequests;
 
       return utils.mergeDeep({
         ortb2: utils.mergeDeep({
@@ -775,7 +775,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns false', function() {
           const bidRequests = (
             new BidRequestsBuilder()
-              .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
+              .withVideo({ context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar'] })
               .build()
           );
 
@@ -797,7 +797,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns true', function() {
           const bidRequests = (
             new BidRequestsBuilder()
-              .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
+              .withVideo({ context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar'] })
               .build()
           );
 
@@ -833,7 +833,7 @@ describe('33acrossBidAdapter:', function () {
         const bidRequests = this.buildBannerBidRequests(); // Bids have the default zone ID configured
         const bidderRequest = this.buildBidderRequest(bidRequests);
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       })
@@ -864,7 +864,7 @@ describe('33acrossBidAdapter:', function () {
           }
         });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -876,7 +876,7 @@ describe('33acrossBidAdapter:', function () {
           new TtxRequestBuilder()
             .withBanner()
             .withProduct()
-            .withViewability({amount: 100})
+            .withViewability({ amount: 100 })
             .build()
         );
 
@@ -884,7 +884,7 @@ describe('33acrossBidAdapter:', function () {
 
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -896,7 +896,7 @@ describe('33acrossBidAdapter:', function () {
           new TtxRequestBuilder()
             .withBanner()
             .withProduct()
-            .withViewability({amount: 0})
+            .withViewability({ amount: 0 })
             .build()
         );
         const bidRequests = this.buildBannerBidRequests();
@@ -904,7 +904,7 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(this.element, { x: -300, y: 0, width: 207, height: 320 });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -916,7 +916,7 @@ describe('33acrossBidAdapter:', function () {
           new TtxRequestBuilder()
             .withBanner()
             .withProduct()
-            .withViewability({amount: 75})
+            .withViewability({ amount: 75 })
             .build()
         )
         const bidRequests = this.buildBannerBidRequests();
@@ -924,7 +924,7 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(this.element, { width: 800, height: 800 });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -937,7 +937,7 @@ describe('33acrossBidAdapter:', function () {
             .withBanner()
             .withProduct()
             .withSizes([{ w: 800, h: 2400 }])
-            .withViewability({amount: 25})
+            .withViewability({ amount: 25 })
             .build()
         );
         const bidRequests = this.buildBannerBidRequests();
@@ -946,7 +946,7 @@ describe('33acrossBidAdapter:', function () {
         Object.assign(this.element, { width: 0, height: 0 });
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -958,7 +958,7 @@ describe('33acrossBidAdapter:', function () {
           new TtxRequestBuilder()
             .withBanner()
             .withProduct()
-            .withViewability({amount: spec.NON_MEASURABLE})
+            .withViewability({ amount: spec.NON_MEASURABLE })
             .build()
         );
         const bidRequests = this.buildBannerBidRequests();
@@ -971,7 +971,7 @@ describe('33acrossBidAdapter:', function () {
         this.sandbox.stub(utils, 'getWindowTop').returns({});
         this.sandbox.stub(utils, 'getWindowSelf').returns(this.win);
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -1014,7 +1014,7 @@ describe('33acrossBidAdapter:', function () {
             }
           });
 
-          const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(buildRequest, serverRequest);
         });
@@ -1064,7 +1064,7 @@ describe('33acrossBidAdapter:', function () {
             }
           });
 
-          const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(buildRequest, serverRequest);
         });
@@ -1077,7 +1077,7 @@ describe('33acrossBidAdapter:', function () {
           new TtxRequestBuilder()
             .withBanner()
             .withProduct()
-            .withViewability({amount: 0})
+            .withViewability({ amount: 0 })
             .build()
         );
         const bidRequests = this.buildBannerBidRequests();
@@ -1090,7 +1090,7 @@ describe('33acrossBidAdapter:', function () {
         this.sandbox.stub(utils, 'getWindowTop').returns(this.win);
         resetWinDimensions();
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
@@ -1118,7 +1118,7 @@ describe('33acrossBidAdapter:', function () {
           }
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1150,7 +1150,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1166,7 +1166,7 @@ describe('33acrossBidAdapter:', function () {
         );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1187,7 +1187,7 @@ describe('33acrossBidAdapter:', function () {
         );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1211,7 +1211,7 @@ describe('33acrossBidAdapter:', function () {
           }
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1239,7 +1239,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1255,7 +1255,7 @@ describe('33acrossBidAdapter:', function () {
         );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1276,7 +1276,7 @@ describe('33acrossBidAdapter:', function () {
         );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1303,7 +1303,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1330,7 +1330,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1355,7 +1355,7 @@ describe('33acrossBidAdapter:', function () {
           }
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1383,7 +1383,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1407,7 +1407,7 @@ describe('33acrossBidAdapter:', function () {
               }
             }
           });
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1429,7 +1429,7 @@ describe('33acrossBidAdapter:', function () {
             }
           });
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1460,7 +1460,7 @@ describe('33acrossBidAdapter:', function () {
           };
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequestsWithGpid, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequestsWithGpid, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1479,7 +1479,7 @@ describe('33acrossBidAdapter:', function () {
           refererInfo: {}
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1533,7 +1533,7 @@ describe('33acrossBidAdapter:', function () {
             }
           });
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1551,7 +1551,7 @@ describe('33acrossBidAdapter:', function () {
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1567,7 +1567,7 @@ describe('33acrossBidAdapter:', function () {
         );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1587,7 +1587,7 @@ describe('33acrossBidAdapter:', function () {
 
           bidRequests[0].getFloor = () => ({});
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1599,13 +1599,13 @@ describe('33acrossBidAdapter:', function () {
             new TtxRequestBuilder()
               .withBanner()
               .withProduct()
-              .withFormatFloors('banner', [ 1.0, 0.10 ])
+              .withFormatFloors('banner', [1.0, 0.10])
               .build()
           );
           const bidRequests = this.buildBannerBidRequests();
           const bidderRequest = this.buildBidderRequest(bidRequests);
 
-          bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+          bidRequests[0].getFloor = ({ size, currency, mediaType }) => {
             const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
             return (
               {
@@ -1615,7 +1615,7 @@ describe('33acrossBidAdapter:', function () {
             );
           };
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1626,7 +1626,7 @@ describe('33acrossBidAdapter:', function () {
       context('and context is instream', function() {
         it('builds instream request with default params', function() {
           const bidRequests = new BidRequestsBuilder()
-            .withVideo({context: 'instream'})
+            .withVideo({ context: 'instream' })
             .build();
           const ttxRequest = new TtxRequestBuilder()
             .withVideo()
@@ -1636,7 +1636,7 @@ describe('33acrossBidAdapter:', function () {
 
           const serverRequest = this.buildServerRequest(ttxRequest);
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1669,7 +1669,7 @@ describe('33acrossBidAdapter:', function () {
           };
           const bidRequests = (
             new BidRequestsBuilder()
-              .withVideo({context: 'instream', ...allowedParams})
+              .withVideo({ context: 'instream', ...allowedParams })
               .build()
           );
           const ttxRequest = new TtxRequestBuilder()
@@ -1678,7 +1678,7 @@ describe('33acrossBidAdapter:', function () {
             .build();
           const serverRequest = this.buildServerRequest(ttxRequest);
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1701,7 +1701,7 @@ describe('33acrossBidAdapter:', function () {
 
             const serverRequest = this.buildServerRequest(ttxRequest);
             const bidderRequest = this.buildBidderRequest(bidRequests);
-            const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+            const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
             validateBuiltServerRequest(builtServerRequest, serverRequest);
           });
@@ -1719,12 +1719,12 @@ describe('33acrossBidAdapter:', function () {
             .build();
           const serverRequest = this.buildServerRequest(
             new TtxRequestBuilder()
-              .withVideo({plcmt: 3, playbackmethod: [2]})
+              .withVideo({ plcmt: 3, playbackmethod: [2] })
               .withProduct('siab')
               .build()
           );
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1741,7 +1741,7 @@ describe('33acrossBidAdapter:', function () {
         );
         const bidRequests = this.buildBannerBidRequests();
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1759,7 +1759,7 @@ describe('33acrossBidAdapter:', function () {
               .build()
           );
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1771,7 +1771,7 @@ describe('33acrossBidAdapter:', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
-            .withVideo({context: 'outstream'})
+            .withVideo({ context: 'outstream' })
             .build()
         );
         const serverRequest = this.buildServerRequest(
@@ -1782,7 +1782,7 @@ describe('33acrossBidAdapter:', function () {
             .build()
         );
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1792,7 +1792,7 @@ describe('33acrossBidAdapter:', function () {
           const bidRequests = (
             new BidRequestsBuilder()
               .withBanner()
-              .withVideo({context: 'instream', plcmt: 2})
+              .withVideo({ context: 'instream', plcmt: 2 })
               .build()
           );
 
@@ -1803,7 +1803,7 @@ describe('33acrossBidAdapter:', function () {
             .build();
           const serverRequest = this.buildServerRequest(ttxRequest);
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1815,7 +1815,7 @@ describe('33acrossBidAdapter:', function () {
         it('does not set any bidfloors in video', function() {
           const bidRequests = (
             new BidRequestsBuilder()
-              .withVideo({context: 'outstream'})
+              .withVideo({ context: 'outstream' })
               .build()
           );
 
@@ -1828,7 +1828,7 @@ describe('33acrossBidAdapter:', function () {
               .build()
           );
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1838,11 +1838,11 @@ describe('33acrossBidAdapter:', function () {
         it('sets bidfloors in video', function() {
           const bidRequests = (
             new BidRequestsBuilder()
-              .withVideo({context: 'outstream'})
+              .withVideo({ context: 'outstream' })
               .build()
           );
 
-          bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+          bidRequests[0].getFloor = ({ size, currency, mediaType }) => {
             const floor = (mediaType === 'video') ? 1.0 : 0.10
             return (
               {
@@ -1855,11 +1855,11 @@ describe('33acrossBidAdapter:', function () {
           const ttxRequest = new TtxRequestBuilder()
             .withVideo()
             .withProduct()
-            .withFloors('video', [ 1.0 ])
+            .withFloors('video', [1.0])
             .build();
           const serverRequest = this.buildServerRequest(ttxRequest);
           const bidderRequest = this.buildBidderRequest(bidRequests);
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
@@ -1910,7 +1910,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1937,7 +1937,7 @@ describe('33acrossBidAdapter:', function () {
             }
           }
         });
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1979,7 +1979,7 @@ describe('33acrossBidAdapter:', function () {
             .build()
         );
         const bidderRequest = this.buildBidderRequest(bidRequests);
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -2012,7 +2012,7 @@ describe('33acrossBidAdapter:', function () {
             }
           })
           .withBanner()
-          .withVideo({context: 'outstream'})
+          .withVideo({ context: 'outstream' })
           .build();
 
         const req1 = new TtxRequestBuilder()
@@ -2066,7 +2066,7 @@ describe('33acrossBidAdapter:', function () {
             }
           })
           .withBanner()
-          .withVideo({context: 'outstream'})
+          .withVideo({ context: 'outstream' })
           .build();
 
         const req1 = new TtxRequestBuilder()
@@ -2457,7 +2457,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with undefined consent string as param and gdpr=1', function() {
           spec.buildRequests(this.bidRequests);
 
-          const syncResults = spec.getUserSyncs(this.syncOptions, {}, {gdprApplies: true});
+          const syncResults = spec.getUserSyncs(this.syncOptions, {}, { gdprApplies: true });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -2477,7 +2477,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with gdpr_consent=consent string as param and gdpr=1', function() {
           spec.buildRequests(this.bidRequests);
 
-          const syncResults = spec.getUserSyncs(this.syncOptions, {}, {gdprApplies: true, consentString: 'consent123A'});
+          const syncResults = spec.getUserSyncs(this.syncOptions, {}, { gdprApplies: true, consentString: 'consent123A' });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -2497,7 +2497,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with undefined consent string as param and gdpr=0', function() {
           spec.buildRequests(this.bidRequests);
 
-          const syncResults = spec.getUserSyncs(this.syncOptions, {}, {gdprApplies: false});
+          const syncResults = spec.getUserSyncs(this.syncOptions, {}, { gdprApplies: false });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -2516,7 +2516,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with only consent string as param', function() {
           spec.buildRequests(this.bidRequests);
 
-          const syncResults = spec.getUserSyncs(this.syncOptions, {}, {consentString: 'consent123A'});
+          const syncResults = spec.getUserSyncs(this.syncOptions, {}, { consentString: 'consent123A' });
           const expectedSyncs = [
             {
               type: 'iframe',
@@ -2535,7 +2535,7 @@ describe('33acrossBidAdapter:', function () {
         it('returns sync urls with consent string as param and gdpr=0', function() {
           spec.buildRequests(this.bidRequests);
 
-          const syncResults = spec.getUserSyncs(this.syncOptions, {}, {gdprApplies: false, consentString: 'consent123A'});
+          const syncResults = spec.getUserSyncs(this.syncOptions, {}, { gdprApplies: false, consentString: 'consent123A' });
           const expectedSyncs = [
             {
               type: 'iframe',

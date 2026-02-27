@@ -1,6 +1,6 @@
-import {gdprDataHandler} from '../../../src/adapterManager.js';
-import {enrichFPDHook} from '../../../modules/consentManagementTcf.js';
-import {config} from 'src/config.js';
+import { gdprDataHandler } from '../../../src/adapterManager.js';
+import { enrichFPDHook } from '../../../modules/consentManagementTcf.js';
+import { config } from 'src/config.js';
 import 'src/prebid.js';
 
 describe('GDPR FPD enrichment', () => {
@@ -21,7 +21,7 @@ describe('GDPR FPD enrichment', () => {
   }
 
   it('sets gdpr properties from gdprDataHandler', () => {
-    consent = {gdprApplies: true, consentString: 'consent'};
+    consent = { gdprApplies: true, consentString: 'consent' };
     return callHook().then(ortb2 => {
       expect(ortb2.regs.ext.gdpr).to.eql(1);
       expect(ortb2.user.ext.consent).to.eql('consent');
@@ -35,7 +35,7 @@ describe('GDPR FPD enrichment', () => {
   });
 
   it('sets user.ext.consent, but not regs.ext.gdpr, if gdprApplies is not a boolean', () => {
-    consent = {consentString: 'mock-consent'};
+    consent = { consentString: 'mock-consent' };
     return callHook().then(ortb2 => {
       expect(ortb2).to.eql({
         user: {

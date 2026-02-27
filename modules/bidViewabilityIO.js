@@ -1,7 +1,7 @@
 import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -77,7 +77,7 @@ export const init = () => {
     if (conf[MODULE_NAME][CONFIG_ENABLED] && CLIENT_SUPPORTS_IO) {
       // if the module is enabled and the browser supports Intersection Observer,
       // then listen to AD_RENDER_SUCCEEDED to setup IO's for supported mediaTypes
-      events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
+      events.on(EVENTS.AD_RENDER_SUCCEEDED, ({ doc, bid, id }) => {
         if (isSupportedMediaType(bid)) {
           const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
           const element = document.getElementById(bid.adUnitCode);

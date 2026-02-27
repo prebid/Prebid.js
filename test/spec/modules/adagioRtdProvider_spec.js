@@ -127,7 +127,7 @@ describe('Adagio Rtd Provider', function () {
       };
 
       it('store new session data for further usage', function () {
-        const storageValue = JSON.stringify({abTest: {}});
+        const storageValue = JSON.stringify({ abTest: {} });
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Date, 'now').returns(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
@@ -155,7 +155,7 @@ describe('Adagio Rtd Provider', function () {
       });
 
       it('store existing session data for further usage', function () {
-        const storageValue = JSON.stringify({session: session, abTest: {}});
+        const storageValue = JSON.stringify({ session: session, abTest: {} });
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Date, 'now').returns(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
@@ -179,7 +179,7 @@ describe('Adagio Rtd Provider', function () {
       });
 
       it('store new session if old session has expired data for further usage', function () {
-        const storageValue = JSON.stringify({session: session, abTest: {}});
+        const storageValue = JSON.stringify({ session: session, abTest: {} });
         sandbox.stub(Date, 'now').returns(1715679344351);
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Math, 'random').returns(0.8);
@@ -422,8 +422,8 @@ describe('Adagio Rtd Provider', function () {
           ext: {
             geom() {
               return {
-                win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
-                self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
+                win: { t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177 },
+                self: { t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250 },
               }
             }
           }
@@ -705,7 +705,8 @@ describe('Adagio Rtd Provider', function () {
         mediaTypes,
         params,
         auctionId,
-        bidderRequestsCount } = bidderRequestCopy.bids[0];
+        bidderRequestsCount
+      } = bidderRequestCopy.bids[0];
 
       const expected = {
         bidder,

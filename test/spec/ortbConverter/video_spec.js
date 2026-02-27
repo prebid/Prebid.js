@@ -1,5 +1,5 @@
-import {fillVideoImp, fillVideoResponse, VALIDATIONS} from '../../../libraries/ortbConverter/processors/video.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import { fillVideoImp, fillVideoResponse, VALIDATIONS } from '../../../libraries/ortbConverter/processors/video.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('pbjs -> ortb video conversion', () => {
   [
@@ -104,7 +104,7 @@ describe('pbjs -> ortb video conversion', () => {
         }
       }
     },
-  ].forEach(({t, request, imp}) => {
+  ].forEach(({ t, request, imp }) => {
     it(`can handle ${t}`, () => {
       const actual = {};
       fillVideoImp(actual, request, {});
@@ -118,7 +118,7 @@ describe('pbjs -> ortb video conversion', () => {
         someParam: 'someValue'
       }
     };
-    fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {});
+    fillVideoImp(imp, { mediaTypes: { video: { playerSize: [[1, 2]] } } }, {});
     expect(imp.video.someParam).to.eql('someValue');
   });
 
@@ -128,13 +128,13 @@ describe('pbjs -> ortb video conversion', () => {
         battr: 'battr'
       }
     };
-    fillVideoImp(imp, {mediaTypes: {video: {sizes: [1, 2]}}}, {});
+    fillVideoImp(imp, { mediaTypes: { video: { sizes: [1, 2] } } }, {});
     expect(imp.video.battr).to.eql('battr');
   });
 
   it('does nothing is context.mediaType is set but is not VIDEO', () => {
     const imp = {};
-    fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {mediaType: BANNER});
+    fillVideoImp(imp, { mediaTypes: { video: { playerSize: [[1, 2]] } } }, { mediaType: BANNER });
     expect(imp).to.eql({});
   });
 });
@@ -189,7 +189,7 @@ describe('ortb -> pbjs video conversion', () => {
         mediaType: VIDEO
       }
     }
-  ].forEach(({t, seatbid, context, response, expected}) => {
+  ].forEach(({ t, seatbid, context, response, expected }) => {
     it(`can handle ${t}`, () => {
       fillVideoResponse(response, seatbid, context);
       expect(response).to.eql(expected);

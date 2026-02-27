@@ -1,6 +1,6 @@
-import {ORTB_MTYPES, setResponseMediaType} from '../../../libraries/ortbConverter/processors/mediaType.js';
-import {BANNER} from '../../../src/mediaTypes.js';
-import {extPrebidMediaType} from '../../../libraries/pbsExtensions/processors/mediaType.js';
+import { ORTB_MTYPES, setResponseMediaType } from '../../../libraries/ortbConverter/processors/mediaType.js';
+import { BANNER } from '../../../src/mediaTypes.js';
+import { extPrebidMediaType } from '../../../libraries/pbsExtensions/processors/mediaType.js';
 
 function testMtype(processor) {
   describe('respects 2.6 mtype', () => {
@@ -25,14 +25,14 @@ describe('ortb -> pbjs mediaType conversion', () => {
   });
 
   it('respects pre-set bidResponse.mediaType', () => {
-    const resp = {mediaType: 'video'};
-    setResponseMediaType(resp, {mtype: 1});
+    const resp = { mediaType: 'video' };
+    setResponseMediaType(resp, { mtype: 1 });
     expect(resp.mediaType).to.eql('video');
   });
 
   it('gives precedence to context.mediaType', () => {
     const resp = {};
-    setResponseMediaType(resp, {mtype: 1}, {mediaType: 'video'});
+    setResponseMediaType(resp, { mtype: 1 }, { mediaType: 'video' });
     expect(resp.mediaType).to.eql('video')
   })
 });
@@ -61,7 +61,7 @@ describe('ortb -> pbjs mediaType conversion based on ext.prebid.type', () => {
 
   it('gives precedence to context.mediaType', () => {
     const response = {};
-    extPrebidMediaType(response, {ext: {prebid: {type: 'banner'}}}, {mediaType: 'video'});
+    extPrebidMediaType(response, { ext: { prebid: { type: 'banner' } } }, { mediaType: 'video' });
     expect(response.mediaType).to.eql('video');
   })
 });

@@ -1,7 +1,7 @@
-import type {TargetingMap} from "../targeting.ts";
-import {config} from "../config.ts";
-import {ttlCollection} from "../utils/ttlCollection.ts";
-import {isGptPubadsDefined} from "../utils.js";
+import type { TargetingMap } from "../targeting.ts";
+import { config } from "../config.ts";
+import { ttlCollection } from "../utils/ttlCollection.ts";
+import { isGptPubadsDefined } from "../utils.js";
 import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
 
 const DEFAULT_LOCK_TIMEOUT = 3000;
@@ -34,7 +34,7 @@ export function targetingLock() {
     slack: 0,
   });
   config.getConfig('targetingControls', (cfg) => {
-    ({lock: keys, lockTimeout: timeout = DEFAULT_LOCK_TIMEOUT} = cfg.targetingControls ?? {});
+    ({ lock: keys, lockTimeout: timeout = DEFAULT_LOCK_TIMEOUT } = cfg.targetingControls ?? {});
     if (keys != null && !Array.isArray(keys)) {
       keys = [keys];
     } else if (keys == null) {
@@ -44,7 +44,7 @@ export function targetingLock() {
   })
   const [setupGpt, tearDownGpt] = (() => {
     let enabled = false;
-    function onGptRender({slot}: SlotRenderEndedEvent) {
+    function onGptRender({ slot }: SlotRenderEndedEvent) {
       keys?.forEach(key => slot.getTargeting(key)?.forEach(locked.delete));
     }
     return [

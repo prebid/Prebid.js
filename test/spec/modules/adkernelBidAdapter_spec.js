@@ -1,15 +1,15 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adkernelBidAdapter';
+import { expect } from 'chai';
+import { spec } from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
 import * as navigatorDnt from 'libraries/dnt/index.js';
-import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
-import {config} from 'src/config';
-import {parseDomain} from '../../../src/refererDetection.js';
+import { NATIVE, BANNER, VIDEO } from 'src/mediaTypes';
+import { config } from 'src/config';
+import { parseDomain } from '../../../src/refererDetection.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
     bidder: 'adkernel',
-    params: {zoneId: 1, host: 'rtb.adkernel.com'},
+    params: { zoneId: 1, host: 'rtb.adkernel.com' },
     adUnitCode: 'ad-unit-1',
     bidId: 'Bid_01',
     bidderRequestId: 'req-001',
@@ -26,7 +26,7 @@ describe('Adkernel adapter', function () {
     }
   }; const bid2_zone2 = {
     bidder: 'adkernel',
-    params: {zoneId: 2, host: 'rtb.adkernel.com'},
+    params: { zoneId: 2, host: 'rtb.adkernel.com' },
     adUnitCode: 'ad-unit-2',
     bidId: 'Bid_02',
     bidderRequestId: 'req-001',
@@ -40,13 +40,13 @@ describe('Adkernel adapter', function () {
       {
         source: 'crwdcntrl.net',
         uids: [
-          {atype: 1, id: '97d09fbba28542b7acbb6317c9534945a702b74c5993c352f332cfe83f40cdd9'}
+          { atype: 1, id: '97d09fbba28542b7acbb6317c9534945a702b74c5993c352f332cfe83f40cdd9' }
         ]
       }
     ]
   }; const bid3_host2 = {
     bidder: 'adkernel',
-    params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
+    params: { zoneId: 1, host: 'rtb-private.adkernel.com' },
     adUnitCode: 'ad-unit-2',
     bidId: 'Bid_02',
     bidderRequestId: 'req-001',
@@ -58,7 +58,7 @@ describe('Adkernel adapter', function () {
     }
   }; const bid_without_zone = {
     bidder: 'adkernel',
-    params: {host: 'rtb-private.adkernel.com'},
+    params: { host: 'rtb-private.adkernel.com' },
     adUnitCode: 'ad-unit-1',
     bidId: 'Bid_W',
     bidderRequestId: 'req-002',
@@ -70,7 +70,7 @@ describe('Adkernel adapter', function () {
     }
   }; const bid_without_host = {
     bidder: 'adkernel',
-    params: {zoneId: 1},
+    params: { zoneId: 1 },
     adUnitCode: 'ad-unit-1',
     bidId: 'Bid_W',
     bidderRequestId: 'req-002',
@@ -82,7 +82,7 @@ describe('Adkernel adapter', function () {
     }
   }; const bid_with_wrong_zoneId = {
     bidder: 'adkernel',
-    params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
+    params: { zoneId: 'wrong id', host: 'rtb.adkernel.com' },
     adUnitCode: 'ad-unit-2',
     bidId: 'Bid_02',
     bidderRequestId: 'req-002',
@@ -116,10 +116,10 @@ describe('Adkernel adapter', function () {
     adUnitCode: 'ad-unit-1'
   }; const bid_multiformat = {
     bidder: 'adkernel',
-    params: {zoneId: 1, host: 'rtb.adkernel.com'},
+    params: { zoneId: 1, host: 'rtb.adkernel.com' },
     mediaTypes: {
-      banner: {sizes: [[300, 250], [300, 200]]},
-      video: {context: 'instream', playerSize: [[640, 480]]}
+      banner: { sizes: [[300, 250], [300, 200]] },
+      video: { context: 'instream', playerSize: [[640, 480]] }
     },
     adUnitCode: 'ad-unit-1',
     transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
@@ -129,7 +129,7 @@ describe('Adkernel adapter', function () {
   };
   const bid_native = {
     bidder: 'adkernel',
-    params: {zoneId: 1, host: 'rtb.adkernel.com'},
+    params: { zoneId: 1, host: 'rtb.adkernel.com' },
     mediaTypes: {
       native: {
         title: {
@@ -144,7 +144,7 @@ describe('Adkernel adapter', function () {
         },
         icon: {
           required: true,
-          aspect_ratios: [{min_width: 50, min_height: 50}]
+          aspect_ratios: [{ min_width: 50, min_height: 50 }]
         },
         image: {
           required: true,
@@ -177,25 +177,24 @@ describe('Adkernel adapter', function () {
       ver: '1.2',
       assets: [
         {
-          id: 0, required: 1, title: {len: 80}
-        }, {
-          id: 1, required: 1, data: {type: 2}},
+          id: 0, required: 1, title: { len: 80 }
+        }, { id: 1, required: 1, data: { type: 2 } },
         {
-          id: 2, required: 1, data: {type: 10}
+          id: 2, required: 1, data: { type: 10 }
         }, {
-          id: 3, required: 1, img: {type: 1, wmin: 50, hmin: 50}
+          id: 3, required: 1, img: { type: 1, wmin: 50, hmin: 50 }
         }, {
-          id: 4, required: 1, img: {type: 3, w: 300, h: 200}
+          id: 4, required: 1, img: { type: 3, w: 300, h: 200 }
         }, {
-          id: 5, required: 0, data: {type: 3}
+          id: 5, required: 0, data: { type: 3 }
         }, {
-          id: 6, required: 0, data: {type: 6}
+          id: 6, required: 0, data: { type: 6 }
         }, {
-          id: 7, required: 0, data: {type: 12}
+          id: 7, required: 0, data: { type: 12 }
         }, {
-          id: 8, required: 0, data: {type: 1}
+          id: 8, required: 0, data: { type: 1 }
         }, {
-          id: 9, required: 0, data: {type: 11}
+          id: 9, required: 0, data: { type: 11 }
         }
       ],
       privacy: 1
@@ -224,7 +223,7 @@ describe('Adkernel adapter', function () {
       }]
     }],
     ext: {
-      adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
+      adk_usersync: [{ type: 1, url: 'https://adk.sync.com/sync' }]
     }
   }; const videoBidResponse = {
     id: '47ce4badcf7482',
@@ -259,7 +258,7 @@ describe('Adkernel adapter', function () {
   const usersyncOnlyResponse = {
     id: 'nobid1',
     ext: {
-      adk_usersync: [{type: 2, url: 'https://adk.sync.com/sync'}]
+      adk_usersync: [{ type: 2, url: 'https://adk.sync.com/sync' }]
     }
   }; const nativeResponse = {
     id: '56fbc713-b737-4651-9050-13376aed9818',
@@ -272,15 +271,15 @@ describe('Adkernel adapter', function () {
         adm: JSON.stringify({
           native: {
             assets: [
-              {id: 0, title: {text: 'Title'}},
-              {id: 3, data: {value: 'Description'}},
-              {id: 4, data: {value: 'Additional description'}},
-              {id: 1, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50}},
-              {id: 2, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200}},
-              {id: 5, data: {value: 'Sponsor.com'}},
-              {id: 14, data: {value: 'displayurl.com'}}
+              { id: 0, title: { text: 'Title' } },
+              { id: 3, data: { value: 'Description' } },
+              { id: 4, data: { value: 'Additional description' } },
+              { id: 1, img: { url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50 } },
+              { id: 2, img: { url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200 } },
+              { id: 5, data: { value: 'Sponsor.com' } },
+              { id: 14, data: { value: 'displayurl.com' } }
             ],
-            link: {url: 'http://rtb.com/click?i=pTuOlf5KHUo_0'},
+            link: { url: 'http://rtb.com/click?i=pTuOlf5KHUo_0' },
             imptrackers: ['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']
           }
         }),
@@ -338,7 +337,7 @@ describe('Adkernel adapter', function () {
   });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {page: url, domain: parseDomain(url), reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
+    return Object.assign({}, params, { refererInfo: { page: url, domain: parseDomain(url), reachedTop: true }, timeout: 3000, bidderCode: 'adkernel' });
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
@@ -398,7 +397,7 @@ describe('Adkernel adapter', function () {
 
     it('should have w/h', function () {
       expect(bidRequest.imp[0].banner).to.have.property('format');
-      expect(bidRequest.imp[0].banner.format).to.be.eql([{w: 300, h: 250}, {w: 300, h: 200}]);
+      expect(bidRequest.imp[0].banner.format).to.be.eql([{ w: 300, h: 250 }, { w: 300, h: 200 }]);
     });
 
     it('should respect secure connection', function () {
@@ -441,21 +440,22 @@ describe('Adkernel adapter', function () {
     it('should contain gdpr-related information if consent is configured', function () {
       const [_, bidRequests] = buildRequest([bid1_zone1],
         buildBidderRequest('https://example.com/index.html', {
-          gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}},
+          gdprConsent: { gdprApplies: true, consentString: 'test-consent-string', vendorData: {} },
           uspConsent: '1YNN',
-          gppConsent: {gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [2]}}
+          gppConsent: { gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [2] }
+        }
         ));
       const bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
-      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1, 'us_privacy': '1YNN'});
+      expect(bidRequest.regs.ext).to.be.eql({ 'gdpr': 1, 'us_privacy': '1YNN' });
       expect(bidRequest.regs.gpp).to.be.eql('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
       expect(bidRequest.regs.gpp_sid).to.be.eql([2]);
       expect(bidRequest).to.have.property('user');
-      expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
+      expect(bidRequest.user.ext).to.be.eql({ 'consent': 'test-consent-string' });
     });
 
     it('should contain coppa if configured', function () {
-      config.setConfig({coppa: true});
+      config.setConfig({ coppa: true });
       const [_, bidRequests] = buildRequest([bid1_zone1]);
       const bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
@@ -463,10 +463,10 @@ describe('Adkernel adapter', function () {
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', {gdprConsent: {gdprApplies: false}}));
+      const [_, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', { gdprConsent: { gdprApplies: false } }));
       const bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
-      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 0});
+      expect(bidRequest.regs.ext).to.be.eql({ 'gdpr': 0 });
       expect(bidRequest).to.not.have.property('user');
     });
 
@@ -552,7 +552,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].imp[1].id).to.be.not.eql(bidRequests[0].imp[0].id);
     });
     it('should collect ads back to same requestId', function() {
-      const bids = spec.interpretResponse({body: multiformat_response}, pbRequests[0]);
+      const bids = spec.interpretResponse({ body: multiformat_response }, pbRequests[0]);
       expect(bids).to.have.length(2);
       expect(bids[0].requestId).to.be.eql('Bid_01');
       expect(bids[0].mediaType).to.be.eql('banner');
@@ -658,7 +658,7 @@ describe('Adkernel adapter', function () {
   describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', function () {
       const [pbRequests, _] = buildRequest([bid1_zone1]);
-      const resp = spec.interpretResponse({body: bannerBidResponse}, pbRequests[0])[0];
+      const resp = spec.interpretResponse({ body: bannerBidResponse }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 3.01);
       expect(resp).to.have.property('width', 300);
@@ -675,7 +675,7 @@ describe('Adkernel adapter', function () {
 
     it('should return fully-initialized video bid-response', function () {
       const [pbRequests, _] = buildRequest([bid_video]);
-      const resp = spec.interpretResponse({body: videoBidResponse}, pbRequests[0])[0];
+      const resp = spec.interpretResponse({ body: videoBidResponse }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_Video');
       expect(resp.mediaType).to.equal(VIDEO);
       expect(resp.cpm).to.equal(0.00145);
@@ -686,7 +686,7 @@ describe('Adkernel adapter', function () {
 
     it('should support vast xml in adm', function () {
       const [pbRequests, _] = buildRequest([bid_video]);
-      const resp = spec.interpretResponse({body: videoBidResponseWithAdm}, pbRequests[0])[0];
+      const resp = spec.interpretResponse({ body: videoBidResponseWithAdm }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_Video');
       expect(resp.mediaType).to.equal(VIDEO);
       expect(resp.cpm).to.equal(0.00145);
@@ -698,27 +698,27 @@ describe('Adkernel adapter', function () {
 
     it('should add nurl as pixel for banner response', function () {
       const [pbRequests, _] = buildRequest([bid1_zone1]);
-      const resp = spec.interpretResponse({body: bannerBidResponse}, pbRequests[0])[0];
+      const resp = spec.interpretResponse({ body: bannerBidResponse }, pbRequests[0])[0];
       const expectedNurl = bannerBidResponse.seatbid[0].bid[0].nurl + '&px=1';
       expect(resp.ad).to.have.string(expectedNurl);
     });
 
     it('should handle bidresponse with user-sync only', function () {
       const [pbRequests, _] = buildRequest([bid1_zone1]);
-      const resp = spec.interpretResponse({body: usersyncOnlyResponse}, pbRequests[0]);
+      const resp = spec.interpretResponse({ body: usersyncOnlyResponse }, pbRequests[0]);
       expect(resp).to.have.length(0);
     });
 
     it('should perform usersync', function () {
-      let syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, []);
+      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
       expect(syncs).to.have.length(0);
-      syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, [{body: bannerBidResponse}]);
+      syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [{ body: bannerBidResponse }]);
       expect(syncs).to.have.length(0);
-      syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [{body: bannerBidResponse}]);
+      syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [{ body: bannerBidResponse }]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
       expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
-      syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: usersyncOnlyResponse}]);
+      syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{ body: usersyncOnlyResponse }]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'image');
       expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
@@ -744,21 +744,21 @@ describe('Adkernel adapter', function () {
       const request = JSON.parse(bidRequests[0].imp[0].native.request);
       expect(request).to.have.property('ver', '1.2');
       expect(request.assets).to.have.length(10);
-      expect(request.assets[0]).to.be.eql({id: 0, required: 1, title: {len: 80}});
-      expect(request.assets[1]).to.be.eql({id: 1, required: 1, data: {type: 2}});
-      expect(request.assets[2]).to.be.eql({id: 2, required: 1, data: {type: 10}});
-      expect(request.assets[3]).to.be.eql({id: 3, required: 1, img: {wmin: 50, hmin: 50, type: 1}});
-      expect(request.assets[4]).to.be.eql({id: 4, required: 1, img: {w: 300, h: 200, type: 3}});
-      expect(request.assets[5]).to.be.eql({id: 5, required: 0, data: {type: 3}});
-      expect(request.assets[6]).to.be.eql({id: 6, required: 0, data: {type: 6}});
-      expect(request.assets[7]).to.be.eql({id: 7, required: 0, data: {type: 12}});
-      expect(request.assets[8]).to.be.eql({id: 8, required: 0, data: {type: 1}});
-      expect(request.assets[9]).to.be.eql({id: 9, required: 0, data: {type: 11}});
+      expect(request.assets[0]).to.be.eql({ id: 0, required: 1, title: { len: 80 } });
+      expect(request.assets[1]).to.be.eql({ id: 1, required: 1, data: { type: 2 } });
+      expect(request.assets[2]).to.be.eql({ id: 2, required: 1, data: { type: 10 } });
+      expect(request.assets[3]).to.be.eql({ id: 3, required: 1, img: { wmin: 50, hmin: 50, type: 1 } });
+      expect(request.assets[4]).to.be.eql({ id: 4, required: 1, img: { w: 300, h: 200, type: 3 } });
+      expect(request.assets[5]).to.be.eql({ id: 5, required: 0, data: { type: 3 } });
+      expect(request.assets[6]).to.be.eql({ id: 6, required: 0, data: { type: 6 } });
+      expect(request.assets[7]).to.be.eql({ id: 7, required: 0, data: { type: 12 } });
+      expect(request.assets[8]).to.be.eql({ id: 8, required: 0, data: { type: 1 } });
+      expect(request.assets[9]).to.be.eql({ id: 9, required: 0, data: { type: 11 } });
     });
 
     it('native response processing', () => {
       const [pbRequests, _] = buildRequest([bid_native]);
-      const resp = spec.interpretResponse({body: nativeResponse}, pbRequests[0])[0];
+      const resp = spec.interpretResponse({ body: nativeResponse }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 2.25);
       expect(resp).to.have.property('currency', 'EUR');
@@ -774,15 +774,15 @@ describe('Adkernel adapter', function () {
 
       expect(resp.native.ortb).to.be.eql({
         assets: [
-          {id: 0, title: {text: 'Title'}},
-          {id: 3, data: {value: 'Description'}},
-          {id: 4, data: {value: 'Additional description'}},
-          {id: 1, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50}},
-          {id: 2, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200}},
-          {id: 5, data: {value: 'Sponsor.com'}},
-          {id: 14, data: {value: 'displayurl.com'}}
+          { id: 0, title: { text: 'Title' } },
+          { id: 3, data: { value: 'Description' } },
+          { id: 4, data: { value: 'Additional description' } },
+          { id: 1, img: { url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50 } },
+          { id: 2, img: { url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200 } },
+          { id: 5, data: { value: 'Sponsor.com' } },
+          { id: 14, data: { value: 'displayurl.com' } }
         ],
-        link: {url: 'http://rtb.com/click?i=pTuOlf5KHUo_0'},
+        link: { url: 'http://rtb.com/click?i=pTuOlf5KHUo_0' },
         imptrackers: ['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']
       });
     });
@@ -797,7 +797,7 @@ describe('Adkernel adapter', function () {
     });
     it('should trigger pixel for nurl', () => {
       const [pbRequests, _] = buildRequest([bid_video]);
-      const bid = spec.interpretResponse({body: videoBidResponseWithAdm}, pbRequests[0])[0];
+      const bid = spec.interpretResponse({ body: videoBidResponseWithAdm }, pbRequests[0])[0];
       spec.onBidWon(bid);
       expect(utils.triggerPixel.callCount).to.equal(1);
     });

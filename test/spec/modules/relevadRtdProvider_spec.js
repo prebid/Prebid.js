@@ -1,9 +1,9 @@
 import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js';
 
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 
 const moduleConfigCommon = {
   'dryrun': true,
@@ -119,7 +119,7 @@ describe('relevadRtdProvider', function() {
       expect(reqBids.adUnits[0].bids[3].params || {}).to.not.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3');
       expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('segments', ['segment1', 'segment2']);
       expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', ['category3']);
-      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', {'0': 'category3'});
+      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', { '0': 'category3' });
       expect(reqBids.ortb2Fragments?.bidder?.rubicon?.user?.ext?.data || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
       expect(config.getConfig('ix.firstPartyData') || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
     });
@@ -139,7 +139,7 @@ describe('relevadRtdProvider', function() {
       const reqBids = {
         'timeout': 10000,
         'adUnits': deepClone(adUnitsCommon),
-        'adUnitCodes': [ '/19968336/header-bid-tag-0' ],
+        'adUnitCodes': ['/19968336/header-bid-tag-0'],
         'ortb2Fragments': {
           'global': {
             'site': {
@@ -165,7 +165,7 @@ describe('relevadRtdProvider', function() {
 
       const data = {
         segments: ['segment1', 'segment2'],
-        cats: {'category3': 100}
+        cats: { 'category3': 100 }
       };
       (config.getConfig('ix') || {}).firstPartyData = null;
       addRtdData(reqBids, data, moduleConfig, () => {});
@@ -200,7 +200,7 @@ describe('relevadRtdProvider', function() {
 
       const data = {
         segments: ['segment1', 'segment2'],
-        cats: {'category3': 100}
+        cats: { 'category3': 100 }
       };
 
       getBidRequestData(reqBidsConfigObj, () => {}, moduleConfig, {});
@@ -225,7 +225,7 @@ describe('Process auction end data', function() {
           {
             'code': '/19968336/header-bid-tag-0',
             'mediaTypes': {
-              'banner': { 'sizes': [ [ 728, 90 ] ] }
+              'banner': { 'sizes': [[728, 90]] }
             },
             'bids': [
               {
@@ -233,16 +233,16 @@ describe('Process auction end data', function() {
                 'params': {
                   'placementId': '13144370',
                   'keywords': {
-                    'relevad_rtd': [ 'IAB410-391', 'IAB63-53' ]
+                    'relevad_rtd': ['IAB410-391', 'IAB63-53']
                   }
                 }
               }
             ],
-            'ortb2Imp': { 'ext': { 'data': { 'relevad_rtd': [ 'IAB410-391', 'IAB63-53' ] }, } },
-            'sizes': [ [ 728, 90 ] ],
+            'ortb2Imp': { 'ext': { 'data': { 'relevad_rtd': ['IAB410-391', 'IAB63-53'] }, } },
+            'sizes': [[728, 90]],
           }
         ],
-        'adUnitCodes': [ '/19968336/header-bid-tag-0' ],
+        'adUnitCodes': ['/19968336/header-bid-tag-0'],
         'bidderRequests': [
           {
             'bidderCode': 'appnexus',
@@ -261,11 +261,11 @@ describe('Process auction end data', function() {
                   }
                 },
                 'ortb2Imp': {
-                  'ext': { 'data': { 'relevad_rtd': [ 'IAB410-391', 'IAB63-53' ] }, }
+                  'ext': { 'data': { 'relevad_rtd': ['IAB410-391', 'IAB63-53'] }, }
                 },
-                'mediaTypes': { 'banner': { 'sizes': [ [ 728, 90 ] ] } },
+                'mediaTypes': { 'banner': { 'sizes': [[728, 90]] } },
                 'adUnitCode': '/19968336/header-bid-tag-0',
-                'sizes': [ [ 728, 90 ] ],
+                'sizes': [[728, 90]],
                 'bidId': '20f0b347b07f94',
                 'bidderRequestId': '1d917281b2bf6c',
                 'auctionId': 'f7ec9895-5809-475e-8fef-49cbc221921a',
@@ -278,9 +278,9 @@ describe('Process auction end data', function() {
                     'page': 'http://www.localhost.localdomain:8888/integrationExamples/gpt/relevadRtdProvider_example.html',
                     'domain': 'localhost.localdomain:8888',
                     'publisher': { 'domain': 'localhost.localdomain:8888' },
-                    'cat': [ 'IAB410-391', 'IAB63-53' ],
-                    'pagecat': [ 'IAB410-391', 'IAB63-53' ],
-                    'sectioncat': [ 'IAB410-391', 'IAB63-53' ]
+                    'cat': ['IAB410-391', 'IAB63-53'],
+                    'pagecat': ['IAB410-391', 'IAB63-53'],
+                    'sectioncat': ['IAB410-391', 'IAB63-53']
                   },
                   'device': {
                     'w': 326,
@@ -310,7 +310,7 @@ describe('Process auction end data', function() {
                 'reachedTop': true,
                 'isAmp': false,
                 'numIframes': 0,
-                'stack': [ 'http://www.localhost.localdomain:8888/integrationExamples/gpt/relevadRtdProvider_example.html' ],
+                'stack': ['http://www.localhost.localdomain:8888/integrationExamples/gpt/relevadRtdProvider_example.html'],
                 'referer': 'http://www.localhost.localdomain:8888/integrationExamples/gpt/relevadRtdProvider_example.html',
                 'canonicalUrl': null
               }
@@ -320,9 +320,9 @@ describe('Process auction end data', function() {
                 'page': 'http://www.localhost.localdomain:8888/integrationExamples/gpt/relevadRtdProvider_example.html',
                 'domain': 'localhost.localdomain:8888',
                 'publisher': { 'domain': 'localhost.localdomain:8888' },
-                'cat': [ 'IAB410-391', 'IAB63-53' ],
-                'pagecat': [ 'IAB410-391', 'IAB63-53' ],
-                'sectioncat': [ 'IAB410-391', 'IAB63-53' ]
+                'cat': ['IAB410-391', 'IAB63-53'],
+                'pagecat': ['IAB410-391', 'IAB63-53'],
+                'sectioncat': ['IAB410-391', 'IAB63-53']
               },
               'device': {
                 'w': 326,

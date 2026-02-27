@@ -32,8 +32,8 @@ const sizes = [[imageWidth, imageHeight]]
 const bidderRequest = {
   refererInfo: { referer: pageUrl },
 }
-const mediaTypeBanner = { [BANNER]: {sizes: [[imageWidth, imageHeight]]} }
-const mediaTypeVideo = { [VIDEO]: {playerSize: [[imageWidth, imageHeight]]} }
+const mediaTypeBanner = { [BANNER]: { sizes: [[imageWidth, imageHeight]] } }
+const mediaTypeVideo = { [VIDEO]: { playerSize: [[imageWidth, imageHeight]] } }
 const commonParams = {
   placeId,
   placeContainer,
@@ -117,7 +117,7 @@ const configByPlaceType = {
     })
   },
 }
-const getTransformedConfig = ({mediaTypes, params}) => {
+const getTransformedConfig = ({ mediaTypes, params }) => {
   return {
     params: params,
     sizes,

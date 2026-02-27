@@ -57,8 +57,8 @@ describe('LiveIntent Analytics Adapter ', () => {
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);
-    sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
-    sandbox.stub(auctionManager.index, 'getAuction').withArgs({auctionId: AUCTION_INIT_EVENT.auctionId}).returns({
+    sandbox.stub(refererDetection, 'getRefererInfo').returns({ page: url });
+    sandbox.stub(auctionManager.index, 'getAuction').withArgs({ auctionId: AUCTION_INIT_EVENT.auctionId }).returns({
       getBidRequests: () => AUCTION_INIT_EVENT.bidderRequests,
       getAuctionStart: () => AUCTION_INIT_EVENT.timestamp
     });

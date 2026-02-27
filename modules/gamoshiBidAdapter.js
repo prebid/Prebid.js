@@ -10,12 +10,12 @@ import {
   logWarn,
   mergeDeep
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
-import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io',
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
@@ -208,7 +208,7 @@ export const spec = {
           bidResponse.ext['utrk']
             .forEach(pixel => {
               const url = helper.replaceMacros(pixel.url, params);
-              syncs.push({type: pixel.type, url});
+              syncs.push({ type: pixel.type, url });
             });
         }
         if (Array.isArray(bidResponse.seatbid)) {
@@ -219,7 +219,7 @@ export const spec = {
                   bid.ext['utrk']
                     .forEach(pixel => {
                       const url = helper.replaceMacros(pixel.url, params);
-                      syncs.push({type: pixel.type, url});
+                      syncs.push({ type: pixel.type, url });
                     });
                 }
               });

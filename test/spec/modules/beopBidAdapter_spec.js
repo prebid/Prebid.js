@@ -288,7 +288,7 @@ describe('BeOp Bid Adapter tests', () => {
       spec.onBidWon({});
       spec.onBidWon();
       expect(triggerPixelStub.getCall(0)).to.be.null;
-      spec.onBidWon({params: {accountId: '5a8af500c9e77c00017e4cad'}, cpm: 1.2});
+      spec.onBidWon({ params: { accountId: '5a8af500c9e77c00017e4cad' }, cpm: 1.2 });
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
@@ -299,7 +299,7 @@ describe('BeOp Bid Adapter tests', () => {
       spec.onBidWon({});
       spec.onBidWon();
       expect(triggerPixelStub.getCall(0)).to.be.null;
-      spec.onBidWon({params: [{accountId: '5a8af500c9e77c00017e4cad'}], cpm: 1.2});
+      spec.onBidWon({ params: [{ accountId: '5a8af500c9e77c00017e4cad' }], cpm: 1.2 });
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
@@ -368,7 +368,7 @@ describe('BeOp Bid Adapter tests', () => {
 
     it(`should get eids from bid`, function () {
       const bid = Object.assign({}, validBid);
-      bid.userIdAsEids = [{source: 'provider.com', uids: [{id: 'someid', atype: 1, ext: {whatever: true}}]}];
+      bid.userIdAsEids = [{ source: 'provider.com', uids: [{ id: 'someid', atype: 1, ext: { whatever: true } }] }];
       bidRequests.push(bid);
 
       const request = spec.buildRequests(bidRequests, {});

@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   onBidWon,
@@ -13,14 +13,14 @@ const DEFAULT_SUB_DOMAIN = 'bidder';
 const BIDDER_CODE = 'apester';
 const BIDDER_VERSION = '1.0.0';
 const GVLID = 354;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.apester.com`;
 }
 
 function createUniqueRequestData(hashUrl, bid) {
-  const {auctionId, transactionId} = bid;
+  const { auctionId, transactionId } = bid;
   return {
     auctionId,
     transactionId

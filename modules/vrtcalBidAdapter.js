@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import {deepAccess, isFn, isPlainObject} from '../src/utils.js';
+import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
 
 const GVLID = 706;
 const VRTCAL_USER_SYNC_URL_IFRAME = `https://usync.vrtcal.com/i?ssp=1804&synctype=iframe`;
@@ -20,7 +20,7 @@ export const spec = {
       let floor = 0;
 
       if (isFn(bid.getFloor)) {
-        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({w, h})) });
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: 'banner', size: bid.sizes.map(([w, h]) => ({ w, h })) });
 
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
           floor = Math.max(floor, parseFloat(floorInfo.floor));
@@ -104,7 +104,7 @@ export const spec = {
         params.regs.ext.gpp_sid = bid.ortb2.regs.gpp_sid;
       }
 
-      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};
+      return { method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: { withCredentials: false, crossOrigin: true } };
     });
 
     return requests;

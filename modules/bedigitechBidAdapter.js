@@ -1,6 +1,6 @@
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {_each, isArray} from '../src/utils.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { _each, isArray } from '../src/utils.js';
 
 const BEDIGITECH_CODE = 'bedigitech';
 const BEDIGITECH_ENDPOINT = 'https://bid.bedigitech.com/bid/pub_bid.php';
@@ -41,7 +41,7 @@ export const spec = {
   buildRequests: (bidRequests) => {
     return bidRequests.map(bid => {
       const url = BEDIGITECH_ENDPOINT;
-      const data = {'pid': bid.params.placementId};
+      const data = { 'pid': bid.params.placementId };
       return {
         method: BEDIGITECH_REQUEST_METHOD,
         url,

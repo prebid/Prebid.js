@@ -1,4 +1,4 @@
-import {_internal, setDebounceDelay} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { _internal, setDebounceDelay } from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 before(() => {
   // stub out analytics networking to avoid random events polluting the global xhr mock

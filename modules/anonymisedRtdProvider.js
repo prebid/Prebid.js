@@ -5,11 +5,11 @@
  * @module modules/anonymisedRtdProvider
  * @requires module:modules/realTimeData
  */
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logWarn, logError} from '../src/utils.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-import {loadExternalScript} from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
@@ -60,7 +60,7 @@ export function createRtdProvider(moduleName) {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
       return;
     }
-    const tagConfig = config.params?.tagConfig ? {...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId} : {};
+    const tagConfig = config.params?.tagConfig ? { ...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId } : {};
     delete tagConfig.clientId;
 
     const tagUrl = config.params.tagUrl ? config.params.tagUrl : `${MARKETING_TAG_URL}?ref=prebid`;
@@ -100,7 +100,7 @@ export function createRtdProvider(moduleName) {
           ext: {
             segtax: config.params.segtax
           },
-          segment: segments.map(x => ({id: x}))
+          segment: segments.map(x => ({ id: x }))
         }
 
         logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);

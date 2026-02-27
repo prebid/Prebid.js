@@ -2,11 +2,11 @@
  * This module validates the configuration and filters data accordingly
  * @module modules/dataController
  */
-import {config} from '../../src/config.js';
-import {getHook, module} from '../../src/hook.js';
-import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
-import {startAuction} from '../../src/prebid.js';
-import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import { config } from '../../src/config.js';
+import { getHook, module } from '../../src/hook.js';
+import { deepAccess, deepSetValue, prefixLog } from '../../src/utils.js';
+import { startAuction } from '../../src/prebid.js';
+import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
@@ -163,13 +163,13 @@ export function init() {
     const dataController = dataControllerConfig && dataControllerConfig.dataController;
     if (!dataController) {
       _logger.logInfo(`Data Controller is not configured`);
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({ hook: filterBidData }).remove();
       return;
     }
 
     if (dataController.filterEIDwhenSDA && dataController.filterSDAwhenEID) {
       _logger.logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({ hook: filterBidData }).remove();
       return;
     }
     confListener(); // unsubscribe config listener

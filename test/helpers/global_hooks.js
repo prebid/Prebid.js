@@ -1,4 +1,4 @@
-import {clearEvents} from '../../src/events.js';
+import { clearEvents } from '../../src/events.js';
 
 window.describe = window.context = ((orig) => {
   let level = 0;

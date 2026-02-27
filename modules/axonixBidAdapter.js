@@ -1,9 +1,9 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {ajax} from '../src/ajax.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { ajax } from '../src/ajax.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const BIDDER_CODE = 'axonix';

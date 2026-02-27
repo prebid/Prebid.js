@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/trustxBidAdapter.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec } from 'modules/trustxBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import sinon from 'sinon';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 
 const getBannerRequest = () => {
   return {
@@ -21,7 +21,7 @@ const getBannerRequest = () => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 300, 250 ],
+              [300, 250],
             ]
           }
         },
@@ -437,7 +437,7 @@ describe('trustxBidAdapter', function() {
     beforeEach(function() {
       bidderBannerRequest = getBannerRequest();
 
-      mockBidderRequest = {refererInfo: {}};
+      mockBidderRequest = { refererInfo: {} };
 
       bidRequestsWithMediaTypes = [{
         bidder: 'trustx',
@@ -682,7 +682,7 @@ describe('trustxBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
@@ -919,32 +919,36 @@ describe('trustxBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
       });
 
       it('should return no bids if the response "nurl" and "adm" are missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              price: 8.01
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                price: 8.01
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
 
       it('should return no bids if the response "price" is missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              adm: '<VAST></VAST>'
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                adm: '<VAST></VAST>'
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
@@ -995,13 +999,13 @@ describe('trustxBidAdapter', function() {
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [bidderResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -1009,7 +1013,7 @@ describe('trustxBidAdapter', function() {
     });
 
     it('pixel sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [bidderResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -1017,7 +1021,7 @@ describe('trustxBidAdapter', function() {
     });
 
     it('all sync enabled should prioritize iframe', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [bidderResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
     });
@@ -1088,7 +1092,7 @@ describe('trustxBidAdapter', function() {
       };
 
       // Test with pixel enabled
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [realWorldResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [realWorldResponse]);
 
       // Should return all pixel syncs from all providers
       expect(opts).to.be.an('array');
@@ -1100,7 +1104,7 @@ describe('trustxBidAdapter', function() {
       expect(opts.some(s => s.url.includes('sync.trustx.org'))).to.be.true;
 
       // Test with iframe enabled
-      opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [realWorldResponse]);
+      opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [realWorldResponse]);
 
       // Should return only iframe syncs
       expect(opts).to.be.an('array');

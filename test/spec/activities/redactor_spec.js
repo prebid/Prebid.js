@@ -6,14 +6,14 @@ import {
   ORTB_UFPD_PATHS,
   redactorFactory, redactRule
 } from '../../../src/activities/redactor.js';
-import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
+import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
 import {
   ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO, ACTIVITY_TRANSMIT_TID,
   ACTIVITY_TRANSMIT_UFPD
 } from '../../../src/activities/activities.js';
-import {deepAccess, deepSetValue} from '../../../src/utils.js';
-import {activityParams} from '../../../src/activities/activityParams.js';
+import { deepAccess, deepSetValue } from '../../../src/utils.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('objectTransformer', () => {
   describe('using dummy rules', () => {
@@ -30,7 +30,7 @@ describe('objectTransformer', () => {
     });
 
     it('runs rule for each path', () => {
-      const obj = {foo: 'val'};
+      const obj = { foo: 'val' };
       objectTransformer([rule])({}, obj);
       sinon.assert.calledWith(run, obj, null, obj, 'foo');
       sinon.assert.calledWith(run, obj, 'bar', undefined, 'baz');
@@ -56,15 +56,15 @@ describe('objectTransformer', () => {
     });
 
     it('does not call apply if session already contains a result for the rule', () => {
-      objectTransformer([rule])({[rule.name]: false}, {});
+      objectTransformer([rule])({ [rule.name]: false }, {});
       expect(applies.callCount).to.equal(0);
       expect(run.callCount).to.equal(0);
     })
 
     it('passes arguments to applies', () => {
       run.callsFake((_1, _2, _3, _4, applies) => applies());
-      const arg1 = {n: 0};
-      const arg2 = {n: 1};
+      const arg1 = { n: 0 };
+      const arg2 = { n: 1 };
       objectTransformer([rule])({}, {}, arg1, arg2);
       sinon.assert.calledWith(applies, arg1, arg2);
     });
@@ -95,10 +95,10 @@ describe('objectTransformer', () => {
           expect(Object.keys(parent)).to.not.include.members([prop]);
         }
       }
-    }).forEach(([t, {get, expectation}]) => {
+    }).forEach(([t, { get, expectation }]) => {
       describe(`property ${t}`, () => {
         it('should work on top level properties', () => {
-          const obj = {foo: 1, bar: 2};
+          const obj = { foo: 1, bar: 2 };
           objectTransformer([
             redactRule({
               name: 'test',
@@ -113,7 +113,7 @@ describe('objectTransformer', () => {
           expectation(obj, 'foo', get(1));
         });
         it('should work on nested properties', () => {
-          const obj = {outer: {inner: {foo: 'bar'}, baz: 0}};
+          const obj = { outer: { inner: { foo: 'bar' }, baz: 0 } };
           objectTransformer([
             redactRule({
               name: 'test',
@@ -134,10 +134,10 @@ describe('objectTransformer', () => {
     describe('should not run rule if property is', () => {
       Object.entries({
         'missing': {},
-        'empty array': {foo: []},
-        'empty object': {foo: {}},
-        'null': {foo: null},
-        'undefined': {foo: undefined}
+        'empty array': { foo: [] },
+        'empty object': { foo: {} },
+        'null': { foo: null },
+        'undefined': { foo: undefined }
       }).forEach(([t, obj]) => {
         it(t, () => {
           const get = sinon.stub();
@@ -160,14 +160,14 @@ describe('objectTransformer', () => {
         false: false
       }).forEach(([t, val]) => {
         it(t, () => {
-          const obj = {foo: val};
+          const obj = { foo: val };
           objectTransformer([redactRule({
             name: 'test',
             paths: ['foo'],
             applies() { return true },
             get(val) { return 'repl' },
           })])({}, obj);
-          expect(obj).to.eql({foo: 'repl'});
+          expect(obj).to.eql({ foo: 'repl' });
         })
       })
     });

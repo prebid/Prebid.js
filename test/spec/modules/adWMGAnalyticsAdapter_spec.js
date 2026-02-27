@@ -1,8 +1,8 @@
 import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import {expectEvents} from '../../helpers/analytics.js';
-import {EVENTS} from 'src/constants.js';
+import { expectEvents } from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
 
@@ -142,7 +142,7 @@ describe('adWMG Analytics', function () {
       });
 
       expectEvents([
-        [EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits}],
+        [EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits }],
         [EVENTS.BID_REQUESTED, {}],
         [EVENTS.BID_RESPONSE, bidResponse],
         [EVENTS.NO_BID, {}],

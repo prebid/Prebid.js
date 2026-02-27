@@ -3,10 +3,10 @@
  */
 import * as utils from './utils.js'
 import { EVENTS, EVENT_ID_PATHS } from './constants.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {config} from './config.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { config } from './config.js';
 
-type CoreEvent = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVENTS];
+type CoreEvent = { [K in keyof typeof EVENTS]: typeof EVENTS[K] }[keyof typeof EVENTS];
 
 // hide video events (unless the video module is included) with this one weird trick
 
@@ -191,7 +191,7 @@ const _public = (function () {
 
 utils._setEventEmitter(_public.emit.bind(_public));
 
-export const {on, off, get, getEvents, emit, addEvents, has} = _public;
+export const { on, off, get, getEvents, emit, addEvents, has } = _public;
 
 export function clearEvents() {
   eventsFired.clear();

@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/redtramBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/redtramBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 import * as utils from '../../../src/utils.js';
 

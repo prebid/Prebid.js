@@ -1,11 +1,11 @@
-import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
-import {config} from 'src/config.js';
+import { sharedIdSystemSubmodule } from 'modules/sharedIdSystem.js';
+import { config } from 'src/config.js';
 
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const expect = require('chai').expect;
 
@@ -51,7 +51,7 @@ describe('SharedId System', function () {
       expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
     it('should abort if coppa is set', function () {
-      const result = sharedIdSystemSubmodule.getId({}, {coppa: true});
+      const result = sharedIdSystemSubmodule.getId({}, { coppa: true });
       expect(result).to.be.undefined;
     });
   });
@@ -82,7 +82,7 @@ describe('SharedId System', function () {
       expect(pubcommId).to.equal('TestId');
     });
     it('should abort if coppa is set', function () {
-      const result = sharedIdSystemSubmodule.extendId({params: {extend: true}}, {coppa: true}, 'TestId');
+      const result = sharedIdSystemSubmodule.extendId({ params: { extend: true } }, { coppa: true }, 'TestId');
       expect(result).to.be.undefined;
     });
   });
@@ -101,7 +101,7 @@ describe('SharedId System', function () {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'pubcid.org',
-        uids: [{id: 'some-random-id-value', atype: 1}]
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
       });
     });
 
@@ -113,7 +113,7 @@ describe('SharedId System', function () {
             params: {
               inserter: 'mock-inserter'
             },
-            value: {pubcid: 'mock-id'}
+            value: { pubcid: 'mock-id' }
           }]
         }
       });

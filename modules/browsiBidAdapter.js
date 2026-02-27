@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {VIDEO} from '../src/mediaTypes.js';
-import {logError, logInfo, isArray, isStr} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { VIDEO } from '../src/mediaTypes.js';
+import { logError, logInfo, isArray, isStr } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -29,8 +29,8 @@ export const spec = {
     if (!bid.params) {
       return false;
     }
-    const {pubId, tagId} = bid.params
-    const {mediaTypes} = bid;
+    const { pubId, tagId } = bid.params
+    const { mediaTypes } = bid;
     return !!(validateBrowsiIds(pubId, tagId) && mediaTypes?.[VIDEO]);
   },
   /**
@@ -41,9 +41,9 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
-    const {refererInfo, bidderRequestId, gdprConsent, uspConsent} = bidderRequest;
+    const { refererInfo, bidderRequestId, gdprConsent, uspConsent } = bidderRequest;
     validBidRequests.forEach(bidRequest => {
-      const {bidId, adUnitCode, auctionId, ortb2Imp, params} = bidRequest;
+      const { bidId, adUnitCode, auctionId, ortb2Imp, params } = bidRequest;
       const schain = bidRequest?.ortb2?.source?.ext?.schain;
       const video = getVideoMediaType(bidRequest);
 
@@ -141,7 +141,7 @@ export const spec = {
   onTimeout(timeoutData) {
     logInfo(`${BIDDER_CODE} bidder timed out`, timeoutData);
   },
-  onBidderError: function ({error}) {
+  onBidderError: function ({ error }) {
     logError(`${BIDDER_CODE} bidder error`, error);
   }
 }

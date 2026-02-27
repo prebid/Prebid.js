@@ -1,8 +1,8 @@
-import {assert} from 'chai';
-import {spec, resolveFloor} from 'modules/mediaforceBidAdapter.js';
+import { assert } from 'chai';
+import { spec, resolveFloor } from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import { getDNT } from 'libraries/dnt/index.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('mediaforce bid adapter', function () {
   let sandbox;
@@ -44,7 +44,7 @@ describe('mediaforce bid adapter', function () {
 
     it('should return false when valid params are not passed', function () {
       const bid = utils.deepClone(defaultBid);
-      bid.params = {placement_id: '', publisher_id: ''};
+      bid.params = { placement_id: '', publisher_id: '' };
       assert.equal(spec.isBidRequestValid(bid), false);
     });
 
@@ -55,7 +55,7 @@ describe('mediaforce bid adapter', function () {
           sizes: [[300, 250]]
         }
       };
-      bid.params = {publisher_id: 2, placement_id: '123'};
+      bid.params = { publisher_id: 2, placement_id: '123' };
       assert.equal(spec.isBidRequestValid(bid), true);
     });
   });
@@ -143,7 +143,7 @@ describe('mediaforce bid adapter', function () {
         },
         site: {
           id: defaultBid.params.publisher_id,
-          publisher: {id: defaultBid.params.publisher_id},
+          publisher: { id: defaultBid.params.publisher_id },
           ref: encodeURIComponent(refererInfo.ref),
           page: pageUrl,
         },
@@ -162,14 +162,14 @@ describe('mediaforce bid adapter', function () {
               transactionId: defaultBid.ortb2Imp.ext.tid,
             }
           },
-          banner: {w: 300, h: 250},
+          banner: { w: 300, h: 250 },
           native: {
             ver: '1.2',
             request: {
               assets: [
-                {id: 1, title: {len: 800}, required: 1},
-                {id: 3, img: {w: 300, h: 250, type: 3}, required: 1},
-                {id: 5, data: {type: 1}, required: 0}
+                { id: 1, title: { len: 800 }, required: 1 },
+                { id: 3, img: { w: 300, h: 250, type: 3 }, required: 1 },
+                { id: 5, data: { type: 1 }, required: 0 }
               ],
               context: 1,
               plcmttype: 1,
@@ -213,10 +213,10 @@ describe('mediaforce bid adapter', function () {
         placement_id: '203',
         transactionId: '8df76688-1618-417a-87b1-60ad046841c9'
       }
-    ].map(({publisher_id, placement_id, transactionId}) => {
+    ].map(({ publisher_id, placement_id, transactionId }) => {
       return {
         bidder: 'mediaforce',
-        params: {publisher_id, placement_id},
+        params: { publisher_id, placement_id },
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [600, 400]]
@@ -330,7 +330,7 @@ describe('mediaforce bid adapter', function () {
 
       const [request] = spec.buildRequests([bid]);
       const data = JSON.parse(request.data);
-      assert.deepEqual(data.imp[0].banner, {w: 300, h: 600, format: [{w: 300, h: 250}]});
+      assert.deepEqual(data.imp[0].banner, { w: 300, h: 600, format: [{ w: 300, h: 250 }] });
     });
 
     it('should skip banner with empty sizes', function () {
@@ -370,7 +370,7 @@ describe('mediaforce bid adapter', function () {
             },
             site: {
               id: 'pub123',
-              publisher: {id: 'pub123'},
+              publisher: { id: 'pub123' },
               ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
@@ -389,7 +389,7 @@ describe('mediaforce bid adapter', function () {
                   transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
                 }
               },
-              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+              banner: { w: 300, h: 250, format: [{ w: 600, h: 400 }] },
             }, {
               tagid: '203',
               secure: secure,
@@ -399,7 +399,7 @@ describe('mediaforce bid adapter', function () {
                   transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
                 }
               },
-              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+              banner: { w: 300, h: 250, format: [{ w: 600, h: 400 }] },
             }, {
               tagid: '203',
               secure: secure,
@@ -409,7 +409,7 @@ describe('mediaforce bid adapter', function () {
                   transactionId: '8df76688-1618-417a-87b1-60ad046841c9'
                 }
               },
-              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+              banner: { w: 300, h: 250, format: [{ w: 600, h: 400 }] },
             }]
           }
         },
@@ -426,7 +426,7 @@ describe('mediaforce bid adapter', function () {
             },
             site: {
               id: 'pub124',
-              publisher: {id: 'pub124'},
+              publisher: { id: 'pub124' },
               ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
@@ -445,7 +445,7 @@ describe('mediaforce bid adapter', function () {
                   transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
                 }
               },
-              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+              banner: { w: 300, h: 250, format: [{ w: 600, h: 400 }] },
             }]
           }
         }
@@ -527,20 +527,20 @@ describe('mediaforce bid adapter', function () {
         ext: {
           advertiser_name: 'MediaForce',
           native: {
-            link: {url: nativeLink},
+            link: { url: nativeLink },
             assets: [{
               id: 1,
-              title: {text: titleText},
+              title: { text: titleText },
               required: 1
             }, {
               id: 3,
               img: imgData
             }, {
               id: 5,
-              data: {value: sponsoredByValue}
+              data: { value: sponsoredByValue }
             }, {
               id: 4,
-              data: {value: bodyValue}
+              data: { value: bodyValue }
             }],
             imptrackers: [nativeTracker],
             ver: '1'
@@ -603,20 +603,20 @@ describe('mediaforce bid adapter', function () {
       const bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
       const adm = JSON.stringify({
         native: {
-          link: {url: nativeLink},
+          link: { url: nativeLink },
           assets: [{
             id: 1,
-            title: {text: titleText},
+            title: { text: titleText },
             required: 1
           }, {
             id: 3,
             img: imgData
           }, {
             id: 5,
-            data: {value: sponsoredByValue}
+            data: { value: sponsoredByValue }
           }, {
             id: 4,
-            data: {value: bodyValue}
+            data: { value: bodyValue }
           }],
           imptrackers: [nativeTracker],
           ver: '1'

@@ -1,5 +1,5 @@
-import {deepEqual, deepSetValue, deepAccess, logWarn} from '../utils.js';
-import {hook} from '../hook.js';
+import { deepEqual, deepSetValue, deepAccess, logWarn } from '../utils.js';
+import { hook } from '../hook.js';
 
 export const normalizeFPD = hook('sync', function(ortb2Fragments) {
   [

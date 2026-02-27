@@ -1,6 +1,6 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/admediaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/admediaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
@@ -12,7 +12,7 @@ describe('admediaBidAdapter', function () {
       adUnitCode: 'adunit-code',
       bidder: 'admedia',
       bidId: 'g7ghhs78',
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: {
         placementId: '782332',
         aid: '86858',
@@ -31,7 +31,7 @@ describe('admediaBidAdapter', function () {
         adUnitCode: 'adunit-code',
         bidder: 'admedia',
         bidId: 'g7ghhs78',
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         params: {
           placementId: '782332',
           aid: '86858'

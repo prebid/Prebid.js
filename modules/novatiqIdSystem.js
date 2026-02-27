@@ -8,8 +8,8 @@
 import { logInfo, getWindowLocation } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -92,8 +92,10 @@ export const novatiqIdSubmodule = {
     } else {
       this.sendSimpleSyncRequest(novatiqId, url);
 
-      return { 'id': novatiqId,
-        'sharedStatus': sharedStatus }
+      return {
+        'id': novatiqId,
+        'sharedStatus': sharedStatus
+      }
     }
   },
 
@@ -124,7 +126,7 @@ export const novatiqIdSubmodule = {
         undefined, { method: 'GET', withCredentials: false });
     }
 
-    return {callback: resp};
+    return { callback: resp };
   },
 
   sendSimpleSyncRequest(novatiqId, url) {
@@ -225,7 +227,7 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       const cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+      const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
       // first check local storage
       if (storage.hasLocalStorage()) {

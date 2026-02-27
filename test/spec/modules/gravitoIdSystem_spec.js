@@ -27,7 +27,7 @@ describe('gravitompId module', function () {
     it('should return the gravitompId when it exists in cookie', function () {
       getCookieStub.withArgs(cookieKey).returns(GRAVITOID_TEST_VALUE);
       const id = gravitoIdSystemSubmodule.getId();
-      expect(id).to.be.deep.equal({id: {gravitompId: GRAVITOID_TEST_VALUE}});
+      expect(id).to.be.deep.equal({ id: { gravitompId: GRAVITOID_TEST_VALUE } });
     });
 
     cookieTestCasesForEmpty.forEach(testCase => it('should return the gravitompId when it not exists in cookie', function () {
@@ -40,7 +40,7 @@ describe('gravitompId module', function () {
   describe('decode()', function () {
     it('should return the gravitompId when it exists in cookie', function () {
       const decoded = gravitoIdSystemSubmodule.decode(GRAVITOID_TEST_OBJ);
-      expect(decoded).to.be.deep.equal({gravitompId: GRAVITOID_TEST_VALUE});
+      expect(decoded).to.be.deep.equal({ gravitompId: GRAVITOID_TEST_VALUE });
     });
 
     it('should return the undefined when decode id is not "string"', function () {

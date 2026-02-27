@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {parseSizesInput} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput } from '../src/utils.js';
 
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -104,7 +104,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params});
+      requests.push({ data: params });
     })
     return {
       method: 'POST',

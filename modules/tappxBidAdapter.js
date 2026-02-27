@@ -1,6 +1,6 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -330,7 +330,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     banner.api = api;
 
-    const formatArr = bannerMediaType.sizes.map(size => ({w: size[0], h: size[1]}))
+    const formatArr = bannerMediaType.sizes.map(size => ({ w: size[0], h: size[1] }))
     banner.format = Object.assign({}, formatArr);
 
     imp.banner = banner;
@@ -622,7 +622,7 @@ export function _checkParamDataType(key, value, datatype) {
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
   const url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
-  return parseDomain(url, {noLeadingWww: true});
+  return parseDomain(url, { noLeadingWww: true });
 }
 
 registerBidder(spec);

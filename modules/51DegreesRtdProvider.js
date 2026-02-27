@@ -1,6 +1,6 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {submodule} from '../src/hook.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { submodule } from '../src/hook.js';
 import {
   deepAccess,
   deepSetValue,
@@ -8,11 +8,11 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
-const {logMessage, logWarn, logError} = prefixLog(LOG_PREFIX);
+const { logMessage, logWarn, logError } = prefixLog(LOG_PREFIX);
 
 // ORTB device types
 const ORTB_DEVICE_TYPE = {
@@ -101,7 +101,7 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/HNZ75HT1');
   }
 
-  return {resourceKey, onPremiseJSUrl};
+  return { resourceKey, onPremiseJSUrl };
 }
 
 /**
@@ -270,7 +270,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
     deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
   }
 
-  return {device: ortb2Device};
+  return { device: ortb2Device };
 }
 
 /**
@@ -282,7 +282,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
-    const {resourceKey, onPremiseJSUrl} = extractConfig(moduleConfig, reqBidsConfigObj);
+    const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);
     logMessage('Resource key: ', resourceKey);
     logMessage('On-premise JS URL: ', onPremiseJSUrl);
 
@@ -296,7 +296,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
 
     getHighEntropyValues(['model', 'platform', 'platformVersion', 'fullVersionList']).then((hev) => {
       // Get 51Degrees JS URL, which is either cloud or on-premise
-      const scriptURL = get51DegreesJSURL({resourceKey, onPremiseJSUrl, hev});
+      const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev });
       logMessage('URL of the script to be injected: ', scriptURL);
 
       // Inject 51Degrees script, get device data and merge it into the ORTB2 object
@@ -313,7 +313,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
           logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
           callback();
         });
-      }, document, {crossOrigin: 'anonymous'});
+      }, document, { crossOrigin: 'anonymous' });
     });
   } catch (error) {
     // In case of an error, log it and continue

@@ -1,9 +1,9 @@
 import chai from 'chai';
-import {batchingCache, getCacheUrl, store, _internal, storeBatch} from 'src/videoCache.js';
-import {config} from 'src/config.js';
-import {server} from 'test/mocks/xhr.js';
-import {auctionManager} from '../../src/auctionManager.js';
-import {AuctionIndex} from '../../src/auctionIndex.js';
+import { batchingCache, getCacheUrl, store, _internal, storeBatch } from 'src/videoCache.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
+import { auctionManager } from '../../src/auctionManager.js';
+import { AuctionIndex } from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
 import { storeLocally } from '../../src/videoCache.js';
 
@@ -389,9 +389,9 @@ describe('The video cache', function () {
       sinon.assert.called(utils.logError);
     });
     it('should not process returned uuids if they do not match the batch size', () => {
-      const el = {auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub()}
+      const el = { auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub() }
       const batch = [el, el];
-      cacheIds = [{uuid: 'mock-id'}]
+      cacheIds = [{ uuid: 'mock-id' }]
       storeBatch(batch);
       expect(el.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.notCalled(batch[0].afterBidAdded);
@@ -403,8 +403,8 @@ describe('The video cache', function () {
           url: 'mock-cache'
         }
       })
-      const el = {auctionInstance: {addBidReceived: sinon.stub()}, bidResponse: {}, afterBidAdded: sinon.stub()};
-      cacheIds = [{uuid: 'mock-id'}]
+      const el = { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() };
+      cacheIds = [{ uuid: 'mock-id' }]
       storeBatch([el]);
       sinon.assert.match(el.bidResponse, {
         videoCacheKey: 'mock-id',

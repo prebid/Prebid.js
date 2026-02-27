@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];

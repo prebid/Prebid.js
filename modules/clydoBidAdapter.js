@@ -35,7 +35,7 @@ export const spec = {
     return allowedRegions.includes(region);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const data = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     const { partnerId, region } = validBidRequests[0].params;
 
     if (Array.isArray(data.imp)) {
@@ -47,7 +47,7 @@ export const spec = {
         const mediaType = imp.banner ? 'banner' : (imp.video ? 'video' : (imp.native ? 'native' : '*'));
         let floor = deepAccess(srcBid, 'floor');
         if (!floor && isFn(srcBid.getFloor)) {
-          const floorInfo = srcBid.getFloor({currency: DEFAULT_CURRENCY, mediaType, size: '*'});
+          const floorInfo = srcBid.getFloor({ currency: DEFAULT_CURRENCY, mediaType, size: '*' });
           if (floorInfo && typeof floorInfo.floor === 'number') {
             floor = floorInfo.floor;
           }
@@ -84,7 +84,7 @@ export const spec = {
                   try {
                     const parsed = JSON.parse(b.adm);
                     if (parsed && parsed.native && Array.isArray(parsed.native.assets)) {
-                      return {...b, adm: JSON.stringify(parsed.native)};
+                      return { ...b, adm: JSON.stringify(parsed.native) };
                     }
                   } catch (e) {}
                 }
@@ -93,7 +93,7 @@ export const spec = {
             }))
           }
         : body;
-      bids = converter.fromORTB({response: normalized, request: request.data}).bids;
+      bids = converter.fromORTB({ response: normalized, request: request.data }).bids;
     }
     return bids;
   },

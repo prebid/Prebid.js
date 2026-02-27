@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/relaidoBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {VIDEO} from 'src/mediaTypes.js';
-import {getCoreStorageManager} from '../../../src/storageManager.js';
+import { VIDEO } from 'src/mediaTypes.js';
+import { getCoreStorageManager } from '../../../src/storageManager.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 
 const UUID_KEY = 'relaido_uuid';
@@ -350,7 +350,7 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
       const request = data.bids[0];
-      expect(request.pagekvt).to.deep.equal({testkey: ['testvalue']});
+      expect(request.pagekvt).to.deep.equal({ testkey: ['testvalue'] });
     });
 
     it('should get canonicalUrl (ogUrl:true)', function () {
@@ -483,7 +483,7 @@ describe('RelaidoAdapter', function () {
 
   describe('spec.getUserSyncs', function () {
     it('should choose iframe sync urls', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: serverResponse.body.syncUrl + '?uu=hogehoge'
@@ -491,7 +491,7 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should choose iframe sync urls if serverResponse are empty', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: true}, []);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: 'https://api.relaido.jp/tr/v1/prebid/sync.html?uu=hogehoge'
@@ -500,7 +500,7 @@ describe('RelaidoAdapter', function () {
 
     it('should choose iframe sync urls if syncUrl are undefined', function () {
       serverResponse.body.syncUrl = undefined;
-      const userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: 'https://api.relaido.jp/tr/v1/prebid/sync.html?uu=hogehoge'
@@ -508,7 +508,7 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should return empty if iframeEnabled are false', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: false}, [serverResponse]);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: false }, [serverResponse]);
       expect(userSyncs).to.have.lengthOf(0);
     });
   });

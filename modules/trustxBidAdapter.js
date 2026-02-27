@@ -6,11 +6,11 @@ import {
   deepSetValue,
   mergeDeep
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -44,7 +44,7 @@ const ortbAdapterConverter = ortbConverter({
         const floorInfo = bidRequest.getFloor({
           currency: SUPPORTED_CURRENCY,
           mediaType: curMediaType,
-          size: bidRequest.sizes ? bidRequest.sizes.map(([w, h]) => ({w, h})) : '*'
+          size: bidRequest.sizes ? bidRequest.sizes.map(([w, h]) => ({ w, h })) : '*'
         });
 
         if (floorInfo && typeof floorInfo === 'object' &&
@@ -146,7 +146,7 @@ const ortbAdapterConverter = ortbConverter({
     return requestObj;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     let responseMediaType;
 
     if (bid.mtype === 2) {
@@ -219,7 +219,7 @@ export const spec = {
     const requestData = ortbAdapterConverter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
-      context: {contextMediaType: adType}
+      context: { contextMediaType: adType }
     });
 
     if (validBidRequests[0].params.test) {

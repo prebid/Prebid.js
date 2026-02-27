@@ -31,7 +31,7 @@ export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const globals = {};
 
 /* ----- mguid:start ------ */

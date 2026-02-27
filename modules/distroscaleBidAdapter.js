@@ -1,4 +1,4 @@
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -12,7 +12,7 @@ const AUCTION_TYPE = 1;
 const GVLID = 754;
 const UNDEF = undefined;
 
-const SUPPORTED_MEDIATYPES = [ BANNER ];
+const SUPPORTED_MEDIATYPES = [BANNER];
 
 function _getHost(url) {
   const a = document.createElement('a');
@@ -222,10 +222,10 @@ export const spec = {
     // First Party Data
     const commonFpd = bidderRequest.ortb2 || {};
     if (commonFpd.site) {
-      mergeDeep(payload, {site: commonFpd.site});
+      mergeDeep(payload, { site: commonFpd.site });
     }
     if (commonFpd.user) {
-      mergeDeep(payload, {user: commonFpd.user});
+      mergeDeep(payload, { user: commonFpd.user });
     }
 
     // User IDs

@@ -31,7 +31,7 @@ import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagio
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

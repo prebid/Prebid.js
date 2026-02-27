@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Renderer, executeRenderer } from 'src/Renderer.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 describe('Renderer', function () {
   let oldAdUnits;

@@ -1,19 +1,19 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import parse from 'url-parse';
-import {buildGamVideoUrl as buildDfpVideoUrl, dep} from 'modules/gamAdServerVideo.js';
+import { buildGamVideoUrl as buildDfpVideoUrl, dep } from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
-import {deepClone} from 'src/utils.js';
-import {config} from 'src/config.js';
-import {targeting} from 'src/targeting.js';
-import {auctionManager} from 'src/auctionManager.js';
-import {gdprDataHandler} from 'src/adapterManager.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
+import { targeting } from 'src/targeting.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { gdprDataHandler } from 'src/adapterManager.js';
 
 import * as adServer from 'src/adserver.js';
-import {hook} from '../../../src/hook.js';
-import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {AuctionIndex} from '../../../src/auctionIndex.js';
+import { hook } from '../../../src/hook.js';
+import { stubAuctionIndex } from '../../helpers/indexStub.js';
+import { AuctionIndex } from '../../../src/auctionIndex.js';
 import { getVastXml } from '../../../modules/gamAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
 import { generateUUID } from '../../../src/utils.js';
@@ -71,13 +71,13 @@ describe('The DFP video support module', function () {
   }).forEach(([t, options]) => {
     describe(`when using ${t}`, () => {
       it('should use page location as default for description_url', () => {
-        sandbox.stub(dep, 'ri').callsFake(() => ({page: 'example.com'}));
+        sandbox.stub(dep, 'ri').callsFake(() => ({ page: 'example.com' }));
         const prm = getQueryParams(options);
         expect(prm.description_url).to.eql('example.com');
       });
 
       it('should use a URI encoded page location as default for description_url', () => {
-        sandbox.stub(dep, 'ri').callsFake(() => ({page: 'https://example.com?iu=/99999999/news&cust_params=current_hour%3D12%26newscat%3Dtravel&pbjs_debug=true'}));
+        sandbox.stub(dep, 'ri').callsFake(() => ({ page: 'https://example.com?iu=/99999999/news&cust_params=current_hour%3D12%26newscat%3Dtravel&pbjs_debug=true' }));
         const prm = getQueryParams(options);
         expect(prm.description_url).to.eql('https%3A%2F%2Fexample.com%3Fiu%3D%2F99999999%2Fnews%26cust_params%3Dcurrent_hour%253D12%2526newscat%253Dtravel%26pbjs_debug%3Dtrue');
       });
@@ -193,8 +193,8 @@ describe('The DFP video support module', function () {
     });
 
     Object.entries({
-      'params': {params: {'iu': 'mock/unit'}},
-      'url': {url: 'https://video.adserver.mock/', params: {'iu': 'mock/unit'}}
+      'params': { params: { 'iu': 'mock/unit' } },
+      'url': { url: 'https://video.adserver.mock/', params: { 'iu': 'mock/unit' } }
     }).forEach(([t, opts]) => {
       describe(`when using ${t}`, () => {
         it('should be included if available', () => {
@@ -320,7 +320,7 @@ describe('The DFP video support module', function () {
       ]
     }).forEach(([param, cases]) => {
       describe(param, () => {
-        cases.forEach(({video, expected}) => {
+        cases.forEach(({ video, expected }) => {
           describe(`when mediaTypes.video has ${JSON.stringify(video)}`, () => {
             it(`fills in ${param} = ${expected}`, () => {
               Object.assign(adUnit.mediaTypes.video, video);
@@ -385,8 +385,8 @@ describe('The DFP video support module', function () {
                 data: [
                   {
                     segment: [
-                      {id: '1'},
-                      {id: '2'}
+                      { id: '1' },
+                      { id: '2' }
                     ]
                   },
                 ]
@@ -399,7 +399,7 @@ describe('The DFP video support module', function () {
                     segtax: 1,
                   },
                   segment: [
-                    {id: '3'}
+                    { id: '3' }
                   ]
                 }
               ]
@@ -414,8 +414,8 @@ describe('The DFP video support module', function () {
               segtax: 4,
             },
             segment: [
-              {id: '4-1'},
-              {id: '4-2'}
+              { id: '4-1' },
+              { id: '4-2' }
             ]
           },
           {
@@ -423,8 +423,8 @@ describe('The DFP video support module', function () {
               segtax: 4,
             },
             segment: [
-              {id: '4-2'},
-              {id: '4-3'}
+              { id: '4-2' },
+              { id: '4-3' }
             ]
           },
           {
@@ -432,8 +432,8 @@ describe('The DFP video support module', function () {
               segtax: 6,
             },
             segment: [
-              {id: '6-1'},
-              {id: '6-2'}
+              { id: '6-1' },
+              { id: '6-2' }
             ]
           },
           {
@@ -441,8 +441,8 @@ describe('The DFP video support module', function () {
               segtax: 6,
             },
             segment: [
-              {id: '6-2'},
-              {id: '6-3'}
+              { id: '6-2' },
+              { id: '6-3' }
             ]
           },
         ]
@@ -499,7 +499,7 @@ describe('The DFP video support module', function () {
 
     before(function () {
       targetingStub = sinon.stub(targeting, 'getAllTargeting');
-      targetingStub.returns({'video1': allTargetingData});
+      targetingStub.returns({ 'video1': allTargetingData });
 
       config.setConfig({
         enableSendAllBids: true
@@ -734,7 +734,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should substitue vast ad tag uri in gam wrapper with blob content in data uri format', (done) => {
-    config.setConfig({cache: { useLocal: true }});
+    config.setConfig({ cache: { useLocal: true } });
     const url = 'https://pubads.g.doubleclick.net/gampad/ads'
     const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>';
     const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
@@ -768,7 +768,7 @@ describe('The DFP video support module', function () {
     server.respondWith(/^https:\/\/pubads.*/, gamWrapper);
     server.respondWith(/^blob:http:*/, blobContent);
 
-    getVastXml({url, adUnit: {}, bid: {}}, localMap)
+    getVastXml({ url, adUnit: {}, bid: {} }, localMap)
       .then((vastXml) => {
         expect(vastXml).to.deep.eql(expectedOutput);
         done();
@@ -792,7 +792,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should return unmodified gam vast wrapper if it doesn\'nt contain locally cached uuid', (done) => {
-    config.setConfig({cache: { useLocal: true }});
+    config.setConfig({ cache: { useLocal: true } });
     const uuidNotPresentInCache = '4536229c-eddb-45b3-a919-89d889e925aa';
     const uuidPresentInCache = '64fcdc86-5325-4750-bc60-02f63b23175a';
     const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuidNotPresentInCache;
@@ -820,7 +820,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should return unmodified gam vast wrapper if it contains more than 1 saved uuids', (done) => {
-    config.setConfig({cache: { useLocal: true }});
+    config.setConfig({ cache: { useLocal: true } });
     const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa';
     const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a';
     const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`
@@ -851,7 +851,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should return returned unmodified gam vast wrapper if exception has been thrown', (done) => {
-    config.setConfig({cache: { useLocal: true }});
+    config.setConfig({ cache: { useLocal: true } });
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -874,7 +874,7 @@ describe('The DFP video support module', function () {
 
   describe('Retrieve US Privacy string from GPP when using the IMA player and downloading VAST XMLs', () => {
     beforeEach(() => {
-      config.setConfig({cache: { useLocal: true }});
+      config.setConfig({ cache: { useLocal: true } });
       // Install a fake IMA object, because the us_privacy is only set when IMA is available
       window.google = {
         ima: {
@@ -901,7 +901,7 @@ describe('The DFP video support module', function () {
       );
       server.respondWith(gamWrapper);
 
-      const result = getVastXml({url, adUnit: {}, bid: {}}, []).then(() => {
+      const result = getVastXml({ url, adUnit: {}, bid: {} }, []).then(() => {
         const request = server.requests[0];
         const url = new URL(request.url);
         return url.searchParams.get('us_privacy');
@@ -1161,7 +1161,8 @@ describe('The DFP video support module', function () {
           "MspaServiceProviderMode": 0,
           "GpcSegmentType": 1,
           "Gpc": false
-        }}));
+        }
+      }));
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YNY');

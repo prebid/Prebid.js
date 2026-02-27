@@ -1,9 +1,9 @@
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {hasUserInfo} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import { hasUserInfo } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
@@ -96,7 +96,8 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
     data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
     options: {
       contentType: 'application/json',
-      withCredentials: false}
+      withCredentials: false
+    }
   }
 }
 

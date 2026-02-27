@@ -3,9 +3,9 @@
    access to a publisher page from creative payloads.
  */
 
-import {getAllAssetsMessage, getAssetMessage} from './native.js';
-import {BID_STATUS, MESSAGES} from './constants.js';
-import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
+import { getAllAssetsMessage, getAssetMessage } from './native.js';
+import { BID_STATUS, MESSAGES } from './constants.js';
+import { isApnGetTagDefined, isGptPubadsDefined, logError, logWarn } from './utils.js';
 import {
   deferRendering,
   getBidToRender,
@@ -14,8 +14,8 @@ import {
   handleRender,
   markWinner
 } from './adRendering.js';
-import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
-import {PbPromise} from './utils/promise.js';
+import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
+import { PbPromise } from './utils/promise.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -56,7 +56,7 @@ export function getReplier(ev) {
 
 function ensureAdId(adId, reply) {
   return function (data, ...args) {
-    return reply(Object.assign({}, data, {adId}), ...args);
+    return reply(Object.assign({}, data, { adId }), ...args);
   }
 }
 
@@ -82,7 +82,7 @@ function getResizer(adId, bidResponse) {
   // the first is the one that was requested and is tied to the element
   // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
   return function (width, height) {
-    resizeRemoteCreative({...bidResponse, width, height, adId});
+    resizeRemoteCreative({ ...bidResponse, width, height, adId });
   }
 }
 function handleRenderRequest(reply, message, bidResponse) {
@@ -119,7 +119,7 @@ function handleNativeRequest(reply, data, adObject) {
       deferRendering(adObject, () => reply(getAllAssetsMessage(data, adObject)));
       break;
     default:
-      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)});
+      handleNativeMessage(data, adObject, { resizeFn: getResizer(data.adId, adObject) });
       markWinner(adObject);
   }
 }
@@ -152,7 +152,7 @@ export function resizeAnchor(ins, width, height) {
     // wait until GPT has set dimensions on the ins, otherwise our changes will be overridden
     const resizer = setInterval(() => {
       let done = false;
-      Object.entries({width, height})
+      Object.entries({ width, height })
         .forEach(([dimension, newValue]) => {
           if (/\d+px/.test(ins.style[dimension])) {
             ins.style[dimension] = getDimension(newValue);
@@ -167,7 +167,7 @@ export function resizeAnchor(ins, width, height) {
   })
 }
 
-export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({ instl, adId, adUnitCode, width, height }) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;

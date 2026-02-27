@@ -4,12 +4,12 @@ import adapterManager, {
   type BidRequest,
   type ClientBidderRequest
 } from '../adapterManager.js';
-import {config} from '../config.js';
-import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
-import {type SyncType, userSync} from '../userSync.js';
-import {nativeBidIsValid} from '../native.js';
-import {isValidVideoBid} from '../video.js';
-import {EVENTS, REJECTION_REASON, DEBUG_MODE} from '../constants.js';
+import { config } from '../config.js';
+import { BannerBid, Bid, BidResponse, createBid } from '../bidfactory.js';
+import { type SyncType, userSync } from '../userSync.js';
+import { nativeBidIsValid } from '../native.js';
+import { isValidVideoBid } from '../video.js';
+import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
 import * as events from '../events.js';
 
 import {
@@ -28,20 +28,20 @@ import {
   getParameterByName,
   debugTurnedOn
 } from '../utils.js';
-import {hook} from '../hook.js';
-import {auctionManager} from '../auctionManager.js';
-import {bidderSettings} from '../bidderSettings.js';
-import {useMetrics} from '../utils/perfMetrics.js';
-import {isActivityAllowed} from '../activities/rules.js';
-import {activityParams} from '../activities/activityParams.js';
-import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
-import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
-import type {AnyFunction, Wraps} from "../types/functions.d.ts";
-import type {BidderCode, StorageDisclosure} from "../types/common.d.ts";
-import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
-import type {AddBidResponse} from "../auction.ts";
-import type {MediaType} from "../mediaTypes.ts";
-import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../consentHandler.ts";
+import { hook } from '../hook.js';
+import { auctionManager } from '../auctionManager.js';
+import { bidderSettings } from '../bidderSettings.js';
+import { useMetrics } from '../utils/perfMetrics.js';
+import { isActivityAllowed } from '../activities/rules.js';
+import { activityParams } from '../activities/activityParams.js';
+import { MODULE_TYPE_BIDDER } from '../activities/modules.js';
+import { ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD } from '../activities/activities.js';
+import type { AnyFunction, Wraps } from "../types/functions.d.ts";
+import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
+import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
+import type { AddBidResponse } from "../auction.ts";
+import type { MediaType } from "../mediaTypes.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -197,7 +197,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-export const guardTids: any = memoize(({bidderCode}) => {
+export const guardTids: any = memoize(({ bidderCode }) => {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -215,7 +215,7 @@ export const guardTids: any = memoize(({bidderCode}) => {
       });
     return proxy;
   }
-  const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
+  const bidRequest = memoize((br) => privateAccessProxy(br, { get }), (arg) => arg.bidId);
   /**
    * Return a view on bidd(er) requests where auctionId/transactionId are nulled if the bidder is not allowed `transmitTid`.
    *
@@ -334,7 +334,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
           }
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
-          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
+          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, { bidRequests: validBidRequests });
         },
         onBid: (bidResponse) => {
           const bidRequest = bidRequestMap[bidResponse.requestId];
@@ -407,7 +407,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
   bidderRequest: ClientBidderRequest<B>,
   ajax: Ajax,
   wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
-  {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
+  { onRequest, onResponse, onPaapi, onError, onBid, onCompletion }: {
     /**
      * invoked once for each HTTP request built by the adapter - with the raw request
      */
@@ -629,7 +629,7 @@ declare module '../bidfactory' {
 }
 
 // check that the bid has a width and height set
-function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index} = {}) {
+function validBidSize(adUnitCode, bid: BannerBid, { index = auctionManager.index } = {}) {
   if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
     bid.width = parseInt(bid.width, 10);
     bid.height = parseInt(bid.height, 10);
@@ -651,7 +651,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [ width, height ] = parsedSizes[0].split('x');
+    const [width, height] = parsedSizes[0].split('x');
     bid.width = parseInt(width, 10);
     bid.height = parseInt(height, 10);
     return true;
@@ -661,7 +661,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
+export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.index } = {}) {
   function hasValidKeys() {
     const bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
@@ -686,15 +686,15 @@ export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.in
     return false;
   }
 
-  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
+  if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, { index })) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
-  if (FEATURES.VIDEO && bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
+  if (FEATURES.VIDEO && bid.mediaType === 'video' && !isValidVideoBid(bid, { index })) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }
-  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, {index})) {
+  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, { index })) {
     logError(errorMessage(`Banner bids require a width and height`));
     return false;
   }

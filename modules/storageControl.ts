@@ -1,5 +1,5 @@
-import {config} from '../src/config.js';
-import {metadata} from '../libraries/metadata/metadata.js';
+import { config } from '../src/config.js';
+import { metadata } from '../libraries/metadata/metadata.js';
 import {
   ACTIVITY_PARAM_COMPONENT,
   ACTIVITY_PARAM_COMPONENT_NAME,
@@ -13,14 +13,14 @@ import {
   STORAGE_TYPE_LOCALSTORAGE,
   type StorageDisclosure as Disclosure
 } from '../src/storageManager.js';
-import {logWarn, uniques} from '../src/utils.js';
-import {registerActivityControl} from '../src/activities/rules.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../src/activities/activities.js';
-import {addApiMethod} from "../src/prebid.ts";
+import { logWarn, uniques } from '../src/utils.js';
+import { registerActivityControl } from '../src/activities/rules.js';
+import { ACTIVITY_ACCESS_DEVICE } from '../src/activities/activities.js';
+import { addApiMethod } from "../src/prebid.ts";
 // @ts-expect-error the ts compiler is confused by build-time renaming of summary.mjs to summary.js, reassure it
 // eslint-disable-next-line prebid/validate-imports
-import {getStorageDisclosureSummary} from "../libraries/storageDisclosure/summary.js";
-import {getGlobal} from "../src/prebidGlobal.ts";
+import { getStorageDisclosureSummary } from "../libraries/storageDisclosure/summary.js";
+import { getGlobal } from "../src/prebidGlobal.ts";
 
 export const ENFORCE_STRICT = 'strict';
 export const ENFORCE_ALIAS = 'allowAliases';
@@ -83,9 +83,9 @@ export function checkDisclosure(params, getMatchingDisclosures = getDisclosures)
     if (disclosures == null) {
       reason = `Cannot determine if storage key "${key}" is disclosed by "${component}" because the necessary metadata is missing - was it included in the build?`
     } else {
-      const {disclosureURLs, matches} = disclosures;
+      const { disclosureURLs, matches } = disclosures;
       const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME]
-      for (const {componentName} of matches) {
+      for (const { componentName } of matches) {
         if (componentName === moduleName) {
           disclosed = true;
         } else {
@@ -113,11 +113,11 @@ export function checkDisclosure(params, getMatchingDisclosures = getDisclosures)
 
 export function storageControlRule(getEnforcement = () => enforcement, check = checkDisclosure) {
   return function (params) {
-    const {disclosed, parent, reason} = check(params);
+    const { disclosed, parent, reason } = check(params);
     if (disclosed === null) return;
     if (!disclosed) {
       const enforcement = getEnforcement();
-      if (enforcement === ENFORCE_STRICT || (enforcement === ENFORCE_ALIAS && !parent)) return {allow: false, reason};
+      if (enforcement === ENFORCE_STRICT || (enforcement === ENFORCE_ALIAS && !parent)) return { allow: false, reason };
       if (reason) {
         logWarn('storageControl:', reason);
       }
@@ -185,7 +185,7 @@ export function dynamicDisclosureCollector() {
   }
 }
 
-const {hook: discloseStorageHook, getDisclosures: dynamicDisclosures} = dynamicDisclosureCollector();
+const { hook: discloseStorageHook, getDisclosures: dynamicDisclosures } = dynamicDisclosureCollector();
 discloseStorageUse.before(discloseStorageHook);
 
 export type StorageDisclosure = Disclosure & {

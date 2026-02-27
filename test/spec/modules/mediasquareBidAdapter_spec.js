@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/mediasquareBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/mediasquareBidAdapter.js';
 import { server } from 'test/mocks/xhr.js';
 
 describe('MediaSquare bid adapter tests', function () {
@@ -82,37 +82,39 @@ describe('MediaSquare bid adapter tests', function () {
     sizes: [[300, 250]],
     getFloor: function (a) { return { currency: 'USD', floor: 1.0 }; },
   }];
-  var BID_RESPONSE = {'body': {
-    'responses': [{
-      'transaction_id': 'cccc1234',
-      'cpm': 22.256608,
-      'width': 300,
-      'height': 250,
-      'creative_id': '158534630',
-      'currency': 'USD',
-      'originalCpm': 25.0123,
-      'originalCurrency': 'USD',
-      'net_revenue': true,
-      'ttl': 300,
-      'ad': '< --- creative code --- >',
-      'bidder': 'msqClassic',
-      'code': 'test/publishername_atf_desktop_rg_pave',
-      'bid_id': 'aaaa1234',
-      'adomain': ['test.com'],
-      'context': 'instream',
-      'increment': 1.0,
-      'ova': 'cleared',
-      'dsa': {
-        'behalf': 'some-behalf',
-        'paid': 'some-paid',
-        'transparency': [{
-          'domain': 'test.com',
-          'dsaparams': [1, 2, 3]
-        }],
-        'adrender': 1
-      }
-    }],
-  }};
+  var BID_RESPONSE = {
+    'body': {
+      'responses': [{
+        'transaction_id': 'cccc1234',
+        'cpm': 22.256608,
+        'width': 300,
+        'height': 250,
+        'creative_id': '158534630',
+        'currency': 'USD',
+        'originalCpm': 25.0123,
+        'originalCurrency': 'USD',
+        'net_revenue': true,
+        'ttl': 300,
+        'ad': '< --- creative code --- >',
+        'bidder': 'msqClassic',
+        'code': 'test/publishername_atf_desktop_rg_pave',
+        'bid_id': 'aaaa1234',
+        'adomain': ['test.com'],
+        'context': 'instream',
+        'increment': 1.0,
+        'ova': 'cleared',
+        'dsa': {
+          'behalf': 'some-behalf',
+          'paid': 'some-paid',
+          'transparency': [{
+            'domain': 'test.com',
+            'dsaparams': [1, 2, 3]
+          }],
+          'adrender': 1
+        }
+      }],
+    }
+  };
 
   const DEFAULT_OPTIONS = {
     ortb2: {
@@ -260,7 +262,7 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with cookies in bid response', function () {
-    BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
+    BID_RESPONSE.body.cookies = [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }];
     var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
@@ -278,7 +280,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].native = {'title': 'native title'};
+    BID_RESPONSE.body.responses[0].native = { 'title': 'native title' };
     const response = spec.interpretResponse(BID_RESPONSE, request);
     expect(response).to.have.lengthOf(1);
     const bid = response[0];
@@ -287,7 +289,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies video in bid response', function () {
     const request = spec.buildRequests(VIDEO_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].video = {'xml': 'my vast XML', 'url': 'my vast url'};
+    BID_RESPONSE.body.responses[0].video = { 'xml': 'my vast XML', 'url': 'my vast url' };
     const response = spec.interpretResponse(BID_RESPONSE, request);
     expect(response).to.have.lengthOf(1);
     const bid = response[0];
@@ -298,7 +300,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies burls in bid response', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].burls = [{'url': 'http://myburl.com/track?bid=1.0'}];
+    BID_RESPONSE.body.responses[0].burls = [{ 'url': 'http://myburl.com/track?bid=1.0' }];
     const response = spec.interpretResponse(BID_RESPONSE, request);
     expect(response).to.have.lengthOf(1);
     const bid = response[0];
@@ -309,7 +311,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies burls bidwon', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
-    BID_RESPONSE.body.responses[0].burls = [{'url': 'http://myburl.com/track?bid=1.0'}];
+    BID_RESPONSE.body.responses[0].burls = [{ 'url': 'http://myburl.com/track?bid=1.0' }];
     const response = spec.interpretResponse(BID_RESPONSE, request);
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);

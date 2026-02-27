@@ -1,8 +1,8 @@
-import {mergeProcessors} from '../ortbConverter/lib/mergeProcessors.js';
-import {PBS_PROCESSORS} from './processors/pbs.js';
-import {getProcessors, PBS} from '../../src/pbjsORTB.js';
-import {defaultProcessors} from '../ortbConverter/converter.js';
-import {memoize} from '../../src/utils.js';
+import { mergeProcessors } from '../ortbConverter/lib/mergeProcessors.js';
+import { PBS_PROCESSORS } from './processors/pbs.js';
+import { getProcessors, PBS } from '../../src/pbjsORTB.js';
+import { defaultProcessors } from '../ortbConverter/converter.js';
+import { memoize } from '../../src/utils.js';
 
 /**
  * ORTB converter processor set that understands Prebid Server extensions.

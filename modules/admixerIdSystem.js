@@ -8,8 +8,8 @@
 import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -19,7 +19,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
  */
 
 const NAME = 'admixerId';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: NAME });
 
 /** @type {Submodule} */
 export const admixerIdSubmodule = {
@@ -49,8 +49,8 @@ export const admixerIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, {gdpr: consentData} = {}) {
-    const {e, p, pid} = (config && config.params) || {};
+  getId(config, { gdpr: consentData } = {}) {
+    const { e, p, pid } = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
       logError('admixerId submodule requires partner id to be defined');
       return;
@@ -90,7 +90,7 @@ export const admixerIdSubmodule = {
 function retrieveVisitorId(url, callback) {
   ajax(url, {
     success: response => {
-      const {setData: {visitorid} = {}} = JSON.parse(response || '{}');
+      const { setData: { visitorid } = {} } = JSON.parse(response || '{}');
       if (visitorid) {
         callback(visitorid);
       } else {

@@ -3,9 +3,9 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
@@ -18,7 +18,7 @@ const DEFAULT_PARTNER_ID = 0;
 const AU_GVLID = 561;
 const MODULE_CODE = 'hadronAnalytics';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 var viewId = utils.generateUUID();
 
@@ -47,8 +47,8 @@ var startAuction = 0;
 var bidRequestTimeout = 0;
 const analyticsType = 'endpoint';
 
-const hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
-  track({eventType, args}) {
+const hadronAnalyticsAdapter = Object.assign(adapter({ url: HADRON_ANALYTICS_URL, analyticsType }), {
+  track({ eventType, args }) {
     args = args ? utils.deepClone(args) : {};
     var data = {};
     if (!eventsToTrack.includes(eventType)) return;

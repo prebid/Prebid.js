@@ -1,6 +1,6 @@
-import {submodule, getHook} from '../src/hook.js';
+import { submodule, getHook } from '../src/hook.js';
 import adapterManager from '../src/adapterManager.js';
-import {logInfo, deepClone, isArray, isStr, isPlainObject, logError} from '../src/utils.js';
+import { logInfo, deepClone, isArray, isStr, isPlainObject, logError } from '../src/utils.js';
 
 // Constants
 const MODULE_NAME = 'raveltech';
@@ -24,10 +24,10 @@ const getAnonymizedEids = (eids) => {
         return [];
       }
       logInfo('Anonymized as byte array of length=', id.length);
-      return [ {
+      return [{
         ...uid,
         id
-      } ];
+      }];
     })
   })
 
@@ -57,7 +57,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
     }
     let requests = preserveOriginalBid ? buildRequests(validBidRequests, ...rest) : [];
     if (!isArray(requests)) {
-      requests = [ requests ];
+      requests = [requests];
     }
 
     try {
@@ -73,7 +73,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
 
       let ravelRequests = buildRequests(ravelBidRequests, ...rest);
       if (!isArray(ravelRequests) && ravelRequests) {
-        ravelRequests = [ ravelRequests ];
+        ravelRequests = [ravelRequests];
       }
       if (ravelRequests) {
         ravelRequests.forEach(request => {
@@ -84,7 +84,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
         })
       }
 
-      return [ ...requests ?? [], ...ravelRequests ?? [] ];
+      return [...requests ?? [], ...ravelRequests ?? []];
     } catch (e) {
       logError('Error while generating ravel requests :', e);
       return requests;

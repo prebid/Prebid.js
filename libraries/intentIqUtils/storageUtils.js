@@ -1,12 +1,12 @@
-import {logError, logInfo} from '../../src/utils.js';
-import {SUPPORTED_TYPES, FIRST_PARTY_KEY} from '../../libraries/intentIqConstants/intentIqConstants.js';
-import {getStorageManager} from '../../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
+import { logError, logInfo } from '../../src/utils.js';
+import { SUPPORTED_TYPES, FIRST_PARTY_KEY } from '../../libraries/intentIqConstants/intentIqConstants.js';
+import { getStorageManager } from '../../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 
 const MODULE_NAME = 'intentIqId';
 const PCID_EXPIRY = 365;
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * Read data from local storage or cookie based on allowed storage types.

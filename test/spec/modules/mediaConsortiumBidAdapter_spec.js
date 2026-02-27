@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, OPTIMIZATIONS_STORAGE_KEY, getOptimizationsFromLocalStorage } from 'modules/mediaConsortiumBidAdapter.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BANNER_BID = {
   adUnitCode: 'dfp_ban_atf',
@@ -166,7 +166,7 @@ describe('Media Consortium Bid Adapter', function () {
       }
 
       const bids = [BANNER_BID]
-      const [syncRequest, auctionRequest] = spec.buildRequests(bids, {...bidderRequest, bids});
+      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids });
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -215,7 +215,7 @@ describe('Media Consortium Bid Adapter', function () {
       }
 
       const bids = [VIDEO_BID]
-      const [syncRequest, auctionRequest] = spec.buildRequests(bids, {...bidderRequest, bids});
+      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids });
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -264,7 +264,7 @@ describe('Media Consortium Bid Adapter', function () {
       }
 
       const bids = [MULTI_MEDIATYPES_BID]
-      const [syncRequest, auctionRequest] = spec.buildRequests(bids, {...bidderRequest, bids});
+      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids });
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -278,12 +278,12 @@ describe('Media Consortium Bid Adapter', function () {
     it('should not build a request if optimizations are there for the adunit code', function () {
       const bids = [BANNER_BID]
       const optimizations = {
-        [bids[0].adUnitCode]: {isEnabled: false, expiresAt: Date.now() + 600000}
+        [bids[0].adUnitCode]: { isEnabled: false, expiresAt: Date.now() + 600000 }
       }
 
       localStorage.setItem(OPTIMIZATIONS_STORAGE_KEY, JSON.stringify(optimizations))
 
-      const requests = spec.buildRequests(bids, {...bidderRequest, bids});
+      const requests = spec.buildRequests(bids, { ...bidderRequest, bids });
 
       localStorage.removeItem(OPTIMIZATIONS_STORAGE_KEY)
 
@@ -301,7 +301,7 @@ describe('Media Consortium Bid Adapter', function () {
         impressions: [{
           id: MULTI_MEDIATYPES_WITH_INVALID_VIDEO_CONTEXT.bidId,
           adUnitCode: MULTI_MEDIATYPES_WITH_INVALID_VIDEO_CONTEXT.adUnitCode,
-          mediaTypes: {banner: MULTI_MEDIATYPES_WITH_INVALID_VIDEO_CONTEXT.mediaTypes.banner}
+          mediaTypes: { banner: MULTI_MEDIATYPES_WITH_INVALID_VIDEO_CONTEXT.mediaTypes.banner }
         }],
         device: {
           w: 1200,
@@ -330,9 +330,9 @@ describe('Media Consortium Bid Adapter', function () {
       const invalidVideoBids = [VIDEO_BID_WITH_MISSING_CONTEXT]
       const multiMediatypesBidWithInvalidVideo = [MULTI_MEDIATYPES_WITH_INVALID_VIDEO_CONTEXT]
 
-      expect(spec.buildRequests(invalidVideoBids, {...bidderRequest, bids: invalidVideoBids})).to.be.undefined
+      expect(spec.buildRequests(invalidVideoBids, { ...bidderRequest, bids: invalidVideoBids })).to.be.undefined
 
-      const [syncRequest, auctionRequest] = spec.buildRequests(multiMediatypesBidWithInvalidVideo, {...bidderRequest, bids: multiMediatypesBidWithInvalidVideo})
+      const [syncRequest, auctionRequest] = spec.buildRequests(multiMediatypesBidWithInvalidVideo, { ...bidderRequest, bids: multiMediatypesBidWithInvalidVideo })
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -341,7 +341,7 @@ describe('Media Consortium Bid Adapter', function () {
 
   describe('interpretResponse', function () {
     it('should return an empty array if the response is invalid', function () {
-      expect(spec.interpretResponse({body: 'INVALID_BODY'}, {})).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: 'INVALID_BODY' }, {})).to.deep.equal([]);
     })
 
     it('should return a formatted banner bid', function () {
@@ -360,7 +360,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'banner',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<html><body><div>1</div></body></html>'
               }
             },
@@ -428,7 +428,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'video',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<VAST>...</VAST>',
                 rendering: {
                   video: {
@@ -486,7 +486,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'video',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<VAST>...</VAST>'
               }
             },
@@ -525,7 +525,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'video',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<VAST>...</VAST>'
               }
             },
@@ -555,8 +555,8 @@ describe('Media Consortium Bid Adapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return an empty response if the response is invalid or missing data', function () {
-      expect(spec.getUserSyncs(null, [{body: 'INVALID_BODY'}])).to.be.undefined;
-      expect(spec.getUserSyncs(null, [{body: 'INVALID_BODY'}, {body: 'INVALID_BODY'}])).to.be.undefined;
+      expect(spec.getUserSyncs(null, [{ body: 'INVALID_BODY' }])).to.be.undefined;
+      expect(spec.getUserSyncs(null, [{ body: 'INVALID_BODY' }, { body: 'INVALID_BODY' }])).to.be.undefined;
     })
 
     it('should return an array of user syncs', function () {
@@ -564,9 +564,9 @@ describe('Media Consortium Bid Adapter', function () {
         {
           body: {
             bidders: [
-              {type: 'image', url: 'https://test-url.com'},
-              {type: 'redirect', url: 'https://test-url.com'},
-              {type: 'iframe', url: 'https://test-url.com'}
+              { type: 'image', url: 'https://test-url.com' },
+              { type: 'redirect', url: 'https://test-url.com' },
+              { type: 'iframe', url: 'https://test-url.com' }
             ]
           }
         },
@@ -576,9 +576,9 @@ describe('Media Consortium Bid Adapter', function () {
       ]
 
       const formattedUserSyncs = [
-        {type: 'image', url: 'https://test-url.com'},
-        {type: 'image', url: 'https://test-url.com'},
-        {type: 'iframe', url: 'https://test-url.com'}
+        { type: 'image', url: 'https://test-url.com' },
+        { type: 'image', url: 'https://test-url.com' },
+        { type: 'iframe', url: 'https://test-url.com' }
       ]
 
       expect(spec.getUserSyncs(null, serverResponses)).to.deep.equal(formattedUserSyncs);
@@ -601,7 +601,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'video',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<VAST>...</VAST>',
                 rendering: {
                   video: {
@@ -659,7 +659,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'video',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<VAST>...</VAST>',
                 rendering: {
                   video: {
@@ -720,7 +720,7 @@ describe('Media Consortium Bid Adapter', function () {
               creative: {
                 id: 'CREATIVE_ID',
                 mediaType: 'video',
-                size: {width: 320, height: 250},
+                size: { width: 320, height: 250 },
                 markup: '<VAST>...</VAST>'
               }
             },

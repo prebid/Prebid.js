@@ -12,7 +12,7 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
   function queueAd(adTagUrl, divId, options = {}) {
     const queue = storage[divId];
     if (queue) {
-      queue.push({adTagUrl, options});
+      queue.push({ adTagUrl, options });
       triggerEvent(AUCTION_AD_LOAD_QUEUED, adTagUrl, options);
     } else {
       loadAd(divId, adTagUrl, options);

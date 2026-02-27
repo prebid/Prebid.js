@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   createSessionId,
   isBidRequestValid,
@@ -12,13 +12,13 @@ import {
   createBuildRequestsFn,
   createInterpretResponseFn
 } from '../libraries/vidazooUtils/bidderUtils.js';
-import {OPT_CACHE_KEY, OPT_TIME_KEY} from '../libraries/vidazooUtils/constants.js';
+import { OPT_CACHE_KEY, OPT_TIME_KEY } from '../libraries/vidazooUtils/constants.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
 const BIDDER_VERSION = '1.0.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const webSessionId = createSessionId();
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {

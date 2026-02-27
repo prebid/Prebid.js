@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/proxistoreBidAdapter.js';
-import {BANNER} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec } from 'modules/proxistoreBidAdapter.js';
+import { BANNER } from 'src/mediaTypes.js';
 
 const BIDDER_CODE = 'proxistore';
 const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/openrtb';
@@ -94,24 +94,24 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return false when website param is missing', function () {
-      const bid = {...baseBid, params: {language: 'fr'}};
+      const bid = { ...baseBid, params: { language: 'fr' } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when language param is missing', function () {
-      const bid = {...baseBid, params: {website: 'example.fr'}};
+      const bid = { ...baseBid, params: { website: 'example.fr' } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when params object is empty', function () {
-      const bid = {...baseBid, params: {}};
+      const bid = { ...baseBid, params: {} };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
     describe('request structure', function () {
-      const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+      const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
       const request = spec.buildRequests([baseBid], bidderRequest);
 
       it('should return a valid object', function () {
@@ -128,12 +128,12 @@ describe('ProxistoreBidAdapter', function () {
 
       it('should have correct options', function () {
         expect(request.options.contentType).to.equal('application/json');
-        expect(request.options.customHeaders).to.deep.equal({version: '2.0.0'});
+        expect(request.options.customHeaders).to.deep.equal({ version: '2.0.0' });
       });
     });
 
     describe('OpenRTB data format', function () {
-      const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+      const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
       const request = spec.buildRequests([baseBid], bidderRequest);
       const data = request.data;
 
@@ -154,8 +154,8 @@ describe('ProxistoreBidAdapter', function () {
 
       it('should include banner formats from bid sizes', function () {
         const formats = data.imp[0].banner.format;
-        expect(formats).to.deep.include({w: 300, h: 600});
-        expect(formats).to.deep.include({w: 300, h: 250});
+        expect(formats).to.deep.include({ w: 300, h: 600 });
+        expect(formats).to.deep.include({ w: 300, h: 250 });
       });
 
       it('should set imp.id to bidId', function () {
@@ -176,19 +176,19 @@ describe('ProxistoreBidAdapter', function () {
 
     describe('endpoint URL selection', function () {
       it('should use cookie URL when GDPR consent is given for vendor 418', function () {
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.url).to.equal(COOKIE_BASE_URL);
       });
 
       it('should use cookieless URL when GDPR applies but consent not given', function () {
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithoutVendor};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithoutVendor };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.url).to.equal(COOKIE_LESS_URL);
       });
 
       it('should use cookieless URL when vendorData is null', function () {
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentNoVendorData};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentNoVendorData };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.url).to.equal(COOKIE_LESS_URL);
       });
@@ -206,7 +206,7 @@ describe('ProxistoreBidAdapter', function () {
       });
 
       it('should use cookie URL when no gdprConsent object', function () {
-        const bidderRequest = {...baseBidderRequest};
+        const bidderRequest = { ...baseBidderRequest };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.url).to.equal(COOKIE_BASE_URL);
       });
@@ -214,25 +214,25 @@ describe('ProxistoreBidAdapter', function () {
 
     describe('withCredentials option', function () {
       it('should set withCredentials to true when consent given', function () {
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.options.withCredentials).to.be.true;
       });
 
       it('should set withCredentials to false when consent not given', function () {
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithoutVendor};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithoutVendor };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.options.withCredentials).to.be.false;
       });
 
       it('should set withCredentials to false when no vendorData', function () {
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentNoVendorData};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentNoVendorData };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.options.withCredentials).to.be.false;
       });
 
       it('should set withCredentials to false when no gdprConsent', function () {
-        const bidderRequest = {...baseBidderRequest};
+        const bidderRequest = { ...baseBidderRequest };
         const request = spec.buildRequests([baseBid], bidderRequest);
         expect(request.options.withCredentials).to.be.false;
       });
@@ -245,7 +245,7 @@ describe('ProxistoreBidAdapter', function () {
           bidId: '789789789',
           adUnitCode: 'div-gpt-ad-456',
         };
-        const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+        const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
         const request = spec.buildRequests([baseBid, secondBid], bidderRequest);
         const data = request.data;
 
@@ -258,9 +258,9 @@ describe('ProxistoreBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should return empty array for empty response', function () {
-      const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+      const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
       const request = spec.buildRequests([baseBid], bidderRequest);
-      const emptyResponse = {body: null};
+      const emptyResponse = { body: null };
 
       const bids = spec.interpretResponse(emptyResponse, request);
       expect(bids).to.be.an('array');
@@ -268,9 +268,9 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return empty array for response with no seatbid', function () {
-      const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+      const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
       const request = spec.buildRequests([baseBid], bidderRequest);
-      const response = {body: {id: '123', seatbid: []}};
+      const response = { body: { id: '123', seatbid: [] } };
 
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.be.an('array');
@@ -278,7 +278,7 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should correctly parse OpenRTB bid response', function () {
-      const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+      const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
       const request = spec.buildRequests([baseBid], bidderRequest);
       const requestData = request.data;
 
@@ -328,7 +328,7 @@ describe('ProxistoreBidAdapter', function () {
         bidId: '789789789',
         adUnitCode: 'div-gpt-ad-456',
       };
-      const bidderRequest = {...baseBidderRequest, gdprConsent: gdprConsentWithVendor};
+      const bidderRequest = { ...baseBidderRequest, gdprConsent: gdprConsentWithVendor };
       const request = spec.buildRequests([baseBid, secondBid], bidderRequest);
       const requestData = request.data;
 
@@ -377,13 +377,13 @@ describe('ProxistoreBidAdapter', function () {
     const SYNC_BASE_URL = 'https://abs.proxistore.com/v3/rtb/sync';
 
     it('should return empty array when GDPR applies and consent not given', function () {
-      const syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
       const gdprConsent = {
         gdprApplies: true,
         consentString: consentString,
         vendorData: {
           vendor: {
-            consents: {418: false},
+            consents: { 418: false },
           },
         },
       };
@@ -394,13 +394,13 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return pixel sync when pixelEnabled and consent given', function () {
-      const syncOptions = {pixelEnabled: true, iframeEnabled: false};
+      const syncOptions = { pixelEnabled: true, iframeEnabled: false };
       const gdprConsent = {
         gdprApplies: true,
         consentString: consentString,
         vendorData: {
           vendor: {
-            consents: {418: true},
+            consents: { 418: true },
           },
         },
       };
@@ -415,13 +415,13 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return iframe sync when iframeEnabled and consent given', function () {
-      const syncOptions = {pixelEnabled: false, iframeEnabled: true};
+      const syncOptions = { pixelEnabled: false, iframeEnabled: true };
       const gdprConsent = {
         gdprApplies: true,
         consentString: consentString,
         vendorData: {
           vendor: {
-            consents: {418: true},
+            consents: { 418: true },
           },
         },
       };
@@ -434,13 +434,13 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return both syncs when both enabled and consent given', function () {
-      const syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
       const gdprConsent = {
         gdprApplies: true,
         consentString: consentString,
         vendorData: {
           vendor: {
-            consents: {418: true},
+            consents: { 418: true },
           },
         },
       };
@@ -453,7 +453,7 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return syncs when GDPR does not apply', function () {
-      const syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
       const gdprConsent = {
         gdprApplies: false,
         consentString: consentString,
@@ -466,7 +466,7 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return syncs when no gdprConsent provided', function () {
-      const syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
 
       const syncs = spec.getUserSyncs(syncOptions, [], undefined);
       expect(syncs).to.be.an('array');
@@ -474,13 +474,13 @@ describe('ProxistoreBidAdapter', function () {
     });
 
     it('should return empty array when no sync options enabled', function () {
-      const syncOptions = {pixelEnabled: false, iframeEnabled: false};
+      const syncOptions = { pixelEnabled: false, iframeEnabled: false };
       const gdprConsent = {
         gdprApplies: true,
         consentString: consentString,
         vendorData: {
           vendor: {
-            consents: {418: true},
+            consents: { 418: true },
           },
         },
       };

@@ -17,7 +17,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -334,7 +334,8 @@ export const spec = {
         : {
             bidderRequestsCount: 0,
             bidderWinsCount: 0,
-            bidRequestsCount: 0 };
+            bidRequestsCount: 0
+          };
 
     const payload = {
       a: generateUUID(),

@@ -2,9 +2,9 @@ import { tapadIdSubmodule, graphUrl } from 'modules/tapadIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
-import {attachIdSystem} from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
 
 describe('TapadIdSystem', function () {
   describe('getId', function() {
@@ -77,7 +77,7 @@ describe('TapadIdSystem', function () {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'tapad.com',
-        uids: [{id: 'some-random-id-value', atype: 1}]
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
       });
     });
   })

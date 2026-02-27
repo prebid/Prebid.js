@@ -117,19 +117,19 @@ describe('shBidAdapter', () => {
       bids: [bidRequestVideoV2],
       ...bidderRequest,
       ...gdpr,
-      ...{uspConsent: uspConsent},
+      ...{ uspConsent: uspConsent },
       ortb2: {
         source: {
-          ext: {schain: schain.schain.config}
+          ext: { schain: schain.schain.config }
         }
       }
     };
     bidRequest.ortb2 = {
       source: {
-        ext: {schain: schain.schain.config}
+        ext: { schain: schain.schain.config }
       }
     };
-    const getFloorResponse = {currency: 'EUR', floor: 3};
+    const getFloorResponse = { currency: 'EUR', floor: 3 };
     bidRequest.getFloor = () => getFloorResponse;
     const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(fullRequest));
     const payload = request.data;

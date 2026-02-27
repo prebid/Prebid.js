@@ -1,7 +1,7 @@
-import {deepSetValue} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { deepSetValue } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'clickio';
 const IAB_GVL_ID = 1500;
@@ -23,7 +23,7 @@ export const spec = {
   gvlid: IAB_GVL_ID,
   supportedMediaTypes: [BANNER],
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({bidRequests, bidderRequest})
+    const data = converter.toORTB({ bidRequests, bidderRequest })
     return [{
       method: 'POST',
       url: 'https://o.clickiocdn.com/bids',
@@ -34,7 +34,7 @@ export const spec = {
     return true;
   },
   interpretResponse(response, request) {
-    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     return bids;
   },
   getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {

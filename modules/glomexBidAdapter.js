@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid'
 const BIDDER_CODE = 'glomex'
@@ -32,7 +32,8 @@ export const spec = {
           isAmp: refererInfo.isAmp,
           numIframes: refererInfo.numIframes,
           reachedTop: refererInfo.reachedTop,
-          referer: refererInfo.topmostLocation},
+          referer: refererInfo.topmostLocation
+        },
         gdprConsent: {
           consentString: gdprConsent.consentString,
           gdprApplies: gdprConsent.gdprApplies

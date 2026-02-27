@@ -1,7 +1,7 @@
 import { deepAccess, logError } from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {VIDEO, BANNER} from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
 function configureUniversalTag(exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
@@ -57,7 +57,7 @@ const RemoveDuplicateSizes = (validBid) => {
 };
 
 const getRequests = (conf, validBidRequests, bidderRequest) => {
-  const {bids, bidderRequestId, bidderCode, ...bidderRequestData} = bidderRequest;
+  const { bids, bidderRequestId, bidderCode, ...bidderRequestData } = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
   const requestBySiteId = {};
 
@@ -83,7 +83,7 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
       )
     };
 
-    request.push(Object.assign({}, {data, ...conf}));
+    request.push(Object.assign({}, { data, ...conf }));
   });
 
   return request;

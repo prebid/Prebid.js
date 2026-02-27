@@ -1,7 +1,7 @@
-import {getUniqueIdentifierStr} from '../../src/utils.js';
-import {GreedyPromise} from 'libraries/greedy/greedyPromise.js';
-import {fakeXhr} from 'nise';
-import {dep} from 'src/ajax.js';
+import { getUniqueIdentifierStr } from '../../src/utils.js';
+import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
+import { fakeXhr } from 'nise';
+import { dep } from 'src/ajax.js';
 
 export const xhr = fakeXhr.useFakeXMLHttpRequest();
 export const server = mockFetchServer();
@@ -13,7 +13,7 @@ function mockFetchServer() {
   const sandbox = sinon.createSandbox();
   const bodies = new WeakMap();
   const requests = [];
-  const {DONE, UNSENT} = XMLHttpRequest;
+  const { DONE, UNSENT } = XMLHttpRequest;
 
   function makeRequest(resource, options) {
     const requestBody = options?.body || bodies.get(resource);

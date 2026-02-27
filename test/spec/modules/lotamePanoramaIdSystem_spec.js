@@ -5,8 +5,8 @@ import {
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 

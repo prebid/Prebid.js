@@ -1,6 +1,6 @@
-import {aaxBlockmeterRtdModule} from '../../../modules/aaxBlockmeterRtdProvider.js';
+import { aaxBlockmeterRtdModule } from '../../../modules/aaxBlockmeterRtdProvider.js';
 import * as sinon from 'sinon';
-import {assert} from 'chai';
+import { assert } from 'chai';
 
 let sandbox;
 let getTargetingDataSpy;
@@ -31,11 +31,11 @@ describe('aaxBlockmeter realtime module', function () {
   });
 
   it('init should return false when config.params id is empty', function () {
-    assert.equal(aaxBlockmeterRtdModule.init({params: {}}), false);
+    assert.equal(aaxBlockmeterRtdModule.init({ params: {} }), false);
   });
 
   it('init should return true when config.params.pub is not string', function () {
-    assert.equal(aaxBlockmeterRtdModule.init({params: {pub: 12345}}), false);
+    assert.equal(aaxBlockmeterRtdModule.init({ params: { pub: 12345 } }), false);
   });
 
   it('init should return true when config.params.pub id is passed and is string typed', function () {
@@ -46,8 +46,8 @@ describe('aaxBlockmeter realtime module', function () {
     it('should return ad unit codes when ad units are present', function () {
       const codes = ['code1', 'code2'];
       assert.deepEqual(aaxBlockmeterRtdModule.getTargetingData(codes), {
-        code1: {'atk': 'code1'},
-        code2: {'atk': 'code2'},
+        code1: { 'atk': 'code1' },
+        code2: { 'atk': 'code2' },
       });
     });
 

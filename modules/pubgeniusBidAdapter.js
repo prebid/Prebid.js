@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
@@ -21,7 +21,7 @@ const BASE_URL = 'https://auction.adpearl.io';
 export const spec = {
   code: 'pubgenius',
 
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid(bid) {
     const adUnitId = bid.params.adUnitId;

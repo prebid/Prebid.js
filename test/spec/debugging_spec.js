@@ -1,6 +1,6 @@
-import {ready, loadSession, getConfig, reset, debuggingModuleLoader, debuggingControls} from '../../src/debugging.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
-import {defer} from '../../src/utils/promise.js';
+import { ready, loadSession, getConfig, reset, debuggingModuleLoader, debuggingControls } from '../../src/debugging.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import { defer } from '../../src/utils/promise.js';
 import funHooks from 'fun-hooks/no-eval/index.js';
 
 describe('Debugging', () => {
@@ -20,7 +20,7 @@ describe('Debugging', () => {
         return scriptResult;
       });
       alreadyInstalled = sinon.stub();
-      loader = debuggingModuleLoader({alreadyInstalled, script});
+      loader = debuggingModuleLoader({ alreadyInstalled, script });
     });
 
     afterEach(() => {
@@ -70,7 +70,7 @@ describe('Debugging', () => {
       loader = defer();
       hookRan = false;
       hook = funHooks()('sync', () => { hookRan = true });
-      debugging = debuggingControls({load: sinon.stub().returns(loader.promise), hook});
+      debugging = debuggingControls({ load: sinon.stub().returns(loader.promise), hook });
     })
 
     it('should delay execution of hook until module is loaded', () => {

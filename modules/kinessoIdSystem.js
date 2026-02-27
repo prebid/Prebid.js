@@ -6,8 +6,8 @@
  */
 
 import { logError, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -182,7 +182,7 @@ function encodeId(value) {
  * @return {string}
  */
 function kinessoSyncUrl(accountId, consentData) {
-  const {gdpr, usp: usPrivacyString} = consentData ?? {};
+  const { gdpr, usp: usPrivacyString } = consentData ?? {};
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
     kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
@@ -235,8 +235,8 @@ export const kinessoIdSubmodule = {
     const kinessoIdPayload = {};
     kinessoIdPayload.id = knnsoId;
     const payloadString = JSON.stringify(kinessoIdPayload);
-    ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, {method: 'POST', withCredentials: true});
-    return {'id': knnsoId};
+    ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
+    return { 'id': knnsoId };
   },
   eids: {
     'kpuid': {

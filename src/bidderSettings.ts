@@ -1,10 +1,10 @@
-import {deepAccess, mergeDeep} from './utils.js';
-import {getGlobal} from './prebidGlobal.js';
+import { deepAccess, mergeDeep } from './utils.js';
+import { getGlobal } from './prebidGlobal.js';
 import { JSON_MAPPING } from './constants.js';
-import type {BidderCode} from "./types/common";
-import type {BidRequest} from "./adapterManager.ts";
-import type {Bid} from "./bidfactory.ts";
-import type {StorageType} from "./storageManager.ts";
+import type { BidderCode } from "./types/common";
+import type { BidRequest } from "./adapterManager.ts";
+import type { Bid } from "./bidfactory.ts";
+import type { StorageType } from "./storageManager.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface BidderSettings<B extends BidderCode> {

@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/admixerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/admixerBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
 const RTB_BIDDER_CODE = 'rtbstack'
@@ -309,9 +309,9 @@ describe('AdmixerAdapter', function () {
     ];
 
     it('Returns valid values', function () {
-      const userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
-      const userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
-      const userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
+      const userSyncAll = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, responses);
+      const userSyncImg = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, responses);
+      const userSyncFrm = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, responses);
       expect(userSyncAll).to.be.an('array').with.lengthOf(2);
       expect(userSyncImg).to.be.an('array').with.lengthOf(1);
       expect(userSyncImg[0].url).to.be.equal(imgUrl);

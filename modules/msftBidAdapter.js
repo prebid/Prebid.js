@@ -376,7 +376,7 @@ export const spec = {
       return [{
         type: "iframe",
         url: "https://acdn.adnxs.com/dmp/async_usersync.html",
-      }, ];
+      },];
     }
 
     if (syncOptions.pixelEnabled) {

@@ -1,4 +1,4 @@
-const {expect} = require('chai');
+const { expect } = require('chai');
 const DEFAULT_TIMEOUT = 10000; // allow more time for BrowserStack sessions
 const utils = {
   host: (process.env.TEST_SERVER_HOST) ? process.env.TEST_SERVER_HOST : 'localhost',
@@ -8,7 +8,7 @@ const utils = {
   },
   waitForElement: async function(elementRef, time = DEFAULT_TIMEOUT) {
     const element = $(elementRef);
-    await element.waitForExist({timeout: time});
+    await element.waitForExist({ timeout: time });
   },
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
@@ -27,7 +27,7 @@ const utils = {
       }
     }
   },
-  setupTest({url, waitFor, expectGAMCreative = null, nestedIframe = true, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3}, name, fn) {
+  setupTest({ url, waitFor, expectGAMCreative = null, nestedIframe = true, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3 }, name, fn) {
     describe(name, function () {
       this.retries(retries);
       before(() => utils.loadAndWaitForElement(url, waitFor, pause, timeout, retries));

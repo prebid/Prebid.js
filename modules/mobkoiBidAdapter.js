@@ -91,7 +91,7 @@ export const spec = {
   interpretResponse(serverResponse, customBidRequest) {
     if (!serverResponse.body) return [];
 
-    const responseBody = {...serverResponse.body, seatbid: serverResponse.body.seatbid};
+    const responseBody = { ...serverResponse.body, seatbid: serverResponse.body.seatbid };
     const prebidBidResponse = converter.fromORTB({
       request: customBidRequest.data,
       response: responseBody,
@@ -182,7 +182,7 @@ export const utils = {
         'Failed to obtain placement ID from the given object. ' +
         `Please set it via the "${paramPath}" field in the bid configuration.\n` +
         'Given object:\n' +
-        JSON.stringify({functionParam: prebidBidRequestOrOrtbBidRequest}, null, 3)
+        JSON.stringify({ functionParam: prebidBidRequestOrOrtbBidRequest }, null, 3)
       );
     }
 

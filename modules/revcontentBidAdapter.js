@@ -1,12 +1,12 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {_map, deepAccess, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel} from '../src/utils.js';
-import {parseDomain} from '../src/refererDetection.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { _map, deepAccess, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel } from '../src/utils.js';
+import { parseDomain } from '../src/refererDetection.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'revcontent';
 const GVLID = 203;
@@ -56,7 +56,7 @@ export const spec = {
     }
 
     if (typeof domain === 'undefined') {
-      domain = parseDomain(refererInfo, {noPort: true});
+      domain = parseDomain(refererInfo, { noPort: true });
     }
 
     var endpoint = 'https://' + host + '/rtb?apiKey=' + apiKey + '&userId=' + userId;

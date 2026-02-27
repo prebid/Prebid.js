@@ -11,12 +11,12 @@
 
 /* eslint prebid/validate-imports: "off" */
 
-import {auctionManager} from '../src/auctionManager.js';
-import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';
-import {submodule} from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import {
   _each,
   _map,
@@ -35,7 +35,7 @@ import {
   parseUrl,
   safeJSONParse
 } from '../src/utils.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -83,7 +83,7 @@ function init(config, userConsent) {
     return false;
   }
 
-  config.params.thresholds = config.params.thresholds || [ 50, 60, 70, 80, 90 ];
+  config.params.thresholds = config.params.thresholds || [50, 60, 70, 80, 90];
 
   function analyticsConfigCallback(data) {
     config = mergeDeep(config.params, data);
@@ -104,25 +104,27 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnitCodes.map(code => adUnits0.find(unit => unit.code === code));
 
   // buildUrl creates PHP style multi-parameters and includes undefined... (╯°□°)╯ ┻━┻
-  const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), { search: {
-    'v': 'pbjs-v' + '$prebid.version$',
-    'c': config.params.clientid,
-    'p': config.params.platformid,
-    't': config.params.tagid,
-    'imp': config.params.imps,
-    'fc_ip': config.params.freqcap_ip,
-    'fc_ipua': config.params.freqcap_ipua,
-    'pn': (getRefererInfo().page || '').substr(0, 300).split(/[?#]/)[0],
-    's': _map(adUnits, function(unit) {
+  const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), {
+    search: {
+      'v': 'pbjs-v' + '$prebid.version$',
+      'c': config.params.clientid,
+      'p': config.params.platformid,
+      't': config.params.tagid,
+      'imp': config.params.imps,
+      'fc_ip': config.params.freqcap_ip,
+      'fc_ipua': config.params.freqcap_ipua,
+      'pn': (getRefererInfo().page || '').substr(0, 300).split(/[?#]/)[0],
+      's': _map(adUnits, function(unit) {
       // gptPreAuction runs *after* RTD so pbadslot may not be populated... (╯°□°)╯ ┻━┻
-      const gpid = deepAccess(unit, 'ortb2Imp.ext.gpid') ||
+        const gpid = deepAccess(unit, 'ortb2Imp.ext.gpid') ||
                    getGptSlotInfoForAdUnitCode(unit.code).gptSlot ||
                    unit.code;
-      const ref = [ gpid ];
-      if (!config.params.slotinpath) ref.push(unit.code);
-      return ref.join('\t');
-    })
-  } })).replace(/\[\]|[^?&]+=undefined/g, '').replace(/([?&])&+/g, '$1');
+        const ref = [gpid];
+        if (!config.params.slotinpath) ref.push(unit.code);
+        return ref.join('\t');
+      })
+    }
+  })).replace(/\[\]|[^?&]+=undefined/g, '').replace(/([?&])&+/g, '$1');
 
   ajax(url,
     function(responseText, q) {

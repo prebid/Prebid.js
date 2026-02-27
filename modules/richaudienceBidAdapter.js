@@ -1,8 +1,8 @@
-import {deepAccess, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
+import { deepAccess, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'richaudience';
@@ -11,7 +11,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: [{code: 'ra', gvlid: 108}],
+  aliases: [{ code: 'ra', gvlid: 108 }],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
@@ -339,7 +339,7 @@ function raiGetFloor(bid, config) {
 }
 
 function raiGetTimeoutURL(data) {
-  const {params, timeout} = data[0]
+  const { params, timeout } = data[0]
   let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
 
   url = url.replace('[timeout_publisher]', timeout)

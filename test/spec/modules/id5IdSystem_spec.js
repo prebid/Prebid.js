@@ -7,18 +7,18 @@ import {
   setSubmoduleRegistry,
   startAuctionHook
 } from '../../../modules/userId/index.ts';
-import {config} from '../../../src/config.js';
+import { config } from '../../../src/config.js';
 import * as events from '../../../src/events.js';
-import {EVENTS} from '../../../src/constants.js';
+import { EVENTS } from '../../../src/constants.js';
 import * as utils from '../../../src/utils.js';
-import {deepClone} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 import '../../../src/prebid.js';
-import {hook} from '../../../src/hook.js';
-import {mockGdprConsent} from '../../helpers/consentData.js';
-import {server} from '../../mocks/xhr.js';
-import {expect} from 'chai';
-import {PbPromise} from '../../../src/utils/promise.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { hook } from '../../../src/hook.js';
+import { mockGdprConsent } from '../../helpers/consentData.js';
+import { server } from '../../mocks/xhr.js';
+import { expect } from 'chai';
+import { PbPromise } from '../../../src/utils/promise.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 describe('ID5 ID System', function () {
   let logInfoStub;
@@ -199,9 +199,9 @@ describe('ID5 ID System', function () {
   function getAdUnitMock(code = 'adUnit-code') {
     return {
       code,
-      mediaTypes: {banner: {}, native: {}},
+      mediaTypes: { banner: {}, native: {} },
       sizes: [[300, 200], [300, 600]],
-      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
+      bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }]
     };
   }
 
@@ -391,30 +391,30 @@ describe('ID5 ID System', function () {
       expect(id5System.id5IdSubmodule.getId({})).is.eq(undefined);
 
       // valid params, invalid id5System.storage
-      expect(id5System.id5IdSubmodule.getId({params: {partner: 123}})).to.be.eq(undefined);
-      expect(id5System.id5IdSubmodule.getId({params: {partner: 123}, storage: {}})).to.be.eq(undefined);
-      expect(id5System.id5IdSubmodule.getId({params: {partner: 123}, storage: {name: ''}})).to.be.eq(undefined);
-      expect(id5System.id5IdSubmodule.getId({params: {partner: 123}, storage: {type: ''}})).to.be.eq(undefined);
+      expect(id5System.id5IdSubmodule.getId({ params: { partner: 123 } })).to.be.eq(undefined);
+      expect(id5System.id5IdSubmodule.getId({ params: { partner: 123 }, storage: {} })).to.be.eq(undefined);
+      expect(id5System.id5IdSubmodule.getId({ params: { partner: 123 }, storage: { name: '' } })).to.be.eq(undefined);
+      expect(id5System.id5IdSubmodule.getId({ params: { partner: 123 }, storage: { type: '' } })).to.be.eq(undefined);
 
       // valid id5System.storage, invalid params
-      expect(id5System.id5IdSubmodule.getId({storage: {name: 'name', type: 'html5'}})).to.be.eq(undefined);
-      expect(id5System.id5IdSubmodule.getId({storage: {name: 'name', type: 'html5'}, params: {}})).to.be.eq(undefined);
+      expect(id5System.id5IdSubmodule.getId({ storage: { name: 'name', type: 'html5' } })).to.be.eq(undefined);
+      expect(id5System.id5IdSubmodule.getId({ storage: { name: 'name', type: 'html5' }, params: {} })).to.be.eq(undefined);
       expect(id5System.id5IdSubmodule.getId({
-        storage: {name: 'name', type: 'html5'},
-        params: {partner: 'abc'}
+        storage: { name: 'name', type: 'html5' },
+        params: { partner: 'abc' }
       })).to.be.eq(undefined);
     });
 
     it('should warn with non-recommended id5System.storage params', function () {
       const logWarnStub = sinon.stub(utils, 'logWarn');
 
-      id5System.id5IdSubmodule.getId({storage: {name: 'name', type: 'html5'}, params: {partner: 123}});
+      id5System.id5IdSubmodule.getId({ storage: { name: 'name', type: 'html5' }, params: { partner: 123 } });
       expect(logWarnStub.calledOnce).to.be.true;
       logWarnStub.restore();
 
       id5System.id5IdSubmodule.getId({
-        storage: {name: id5System.ID5_STORAGE_NAME, type: 'cookie'},
-        params: {partner: 123}
+        storage: { name: id5System.ID5_STORAGE_NAME, type: 'cookie' },
+        params: { partner: 123 }
       });
       expect(logWarnStub.calledOnce).to.be.true;
       logWarnStub.restore();
@@ -423,14 +423,14 @@ describe('ID5 ID System', function () {
 
   describe('Check for valid consent', function () {
     const dataConsentVals = [
-      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: true}}}, ' no purpose consent'],
-      [{purpose: {consents: {1: true}}}, {vendor: {consents: {131: false}}}, ' no vendor consent'],
-      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: false}}}, ' no purpose and vendor consent'],
-      [{purpose: {consents: undefined}}, {vendor: {consents: {131: true}}}, ' undefined purpose consent'],
-      [{purpose: {consents: {1: false}}}, {vendor: {consents: undefined}}], ' undefined vendor consent',
-      [undefined, {vendor: {consents: {131: true}}}, ' undefined purpose'],
-      [{purpose: {consents: {1: true}}}, {vendor: undefined}, ' undefined vendor'],
-      [{purpose: {consents: {1: true}}}, {vendor: {consents: {31: true}}}, ' incorrect vendor consent']
+      [{ purpose: { consents: { 1: false } } }, { vendor: { consents: { 131: true } } }, ' no purpose consent'],
+      [{ purpose: { consents: { 1: true } } }, { vendor: { consents: { 131: false } } }, ' no vendor consent'],
+      [{ purpose: { consents: { 1: false } } }, { vendor: { consents: { 131: false } } }, ' no purpose and vendor consent'],
+      [{ purpose: { consents: undefined } }, { vendor: { consents: { 131: true } } }, ' undefined purpose consent'],
+      [{ purpose: { consents: { 1: false } } }, { vendor: { consents: undefined } }], ' undefined vendor consent',
+      [undefined, { vendor: { consents: { 131: true } } }, ' undefined purpose'],
+      [{ purpose: { consents: { 1: true } } }, { vendor: undefined }, ' undefined vendor'],
+      [{ purpose: { consents: { 1: true } } }, { vendor: { consents: { 31: true } } }, ' incorrect vendor consent']
     ];
 
     dataConsentVals.forEach(function ([purposeConsent, vendorConsent, caseName]) {
@@ -442,10 +442,10 @@ describe('ID5 ID System', function () {
             purposeConsent, vendorConsent
           }
         };
-        expect(id5System.id5IdSubmodule.getId(config, {gdpr: dataConsent})).is.eq(undefined);
+        expect(id5System.id5IdSubmodule.getId(config, { gdpr: dataConsent })).is.eq(undefined);
 
         const cacheIdObject = 'cacheIdObject';
-        expect(id5System.id5IdSubmodule.extendId(config, {gdpr: dataConsent}, cacheIdObject)).is.eql({id: cacheIdObject});
+        expect(id5System.id5IdSubmodule.extendId(config, { gdpr: dataConsent }, cacheIdObject)).is.eql({ id: cacheIdObject });
       });
     });
   });
@@ -501,7 +501,7 @@ describe('ID5 ID System', function () {
 
       // Trigger the fetch but we await on it later
       const config = getId5FetchConfig();
-      const submoduleResponsePromise = callSubmoduleGetId(config, {gdpr: consentData}, undefined);
+      const submoduleResponsePromise = callSubmoduleGetId(config, { gdpr: consentData }, undefined);
 
       const fetchRequest = await xhrServerMock.expectFetchRequest();
       const requestBody = JSON.parse(fetchRequest.requestBody);
@@ -548,7 +548,7 @@ describe('ID5 ID System', function () {
 
       // Trigger the fetch but we await on it later
       const config = getId5FetchConfig();
-      const submoduleResponsePromise = callSubmoduleGetId(config, {gdpr: consentData, usp: usPrivacyString}, undefined);
+      const submoduleResponsePromise = callSubmoduleGetId(config, { gdpr: consentData, usp: usPrivacyString }, undefined);
 
       const fetchRequest = await xhrServerMock.expectFetchRequest();
       const requestBody = JSON.parse(fetchRequest.requestBody);
@@ -859,7 +859,7 @@ describe('ID5 ID System', function () {
     it('should call the ID5 server with ab_testing object when abTesting is turned on', async function () {
       const xhrServerMock = new XhrServerMock(server);
       const id5Config = getId5FetchConfig();
-      id5Config.params.abTesting = {enabled: true, controlGroupPct: 0.234};
+      id5Config.params.abTesting = { enabled: true, controlGroupPct: 0.234 };
 
       // Trigger the fetch but we await on it later
       const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, oldStoredObject(ID5_STORED_OBJ));
@@ -876,7 +876,7 @@ describe('ID5 ID System', function () {
     it('should call the ID5 server without ab_testing object when abTesting is turned off', async function () {
       const xhrServerMock = new XhrServerMock(server);
       const id5Config = getId5FetchConfig();
-      id5Config.params.abTesting = {enabled: false, controlGroupPct: 0.55};
+      id5Config.params.abTesting = { enabled: false, controlGroupPct: 0.55 };
 
       // Trigger the fetch but we await on it later
       const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, oldStoredObject(ID5_STORED_OBJ));
@@ -969,7 +969,7 @@ describe('ID5 ID System', function () {
         gppString: 'GPP_STRING',
         applicableSections: [2]
       };
-      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, oldStoredObject(ID5_STORED_OBJ));
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), { gpp: gppData }, oldStoredObject(ID5_STORED_OBJ));
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
@@ -1003,7 +1003,7 @@ describe('ID5 ID System', function () {
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
           const requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.true_link).is.eql({booted: false});
+          expect(requestBody.true_link).is.eql({ booted: false });
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
         });
@@ -1011,7 +1011,7 @@ describe('ID5 ID System', function () {
 
     it('should pass full true link info to ID5 server when true link is booted', function () {
       const xhrServerMock = new XhrServerMock(server);
-      const trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
+      const trueLinkResponse = { booted: true, redirected: true, id: 'TRUE_LINK_ID' };
       window.id5Bootstrap = {
         getTrueLinkInfo: function () {
           return trueLinkResponse;
@@ -1105,7 +1105,7 @@ describe('ID5 ID System', function () {
             }]
           });
           done();
-        }), {ortb2Fragments});
+        }), { ortb2Fragments });
       });
 
       it('should add stored EUID from cache to bids', function (done) {
@@ -1128,7 +1128,7 @@ describe('ID5 ID System', function () {
             }]
           });
           done();
-        }, {ortb2Fragments});
+        }, { ortb2Fragments });
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids', function (done) {
@@ -1147,7 +1147,7 @@ describe('ID5 ID System', function () {
             }]
           });
           done();
-        }), {ortb2Fragments});
+        }), { ortb2Fragments });
       });
     });
 
@@ -1168,7 +1168,7 @@ describe('ID5 ID System', function () {
       return new Promise((resolve) => {
         startAuctionHook(() => {
           resolve();
-        }, {adUnits});
+        }, { adUnits });
       }).then(() => {
         expect(xhrServerMock.hasReceivedAnyRequest()).is.false;
         events.emit(EVENTS.AUCTION_END, {});
@@ -1201,7 +1201,7 @@ describe('ID5 ID System', function () {
             }]
           });
           done();
-        }), {ortb2Fragments});
+        }), { ortb2Fragments });
       });
 
       it('should add stored EUID from cache to bids - from ids', function (done) {
@@ -1222,7 +1222,7 @@ describe('ID5 ID System', function () {
           expect(eids[0]).is.eql(IDS_ID5ID.eid);
           expect(eids[1]).is.eql(IDS_EUID.eid);
           done();
-        }), {ortb2Fragments});
+        }), { ortb2Fragments });
       });
 
       it('should add stored TRUE_LINK_ID from cache to bids - from ids', function (done) {
@@ -1241,7 +1241,7 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, function () {
           expect(ortb2Fragments.global.user.ext.eids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
           done();
-        }), {ortb2Fragments});
+        }), { ortb2Fragments });
       });
 
       it('should add other id from cache to bids', function (done) {
@@ -1286,13 +1286,13 @@ describe('ID5 ID System', function () {
             }]
           });
           done();
-        }), {ortb2Fragments});
+        }), { ortb2Fragments });
       });
     });
   });
 
   describe('Decode id5response', function () {
-    const expectedDecodedObject = {id5id: {uid: ID5_STORED_ID, ext: {linkType: ID5_STORED_LINK_TYPE}}};
+    const expectedDecodedObject = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
 
     it('should return undefined if passed a string', function () {
       expect(id5System.id5IdSubmodule.decode('somestring', getId5FetchConfig())).is.eq(undefined);
@@ -1315,7 +1315,7 @@ describe('ID5 ID System', function () {
           expect(id5System.id5IdSubmodule.decode(responseF(ID5_STORED_OBJ_WITH_EUID, config), config).euid).is.eql({
             'source': EUID_SOURCE,
             'uid': EUID_STORED_ID,
-            'ext': {'provider': ID5_SOURCE}
+            'ext': { 'provider': ID5_SOURCE }
           });
         });
         it('should decode trueLinkId from a stored object with trueLinkId', function () {
@@ -1507,10 +1507,10 @@ describe('ID5 ID System', function () {
       // Pre-create id5tags with queued functions
       window.id5tags = {
         cmd: [
-          (tags) => callTracker.push({call: 1, tags: tags}),
-          (tags) => callTracker.push({call: 2, tags: tags}),
+          (tags) => callTracker.push({ call: 1, tags: tags }),
+          (tags) => callTracker.push({ call: 2, tags: tags }),
           (tags) => {
-            callTracker.push({call: 3, tags: tags});
+            callTracker.push({ call: 3, tags: tags });
             resolvePromise();
           }
         ]
@@ -1522,9 +1522,9 @@ describe('ID5 ID System', function () {
 
       // Verify all queued functions were called with the tags
       expect(callTracker).to.have.lengthOf(3);
-      expect(callTracker[0]).to.deep.equal({call: 1, tags: testTags});
-      expect(callTracker[1]).to.deep.equal({call: 2, tags: testTags});
-      expect(callTracker[2]).to.deep.equal({call: 3, tags: testTags});
+      expect(callTracker[0]).to.deep.equal({ call: 1, tags: testTags });
+      expect(callTracker[1]).to.deep.equal({ call: 2, tags: testTags });
+      expect(callTracker[2]).to.deep.equal({ call: 3, tags: testTags });
 
       // Verify tags were stored
       expect(window.id5tags.tags).to.deep.equal(testTags);
@@ -1545,7 +1545,7 @@ describe('ID5 ID System', function () {
       // Now push a new function and verify it executes immediately
       let callResult = null;
       window.id5tags.cmd.push((tags) => {
-        callResult = {executed: true, tags: tags};
+        callResult = { executed: true, tags: tags };
       });
 
       expect(callResult).to.not.be.null;
@@ -1580,7 +1580,7 @@ describe('ID5 ID System', function () {
       window.id5tags = {
         cmd: [
           (tags) => {
-            callTracker.push({call: 'decode', tags: utils.deepClone(tags)});
+            callTracker.push({ call: 'decode', tags: utils.deepClone(tags) });
             resolveFirstPromise();
           }
         ]
@@ -1606,7 +1606,7 @@ describe('ID5 ID System', function () {
 
       // Update the callback to resolve when called again
       window.id5tags.cmd[0] = (tags) => {
-        callTracker.push({call: 'decode', tags: utils.deepClone(tags)});
+        callTracker.push({ call: 'decode', tags: utils.deepClone(tags) });
         resolveSecondPromise();
       };
 
@@ -1663,7 +1663,7 @@ describe('ID5 ID System', function () {
 
       // Add external function
       window.id5tags.cmd.push((tags) => {
-        externalCallTracker.push({external: true, tags: tags});
+        externalCallTracker.push({ external: true, tags: tags });
         resolvePromise();
       });
 
@@ -1733,14 +1733,14 @@ describe('ID5 ID System', function () {
   });
 
   describe('A/B Testing', function () {
-    const expectedDecodedObjectWithIdAbOff = {id5id: {uid: ID5_STORED_ID, ext: {linkType: ID5_STORED_LINK_TYPE}}};
+    const expectedDecodedObjectWithIdAbOff = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
     const expectedDecodedObjectWithIdAbOn = {
       id5id: {
         uid: ID5_STORED_ID,
-        ext: {linkType: ID5_STORED_LINK_TYPE, abTestingControlGroup: false}
+        ext: { linkType: ID5_STORED_LINK_TYPE, abTestingControlGroup: false }
       }
     };
-    const expectedDecodedObjectWithoutIdAbOn = {id5id: {uid: '', ext: {linkType: 0, abTestingControlGroup: true}}};
+    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: '', ext: { linkType: 0, abTestingControlGroup: true } } };
     let testConfig, storedObject;
 
     beforeEach(function () {
@@ -1777,13 +1777,13 @@ describe('ID5 ID System', function () {
         });
 
         it('should set abTestingControlGroup to false when A/B testing is on but in normal group', function () {
-          storedObject.ab_testing = {result: 'normal'};
+          storedObject.ab_testing = { result: 'normal' };
           const decoded = id5System.id5IdSubmodule.decode(id5PrebidResponse(storedObject, testConfig), testConfig);
           expect(decoded).is.eql(expectedDecodedObjectWithIdAbOn);
         });
 
         it('should not expose ID when everyone is in control group', function () {
-          storedObject.ab_testing = {result: 'control'};
+          storedObject.ab_testing = { result: 'control' };
           storedObject.universal_uid = '';
           storedObject.ext = {
             'linkType': 0
@@ -1793,7 +1793,7 @@ describe('ID5 ID System', function () {
         });
 
         it('should log A/B testing errors', function () {
-          storedObject.ab_testing = {result: 'error'};
+          storedObject.ab_testing = { result: 'error' };
           const decoded = id5System.id5IdSubmodule.decode(id5PrebidResponse(storedObject, testConfig), testConfig);
           expect(decoded).is.eql(expectedDecodedObjectWithIdAbOff);
           sinon.assert.calledOnce(logErrorSpy);
@@ -1815,7 +1815,7 @@ describe('ID5 ID System', function () {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'id5-sync.com',
-        uids: [{id: 'some-random-id-value', atype: 1}]
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
       });
     });
 

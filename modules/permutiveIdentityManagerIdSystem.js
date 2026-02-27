@@ -1,9 +1,9 @@
-import {MODULE_TYPE_UID} from '../src/activities/modules.js'
-import {submodule} from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js'
-import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
-import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
-import {VENDORLESS_GVLID} from "../src/consentHandler.js";
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { deepAccess, prefixLog, safeJSONParse } from '../src/utils.js'
+import { hasPurposeConsent } from '../libraries/permutiveUtils/index.js'
+import { VENDORLESS_GVLID } from "../src/consentHandler.js";
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -21,7 +21,7 @@ const GOOGLE_DOMAIN = 'google.com'
 
 const PRIMARY_IDS = ['id5id', 'idl_env', 'uid2', 'pairId']
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME})
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 const logger = prefixLog('[PermutiveID]')
 
@@ -107,7 +107,7 @@ export const permutiveIdentityManagerIdSubmodule = {
     } catch (e) {
       logger.logInfo('Error parsing pairId')
     }
-    return pairId === undefined ? value : {...value, pairId}
+    return pairId === undefined ? value : { ...value, pairId }
   },
 
   /**

@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   createBuildRequestsFn,
   createInterpretResponseFn,
@@ -13,7 +13,7 @@ const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
 const BIDDER_VERSION = '1.0.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -62,7 +62,7 @@ function getFirstPartyUUID() {
 };
 
 function createUniqueRequestData(hashUrl, bid) {
-  const {auctionId, transactionId} = bid;
+  const { auctionId, transactionId } = bid;
   const fdata = getAndSetFirstPartyData();
   return {
     auctionId,

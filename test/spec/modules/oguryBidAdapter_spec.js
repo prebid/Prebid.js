@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { spec, ortbConverterProps } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
 import { server } from '../../mocks/xhr.js';
-import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getDevicePixelRatio } from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -114,8 +114,8 @@ describe('OguryBidAdapter', () => {
     bids: bidRequests,
     bidderRequestId: 'mock-uuid',
     auctionId: bidRequests[0].auctionId,
-    gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
-    gppConsent: {gppString: 'myGppString', gppData: {}, applicableSections: [7], parsedSections: {}},
+    gdprConsent: { consentString: 'myConsentString', vendorData: {}, gdprApplies: true },
+    gppConsent: { gppString: 'myGppString', gppData: {}, applicableSections: [7], parsedSections: {} },
     timeout: 1000,
     ortb2
   };
@@ -636,7 +636,7 @@ describe('OguryBidAdapter', () => {
 
     beforeEach(() => {
       windowTopStub = sinon.stub(utils, 'getWindowTop');
-      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: stubbedDevicePixelRatio});
+      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: stubbedDevicePixelRatio });
     });
 
     afterEach(() => {

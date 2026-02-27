@@ -792,8 +792,8 @@ const spec = {
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
-    const {iframeEnabled, pixelEnabled} = syncOptions;
-    const {gdprApplies, consentString = ''} = gdprConsent;
+    const { iframeEnabled, pixelEnabled } = syncOptions;
+    const { gdprApplies, consentString = '' } = gdprConsent;
     const mySyncs = [];
     if (iframeEnabled) {
       mySyncs.push({

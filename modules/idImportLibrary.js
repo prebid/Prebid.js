@@ -235,7 +235,7 @@ function postData() {
   syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   _logInfo(payloadString);
-  ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
+  ajax(conf.url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
 }
 
 function associateIds() {
