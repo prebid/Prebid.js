@@ -28,6 +28,7 @@ export const spec = {
     { code: 'monetixads', gvlid: 1281 },
     { code: 'netaddiction', gvlid: 1281 },
     { code: 'adt', gvlid: 779 },
+    { code: 'adrubi', gvlid: 779 },
     { code: 'yobee', gvlid: 1281 }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],

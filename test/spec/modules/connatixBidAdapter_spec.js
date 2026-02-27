@@ -19,6 +19,7 @@ import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as winDimensions from '../../../src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const BIDDER_CODE = 'connatix';
 
@@ -220,7 +221,7 @@ describe('connatixBidAdapter', function () {
     let getBoundingClientRectStub;
     let topWinMock;
     let querySelectorStub;
-    let getElementByIdStub;
+    let getElementStub;
     let sandbox;
 
     beforeEach(() => {
@@ -237,7 +238,7 @@ describe('connatixBidAdapter', function () {
       };
 
       querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
-      getElementByIdStub = sandbox.stub(document, 'getElementById');
+      getElementStub = sandbox.stub(adUnits, 'getAdUnitElement');
       sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
         {
           document: {
@@ -272,7 +273,7 @@ describe('connatixBidAdapter', function () {
       });
 
       querySelectorStub.withArgs('#validElement').returns(element);
-      getElementByIdStub.returns(null);
+      getElementStub.returns(null);
 
       const result = connatixDetectViewability(bid);
 
@@ -298,7 +299,7 @@ describe('connatixBidAdapter', function () {
       });
 
       querySelectorStub.withArgs('#invalidElement').returns(null);
-      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+      getElementStub.returns(element);
 
       const result = connatixDetectViewability(bid);
 
@@ -325,7 +326,7 @@ describe('connatixBidAdapter', function () {
       });
 
       // The fallback should use the adUnitCode to find the element
-      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+      getElementStub.returns(element);
 
       const result = connatixDetectViewability(bid);
 

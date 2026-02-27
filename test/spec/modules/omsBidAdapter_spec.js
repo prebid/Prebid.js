@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://rt.marphezis.com/hb';
 
@@ -83,7 +84,7 @@ describe('omsBidAdapter', function () {
     }];
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -265,6 +266,16 @@ describe('omsBidAdapter', function () {
       const data = JSON.parse(spec.buildRequests(bidRequests, {ortb2: {regs: {coppa: 1}}}).data)
       expect(data.regs).to.not.be.undefined;
       expect(data.regs.coppa).to.equal(1);
+    });
+
+    it('sends instl property when ortb2Imp.instl = 1', function () {
+      const data = JSON.parse(spec.buildRequests([{ ...bidRequests[0], ortb2Imp: { instl: 1 }}]).data);
+      expect(data.imp[0].instl).to.equal(1);
+    });
+
+    it('ignores instl property when ortb2Imp.instl is falsy', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+      expect(data.imp[0].instl).to.be.undefined;
     });
 
     it('sends schain', function () {

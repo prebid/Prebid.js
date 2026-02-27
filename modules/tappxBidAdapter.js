@@ -1,12 +1,12 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

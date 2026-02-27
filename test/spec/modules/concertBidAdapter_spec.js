@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
 import { hook } from 'src/hook.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 describe('ConcertAdapter', function () {
   let bidRequests;
@@ -86,7 +87,7 @@ describe('ConcertAdapter', function () {
     }
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element)
   });
 
   afterEach(function () {

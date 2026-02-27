@@ -23,6 +23,7 @@ import {GLOBAL_VENDOR_ID, MEDIANET} from '../libraries/medianetUtils/constants.j
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -133,11 +134,11 @@ function getWindowSize() {
   }
 }
 
-function getCoordinates(adUnitCode) {
-  let element = document.getElementById(adUnitCode);
-  if (!element && adUnitCode.indexOf('/') !== -1) {
+function getCoordinates(bidRequest) {
+  let element = getAdUnitElement(bidRequest);
+  if (!element && bidRequest.adUnitCode.indexOf('/') !== -1) {
     // now it means that adUnitCode is GAM AdUnitPath
-    const {divId} = getGptSlotInfoForAdUnitCode(adUnitCode);
+    const {divId} = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
     if (isStr(divId)) {
       element = document.getElementById(divId);
     }
@@ -239,7 +240,7 @@ function slotParams(bidRequest, bidderRequests) {
   if (bidFloor) {
     params.bidfloor = bidFloor;
   }
-  const coordinates = getCoordinates(bidRequest.adUnitCode);
+  const coordinates = getCoordinates(bidRequest);
   if (coordinates && params.banner && params.banner.length !== 0) {
     const normCoordinates = normalizeCoordinates(coordinates);
     params.ext.coordinates = normCoordinates;

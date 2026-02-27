@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess, getBidIdParameter,
@@ -13,6 +12,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
 const ENDPOINT = 'hb.emxdgt.com';

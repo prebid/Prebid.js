@@ -8,6 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, logWarn, isFn, isPlainObject } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'panxo';
 const ENDPOINT_URL = 'https://panxo-sys.com/openrtb/2.5/bid';
@@ -112,7 +113,7 @@ function buildDevice() {
     ua: navigator.userAgent,
     language: navigator.language,
     js: 1,
-    dnt: navigator.doNotTrack === '1' ? 1 : 0
+    dnt: getDNT() ? 1 : 0
   };
 
   if (typeof screen !== 'undefined') {

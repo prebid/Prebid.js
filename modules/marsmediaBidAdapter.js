@@ -1,11 +1,12 @@
 'use strict';
-import {getDNT} from '../libraries/dnt/index.js';
 import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
@@ -167,7 +168,7 @@ function MarsmediaAdapter() {
       bidSizes = bidSizes.filter(size => isArray(size));
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
-      const element = document.getElementById(bid.adUnitCode);
+      const element = getAdUnitElement(bid);
       const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
         ? _getViewability(element, getWindowTop(), minSize)

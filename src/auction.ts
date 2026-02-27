@@ -33,7 +33,7 @@ import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 import type {Bid, BidResponse} from "./bidfactory.ts";
 import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
 import type {TargetingMap} from "./targeting.ts";
-import type {AdUnit} from "./adUnits.ts";
+import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
 import type {MediaType} from "./mediaTypes.ts";
 import type {VideoContext} from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
@@ -661,6 +661,7 @@ declare module './bidfactory' {
   }
 
   interface BaseBid {
+    element?: AdUnitDefinition['element'];
     /**
      * true if this bid is for an interstitial slot.
      */
@@ -770,6 +771,7 @@ function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.ind
 
   const adUnit = index.getAdUnit(bid);
   bid.instl = adUnit?.ortb2Imp?.instl === 1;
+  bid.element = adUnit?.element;
 
   // a publisher-defined renderer can be used to render bids
   const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;

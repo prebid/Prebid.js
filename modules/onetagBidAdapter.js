@@ -9,6 +9,7 @@ import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -358,14 +359,14 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
-  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  const coords = getSpaceCoords(bidRequest);
   if (coords) {
     this['coords'] = coords;
   }
 }
 
-function getSpaceCoords(id) {
-  const space = document.getElementById(id);
+function getSpaceCoords(bidRequest) {
+  const space = getAdUnitElement(bidRequest);
   try {
     const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;

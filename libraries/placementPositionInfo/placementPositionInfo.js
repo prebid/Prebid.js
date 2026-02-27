@@ -1,10 +1,10 @@
 import {getBoundingClientRect} from '../boundingClientRect/boundingClientRect.js';
 import {canAccessWindowTop, cleanObj, getWinDimensions, getWindowSelf, getWindowTop} from '../../src/utils.js';
 import {getViewability, getViewportOffset} from '../percentInView/percentInView.js';
+import {getAdUnitElement} from '../../src/utils/adUnits.js';
 
 export function getPlacementPositionUtils() {
   const topWin = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
-  const selfWin = getWindowSelf();
 
   const getViewportHeight = () => {
     const dim = getWinDimensions();
@@ -49,7 +49,7 @@ export function getPlacementPositionUtils() {
   };
 
   function getPlacementInfo(bidReq) {
-    const element = selfWin.document.getElementById(bidReq.adUnitCode);
+    const element = getAdUnitElement(bidReq);
     const frameOffset = getViewportOffset();
     const {distanceToView, elementHeight} = getViewableDistance(element, frameOffset);
 

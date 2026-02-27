@@ -11,6 +11,7 @@ import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingC
 import { hasPurpose1Consent } from "../src/utils/gdpr.js";
 import { sendBeacon } from "../src/ajax.js";
 import { isAutoplayEnabled } from "../libraries/autoplayDetection/autoplay.js";
+import {getAdUnitElement} from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -35,7 +36,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
  */
 function slotDimensions(bid) {
   const adUnitCode = bid.adUnitCode;
-  const slotEl = document.getElementById(adUnitCode);
+  const slotEl = getAdUnitElement(bid);
 
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`);

@@ -1,10 +1,10 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import {getDNT} from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;

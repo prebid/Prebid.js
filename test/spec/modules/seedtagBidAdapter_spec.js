@@ -4,22 +4,12 @@ import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import { BIDFLOOR_CURRENCY } from '../../../modules/seedtagBidAdapter.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
 
 const adUnitCode = '/19968336/header-bid-tag-0'
-
-// create a default adunit
-const slot = document.createElement('div');
-slot.id = adUnitCode;
-slot.style.width = '300px'
-slot.style.height = '250px'
-slot.style.position = 'absolute'
-slot.style.top = '10px'
-slot.style.left = '20px'
-
-document.body.appendChild(slot);
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -60,12 +50,25 @@ const createBannerSlotConfig = (mediatypes) => {
 };
 
 describe('Seedtag Adapter', function () {
+  let sandbox;
   beforeEach(function () {
     mockGpt.reset();
+    sandbox = sinon.createSandbox();
+    sandbox.stub(adUnits, 'getAdUnitElement').returns({
+      getBoundingClientRect() {
+        return {
+          top: 10,
+          left: 20,
+          width: 300,
+          height: 250
+        }
+      }
+    });
   });
 
   afterEach(function () {
     mockGpt.enable();
+    sandbox.restore();
   });
   describe('isBidRequestValid method', function () {
     describe('returns true', function () {
@@ -328,9 +331,13 @@ describe('Seedtag Adapter', function () {
     });
 
     describe('BidRequests params', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
-      const bidRequests = data.bidRequests;
+      let request, data, bidRequests;
+      beforeEach(() => {
+        request = spec.buildRequests(validBidRequests, bidderRequest);
+        data = JSON.parse(request.data);
+        bidRequests = data.bidRequests;
+      });
+
       it('should request a Banner', function () {
         const bannerBid = bidRequests[0];
         expect(bannerBid.id).to.equal('30b31c1838de1e');
@@ -369,27 +376,21 @@ describe('Seedtag Adapter', function () {
         const bidRequests = data.bidRequests;
         const bannerBid = bidRequests[0];
 
-        // on some CI, the DOM is not initialized, so we need to check if the slot is available
-        const slot = document.getElementById(adUnitCode)
-        if (slot) {
-          expect(bannerBid).to.have.property('geom')
+        expect(bannerBid).to.have.property('geom')
 
-          const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
-          params.forEach(([param, value]) => {
-            expect(bannerBid.geom).to.have.property(param)
-            expect(bannerBid.geom[param]).to.be.a('number')
-            expect(bannerBid.geom[param]).to.be.equal(value)
-          })
+        const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
+        params.forEach(([param, value]) => {
+          expect(bannerBid.geom).to.have.property(param)
+          expect(bannerBid.geom[param]).to.be.a('number')
+          expect(bannerBid.geom[param]).to.be.equal(value)
+        })
 
-          expect(bannerBid.geom).to.have.property('viewport')
-          const viewportParams = ['width', 'height']
-          viewportParams.forEach(param => {
-            expect(bannerBid.geom.viewport).to.have.property(param)
-            expect(bannerBid.geom.viewport[param]).to.be.a('number')
-          })
-        } else {
-          expect(bannerBid).to.not.have.property('geom')
-        }
+        expect(bannerBid.geom).to.have.property('viewport')
+        const viewportParams = ['width', 'height']
+        viewportParams.forEach(param => {
+          expect(bannerBid.geom.viewport).to.have.property(param)
+          expect(bannerBid.geom.viewport[param]).to.be.a('number')
+        })
       })
 
       it('should have bidfloor parameter if available', function () {
