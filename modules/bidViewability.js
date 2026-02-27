@@ -5,13 +5,14 @@
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
-import {isAdUnitCodeMatchingSlot, logWarn, triggerPixel} from '../src/utils.js';
+import {isAdUnitCodeMatchingSlot, logWarn, isFn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
-import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
+import adapterManager from '../src/adapterManager.js';
+import {fireViewabilityPixels} from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
+const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
 const CONFIG_FIRE_PIXELS = 'firePixels';
 const BID_VURL_ARRAY = 'vurls';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
@@ -22,33 +23,6 @@ export const getMatchingWinningBidForGPTSlot = (slot) => {
     // supports custom match function from config
     ({ adUnitCode }) => match(adUnitCode)
   ) || null;
-};
-
-export const fireViewabilityPixels = (globalModuleConfig, bid) => {
-  if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && bid.hasOwnProperty(BID_VURL_ARRAY)) {
-    const queryParams = gdprParams();
-
-    const uspConsent = uspDataHandler.getConsentData();
-    if (uspConsent) { queryParams.us_privacy = uspConsent; }
-
-    const gppConsent = gppDataHandler.getConsentData();
-    if (gppConsent) {
-      // TODO - need to know what to set here for queryParams...
-    }
-
-    bid[BID_VURL_ARRAY].forEach(url => {
-      // add '?' if not present in URL
-      if (Object.keys(queryParams).length > 0 && url.indexOf('?') === -1) {
-        url += '?';
-      }
-      // append all query params, `&key=urlEncoded(value)`
-      url += Object.keys(queryParams).reduce((prev, key) => {
-        prev += `&${key}=${encodeURIComponent(queryParams[key])}`;
-        return prev;
-      }, '');
-      triggerPixel(url)
-    });
-  }
 };
 
 export const logWinningBidNotFound = (slot) => {
@@ -62,8 +36,7 @@ export const impressionViewableHandler = (globalModuleConfig, event) => {
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
   } else {
-    // if config is enabled AND VURL array is present then execute each pixel
-    fireViewabilityPixels(globalModuleConfig, respectiveBid);
+    fireViewabilityPixels(respectiveBid);
     // trigger respective bidder's onBidViewable handler
     adapterManager.callBidViewableBidder(respectiveBid.adapterCode || respectiveBid.bidder, respectiveBid);
 
@@ -84,7 +57,6 @@ const handleSetConfig = (config) => {
   // do nothing if module-config.enabled is not set to true
   // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
   const impressionViewableHandlerWrapper = (event) => {
-    window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
     impressionViewableHandler(globalModuleConfig, event);
   };
 

@@ -6,6 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -700,7 +701,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl, eventtrackers } = ext;
 
           // update site data
           site = {
@@ -737,6 +738,7 @@ const spec = {
               },
               netRevenue: true,
               vurls,
+              eventtrackers: eventtrackers ?? vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
