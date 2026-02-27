@@ -403,6 +403,43 @@ describe('Deepintent adapter', function () {
       expect(data.regs.coppa).to.equal(1);
     });
   });
+  describe('ortb2 blocking (bcat, badv)', function() {
+    it('should add bcat and badv to payload when bidderRequest.ortb2 has them', function() {
+      const bidderReq = {
+        ortb2: {
+          bcat: ['IAB1', 'IAB2'],
+          badv: ['example.com']
+        }
+      };
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.deep.equal(['IAB1', 'IAB2']);
+      expect(data.badv).to.deep.equal(['example.com']);
+    });
+    it('should not add bcat or badv when bidderRequest.ortb2 does not have them', function() {
+      const bidderReq = {ortb2: {}};
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.be.undefined;
+      expect(data.badv).to.be.undefined;
+    });
+    it('should use params.bcat and params.badv as fallback when ortb2 does not set them', function() {
+      const requestWithParams = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        params: {
+          tagId: '100013',
+          bcat: ['IAB25'],
+          badv: ['blocked-advertiser.com']
+        }
+      }];
+      const bRequest = spec.buildRequests(requestWithParams);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.deep.equal(['IAB25']);
+      expect(data.badv).to.deep.equal(['blocked-advertiser.com']);
+    });
+  });
   describe('deals functionality', function() {
     it('should add PMP deals when valid deals array is provided', function() {
       const requestWithDeals = [{
