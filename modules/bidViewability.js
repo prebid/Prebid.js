@@ -7,8 +7,8 @@ import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
-import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
+import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
+import {gdprParams, gppParams} from '../libraries/dfpUtils/dfpUtils.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
@@ -32,15 +32,10 @@ export const getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
 
 export const fireViewabilityPixels = (globalModuleConfig, bid) => {
   if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && bid.hasOwnProperty(BID_VURL_ARRAY)) {
-    const queryParams = gdprParams();
+    const queryParams = Object.assign({}, gdprParams(), gppParams());
 
     const uspConsent = uspDataHandler.getConsentData();
     if (uspConsent) { queryParams.us_privacy = uspConsent; }
-
-    const gppConsent = gppDataHandler.getConsentData();
-    if (gppConsent) {
-      // TODO - need to know what to set here for queryParams...
-    }
 
     bid[BID_VURL_ARRAY].forEach(url => {
       // add '?' if not present in URL
