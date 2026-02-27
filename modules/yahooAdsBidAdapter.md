@@ -8,6 +8,7 @@ The Yahoo Advertising Bid Adapter is an OpenRTB interface that consolidates all 
 
 # Supported Features:
 * Media Types: Banner & Video
+* OpenRTB 2.6 Protocol Support
 * Outstream renderer
 * Multi-format adUnits
 * Schain module
@@ -19,6 +20,9 @@ The Yahoo Advertising Bid Adapter is an OpenRTB interface that consolidates all 
 * First Party Data (ortb2 & ortb2Imp)
 * Custom TTL (time to live)
 * Transaction ID (TID) support via ortb2.source.tid
+* Video Pod/Sequential Advertising
+* User-Agent Client Hints (device.sua)
+* Global Privacy Platform (GPP)
 
 # Adapter Aliases
 Whilst the primary bidder code for this bid adapter is `yahooAds`, the aliases `yahoossp` and `yahooAdvertising` can be used to enable this adapter. If you wish to set Prebid configuration specifically for this bid adapter, then the configuration key _must_ match the used bidder code. All examples in this documentation use the primiry bidder code, but switching `yahooAds` with one of the relevant aliases may be required for your setup. Let's take [setting the request mode](#adapter-request-mode) as an example; if you used the `yahoossp` alias, then the corresponding `setConfig` API call would look like this:
@@ -246,6 +250,87 @@ const adUnits = [{
         }
     }]
 }];
+```
+
+# OpenRTB 2.6 Support
+The Yahoo Advertising bid adapter now supports OpenRTB 2.6 protocol. This upgrade includes enhanced privacy controls, improved content classification, and support for video pod advertising. The adapter maintains full backward compatibility with OpenRTB 2.5 configurations.
+
+## New Features in OpenRTB 2.6:
+
+### Category Taxonomy (cattax)
+Specify which content category taxonomy to use:
+```javascript
+pbjs.setConfig({
+    ortb2: {
+        cattax: 2  // 1 = IAB Content Taxonomy 1.0 (default), 2 = IAB Content Taxonomy 2.0
+    }
+});
+```
+
+### Blocked Content Languages (wlangb)
+Specify languages that should not appear in ad creatives:
+```javascript
+pbjs.setConfig({
+    ortb2: {
+        wlangb: ['fr', 'de']  // Block French and German ads
+    }
+});
+```
+
+### User-Agent Client Hints (device.sua)
+The adapter automatically supports User-Agent Client Hints when available:
+```javascript
+pbjs.setConfig({
+    ortb2: {
+        device: {
+            sua: {
+                browsers: [
+                    {"brand": "Chromium", "version": ["119"]},
+                    {"brand": "Google Chrome", "version": ["119"]}
+                ],
+                platform: {"brand": "macOS", "version": ["14", "0", "0"]},
+                mobile: 0
+            }
+        }
+    }
+});
+```
+**Note:** Prebid.js automatically populates this when User-Agent Client Hints are available in the browser.
+
+### Enhanced Content Metadata
+Content network and channel now support rich object metadata:
+```javascript
+pbjs.setConfig({
+    ortb2: {
+        site: {
+            content: {
+                network: {
+                    id: "espn",
+                    name: "ESPN Network",
+                    domain: "espn.com"
+                },
+                channel: {
+                    id: "sports",
+                    name: "Sports Channel"
+                }
+            },
+            inventorypartnerdomain: "partner.com"  // For resold inventory
+        }
+    }
+});
+```
+**Note:** String values are automatically converted to objects for backward compatibility.
+
+### User Keywords Array
+Pass user-specific keywords as an array:
+```javascript
+pbjs.setConfig({
+    ortb2: {
+        user: {
+            kwarray: ['tech-enthusiast', 'mobile-gamer', 'sports-fan']
+        }
+    }
+});
 ```
 
 # Optional: Schain module support
@@ -483,6 +568,9 @@ Notes: The first party site info is filtered and only the following specific key
 | site.content.data[].name    | String |
 | site.content.data[].segment | Array  |
 | site.content.data[].ext     | Object |
+| site.content.network        | Object (or String, auto-converted) |
+| site.content.channel        | Object (or String, auto-converted) |
+| site.inventorypartnerdomain | String |
 
 
 ### Passing First Party "user" data:
@@ -761,6 +849,42 @@ const adUnits = [{
 
 ```
 # Optional: Video Features
+## Video Pod Support (OpenRTB 2.6)
+The adapter supports video pod/sequential advertising for ad-stitching scenarios. You can configure pod-specific parameters through `mediaTypes.video` or `params.bidOverride.imp.video`:
+
+**Supported Pod Fields:**
+- `podid` - Unique identifier for the ad pod
+- `podseq` - Ad position within the pod (0-indexed)
+- `maxseq` - Maximum number of ads in the pod
+- `poddur` - Total pod duration in seconds
+- `slotinpod` - Slot position (1-indexed)
+- `mincpmpersec` - Minimum CPM per second
+
+```javascript
+const adUnits = [{
+    code: 'video-pod-adUnit',
+    mediaTypes: {
+        video: {
+            context: 'instream',
+            playerSize: [[640, 480]],
+            podid: 'mid-roll-1',
+            podseq: 0,
+            maxseq: 3,
+            poddur: 120,
+            slotinpod: 1,
+            mincpmpersec: 0.50
+        }
+    },
+    bids: [{
+        bidder: 'yahooAds',
+        params: {
+            dcn: '8a969516017a7a396ec539d97f540011',
+            pos: '8a96958a017a7a57ac375d50c0c700cc'
+        }
+    }]
+}];
+```
+
 ## Rewarded video flag
 To indicate to Yahoo Advertising that this adUnit is a rewarded video you can set the `params.bidOverride.imp.video.rewarded` property to `1`
 
