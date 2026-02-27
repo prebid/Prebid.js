@@ -98,9 +98,7 @@ describe('Targeting lock', () => {
         lock.lock(targeting);
         eventHandlers.slotRenderEnded({
           slot: {
-            getConfig: sinon.stub().withArgs('targeting').returns({
-              k1: [targeting.k1]
-            })
+            getTargeting: (key) => [targeting[key]]
           }
         });
         expect(lock.isLocked(targeting)).to.be.false;

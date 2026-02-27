@@ -139,6 +139,9 @@ export const spec = {
             bidResponse['mediasquare'][param] = value[param];
           }
         });
+        if ('burls' in value) {
+          bidResponse['mediasquare']['burls'] = value['burls'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -182,9 +185,22 @@ export const spec = {
     }
     const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+
     if (bid.hasOwnProperty('mediasquare')) {
-      paramsToSearchFor.forEach(param => {
+      // if burls then fire tracking pixels and exit
+      if (bid.mediasquare.hasOwnProperty('burls') && Array.isArray(bid.mediasquare.burls) && bid.mediasquare.burls.length > 0) {
+        bid.mediasquare.burls.forEach(burl => {
+          const url = burl && burl.url;
+          if (!url) return;
+          const method = (burl.method ?? "GET").toUpperCase();
+          const data = (method === "POST" && burl.data ? burl.data : null);
+          ajax(url, null, data ? JSON.stringify(data) : null, {method: method, withCredentials: true});
+        });
+        return true;
+      }
+      // no burl so checking for other mediasquare params
+      let msqParamsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+      msqParamsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
           if (typeof params[param] === 'number') {
@@ -193,7 +209,8 @@ export const spec = {
         }
       });
     };
-    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
     paramsToSearchFor.forEach(param => {
       if (bid.hasOwnProperty(param)) {
         params[param] = bid[param];
