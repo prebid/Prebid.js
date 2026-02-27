@@ -1124,6 +1124,62 @@ describe('targeting tests', function () {
       expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', 'hb_adid', 'hb_bidder');
       expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
     });
+
+    describe('bidTargetingExclusion', function () {
+      it('includes all bids in targeting when bidTargetingExclusion is not set', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.53');
+      });
+
+      it('includes bid in targeting when bidTargetingExclusion returns true for that bid', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid) => bid.cpm >= 0.5
+        });
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.53');
+        config.resetConfig();
+      });
+
+      it('excludes bid from targeting when bidTargetingExclusion returns false for that bid', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid) => bid.adId !== bid1.adId
+        });
+        // Pass bidsReceived so both bid1 and bid2 are in the pool (getBidsReceived() returns only one per bidder per ad unit)
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0'], undefined, bidsReceived);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid2.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.25');
+        config.resetConfig();
+      });
+
+      it('excludes all bids for ad unit when bidTargetingExclusion returns false for all', function () {
+        config.setConfig({
+          bidTargetingExclusion: () => false
+        });
+        // Pass bidsReceived so both ad units have bids; all excluded so no winner for either
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1'], undefined, bidsReceived);
+        expect(targeting).to.contain.key('/123456/header-bid-tag-0');
+        expect(targeting).to.contain.key('/123456/header-bid-tag-1');
+        expect(targeting['/123456/header-bid-tag-0']).to.not.contain.key('hb_adid');
+        expect(targeting['/123456/header-bid-tag-1']).to.not.contain.key('hb_adid');
+        config.resetConfig();
+      });
+
+      it('calls bidTargetingExclusion with (bid, initiallyFilteredBids) and uses second argument', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid, initiallyFilteredBids) => {
+            const sameUnit = initiallyFilteredBids.filter(b => b.adUnitCode === bid.adUnitCode);
+            return sameUnit.length > 1;
+          }
+        });
+        // tag-0 has bid1 and bid2 (2 bids), tag-1 has bid3 only (1 bid) → only tag-0 bids included
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1'], undefined, bidsReceived);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-1']).to.not.contain.key('hb_adid');
+        config.resetConfig();
+      });
+    });
   }); // end getAllTargeting tests
 
   describe('getAllTargeting will work correctly when a hook raises has modified flag in getHighestCpmBidsFromBidPool', function () {
