@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Checkout code
         uses: actions/checkout@v6
@@ -34,6 +34,9 @@ jobs:
 
       - name: Get the diff
         run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge | grep '^\(modules\|src\|libraries\|creative\)/.*\.js$' > __changed_files.txt || true
+
+      - name: Get newly added JS files in TS migration paths
+        run: git diff --name-only --diff-filter=A origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge | grep '^\(modules\|src\|libraries\)/.*\.js$' > __new_js_files.txt || true
 
       - name: Run linter on base branch
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __base.json || true
@@ -56,7 +59,7 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const process = require('process');
-            
+
             function parse(fn) {
               return JSON.parse(fs.readFileSync(fn)).reduce((memo, data) => {
                 const file = path.relative(process.cwd(), data.filePath);
@@ -67,7 +70,7 @@ jobs:
                 return memo;
               }, {})
             }
-            
+
             function mkDiff(old, new_) {
               const files = Object.fromEntries(
                 Object.entries(new_)
@@ -83,12 +86,23 @@ jobs:
                 return memo;
               }, {errors: 0, warnings: 0, files})
             }
-            
-            function mkComment({errors, warnings, files}) {
+
+            function mkComment({errors, warnings, files}, newJsFiles) {
               function pl(noun, number) {
                 return noun + (number === 1 ? '' : 's')
               }
-              if (errors === 0 && warnings === 0) return;
+              const comments = [];
+
+              if (newJsFiles.length > 0) {
+                let jsComment = 'Whoa there partner! This project is changing to typescript. Please change the new JS files to TS. Thanks!\n\n';
+                newJsFiles.forEach((file) => {
+                  jsComment += ` * \`${file}\`\n`;
+                });
+                comments.push(jsComment);
+              }
+
+              if (errors === 0 && warnings === 0) return comments.length > 0 ? comments.join('\n') : undefined;
+
               const summary = [];
               if (errors) summary.push(`**${errors}** linter ${pl('error', errors)}`)
               if (warnings) summary.push(`**${warnings}** linter ${pl('warning', warnings)}`)
@@ -99,12 +113,18 @@ jobs:
                 if (warnings) summary.push(`+${warnings} ${pl('warning', warnings)}`)
                 cm += ` * \`${file}\` (${summary.join(', ')})\n`
               })
-              return cm;
+              comments.push(cm);
+              return comments.join('\n');
             }
-            
+
+            function readLines(fn) {
+              if (!fs.existsSync(fn)) return [];
+              return fs.readFileSync(fn, 'utf8').split('\n').map(line => line.trim()).filter(Boolean);
+            }
+
             const [base, pr] = ['__base.json', '__pr.json'].map(parse);
-            const comment = mkComment(mkDiff(base, pr));
-            
+            const comment = mkComment(mkDiff(base, pr), readLines('__new_js_files.txt'));
+
             if (comment) {
               fs.writeFileSync("${{ runner.temp }}/comment.json", JSON.stringify({
                 issue_number: context.issue.number,
