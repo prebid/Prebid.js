@@ -111,9 +111,17 @@ function fetchContextData(apiUrl, fetchTimeoutMs) {
   fetchPromise = new Promise((resolve, reject) => {
     ajax(apiUrl, {
       success: (responseText) => {
-        try { resolve(JSON.parse(responseText)); } catch (err) { reject(err); }
+        try {
+          resolve(JSON.parse(responseText));
+        } catch (err) {
+          fetchPromise = null; // Clear cache on parse error to allow retry
+          reject(err);
+        }
       },
-      error: (err) => reject(err)
+      error: (err) => {
+        fetchPromise = null; // Clear cache on network error to allow retry
+        reject(err);
+      }
     });
   });
 
