@@ -260,6 +260,7 @@ export interface Config {
    * Return false to exclude a bid from targeting.
    */
   bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
+  /** 
    * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
    * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
    */
