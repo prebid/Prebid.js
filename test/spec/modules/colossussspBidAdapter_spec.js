@@ -447,7 +447,7 @@ describe('ColossussspAdapter', function () {
   })
 
   describe('getUserSyncs', function () {
-    const userSync = spec.getUserSyncs({}, {}, { consentString: 'xxx', gdprApplies: 1 }, { consentString: '1YN-' });
+    const userSync = spec.getUserSyncs({}, {}, { consentString: 'xxx', gdprApplies: 1 }, '1YN-');
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
