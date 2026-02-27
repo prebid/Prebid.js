@@ -1744,6 +1744,72 @@ describe('bidderFactory', () => {
         });
       });
     })
+
+    describe('media type validation', () => {
+      let req;
+
+      function mkResponse(props) {
+        return Object.assign({
+          requestId: req.bidId,
+          cpm: 1,
+          ttl: 60,
+          creativeId: '123',
+          netRevenue: true,
+          currency: 'USD',
+          width: 1,
+          height: 2,
+        }, props);
+      }
+
+      function checkValid(bid) {
+        return isValid('au', bid, {index: stubAuctionIndex({bidRequests: [req]})});
+      }
+
+      beforeEach(() => {
+        req = {
+          ...MOCK_BIDS_REQUEST.bids[0],
+          mediaTypes: {
+            banner: {
+              sizes: [[1, 2]]
+            }
+          }
+        };
+      });
+
+      it('should reject video bid when ad unit only has banner', () => {
+        expect(checkValid(mkResponse({mediaType: 'video'}))).to.be.false;
+      });
+
+      it('should reject banner bid when ad unit only has video', () => {
+        req.mediaTypes = {video: {context: 'instream'}};
+        expect(checkValid(mkResponse({mediaType: 'banner'}))).to.be.false;
+      });
+
+      it('should accept banner bid when ad unit has banner', () => {
+        expect(checkValid(mkResponse({mediaType: 'banner'}))).to.be.true;
+      });
+
+      it('should accept video bid when ad unit has both banner and video', () => {
+        req.mediaTypes = {
+          banner: {sizes: [[1, 2]]},
+          video: {context: 'instream'}
+        };
+        expect(checkValid(mkResponse({mediaType: 'video', vastUrl: 'http://vast.xml'}))).to.be.true;
+      });
+
+      it('should skip check when bid.mediaType is not set', () => {
+        expect(checkValid(mkResponse({mediaType: undefined}))).to.be.true;
+      });
+
+      it('should skip check when mediaTypes is unavailable from index', () => {
+        delete req.mediaTypes;
+        expect(checkValid(mkResponse({mediaType: 'banner'}))).to.be.true;
+      });
+
+      it('should reject native bid when ad unit only has banner', () => {
+        expect(checkValid(mkResponse({mediaType: 'native'}))).to.be.false;
+      });
+    });
   });
 
   describe('gzip compression', () => {
