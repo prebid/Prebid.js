@@ -7,7 +7,7 @@ import {
   getPriceByGranularity,
   addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
-import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
+import { BID_STATUS, EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
@@ -28,7 +28,7 @@ import { setConfig as setCurrencyConfig } from '../../modules/currency.js'
 import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 import {sandbox} from 'sinon';
-import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
+import {getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinWinningBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 
 /**
@@ -866,6 +866,29 @@ describe('auctionmanager.js', function () {
       })
     })
 
+    describe('setConfig(minWinningBidCacheTTL)', () => {
+      it('should update getMinWinningBidCacheTTL', () => {
+        expect(getMinWinningBidCacheTTL()).to.eql(null);
+        config.setConfig({minWinningBidCacheTTL: 3600});
+        expect(getMinWinningBidCacheTTL()).to.eql(3600);
+      });
+
+      it('getEffectiveMinBidCacheTTL uses minWinningBidCacheTTL for bids with targeting set', () => {
+        config.setConfig({minBidCacheTTL: 30, minWinningBidCacheTTL: 3600});
+        const bidWithTargeting = {status: BID_STATUS.BID_TARGETING_SET};
+        const bidWithoutTargeting = {status: 'other'};
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(3600);
+        expect(getEffectiveMinBidCacheTTL(bidWithoutTargeting)).to.eql(30);
+      });
+
+      it('getEffectiveMinBidCacheTTL uses minBidCacheTTL when minWinningBidCacheTTL not set', () => {
+        config.resetConfig();
+        config.setConfig({minBidCacheTTL: 30});
+        const bidWithTargeting = {status: BID_STATUS.BID_TARGETING_SET};
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(30);
+      })
+    })
+
     describe('minBidCacheTTL', () => {
       let clock, auction;
       beforeEach(() => {
@@ -906,7 +929,7 @@ describe('auctionmanager.js', function () {
 
         it('pick up updates to minBidCacheTTL that happen during bid lifetime', async () => {
           auction.callBids();
-          await auction.edn;
+          await auction.end;
           clock.tick(10 * 1000);
           config.setConfig({
             minBidCacheTTL: 20
@@ -914,6 +937,34 @@ describe('auctionmanager.js', function () {
           await clock.tick(0);
           await clock.tick(20 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(1);
+        });
+
+        it('do not expire winning bids with targeting set when minWinningBidCacheTTL is set', async () => {
+          config.setConfig({
+            minBidCacheTTL: 30,
+            minWinningBidCacheTTL: 3600
+          });
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10,
+              adId: utils.getUniqueIdentifierStr(),
+              auctionId: auction.getAuctionId()
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100,
+              adId: utils.getUniqueIdentifierStr(),
+              auctionId: auction.getAuctionId()
+            }
+          ];
+          auction.callBids();
+          await auction.end;
+          const shortTtlBid = auctionManager.getBidsReceived().find(b => b.ttl === 10);
+          auctionManager.setStatusForBids(shortTtlBid.adId, BID_STATUS.BID_TARGETING_SET);
+          await clock.tick(35 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
         })
       })
 
