@@ -139,22 +139,36 @@ function mapApiPayload(cc) {
   const targetingArrays = {};
   lastTargeting = {};
 
-  const iabCats = asStringArray(cc.iab_cats);
   const iabCatIds = asStringArray(cc.iab_cat_ids);
-  targetingArrays.om_iab_cat_ids = iabCatIds;
-  targetingArrays.om_iab_cats = iabCats;
-  lastTargeting.om_iab_cat_ids = iabCatIds.join(',');
-  lastTargeting.om_iab_cats = iabCats.join(',');
 
-  arrayKeys.forEach((key) => {
-    const vals = asStringArray(cc[key]);
-    ext[key] = vals;
-    targetingArrays[`om_${key}`] = vals;
-    lastTargeting[`om_${key}`] = vals.join(',');
+  // Clean up IAB Cats by keeping only the most specific segment (after the last pipe)
+  const iabCats = asStringArray(cc.iab_cats).map(cat => {
+    const parts = cat.split('|');
+    return parts[parts.length - 1];
   });
 
+  // Safely assign IAB keys only if they have data
+  if (iabCatIds.length > 0) {
+    targetingArrays.om_iab_cat_ids = iabCatIds;
+    lastTargeting.om_iab_cat_ids = iabCatIds.join(',');
+  }
+
+  // NOTE: om_iab_cats is intentionally excluded from targetingArrays and lastTargeting
+  // to save ad server slot limits. The cleaned names are only used for the ORTB segment below.
+
+  // Safely assign optional array keys
+  arrayKeys.forEach((key) => {
+    const vals = asStringArray(cc[key]);
+    if (vals.length > 0) { // Only populate if there is actual data
+      ext[key] = vals;
+      targetingArrays[`om_${key}`] = vals;
+      lastTargeting[`om_${key}`] = vals.join(',');
+    }
+  });
+
+  // Safely assign optional scalar keys
   scalarKeys.forEach((key) => {
-    if (cc[key] != null) {
+    if (cc[key] != null && cc[key] !== '') { // Guard against nulls and empty strings
       ext[key] = cc[key];
       targetingArrays[`om_${key}`] = [String(cc[key])];
       lastTargeting[`om_${key}`] = String(cc[key]);
@@ -164,9 +178,6 @@ function mapApiPayload(cc) {
   return { ext, targetingArrays, segment: buildSegments(iabCatIds, iabCats) };
 }
 
-// ==========================================
-// 1. PUBLISHER TARGETING (Independent of Auction)
-// ==========================================
 // ==========================================
 // 1. PUBLISHER TARGETING (Independent of Auction)
 // ==========================================
