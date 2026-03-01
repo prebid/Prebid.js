@@ -1,0 +1,252 @@
+<!--
+  Paywalls RTD Provider — Integration Test Page
+
+  Uses mock-vai.js to simulate VAI classification.
+  Open browser DevTools console to check:
+    ✓ vai.js loaded by RTD module
+    ✓ ortb2.site.ext.vai contains { iss, aud, dom, kid, assertion_jws }
+    ✓ ortb2.user.ext.vai contains { vat, act }
+    ✓ getTargetingData returns { vai_vat, vai_act } per ad unit
+    ✓ Auction completes within timing budget
+
+  Serve with:  npx gulp serve-fast --modules=rtdModule,paywallsRtdProvider
+  Then open:   http://localhost:9999/integrationExamples/gpt/paywallsRtdProvider_example.html
+-->
+<html>
+<head>
+  <title>Paywalls RTD Provider — E2E Test</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 2em auto; }
+    h2 { color: #1a1a2e; }
+    .status { padding: 0.5em 1em; margin: 0.5em 0; border-left: 4px solid #ccc; background: #f9f9f9; font-family: monospace; white-space: pre-wrap; }
+    .pass { border-left-color: #27ae60; background: #eafaf1; }
+    .fail { border-left-color: #e74c3c; background: #fdedec; }
+    .wait { border-left-color: #f39c12; background: #fef9e7; }
+    #ad-slot { min-height: 250px; min-width: 300px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #999; margin: 1em 0; }
+  </style>
+
+  <script>
+    // ─── Ad units ───────────────────────────────────────────────
+    var adUnits = [
+      {
+        code: 'test-div',
+        mediaTypes: {
+          banner: { sizes: [[300, 250], [728, 90]] }
+        },
+        bids: [
+          {
+            bidder: 'appnexus',
+            params: { placementId: 13144370 }
+          }
+        ]
+      }
+    ];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+
+  <!-- Load Prebid dev build -->
+  <script src="../../build/dev/prebid.js" async></script>
+
+  <script>
+    // ─── Test harness ───────────────────────────────────────────
+    var testResults = {};
+    var auctionStart;
+    var degradeMode = location.search.indexOf('degrade') !== -1;
+    var realMode = location.search.indexOf('real') !== -1;
+
+    // In degrade mode, clear localStorage so there's no cached VAI
+    if (degradeMode) {
+      try { localStorage.removeItem('__pw_vai__'); } catch (e) {}
+      delete window.__PW_VAI__;
+      document.title = 'Paywalls RTD — Degradation Test';
+    }
+    if (realMode) {
+      document.title = 'Paywalls RTD — Real VAI Test';
+    }
+
+    function setStatus(id, pass, msg) {
+      testResults[id] = { pass: pass, msg: msg };
+      var el = document.getElementById(id);
+      if (el) {
+        el.className = 'status ' + (pass ? 'pass' : 'fail');
+        el.textContent = (pass ? '✓ ' : '✗ ') + msg;
+      }
+    }
+
+    function runAssertions(ortb2, targeting) {
+      var elapsed = Date.now() - auctionStart;
+
+      // 1. ORTB2 site.ext.vai
+      var siteVai = ortb2 && ortb2.site && ortb2.site.ext && ortb2.site.ext.vai;
+      if (degradeMode) {
+        if (!siteVai) {
+          setStatus('test-site-vai', true, 'site.ext.vai absent (expected — degraded mode)');
+        } else {
+          setStatus('test-site-vai', false, 'site.ext.vai should be absent in degrade mode but found: ' + JSON.stringify(siteVai));
+        }
+      } else {
+        if (siteVai && siteVai.iss && siteVai.aud && siteVai.dom && siteVai.kid && siteVai.assertion_jws) {
+          setStatus('test-site-vai', true, 'site.ext.vai: iss=' + siteVai.iss + ' aud=' + siteVai.aud + ' dom=' + siteVai.dom + ' kid=' + siteVai.kid);
+        } else {
+          setStatus('test-site-vai', false, 'site.ext.vai missing or incomplete: ' + JSON.stringify(siteVai));
+        }
+      }
+
+      // 2. ORTB2 user.ext.vai
+      var userVai = ortb2 && ortb2.user && ortb2.user.ext && ortb2.user.ext.vai;
+      if (degradeMode) {
+        if (!userVai) {
+          setStatus('test-user-vai', true, 'user.ext.vai absent (expected — degraded mode)');
+        } else {
+          setStatus('test-user-vai', false, 'user.ext.vai should be absent in degrade mode but found: ' + JSON.stringify(userVai));
+        }
+      } else {
+        if (userVai && userVai.vat && userVai.act) {
+          setStatus('test-user-vai', true, 'user.ext.vai: vat=' + userVai.vat + ' act=' + userVai.act);
+        } else {
+          setStatus('test-user-vai', false, 'user.ext.vai missing or incomplete: ' + JSON.stringify(userVai));
+        }
+      }
+
+      // 3. GAM targeting keys
+      var tgt = targeting && targeting['test-div'];
+      if (degradeMode) {
+        if (!tgt || (!tgt.vai_vat && !tgt.vai_act)) {
+          setStatus('test-targeting', true, 'targeting keys absent (expected — degraded mode)');
+        } else {
+          setStatus('test-targeting', false, 'targeting should be absent in degrade mode but found: ' + JSON.stringify(tgt));
+        }
+      } else {
+        if (tgt && tgt.vai_vat && tgt.vai_act) {
+          setStatus('test-targeting', true, 'targeting: vai_vat=' + tgt.vai_vat + ' vai_act=' + tgt.vai_act);
+        } else {
+          setStatus('test-targeting', false, 'targeting keys missing for test-div: ' + JSON.stringify(tgt));
+        }
+      }
+
+      // 4. Timing budget
+      if (elapsed < 3000) {
+        setStatus('test-timing', true, 'auction completed in ' + elapsed + 'ms (< 3000ms budget)');
+      } else {
+        setStatus('test-timing', false, 'auction took ' + elapsed + 'ms — exceeded 3000ms budget');
+      }
+
+      // 5. VAI available (window global OR localStorage cache)
+      var vaiSource = null;
+      var vaiData = null;
+      if (window.__PW_VAI__) {
+        vaiSource = 'window.__PW_VAI__';
+        vaiData = window.__PW_VAI__;
+      } else {
+        try {
+          var raw = localStorage.getItem('__pw_vai__');
+          if (raw) { vaiData = JSON.parse(raw); vaiSource = 'localStorage'; }
+        } catch (e) { /* ignore */ }
+      }
+      if (degradeMode) {
+        if (!vaiData) {
+          setStatus('test-vai-loaded', true, 'VAI not available (expected — degraded mode)');
+        } else {
+          setStatus('test-vai-loaded', false, 'VAI should be absent in degrade mode but found via ' + vaiSource);
+        }
+      } else {
+        if (vaiData && vaiData.vat && vaiData.act) {
+          setStatus('test-vai-loaded', true, 'VAI available via ' + vaiSource + ': vat=' + vaiData.vat + ' act=' + vaiData.act);
+        } else {
+          setStatus('test-vai-loaded', false, 'VAI not found in window.__PW_VAI__ or localStorage');
+        }
+      }
+
+      // Summary
+      var allPass = Object.keys(testResults).every(function (k) { return testResults[k].pass; });
+      document.getElementById('summary').className = 'status ' + (allPass ? 'pass' : 'fail');
+      document.getElementById('summary').textContent = allPass
+        ? '✓ All tests passed (' + Object.keys(testResults).length + '/' + Object.keys(testResults).length + ')'
+        : '✗ Some tests failed — check above';
+
+      console.log('[e2e] Test results:', testResults);
+      console.log('[e2e] ORTB2:', JSON.stringify(ortb2, null, 2));
+      console.log('[e2e] Targeting:', JSON.stringify(targeting, null, 2));
+    }
+
+    // ─── Prebid config & auction ────────────────────────────────
+    var capturedOrtb2 = null;
+
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        debug: true,
+        realTimeData: {
+          auctionDelay: 2000,
+          dataProviders: [
+            {
+              name: 'paywalls',
+              waitForIt: true,
+              params: {
+                // Use 127.0.0.1 (not localhost) for real VAI host so that the
+              // Origin hostname differs from the worker bind address — this
+              // avoids wrangler dev's port-stacking CORS header mangling.
+              // Alt: 'https://dev.paywalls.net/pw/vai.js' (deployed worker)
+              scriptUrl: degradeMode
+                  ? '/integrationExamples/gpt/nonexistent-vai.js'
+                  : realMode
+                    ? 'http://127.0.0.1:8080/pw/vai.js'
+                    : '/integrationExamples/gpt/mock-vai.js'
+              }
+            }
+          ]
+        }
+      });
+
+      // Capture ORTB2 from the actual bid request (RTD modules merge into
+      // reqBidsConfigObj.ortb2Fragments.global, which flows into bidderRequest.ortb2
+      // — NOT into pbjs.getConfig('ortb2'))
+      pbjs.onEvent('bidRequested', function (bidderRequest) {
+        if (!capturedOrtb2 && bidderRequest.ortb2) {
+          capturedOrtb2 = bidderRequest.ortb2;
+          console.log('[e2e] captured ORTB2 from bidRequested event:', JSON.stringify(capturedOrtb2, null, 2));
+        }
+      });
+
+      pbjs.addAdUnits(adUnits);
+
+      auctionStart = Date.now();
+      document.getElementById('test-vai-loaded').className = 'status wait';
+      document.getElementById('test-vai-loaded').textContent = '⏳ Waiting for auction...';
+
+      pbjs.requestBids({
+        bidsBackHandler: function () {
+          var ortb2 = capturedOrtb2 || {};
+          var targeting = pbjs.getAdserverTargeting();
+
+          console.log('[e2e] bidsBackHandler fired. Elapsed:', Date.now() - auctionStart, 'ms');
+          runAssertions(ortb2, targeting);
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <h2>Paywalls RTD Provider — Integration Test</h2>
+
+  <h3>Test Results</h3>
+  <div id="test-vai-loaded" class="status wait">⏳ Waiting for Prebid to load...</div>
+  <div id="test-site-vai" class="status wait">⏳ site.ext.vai</div>
+  <div id="test-user-vai" class="status wait">⏳ user.ext.vai</div>
+  <div id="test-targeting" class="status wait">⏳ GAM targeting keys</div>
+  <div id="test-timing" class="status wait">⏳ Timing</div>
+  <div id="summary" class="status wait">⏳ Running...</div>
+
+  <h3>Ad Slot (test-div)</h3>
+  <div id="ad-slot">
+    <div id="test-div">
+      (Ad slot — no real bids expected in test)
+    </div>
+  </div>
+
+  <h3>Debug</h3>
+  <p>Open DevTools console for full ORTB2 and targeting output. Prebid <code>debug: true</code> is enabled.</p>
+</body>
+</html>
