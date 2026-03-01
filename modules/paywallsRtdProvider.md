@@ -131,13 +131,13 @@ These are available via `pbjs.getAdserverTargeting()` and are compatible with st
 
 ## Activity Controls
 
-Publishers can restrict which activities the Paywalls module is allowed to perform. The module uses `loadExternalScript`, which requires the `fetchBids` activity to allow the `paywalls` module:
+Publishers can restrict which activities the Paywalls module is allowed to perform. The module uses `loadExternalScript` to inject `vai.js`, which is gated by the `loadExternalScript` activity. If your activity configuration denies this by default, explicitly allow it for the `paywalls` component:
 
 ```javascript
 pbjs.setConfig({
   allowActivities: {
-    fetchBids: {
-      default: true,
+    loadExternalScript: {
+      default: false,
       rules: [
         {
           condition: function (params) {
@@ -156,7 +156,7 @@ pbjs.setConfig({
 - **No user identifiers**: VAI does not collect, store, or transmit user IDs, cookies, or fingerprints.
 - **No PII**: The classification is based on aggregate session-level behavioral signals, not personal data.
 - **Browser-side only**: All signal extraction runs in the browser; no data leaves the page except the classification result.
-- **Signed assertions**: SSPs can independently verify the `assertion_jws` via the JWKS endpoint (`/pw/jwks.json`), ensuring the classification has not been tampered with.
+- **Signed assertions**: SSPs can independently verify the `assertion_jws` via the JWKS endpoint pulled from the JWS header (typically `https://example.com/pw/jwks.json`), ensuring the classification has not been tampered with.
 
 ## How It Works
 
