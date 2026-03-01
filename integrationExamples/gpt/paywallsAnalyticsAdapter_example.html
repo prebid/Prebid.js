@@ -1,0 +1,167 @@
+<!--
+  Paywalls Analytics Adapter — Integration Test Page
+
+  Verifies that the analytics adapter emits vai_vat and vai_act
+  on each auction.  Uses a single appnexus test placement (nobid is fine —
+  the adapter fires on AUCTION_END regardless of bid outcome).
+
+  Serve with:  npx gulp serve-fast --modules=rtdModule,paywallsRtdProvider,paywallsAnalyticsAdapter,appnexusBidAdapter
+  Then open:   http://localhost:9999/integrationExamples/gpt/paywallsAnalyticsAdapter_example.html
+-->
+<html>
+<head>
+  <title>Paywalls Analytics Adapter — E2E Test</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 700px; margin: 2em auto; }
+    h2 { color: #1a1a2e; }
+    .status { padding: 0.5em 1em; margin: 0.5em 0; border-left: 4px solid #ccc; background: #f9f9f9; font-family: monospace; white-space: pre-wrap; }
+    .pass { border-left-color: #27ae60; background: #eafaf1; }
+    .fail { border-left-color: #e74c3c; background: #fdedec; }
+    .wait { border-left-color: #f39c12; background: #fef9e7; }
+  </style>
+
+  <script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+  <script src="../../build/dev/prebid.js" async></script>
+
+  <script>
+    var degradeMode = location.search.indexOf('degrade') !== -1;
+    var realMode = location.search.indexOf('real') !== -1;
+
+    if (degradeMode) {
+      try { localStorage.removeItem('__pw_vai__'); } catch (e) {}
+      delete window.__PW_VAI__;
+      document.title = 'Paywalls Analytics — Degradation Test';
+    }
+    if (realMode) {
+      document.title = 'Paywalls Analytics — Real VAI Test';
+    }
+
+    var collectedMetrics = null;
+
+    function setStatus(id, pass, msg) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.className = 'status ' + (pass ? 'pass' : 'fail');
+        el.textContent = (pass ? '✓ ' : '✗ ') + msg;
+      }
+    }
+
+    function runAssertions() {
+      if (!collectedMetrics) {
+        setStatus('test-callback', false, 'Analytics callback was NOT called');
+        setStatus('summary', false, 'FAIL — no callback');
+        return;
+      }
+      setStatus('test-callback', true, 'Analytics callback fired');
+
+      var m = collectedMetrics;
+
+      // VAI classification
+      if (degradeMode) {
+        if (m.vai_vat === 'UNKNOWN' && m.vai_act === 'UNKNOWN') {
+          setStatus('test-vat', true, 'vai_vat=UNKNOWN (expected — degrade mode)');
+          setStatus('test-act', true, 'vai_act=UNKNOWN (expected — degrade mode)');
+        } else {
+          setStatus('test-vat', false, 'Expected UNKNOWN, got vai_vat=' + m.vai_vat);
+          setStatus('test-act', false, 'Expected UNKNOWN, got vai_act=' + m.vai_act);
+        }
+      } else {
+        var vatOk = m.vai_vat && m.vai_vat !== 'UNKNOWN';
+        var actOk = m.vai_act && m.vai_act !== 'UNKNOWN';
+        setStatus('test-vat', vatOk, 'vai_vat=' + m.vai_vat);
+        setStatus('test-act', actOk, 'vai_act=' + m.vai_act);
+      }
+
+      // Only vat and act should be present
+      var keys = Object.keys(m);
+      var onlyTwo = keys.length === 2 && m.vai_vat !== undefined && m.vai_act !== undefined;
+      setStatus('test-keys', onlyTwo, 'Keys: ' + keys.join(', ') + (onlyTwo ? '' : ' (expected only vai_vat, vai_act)'));
+
+      // Summary
+      var allPass = [
+        collectedMetrics != null,
+        degradeMode ? (m.vai_vat === 'UNKNOWN') : (m.vai_vat && m.vai_vat !== 'UNKNOWN'),
+        degradeMode ? (m.vai_act === 'UNKNOWN') : (m.vai_act && m.vai_act !== 'UNKNOWN'),
+        onlyTwo
+      ].every(Boolean);
+      setStatus('summary', allPass, allPass ? 'All tests passed' : 'Some tests failed');
+
+      console.log('[e2e-analytics] Metrics:', JSON.stringify(m));
+    }
+
+    // ─── Prebid config ──────────────────────────────────────────
+    pbjs.que.push(function () {
+      var vaiScriptUrl = degradeMode
+        ? '/integrationExamples/gpt/nonexistent-vai.js'
+        : realMode
+          ? 'http://127.0.0.1:8080/pw/vai.js'
+          : '/integrationExamples/gpt/mock-vai.js';
+
+      pbjs.setConfig({
+        debug: true,
+        realTimeData: {
+          auctionDelay: 2000,
+          dataProviders: [{
+            name: 'paywalls',
+            waitForIt: true,
+            params: { scriptUrl: vaiScriptUrl }
+          }]
+        }
+      });
+
+      pbjs.enableAnalytics([{
+        provider: 'paywalls',
+        options: {
+          output: 'callback',
+          callback: function (metrics) {
+            console.log('[e2e-analytics] callback:', metrics);
+            collectedMetrics = metrics;
+            setTimeout(runAssertions, 100);
+          },
+          scriptUrl: vaiScriptUrl,
+          samplingRate: 1.0
+        }
+      }]);
+
+      pbjs.addAdUnits([{
+        code: 'test-div-1',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [{ bidder: 'appnexus', params: { placementId: 13144370 } }]
+      }]);
+
+      pbjs.requestBids({
+        bidsBackHandler: function () {
+          console.log('[e2e-analytics] bidsBackHandler fired');
+          setTimeout(function () {
+            if (!collectedMetrics) {
+              setStatus('test-callback', false, 'Analytics callback never fired (timeout)');
+              setStatus('summary', false, 'Timed out');
+            }
+          }, 5000);
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <h2>Paywalls Analytics Adapter — Integration Test</h2>
+  <p>Verifies <code>vai_vat</code> and <code>vai_act</code> are emitted on each auction.</p>
+
+  <div id="test-callback" class="status wait">⏳ Waiting for auction...</div>
+  <div id="test-vat" class="status wait">⏳ vai_vat</div>
+  <div id="test-act" class="status wait">⏳ vai_act</div>
+  <div id="test-keys" class="status wait">⏳ Only vat/act keys</div>
+  <div id="summary" class="status wait">⏳ Running...</div>
+
+  <div id="test-div-1" style="min-width:300px; min-height:100px; border:2px dashed #ccc; display:flex; align-items:center; justify-content:center; color:#999; margin:1em 0;">(ad slot)</div>
+
+  <p style="color:#666; font-size:0.9em;">
+    <code>?degrade</code> — test with VAI unavailable &nbsp;|&nbsp;
+    <code>?real</code> — use real VAI from <code>127.0.0.1:8080</code>
+  </p>
+</body>
+</html>
