@@ -168,6 +168,6 @@ gulp serve-fast --modules=rtdModule,paywallsRtdProvider,paywallsAnalyticsAdapter
 
 ## Links
 
-- [VAI Documentation](https://paywalls.net/docs/publishers/vai)
+- [VAI Documentation](https://docs.paywalls.net/publishers/vai)
 - [Paywalls RTD Provider](paywallsRtdProvider.md)
 - [Prebid Analytics Adapter Documentation](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html)

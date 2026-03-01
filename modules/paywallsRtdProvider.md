@@ -1,6 +1,4 @@
-# Paywalls RTD Provider
-
-## Overview
+# Overview
 
 **Module Name:** Paywalls RTD Provider
 
@@ -10,7 +8,7 @@
 
 ## Description
 
-The Paywalls RTD module integrates [VAI (Validated Actor Inventory)](https://paywalls.net/docs/publishers/vai) into Prebid.js. VAI classifies page impressions by **actor type** (`vat`) and **confidence tier** (`act`), producing a cryptographically signed assertion that SSPs can independently verify.
+The Paywalls RTD module integrates [VAI (Validated Actor Inventory)](https://docs.paywalls.net/publishers/vai) into Prebid.js. VAI classifies page impressions by **actor type** (`vat`) and **confidence tier** (`act`), producing a cryptographically signed assertion that SSPs can independently verify.
 
 The module automates VAI loading, timing, and signal injection:
 
@@ -55,7 +53,7 @@ pbjs.setConfig({
 | `waitForIt`         | `Boolean` | Optional | Should be `true` when `auctionDelay` is set            | `false`          |
 | `params`            | `Object`  | Optional | Provider configuration                                 | `{}`             |
 | `params.scriptUrl`  | `String`  | Optional | URL of the VAI loader script                           | `'/pw/vai.js'`   |
-| `params.waitForIt`  | `Number`  | Optional | Max ms to wait for VAI before releasing the auction    | `100`            |
+| `params.waitForIt`  | `Number`  | Optional | Max ms to wait for VAI before releasing the auction (distinct from the Boolean `waitForIt` above)    | `100`            |
 
 ### Hosting Modes
 
@@ -162,8 +160,8 @@ pbjs.setConfig({
 
 ## How It Works
 
-1. **`init()`** — Checks `window.__PW_VAI__` and `localStorage` for an existing VAI payload. If present and unexpired, caches it for immediate use.
-2. **`getBidRequestData()`** — If cached VAI exists, merges ORTB2 and calls back immediately (fast path). Otherwise, injects `vai.js` via `loadExternalScript` and polls/hooks for the result until `waitForIt` ms elapse (slow path). On timeout, calls back without enrichment.
+1. **`init()`** — Checks `window.__PW_VAI__` and `localStorage` (key: `__pw_vai__`) for an existing VAI payload. If present and unexpired (`exp` > now), caches it for immediate use.
+2. **`getBidRequestData()`** — If cached VAI exists, merges ORTB2 and calls back immediately (fast path). Otherwise, injects `vai.js` via `loadExternalScript`, sets up `window.__PW_VAI_HOOK__` as a callback for the script to deliver the payload, and polls `window.__PW_VAI__` until `waitForIt` ms elapse (slow path). On timeout, calls back without enrichment.
 3. **`getTargetingData()`** — Returns `{ vai_vat, vai_act }` for each ad unit from the current VAI payload.
 
 ## Testing
@@ -185,6 +183,6 @@ gulp serve-fast --modules=rtdModule,paywallsRtdProvider,appnexusBidAdapter
 
 ## Links
 
-- [VAI Documentation](https://paywalls.net/docs.publishers/vai)
+- [VAI Documentation](https://docs.paywalls.net/publishers/vai)
 - [Prebid RTD Module Documentation](https://docs.prebid.org/dev-docs/add-rtd-submodule.html)
 - [How Bid Adapters Should Read First Party Data](https://docs.prebid.org/features/firstPartyData.html#how-bid-adapters-should-read-first-party-data)
