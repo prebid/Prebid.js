@@ -12,7 +12,7 @@
  *
  * @module modules/paywallsRtdProvider
  * @requires module:modules/realTimeData
- * @see https://docs.paywalls.net/publishers/vai
+ * @see https://paywalls.net/docs/publishers/vai
  */
 
 import {submodule} from '../src/hook.js';

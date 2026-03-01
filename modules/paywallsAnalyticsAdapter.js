@@ -10,7 +10,7 @@
  * on it natively.
  *
  * @module modules/paywallsAnalyticsAdapter
- * @see https://docs.paywalls.net/publishers/vai
+ * @see https://paywalls.net/docs/publishers/vai
  */
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';

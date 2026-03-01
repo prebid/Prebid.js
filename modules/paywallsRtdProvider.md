@@ -8,7 +8,7 @@
 
 ## Description
 
-The Paywalls RTD module integrates [VAI (Validated Actor Inventory)](https://docs.paywalls.net/publishers/vai) into Prebid.js. VAI classifies page impressions by **actor type** (`vat`) and **confidence tier** (`act`), producing a cryptographically signed assertion that SSPs can independently verify.
+The Paywalls RTD module integrates [VAI (Validated Actor Inventory)](https://paywalls.net/docs/publishers/vai) into Prebid.js. VAI classifies page impressions by **actor type** (`vat`) and **confidence tier** (`act`), producing a cryptographically signed assertion that SSPs can independently verify.
 
 The module automates VAI loading, timing, and signal injection:
 
@@ -183,6 +183,6 @@ gulp serve-fast --modules=rtdModule,paywallsRtdProvider,appnexusBidAdapter
 
 ## Links
 
-- [VAI Documentation](https://docs.paywalls.net/publishers/vai)
+- [VAI Documentation](https://paywalls.net/docs/publishers/vai)
 - [Prebid RTD Module Documentation](https://docs.prebid.org/dev-docs/add-rtd-submodule.html)
 - [How Bid Adapters Should Read First Party Data](https://docs.prebid.org/features/firstPartyData.html#how-bid-adapters-should-read-first-party-data)

@@ -9,7 +9,7 @@
 
 ## Description
 
-The Paywalls Analytics Adapter emits [VAI (Validated Actor Inventory)](https://docs.paywalls.net/publishers/vai) classification on each Prebid auction. VAI helps publishers distinguish **human traffic** and **AI agents** from **non-human automation** (sharing/preview bots, search crawlers, AI training, etc.) so they can make better-informed economic decisions.
+The Paywalls Analytics Adapter emits [VAI (Validated Actor Inventory)](https://paywalls.net/docs/publishers/vai) classification on each Prebid auction. VAI helps publishers distinguish **human traffic** and **AI agents** from **non-human automation** (sharing/preview bots, search crawlers, AI training, etc.) so they can make better-informed economic decisions.
 
 In practice, this enables publishers to:
 
@@ -168,6 +168,6 @@ gulp serve-fast --modules=rtdModule,paywallsRtdProvider,paywallsAnalyticsAdapter
 
 ## Links
 
-- [VAI Documentation](https://docs.paywalls.net/publishers/vai)
+- [VAI Documentation](https://paywalls.net/docs/publishers/vai)
 - [Paywalls RTD Provider](paywallsRtdProvider.md)
 - [Prebid Analytics Adapter Documentation](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html)
