@@ -12,6 +12,7 @@ import {expect} from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import {EVENTS} from 'src/constants.js';
 import sinon from 'sinon';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
@@ -93,6 +94,12 @@ describe('PaywallsAnalyticsAdapter', function () {
       expect(getVaiClassification()).to.be.null;
     });
 
+    it('should return null for expired VAI', function () {
+      const nowSec = Math.floor(Date.now() / 1000);
+      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1', exp: nowSec - 1};
+      expect(getVaiClassification()).to.be.null;
+    });
+
     it('should skip VAI injection when __PW_VAI__ is already present', function () {
       window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
       sandbox.stub(events, 'getEvents').returns([]);
@@ -123,6 +130,13 @@ describe('PaywallsAnalyticsAdapter', function () {
 
     it('should return UNKNOWN when VAI is absent', function () {
       delete window[VAI_WINDOW_KEY];
+      const result = computeMetrics();
+      expect(result).to.deep.equal({vai_vat: 'UNKNOWN', vai_act: 'UNKNOWN'});
+    });
+
+    it('should return UNKNOWN when VAI is expired', function () {
+      const nowSec = Math.floor(Date.now() / 1000);
+      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1', exp: nowSec - 1};
       const result = computeMetrics();
       expect(result).to.deep.equal({vai_vat: 'UNKNOWN', vai_act: 'UNKNOWN'});
     });
@@ -338,6 +352,30 @@ describe('PaywallsAnalyticsAdapter', function () {
       paywallsAnalytics.disableAnalytics();
     });
 
+    it('should not load vai.js when sampled out', function () {
+      const cb = sandbox.stub();
+      sandbox.stub(events, 'getEvents').returns([]);
+      delete window[VAI_WINDOW_KEY];
+      loadExternalScriptStub.resetHistory();
+
+      sandbox.stub(Math, 'random').returns(0.9);
+      adapterManager.enableAnalytics({
+        provider: 'paywalls',
+        options: {
+          output: 'callback',
+          callback: cb,
+          samplingRate: 0.1,
+          scriptUrl: '/pw/vai.js'
+        }
+      });
+
+      expect(loadExternalScriptStub.called).to.be.false;
+
+      Math.random.restore();
+      events.getEvents.restore();
+      paywallsAnalytics.disableAnalytics();
+    });
+
     it('should emit when sampled in', function () {
       const cb = sandbox.stub();
       sandbox.stub(events, 'getEvents').returns([]);
@@ -361,6 +399,37 @@ describe('PaywallsAnalyticsAdapter', function () {
       Math.random.restore();
       events.getEvents.restore();
       paywallsAnalytics.disableAnalytics();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Bug reproductions (from bot review feedback)
+  // -----------------------------------------------------------------------
+
+  describe('bug reproductions', function () {
+    afterEach(function () {
+      delete window[VAI_WINDOW_KEY];
+      resetForTesting();
+    });
+
+    it('ensureVai should inject script when __PW_VAI__ is truthy but invalid', function () {
+      // Bug: ensureVai() checks `if (window[VAI_WINDOW_KEY])` which is truthy
+      // for objects missing vat/act, preventing injection
+      window[VAI_WINDOW_KEY] = { invalid: true };
+      resetForTesting();
+      loadExternalScriptStub.resetHistory();
+
+      // Call ensureVai directly — it should detect the invalid payload and inject
+      ensureVai('/pw/vai.js');
+
+      // Proves the object is invalid for classification
+      const classification = getVaiClassification();
+      expect(classification).to.be.null;
+
+      // With the bug, loadExternalScript would NOT be called because
+      // ensureVai saw a truthy window.__PW_VAI__ and returned early.
+      // After fix, it should call loadExternalScript.
+      expect(loadExternalScriptStub.called).to.be.true;
     });
   });
 

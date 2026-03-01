@@ -321,6 +321,127 @@ describe('paywallsRtdProvider', function () {
   });
 
   // -------------------------------------------------------------------------
+  // Bug reproductions (from bot review feedback)
+  // -------------------------------------------------------------------------
+
+  describe('bug reproductions', function () {
+    let clock;
+
+    beforeEach(function () {
+      clock = sinon.useFakeTimers();
+    });
+
+    afterEach(function () {
+      clock.restore();
+    });
+
+    it('P1: late hook payload should be stored for subsequent auctions', function (done) {
+      // Bug: if timeout fires before hook, the payload is dropped permanently.
+      // Subsequent auctions keep degrading because loadExternalScript won't re-execute.
+      const reqBids1 = makeReqBids();
+      const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
+
+      loadExternalScriptStub.callsFake(() => {
+        // Simulate hook-only delivery AFTER timeout (no window global fallback)
+        setTimeout(() => {
+          if (typeof window[VAI_HOOK_KEY] === 'function') {
+            window[VAI_HOOK_KEY]({ ...MOCK_VAI });
+          }
+        }, 20);
+      });
+
+      // First auction: should timeout and degrade
+      paywallsSubmodule.init(fastConfig, {});
+      paywallsSubmodule.getBidRequestData(reqBids1, function () {
+        // First auction degraded — expected
+        const global1 = reqBids1.ortb2Fragments.global;
+        expect(global1).to.not.have.nested.property('site.ext.vai');
+
+        // Now hook delivers late payload (at t=20ms)
+        clock.tick(15);
+
+        // Second auction should pick up the late payload
+        const reqBids2 = makeReqBids();
+        paywallsSubmodule.getBidRequestData(reqBids2, function () {
+          const global2 = reqBids2.ortb2Fragments.global;
+          expect(global2.user.ext.vai.vat).to.equal('HUMAN');
+          expect(global2.user.ext.vai.act).to.equal('ACT-1');
+          done();
+        }, fastConfig, {});
+      }, fastConfig, {});
+
+      // Advance past timeout
+      clock.tick(15);
+    });
+
+    it('waitForIt=0 should be respected, not treated as falsy', function (done) {
+      // Bug: params.waitForIt || DEFAULT_WAIT_FOR_IT treats 0 as falsy
+      const reqBids = makeReqBids();
+      const zeroConfig = { name: SUBMODULE_NAME, params: { waitForIt: 0 } };
+      let callbackTime = null;
+
+      loadExternalScriptStub.callsFake(() => {
+        // Script never sets __PW_VAI__ — should timeout at 0ms, not 100ms
+      });
+
+      paywallsSubmodule.init(zeroConfig, {});
+      paywallsSubmodule.getBidRequestData(reqBids, function () {
+        callbackTime = clock.now;
+        done();
+      }, zeroConfig, {});
+
+      // If bug exists, callback won't fire until 100ms (DEFAULT_WAIT_FOR_IT)
+      // With fix, it should fire at ~0ms
+      clock.tick(1);
+      // If we get here without done() being called, the test will timeout
+    });
+
+    it('should extend hook grace when script loads after timeout', function (done) {
+      // Scenario: slow network — script loads well after waitForIt timeout.
+      // Hook delivery happens 50ms after script load, which is beyond the
+      // initial grace window. The onload extension should keep the hook alive.
+      const reqBids1 = makeReqBids();
+      const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
+      let scriptOnload;
+
+      loadExternalScriptStub.callsFake((_url, _type, _name, onload) => {
+        // Capture the onload so we can fire it manually later
+        scriptOnload = onload;
+      });
+
+      paywallsSubmodule.init(fastConfig, {});
+      paywallsSubmodule.getBidRequestData(reqBids1, function () {
+        // First auction degrades (expected)
+
+        // Simulate script loading 500ms after timeout (well past initial grace)
+        clock.tick(500);
+        scriptOnload(); // fires onload — should extend hook grace
+
+        // Hook delivers VAI 50ms after script load
+        clock.tick(50);
+        if (typeof window[VAI_HOOK_KEY] === 'function') {
+          window[VAI_HOOK_KEY]({ ...MOCK_VAI });
+        }
+
+        // Verify the late payload was stored
+        expect(window[VAI_WINDOW_KEY]).to.have.property('vat', 'HUMAN');
+
+        // Second auction should use the stored payload
+        const reqBids2 = makeReqBids();
+        paywallsSubmodule.getBidRequestData(reqBids2, function () {
+          const global2 = reqBids2.ortb2Fragments.global;
+          expect(global2.user.ext.vai.vat).to.equal('HUMAN');
+          expect(global2.user.ext.vai.act).to.equal('ACT-1');
+          done();
+        }, fastConfig, {});
+      }, fastConfig, {});
+
+      // Advance past timeout
+      clock.tick(15);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // getTargetingData
   // -------------------------------------------------------------------------
 

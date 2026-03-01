@@ -29,7 +29,7 @@ export const VAI_WINDOW_KEY = '__PW_VAI__';
 const {AUCTION_END} = EVENTS;
 
 // Track which auctions we've already emitted for (de-dup)
-let emittedAuctions = {};
+let emittedAuctions = Object.create(null);
 
 // ---------------------------------------------------------------------------
 // Config (set during enableAnalytics)
@@ -59,6 +59,9 @@ let vaiInjected = false;
 export function getVaiClassification() {
   const vai = window[VAI_WINDOW_KEY];
   if (vai && typeof vai === 'object' && vai.vat && vai.act) {
+    if (typeof vai.exp === 'number' && vai.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
     return {vat: vai.vat, act: vai.act};
   }
   return null;
@@ -70,8 +73,9 @@ export function getVaiClassification() {
  * @param {string} scriptUrl
  */
 export function ensureVai(scriptUrl) {
-  if (window[VAI_WINDOW_KEY]) {
-    logInfo(LOG_PREFIX + 'VAI already present. vat=' + window[VAI_WINDOW_KEY].vat);
+  const existing = getVaiClassification();
+  if (existing) {
+    logInfo(LOG_PREFIX + 'VAI already present. vat=' + existing.vat);
     return;
   }
   if (vaiInjected) {
@@ -197,7 +201,11 @@ paywallsAnalytics.enableAnalytics = function (config) {
   // Parse config
   adapterConfig.output = options.output || 'callback';
   adapterConfig.scriptUrl = options.scriptUrl || DEFAULT_SCRIPT_URL;
-  adapterConfig.samplingRate = typeof options.samplingRate === 'number' ? options.samplingRate : 1.0;
+  const rawRate = typeof options.samplingRate === 'number' ? options.samplingRate : 1.0;
+  adapterConfig.samplingRate = Math.max(0, Math.min(1, rawRate));
+  if (rawRate !== adapterConfig.samplingRate) {
+    logWarn(LOG_PREFIX + 'samplingRate clamped to [0, 1]: ' + rawRate + ' → ' + adapterConfig.samplingRate);
+  }
   adapterConfig.callback = typeof options.callback === 'function' ? options.callback : null;
 
   // Sampling decision
@@ -207,11 +215,13 @@ paywallsAnalytics.enableAnalytics = function (config) {
   }
 
   // Reset state
-  emittedAuctions = {};
+  emittedAuctions = Object.create(null);
   vaiInjected = false;
 
-  // Ensure VAI is on the page
-  ensureVai(adapterConfig.scriptUrl);
+  // Ensure VAI is on the page only when this session is sampled in
+  if (sampledIn) {
+    ensureVai(adapterConfig.scriptUrl);
+  }
 
   // Call original enable (wires up event listeners)
   paywallsAnalytics.originEnableAnalytics(config);
@@ -228,7 +238,7 @@ adapterManager.registerAnalyticsAdapter({
  * @param {boolean} [overrides.sampledIn]
  */
 export function resetForTesting(overrides) {
-  emittedAuctions = {};
+  emittedAuctions = Object.create(null);
   vaiInjected = false;
   sampledIn = true;
   adapterConfig.output = 'callback';

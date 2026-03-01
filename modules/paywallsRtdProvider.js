@@ -35,6 +35,7 @@ export const VAI_HOOK_KEY = '__PW_VAI_HOOK__';
 export const VAI_LS_KEY = '__pw_vai__';
 
 const DEFAULT_WAIT_FOR_IT = 100;
+const LATE_HOOK_GRACE_MS = 1000;
 
 // Cached VAI payload from init (for early detection)
 let cachedVai = null;
@@ -151,8 +152,8 @@ function mergeOrtb2Fragments(reqBidsConfigObj, vai) {
  * init — called once when the submodule is registered.
  *
  * Checks for an existing VAI payload (window global or localStorage).
- * If valid+unexpired, injects ORTB2 immediately so bid requests that
- * fire before getBidRequestData still carry VAI signals.
+ * If valid+unexpired, caches it so getBidRequestData can inject ORTB2
+ * immediately on the first call without script injection.
  *
  * @param {object} rtdConfig  Provider configuration from realTimeData.dataProviders
  * @param {object} userConsent  Consent data
@@ -194,41 +195,94 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   // Slow path: need to inject vai.js and wait
   const params = (rtdConfig && rtdConfig.params) || {};
   const scriptUrl = params.scriptUrl || DEFAULT_SCRIPT_URL;
-  const waitForIt = params.waitForIt || DEFAULT_WAIT_FOR_IT;
+  const rawWaitForIt = params.waitForIt;
+  const waitForIt = (typeof rawWaitForIt === 'number' && rawWaitForIt >= 0)
+    ? rawWaitForIt
+    : DEFAULT_WAIT_FOR_IT;
+  if (rawWaitForIt != null && (typeof rawWaitForIt !== 'number' || rawWaitForIt < 0)) {
+    logWarn(LOG_PREFIX + 'Invalid waitForIt value (' + rawWaitForIt + '); using default ' + DEFAULT_WAIT_FOR_IT);
+  }
 
   let resolved = false;
+  let enriched = false;
+  let pollId = null;
+  let timeoutId = null;
+  let lateHookCleanupId = null;
+
+  const previousHook = (typeof window[VAI_HOOK_KEY] === 'function') ? window[VAI_HOOK_KEY] : null;
+
+  function restoreHook() {
+    if (window[VAI_HOOK_KEY] === hookHandler) {
+      if (previousHook) {
+        window[VAI_HOOK_KEY] = previousHook;
+      } else {
+        delete window[VAI_HOOK_KEY];
+      }
+    }
+    if (lateHookCleanupId != null) {
+      clearTimeout(lateHookCleanupId);
+      lateHookCleanupId = null;
+    }
+  }
+
+  function cleanup() {
+    if (pollId != null) { clearInterval(pollId); pollId = null; }
+    if (timeoutId != null) { clearTimeout(timeoutId); timeoutId = null; }
+  }
+
+  function installLateHookCapture() {
+    lateHookCleanupId = setTimeout(function () {
+      restoreHook();
+    }, Math.max(waitForIt, LATE_HOOK_GRACE_MS));
+  }
 
   function resolve(vai) {
-    if (resolved) return;
+    const validVai = !!(vai && isValid(vai));
+    if (resolved) {
+      // Even after timeout, store late payloads so subsequent auctions can use them
+      if (!enriched && validVai) {
+        window[VAI_WINDOW_KEY] = vai;
+        enriched = true;
+        restoreHook();
+        logInfo(LOG_PREFIX + 'late VAI payload stored for subsequent auctions. vat=' + vai.vat);
+      }
+      return;
+    }
     resolved = true;
-    if (vai && isValid(vai)) {
-      // Also set the window global so subsequent calls are fast
+    enriched = validVai;
+    cleanup();
+    if (validVai) {
       window[VAI_WINDOW_KEY] = vai;
+      restoreHook();
       mergeOrtb2Fragments(reqBidsConfigObj, vai);
     } else {
+      installLateHookCapture();
       logWarn(LOG_PREFIX + 'VAI unavailable — proceeding without enrichment');
     }
     callback();
   }
 
   // Set up the hook that vai.js may call
-  window[VAI_HOOK_KEY] = function (vaiData) {
+  // Preserve any existing hook set by the page
+  function hookHandler(vaiData) {
     resolve(vaiData);
-  };
+    if (previousHook) {
+      try { previousHook(vaiData); } catch (e) { logWarn(LOG_PREFIX + 'Error in existing VAI hook:', e); }
+    }
+  }
+  window[VAI_HOOK_KEY] = hookHandler;
 
   // Set up a poll interval to check for window.__PW_VAI__
   const pollInterval = 10; // ms
-  const pollId = setInterval(function () {
+  pollId = setInterval(function () {
     const vai = window[VAI_WINDOW_KEY];
     if (vai && isValid(vai)) {
-      clearInterval(pollId);
       resolve(vai);
     }
   }, pollInterval);
 
   // Set up timeout (graceful degradation — never block the auction)
-  const timeoutId = setTimeout(function () {
-    clearInterval(pollId);
+  timeoutId = setTimeout(function () {
     resolve(null);
   }, waitForIt);
 
@@ -240,15 +294,17 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
       // (script may have set it synchronously)
       const vai = window[VAI_WINDOW_KEY];
       if (vai && isValid(vai)) {
-        clearInterval(pollId);
-        clearTimeout(timeoutId);
         resolve(vai);
+      } else if (resolved && !enriched) {
+        // Script loaded after timeout but hasn't delivered VAI yet.
+        // Extend hook grace so async delivery (e.g. fetch of vai.json) can still reach us.
+        if (lateHookCleanupId != null) { clearTimeout(lateHookCleanupId); }
+        lateHookCleanupId = setTimeout(function () { restoreHook(); }, LATE_HOOK_GRACE_MS);
+        logInfo(LOG_PREFIX + 'script loaded post-timeout — extending hook grace by ' + LATE_HOOK_GRACE_MS + 'ms');
       }
     });
   } catch (e) {
     logWarn(LOG_PREFIX + 'loadExternalScript failed:', e);
-    clearInterval(pollId);
-    clearTimeout(timeoutId);
     resolve(null);
   }
 }
