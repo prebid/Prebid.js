@@ -10,6 +10,7 @@ import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 // import { config } from '../src/config.js';
@@ -81,6 +82,20 @@ function getProperty(obj, ...keys) {
     }
   }
   return o;
+}
+
+/**
+ * 获取设备平台/操作系统，优先级：userAgentData.platform > navigator.platform > UA 解析
+ * @returns {string}
+ */
+function getDeviceOs() {
+  if (navigator.userAgentData?.platform) {
+    return navigator.userAgentData.platform;
+  }
+  if (navigator.platform) {
+    return navigator.platform;
+  }
+  return getOsInfo().os || '';
 }
 
 /**
@@ -173,6 +188,7 @@ function getItems(validBidRequests, bidderRequest) {
           gpid: gpid, // 加入后无法返回广告
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
           publisher: req.params.publisher || '',
+          transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
@@ -240,11 +256,12 @@ function getParam(validBidRequests, bidderRequest) {
         // language: 'en',
         // os: 'Microsoft Windows',
         // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
-        os: navigator.platform || '',
+        os: getDeviceOs(),
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language
       },
       ext: {
+        pbjsversion: '$prebid.version$',
         eids,
         bidsUserIdAsEids,
         firstPartyData,
