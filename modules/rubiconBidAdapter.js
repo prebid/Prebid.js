@@ -30,7 +30,7 @@ import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
+const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.3.7.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = config.getConfig('rubicon') || {};

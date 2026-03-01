@@ -337,7 +337,7 @@ describe('BidfuseBidAdapter', function () {
       const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
-        'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&gpp=gpp_string&gpp_sid=7&coppa=1',
+        'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&ccpa_consent=usp_string&gpp=gpp_string&gpp_sid=7&coppa=1',
         'type': 'image'
       }]);
     });
