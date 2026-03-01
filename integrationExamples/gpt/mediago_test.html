@@ -162,6 +162,12 @@
                         console.log('  Is Unique:', isUnique ? '✓ Yes' : '✗ No');
                         console.log('  ID List:', ids);
                         
+                        // Log transactionId for each imp (for debugging)
+                        requestData.imp.forEach((imp, idx) => {
+                            var tid = imp.ext && imp.ext.transactionId;
+                            console.log('  imp[' + idx + '] transactionId:', tid || '(empty)');
+                        });
+                        
                         if (!isUnique) {
                             console.warn('Warning: Duplicate IDs found!', ids);
                         }
@@ -206,6 +212,15 @@
                 html += 'Ad Unit ' + (index + 1) + ': <code>' + id + '</code>';
                 if (isDup) html += ' <strong>(Duplicate!)</strong>';
                 html += '</li>';
+            });
+            html += '</ul>';
+            html += '<p><strong>Transaction IDs (imp[].ext.transactionId):</strong></p>';
+            html += '<ul>';
+            (requestData.imp || []).forEach((imp, index) => {
+                var tid = imp.ext && imp.ext.transactionId;
+                var tidDisplay = tid || '(empty)';
+                var tidColor = tid ? 'green' : 'red';
+                html += '<li style="color: ' + tidColor + '">imp[' + index + ']: <code>' + tidDisplay + '</code></li>';
             });
             html += '</ul>';
             
@@ -281,6 +296,9 @@
             
             pbjs.que.push(function() {
                 console.log('Prebid.js loaded');
+                
+                // Enable TID (Transaction ID) transmission - required since Prebid 8 for ortb2Imp.ext.tid to reach bidders
+                pbjs.setConfig({ enableTIDs: true });
                 
                 // Set pageUrl and ortb2 site configuration to simulate other site
                 // pageUrl will override Prebid's referrer detection
