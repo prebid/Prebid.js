@@ -59,14 +59,14 @@ pbjs.setConfig({
 
 VAI supports two hosting modes for the loader script:
 
-- **Paywalls-hosted** (recommended): The script is served from the Paywalls CDN. Set `scriptUrl` to the Paywalls endpoint (e.g., `'https://cdn.paywalls.net/pw/vai.js'`).
-- **Publisher-hosted**: The script is served from the publisher's own domain via a reverse proxy. Use a relative path (e.g., `'/pw/vai.js'`).
+- **Publisher-hosted** (preferred): The script is served from the publisher's own domain via a CDN or server integration. Use the default relative path `'/pw/vai.js'`. This keeps requests same-origin, avoids CORS, and ensures the assertion's `dom` claim matches the inventory domain.
+- **Paywalls-hosted**: The script is served from `https://paywalls.net/pw/vai.js`. Set `scriptUrl` to the full URL. This mode requires paywalls.net configuration before usage. **Note** The domain provenance claim (`dom`) will reflect `paywalls.net` rather than the inventory domain, which may affect SSP verification and buyer trust.
 
-In both cases, `vai.js` makes a same-origin or CORS request to fetch `vai.json`, which contains the signed assertion.
+In both cases, `vai.js` makes a request to fetch `vai.json`, which contains the signed assertion. The publisher-hosted mode is same-origin; the Paywalls-hosted mode is cross-origin (CORS).
 
 ## ORTB2 Output
 
-VAI signals are placed in the global ORTB2 config using a canonical split placement:
+VAI signals are placed in the global ORTB2 within the `site` and `user` sections:
 
 ### `site.ext.vai` — Domain Provenance
 
@@ -94,7 +94,7 @@ Fields that describe the assertion context (who issued it, for which domain):
 | `aud`           | Audience — always `vai`                          |
 | `dom`           | Domain the assertion covers                      |
 | `kid`           | Key ID for JWS verification via JWKS endpoint    |
-| `assertion_jws` | Full JWS (compact serialization) for SSP verification |
+| `assertion_jws` | Full JWS (compact serialization) for SSP and DSP verification |
 
 ### `user.ext.vai` — Actor Classification
 
