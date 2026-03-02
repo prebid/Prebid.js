@@ -29,7 +29,7 @@ export function reset() {
 }
 
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
-  const {bcat = [], badv = []} = index.getOrtb2(bid) || {};
+  const {bcat = [], badv = [], cattax = 1} = index.getOrtb2(bid) || {};
   const bidRequest = index.getBidRequest(bid);
   const battr = bidRequest?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
 
@@ -43,11 +43,15 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
     advertiserDomains = [],
     attr: metaAttr,
     mediaType: metaMediaType,
+    cattax: metaCattax = 1,
   } = bid.meta || {};
 
   // checking if bid fulfills ortb2 fields rules
-  if ((catConfig.enforce && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
-    (catConfig.blockUnknown && !primaryCatId)) {
+  const normalizedMetaCattax = Number(metaCattax);
+  const normalizedRequestCattax = Number(cattax);
+  const isCattaxMatch = normalizedMetaCattax === normalizedRequestCattax;
+  if ((catConfig.enforce && isCattaxMatch && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
+    (catConfig.blockUnknown && (!isCattaxMatch || !primaryCatId))) {
     reject(BID_CATEGORY_REJECTION_REASON);
   } else if ((advConfig.enforce && badv.some(domain => advertiserDomains.includes(domain))) ||
     (advConfig.blockUnknown && !advertiserDomains.length)) {
