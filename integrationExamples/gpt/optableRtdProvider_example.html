@@ -186,9 +186,9 @@
                     // Display split test variant if present in adUnit ortb2Imp
                     if (data.bids && data.bids.length > 0) {
                         data.bids.forEach(bid => {
-                            const splitTestVariant = bid.ortb2Imp?.ext?.optable?.splitTestVariant;
-                            if (splitTestVariant) {
-                                console.log(`Split test variant for ${bid.adUnitCode}: ${splitTestVariant}`);
+                            const splitTestAssignment = bid.ortb2Imp?.ext?.optable?.splitTestAssignment;
+                            if (splitTestAssignment) {
+                                console.log(`Split test variant for ${bid.adUnitCode}: ${splitTestAssignment}`);
                             }
                         });
                     }
