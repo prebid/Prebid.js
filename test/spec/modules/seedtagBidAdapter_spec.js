@@ -936,7 +936,7 @@ describe('Seedtag Adapter', function () {
       utils.triggerPixel.restore();
     });
 
-    it('should return the correct endpoint', function () {
+    it('should return the correct endpoint with adUnitId', function () {
       const params = { publisherId: '0000', adUnitId: '11111' };
       const timeout = 3000;
       const timeoutData = [{ params: [params], timeout }];
@@ -944,8 +944,21 @@ describe('Seedtag Adapter', function () {
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
         params.publisherId +
+        '&timeout=' +
+        timeout +
         '&adUnitId=' +
-        params.adUnitId +
+        params.adUnitId
+      );
+    });
+
+    it('should return the correct endpoint without adUnitId', function () {
+      const params = { publisherId: '0000' };
+      const timeout = 3000;
+      const timeoutData = [{ params: [params], timeout }];
+      const timeoutUrl = getTimeoutUrl(timeoutData);
+      expect(timeoutUrl).to.equal(
+        'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
+        params.publisherId +
         '&timeout=' +
         timeout
       );
@@ -960,10 +973,10 @@ describe('Seedtag Adapter', function () {
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
           params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
           '&timeout=' +
-          timeout
+          timeout +
+          '&adUnitId=' +
+          params.adUnitId
         )
       ).to.equal(true);
     });
