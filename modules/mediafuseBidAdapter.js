@@ -489,9 +489,8 @@ const converter = ortbConverter({
           renderer_url: extANData.renderer_url,
           renderer_id: extANData.renderer_id,
         }, rendererOptions);
-      } else if (bid.nurl && extANData?.asset_url) {
-        const sep = bid.nurl.includes('?') ? '&' : '?';
-        bidResponse.vastUrl = bid.nurl + sep + 'redir=' + encodeURIComponent(extANData.asset_url);
+      } else if (extANData?.asset_url) {
+        bidResponse.vastUrl = extANData.asset_url;
       }
     }
 
