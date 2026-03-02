@@ -418,9 +418,9 @@ class WeboramaRtdProvider {
       gdpr,
       'vendorData.publisher.restrictions',
     );
-    const vendorsDisclosed =
-      deepAccess(gdpr, 'vendorData.vendor.vendorsDisclosed') ||
-      deepAccess(gdpr, 'vendorData.outOfBand.vendorsDisclosed');
+    const disclosedVendors =
+      deepAccess(gdpr, 'vendorData.vendor.disclosedVendors') ||
+      deepAccess(gdpr, 'vendorData.outOfBand.disclosedVendors');
 
     const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
     const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);
@@ -465,8 +465,8 @@ class WeboramaRtdProvider {
       }
     }
 
-    if (isPlainObject(vendorsDisclosed)) {
-      return vendorsDisclosed[GVLID];
+    if (isPlainObject(disclosedVendors)) {
+      return disclosedVendors[GVLID];
     }
 
     return true;

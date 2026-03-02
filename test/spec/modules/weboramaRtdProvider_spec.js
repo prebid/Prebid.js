@@ -70,7 +70,7 @@ describe('weboramaRtdProvider', function () {
           true,
         );
       });
-      it('should initialize if gdpr applies and consent / legitimate interests / vendor (without vendorsDisclosed) are ok', function () {
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor (without disclosedVendors) are ok', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {},
@@ -115,7 +115,7 @@ describe('weboramaRtdProvider', function () {
           true,
         );
       });
-      it('should initialize if gdpr applies and consent / legitimate interests / vendor (with vendorsDisclosed) are ok', function () {
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor (with disclosedVendors) are ok', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {},
@@ -152,7 +152,7 @@ describe('weboramaRtdProvider', function () {
                 legitimateInterests: {
                   284: true,
                 },
-                vendorsDisclosed: {
+                disclosedVendors: {
                   284: true,
                 },
               },
@@ -163,7 +163,7 @@ describe('weboramaRtdProvider', function () {
           true,
         );
       });
-      it('should NOT initialize if gdpr applies and vendorsDisclosed does not allow weborama', function () {
+      it('should NOT initialize if gdpr applies and disclosedVendors does not allow weborama', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {},
@@ -200,7 +200,7 @@ describe('weboramaRtdProvider', function () {
                 legitimateInterests: {
                   284: true,
                 },
-                vendorsDisclosed: {
+                disclosedVendors: {
                   284: false,
                 },
               },
@@ -211,7 +211,7 @@ describe('weboramaRtdProvider', function () {
           false,
         );
       });
-      it('should NOT initialize if gdpr applies and vendorsDisclosed (on alternate location) are nok', function () {
+      it('should NOT initialize if gdpr applies and disclosedVendors (on alternate location) does not allow weborama', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {},
@@ -250,7 +250,7 @@ describe('weboramaRtdProvider', function () {
                 },
               },
               outOfBand: {
-                vendorsDisclosed: {
+                disclosedVendors: {
                   284: false,
                 },
               },
