@@ -5,16 +5,13 @@
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
-import {isAdUnitCodeMatchingSlot, logWarn, isFn, triggerPixel} from '../src/utils.js';
+import {isAdUnitCodeMatchingSlot, logWarn} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
 import {fireViewabilityPixels} from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
-const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
-const CONFIG_FIRE_PIXELS = 'firePixels';
-const BID_VURL_ARRAY = 'vurls';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 
 export const getMatchingWinningBidForGPTSlot = (slot) => {
