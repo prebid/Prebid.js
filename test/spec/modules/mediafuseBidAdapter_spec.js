@@ -284,66 +284,66 @@ describe('mediafuseBidAdapter', function () {
   // interpretResponse — outstream renderer
   // -------------------------------------------------------------------------
   if (FEATURES.VIDEO) {
-  describe('interpretResponse - outstream renderer', function () {
-    it('should create renderer when renderer_url and renderer_id are present', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+    describe('interpretResponse - outstream renderer', function () {
+      it('should create renderer when renderer_url and renderer_id are present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 3.0,
-              ext: {
-                appnexus: {
-                  bid_ad_type: 1,
-                  renderer_url: 'https://cdn.adnxs.com/renderer.js',
-                  renderer_id: 42,
-                  renderer_config: '{"key":"val"}'
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 3.0,
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 1,
+                    renderer_url: 'https://cdn.adnxs.com/renderer.js',
+                    renderer_id: 42,
+                    renderer_config: '{"key":"val"}'
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      expect(bids[0].renderer).to.exist;
-      expect(bids[0].adResponse.ad.renderer_config).to.equal('{"key":"val"}');
-    });
+        const bids = spec.interpretResponse(serverResponse, req);
+        expect(bids[0].renderer).to.exist;
+        expect(bids[0].adResponse.ad.renderer_config).to.equal('{"key":"val"}');
+      });
 
-    it('should set vastUrl from nurl+asset_url when no renderer', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+      it('should set vastUrl from nurl+asset_url when no renderer', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              nurl: 'https://notify.example.com/win',
-              ext: {
-                appnexus: {
-                  bid_ad_type: 1,
-                  asset_url: 'https://vast.example.com/vast.xml'
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                nurl: 'https://notify.example.com/win',
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 1,
+                    asset_url: 'https://vast.example.com/vast.xml'
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      expect(bids[0].vastUrl).to.include('redir=');
-      expect(bids[0].vastUrl).to.include(encodeURIComponent('https://vast.example.com/vast.xml'));
+        const bids = spec.interpretResponse(serverResponse, req);
+        expect(bids[0].vastUrl).to.include('redir=');
+        expect(bids[0].vastUrl).to.include(encodeURIComponent('https://vast.example.com/vast.xml'));
+      });
     });
-  });
   } // FEATURES.VIDEO
 
   // -------------------------------------------------------------------------
@@ -371,280 +371,280 @@ describe('mediafuseBidAdapter', function () {
   // interpretResponse — native exhaustive assets
   // -------------------------------------------------------------------------
   if (FEATURES.NATIVE) {
-  describe('interpretResponse - native exhaustive assets', function () {
-    it('should map all optional native fields', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+    describe('interpretResponse - native exhaustive assets', function () {
+      it('should map all optional native fields', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      // OpenRTB 1.2 assets array format (as returned by the /openrtb2/prebidjs endpoint)
-      const nativeAdm = {
-        native: {
-          assets: [
-            { id: 1, title: { text: 'Title' } },
-            { id: 2, data: { type: 2, value: 'Body' } },
-            { id: 3, data: { type: 10, value: 'Body2' } },
-            { id: 4, data: { type: 12, value: 'Click' } },
-            { id: 5, data: { type: 3, value: '4.5' } },
-            { id: 6, data: { type: 1, value: 'Sponsor' } },
-            { id: 7, data: { type: 9, value: '123 Main St' } },
-            { id: 8, data: { type: 5, value: '1000' } },
-            { id: 9, data: { type: 4, value: '500' } },
-            { id: 10, data: { type: 8, value: '555-1234' } },
-            { id: 11, data: { type: 6, value: '$9.99' } },
-            { id: 12, data: { type: 7, value: '$4.99' } },
-            { id: 13, data: { type: 11, value: 'example.com' } },
-            { id: 14, img: { type: 3, url: 'https://img.example.com/img.jpg', w: 300, h: 250 } },
-            { id: 15, img: { type: 1, url: 'https://img.example.com/icon.png', w: 50, h: 50 } }
-          ],
-          link: { url: 'https://click.example.com', clicktrackers: ['https://ct.example.com'] },
-          privacy: 'https://priv.example.com'
-        }
-      };
+        // OpenRTB 1.2 assets array format (as returned by the /openrtb2/prebidjs endpoint)
+        const nativeAdm = {
+          native: {
+            assets: [
+              { id: 1, title: { text: 'Title' } },
+              { id: 2, data: { type: 2, value: 'Body' } },
+              { id: 3, data: { type: 10, value: 'Body2' } },
+              { id: 4, data: { type: 12, value: 'Click' } },
+              { id: 5, data: { type: 3, value: '4.5' } },
+              { id: 6, data: { type: 1, value: 'Sponsor' } },
+              { id: 7, data: { type: 9, value: '123 Main St' } },
+              { id: 8, data: { type: 5, value: '1000' } },
+              { id: 9, data: { type: 4, value: '500' } },
+              { id: 10, data: { type: 8, value: '555-1234' } },
+              { id: 11, data: { type: 6, value: '$9.99' } },
+              { id: 12, data: { type: 7, value: '$4.99' } },
+              { id: 13, data: { type: 11, value: 'example.com' } },
+              { id: 14, img: { type: 3, url: 'https://img.example.com/img.jpg', w: 300, h: 250 } },
+              { id: 15, img: { type: 1, url: 'https://img.example.com/icon.png', w: 50, h: 50 } }
+            ],
+            link: { url: 'https://click.example.com', clicktrackers: ['https://ct.example.com'] },
+            privacy: 'https://priv.example.com'
+          }
+        };
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.5,
-              adm: JSON.stringify(nativeAdm),
-              ext: { appnexus: { bid_ad_type: 3 } }
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.5,
+                adm: JSON.stringify(nativeAdm),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      const native = bids[0].native;
-      expect(native.title).to.equal('Title');
-      expect(native.body).to.equal('Body');
-      expect(native.body2).to.equal('Body2');
-      expect(native.cta).to.equal('Click');
-      expect(native.rating).to.equal('4.5');
-      expect(native.sponsoredBy).to.equal('Sponsor');
-      expect(native.privacyLink).to.equal('https://priv.example.com');
-      expect(native.address).to.equal('123 Main St');
-      expect(native.downloads).to.equal('1000');
-      expect(native.likes).to.equal('500');
-      expect(native.phone).to.equal('555-1234');
-      expect(native.price).to.equal('$9.99');
-      expect(native.salePrice).to.equal('$4.99');
-      expect(native.displayUrl).to.equal('example.com');
-      expect(native.clickUrl).to.equal('https://click.example.com');
-      expect(native.clickTrackers).to.deep.equal(['https://ct.example.com']);
-      expect(native.image.url).to.equal('https://img.example.com/img.jpg');
-      expect(native.image.width).to.equal(300);
-      expect(native.icon.url).to.equal('https://img.example.com/icon.png');
-    });
+        const bids = spec.interpretResponse(serverResponse, req);
+        const native = bids[0].native;
+        expect(native.title).to.equal('Title');
+        expect(native.body).to.equal('Body');
+        expect(native.body2).to.equal('Body2');
+        expect(native.cta).to.equal('Click');
+        expect(native.rating).to.equal('4.5');
+        expect(native.sponsoredBy).to.equal('Sponsor');
+        expect(native.privacyLink).to.equal('https://priv.example.com');
+        expect(native.address).to.equal('123 Main St');
+        expect(native.downloads).to.equal('1000');
+        expect(native.likes).to.equal('500');
+        expect(native.phone).to.equal('555-1234');
+        expect(native.price).to.equal('$9.99');
+        expect(native.salePrice).to.equal('$4.99');
+        expect(native.displayUrl).to.equal('example.com');
+        expect(native.clickUrl).to.equal('https://click.example.com');
+        expect(native.clickTrackers).to.deep.equal(['https://ct.example.com']);
+        expect(native.image.url).to.equal('https://img.example.com/img.jpg');
+        expect(native.image.width).to.equal(300);
+        expect(native.icon.url).to.equal('https://img.example.com/icon.png');
+      });
 
-    it('should map native fields using request asset IDs as type fallback when response omits type', function () {
+      it('should map native fields using request asset IDs as type fallback when response omits type', function () {
       // Build a real request via spec.buildRequests so ortbConverter registers it in its
       // internal WeakMap (required by fromORTB). Then inject native.request directly on
       // the imp — this simulates what FEATURES.NATIVE would have built without requiring it.
-      const bid = deepClone(BASE_BID);
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+        const bid = deepClone(BASE_BID);
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      req.data.imp[0].native = {
-        request: JSON.stringify({
-          assets: [
-            { id: 1, title: { len: 100 } },
-            { id: 2, data: { type: 1 } },                         // sponsoredBy
-            { id: 3, data: { type: 2 } },                         // body
-            { id: 4, img: { type: 3, wmin: 1, hmin: 1 } },        // main image
-            { id: 5, img: { type: 1, wmin: 50, hmin: 50 } }       // icon
-          ]
-        })
-      };
+        req.data.imp[0].native = {
+          request: JSON.stringify({
+            assets: [
+              { id: 1, title: { len: 100 } },
+              { id: 2, data: { type: 1 } },                         // sponsoredBy
+              { id: 3, data: { type: 2 } },                         // body
+              { id: 4, img: { type: 3, wmin: 1, hmin: 1 } },        // main image
+              { id: 5, img: { type: 1, wmin: 50, hmin: 50 } }       // icon
+            ]
+          })
+        };
 
-      // Response assets intentionally omit type — Xandr does this in practice
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.5,
-              adm: JSON.stringify({
-                native: {
-                  assets: [
-                    { id: 1, title: { text: 'Fallback Title' } },
-                    { id: 2, data: { value: 'Fallback Sponsor' } },
-                    { id: 3, data: { value: 'Fallback Body' } },
-                    { id: 4, img: { url: 'https://img.test/img.jpg', w: 300, h: 250 } },
-                    { id: 5, img: { url: 'https://img.test/icon.png', w: 50, h: 50 } }
-                  ],
-                  link: { url: 'https://click.test' }
-                }
-              }),
-              ext: { appnexus: { bid_ad_type: 3 } }
+        // Response assets intentionally omit type — Xandr does this in practice
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.5,
+                adm: JSON.stringify({
+                  native: {
+                    assets: [
+                      { id: 1, title: { text: 'Fallback Title' } },
+                      { id: 2, data: { value: 'Fallback Sponsor' } },
+                      { id: 3, data: { value: 'Fallback Body' } },
+                      { id: 4, img: { url: 'https://img.test/img.jpg', w: 300, h: 250 } },
+                      { id: 5, img: { url: 'https://img.test/icon.png', w: 50, h: 50 } }
+                    ],
+                    link: { url: 'https://click.test' }
+                  }
+                }),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      const native = bids[0].native;
-      expect(native.title).to.equal('Fallback Title');
-      expect(native.sponsoredBy).to.equal('Fallback Sponsor');
-      expect(native.body).to.equal('Fallback Body');
-      expect(native.image.url).to.equal('https://img.test/img.jpg');
-      expect(native.icon.url).to.equal('https://img.test/icon.png');
-    });
+        const bids = spec.interpretResponse(serverResponse, req);
+        const native = bids[0].native;
+        expect(native.title).to.equal('Fallback Title');
+        expect(native.sponsoredBy).to.equal('Fallback Sponsor');
+        expect(native.body).to.equal('Fallback Body');
+        expect(native.image.url).to.equal('https://img.test/img.jpg');
+        expect(native.icon.url).to.equal('https://img.test/icon.png');
+      });
 
-    it('should handle real-world native response: top-level format (no native wrapper), non-sequential IDs, type fallback', function () {
+      it('should handle real-world native response: top-level format (no native wrapper), non-sequential IDs, type fallback', function () {
       // Validates the format actually returned by the Mediafuse/Xandr endpoint:
       // ADM is top-level {ver, assets, link, eventtrackers} — no 'native' wrapper key.
       // Asset IDs are non-sequential (id:0 for title). Data/img assets omit 'type';
       // type is resolved from the native request's asset definitions.
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      // Inject native.request asset definitions so the type-fallback resolves correctly
-      req.data.imp[0].native = {
-        request: JSON.stringify({
-          assets: [
-            { id: 0, title: { len: 100 } },
-            { id: 1, img: { type: 3, wmin: 1, hmin: 1 } },  // main image
-            { id: 2, data: { type: 1 } }                      // sponsoredBy
-          ]
-        })
-      };
+        // Inject native.request asset definitions so the type-fallback resolves correctly
+        req.data.imp[0].native = {
+          request: JSON.stringify({
+            assets: [
+              { id: 0, title: { len: 100 } },
+              { id: 1, img: { type: 3, wmin: 1, hmin: 1 } },  // main image
+              { id: 2, data: { type: 1 } }                      // sponsoredBy
+            ]
+          })
+        };
 
-      // Real-world ADM: top-level, assets lack 'type', id:0 title, two eventtrackers
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 0.88,
-              adm: JSON.stringify({
-                ver: '1.2',
-                assets: [
-                  { id: 1, img: { url: 'https://img.example.com/img.jpg', w: 150, h: 150 } },
-                  { id: 0, title: { text: 'Discover Insights That Matter' } },
-                  { id: 2, data: { value: 'probescout' } }
-                ],
-                link: { url: 'https://click.example.com' },
-                eventtrackers: [
-                  { event: 1, method: 1, url: 'https://tracker1.example.com/it' },
-                  { event: 1, method: 1, url: 'https://tracker2.example.com/t' }
-                ]
-              }),
-              ext: { appnexus: { bid_ad_type: 3 } }
+        // Real-world ADM: top-level, assets lack 'type', id:0 title, two eventtrackers
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 0.88,
+                adm: JSON.stringify({
+                  ver: '1.2',
+                  assets: [
+                    { id: 1, img: { url: 'https://img.example.com/img.jpg', w: 150, h: 150 } },
+                    { id: 0, title: { text: 'Discover Insights That Matter' } },
+                    { id: 2, data: { value: 'probescout' } }
+                  ],
+                  link: { url: 'https://click.example.com' },
+                  eventtrackers: [
+                    { event: 1, method: 1, url: 'https://tracker1.example.com/it' },
+                    { event: 1, method: 1, url: 'https://tracker2.example.com/t' }
+                  ]
+                }),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      const native = bids[0].native;
-      expect(native.title).to.equal('Discover Insights That Matter');
-      expect(native.sponsoredBy).to.equal('probescout');
-      expect(native.image.url).to.equal('https://img.example.com/img.jpg');
-      expect(native.image.width).to.equal(150);
-      expect(native.image.height).to.equal(150);
-      expect(native.clickUrl).to.equal('https://click.example.com');
-      expect(native.javascriptTrackers).to.be.an('array').with.lengthOf(2);
-    });
+        const bids = spec.interpretResponse(serverResponse, req);
+        const native = bids[0].native;
+        expect(native.title).to.equal('Discover Insights That Matter');
+        expect(native.sponsoredBy).to.equal('probescout');
+        expect(native.image.url).to.equal('https://img.example.com/img.jpg');
+        expect(native.image.width).to.equal(150);
+        expect(native.image.height).to.equal(150);
+        expect(native.clickUrl).to.equal('https://click.example.com');
+        expect(native.javascriptTrackers).to.be.an('array').with.lengthOf(2);
+      });
 
-    it('should disarm eventtrackers (trk.js) by replacing src= with data-src=', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+      it('should disarm eventtrackers (trk.js) by replacing src= with data-src=', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      const nativeAdm = {
-        native: {
-          title: 'T',
-          eventtrackers: [
-            { method: 1, url: '//cdn.adnxs.com/v/trk.js?src=1&dom_id=%native_dom_id%' },
-            { method: 1, url: 'https://other-tracker.com/pixel' }
-          ]
-        }
-      };
+        const nativeAdm = {
+          native: {
+            title: 'T',
+            eventtrackers: [
+              { method: 1, url: '//cdn.adnxs.com/v/trk.js?src=1&dom_id=%native_dom_id%' },
+              { method: 1, url: 'https://other-tracker.com/pixel' }
+            ]
+          }
+        };
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify(nativeAdm),
-              ext: { appnexus: { bid_ad_type: 3 } }
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify(nativeAdm),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      const trackers = bids[0].native.javascriptTrackers;
-      expect(trackers).to.be.an('array');
-      // The trk.js tracker should be disarmed: 'src=' replaced with 'data-src='
-      const trkTracker = trackers.find(t => t.includes('trk.js'));
-      expect(trkTracker).to.include('data-src=');
-      // Verify the original 'src=1' param is now 'data-src=1' (not a bare 'src=')
-      expect(trkTracker).to.not.match(/(?<!data-)src=1/);
-    });
+        const bids = spec.interpretResponse(serverResponse, req);
+        const trackers = bids[0].native.javascriptTrackers;
+        expect(trackers).to.be.an('array');
+        // The trk.js tracker should be disarmed: 'src=' replaced with 'data-src='
+        const trkTracker = trackers.find(t => t.includes('trk.js'));
+        expect(trkTracker).to.include('data-src=');
+        // Verify the original 'src=1' param is now 'data-src=1' (not a bare 'src=')
+        expect(trkTracker).to.not.match(/(?<!data-)src=1/);
+      });
 
-    it('should handle viewability.config disarming', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+      it('should handle viewability.config disarming', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify({ native: { title: 'T' } }),
-              ext: {
-                appnexus: {
-                  bid_ad_type: 3,
-                  viewability: { config: '<script src="https://cdn.adnxs.com/v/trk.js?id=123"></script>' }
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify({ native: { title: 'T' } }),
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 3,
+                    viewability: { config: '<script src="https://cdn.adnxs.com/v/trk.js?id=123"></script>' }
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      const trackers = bids[0].native.javascriptTrackers;
-      expect(trackers).to.be.an('array');
-      expect(trackers[0]).to.include('data-src=');
-    });
+        const bids = spec.interpretResponse(serverResponse, req);
+        const trackers = bids[0].native.javascriptTrackers;
+        expect(trackers).to.be.an('array');
+        expect(trackers[0]).to.include('data-src=');
+      });
 
-    it('should handle malformed native adm gracefully', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
-      const logErrorStub = sandbox.stub(utils, 'logError');
+      it('should handle malformed native adm gracefully', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
+        const logErrorStub = sandbox.stub(utils, 'logError');
 
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: 'NOT_VALID_JSON',
-              ext: { appnexus: { bid_ad_type: 3 } }
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: 'NOT_VALID_JSON',
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      // Should not throw
-      expect(() => spec.interpretResponse(serverResponse, req)).to.not.throw();
-      expect(logErrorStub.calledOnce).to.be.true;
+        // Should not throw
+        expect(() => spec.interpretResponse(serverResponse, req)).to.not.throw();
+        expect(logErrorStub.calledOnce).to.be.true;
+      });
     });
-  });
   } // FEATURES.NATIVE
 
   // -------------------------------------------------------------------------
@@ -1113,161 +1113,161 @@ describe('mediafuseBidAdapter', function () {
   // interpretResponse — native jsTrackers combinations
   // -------------------------------------------------------------------------
   if (FEATURES.NATIVE) {
-  describe('interpretResponse - native jsTrackers combinations', function () {
-    function buildNativeReq() {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      return req;
-    }
+    describe('interpretResponse - native jsTrackers combinations', function () {
+      function buildNativeReq() {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        return req;
+      }
 
-    it('should combine string jsTracker with viewability.config into array [str, disarmed]', function () {
-      const req = buildNativeReq();
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify({ native: { title: 'T', javascript_trackers: 'https://existing-tracker.com/t.js' } }),
-              ext: {
-                appnexus: {
-                  bid_ad_type: 3,
-                  viewability: { config: '<script src="https://cdn.adnxs.com/v/trk.js?id=123"></script>' }
+      it('should combine string jsTracker with viewability.config into array [str, disarmed]', function () {
+        const req = buildNativeReq();
+        const impId = req.data.imp[0].id;
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify({ native: { title: 'T', javascript_trackers: 'https://existing-tracker.com/t.js' } }),
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 3,
+                    viewability: { config: '<script src="https://cdn.adnxs.com/v/trk.js?id=123"></script>' }
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      const trackers = bids[0].native.javascriptTrackers;
-      expect(trackers).to.be.an('array').with.lengthOf(2);
-      expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
-      expect(trackers[1]).to.include('data-src=');
-    });
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, req);
+        const trackers = bids[0].native.javascriptTrackers;
+        expect(trackers).to.be.an('array').with.lengthOf(2);
+        expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
+        expect(trackers[1]).to.include('data-src=');
+      });
 
-    it('should push viewability.config into existing array jsTrackers', function () {
-      const req = buildNativeReq();
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify({ native: { title: 'T', javascript_trackers: ['https://tracker1.com/t.js'] } }),
-              ext: {
-                appnexus: {
-                  bid_ad_type: 3,
-                  viewability: { config: '<script src="https://cdn.adnxs.com/v/trk.js?id=456"></script>' }
+      it('should push viewability.config into existing array jsTrackers', function () {
+        const req = buildNativeReq();
+        const impId = req.data.imp[0].id;
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify({ native: { title: 'T', javascript_trackers: ['https://tracker1.com/t.js'] } }),
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 3,
+                    viewability: { config: '<script src="https://cdn.adnxs.com/v/trk.js?id=456"></script>' }
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      const trackers = bids[0].native.javascriptTrackers;
-      expect(trackers).to.be.an('array').with.lengthOf(2);
-      expect(trackers[0]).to.equal('https://tracker1.com/t.js');
-      expect(trackers[1]).to.include('data-src=');
-    });
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, req);
+        const trackers = bids[0].native.javascriptTrackers;
+        expect(trackers).to.be.an('array').with.lengthOf(2);
+        expect(trackers[0]).to.equal('https://tracker1.com/t.js');
+        expect(trackers[1]).to.include('data-src=');
+      });
 
-    it('should combine string jsTracker with eventtrackers into array', function () {
-      const req = buildNativeReq();
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify({
-                native: {
-                  title: 'T',
-                  javascript_trackers: 'https://existing-tracker.com/t.js',
-                  eventtrackers: [{ method: 1, url: 'https://event-tracker.com/track' }]
-                }
-              }),
-              ext: { appnexus: { bid_ad_type: 3 } }
+      it('should combine string jsTracker with eventtrackers into array', function () {
+        const req = buildNativeReq();
+        const impId = req.data.imp[0].id;
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify({
+                  native: {
+                    title: 'T',
+                    javascript_trackers: 'https://existing-tracker.com/t.js',
+                    eventtrackers: [{ method: 1, url: 'https://event-tracker.com/track' }]
+                  }
+                }),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      const trackers = bids[0].native.javascriptTrackers;
-      expect(trackers).to.be.an('array').with.lengthOf(2);
-      expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
-      expect(trackers[1]).to.equal('https://event-tracker.com/track');
-    });
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, req);
+        const trackers = bids[0].native.javascriptTrackers;
+        expect(trackers).to.be.an('array').with.lengthOf(2);
+        expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
+        expect(trackers[1]).to.equal('https://event-tracker.com/track');
+      });
 
-    it('should push eventtrackers into existing array jsTrackers', function () {
-      const req = buildNativeReq();
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify({
-                native: {
-                  title: 'T',
-                  javascript_trackers: ['https://existing-tracker.com/t.js'],
-                  eventtrackers: [{ method: 1, url: 'https://event-tracker.com/track' }]
-                }
-              }),
-              ext: { appnexus: { bid_ad_type: 3 } }
+      it('should push eventtrackers into existing array jsTrackers', function () {
+        const req = buildNativeReq();
+        const impId = req.data.imp[0].id;
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify({
+                  native: {
+                    title: 'T',
+                    javascript_trackers: ['https://existing-tracker.com/t.js'],
+                    eventtrackers: [{ method: 1, url: 'https://event-tracker.com/track' }]
+                  }
+                }),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
             }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      const trackers = bids[0].native.javascriptTrackers;
-      expect(trackers).to.be.an('array').with.lengthOf(2);
-      expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
-      expect(trackers[1]).to.equal('https://event-tracker.com/track');
-    });
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, req);
+        const trackers = bids[0].native.javascriptTrackers;
+        expect(trackers).to.be.an('array').with.lengthOf(2);
+        expect(trackers[0]).to.equal('https://existing-tracker.com/t.js');
+        expect(trackers[1]).to.equal('https://event-tracker.com/track');
+      });
 
-    it('should replace %native_dom_id% macro in eventtrackers during interpretResponse', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { native: { title: { required: true } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
+      it('should replace %native_dom_id% macro in eventtrackers during interpretResponse', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { native: { title: { required: true } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
 
-      const adWithMacro = {
-        native: {
-          title: 'T',
-          eventtrackers: [{
-            method: 1,
-            url: 'https://cdn.adnxs.com/v/trk.js?dom_id=%native_dom_id%&id=123'
-          }]
-        }
-      };
-
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 1.0,
-              adm: JSON.stringify(adWithMacro),
-              ext: { appnexus: { bid_ad_type: 3 } }
+        const adWithMacro = {
+          native: {
+            title: 'T',
+            eventtrackers: [{
+              method: 1,
+              url: 'https://cdn.adnxs.com/v/trk.js?dom_id=%native_dom_id%&id=123'
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const bids = spec.interpretResponse(serverResponse, req);
-      const parsedAdm = JSON.parse(bids[0].ad);
-      const trackers = parsedAdm.native?.eventtrackers || parsedAdm.eventtrackers;
-      expect(trackers[0].url).to.include('pbjs_adid=');
-      expect(trackers[0].url).to.include('pbjs_auc=');
-      expect(trackers[0].url).to.not.include('%native_dom_id%');
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                adm: JSON.stringify(adWithMacro),
+                ext: { appnexus: { bid_ad_type: 3 } }
+              }]
+            }]
+          }
+        };
+
+        const bids = spec.interpretResponse(serverResponse, req);
+        const parsedAdm = JSON.parse(bids[0].ad);
+        const trackers = parsedAdm.native?.eventtrackers || parsedAdm.eventtrackers;
+        expect(trackers[0].url).to.include('pbjs_adid=');
+        expect(trackers[0].url).to.include('pbjs_auc=');
+        expect(trackers[0].url).to.not.include('%native_dom_id%');
+      });
     });
-  });
   } // FEATURES.NATIVE
 
   // -------------------------------------------------------------------------
@@ -1489,33 +1489,33 @@ describe('mediafuseBidAdapter', function () {
   // interpretResponse — renderer options from mediaTypes.video.renderer.options
   // -------------------------------------------------------------------------
   if (FEATURES.VIDEO) {
-  describe('interpretResponse - renderer options from mediaTypes.video.renderer', function () {
-    it('should use mediaTypes.video.renderer.options when available', function () {
-      const bid = deepClone(BASE_BID);
-      bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480], renderer: { options: { key: 'val' } } } };
-      const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-      const impId = req.data.imp[0].id;
-      const serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: impId,
-              price: 3.0,
-              ext: {
-                appnexus: {
-                  bid_ad_type: 1,
-                  renderer_url: 'https://cdn.adnxs.com/renderer.js',
-                  renderer_id: 42
+    describe('interpretResponse - renderer options from mediaTypes.video.renderer', function () {
+      it('should use mediaTypes.video.renderer.options when available', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480], renderer: { options: { key: 'val' } } } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 3.0,
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 1,
+                    renderer_url: 'https://cdn.adnxs.com/renderer.js',
+                    renderer_id: 42
+                  }
                 }
-              }
+              }]
             }]
-          }]
-        }
-      };
-      const bids = spec.interpretResponse(serverResponse, req);
-      expect(bids[0].renderer).to.exist;
+          }
+        };
+        const bids = spec.interpretResponse(serverResponse, req);
+        expect(bids[0].renderer).to.exist;
+      });
     });
-  });
   } // FEATURES.VIDEO
 
   // -------------------------------------------------------------------------
