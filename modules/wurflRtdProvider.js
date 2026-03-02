@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.5.0';
+const MODULE_VERSION = '2.6.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -1156,6 +1156,15 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     const controlEnrichment = cachedWurflData ? ENRICHMENT_TYPE.NONE : ENRICHMENT_TYPE.NONE_LCE;
     enrichmentType = controlEnrichment;
     bidders.forEach(bidder => bidderEnrichment.set(bidder, controlEnrichment));
+
+    // Read cache metadata for beacon reporting (without enriching bid request)
+    if (cachedWurflData) {
+      wurflId = cachedWurflData.WURFL?.wurfl_id || '';
+      samplingRate = cachedWurflData.wurfl_pbjs?.sampling_rate ?? DEFAULT_SAMPLING_RATE;
+      tier = cachedWurflData.wurfl_pbjs?.tier ?? '';
+      overQuota = cachedWurflData.wurfl_pbjs?.over_quota ?? DEFAULT_OVER_QUOTA;
+    }
+
     WurflDebugger.moduleExecutionStop();
     callback();
     return;
