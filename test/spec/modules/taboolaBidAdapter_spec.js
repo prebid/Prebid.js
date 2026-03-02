@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, internal, BANNER_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
+import {spec, internal, BANNER_ENDPOINT_URL, NATIVE_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config.js'
 import * as utils from '../../../src/utils.js'
 import {server} from '../../mocks/xhr.js'
@@ -270,7 +270,7 @@ describe('Taboola Adapter', function () {
     }
 
     it('should build display request', function () {
-      const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
       const expectedData = {
         'imp': [{
           'id': res.data.imp[0].id,
@@ -335,7 +335,7 @@ describe('Taboola Adapter', function () {
         params: {...commonBidRequest.params, ...optionalParams}
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].bidfloor).to.deep.equal(0.25);
       expect(res.data.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
@@ -351,7 +351,7 @@ describe('Taboola Adapter', function () {
           }
         }
       };
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].bidfloor).to.deep.equal(2.7);
       expect(res.data.imp[0].bidfloorcur).to.deep.equal('USD');
     });
@@ -372,7 +372,7 @@ describe('Taboola Adapter', function () {
           }
         }
       };
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].bidfloor).to.deep.equal(2.7);
       expect(res.data.imp[0].bidfloorcur).to.deep.equal('USD');
     });
@@ -387,7 +387,7 @@ describe('Taboola Adapter', function () {
         params: {...commonBidRequest.params, ...optionalParams}
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].banner.pos).to.deep.equal(2);
     });
 
@@ -403,7 +403,7 @@ describe('Taboola Adapter', function () {
         params: {...commonBidRequest.params}
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].ext.gpid).to.deep.equal('/homepage/#1');
     });
 
@@ -419,7 +419,7 @@ describe('Taboola Adapter', function () {
         params: {...commonBidRequest.params}
       };
 
-      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(res.data.imp[0].ext.example).to.deep.equal('example');
     });
 
@@ -428,7 +428,7 @@ describe('Taboola Adapter', function () {
         ...commonBidderRequest,
         timeout: 500
       }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
       expect(res.data.tmax).to.equal(500);
     });
 
@@ -437,7 +437,7 @@ describe('Taboola Adapter', function () {
         ...commonBidderRequest,
         timeout: '500'
       }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
       expect(res.data.tmax).to.equal(500);
     });
 
@@ -446,7 +446,7 @@ describe('Taboola Adapter', function () {
         ...commonBidderRequest,
         timeout: null
       }
-      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
       expect(res.data.tmax).to.equal(undefined);
     });
 
@@ -475,7 +475,7 @@ describe('Taboola Adapter', function () {
             }
           }
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
         expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv)
         expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
@@ -499,7 +499,7 @@ describe('Taboola Adapter', function () {
             }
           }
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
         expect(res.data.user.buyeruid).to.deep.equal(bidderRequest.ortb2.user.buyeruid)
         expect(res.data.user.yob).to.deep.equal(bidderRequest.ortb2.user.yob)
@@ -516,7 +516,7 @@ describe('Taboola Adapter', function () {
             }
           }
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.ext.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
       });
 
@@ -529,7 +529,7 @@ describe('Taboola Adapter', function () {
             }
           }
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.ext.example).to.deep.equal(bidderRequest.ortb2.ext.example);
       });
 
@@ -553,7 +553,7 @@ describe('Taboola Adapter', function () {
             }
           }
         }
-        const res = spec.buildRequests([defaultBidRequest], {...ortb2})
+        const [res] = spec.buildRequests([defaultBidRequest], {...ortb2})
         expect(res.data.user.data).to.deep.equal(ortb2.ortb2.user.data);
       });
     });
@@ -570,7 +570,7 @@ describe('Taboola Adapter', function () {
           }
         };
 
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest)
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest)
         expect(res.data.user.ext.consent).to.equal('consentString')
         expect(res.data.regs.ext.gdpr).to.equal(1)
       });
@@ -583,7 +583,7 @@ describe('Taboola Adapter', function () {
           }
         }
 
-        const res = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
+        const [res] = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
         expect(res.data.regs.ext.gpp).to.equal('testGpp')
         expect(res.data.regs.ext.gpp_sid).to.deep.equal([1, 2, 3])
       });
@@ -595,14 +595,14 @@ describe('Taboola Adapter', function () {
           },
           uspConsent: 'consentString'
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {
         config.setConfig({coppa: true})
 
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest)
         expect(res.data.regs.coppa).to.equal(1)
 
         config.resetConfig()
@@ -619,7 +619,7 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest,
           timeout: 500
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(51525152);
       });
 
@@ -633,7 +633,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('12121212');
       });
 
@@ -654,7 +654,7 @@ describe('Taboola Adapter', function () {
             }
           }
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.id).to.deep.equal('userid')
         expect(res.data.user.buyeruid).to.equal('12121212');
       });
@@ -676,7 +676,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('user:12121212');
       });
 
@@ -694,7 +694,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('user:12121212');
       });
 
@@ -712,7 +712,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('user:tbla:12121212');
       });
 
@@ -739,7 +739,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('cookie:1');
       });
 
@@ -753,7 +753,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
 
         expect(res.data.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
       });
@@ -770,7 +770,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(window.TRC.user_id);
 
         delete window.TRC;
@@ -783,7 +783,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(0);
       });
 
@@ -791,7 +791,7 @@ describe('Taboola Adapter', function () {
         const bidderRequest = {
           ...commonBidderRequest
         }
-        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal(0);
       });
     });
@@ -813,7 +813,7 @@ describe('Taboola Adapter', function () {
     const bidderRequest = {
       ...commonBidderRequest
     };
-    const request = spec.buildRequests([defaultBidRequest], bidderRequest);
+    const [request] = spec.buildRequests([defaultBidRequest], bidderRequest);
 
     const serverResponse = {
       body: {
@@ -1100,7 +1100,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should interpret multi impression request', function () {
-      const multiRequest = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
+      const [multiRequest] = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
 
       const multiServerResponse = {
         body: {
@@ -1442,7 +1442,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should replace AUCTION_PRICE macro in adm', function () {
-      const multiRequest = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
+      const [multiRequest] = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
       const multiServerResponseWithMacro = {
         body: {
           'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
@@ -1665,7 +1665,11 @@ describe('Taboola Adapter', function () {
         },
         bidId: 'test-bid-id',
         auctionId: 'test-auction-id',
-        sizes: [[300, 250]]
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
       };
 
       const commonBidderRequest = {
@@ -1678,13 +1682,13 @@ describe('Taboola Adapter', function () {
       };
 
       it('should include bot detection in device.ext', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.device.ext.bot).to.exist;
         expect(res.data.device.ext.bot).to.have.property('detected');
       });
 
       it('should include visibility in device.ext', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.device.ext.visibility).to.exist;
         expect(res.data.device.ext.visibility).to.have.property('hidden');
         expect(res.data.device.ext.visibility).to.have.property('state');
@@ -1692,7 +1696,7 @@ describe('Taboola Adapter', function () {
       });
 
       it('should include scroll position in device.ext', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.device.ext.scroll).to.exist;
         expect(res.data.device.ext.scroll).to.have.property('top');
         expect(res.data.device.ext.scroll).to.have.property('left');
@@ -1714,7 +1718,7 @@ describe('Taboola Adapter', function () {
         };
 
         try {
-          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
           // Viewability should be a number between 0-100 when element exists
           expect(res.data.imp[0].ext.viewability).to.be.a('number');
           expect(res.data.imp[0].ext.viewability).to.be.at.least(0);
@@ -1729,7 +1733,7 @@ describe('Taboola Adapter', function () {
           ...defaultBidRequest,
           adUnitCode: 'non-existent-element-id'
         };
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.viewability).to.be.undefined;
       });
 
@@ -1750,7 +1754,7 @@ describe('Taboola Adapter', function () {
         };
 
         try {
-          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
           expect(res.data.imp[0].ext.placement).to.exist;
           expect(res.data.imp[0].ext.placement).to.have.property('top');
           expect(res.data.imp[0].ext.placement).to.have.property('left');
@@ -1775,7 +1779,7 @@ describe('Taboola Adapter', function () {
         };
 
         try {
-          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
           expect(res.data.imp[0].ext.fold).to.exist;
           expect(res.data.imp[0].ext.fold).to.be.oneOf(['above', 'below']);
         } finally {
@@ -1788,7 +1792,7 @@ describe('Taboola Adapter', function () {
           ...defaultBidRequest,
           adUnitCode: 'non-existent-placement-element'
         };
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.placement).to.be.undefined;
         expect(res.data.imp[0].ext.fold).to.be.undefined;
       });
@@ -1805,19 +1809,19 @@ describe('Taboola Adapter', function () {
             }
           }
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequestWithDeviceExt);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequestWithDeviceExt);
         expect(res.data.device.ext.existingProp).to.equal('existingValue');
         expect(res.data.device.ext.bot).to.exist;
         expect(res.data.device.ext.visibility).to.exist;
       });
 
       it('should include device.js = 1', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.device.js).to.equal(1);
       });
 
       it('should include connectiontype when available', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         // connectiontype is optional - depends on navigator.connection availability
         if (res.data.device.connectiontype !== undefined) {
           expect(res.data.device.connectiontype).to.be.a('number');
@@ -1836,7 +1840,7 @@ describe('Taboola Adapter', function () {
             }
           }
         };
-        const res = spec.buildRequests([defaultBidRequest], bidderRequestWithDevice);
+        const [res] = spec.buildRequests([defaultBidRequest], bidderRequestWithDevice);
         expect(res.data.device.ua).to.equal('custom-ua');
         expect(res.data.device.w).to.equal(1920);
         expect(res.data.device.h).to.equal(1080);
@@ -1854,7 +1858,11 @@ describe('Taboola Adapter', function () {
         bidId: 'test-bid-id-123',
         auctionId: 'test-auction-id-456',
         adUnitCode: 'test-ad-unit-code',
-        sizes: [[300, 250]]
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
       };
 
       const commonBidderRequest = {
@@ -1868,17 +1876,17 @@ describe('Taboola Adapter', function () {
       };
 
       it('should include auctionId in ext.prebid', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.ext.prebid.auctionId).to.equal('auction-id-789');
       });
 
       it('should include bidId in imp.ext.prebid', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.bidId).to.equal('test-bid-id-123');
       });
 
       it('should include adUnitCode in imp.ext.prebid', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.adUnitCode).to.equal('test-ad-unit-code');
       });
 
@@ -1887,12 +1895,12 @@ describe('Taboola Adapter', function () {
           ...defaultBidRequest,
           adUnitId: 'test-ad-unit-id'
         };
-        const res = spec.buildRequests([bidRequestWithAdUnitId], commonBidderRequest);
+        const [res] = spec.buildRequests([bidRequestWithAdUnitId], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.adUnitId).to.equal('test-ad-unit-id');
       });
 
       it('should not include adUnitId when not available', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.adUnitId).to.be.undefined;
       });
 
@@ -1907,7 +1915,7 @@ describe('Taboola Adapter', function () {
           bidId: 'bid-id-2',
           adUnitCode: 'ad-unit-2'
         };
-        const res = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
+        const [res] = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.bidId).to.equal('bid-id-1');
         expect(res.data.imp[0].ext.prebid.adUnitCode).to.equal('ad-unit-1');
         expect(res.data.imp[1].ext.prebid.bidId).to.equal('bid-id-2');
@@ -1927,7 +1935,11 @@ describe('Taboola Adapter', function () {
         bidRequestsCount: 3,
         bidderRequestsCount: 2,
         bidderWinsCount: 1,
-        sizes: [[300, 250]]
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
       };
 
       const commonBidderRequest = {
@@ -1941,17 +1953,17 @@ describe('Taboola Adapter', function () {
       };
 
       it('should include bidRequestsCount in imp.ext.prebid', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(3);
       });
 
       it('should include bidderRequestsCount in imp.ext.prebid', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(2);
       });
 
       it('should include bidderWinsCount in imp.ext.prebid', function () {
-        const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest);
         expect(res.data.imp[0].ext.prebid.bidderWinsCount).to.equal(1);
       });
 
@@ -1972,7 +1984,7 @@ describe('Taboola Adapter', function () {
           bidderRequestsCount: 1,
           bidderWinsCount: 0
         };
-        const res = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
+        const [res] = spec.buildRequests([bidRequest1, bidRequest2], commonBidderRequest);
 
         expect(res.data.imp[0].ext.prebid.bidRequestsCount).to.equal(5);
         expect(res.data.imp[0].ext.prebid.bidderRequestsCount).to.equal(4);
@@ -2068,7 +2080,7 @@ describe('Taboola Adapter', function () {
             auctionId: utils.generateUUID(),
           };
 
-          const res = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+          const [res] = spec.buildRequests([nativeBidRequest], commonBidderRequest);
 
           expect(res.data.imp[0]).to.not.have.property('banner');
           expect(res.data.imp[0]).to.have.property('native');
@@ -2092,7 +2104,7 @@ describe('Taboola Adapter', function () {
           auctionId: utils.generateUUID(),
         };
 
-        const res = spec.buildRequests([bannerBidRequest], commonBidderRequest);
+        const [res] = spec.buildRequests([bannerBidRequest], commonBidderRequest);
 
         expect(res.data.imp[0]).to.have.property('banner');
         expect(res.data.imp[0]).to.not.have.property('native');
@@ -2121,7 +2133,7 @@ describe('Taboola Adapter', function () {
             auctionId: utils.generateUUID(),
           };
 
-          const request = spec.buildRequests([nativeBidRequest], commonBidderRequest);
+          const [request] = spec.buildRequests([nativeBidRequest], commonBidderRequest);
 
           const nativeAdm = {
             ver: '1.2',
@@ -2164,5 +2176,209 @@ describe('Taboola Adapter', function () {
         });
       }
     });
+
+    if (FEATURES.NATIVE) {
+      describe('multiformat support', function () {
+        it('should split multiformat bid into separate banner and native requests', function () {
+          const multiformatBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'multiformat-placement'
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              },
+              native: {
+                title: {required: true, len: 150},
+                image: {required: true, sizes: [300, 250]},
+                sponsoredBy: {required: true}
+              }
+            },
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                {id: 1, required: 1, title: {len: 150}},
+                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}},
+                {id: 3, required: 1, data: {type: 1}}
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([multiformatBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(2);
+
+          const bannerReq = requests.find(r => r.url.includes('display'));
+          const nativeReq = requests.find(r => r.url.includes('native'));
+
+          expect(bannerReq).to.exist;
+          expect(nativeReq).to.exist;
+
+          expect(bannerReq.url).to.include(BANNER_ENDPOINT_URL);
+          expect(nativeReq.url).to.include(NATIVE_ENDPOINT_URL);
+
+          expect(bannerReq.data.imp[0]).to.have.property('banner');
+          expect(bannerReq.data.imp[0]).to.not.have.property('native');
+
+          expect(nativeReq.data.imp[0]).to.have.property('native');
+          expect(nativeReq.data.imp[0]).to.not.have.property('banner');
+        });
+
+        it('should send banner-only bids to display endpoint only', function () {
+          const bannerBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'banner-placement'
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([bannerBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(1);
+          expect(requests[0].url).to.include(BANNER_ENDPOINT_URL);
+        });
+
+        it('should send native-only bids to native endpoint only', function () {
+          const nativeBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                {id: 1, required: 1, title: {len: 150}},
+                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([nativeBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(1);
+          expect(requests[0].url).to.include(NATIVE_ENDPOINT_URL);
+        });
+
+        it('should group mixed banner and native bids into separate requests', function () {
+          const bannerBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'banner-placement'
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const nativeBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                {id: 1, required: 1, title: {len: 150}},
+                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const requests = spec.buildRequests([bannerBid, nativeBid], commonBidderRequest);
+
+          expect(requests).to.be.an('array').with.lengthOf(2);
+
+          const bannerReq = requests.find(r => r.url.includes('display'));
+          const nativeReq = requests.find(r => r.url.includes('native'));
+
+          expect(bannerReq.data.imp).to.have.lengthOf(1);
+          expect(nativeReq.data.imp).to.have.lengthOf(1);
+        });
+
+        it('should use bid.mtype to determine response media type', function () {
+          const nativeBid = {
+            bidder: 'taboola',
+            params: {
+              publisherId: 'publisherId',
+              tagId: 'native-placement'
+            },
+            ...nativeBidRequestParams,
+            nativeOrtbRequest: {
+              ver: '1.2',
+              assets: [
+                {id: 1, required: 1, title: {len: 150}},
+                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+              ]
+            },
+            bidId: utils.generateUUID(),
+            auctionId: utils.generateUUID(),
+          };
+
+          const [request] = spec.buildRequests([nativeBid], commonBidderRequest);
+
+          const nativeAdm = {
+            ver: '1.2',
+            assets: [
+              {id: 1, title: {text: 'Native Ad Title'}},
+              {id: 2, img: {url: 'https://example.com/image.jpg', w: 300, h: 250}}
+            ],
+            link: {url: 'https://example.com/click'}
+          };
+
+          const serverResponse = {
+            body: {
+              id: 'response-id',
+              seatbid: [{
+                bid: [{
+                  id: 'bid-id',
+                  impid: request.data.imp[0].id,
+                  price: 1.5,
+                  adm: JSON.stringify(nativeAdm),
+                  adomain: ['example.com'],
+                  crid: 'creative-id',
+                  exp: 300,
+                  mtype: 4,
+                  nurl: 'https://example.com/win'
+                }],
+                seat: 'taboola'
+              }],
+              cur: 'USD'
+            }
+          };
+
+          const res = spec.interpretResponse(serverResponse, request);
+
+          expect(res).to.be.an('array').with.lengthOf(1);
+          expect(res[0].mediaType).to.equal('native');
+          expect(res[0].native).to.exist;
+          expect(res[0]).to.not.have.property('ad');
+        });
+      });
+    }
   });
 })
