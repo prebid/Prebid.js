@@ -247,13 +247,14 @@ export function getTimeoutUrl(data) {
     const params = data[0].params[0];
     const timeout = data[0].timeout;
 
-    queryParams =
-      '?publisherToken=' +
-      params.publisherId +
-      '&adUnitId=' +
-      params.adUnitId +
-      '&timeout=' +
-      timeout;
+    const qsParams = [
+      'publisherToken=' + params.publisherId,
+      'timeout=' + timeout
+    ];
+    if (params.adUnitId) {
+      qsParams.push('adUnitId=' + params.adUnitId);
+    }
+    queryParams = '?' + qsParams.join('&');
   }
   return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
 }
