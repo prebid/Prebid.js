@@ -65,6 +65,7 @@ const handleSetConfig = (config) => {
   }
   // add the GPT event listener
   window.googletag.cmd.push(() => {
+    window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
     window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
   });
 }
