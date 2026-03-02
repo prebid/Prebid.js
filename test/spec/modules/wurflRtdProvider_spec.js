@@ -618,6 +618,9 @@ describe('wurflRtdProvider', function () {
             expect(payload).to.have.property('ab_name', 'test_wurfl');
             expect(payload).to.have.property('ab_variant', 'control');
             expect(payload).to.have.property('enrichment', 'none');
+            // Beacon metadata should be read from cache even in control group
+            expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+            expect(payload).to.have.property('sampling_rate', 100);
             done();
           };
 
@@ -664,6 +667,9 @@ describe('wurflRtdProvider', function () {
             expect(payload).to.have.property('ab_name', 'test_none_lce');
             expect(payload).to.have.property('ab_variant', 'control');
             expect(payload).to.have.property('enrichment', 'none_lce');
+            // No cache → beacon metadata stays at defaults
+            expect(payload).to.have.property('wurfl_id', '');
+            expect(payload).to.have.property('sampling_rate', 100);
 
             // Verify per-bidder enrichment also gets none_lce
             const bidderEntry = payload.ad_units[0].bidders.find(b => b.bidder === 'bidder1');
