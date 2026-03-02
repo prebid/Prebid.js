@@ -344,4 +344,70 @@ describe('bidResponseFilter', () => {
     addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
     sinon.assert.calledWith(reject, BID_MEDIA_TYPE_REJECTION_REASON);
   });
+
+  it('should reject IBV bids on multi-format ad units when enforcing plain video media type', () => {
+    const reject = sinon.stub();
+    const call = sinon.stub();
+    const bid = {
+      meta: {
+        advertiserDomains: ['validdomain1.com'],
+        primaryCatId: 'VALID_CAT',
+        attr: 6,
+        mediaType: 'video',
+        cattax: 1
+      },
+      mediaType: 'video'
+    };
+
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: [], bcat: []
+    });
+
+    mockAuctionIndex.getBidRequest = () => ({
+      mediaTypes: {
+        banner: {},
+        video: {
+          context: 'inbanner'
+        }
+      },
+      ortb2Imp: {}
+    });
+
+    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
+    sinon.assert.calledWith(reject, BID_MEDIA_TYPE_REJECTION_REASON);
+    sinon.assert.notCalled(call);
+  });
+
+  it('should allow plain video bids on multi-format ad units when video context is not inbanner', () => {
+    const reject = sinon.stub();
+    const call = sinon.stub();
+    const bid = {
+      meta: {
+        advertiserDomains: ['validdomain1.com'],
+        primaryCatId: 'VALID_CAT',
+        attr: 6,
+        mediaType: 'video',
+        cattax: 1
+      },
+      mediaType: 'video'
+    };
+
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: [], bcat: []
+    });
+
+    mockAuctionIndex.getBidRequest = () => ({
+      mediaTypes: {
+        banner: {},
+        video: {
+          context: 'outstream'
+        }
+      },
+      ortb2Imp: {}
+    });
+
+    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
+    sinon.assert.notCalled(reject);
+    sinon.assert.calledOnce(call);
+  });
 })
