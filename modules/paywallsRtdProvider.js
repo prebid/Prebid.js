@@ -226,6 +226,7 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   let pollId = null;
   let timeoutId = null;
   let lateHookCleanupId = null;
+  let lateHookDeadline = 0;
 
   const previousHook = (typeof window[VAI_HOOK_KEY] === 'function') ? window[VAI_HOOK_KEY] : null;
 
@@ -249,9 +250,11 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   }
 
   function installLateHookCapture() {
+    const delay = Math.max(waitForIt, LATE_HOOK_GRACE_MS);
+    lateHookDeadline = Date.now() + delay;
     lateHookCleanupId = setTimeout(function () {
       restoreHook();
-    }, Math.max(waitForIt, LATE_HOOK_GRACE_MS));
+    }, delay);
   }
 
   function resolve(vai) {
@@ -316,9 +319,13 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
       } else if (resolved && !enriched) {
         // Script loaded after timeout but hasn't delivered VAI yet.
         // Extend hook grace so async delivery (e.g. fetch of vai.json) can still reach us.
+        // Never shorten an already-running longer timer.
+        const remaining = Math.max(0, lateHookDeadline - Date.now());
+        const grace = Math.max(remaining, LATE_HOOK_GRACE_MS);
         if (lateHookCleanupId != null) { clearTimeout(lateHookCleanupId); }
-        lateHookCleanupId = setTimeout(function () { restoreHook(); }, LATE_HOOK_GRACE_MS);
-        logInfo(LOG_PREFIX + 'script loaded post-timeout — extending hook grace by ' + LATE_HOOK_GRACE_MS + 'ms');
+        lateHookDeadline = Date.now() + grace;
+        lateHookCleanupId = setTimeout(function () { restoreHook(); }, grace);
+        logInfo(LOG_PREFIX + 'script loaded post-timeout — hook grace ' + grace + 'ms');
       }
     });
   } catch (e) {
