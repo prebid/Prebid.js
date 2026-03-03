@@ -306,6 +306,14 @@ describe('ImpactifyAdapter', function () {
       expect(request.options.customHeaders['x-impact']).to.equal('testValue');
     });
 
+    it('should set instream context and player size for video imps', function () {
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp[0].video.context).to.equal('instream');
+      expect(payload.imp[0].video.playerSize).to.deep.equal([DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]);
+    });
+
     it('should set header value from localstorage correctly', function () {
       localStorageIsEnabledStub.returns(true);
       getLocalStorageStub.returns('testValue');

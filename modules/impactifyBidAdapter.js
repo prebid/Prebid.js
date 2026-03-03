@@ -124,7 +124,7 @@ const helpers = {
     const resolvedPlayerSize = playerSize && playerSize.length === 2 ? playerSize : [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT];
     const context = videoContext === 'instream' ? 'instream' : 'outstream';
 
-     return {
+    return {
       id: 'video-' + bid.bidId,
       playerSize: resolvedPlayerSize,
       context,
