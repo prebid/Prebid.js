@@ -40,6 +40,7 @@ const helpers = {
         appId: bid.params.appId
       },
     };
+    const render = {};
 
     if (typeof bid.params.format === 'string') {
       ext.impactify.format = bid.params.format;
@@ -49,12 +50,46 @@ const helpers = {
       ext.impactify.style = bid.params.style;
     }
 
-    if (typeof bid.params.container === 'string') {
-      ext.impactify.container = bid.params.container;
-    }
-
     if (typeof bid.params.size === 'string') {
       ext.impactify.size = bid.params.size;
+    }
+
+    if (isPlainObject(bid.params.render)) {
+      if (typeof bid.params.render.top === 'number') {
+        render.top = bid.params.render.top;
+      }
+
+      if (typeof bid.params.render.bottom === 'number') {
+        render.bottom = bid.params.render.bottom;
+      }
+
+      if (typeof bid.params.render.align === 'string') {
+        render.align = bid.params.render.align;
+      }
+
+      if (typeof bid.params.render.container === 'string') {
+        render.container = bid.params.render.container;
+      }
+
+      if (typeof bid.params.render.expandAd === 'boolean') {
+        render.expandAd = bid.params.render.expandAd;
+      }
+
+      if (typeof bid.params.render.location === 'string') {
+        render.location = bid.params.render.location;
+      }
+
+      if (typeof bid.params.render.onAdEventName === 'string') {
+        render.onAdEventName = bid.params.render.onAdEventName;
+      }
+
+      if (typeof bid.params.render.onNoAdEventName === 'string') {
+        render.onNoAdEventName = bid.params.render.onNoAdEventName;
+      }
+
+      if (Object.keys(render).length > 0) {
+        ext.impactify.render = render;
+      }
     }
 
     return ext;
