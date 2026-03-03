@@ -119,10 +119,15 @@ const helpers = {
   },
 
   createOrtbImpVideoObj(bid) {
-    return {
+    const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+    const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes?.[0];
+    const resolvedPlayerSize = playerSize && playerSize.length === 2 ? playerSize : [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT];
+    const context = videoContext === 'instream' ? 'instream' : 'outstream';
+
+     return {
       id: 'video-' + bid.bidId,
-      playerSize: [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT],
-      context: 'outstream',
+      playerSize: resolvedPlayerSize,
+      context,
       mimes: ['video/mp4'],
     }
   },
