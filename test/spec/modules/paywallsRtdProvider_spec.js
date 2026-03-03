@@ -18,13 +18,14 @@ import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 // ---------------------------------------------------------------------------
 
 const MOCK_VAI = {
-  iss: 'https://paywalls.net',
-  aud: 'vai',
+  iss: 'paywalls.net',
   dom: 'example.com',
   kid: '2026-01-a',
   vat: 'HUMAN',
   act: 'ACT-1',
-  assertion_jws: 'eyJhbGciOiJFZERTQSJ9.eyJ2YXQiOiJIVU1BTiJ9.signature',
+  mstk: '01J4X9K2ABCDEF01234567',
+  jws: 'eyJhbGciOiJFZERTQSJ9.eyJ2YXQiOiJIVU1BTiJ9.signature',
+  pvtk: '01J4X9K2ABCDEF01234567/1',
   iat: Math.floor(Date.now() / 1000) - 10,
   exp: Math.floor(Date.now() / 1000) + 60,
 };
@@ -47,11 +48,12 @@ const MOCK_CONFIG_WITH_URL = {
   },
 };
 
-function makeReqBids(existingOrtb2 = {}) {
+function makeReqBids(existingOrtb2 = {}, adUnits = [{code: 'ad-unit-1'}, {code: 'ad-unit-2'}]) {
   return {
     ortb2Fragments: {
       global: existingOrtb2,
     },
+    adUnits: adUnits,
   };
 }
 
@@ -140,22 +142,22 @@ describe('paywallsRtdProvider', function () {
       const ortb2 = buildOrtb2(MOCK_VAI);
       expect(ortb2.site.ext.vai).to.deep.equal({
         iss: MOCK_VAI.iss,
-        aud: MOCK_VAI.aud,
         dom: MOCK_VAI.dom,
-        kid: MOCK_VAI.kid,
-        assertion_jws: MOCK_VAI.assertion_jws,
       });
     });
 
     it('places user fields at user.ext.vai', function () {
       const ortb2 = buildOrtb2(MOCK_VAI);
       expect(ortb2.user.ext.vai).to.deep.equal({
+        iss: MOCK_VAI.iss,
         vat: MOCK_VAI.vat,
         act: MOCK_VAI.act,
+        mstk: MOCK_VAI.mstk,
+        jws: MOCK_VAI.jws,
       });
     });
 
-    it('does not place fields at imp level', function () {
+    it('does not place fields at imp level (imp handled in mergeOrtb2Fragments)', function () {
       const ortb2 = buildOrtb2(MOCK_VAI);
       expect(ortb2).to.not.have.property('imp');
     });
@@ -204,9 +206,15 @@ describe('paywallsRtdProvider', function () {
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         const global = reqBids.ortb2Fragments.global;
         expect(global.site.ext.vai.dom).to.equal('example.com');
-        expect(global.site.ext.vai.assertion_jws).to.equal(MOCK_VAI.assertion_jws);
+        expect(global.site.ext.vai.iss).to.equal('paywalls.net');
+        expect(global.user.ext.vai.jws).to.equal(MOCK_VAI.jws);
+        expect(global.user.ext.vai.mstk).to.equal(MOCK_VAI.mstk);
         expect(global.user.ext.vai.vat).to.equal('HUMAN');
         expect(global.user.ext.vai.act).to.equal('ACT-1');
+        // pvtk should be set at imp level on each ad unit
+        reqBids.adUnits.forEach(function (adUnit) {
+          expect(adUnit.ortb2Imp.ext.vai.pvtk).to.equal(MOCK_VAI.pvtk);
+        });
         expect(loadExternalScriptStub.called).to.be.false;
         done();
       }, MOCK_CONFIG, {});
@@ -317,6 +325,37 @@ describe('paywallsRtdProvider', function () {
         // Should still reach here via timeout
         done();
       }, fastConfig, {});
+    });
+
+    it('injects pvtk at imp level on each ad unit', function (done) {
+      window[VAI_WINDOW_KEY] = { ...MOCK_VAI };
+      const reqBids = makeReqBids({}, [{code: 'slot-a'}, {code: 'slot-b'}, {code: 'slot-c'}]);
+
+      paywallsSubmodule.getBidRequestData(reqBids, function () {
+        reqBids.adUnits.forEach(function (adUnit) {
+          expect(adUnit.ortb2Imp).to.have.nested.property('ext.vai.pvtk');
+          expect(adUnit.ortb2Imp.ext.vai.pvtk).to.equal(MOCK_VAI.pvtk);
+        });
+        done();
+      }, MOCK_CONFIG, {});
+    });
+
+    it('skips imp-level pvtk when pvtk is absent from VAI payload', function (done) {
+      const vaiNoPvtk = { ...MOCK_VAI };
+      delete vaiNoPvtk.pvtk;
+      window[VAI_WINDOW_KEY] = vaiNoPvtk;
+      const reqBids = makeReqBids();
+
+      paywallsSubmodule.getBidRequestData(reqBids, function () {
+        // Global ORTB2 should still be enriched
+        const global = reqBids.ortb2Fragments.global;
+        expect(global.user.ext.vai.vat).to.equal('HUMAN');
+        // But ad units should NOT have ortb2Imp.ext.vai
+        reqBids.adUnits.forEach(function (adUnit) {
+          expect(adUnit).to.not.have.nested.property('ortb2Imp.ext.vai');
+        });
+        done();
+      }, MOCK_CONFIG, {});
     });
   });
 

@@ -27,7 +27,7 @@ Two key-value pairs are emitted per auction:
 
 If VAI is unavailable (script failed to load, timed out, or returned an invalid response), both values are `UNKNOWN`.
 
-> **No bid-level aggregation is performed.** The companion [Paywalls RTD Provider](paywallsRtdProvider.md) injects VAI into ORTB2 (`site.ext.vai`, `user.ext.vai`) and GAM targeting (`vai_vat`, `vai_act`), so SSPs, DSPs, GAM, and warehouse pipelines already have the signals needed to aggregate natively. The analytics adapter simply confirms classification is reaching the page and routes it to the publisher's analytics tool of choice.
+> **No bid-level aggregation is performed.** The companion [Paywalls RTD Provider](paywallsRtdProvider.md) injects VAI into ORTB2 (`site.ext.vai`, `user.ext.vai`, `imp[].ext.vai`) and GAM targeting (`vai_vat`, `vai_act`), so SSPs, DSPs, GAM, and warehouse pipelines already have the signals needed to aggregate natively. The analytics adapter simply confirms classification is reaching the page and routes it to the publisher's analytics tool of choice.
 
 ## Build Instructions
 
@@ -147,7 +147,7 @@ pbjs.setConfig({
 - **No user identifiers**: VAI does not collect, store, or transmit user IDs, cookies, or fingerprints.
 - **No PII**: The classification is based on aggregate session-level behavioral signals, not personal data.
 - **Browser-side only**: All signal extraction runs in the browser; no data leaves the page except the classification result.
-- **Signed assertions**: SSPs can independently verify the `assertion_jws` via the JWKS endpoint pulled from the JWS header (typically `https://example.com/pw/jwks.json`), ensuring the classification has not been tampered with.
+- **Signed assertions**: SSPs can independently verify the `jws` via the JWKS endpoint pulled from the JWS header (typically `https://example.com/pw/jwks.json`), ensuring the classification has not been tampered with.
 
 ## Testing
 

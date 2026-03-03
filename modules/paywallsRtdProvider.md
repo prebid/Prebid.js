@@ -12,7 +12,7 @@ The Paywalls RTD module integrates [VAI (Validated Actor Inventory)](https://pay
 
 The module automates VAI loading, timing, and signal injection:
 
-- **ORTB2 enrichment** — VAI signals are split across `site.ext.vai` (domain provenance) and `user.ext.vai` (actor classification), available to all ORTB2-native bid adapters.
+- **ORTB2 enrichment** — VAI signals are split across `site.ext.vai` (domain provenance), `user.ext.vai` (actor classification + signed assertion), and `imp[].ext.vai` (pageview correlation), available to all ORTB2-native bid adapters.
 - **GAM targeting** — `vai_vat` and `vai_act` key-value pairs are set per ad unit for Google Ad Manager line item targeting.
 - **Graceful degradation** — if VAI is unavailable or times out, the auction proceeds normally without enrichment.
 
@@ -66,57 +66,77 @@ In both cases, `vai.js` makes a request to fetch `vai.json`, which contains the 
 
 ## ORTB2 Output
 
-VAI signals are placed in the global ORTB2 within the `site` and `user` sections:
+VAI signals are placed in the global ORTB2 within the `site`, `user`, and `imp` sections:
 
 ### `site.ext.vai` — Domain Provenance
 
-Fields that describe the assertion context (who issued it, for which domain):
+Fields that describe the assertion context (who issued it, for which domain). The `dom` value can be cryptographically verified through the signed `jws` in `user.ext.vai`.
 
 ```json
 {
   "site": {
     "ext": {
       "vai": {
-        "iss": "https://paywalls.net",
-        "aud": "vai",
-        "dom": "example.com",
-        "kid": "2026-02-a1b2c3",
-        "assertion_jws": "eyJhbGciOiJFZERTQSIs..."
+        "iss": "paywalls.net",
+        "dom": "example.com"
       }
     }
   }
 }
 ```
 
-| Field           | Description                                      |
-|-----------------|--------------------------------------------------|
-| `iss`           | Issuer — always `https://paywalls.net`           |
-| `aud`           | Audience — always `vai`                          |
-| `dom`           | Domain the assertion covers                      |
-| `kid`           | Key ID for JWS verification via JWKS endpoint    |
-| `assertion_jws` | Full JWS (compact serialization) for SSP and DSP verification |
+| Field | Description                                      |
+|-------|--------------------------------------------------|
+| `iss` | Issuer — bare domain (e.g. `paywalls.net`)       |
+| `dom` | Domain the assertion covers                      |
 
 ### `user.ext.vai` — Actor Classification
 
-Fields that describe the classified actor:
+Fields that describe the classified actor and the signed assertion:
 
 ```json
 {
   "user": {
     "ext": {
       "vai": {
+        "iss": "paywalls.net",
+        "mstk": "01J4X9K2ABCDEF01234567",
         "vat": "HUMAN",
-        "act": "ACT-1"
+        "act": "ACT-1",
+        "jws": "eyJhbGciOiJFZERTQSIs..."
       }
     }
   }
 }
 ```
 
-| Field | Description                                                  |
-|-------|--------------------------------------------------------------|
-| `vat` | Validated Actor Type — one of `HUMAN`, `AI_AGENT`, `SHARING`, `OTHER` |
-| `act` | Actor Confidence Tier — one of `ACT-1`, `ACT-2`, `ACT-3`   |
+| Field  | Description                                                  |
+|--------|--------------------------------------------------------------|
+| `iss`  | Issuer — bare domain (e.g. `paywalls.net`)                   |
+| `mstk` | Micro-session token — unique per assertion                   |
+| `vat`  | Validated Actor Type — one of `HUMAN`, `AI_AGENT`, `SHARING`, `OTHER` |
+| `act`  | Actor Confidence Tier — one of `ACT-1`, `ACT-2`, `ACT-3`   |
+| `jws`  | Full JWS (compact serialization) for SSP and DSP verification |
+
+### `imp[].ext.vai` — Pageview Correlation
+
+Set on each ad unit's `ortb2Imp` when `pvtk` is available from the VAI payload:
+
+```json
+{
+  "imp": [{
+    "ext": {
+      "vai": {
+        "pvtk": "01J4X9K2ABCDEF01234567/3"
+      }
+    }
+  }]
+}
+```
+
+| Field  | Description                                                  |
+|--------|--------------------------------------------------------------|
+| `pvtk` | Pageview token — client-derived, unsigned; correlates impressions within a pageview using the `mstk` root |
 
 ## GAM Targeting
 
@@ -156,7 +176,7 @@ pbjs.setConfig({
 - **No user identifiers**: VAI does not collect, store, or transmit user IDs, cookies, or fingerprints.
 - **No PII**: The classification is based on aggregate session-level behavioral signals, not personal data.
 - **Browser-side only**: All signal extraction runs in the browser; no data leaves the page except the classification result.
-- **Signed assertions**: SSPs can independently verify the `assertion_jws` via the JWKS endpoint pulled from the JWS header (typically `https://example.com/pw/jwks.json`), ensuring the classification has not been tampered with.
+- **Signed assertions**: SSPs can independently verify the `jws` via the JWKS endpoint pulled from the JWS header (typically `https://example.com/pw/jwks.json`), ensuring the classification has not been tampered with.
 
 ## How It Works
 

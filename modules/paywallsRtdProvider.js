@@ -7,8 +7,9 @@
  * automates VAI loading, timing, and ORTB2 injection.
  *
  * ORTB2 placement (canonical split):
- *   site.ext.vai — { iss, aud, dom, kid, assertion_jws }
- *   user.ext.vai — { vat, act }
+ *   site.ext.vai — { iss, dom }
+ *   user.ext.vai — { iss, mstk, vat, act, jws }
+ *   imp[].ext.vai — { pvtk }
  *
  * @module modules/paywallsRtdProvider
  * @requires module:modules/realTimeData
@@ -88,8 +89,10 @@ export function getVaiPayload() {
 /**
  * Build the canonical ORTB2 split placement from a VAI payload.
  *
- * site.ext.vai — domain provenance + assertion (iss, aud, dom, kid, assertion_jws)
- * user.ext.vai — actor classification (vat, act)
+ * site.ext.vai — domain provenance (iss, dom)
+ * user.ext.vai — actor classification + signed assertion (iss, vat, act, mstk, jws)
+ *
+ * imp-level pvtk enrichment is handled separately in mergeOrtb2Fragments.
  *
  * @param {object} vai
  * @returns {{site: object, user: object}}
@@ -100,18 +103,18 @@ export function buildOrtb2(vai) {
       ext: {
         vai: {
           iss: vai.iss,
-          aud: vai.aud,
           dom: vai.dom,
-          kid: vai.kid,
-          assertion_jws: vai.assertion_jws,
         }
       }
     },
     user: {
       ext: {
         vai: {
+          iss: vai.iss,
           vat: vai.vat,
           act: vai.act,
+          mstk: vai.mstk,
+          jws: vai.jws,
         }
       }
     }
@@ -134,6 +137,10 @@ function mergeOrtb2Config(vai) {
 /**
  * Merge VAI signals into the request-level ORTB2 fragments.
  * Used during getBidRequestData.
+ *
+ * - site.ext.vai and user.ext.vai are merged into ortb2Fragments.global
+ * - imp[].ext.vai.pvtk is merged into each ad unit's ortb2Imp (if pvtk is available)
+ *
  * @param {object} reqBidsConfigObj
  * @param {object} vai
  */
@@ -141,7 +148,18 @@ function mergeOrtb2Fragments(reqBidsConfigObj, vai) {
   const ortb2 = buildOrtb2(vai);
   const global = reqBidsConfigObj.ortb2Fragments.global;
   mergeDeep(global, ortb2);
-  logInfo(LOG_PREFIX + 'merged ORTB2 fragments. vat=' + vai.vat + ' act=' + vai.act);
+
+  // Enrich imp-level ortb2 with pvtk when available
+  if (vai.pvtk && reqBidsConfigObj.adUnits) {
+    reqBidsConfigObj.adUnits.forEach(function (adUnit) {
+      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+      mergeDeep(adUnit.ortb2Imp, {
+        ext: { vai: { pvtk: vai.pvtk } }
+      });
+    });
+  }
+
+  logInfo(LOG_PREFIX + 'merged ORTB2 fragments. vat=' + vai.vat + ' act=' + vai.act + (vai.pvtk ? ' pvtk=' + vai.pvtk : ''));
 }
 
 // ---------------------------------------------------------------------------
