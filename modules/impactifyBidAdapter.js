@@ -158,7 +158,10 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     dnt: getDNT() ? 1 : 0,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
-  request.site = { page: bidderRequest.refererInfo.page };
+  const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
+  const publisherId = deepAccess(validBidRequests[0], 'params.publisherId');
+  deepSetValue(request, 'site.page', pageUrl);
+  deepSetValue(request, 'site.publisher.id', publisherId);
 
   // Handle privacy settings for GDPR/CCPA/COPPA
   let gdprApplies = 0;
