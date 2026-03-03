@@ -321,6 +321,49 @@ describe('ImpactifyAdapter', function () {
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
       expect(request.options.customHeaders).to.be.undefined;
     });
+
+    it('should pass supported render fields in imp ext', function () {
+      videoBidRequests[0].params.render = {
+        top: 0,
+        bottom: 0,
+        align: 'right',
+        container: '#my-container',
+        expandAd: true,
+        location: 'bottom-left',
+        onAdEventName: 'on-ad-event',
+        onNoAdEventName: 'on-noad-event'
+      };
+
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.imp[0].ext.impactify.render).to.deep.equal(videoBidRequests[0].params.render);
+    });
+
+    it('should ignore unsupported render fields and types', function () {
+      videoBidRequests[0].params.render = {
+        top: '0',
+        bottom: 0,
+        align: 'right',
+        container: 123,
+        expandAd: true,
+        location: 'bottom-left',
+        onAdEventName: 'on-ad-event',
+        onNoAdEventName: false,
+        foo: 'bar'
+      };
+
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.imp[0].ext.impactify.render).to.deep.equal({
+        bottom: 0,
+        align: 'right',
+        expandAd: true,
+        location: 'bottom-left',
+        onAdEventName: 'on-ad-event'
+      });
+    });
   });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
