@@ -1,9 +1,13 @@
 name: Check for linter warnings / exceptions
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - master
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   check-linter:
@@ -22,21 +26,29 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Fetch base and target branches
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
-          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge:refs/remotes/pull/${{ github.event.pull_request.number }}/merge
+          git fetch origin "+refs/heads/${PR_BASE_REF}:refs/remotes/origin/${PR_BASE_REF}"
+          git fetch origin "+refs/pull/${PR_NUMBER}/merge:refs/remotes/pull/${PR_NUMBER}/merge"
 
       - name: Install dependencies
         run: npm ci
 
       - name: Get the diff
-        run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge | grep '^\(modules\|src\|libraries\|creative\)/.*\.js$' > __changed_files.txt || true
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: git diff --name-only "origin/${PR_BASE_REF}...refs/remotes/pull/${PR_NUMBER}/merge" | grep '^\(modules\|src\|libraries\|creative\)/.*\.js$' > __changed_files.txt || true
 
       - name: Run linter on base branch
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __base.json || true
 
       - name: Check out PR
-        run: git checkout ${{ github.event.pull_request.head.sha }}
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git checkout "$PR_HEAD_SHA"
 
       - name: Run linter on PR
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __pr.json || true
