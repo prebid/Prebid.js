@@ -844,6 +844,11 @@ export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> 
      */
     enforceJS?: boolean;
     /**
+     * Array of bidders to enforce JS floors on when enforceJS is true.
+     * Defaults to ['*'] (all bidders).
+     */
+    enforceBidders?: (BidderCode | '*')[];
+    /**
      * If set to true (the default), the Price Floors Module will signal to Prebid Server to pass floors to it’s bid
      * adapters and enforce floors.
      * If set to false, the pbjs should still pass matched bid request floor data to PBS, however no enforcement will take place.
@@ -901,6 +906,7 @@ export function handleSetFloorsConfig(config) {
     'userIds', validateUserIdsConfig,
     'enforcement', enforcement => pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
+      'enforceBidders', enforceBidders => Array.isArray(enforceBidders) && enforceBidders.length > 0 ? enforceBidders : ['*'],
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
       'floorDeals', floorDeals => floorDeals === true, // defaults to false
       'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true,
@@ -983,9 +989,12 @@ function addFloorDataToBid(floorData, floorInfo, bid: Partial<Bid>, adjustedCpm)
  */
 function shouldFloorBid(floorData, floorInfo, bid) {
   const enforceJS = deepAccess(floorData, 'enforcement.enforceJS') !== false;
+  const enforceBidders = deepAccess(floorData, 'enforcement.enforceBidders') || ['*'];
+  const bidderCode = bid?.adapterCode || bid?.bidderCode || bid?.bidder;
+  const shouldEnforceBidder = enforceBidders.includes('*') || (bidderCode != null && enforceBidders.includes(bidderCode));
   const shouldFloorDeal = deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
   const bidBelowFloor = bid.floorData.cpmAfterAdjustments < floorInfo.matchingFloor;
-  return enforceJS && (bidBelowFloor && shouldFloorDeal);
+  return enforceJS && shouldEnforceBidder && (bidBelowFloor && shouldFloorDeal);
 }
 
 /**
