@@ -279,11 +279,11 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode: string, bid: Bid) {
+      function addBidWithCode(adUnitCode: string, bid: Bid, responseMediaType = null) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
-        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
+        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid, {responseMediaType}))) {
           addBidResponse(adUnitCode, bid);
         } else {
           addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID)
@@ -345,7 +345,10 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.deferBilling = bidRequest.deferBilling;
             bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
             const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
-            addBidWithCode(bidRequest.adUnitCode, prebidBid);
+            const responseMediaType = Object.prototype.hasOwnProperty.call(bidResponse, 'mediaType')
+              ? bidResponse.mediaType
+              : null;
+            addBidWithCode(bidRequest.adUnitCode, prebidBid, responseMediaType);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
             addBidResponse.reject(null, bidResponse, REJECTION_REASON.INVALID_REQUEST_ID);
@@ -647,7 +650,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
+export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index, responseMediaType = bid.mediaType} = {}) {
   function hasValidKeys() {
     const bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
@@ -670,6 +673,16 @@ export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.in
   if (!hasValidKeys()) {
     logError(errorMessage(`Bidder ${bid.bidderCode} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`));
     return false;
+  }
+
+  if (responseMediaType != null) {
+    const mediaTypes = index.getMediaTypes(bid);
+    if (mediaTypes && Object.keys(mediaTypes).length > 0) {
+      if (!mediaTypes.hasOwnProperty(responseMediaType)) {
+        logError(errorMessage(`Bid mediaType '${responseMediaType}' is not supported by the ad unit. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+        return false;
+      }
+    }
   }
 
   if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, {index})) {
