@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Adcluster Adapter Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+        background: #f9f9f9;
+      }
+
+      #div-gpt-ad-300x250 {
+        width: 300px;
+        height: 250px;
+      }
+    </style>
+
+    <!-- Prebid build (your adapter compiled into it) -->
+    <script src="../../build/dev/prebid.js"></script>
+
+    <!-- Google Publisher Tag (GPT) -->
+    <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+  </head>
+
+  <body>
+    <h2>Prebid.js Live Adapter Test</h2>
+    <div id="div-gpt-ad-300x250"></div>
+
+    <script>
+      window.pbjs = window.pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      window.googletag = window.googletag || {
+        cmd: [],
+      };
+
+      // --- GPT slot setup ---
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot("/1234567/test", [[300, 250]], "div-gpt-ad-300x250")
+          .addService(googletag.pubads());
+        googletag.pubads().disableInitialLoad();
+        googletag.enableServices();
+      });
+
+      // --- Prebid setup ---
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          debug: true,
+          bidderTimeout: 800,
+        });
+
+        const adUnits = [
+          {
+            code: "div-gpt-ad-300x250",
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]],
+              },
+              video: {
+                context: "outstream",
+                playerSize: [300, 250],
+                mimes: ["video/mp4"],
+              },
+            },
+            bids: [
+              {
+                bidder: "adcluster",
+                params: {
+                  unitId: "42d1f525-5792-47a6-846d-1825e53c97d6",
+                  previewMediaId: "256b938b-bf3d-4093-ade5-540a1002bec4",
+                },
+              },
+            ],
+          },
+        ];
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.requestBids({
+          bidsBackHandler: function (_bids) {
+            console.log(_bids);
+            const bids = _bids["div-gpt-ad-300x250"].bids;
+            const win = bids && bids[0];
+            if (!win) {
+              console.log("No bids");
+              return;
+            }
+            const slot = document.getElementById("div-gpt-ad-300x250");
+
+            // create an iframe and render the Prebid creative into it
+            const iframe = document.createElement("iframe");
+            iframe.width = win.width;
+            iframe.height = win.height;
+            iframe.frameBorder = 0;
+            iframe.scrolling = "no";
+            slot.innerHTML = "";
+            slot.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            doc.body.style.setProperty("margin", "0", "important");
+            // pbjs.renderAd knows how to find the creative by adId
+            pbjs.renderAd(doc, win.adId);
+          },
+        });
+
+        // optional debug hooks
+        pbjs.onEvent("bidResponse", (e) => console.log("[Bid Response]", e));
+        pbjs.onEvent("auctionEnd", (e) => console.log("[Auction End]", e));
+        pbjs.onEvent("bidWon", (e) => console.log("[Bid Won]", e));
+      });
+    </script>
+  </body>
+</html>

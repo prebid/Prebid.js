@@ -389,6 +389,107 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.fg).to.exist;
     })
   })
+  describe('slot name normalization', function () {
+    it('should preserve non-GPT adUnitCode unchanged (case-sensitive)', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = '/Network/TopBanner';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('/Network/TopBanner');
+    });
+
+    it('should preserve mixed-case custom adUnitCode unchanged', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'InArticleSlot';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('InArticleSlot');
+    });
+
+    it('should normalize GPT auto-generated adUnitCode by removing prefix', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-article_top';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('article_top');
+    });
+
+    it('should remove long numeric suffix from GPT adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-sidebar_123456';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('sidebar');
+    });
+
+    it('should remove timestamp-like suffix from GPT adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-header-1678459238475';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('header');
+    });
+
+    it('should preserve short numeric suffix in GPT adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-topbanner-1';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('topbanner-1');
+    });
+
+    it('should preserve short numeric suffix like -2 in GPT adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-article_slot-2';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('article_slot-2');
+    });
+
+    it('should handle GPT adUnitCode with underscore separator', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad_content_main';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('content_main');
+    });
+
+    it('should return undefined for too short GPT slot names', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-ab';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.be.undefined;
+    });
+
+    it('should prefer gpid over adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-fallback';
+      bid.ortb2Imp = { ext: { gpid: '/123/preferred-slot' } };
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('/123/preferred-slot');
+    });
+
+    it('should prefer adslot over adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-fallback';
+      bid.ortb2Imp = { ext: { data: { adslot: '/456/adslot-name' } } };
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('/456/adslot-name');
+    });
+
+    it('should prefer tagid over normalized adUnitCode', function () {
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-fallback';
+      bid.ortb2Imp = { tagid: 'custom-tagid' };
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('custom-tagid');
+    });
+  });
+
   describe('getUserSyncs', function () {
     it('should return iframe sync when iframeEnabled and syncFrame provided', function () {
       const syncOptions = { iframeEnabled: true, pixelEnabled: false };
