@@ -9,6 +9,10 @@ const LOG_PREFIX = "TopOn";
 const GVLID = 1305;
 const ENDPOINT = "https://web-rtb.anyrtb.com/ortb/prebid";
 const DEFAULT_TTL = 360;
+const USER_SYNC_URL = "https://pb.anyrtb.com/pb/page/prebidUserSyncs.html";
+const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sdk_sync";
+
+let lastPubid;
 
 const converter = ortbConverter({
   context: {
@@ -98,6 +102,7 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const { pubid } = bidderRequest?.bids?.[0]?.params || {};
+    lastPubid = pubid;
     const ortbRequest = converter.toORTB({ validBidRequests, bidderRequest });
 
     const url = ENDPOINT + "?pubid=" + pubid;
@@ -156,13 +161,64 @@ export const spec = {
 
     return bids;
   },
-  getUserSyncs: (
+  getUserSyncs: function (
     syncOptions,
     responses,
     gdprConsent,
     uspConsent,
     gppConsent
-  ) => {},
+  ) {
+    const pubid = lastPubid;
+    const syncs = [];
+    const params = [];
+
+    if (typeof pubid === "string" && pubid.length > 0) {
+      params.push(`pubid=tpn${encodeURIComponent(pubid)}`);
+    }
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === "boolean") {
+        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
+      }
+      if (typeof gdprConsent.consentString === "string") {
+        params.push(`consent=${encodeURIComponent(gdprConsent.consentString)}`);
+      }
+    }
+    if (uspConsent) {
+      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+    }
+    if (gppConsent) {
+      if (typeof gppConsent.gppString === "string") {
+        params.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`);
+      }
+      if (Array.isArray(gppConsent.applicableSections)) {
+        params.push(
+          `gpp_sid=${encodeURIComponent(
+            gppConsent.applicableSections.join(",")
+          )}`
+        );
+      }
+    }
+    if (syncOptions?.iframeEnabled) {
+      const syncUrl = `${USER_SYNC_URL}${
+        params.length > 0 ? "?" + params.join("&") : ""
+      }`;
+
+      syncs.push({
+        type: "iframe",
+        url: syncUrl,
+      });
+    } else if (syncOptions?.pixelEnabled) {
+      const syncUrl = `${USER_SYNC_IMG_URL}${
+        params.length > 0 ? "?" + params.join("&") : ""
+      }`;
+
+      syncs.push({
+        type: "image",
+        url: syncUrl,
+      });
+    }
+    return syncs;
+  },
   onBidWon: (bid) => {
     logWarn(`[${LOG_PREFIX}] Bid won: ${JSON.stringify(bid)}`);
   },

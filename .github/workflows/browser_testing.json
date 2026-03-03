@@ -2,7 +2,14 @@
   "ChromeHeadless": {
     "bsName": "chrome",
     "wdioName": "chrome",
-    "coverage": true
+    "coverage": true,
+    "versions": {
+      "113.0": {
+        "coverage": false,
+        "chrome": "113.0.5672.0",
+        "name": "ChromeNoSandbox"
+      }
+    }
   },
   "EdgeHeadless": {
     "bsName": "edge",

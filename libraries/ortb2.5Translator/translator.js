@@ -13,9 +13,18 @@ export const EXT_PROMOTIONS = [
 
 export function splitPath(path) {
   const parts = path.split('.');
-  const prefix = parts.slice(0, parts.length - 1).join('.');
-  const field = parts[parts.length - 1];
-  return [prefix, field];
+  const field = parts.pop();
+  return [parts.join('.'), field];
+}
+
+export function addExt(prefix, field) {
+  return `${prefix}.ext.${field}`
+}
+
+function removeExt(prefix, field) {
+  const [newPrefix, ext] = splitPath(prefix);
+  if (ext !== 'ext') throw new Error('invalid argument');
+  return `${newPrefix}.${field}`;
 }
 
 /**
@@ -25,7 +34,7 @@ export function splitPath(path) {
  * @return {(function({}): (function(): void|undefined))|*} a function that takes an object and, if it contains
  *        sourcePath, copies its contents to destinationPath, returning a function that deletes the original sourcePath.
  */
-export function moveRule(sourcePath, dest = (prefix, field) => `${prefix}.ext.${field}`) {
+export function moveRule(sourcePath, dest) {
   const [prefix, field] = splitPath(sourcePath);
   dest = dest(prefix, field);
   return (ortb2) => {
@@ -50,9 +59,13 @@ function kwarrayRule(section) {
   };
 }
 
-export const DEFAULT_RULES = Object.freeze([
-  ...EXT_PROMOTIONS.map((f) => moveRule(f)),
+export const TO_25_DEFAULT_RULES = Object.freeze([
+  ...EXT_PROMOTIONS.map((f) => moveRule(f, addExt)),
   ...['app', 'content', 'site', 'user'].map(kwarrayRule)
+]);
+
+export const TO_26_DEFAULT_RULES = Object.freeze([
+  ...EXT_PROMOTIONS.map(f => moveRule(addExt(...splitPath(f)), removeExt)),
 ]);
 
 /**
@@ -62,7 +75,7 @@ export const DEFAULT_RULES = Object.freeze([
  * @param rules translation rules; an array of functions of the type returned by `moveRule`
  * @return {function({}): {}} a translation function that takes an ORTB object, modifies it in place, and returns it.
  */
-export function ortb25Translator(deleteFields = true, rules = DEFAULT_RULES) {
+export function ortb25Translator(deleteFields = true, rules = TO_25_DEFAULT_RULES) {
   return function (ortb2) {
     rules.forEach(f => {
       try {
@@ -82,3 +95,10 @@ export function ortb25Translator(deleteFields = true, rules = DEFAULT_RULES) {
  * The request is modified in place and returned.
  */
 export const toOrtb25 = ortb25Translator();
+
+/**
+ * Translate an ortb 2.5 request to version 2.6 by moving fields that have a standardized 2.5 extension.
+ *
+ * The request is modified in place and returned.
+ */
+export const toOrtb26 = ortb25Translator(true, TO_26_DEFAULT_RULES);

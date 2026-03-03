@@ -71,6 +71,12 @@ describe('adbroBidAdapter', function () {
       expect(serverRequest.data).to.exist;
     });
 
+    it('Configures compression for the ServerRequest object', function () {
+      const serverRequest = serverRequests[0];
+      expect(serverRequest.options).to.exist;
+      expect(serverRequest.options.endpointCompression).to.be.true;
+    });
+
     it('Returns general data valid', function () {
       const data = serverRequests[0].data;
       expect(data).to.be.an('object');

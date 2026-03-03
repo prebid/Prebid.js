@@ -1,3 +1,4 @@
+import '../../../src/prebid.js';
 import {expect} from 'chai';
 import {spec} from 'modules/adnuntiusBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';

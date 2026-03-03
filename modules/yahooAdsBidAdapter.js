@@ -288,6 +288,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
         }
       },
       source: {
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,
@@ -490,11 +491,16 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     const allowedUserNumbers = ['yob'];
     const allowedUserArrays = ['data'];
-    const allowedUserObjects = ['ext'];
     outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
+    // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
+    if (userObject.ext && isPlainObject(userObject.ext)) {
+      outBoundBidRequest.user.ext = {
+        ...outBoundBidRequest.user.ext,
+        ...userObject.ext
+      };
+    }
   };
 
   return outBoundBidRequest;

@@ -231,8 +231,8 @@ export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprCons
     }
   }
 
-  if (uspConsent && uspConsent.consentString) {
-    url += `&ccpa_consent=${uspConsent.consentString}`;
+  if (uspConsent) {
+    url += `&ccpa_consent=${uspConsent}`;
   }
 
   if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {

@@ -1,6 +1,9 @@
 name: Wait for browserstack sessions
 description: Wait until enough browserstack sessions have become available
-
+inputs:
+  sessions:
+    description: Number of sessions needed to continue
+    default: "6"
 runs:
   using: 'composite'
   steps:
@@ -14,7 +17,7 @@ runs:
           queued=$(jq '.queued_sessions' <<< $status)
           max_queued=$(jq '.queued_sessions_max_allowed' <<< $status)
           spare=$(( ${max_running} + ${max_queued} - ${running} - ${queued} ))
-          required=6
+          required=${{ inputs.sessions }}
           echo "Browserstack status: ${running} sessions running, ${queued} queued, ${spare} free"
           (( ${required} > ${spare} ))
         do

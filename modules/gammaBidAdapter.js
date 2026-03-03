@@ -1,3 +1,4 @@
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
@@ -81,8 +82,7 @@ function getAdUrlByRegion(bid) {
     ENDPOINT = ENDPOINTS[bid.params.region];
   } else {
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const region = timezone.split('/')[0];
+      const region = getTimeZone().split('/')[0];
 
       switch (region) {
         case 'Europe':

@@ -2,8 +2,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
 
 import {config} from '../src/config.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import {getStorageManager} from '../src/storageManager.js';
-
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
@@ -42,8 +43,8 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   let ns;
 
   function getNetworkSpeed () {
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
-    const Mbps = connection && (connection.downlink || connection.bandwidth);
+    const connection = getConnectionInfo();
+    const Mbps = connection?.downlink ?? connection?.bandwidth;
     return Mbps ? Math.round(Mbps * 1024) : null;
   }
 
@@ -89,7 +90,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
     pu: stripGGParams(topUrl),
     tpl: mosttopURL,
     ce: storage.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1,
+    dpr: getDevicePixelRatio(topWindow),
     jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   };
@@ -322,28 +323,53 @@ function getGreatestDimensions(sizes) {
   return [maxw, maxh];
 }
 
-function getEids(userId) {
-  const idProperties = [
-    'uid',
-    'eid',
-    'lipbid',
-    'envelope',
-    'id'
-  ];
+function getFirstUid(eid) {
+  if (!eid || !Array.isArray(eid.uids)) return null;
+  return eid.uids.find(uid => uid && uid.id);
+}
 
-  return Object.keys(userId).reduce(function (eids, provider) {
-    const eid = userId[provider];
-    switch (typeof eid) {
-      case 'string':
-        eids[provider] = eid;
-        break;
+function getUserEids(bidRequest, bidderRequest) {
+  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
+  if (Array.isArray(bidderRequestEids) && bidderRequestEids.length) {
+    return bidderRequestEids;
+  }
+  const bidEids = deepAccess(bidRequest, 'userIdAsEids');
+  if (Array.isArray(bidEids) && bidEids.length) {
+    return bidEids;
+  }
+  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids');
+  if (Array.isArray(bidUserEids) && bidUserEids.length) {
+    return bidUserEids;
+  }
+  return [];
+}
 
-      case 'object':
-        const idProp = idProperties.filter(prop => eid.hasOwnProperty(prop));
-        idProp.length && (eids[provider] = eid[idProp[0]]);
-        break;
+function isPubProvidedIdEid(eid) {
+  const source = (eid && eid.source) ? eid.source.toLowerCase() : '';
+  if (!source || !pubProvidedIdSources.includes(source) || !Array.isArray(eid.uids)) return false;
+  return eid.uids.some(uid => uid && uid.ext && uid.ext.stype);
+}
+
+function getEidsFromEidsArray(eids) {
+  return (Array.isArray(eids) ? eids : []).reduce((ids, eid) => {
+    const source = (eid.source || '').toLowerCase();
+    if (source === 'uidapi.com') {
+      const uid = getFirstUid(eid);
+      if (uid) {
+        ids.uid2 = uid.id;
+      }
+    } else if (source === 'liveramp.com') {
+      const uid = getFirstUid(eid);
+      if (uid) {
+        ids.idl_env = uid.id;
+      }
+    } else if (source === 'adserver.org' && Array.isArray(eid.uids)) {
+      const tdidUid = eid.uids.find(uid => uid && uid.id && uid.ext && uid.ext.rtiPartner === 'TDID');
+      if (tdidUid) {
+        ids.tdid = tdidUid.id;
+      }
     }
-    return eids;
+    return ids;
   }, {});
 }
 
@@ -367,12 +393,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
-      userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
-    const eids = getEids(userId);
+    const userEids = getUserEids(bidRequest, bidderRequest);
+    const eids = getEidsFromEidsArray(userEids);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
@@ -397,16 +423,20 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
     }
     // Send filtered pubProvidedId's
-    if (userId && userId.pubProvidedId) {
-      const filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
+    if (userEids.length) {
+      const filteredData = userEids.filter(isPubProvidedIdEid);
       const maxLength = 1800; // replace this with your desired maximum length
       const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
-      data.pubProvidedId = truncatedJsonString
+      if (filteredData.length) {
+        data.pubProvidedId = truncatedJsonString
+      }
     }
     // ADJS-1286 Read id5 id linktype field
-    if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
-      data.id5Id = userId.id5id.uid || null
-      data.id5IdLinkType = userId.id5id.ext.linkType || null
+    const id5Eid = userEids.find(eid => (eid.source || '').toLowerCase() === 'id5-sync.com');
+    const id5Uid = getFirstUid(id5Eid);
+    if (id5Uid && id5Uid.ext) {
+      data.id5Id = id5Uid.id || null
+      data.id5IdLinkType = id5Uid.ext.linkType || null
     }
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode;

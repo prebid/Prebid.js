@@ -1,5 +1,6 @@
 const ghRequester = require('./ghRequest.js');
 const AWS = require("@aws-sdk/client-s3");
+const fs = require('fs');
 
 const MODULE_PATTERNS = [
   /^modules\/([^\/]+)BidAdapter(\.(\w+)|\/)/,
@@ -25,7 +26,7 @@ function extractVendor(chunkName) {
 }
 
 const getLibraryRefs = (() => {
-  const deps = require('../../../build/dist/dependencies.json');
+  const deps = JSON.parse(fs.readFileSync(process.env.DEPENDENCIES_JSON).toString());
   const refs = {};
   return function (libraryName) {
     if (!refs.hasOwnProperty(libraryName)) {
@@ -64,9 +65,9 @@ async function isPrebidMember(ghHandle) {
 }
 
 
-async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
+async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, authReviewTeam}) {
   const request = ghRequester(github);
-  let [files, pr, prebidReviewers, prebidEngineers] = await Promise.all([
+  let [files, pr, prReviews, prebidReviewers, prebidEngineers, authorizedReviewers] = await Promise.all([
     request('GET /repos/{owner}/{repo}/pulls/{prNo}/files', {
       owner: context.repo.owner,
       repo: context.repo.repo,
@@ -77,13 +78,19 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
       repo: context.repo.repo,
       prNo,
     }),
-    ...[reviewerTeam, engTeam].map(team => request('GET /orgs/{org}/teams/{team}/members', {
+    request('GET /repos/{owner}/{repo}/pulls/{prNo}/reviews', {
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      prNo,
+    }),
+    ...[reviewerTeam, engTeam, authReviewTeam].map(team => request('GET /orgs/{org}/teams/{team}/members', {
       org: context.repo.owner,
       team,
     }))
   ]);
   prebidReviewers = prebidReviewers.data.map(datum => datum.login);
   prebidEngineers = prebidEngineers.data.map(datum=> datum.login);
+  authorizedReviewers = authorizedReviewers.data.map(datum=> datum.login);
   let isCoreChange = false;
   files = files.data.map(datum => datum.filename).map(file => {
     const core = isCoreFile(file);
@@ -96,15 +103,23 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam}) {
   const review = {
     prebidEngineers: 0,
     prebidReviewers: 0,
-    reviewers: []
+    reviewers: [],
+    requestedReviewers: []
   };
   const author = pr.data.user.login;
+  const allReviewers = new Set();
   pr.data.requested_reviewers
-    .map(rv => rv.login)
+    .forEach(rv => {
+      allReviewers.add(rv.login);
+      review.requestedReviewers.push(rv.login);
+    });
+  prReviews.data.forEach(datum => allReviewers.add(datum.user.login));
+
+  allReviewers
     .forEach(reviewer => {
       if (reviewer === author) return;
       const isPrebidEngineer = prebidEngineers.includes(reviewer);
-      const isPrebidReviewer = isPrebidEngineer || prebidReviewers.includes(reviewer);
+      const isPrebidReviewer = isPrebidEngineer || prebidReviewers.includes(reviewer) || authorizedReviewers.includes(reviewer);
       if (isPrebidEngineer) {
         review.prebidEngineers += 1;
       }
