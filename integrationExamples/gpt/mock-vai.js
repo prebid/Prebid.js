@@ -19,11 +19,14 @@
     vat: 'HUMAN',
     act: 'ACT-1',
     // Domain provenance (site.ext.vai)
-    iss: 'https://paywalls.net',
-    aud: 'vai',
+    iss: 'paywalls.net',
     dom: location.hostname,
-    kid: 'test-key-001',
-    assertion_jws: 'eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJodHRwczovL3ZhaS5wYXl3YWxscy5uZXQifQ.mock-signature',
+    // Signed assertion (user.ext.vai)
+    jws: 'eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3Qta2V5LTAwMSJ9.eyJpc3MiOiJwYXl3YWxscy5uZXQifQ.mock-signature',
+    // Meter/session token (user.ext.vai)
+    mstk: 'mock-mstk-token-001',
+    // Per-view token (imp[].ext.vai)
+    pvtk: 'mock-pvtk-token-001',
     // Expiry — 1 hour from now
     exp: Math.floor(Date.now() / 1000) + 3600,
   };
