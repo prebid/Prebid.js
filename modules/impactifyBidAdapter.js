@@ -271,16 +271,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (typeof bid.params.appId !== 'string' || !bid.params.appId) {
-      return false;
-    }
-    if (typeof bid.params.format !== 'string' || typeof bid.params.style !== 'string' || !bid.params.format || !bid.params.style) {
-      return false;
-    }
-    if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
-      return false;
-    }
-    if (bid.params.style !== 'inline' && bid.params.style !== 'impact' && bid.params.style !== 'static') {
+if (typeof bid.params.style !== 'string' || !bid.params.style) {
       return false;
     }
 
