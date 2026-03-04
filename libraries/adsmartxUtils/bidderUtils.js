@@ -258,10 +258,6 @@ export function createGetUserSyncs(syncUrl, syncParamsRef) {
       params.push('ssp_id=' + encodeURIComponent(syncParams.sspId));
       logInfo('Adding ssp_id to sync URL:', syncParams.sspId);
     }
-    if (syncParams.siteId) {
-      params.push('ssp_site_id=' + encodeURIComponent(syncParams.siteId));
-      logInfo('Adding ssp_site_id to sync URL:', syncParams.siteId);
-    }
     if (syncParams.sspUserId) {
       params.push('ssp_user_id=' + encodeURIComponent(syncParams.sspUserId));
       logInfo('Adding ssp_user_id to sync URL:', syncParams.sspUserId);
