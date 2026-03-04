@@ -323,29 +323,47 @@ if (typeof bid.params.style !== 'string' || !bid.params.style) {
       return [];
     }
 
+    const ortbRequest = JSON.parse(bidRequest.data || '{}');
+    const impMap = {};
+    (ortbRequest.imp || []).forEach((imp) => {
+      impMap[imp.id] = imp;
+    });
+
     serverBody.seatbid.forEach((seatbid) => {
       if (seatbid.bid.length) {
         bidResponses = [
           ...bidResponses,
           ...seatbid.bid
             .filter((bid) => bid.price > 0)
-            .map((bid) => ({
-              id: bid.id,
-              requestId: bid.impid,
-              cpm: bid.price,
-              currency: serverBody.cur,
-              netRevenue: true,
-              ad: bid.adm,
-              width: bid.w || 0,
-              height: bid.h || 0,
-              ttl: 300,
-              creativeId: bid.crid || 0,
-              hash: bid.hash,
-              expiry: bid.expiry,
-              meta: {
-                advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : []
-              }
-            })),
+            .map((bid) => {
+              const isVideo = !!impMap[bid.impid]?.video;
+              return {
+                id: bid.id,
+                requestId: bid.impid,
+                cpm: bid.price,
+                currency: serverBody.cur,
+                netRevenue: true,
+                width: bid.w || 0,
+                height: bid.h || 0,
+                ttl: 300,
+                creativeId: bid.crid || 0,
+                hash: bid.hash,
+                expiry: bid.expiry,
+                meta: {
+                  advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : []
+                },
+
+                ...(isVideo
+                  ? {
+                    mediaType: 'video',
+                    vastUrl: bid.vastUrl || bid.nurl,
+                    vastXml: bid.vastXml || bid.adm
+                  }
+                  : {
+                    ad: bid.adm
+                  })
+              };
+            }),
         ];
       }
     });
