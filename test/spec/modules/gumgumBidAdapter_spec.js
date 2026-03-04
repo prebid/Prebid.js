@@ -476,8 +476,14 @@ describe('gumgumAdapter', function () {
                 id: 'producer-123',
                 name: 'Test Producer'
               },
-              channel: 'Test Channel',
-              network: 'Test Network'
+              channel: {
+                id: 'channel-123',
+                name: 'Test Channel',
+                domain: 'testchannel.com'
+              },
+              network: {
+                name: 'Test Network'
+              }
             }
           }
         };
@@ -505,7 +511,9 @@ describe('gumgumAdapter', function () {
         expect(bidRequest.data.ccat).to.equal('IAB1-1,IAB1-2,IAB1-3');
         expect(bidRequest.data.cpid).to.equal('producer-123');
         expect(bidRequest.data.cpname).to.equal('Test Producer');
+        expect(bidRequest.data.cchannelid).to.equal('channel-123');
         expect(bidRequest.data.cchannel).to.equal('Test Channel');
+        expect(bidRequest.data.cchanneldomain).to.equal('testchannel.com');
         expect(bidRequest.data.cnetwork).to.equal('Test Network');
       });
 

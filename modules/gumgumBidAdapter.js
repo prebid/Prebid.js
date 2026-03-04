@@ -362,9 +362,17 @@ function _getContentParams(ortb2Data) {
     if (content.producer.name) contentParams.cpname = content.producer.name;
   }
 
-  // Channel and network
-  if (content.channel) contentParams.cchannel = content.channel;
-  if (content.network) contentParams.cnetwork = content.network;
+  // Channel fields
+  if (content.channel) {
+    if (content.channel.id) contentParams.cchannelid = content.channel.id;
+    if (content.channel.name) contentParams.cchannel = content.channel.name;
+    if (content.channel.domain) contentParams.cchanneldomain = content.channel.domain;
+  }
+
+  // Network fields
+  if (content.network) {
+    if (content.network.name) contentParams.cnetwork = content.network.name;
+  }
 
   return contentParams;
 }
