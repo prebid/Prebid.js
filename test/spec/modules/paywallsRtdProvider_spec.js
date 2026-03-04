@@ -477,6 +477,49 @@ describe('paywallsRtdProvider', function () {
       // Advance past timeout
       clock.tick(15);
     });
+
+    it('should not chain hooks across multiple degraded auctions', function (done) {
+      // Scenario: VAI never arrives, multiple auctions fire.
+      // Each auction should replace (not wrap) the hook to prevent unbounded closure growth.
+      const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
+      let auctionsDegraded = 0;
+
+      loadExternalScriptStub.callsFake(() => {
+        // Script never delivers VAI
+      });
+
+      paywallsSubmodule.init(fastConfig, {});
+
+      function runDegradedAuction(cb) {
+        const reqBids = makeReqBids();
+        paywallsSubmodule.getBidRequestData(reqBids, function () {
+          auctionsDegraded++;
+          cb();
+        }, fastConfig, {});
+        clock.tick(15);
+      }
+
+      // Run 5 degraded auctions
+      runDegradedAuction(() => {
+        const hook1 = window[VAI_HOOK_KEY];
+        runDegradedAuction(() => {
+          const hook2 = window[VAI_HOOK_KEY];
+          // Hook should be replaced, not chained — different function each time
+          expect(hook2).to.not.equal(hook1);
+          runDegradedAuction(() => {
+            runDegradedAuction(() => {
+              runDegradedAuction(() => {
+                expect(auctionsDegraded).to.equal(5);
+                // Deliver VAI via the current hook — should not cause deep recursion
+                window[VAI_HOOK_KEY]({ ...MOCK_VAI });
+                expect(window[VAI_WINDOW_KEY]).to.have.property('vat', 'HUMAN');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   // -------------------------------------------------------------------------

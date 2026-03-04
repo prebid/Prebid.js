@@ -225,15 +225,9 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   let pollId = null;
   let timeoutId = null;
 
-  const previousHook = (typeof window[VAI_HOOK_KEY] === 'function') ? window[VAI_HOOK_KEY] : null;
-
   function restoreHook() {
     if (window[VAI_HOOK_KEY] === hookHandler) {
-      if (previousHook) {
-        window[VAI_HOOK_KEY] = previousHook;
-      } else {
-        delete window[VAI_HOOK_KEY];
-      }
+      delete window[VAI_HOOK_KEY];
     }
   }
 
@@ -271,13 +265,13 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
     callback();
   }
 
-  // Set up the hook that vai.js may call
-  // Preserve any existing hook set by the page
+  // Set up the hook that vai.js may call.
+  // __PW_VAI_HOOK__ is owned by this module — we overwrite unconditionally
+  // (consistent with Prebid.js conventions; see medianet, gamera, brandmetrics).
+  // If our own handler from a prior degraded auction is still installed, we
+  // simply replace it (no chaining) to prevent unbounded closure accumulation.
   function hookHandler(vaiData) {
     resolve(vaiData);
-    if (previousHook) {
-      try { previousHook(vaiData); } catch (e) { logWarn(LOG_PREFIX + 'Error in existing VAI hook:', e); }
-    }
   }
   window[VAI_HOOK_KEY] = hookHandler;
 
