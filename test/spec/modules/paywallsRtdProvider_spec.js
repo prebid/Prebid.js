@@ -435,10 +435,10 @@ describe('paywallsRtdProvider', function () {
       // If we get here without done() being called, the test will timeout
     });
 
-    it('should extend hook grace when script loads after timeout', function (done) {
+    it('should keep hook alive indefinitely after timeout for late delivery', function (done) {
       // Scenario: slow network — script loads well after waitForIt timeout.
-      // Hook delivery happens 50ms after script load, which is beyond the
-      // initial grace window. The onload extension should keep the hook alive.
+      // Hook delivery happens long after timeout. The hook is never removed
+      // on a timer, so it captures the payload regardless of delay.
       const reqBids1 = makeReqBids();
       const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
       let scriptOnload;
@@ -452,15 +452,14 @@ describe('paywallsRtdProvider', function () {
       paywallsSubmodule.getBidRequestData(reqBids1, function () {
         // First auction degrades (expected)
 
-        // Simulate script loading 500ms after timeout (well past initial grace)
-        clock.tick(500);
-        scriptOnload(); // fires onload — should extend hook grace
+        // Simulate script loading 5s after timeout
+        clock.tick(5000);
+        scriptOnload();
 
-        // Hook delivers VAI 50ms after script load
-        clock.tick(50);
-        if (typeof window[VAI_HOOK_KEY] === 'function') {
-          window[VAI_HOOK_KEY]({ ...MOCK_VAI });
-        }
+        // Hook delivers VAI 3s after script load (8s total — well past any grace timer)
+        clock.tick(3000);
+        expect(typeof window[VAI_HOOK_KEY]).to.equal('function');
+        window[VAI_HOOK_KEY]({ ...MOCK_VAI });
 
         // Verify the late payload was stored
         expect(window[VAI_WINDOW_KEY]).to.have.property('vat', 'HUMAN');

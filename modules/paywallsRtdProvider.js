@@ -36,7 +36,6 @@ export const VAI_HOOK_KEY = '__PW_VAI_HOOK__';
 export const VAI_LS_KEY = '__pw_vai__';
 
 const DEFAULT_WAIT_FOR_IT = 100;
-const LATE_HOOK_GRACE_MS = 1000;
 
 // Cached VAI payload from init (for early detection)
 let cachedVai = null;
@@ -225,8 +224,6 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   let enriched = false;
   let pollId = null;
   let timeoutId = null;
-  let lateHookCleanupId = null;
-  let lateHookDeadline = 0;
 
   const previousHook = (typeof window[VAI_HOOK_KEY] === 'function') ? window[VAI_HOOK_KEY] : null;
 
@@ -238,23 +235,11 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
         delete window[VAI_HOOK_KEY];
       }
     }
-    if (lateHookCleanupId != null) {
-      clearTimeout(lateHookCleanupId);
-      lateHookCleanupId = null;
-    }
   }
 
   function cleanup() {
     if (pollId != null) { clearInterval(pollId); pollId = null; }
     if (timeoutId != null) { clearTimeout(timeoutId); timeoutId = null; }
-  }
-
-  function installLateHookCapture() {
-    const delay = Math.max(waitForIt, LATE_HOOK_GRACE_MS);
-    lateHookDeadline = Date.now() + delay;
-    lateHookCleanupId = setTimeout(function () {
-      restoreHook();
-    }, delay);
   }
 
   function resolve(vai) {
@@ -277,7 +262,10 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
       restoreHook();
       mergeOrtb2Fragments(reqBidsConfigObj, vai);
     } else {
-      installLateHookCapture();
+      // Hook stays installed — no timer-based removal.
+      // It will self-clean when vai.js eventually delivers a valid payload
+      // (captured in the post-resolve branch above), ensuring subsequent
+      // auctions can use the data regardless of how late it arrives.
       logWarn(LOG_PREFIX + 'VAI unavailable — proceeding without enrichment');
     }
     callback();
@@ -316,16 +304,6 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
       const vai = window[VAI_WINDOW_KEY];
       if (vai && isValid(vai)) {
         resolve(vai);
-      } else if (resolved && !enriched) {
-        // Script loaded after timeout but hasn't delivered VAI yet.
-        // Extend hook grace so async delivery (e.g. fetch of vai.json) can still reach us.
-        // Never shorten an already-running longer timer.
-        const remaining = Math.max(0, lateHookDeadline - Date.now());
-        const grace = Math.max(remaining, LATE_HOOK_GRACE_MS);
-        if (lateHookCleanupId != null) { clearTimeout(lateHookCleanupId); }
-        lateHookDeadline = Date.now() + grace;
-        lateHookCleanupId = setTimeout(function () { restoreHook(); }, grace);
-        logInfo(LOG_PREFIX + 'script loaded post-timeout — hook grace ' + grace + 'ms');
       }
     });
   } catch (e) {
