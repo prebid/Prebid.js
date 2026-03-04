@@ -241,6 +241,7 @@ describe('Performax adapter', function () {
       sandbox.stub(storage, 'localStorageIsEnabled');
       sandbox.stub(storage, 'setDataInLocalStorage');
       sandbox.stub(storage, 'getDataFromLocalStorage');
+      sandbox.stub(utils, 'debugTurnedOn').returns(true);
 
       logWarnSpy = sandbox.stub(utils, 'logWarn');
       logErrorSpy = sandbox.stub(utils, 'logError');
@@ -392,6 +393,7 @@ describe('Performax adapter', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'debugTurnedOn').returns(true);
       logWarnSpy = sandbox.stub(utils, 'logWarn');
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'setDataInLocalStorage');
