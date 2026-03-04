@@ -331,8 +331,7 @@ export const spec = {
 
     serverBody.seatbid.forEach((seatbid) => {
       if (seatbid.bid.length) {
-        bidResponses = [
-          ...bidResponses,
+        bidResponses.push(
           ...seatbid.bid
             .filter((bid) => bid.price > 0)
             .map((bid) => {
@@ -366,7 +365,7 @@ export const spec = {
                     }),
               };
             }),
-        ];
+        );
       }
     });
 
