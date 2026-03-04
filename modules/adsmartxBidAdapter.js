@@ -11,7 +11,7 @@ import {
 
 const BIDDER_CODE = 'adsmartx';
 const ENDPOINT_URL = 'https://ads.adsmartx.com/ads/rtb/prebid/js';
-const SYNC_URL = 'https://ads.adsmartx.com/sync';
+const SYNC_URL = 'https://sync.adsmartx.com/sync';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 60;
 
