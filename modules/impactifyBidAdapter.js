@@ -336,7 +336,8 @@ export const spec = {
           ...seatbid.bid
             .filter((bid) => bid.price > 0)
             .map((bid) => {
-              const isVideo = !!impMap[bid.impid]?.video;
+              const isInstream = impMap[bid.impid]?.video?.context === 'instream';
+              const isVast = bid.vastUrl || bid.vastXml;
               return {
                 id: bid.id,
                 requestId: bid.impid,
@@ -354,11 +355,11 @@ export const spec = {
                     bid.adomain && bid.adomain.length ? bid.adomain : [],
                 },
 
-                ...(isVideo
+                ...(isInstream && isVast
                   ? {
                       mediaType: "video",
-                      vastUrl: bid.vastUrl || bid.nurl,
-                      vastXml: bid.vastXml || bid.adm,
+                      vastUrl: bid.vastUrl,
+                      vastXml: bid.vastXml,
                     }
                   : {
                       ad: bid.adm,
