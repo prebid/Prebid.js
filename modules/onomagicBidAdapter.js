@@ -1,17 +1,14 @@
 import {
   _each,
-  createTrackPixelHtml, getBidIdParameter,
+  getBidIdParameter,
   getUniqueIdentifierStr,
-  getWindowTop,
-  isArray,
   logError,
   logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getBidFloor, isIframe} from '../libraries/omsUtils/index.js';
+import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes} from '../libraries/omsUtils/index.js';
+import {getRoundedViewability} from '../libraries/omsUtils/viewability.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -34,17 +31,9 @@ function buildRequests(bidReqs, bidderRequest) {
     const onomagicImps = [];
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
     _each(bidReqs, function (bid) {
-      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
-      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
-      bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
-
-      const element = document.getElementById(bid.adUnitCode);
-      const minSize = getMinSize(processedSizes);
-      const viewabilityAmount = _isViewabilityMeasurable(element)
-        ? _getViewability(element, getWindowTop(), minSize)
-        : 'na';
-      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      const processedSizes = getProcessedSizes(bidSizes);
+      const viewabilityAmountRounded = getRoundedViewability(bid.adUnitCode, processedSizes);
 
       const imp = {
         id: bid.bidId,
@@ -74,7 +63,7 @@ function buildRequests(bidReqs, bidderRequest) {
         }
       },
       device: {
-        devicetype: _getDeviceType(),
+        devicetype: getDeviceType(),
         w: screen.width,
         h: screen.height
       },
@@ -127,7 +116,7 @@ function interpretResponse(serverResponse) {
           currency: 'USD',
           netRevenue: true,
           mediaType: BANNER,
-          ad: _getAdMarkup(onomagicBid),
+          ad: getAdMarkup(onomagicBid),
           ttl: 60,
           meta: {
             advertiserDomains: onomagicBid && onomagicBid.adomain ? onomagicBid.adomain : []
@@ -144,36 +133,6 @@ function interpretResponse(serverResponse) {
 // Don't do user sync for now
 function getUserSyncs(syncOptions, responses, gdprConsent) {
   return [];
-}
-
-function _isMobile() {
-  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
-}
-
-function _isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
-}
-
-function _getDeviceType() {
-  return _isMobile() ? 1 : _isConnectedTV() ? 3 : 2;
-}
-
-function _getAdMarkup(bid) {
-  let adm = bid.adm;
-  if ('nurl' in bid) {
-    adm += createTrackPixelHtml(bid.nurl);
-  }
-  return adm;
-}
-
-function _isViewabilityMeasurable(element) {
-  return !isIframe() && element !== null;
-}
-
-function _getViewability(element, topWin, { w, h } = {}) {
-  return getWindowTop().document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
-    : 0;
 }
 
 registerBidder(spec);
