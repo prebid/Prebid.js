@@ -271,7 +271,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-if (typeof bid.params.style !== 'string' || !bid.params.style) {
+    if (typeof bid.params.style !== 'string' || !bid.params.style) {
       return false;
     }
 
@@ -350,18 +350,19 @@ if (typeof bid.params.style !== 'string' || !bid.params.style) {
                 hash: bid.hash,
                 expiry: bid.expiry,
                 meta: {
-                  advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : []
+                  advertiserDomains:
+                    bid.adomain && bid.adomain.length ? bid.adomain : [],
                 },
 
                 ...(isVideo
                   ? {
-                    mediaType: 'video',
-                    vastUrl: bid.vastUrl || bid.nurl,
-                    vastXml: bid.vastXml || bid.adm
-                  }
+                      mediaType: "video",
+                      vastUrl: bid.vastUrl || bid.nurl,
+                      vastXml: bid.vastXml || bid.adm,
+                    }
                   : {
-                    ad: bid.adm
-                  })
+                      ad: bid.adm,
+                    }),
               };
             }),
         ];
