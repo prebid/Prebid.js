@@ -77,11 +77,24 @@ function getEffectiveBidders(config) {
 }
 
 /**
- * Check whether the Clarity JS tag is present on the page.
+ * Check whether the Clarity JS tag is present on the page (stub or full SDK).
  * @returns {boolean}
  */
 function isClarityPresent() {
   return typeof window.clarity === 'function';
+}
+
+/**
+ * Check whether the full Clarity SDK has loaded and replaced the queue stub.
+ * The stub sets `window.clarity.q` as the command queue; once the real SDK
+ * initialises it removes `.q` and takes over.  Only the live SDK can handle
+ * the "get" command — calling it on the stub would queue the request and
+ * crash when the SDK later tries to replay it.
+ *
+ * @returns {boolean}
+ */
+function isClarityReady() {
+  return isClarityPresent() && !window.clarity.q;
 }
 
 /**
@@ -95,7 +108,15 @@ function isClarityPresent() {
 function injectClarityScript(projectId) {
   try {
     (function (c, l, a, r, i, t, y) {
-      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      c[a] = c[a] || function () {
+        // "get" requires the live SDK — call the callback with undefined
+        // and do NOT push to the queue (replaying "get" crashes the SDK).
+        if (arguments[0] === 'get') {
+          if (typeof arguments[2] === 'function') { arguments[2](undefined); }
+          return;
+        }
+        (c[a].q = c[a].q || []).push(arguments);
+      };
       t = l.createElement(r); t.async = 1;
       t.src = 'https://www.clarity.ms/tag/' + i;
       y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
@@ -298,7 +319,10 @@ function init(config, userConsent) {
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   try {
-    if (!isClarityPresent()) {
+    if (!isClarityReady()) {
+      if (isClarityPresent()) {
+        logInfo(`${LOG_PREFIX} Clarity stub present but SDK still loading — skipping signal collection for this auction.`);
+      }
       callback();
       return;
     }
