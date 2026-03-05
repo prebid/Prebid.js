@@ -1,11 +1,15 @@
 /**
  * Microsoft Clarity RTD Module
  *
- * This RTD submodule reads behavioral signals from an active Microsoft Clarity
- * session on the page and writes them into per-bidder ORTB2 fragments.
- * Signals are only distributed to commercially approved bidders.
+ * This RTD submodule collects behavioral signals from the user's session and
+ * writes them into per-bidder ORTB2 fragments.  Signals are only distributed
+ * to commercially approved bidders.
  *
- * Requires: an active Clarity JS tag on the page (window.clarity).
+ * Signal collection uses a lightweight self-contained DOM tracker that starts
+ * on init().  The Clarity JS tag is still injected for its own analytics /
+ * session-recording functionality, but signals for bid-enrichment are computed
+ * independently from DOM events (scroll, clicks, focus, etc.).
+ *
  * See: https://clarity.microsoft.com
  *
  * @module modules/msClarityRtdProvider
@@ -53,6 +57,179 @@ const DEFAULTS = {
  */
 let _lastSignals = null;
 
+// ─── Self-Contained Behavioral Tracker ────────────────────────────────────────
+// Computes scroll-depth, active-time, rage-clicks, dead-clicks, scroll-velocity,
+// and a composite engagement-score from DOM events.  Does NOT depend on any
+// external SDK or `clarity("get", ...)` API.
+
+const _tracker = {
+  scrollDepth: 0,          // 0-1, high-water-mark
+  activeTimeMs: 0,         // ms of active engagement
+  rageClickCount: 0,       // 3+ clicks within 500ms in ≤30 px radius
+  deadClickCount: 0,       // clicks on non-interactive elements
+  totalClicks: 0,
+  scrollVelocity: 'none',  // 'slow' | 'medium' | 'fast' | 'none'
+  interactionDensity: 0,   // interactions per second of active time
+  _totalInteractions: 0,
+  _lastActivity: 0,
+  _clickHistory: [],       // { time, x, y, target }
+  _scrollSamples: [],      // { time, y } — last 2 s for velocity
+  _activeTimer: null,
+  _initialized: false,
+};
+
+/** Idle threshold — if no activity for this long, stop counting active time. */
+const IDLE_MS = 30_000;
+
+/** Tags considered interactive for dead-click detection. */
+const INTERACTIVE_TAGS = new Set(['a', 'button', 'input', 'select', 'textarea', 'label', 'summary', 'video', 'audio']);
+
+/**
+ * Start the behavioral tracker.  Safe to call multiple times — only the
+ * first invocation attaches event listeners.
+ */
+function initTracker() {
+  if (_tracker._initialized) return;
+  _tracker._initialized = true;
+  _tracker._lastActivity = Date.now();
+
+  // ── Scroll depth (high-water-mark) + velocity samples ──────────────────
+  const onScroll = () => {
+    const now = Date.now();
+    markActive(now);
+
+    const scrollTop = window.scrollY || window.pageYOffset || 0;
+    const docHeight = Math.max(
+      document.body.scrollHeight || 0,
+      document.documentElement.scrollHeight || 0
+    ) - window.innerHeight;
+
+    if (docHeight > 0) {
+      _tracker.scrollDepth = Math.max(_tracker.scrollDepth, Math.min(1, scrollTop / docHeight));
+    }
+
+    // Keep last 2 s of scroll samples for velocity
+    _tracker._scrollSamples.push({ time: now, y: scrollTop });
+    _tracker._scrollSamples = _tracker._scrollSamples.filter(s => now - s.time < 2000);
+
+    if (_tracker._scrollSamples.length >= 2) {
+      const first = _tracker._scrollSamples[0];
+      const last = _tracker._scrollSamples[_tracker._scrollSamples.length - 1];
+      const dt = (last.time - first.time) / 1000; // seconds
+      if (dt > 0) {
+        const pxPerSec = Math.abs(last.y - first.y) / dt;
+        if (pxPerSec < 200) _tracker.scrollVelocity = 'slow';
+        else if (pxPerSec < 800) _tracker.scrollVelocity = 'medium';
+        else _tracker.scrollVelocity = 'fast';
+      }
+    }
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll(); // seed initial depth
+
+  // ── Active time — 1 s tick, only while user is active ──────────────────
+  function markActive(now) {
+    _tracker._lastActivity = now || Date.now();
+    _tracker._totalInteractions++;
+  }
+
+  ['mousemove', 'keydown', 'touchstart', 'pointerdown'].forEach(evt => {
+    window.addEventListener(evt, () => markActive(), { passive: true });
+  });
+
+  _tracker._activeTimer = setInterval(() => {
+    if (Date.now() - _tracker._lastActivity < IDLE_MS) {
+      _tracker.activeTimeMs += 1000;
+    }
+    // Update interaction density
+    if (_tracker.activeTimeMs > 0) {
+      _tracker.interactionDensity = _tracker._totalInteractions / (_tracker.activeTimeMs / 1000);
+    }
+  }, 1000);
+
+  // ── Click tracking — rage-clicks & dead-clicks ─────────────────────────
+  window.addEventListener('click', (e) => {
+    const now = Date.now();
+    markActive(now);
+    _tracker.totalClicks++;
+
+    const x = e.clientX;
+    const y = e.clientY;
+    _tracker._clickHistory.push({ time: now, x, y });
+
+    // Keep only last 2 s
+    _tracker._clickHistory = _tracker._clickHistory.filter(c => now - c.time < 2000);
+
+    // Rage click: ≥ 3 clicks within 500 ms in a ≤ 30 px radius
+    const recent = _tracker._clickHistory.filter(c =>
+      now - c.time < 500 &&
+      Math.abs(c.x - x) < 30 &&
+      Math.abs(c.y - y) < 30
+    );
+    if (recent.length >= 3) {
+      _tracker.rageClickCount++;
+    }
+
+    // Dead click: non-interactive element
+    const tag = (e.target.tagName || '').toLowerCase();
+    const isInteractive = INTERACTIVE_TAGS.has(tag) ||
+      e.target.getAttribute('role') === 'button' ||
+      e.target.getAttribute('role') === 'link' ||
+      e.target.hasAttribute('onclick') ||
+      e.target.closest('a, button, [role="button"], [role="link"]');
+
+    if (!isInteractive) {
+      _tracker.deadClickCount++;
+    }
+  });
+
+  logInfo(`${LOG_PREFIX} Behavioral signal tracker started.`);
+}
+
+/**
+ * Read the current tracker state into a signals object matching the module's
+ * signal schema.  This replaces the old `collectSignals` / `clarityGet` path.
+ *
+ * @param {string[]} requestedSignals
+ * @returns {Object} signals
+ */
+function collectSignals(requestedSignals) {
+  const signals = {};
+  const req = new Set(requestedSignals);
+
+  if (req.has('scroll_depth')) {
+    signals.scroll_depth = Math.round(_tracker.scrollDepth * 1000) / 1000; // 3 dp
+  }
+
+  if (req.has('active_time')) {
+    signals.active_time_ms = _tracker.activeTimeMs;
+  }
+
+  if (req.has('frustration')) {
+    signals.rage_click_count = _tracker.rageClickCount;
+    signals.dead_click_count = _tracker.deadClickCount;
+  }
+
+  if (req.has('interaction_density')) {
+    signals.interaction_density = Math.round(_tracker.interactionDensity * 100) / 100;
+  }
+
+  if (req.has('scroll_velocity') && _tracker.scrollVelocity !== 'none') {
+    signals.scroll_velocity = _tracker.scrollVelocity;
+  }
+
+  if (req.has('engagement_score')) {
+    // Composite: weighted blend of scroll, time, interaction, and frustration
+    const scrollW = _tracker.scrollDepth * 0.30;
+    const timeW = Math.min(1, _tracker.activeTimeMs / 60000) * 0.35;
+    const interW = Math.min(1, _tracker.totalClicks / 20) * 0.20;
+    const frustW = _tracker.rageClickCount === 0 ? 0.15 : 0;
+    signals.engagement_score = Math.round(Math.min(1, scrollW + timeW + interW + frustW) * 1000) / 1000;
+  }
+
+  return signals;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -85,38 +262,16 @@ function isClarityPresent() {
 }
 
 /**
- * Check whether the full Clarity SDK has loaded and replaced the queue stub.
- * The stub sets `window.clarity.q` as the command queue; once the real SDK
- * initialises it removes `.q` and takes over.  Only the live SDK can handle
- * the "get" command — calling it on the stub would queue the request and
- * crash when the SDK later tries to replay it.
- *
- * @returns {boolean}
- */
-function isClarityReady() {
-  return isClarityPresent() && !window.clarity.q;
-}
-
-/**
  * Inject the Microsoft Clarity bootstrap snippet into the page.
- * This creates the queue stub (`window.clarity`) immediately so that
- * `isClarityPresent()` returns `true` right away. The real Clarity JS
- * loads asynchronously; signals become available once it initialises.
+ * Clarity is injected for its own analytics / session-recording; signal
+ * collection for bid-enrichment is handled by the self-contained tracker.
  *
  * @param {string} projectId - Clarity project identifier
  */
 function injectClarityScript(projectId) {
   try {
     (function (c, l, a, r, i, t, y) {
-      c[a] = c[a] || function () {
-        // "get" requires the live SDK — call the callback with undefined
-        // and do NOT push to the queue (replaying "get" crashes the SDK).
-        if (arguments[0] === 'get') {
-          if (typeof arguments[2] === 'function') { arguments[2](undefined); }
-          return;
-        }
-        (c[a].q = c[a].q || []).push(arguments);
-      };
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
       t = l.createElement(r); t.async = 1;
       t.src = 'https://www.clarity.ms/tag/' + i;
       y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
@@ -125,96 +280,6 @@ function injectClarityScript(projectId) {
   } catch (e) {
     logError(`${LOG_PREFIX} Failed to inject Clarity tag:`, e);
   }
-}
-
-// ─── Signal Collection ────────────────────────────────────────────────────────
-
-/**
- * Reads a Clarity API value via the "get" command.
- * Returns undefined if the API is unavailable or the key is missing.
- *
- * @param {string} key
- * @returns {*} value or undefined
- */
-function clarityGet(key) {
-  try {
-    // Clarity's public JS API supports: clarity("get", key)
-    // Returns synchronously for locally cached metrics.
-    let result;
-    window.clarity('get', key, (val) => { result = val; });
-    return result;
-  } catch (e) {
-    return undefined;
-  }
-}
-
-/**
- * Collect all available behavioral signals from the Clarity session.
- * Signals that are unavailable are omitted from the returned object.
- *
- * @param {string[]} requestedSignals - signal names the publisher opted into
- * @returns {Object} signals
- */
-function collectSignals(requestedSignals) {
-  const signals = {};
-  const requestedSet = new Set(requestedSignals);
-
-  // ── Tier 1: Extremely Valuable ───────────────────────────────────────────
-
-  if (requestedSet.has('scroll_depth')) {
-    const sd = clarityGet('scroll-depth');
-    if (sd != null) {
-      signals.scroll_depth = Math.min(1, Math.max(0, Number(sd)));
-    }
-  }
-
-  if (requestedSet.has('active_time')) {
-    const at = clarityGet('active-time');
-    if (at != null) {
-      signals.active_time_ms = Math.round(Number(at));
-    }
-  }
-
-  if (requestedSet.has('frustration')) {
-    const rc = clarityGet('rage-click-count');
-    const dc = clarityGet('dead-click-count');
-    if (rc != null) signals.rage_click_count = Number(rc);
-    if (dc != null) signals.dead_click_count = Number(dc);
-  }
-
-  if (requestedSet.has('interaction_density')) {
-    const id = clarityGet('interaction-density');
-    if (id != null) {
-      signals.interaction_density = Number(id);
-    }
-  }
-
-  // ── Tier 2: Very Valuable ────────────────────────────────────────────────
-
-  if (requestedSet.has('scroll_velocity')) {
-    const sv = clarityGet('scroll-velocity');
-    if (sv != null) {
-      signals.scroll_velocity = String(sv); // 'slow' | 'medium' | 'fast'
-    }
-  }
-
-  if (requestedSet.has('exit_probability')) {
-    const ep = clarityGet('exit-probability');
-    if (ep != null) {
-      signals.exit_probability = Math.min(1, Math.max(0, Number(ep)));
-    }
-  }
-
-  // ── Tier 3: Composite ───────────────────────────────────────────────────
-
-  if (requestedSet.has('engagement_score')) {
-    const es = clarityGet('engagement-score');
-    if (es != null) {
-      signals.engagement_score = Math.min(1, Math.max(0, Number(es)));
-    }
-  }
-
-  return signals;
 }
 
 /**
@@ -288,14 +353,10 @@ function init(config, userConsent) {
     return false;
   }
 
+  // Inject Clarity for its own analytics / session-recording.
   if (!isClarityPresent()) {
     logInfo(`${LOG_PREFIX} Clarity JS tag not found — injecting automatically for project ${projectId}.`);
     injectClarityScript(projectId);
-  }
-
-  if (!isClarityPresent()) {
-    logWarn(`${LOG_PREFIX} Failed to bootstrap Clarity. Module disabled.`);
-    return false;
   }
 
   const bidders = getEffectiveBidders(config);
@@ -303,6 +364,9 @@ function init(config, userConsent) {
     logWarn(`${LOG_PREFIX} No approved bidders configured. Module disabled.`);
     return false;
   }
+
+  // Start the self-contained behavioral tracker.
+  initTracker();
 
   logInfo(`${LOG_PREFIX} Initialized for project ${projectId}, bidders: ${bidders.join(', ')}`);
   return true;
@@ -319,14 +383,6 @@ function init(config, userConsent) {
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   try {
-    if (!isClarityReady()) {
-      if (isClarityPresent()) {
-        logInfo(`${LOG_PREFIX} Clarity stub present but SDK still loading — skipping signal collection for this auction.`);
-      }
-      callback();
-      return;
-    }
-
     const params = mergeDeep({}, DEFAULTS, config.params || {});
     // mergeDeep concatenates arrays — if publisher explicitly set signals, honour their list
     if (config.params && Array.isArray(config.params.signals)) {
