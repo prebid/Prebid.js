@@ -7,6 +7,7 @@ import {
   getUnixTimestampFromNow,
   getWinDimensions,
   isArray,
+  isPlainObject,
   isEmpty,
   isStr
 } from '../src/utils.js';
@@ -254,10 +255,25 @@ const targetingTool = (function() {
 
       existingUrlRelatedData.segments = segments;
     },
-    mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
-      const siteKvs = getKvsFromOrtb(bidderRequest || {}, 'site.ext.data');
-      const userKvs = getKvsFromOrtb(bidderRequest || {}, 'user.ext.data');
-      if (isEmpty(siteKvs) && isEmpty(userKvs)) {
+    mergeKvsFromOrtb: function(bidTargeting, bidderRequest, bid) {
+      function sanitizeKeyValues(kvs) {
+        return Object.keys(kvs || {}).reduce((acc, key) => {
+          const value = kvs[key];
+          if (isArray(value)) {
+            acc[key] = value.map(v => {
+              return isPlainObject(v) ? JSON.stringify(v) : v;
+            });
+            return acc;
+          }
+          acc[key] = value;
+          return acc;
+        }, {});
+      }
+
+      const siteKvs = sanitizeKeyValues(getKvsFromOrtb(bidderRequest || {}, 'site.ext.data'));
+      const userKvs = sanitizeKeyValues(getKvsFromOrtb(bidderRequest || {}, 'user.ext.data'));
+      const impKvs = sanitizeKeyValues(deepAccess(bid, 'ortb2Imp.ext.data'));
+      if (isEmpty(siteKvs) && isEmpty(userKvs) && isEmpty(impKvs)) {
         return;
       }
       if (bidTargeting.kv && !Array.isArray(bidTargeting.kv)) {
@@ -269,6 +285,9 @@ const targetingTool = (function() {
       }
       if (!isEmpty(userKvs)) {
         bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(userKvs));
+      }
+      if (!isEmpty(impKvs)) {
+        bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(impKvs));
       }
     }
   }
@@ -359,7 +378,7 @@ export const spec = {
       }
 
       const bidTargeting = { ...bid.params.targeting || {} };
-      targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
+      targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest, bid);
       const mediaTypes = bid.mediaTypes || {};
       const validMediaTypes = SUPPORTED_MEDIA_TYPES.filter(mt => {
         return mediaTypes[mt];
