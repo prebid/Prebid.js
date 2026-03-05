@@ -1125,6 +1125,7 @@ describe('adnuntiusBidAdapter', function () {
     }
 
     it('should pass site data ext as key values to ad server', function () {
+      delete bidderRequests[0].ortb2Imp;
       const ortb2 = {
         site: {
           ext: {
@@ -1157,6 +1158,7 @@ describe('adnuntiusBidAdapter', function () {
     });
 
     it('should pass site.ext.data and user.ext.data as key values to ad server with targeting in different format', function () {
+      delete bidderRequests[0].ortb2Imp;
       const ortb2 = {
         user: {
           ext: {
@@ -1182,23 +1184,68 @@ describe('adnuntiusBidAdapter', function () {
           {'9090': ['take it over']}
         ]
       };
+      bidderRequests[0].ortb2Imp = {
+        ext: {
+          data: {
+            'fromImp': 'imp-value',
+            '9090': 'from-imp'
+          }
+        }
+      };
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
-      expect(countMatches(data.adUnits[0].kv, {'from': 'user'})).to.equal(1);
-      expect(countMatches(data.adUnits[0].kv, {'9090': 'from-user'})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'9090': ['take it over']})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'merge': ['this']})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
-      expect(data.adUnits[0].kv.length).to.equal(7);
+      expect(countMatches(data.adUnits[0].kv, {'9090': 'from-user'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'from': 'user'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'9090': 'from-imp'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'fromImp': 'imp-value'})).to.equal(1);
+      expect(data.adUnits[0].kv.length).to.equal(9);
 
       delete bidderRequests[0].params.targeting;
+      delete bidderRequests[0].ortb2Imp;
+    });
+
+    it('should pass values from ortb2Imp.ext.data', function () {
+      delete bidderRequests[0].params.targeting;
+      bidderRequests[0].ortb2Imp = {
+        ext: {
+          data: {
+            'arrayVal': ['a', 'b'],
+            'anotherVal': ['c', {'fred': 'said'}],
+            'objectVal': {
+              'nested': 'nope'
+            },
+            'stringVal': 'ok'
+          }
+        }
+      };
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url');
+      const data = JSON.parse(request[0].data);
+      expect(countMatches(data.adUnits[0].kv, {'arrayVal': ['a', 'b']})).to.equal(1);
+      const anotherVal = (data.adUnits[0].kv.find(kv => kv.anotherVal) || {}).anotherVal;
+      expect(anotherVal).to.be.an('array').with.lengthOf(2);
+      expect(anotherVal[0]).to.equal('c');
+      expect(anotherVal[1]).to.be.a('string');
+      expect(anotherVal[1]).to.contain('fred');
+      expect(anotherVal[1]).to.contain('said');
+      expect(countMatches(data.adUnits[0].kv, {'objectVal': {'nested': 'nope'}})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'stringVal': 'ok'})).to.equal(1);
+      expect(data.adUnits[0].kv.length).to.equal(4);
+
+      delete bidderRequests[0].ortb2Imp;
     });
 
     it('should pass site data ext as key values to ad server even if no kv targeting specified in params.targeting', function () {
+      delete bidderRequests[0].ortb2Imp;
       const ortb2 = {
         site: {
           ext: {
@@ -1223,6 +1270,7 @@ describe('adnuntiusBidAdapter', function () {
     });
 
     it('should skip passing site ext if missing', function () {
+      delete bidderRequests[0].ortb2Imp;
       const ortb2 = {
         site: {
           ext: {
@@ -1239,6 +1287,7 @@ describe('adnuntiusBidAdapter', function () {
     });
 
     it('should skip passing site ext data if missing', function () {
+      delete bidderRequests[0].ortb2Imp;
       const ortb2 = {
         site: {
           ext: {
