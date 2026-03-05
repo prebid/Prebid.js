@@ -444,7 +444,10 @@ describe('invibesBidAdapter:', function () {
     it('has capped ids if local storage variable is correctly formatted', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
-      localStorage.ivvcap = '{"9731":[1,1768600800000]}';
+      const now = new Date().getTime();
+      localStorage.ivvcap = JSON.stringify({
+        9731: [1, now + (24 * 60 * 60 * 1000)]
+      })
       SetBidderAccess();
 
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);

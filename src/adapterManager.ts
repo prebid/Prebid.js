@@ -93,7 +93,7 @@ config.getConfig('s2sConfig', config => {
   }
 });
 
-const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
+export const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
 function getConfigName(s2sConfig) {
   // According to our docs, "module" bid (stored impressions)
@@ -195,6 +195,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   gdprConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
   uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
   gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
+  alwaysHasCapacity?: boolean;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
@@ -505,18 +506,78 @@ const adapterManager = {
       .filter(uniques)
       .forEach(incrementAuctionsCounter);
 
+    const ortb2 = ortb2Fragments.global || {};
+    const bidderOrtb2 = ortb2Fragments.bidder || {};
+
+    const getTid = tidFactory();
+
+    const getCacheKey = (bidderCode: BidderCode, s2sActivityParams?): string => {
+      const s2sName = s2sActivityParams != null ? s2sActivityParams[ACTIVITY_PARAM_S2S_NAME] : '';
+      return s2sName ? `${bidderCode}:${s2sName}` : `${bidderCode}:`;
+    };
+
+    const mergeBidderFpd = (() => {
+      const fpdCache: any = {};
+      return function(auctionId: string, bidderCode: BidderCode, s2sActivityParams?) {
+        const cacheKey = getCacheKey(bidderCode, s2sActivityParams);
+        const redact = dep.redact(
+          s2sActivityParams != null
+            ? s2sActivityParams
+            : activityParams(MODULE_TYPE_BIDDER, bidderCode)
+        );
+        if (fpdCache[cacheKey] !== undefined) {
+          return [fpdCache[cacheKey], redact];
+        }
+        const [tid, tidSource] = getTid(bidderCode, auctionId, bidderOrtb2[bidderCode]?.source?.tid ?? ortb2.source?.tid);
+        const fpd = Object.freeze(redact.ortb2(mergeDeep(
+          {},
+          ortb2,
+          bidderOrtb2[bidderCode],
+          {
+            source: {
+              tid,
+              ext: {tidSource}
+            }
+          }
+        )));
+        fpdCache[cacheKey] = fpd;
+        return [fpd, redact];
+      }
+    })();
+
+    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    const allowedBidders = new Set();
+
     adUnits.forEach(au => {
       if (!isPlainObject(au.mediaTypes)) {
         au.mediaTypes = {};
       }
+
       // filter out bidders that cannot participate in the auction
-      au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+      au.bids = au.bids.filter((bid) => {
+        if (!bid.bidder) {
+          return true;
+        }
+        const [ortb2] = mergeBidderFpd(auctionId, bid.bidder);
+        const isS2S = serverBidders.includes(bid.bidder) && !clientBidders.includes(bid.bidder);
+        return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder, {
+          bid,
+          ortb2,
+          adUnit: au,
+          auctionId,
+          isS2S
+        }));
+      });
+      au.bids.forEach(bid => {
+        allowedBidders.add(bid.bidder);
+      });
       incrementRequestsCounter(au.code);
     });
 
-    adUnits = setupAdUnitMediaTypes(adUnits, labels);
+    clientBidders = clientBidders.filter(bidder => allowedBidders.has(bidder));
+    serverBidders = serverBidders.filter(bidder => allowedBidders.has(bidder));
 
-    let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
+    adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
     if (config.getConfig('bidderSequence') === RANDOM) {
       clientBidders = shuffle(clientBidders);
@@ -525,29 +586,8 @@ const adapterManager = {
 
     const bidRequests: BidderRequest<any>[] = [];
 
-    const ortb2 = ortb2Fragments.global || {};
-    const bidderOrtb2 = ortb2Fragments.bidder || {};
-
-    const getTid = tidFactory();
-
     function addOrtb2<T extends BidderRequest<any>>(bidderRequest: Partial<T>, s2sActivityParams?): T {
-      const redact = dep.redact(
-        s2sActivityParams != null
-          ? s2sActivityParams
-          : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
-      );
-      const [tid, tidSource] = getTid(bidderRequest.bidderCode, bidderRequest.auctionId, bidderOrtb2[bidderRequest.bidderCode]?.source?.tid ?? ortb2.source?.tid);
-      const fpd = Object.freeze(redact.ortb2(mergeDeep(
-        {},
-        ortb2,
-        bidderOrtb2[bidderRequest.bidderCode],
-        {
-          source: {
-            tid,
-            ext: {tidSource}
-          }
-        }
-      )));
+      const [fpd, redact] = mergeBidderFpd(bidderRequest.auctionId, bidderRequest.bidderCode, s2sActivityParams);
       bidderRequest.ortb2 = fpd;
       bidderRequest.bids = bidderRequest.bids.map((bid) => {
         bid.ortb2 = fpd;
@@ -597,6 +637,7 @@ const adapterManager = {
             src: S2S.SRC,
             refererInfo,
             metrics,
+            alwaysHasCapacity: s2sConfig.alwaysHasCapacity,
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
             bidRequests.push(bidderRequest);
@@ -626,6 +667,7 @@ const adapterManager = {
       const bidderRequestId = generateUUID();
       const pageViewId = getPageViewIdForBidder(bidderCode);
       const metrics = auctionMetrics.fork();
+      const adapter = _bidderRegistry[bidderCode];
       const bidderRequest = addOrtb2({
         bidderCode,
         auctionId,
@@ -644,8 +686,9 @@ const adapterManager = {
         timeout: cbTimeout,
         refererInfo,
         metrics,
+        src: 'client',
+        alwaysHasCapacity: adapter?.getSpec?.().alwaysHasCapacity,
       });
-      const adapter = _bidderRegistry[bidderCode];
       if (!adapter) {
         logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
       }

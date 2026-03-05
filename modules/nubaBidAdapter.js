@@ -4,7 +4,7 @@ import { isBidRequestValid, buildRequests, interpretResponse } from '../librarie
 
 const BIDDER_CODE = 'nuba';
 
-const AD_URL = 'https://ads.nuba.io/openrtb2/auction';
+const AD_URL = 'https://ads.nuba.io/pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -12,8 +12,7 @@ export const spec = {
 
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
-  interpretResponse,
-  getUserSyncs: () => {},
+  interpretResponse
 };
 
 registerBidder(spec);

@@ -260,6 +260,7 @@ describe('33acrossIdSystem', () => {
 
             const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
             const setCookie = sinon.stub(storage, 'setCookie');
+            const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
             sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
             request.respond(200, {
@@ -277,6 +278,7 @@ describe('33acrossIdSystem', () => {
 
             removeDataFromLocalStorage.restore();
             setCookie.restore();
+            cookiesAreEnabled.restore();
             domainUtils.domainOverride.restore();
           });
         });
@@ -419,6 +421,7 @@ describe('33acrossIdSystem', () => {
 
             const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
             const setCookie = sinon.stub(storage, 'setCookie');
+            const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
             sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
             request.respond(200, {
@@ -436,6 +439,7 @@ describe('33acrossIdSystem', () => {
 
             removeDataFromLocalStorage.restore();
             setCookie.restore();
+            cookiesAreEnabled.restore();
             domainUtils.domainOverride.restore();
           });
         });

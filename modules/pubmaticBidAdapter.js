@@ -99,6 +99,9 @@ const converter = ortbConverter({
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
+    imp.ext?.ae != null && delete imp.ext.ae;
+    imp.ext?.igs != null && delete imp.ext.igs;
+    imp.ext?.paapi != null && delete imp.ext.paapi;
     // check for battr data types
     ['banner', 'video', 'native'].forEach(key => {
       if (imp[key]?.battr && !Array.isArray(imp[key].battr)) {
@@ -753,6 +756,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  alwaysHasCapacity: true,
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *
@@ -851,16 +855,6 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     const { bids } = converter.fromORTB({ response: response.body, request: request.data });
-    const fledgeAuctionConfigs = deepAccess(response.body, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      return {
-        bids,
-        paapi: Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => ({
-          bidId,
-          config: { auctionSignals: {}, ...cfg }
-        }))
-      };
-    }
     return bids;
   },
 
