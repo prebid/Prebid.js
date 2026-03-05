@@ -419,8 +419,7 @@ class WeboramaRtdProvider {
       'vendorData.publisher.restrictions',
     );
     const disclosedVendors =
-      deepAccess(gdpr, 'vendorData.vendor.disclosedVendors') ||
-      deepAccess(gdpr, 'vendorData.outOfBand.disclosedVendors');
+      deepAccess(gdpr, 'vendorData.vendor.disclosedVendors');
 
     const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
     const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);

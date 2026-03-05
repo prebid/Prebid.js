@@ -211,56 +211,6 @@ describe('weboramaRtdProvider', function () {
           false,
         );
       });
-      it('should NOT initialize if gdpr applies and disclosedVendors (on alternate location) does not allow weborama', function () {
-        const moduleConfig = {
-          params: {
-            weboUserDataConf: {},
-          },
-        };
-        const userConsent = {
-          gdpr: {
-            gdprApplies: true,
-            vendorData: {
-              purpose: {
-                consents: {
-                  1: true,
-                  3: true,
-                  4: true,
-                  5: true,
-                  6: true,
-                },
-                legitimateInterests: {
-                  2: true,
-                  7: true,
-                  8: true,
-                  9: true,
-                  10: true,
-                  11: true,
-                },
-              },
-              specialFeatureOptins: {
-                1: true,
-              },
-              vendor: {
-                consents: {
-                  284: true,
-                },
-                legitimateInterests: {
-                  284: true,
-                },
-              },
-              outOfBand: {
-                disclosedVendors: {
-                  284: false,
-                },
-              },
-            },
-          },
-        };
-        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(
-          false,
-        );
-      });
       it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function () {
         const moduleConfig = {
           params: {
