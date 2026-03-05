@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
+import { cleanObj, isArray, isArrayOfNums, logError, logInfo, } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 // #region Constants
@@ -10,17 +10,17 @@ export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding'
 // #region Bid request validation
 function isBidRequestValid(bid) {
   if (!bid) {
-    utils.logError(BIDDER_CODE, 'bid, can not be empty', bid);
+    logError(BIDDER_CODE, 'bid, can not be empty', bid);
     return false;
   }
 
   if (!bid.params) {
-    utils.logError(BIDDER_CODE, 'bid.params is required.');
+    logError(BIDDER_CODE, 'bid.params is required.');
     return false;
   }
 
   if (!bid.params.adUnitId || typeof bid.params.adUnitId !== 'string') {
-    utils.logError(
+    logError(
       BIDDER_CODE,
       'bid.params.adUnitId is missing or has wrong type.'
     );
@@ -28,7 +28,7 @@ function isBidRequestValid(bid) {
   }
 
   if (!bid.params.inventoryId || typeof bid.params.inventoryId !== 'string') {
-    utils.logError(
+    logError(
       BIDDER_CODE,
       'bid.params.inventoryId is missing or has wrong type.'
     );
@@ -38,11 +38,11 @@ function isBidRequestValid(bid) {
   if (
     !bid.mediaTypes ||
     !bid.mediaTypes[BANNER] ||
-    !utils.isArray(bid.mediaTypes[BANNER].sizes) ||
+    !isArray(bid.mediaTypes[BANNER].sizes) ||
     bid.mediaTypes[BANNER].sizes.length <= 0 ||
-    !utils.isArrayOfNums(bid.mediaTypes[BANNER].sizes[0])
+    !isArrayOfNums(bid.mediaTypes[BANNER].sizes[0])
   ) {
-    utils.logError(BIDDER_CODE, 'Wrong or missing size parameters.');
+    logError(BIDDER_CODE, 'Wrong or missing size parameters.');
     return false;
   }
 
@@ -56,7 +56,7 @@ function isBidRequestValid(bid) {
  * @param {object} bid
  * @returns
  */
-function createBidRequest(bid) {
+function createBidRequest(bid, bidderRequest) {
   // Developer Params
   const {
     inventoryId,
@@ -73,12 +73,14 @@ function createBidRequest(bid) {
   return {
     method: 'POST',
     url: ADPLUS_ENDPOINT,
-    data: utils.cleanObj({
+    data: cleanObj({
       bidId: bid.bidId,
       inventoryId: parseInt(inventoryId),
       adUnitId: parseInt(adUnitId),
       adUnitWidth: bid.mediaTypes[BANNER].sizes[0][0],
       adUnitHeight: bid.mediaTypes[BANNER].sizes[0][1],
+      pbAdUnitCode: bid.adUnitCode,
+      pbAuctionId: bidderRequest?.auctionId || bid.auctionId,
       extraData,
       yearOfBirth,
       gender,
@@ -101,7 +103,7 @@ function createBidRequest(bid) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  return validBidRequests.map((req) => createBidRequest(req));
+  return validBidRequests.map((req) => createBidRequest(req, bidderRequest));
 }
 // #endregion
 
@@ -127,7 +129,7 @@ function createAdResponse(responseData, bidParams) {
     mediaType: responseData.mediaType,
     meta: {
       advertiserDomains: responseData.advertiserDomains,
-      primaryCatId: utils.isArray(responseData.categoryIDs) && responseData.categoryIDs.length > 0
+      primaryCatId: isArray(responseData.categoryIDs) && responseData.categoryIDs.length > 0
         ? responseData.categoryIDs[0] : undefined,
       secondaryCatIds: responseData.categoryIDs,
     },
@@ -138,7 +140,7 @@ function interpretResponse(response, request) {
   // In case of empty response
   if (
     response.body == null ||
-    !utils.isArray(response.body) ||
+    !isArray(response.body) ||
     response.body.length === 0
   ) {
     return [];
@@ -156,10 +158,10 @@ export const spec = {
   buildRequests,
   interpretResponse,
   onTimeout(timeoutData) {
-    utils.logError('Adplus adapter timed out for the auction.', timeoutData);
+    logError('Adplus adapter timed out for the auction.', timeoutData);
   },
   onBidWon(bid) {
-    utils.logInfo(
+    logInfo(
       `Adplus adapter won the auction. Bid id: ${bid.bidId}, Ad Unit Id: ${bid.adUnitId}, Inventory Id: ${bid.inventoryId}`
     );
   },
