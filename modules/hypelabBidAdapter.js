@@ -1,202 +1,139 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { generateUUID, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import { ajax } from '../src/ajax.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { BANNER } from "../src/mediaTypes.js";
+import {
+  generateUUID,
+  getWinDimensions,
+  mergeDeep,
+  replaceAuctionPrice,
+  triggerPixel,
+} from "../src/utils.js";
+import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingClientRect.js";
+import {
+  getWalletPresence,
+  getWalletProviderFlags,
+} from "../libraries/hypelabUtils/hypelabUtils.js";
+import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 
-export const BIDDER_CODE = 'hypelab';
-export const ENDPOINT_URL = 'https://api.hypelab.com';
+export const BIDDER_CODE = "hypelab";
+export const ENDPOINT_URL = "https://api.hypelab.com/v1/rtb_requests";
 
-export const REQUEST_ROUTE = '/v1/prebid_requests';
-export const EVENT_ROUTE = '/v1/events';
-export const REPORTING_ROUTE = '';
+const PREBID_VERSION = "$prebid.version$";
+const PROVIDER_VERSION = "0.0.4";
 
-const PREBID_VERSION = '$prebid.version$';
-const PROVIDER_NAME = 'prebid';
-const PROVIDER_VERSION = '0.0.3';
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 360,
+    mediaType: BANNER,
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    mergeDeep(imp, {
+      ext: {
+        bidder: {
+          property_slug: bidRequest.params.property_slug,
+          placement_slug: bidRequest.params.placement_slug,
+          pp: getPosition(bidRequest.adUnitCode),
+        },
+      },
+    });
+    return imp;
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    request.at = 1;
+    if (!request.cur) request.cur = ["USD"];
 
-const url = (route) => ENDPOINT_URL + route;
+    const userId = getUserId(context.bidRequests);
 
-export function mediaSize(data) {
-  if (!data || !data.creative_set) return { width: 0, height: 0 };
-  const media = data.creative_set.video || data.creative_set.image || {};
-  return { width: media.width, height: media.height };
-}
+    mergeDeep(request, {
+      ext: {
+        source: "prebid",
+        sdk_version: PREBID_VERSION,
+        provider_version: PROVIDER_VERSION,
+        dpr: typeof window !== "undefined" ? window.devicePixelRatio : 1,
+        vp: getViewport(),
+      },
+      user: {
+        buyeruid: userId,
+        id: userId,
+        ext: {
+          wids: [],
+          wp: getWalletPresence(),
+          wpfs: getWalletProviderFlags(),
+        },
+      },
+    });
 
-function isBidRequestValid(bidderRequest) {
+    return request;
+  },
+});
+
+function isBidRequestValid(bidRequest) {
   return (
-    !!bidderRequest.params?.property_slug &&
-    !!bidderRequest.params?.placement_slug
+    !!bidRequest.params?.property_slug && !!bidRequest.params?.placement_slug
   );
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
-  const result = validBidRequests.map((request) => {
-    const uids = (request.userIdAsEids || []).reduce((a, c) => {
-      const ids = c.uids.map((uid) => uid.id);
-      return [...a, ...ids];
-    }, []);
+function buildRequests(bidRequests, bidderRequest) {
+  return bidRequests.map((bidRequest) => ({
+    method: "POST",
+    url: ENDPOINT_URL,
+    data: converter.toORTB({ bidRequests: [bidRequest], bidderRequest }),
+    options: { contentType: "application/json", withCredentials: true },
+  }));
+}
 
-    const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
-    const floor = getBidFloor(request, request.sizes || []);
-    const dpr = typeof window !== 'undefined' ? getDevicePixelRatio(window) : 1;
-    const wp = getWalletPresence();
-    const wpfs = getWalletProviderFlags();
-    const winDimensions = getWinDimensions();
-    const vp = [
-      Math.max(
-        winDimensions?.document.documentElement.clientWidth || 0,
-        winDimensions?.innerWidth || 0
-      ),
-      Math.max(
-        winDimensions?.document.documentElement.clientHeight || 0,
-        winDimensions?.innerHeight || 0
-      ),
-    ];
-    const pp = getPosition(request.adUnitCode);
-
-    const payload = {
-      property_slug: request.params.property_slug,
-      placement_slug: request.params.placement_slug,
-      provider_version: PROVIDER_VERSION,
-      provider_name: PROVIDER_NAME,
-      location:
-        bidderRequest.refererInfo?.page || typeof window !== 'undefined'
-          ? window.location.href
-          : '',
-      sdk_version: PREBID_VERSION,
-      sizes: request.sizes,
-      wids: [],
-      floor,
-      dpr,
-      uuid,
-      bidRequestsCount: request.bidRequestsCount,
-      bidderRequestsCount: request.bidderRequestsCount,
-      bidderWinsCount: request.bidderWinsCount,
-      wp,
-      wpfs,
-      vp,
-      pp,
-    };
-
-    return {
-      method: 'POST',
-      url: url(REQUEST_ROUTE),
-      options: { contentType: 'application/json', withCredentials: true },
-      data: payload,
-      bidId: request.bidId,
-    };
+function interpretResponse(response, request) {
+  if (!response.body) return [];
+  const result = converter.fromORTB({
+    request: request.data,
+    response: response.body,
   });
-
-  return result;
+  return result.bids || [];
 }
 
-function generateTemporaryUUID() {
-  return 'tmp_' + generateUUID();
-}
-
-function getBidFloor(bid, sizes) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.bidFloor ? bid.params.bidFloor : null;
+function onBidWon(bid) {
+  if (bid.burl) {
+    triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm));
   }
-
-  let floor;
-
-  const floorInfo = bid.getFloor({
-    currency: 'USD',
-    mediaType: 'banner',
-    size: sizes.length === 1 ? sizes[0] : '*',
-  });
-
-  if (
-    isPlainObject(floorInfo) &&
-    floorInfo.currency === 'USD' &&
-    !isNaN(parseFloat(floorInfo.floor))
-  ) {
-    floor = parseFloat(floorInfo.floor);
-  }
-
-  return floor;
 }
 
-function getPosition(id) {
-  const element = document.getElementById(id);
+function getPosition(adUnitCode) {
+  const element = document.getElementById(adUnitCode);
   if (!element) return null;
   const rect = getBoundingClientRect(element);
   return [rect.left, rect.top];
 }
 
-function interpretResponse(serverResponse, bidRequest) {
-  const { data } = serverResponse.body;
-
-  if (!data.cpm || !data.html) return [];
-
-  const size = mediaSize(data);
-
-  const result = {
-    requestId: bidRequest.bidId,
-    cpm: data.cpm,
-    width: size.width,
-    height: size.height,
-    creativeId: data.creative_set_slug,
-    currency: data.currency,
-    netRevenue: true,
-    referrer: bidRequest.data.location,
-    ttl: data.ttl,
-    ad: data.html,
-    mediaType: serverResponse.body.data.media_type,
-    meta: {
-      advertiserDomains: data.advertiser_domains || [],
-    },
-  };
-
-  return [result];
+function getUserId(bidRequests) {
+  const eids = bidRequests?.[0]?.userIdAsEids || [];
+  const uids = eids.flatMap((eid) => eid.uids.map((uid) => uid.id));
+  return uids[0] || "tmp_" + generateUUID();
 }
 
-export function report(eventType, data, route = REPORTING_ROUTE) {
-  if (!route) return;
-
-  const options = {
-    method: 'POST',
-    contentType: 'application/json',
-    withCredentials: true,
-  };
-
-  const request = { type: eventType, data };
-  ajax(url(route), null, request, options);
-}
-
-function onTimeout(timeoutData) {
-  this.report('timeout', timeoutData);
-}
-
-function onBidWon(bid) {
-  this.report('bidWon', bid);
-}
-
-function onSetTargeting(bid) {
-  this.report('setTargeting', bid);
-}
-
-function onBidderError(errorData) {
-  this.report('bidderError', errorData);
+function getViewport() {
+  const win = getWinDimensions();
+  return [
+    Math.max(
+      win?.document.documentElement.clientWidth || 0,
+      win?.innerWidth || 0
+    ),
+    Math.max(
+      win?.document.documentElement.clientHeight || 0,
+      win?.innerHeight || 0
+    ),
+  ];
 }
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
-  aliases: ['hype'],
+  aliases: ["hype"],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  onTimeout,
   onBidWon,
-  onSetTargeting,
-  onBidderError,
-  report,
-  REPORTING_ROUTE: 'a',
 };
 
 registerBidder(spec);
