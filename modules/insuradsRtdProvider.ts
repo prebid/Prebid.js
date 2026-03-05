@@ -20,6 +20,7 @@ export const subModuleObj = {
   name: MODULE_NAME,
   gvlid: GVLID,
   init: init,
+  getBidRequestData: getBidRequestData,
   getTargetingData: getTargetingData
 };
 
@@ -27,6 +28,7 @@ export const insurAdsRtdProvider = {
   name: MODULE_NAME,
   gvlid: GVLID,
   init: init,
+  getBidRequestData: getBidRequestData,
   getTargetingData: getTargetingData
 };
 
@@ -69,6 +71,29 @@ function makeApiCall(publicId) {
   }).catch((_e) => {
     // ignore errors for now
   });
+}
+
+function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+  logInfo(LOG_PREFIX + 'submodule getBidRequestData', reqBidsConfigObj, config, userConsent);
+
+  // Enrich bid requests with RTD data for insurads bidder
+  if (keyValues && Object.keys(keyValues).length > 0) {
+    reqBidsConfigObj.adUnits.forEach(adUnit => {
+      adUnit.bids.forEach(bid => {
+        if (bid.bidder === 'insurads') {
+          // Add RTD data to bid params so it can be accessed by the adapter
+          bid.params = bid.params || {};
+
+          bid.params.rtdData = keyValues;
+          logInfo(LOG_PREFIX + 'Enriched bid request for insurads', bid.params.rtdData);
+        }
+      });
+    });
+  } else {
+    logInfo(LOG_PREFIX + 'No keyValues available for bid enrichment');
+  }
+
+  callback();
 }
 
 function getTargetingData(adUnitCodes, config, userConsent, auctionDetails) {

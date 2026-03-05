@@ -1,10 +1,10 @@
-import { deepSetValue, generateUUID, logError } from '../src/utils.js';
+import { deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs, createRenderer } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
@@ -36,11 +36,12 @@ type InsurAdsBidParams = RequireAtLeastOne<{
   allBids?: boolean;
   customId?: string;
   bidders?: Record<string, unknown>;
+  rtdData?: Record<string, string>;
 }, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    ['nexx360']: InsurAdsBidParams;
+    ['insurads']: InsurAdsBidParams;
   }
 }
 
@@ -94,6 +95,18 @@ const converter = ortbConverter({
     request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION);
     return request;
   },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    // Get RTD data from bid params (set by insuradsRtdProvider)
+    const rtdData = (context.bidRequest?.params as InsurAdsBidParams)?.rtdData || {};
+
+    // Add adserverTargeting with RTD keyValues
+    bidResponse.adserverTargeting = {
+      ...rtdData
+    };
+    return bidResponse;
+  },
 });
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
@@ -136,6 +149,44 @@ const buildRequests = (
   return adapterRequest;
 }
 
+export function interpretResponse(serverResponse, request) {
+  const result = converter.fromORTB({response: serverResponse.body, request: request.data});
+  const bids = (result as any).bids || [];
+
+  // Post-process bids to add divId and renderer for outstream video
+  bids.forEach((bid, index) => {
+    // Find the corresponding bid in the server response to get ext data
+    let bidExt;
+    if (serverResponse.body?.seatbid) {
+      for (const seatbid of serverResponse.body.seatbid) {
+        const serverBid = seatbid.bid?.find(b => b.impid === bid.requestId);
+        if (serverBid) {
+          bidExt = serverBid.ext;
+          break;
+        }
+      }
+    }
+
+    // Add divId if available in ext
+    if (bidExt?.divId) {
+      bid.divId = bidExt.divId;
+    }
+
+    // Add renderer for outstream video
+    if (bid.mediaType === 'outstream' && bid.vastXml && bidExt?.divId) {
+      bid.renderer = createRenderer({
+        requestId: bid.requestId,
+        vastXml: bid.vastXml,
+        divId: bidExt.divId,
+        width: bid.width,
+        height: bid.height
+      });
+    }
+  });
+
+  return bids;
+}
+
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -143,7 +194,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
+  getUserSyncs
 };
 
 registerBidder(spec);
