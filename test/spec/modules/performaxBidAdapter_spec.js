@@ -314,6 +314,28 @@ describe('Performax adapter', function () {
         expect(result).to.equal('fallback');
       });
 
+      it('should return defaultValue when stored value is a JSON primitive', () => {
+        storage.localStorageIsEnabled.returns(true);
+        const defaultValue = { fallback: true };
+
+        storage.getDataFromLocalStorage.returns('"hello"');
+        expect(readData('k', defaultValue)).to.deep.equal(defaultValue);
+
+        storage.getDataFromLocalStorage.returns('42');
+        expect(readData('k', defaultValue)).to.deep.equal(defaultValue);
+
+        storage.getDataFromLocalStorage.returns('true');
+        expect(readData('k', defaultValue)).to.deep.equal(defaultValue);
+      });
+
+      it('should return defaultValue when stored value is a JSON array', () => {
+        storage.localStorageIsEnabled.returns(true);
+        const defaultValue = { fallback: true };
+        storage.getDataFromLocalStorage.returns('[1,2]');
+
+        expect(readData('k', defaultValue)).to.deep.equal(defaultValue);
+      });
+
       it('should return defaultValue and log an error if JSON is malformed', () => {
         storage.localStorageIsEnabled.returns(true);
         storage.getDataFromLocalStorage.returns('not-valid-json{');

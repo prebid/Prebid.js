@@ -78,7 +78,8 @@ export function readData(key, defaultValue) {
   }
 
   try {
-    return JSON.parse(rawData) || {};
+    const parsed = JSON.parse(rawData);
+    return (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : defaultValue;
   } catch (err) {
     logError(`Error parsing data for key "${key}": `, err);
     return defaultValue;
