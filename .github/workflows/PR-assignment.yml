@@ -1,31 +1,35 @@
 name: Assign PR reviewers
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-
+  workflow_run:
+    workflows:
+      - Compile dependencies.json for PR assignment checks
+    types:
+      - completed
 jobs:
   assign_reviewers:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Assign reviewers
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: master
       - name: Generate app token
         id: token
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.PR_BOT_ID }}
           private-key: ${{ secrets.PR_BOT_PEM }}
-
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Download dependencies.json
+        uses: ./.github/actions/unzip-artifact
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
-
-      - name: Install dependencies
-        uses: ./.github/actions/npm-ci
-      - name: Build
-        run: |
-          npx gulp build
+          name: dependencies.json
+      - name: Download PR info
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: prInfo
       - name: Install s3 client
         run: |
           npm install @aws-sdk/client-s3
@@ -35,14 +39,17 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ vars.PR_BOT_AWS_AK }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PR_BOT_AWS_SAK }}
+          DEPENDENCIES_JSON: ${{ runner.temp }}/artifacts/dependencies.json
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
+            const fs = require('fs');
             const getProps = require('./.github/workflows/scripts/getPRProperties.js')
+            const { prNo }  = JSON.parse(fs.readFileSync('${{runner.temp}}/artifacts/prInfo.json').toString());
             const props = await getProps({
               github, 
               context, 
-              prNo: ${{ github.event.pull_request.number }},
+              prNo,
               reviewerTeam: '${{ vars.REVIEWER_TEAM }}',
               engTeam: '${{ vars.ENG_TEAM }}',
               authReviewTeam: '${{ vars.AUTH_REVIEWER_TEAM }}'

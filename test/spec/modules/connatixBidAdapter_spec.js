@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { config } from 'src/config.js';
 import {
   _getBidRequests,
   _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
@@ -141,10 +142,12 @@ describe('connatixBidAdapter', function () {
     let element;
     let getBoundingClientRectStub;
     let topWinMock;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       element = document.createElement('div');
-      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
         document: {
@@ -153,10 +156,18 @@ describe('connatixBidAdapter', function () {
         innerWidth: 800,
         innerHeight: 600
       };
+      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => ({
+        document: {
+          documentElement: {
+            clientWidth: topWinMock.innerWidth,
+            clientHeight: topWinMock.innerHeight
+          }
+        }
+      }));
     });
 
     afterEach(() => {
-      getBoundingClientRectStub.restore();
+      sandbox.restore();
     });
 
     it('should return 0 if the document is not visible', () => {
@@ -179,25 +190,18 @@ describe('connatixBidAdapter', function () {
     it('should return the correct percentage if the element is partially in view', () => {
       const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
-      const getWinDimensionsStub = sinon.stub(winDimensions, 'getWinDimensions');
-      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
-
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
-      getWinDimensionsStub.restore();
     });
 
     it('should return 0% if the element is not in view', () => {
-      const getWinDimensionsStub = sinon.stub(winDimensions, 'getWinDimensions');
-      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
       const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
 
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(0);
-      getWinDimensionsStub.restore();
     });
 
     it('should use provided width and height if element dimensions are zero', () => {
@@ -217,10 +221,12 @@ describe('connatixBidAdapter', function () {
     let topWinMock;
     let querySelectorStub;
     let getElementByIdStub;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       element = document.createElement('div');
-      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
         document: {
@@ -230,14 +236,22 @@ describe('connatixBidAdapter', function () {
         innerHeight: 600
       };
 
-      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
-      getElementByIdStub = sinon.stub(document, 'getElementById');
+      querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
+      getElementByIdStub = sandbox.stub(document, 'getElementById');
+      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
+        {
+          document: {
+            documentElement: {
+              clientWidth: topWinMock.innerWidth,
+              clientHeight: topWinMock.innerHeight
+            }
+          }
+        }
+      ));
     });
 
     afterEach(() => {
-      getBoundingClientRectStub.restore();
-      querySelectorStub.restore();
-      getElementByIdStub.restore();
+      sandbox.restore();
     });
 
     it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {
@@ -755,6 +769,10 @@ describe('connatixBidAdapter', function () {
       headers: function() { }
     };
 
+    afterEach(() => {
+      config.resetConfig();
+    });
+
     it('Should return an empty array when iframeEnabled: false', function () {
       expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
@@ -832,16 +850,16 @@ describe('connatixBidAdapter', function () {
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
     });
-    it('Should not modify the sync url if gppConsent param is provided', function () {
+    it('Should append gpp and gpp_sid to the url if gppConsent param is provided', function () {
       const userSyncList = spec.getUserSyncs(
         {iframeEnabled: true, pixelEnabled: true},
         [serverResponse],
         {gdprApplies: true, consentString: 'test&2'},
         '1YYYN',
-        {consent: '1'}
+        {gppString: 'GPP', applicableSections: [2, 4]}
       );
       const { url } = userSyncList[0];
-      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
     });
     it('Should correctly append all consents to the sync url if the url contains query params', function () {
       const userSyncList = spec.getUserSyncs(
@@ -849,10 +867,24 @@ describe('connatixBidAdapter', function () {
         [serverResponse2],
         {gdprApplies: true, consentString: 'test&2'},
         '1YYYN',
-        {consent: '1'}
+        {gppString: 'GPP', applicableSections: [2, 4]}
       );
       const { url } = userSyncList[0];
-      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
+    });
+    it('Should append coppa to the url if coppa is true', function () {
+      config.setConfig({
+        coppa: true
+      });
+      const userSyncList = spec.getUserSyncs(
+        {iframeEnabled: true, pixelEnabled: true},
+        [serverResponse],
+        {gdprApplies: true, consentString: 'test&2'},
+        '1YYYN',
+        {gppString: 'GPP', applicableSections: [2, 4]}
+      );
+      const { url } = userSyncList[0];
+      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4&coppa=1`);
     });
   });
 

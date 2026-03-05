@@ -22,7 +22,7 @@ import {AUDIO, VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
-import adapterManager, {type BidderRequest, type BidRequest} from './adapterManager.js';
+import adapterManager, {activityParams, type BidderRequest, type BidRequest} from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {type Metrics, useMetrics} from './utils/perfMetrics.js';
@@ -36,6 +36,9 @@ import type {TargetingMap} from "./targeting.ts";
 import type {AdUnit} from "./adUnits.ts";
 import type {MediaType} from "./mediaTypes.ts";
 import type {VideoContext} from "./video.ts";
+import { isActivityAllowed } from './activities/rules.js';
+import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
+import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
 
 const { syncUsers } = userSync;
 
@@ -135,6 +138,15 @@ export interface AuctionOptionsConfig {
    * When true, prevent bids from being rendered if TTL is reached. Default is false.
    */
   suppressExpiredRender?: boolean;
+
+  /**
+   * If true, use legacy rendering logic.
+   *
+   * Since Prebid 10.12, `pbjs.renderAd` wraps creatives in an additional iframe. This can cause problems for some creatives
+   * that try to reach the top window and do not expect to find the extra iframe. You may set `legacyRender: true` to revert
+   * to pre-10.12 rendering logic.
+   */
+  legacyRender?: boolean;
 }
 
 export interface PriceBucketConfig {
@@ -243,7 +255,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       done.resolve();
 
       events.emit(EVENTS.AUCTION_END, getProperties());
-      bidsBackCallback(_adUnits, function () {
+      bidsBackCallback(_adUnits, auctionId, function () {
         try {
           if (_callback != null) {
             const bids = _bidsReceived.toArray()
@@ -366,6 +378,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         let requests = 1;
         const source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC) ? 's2s'
           : bidRequest.bidderCode;
+
+        // if the bidder has alwaysHasCapacity flag set and forceMaxRequestsPerOrigin is false, don't check capacity
+        if (bidRequest.alwaysHasCapacity && !config.getConfig('forceMaxRequestsPerOrigin')) {
+          return false;
+        }
+
         // if we have no previous info on this source just let them through
         if (sourceInfo[source]) {
           if (sourceInfo[source].SRA === false) {
@@ -454,7 +472,13 @@ declare module './hook' {
  */
 export const addBidResponse = ignoreCallbackArg(hook('async', function(adUnitCode: string, bid: Partial<Bid>, reject: (reason: (typeof REJECTION_REASON)[keyof typeof REJECTION_REASON]) => void): void {
   if (!isValidPrice(bid)) {
-    reject(REJECTION_REASON.PRICE_TOO_HIGH)
+    reject(REJECTION_REASON.PRICE_TOO_HIGH);
+  } else if (!isActivityAllowed(ACTIVITY_ADD_BID_RESPONSE, activityParams(MODULE_TYPE_BIDDER, bid.bidder || bid.bidderCode, {
+    bid,
+    ortb2: auctionManager.index.getOrtb2(bid),
+    adUnit: auctionManager.index.getAdUnit(bid),
+  }))) {
+    reject(REJECTION_REASON.BIDDER_DISALLOWED);
   } else {
     this.dispatch.call(null, adUnitCode, bid);
   }
@@ -472,7 +496,7 @@ export const addBidderRequests = hook('sync', function(bidderRequests) {
   this.dispatch.call(this.context, bidderRequests);
 }, 'addBidderRequests');
 
-export const bidsBackCallback = hook('async', function (adUnits, callback) {
+export const bidsBackCallback = hook('async', function (adUnits, auctionId, callback) {
   if (callback) {
     callback();
   }

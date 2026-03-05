@@ -39,6 +39,7 @@ export const spec = {
   code: 'sovrn',
   supportedMediaTypes: [BANNER, VIDEO],
   gvlid: 13,
+  alwaysHasCapacity: true,
 
   /**
    * Check if the bid is a valid zone ID in either number or string form
