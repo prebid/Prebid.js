@@ -161,7 +161,7 @@ describe('rakutenBidAdapter', function() {
         pixelEnabled: true
       }
     });
-    it('sucess usersync url', function () {
+    it('success usersync url', function () {
       const result = [];
       result.push({type: 'image', url: 'https://rdn1.test/sync?uid=9876543210'});
       result.push({type: 'image', url: 'https://rdn2.test/sync?uid=9876543210'});

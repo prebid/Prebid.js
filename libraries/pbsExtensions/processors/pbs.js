@@ -30,7 +30,7 @@ export const PBS_PROCESSORS = {
   },
   [IMP]: {
     params: {
-      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params, passed through transformBidParams if necessary
+      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params
       fn: setImpBidParams
     },
     adUnitCode: {
