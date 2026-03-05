@@ -26,16 +26,30 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     return;
   }
 
+  const hasCallback = typeof callback === 'function' || typeof callback?.success == 'function' || typeof callback?.error === 'function';
+
+  function runCallback(cb, err) {
+    if (err == null) {
+      if (typeof cb === 'function') {
+        cb()
+      } else {
+        cb.success?.();
+      }
+    } else {
+      cb.error?.(err);
+    }
+  }
+
   if (!doc) {
     doc = document; // provide a "valid" key for the WeakMap
   }
   // only load each asset once
   const storedCachedObject = getCacheObject(doc, url);
   if (storedCachedObject) {
-    if (callback && typeof callback === 'function') {
+    if (hasCallback) {
       if (storedCachedObject.loaded) {
         // invokeCallbacks immediately
-        callback();
+        runCallback(callback, storedCachedObject.error);
       } else {
         // queue the callback
         storedCachedObject.callbacks.push(callback);
@@ -45,6 +59,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   }
   const cachedDocObj = _requestCache.get(doc) || {};
   const cacheObject = {
+    error: null,
     loaded: false,
     tag: null,
     callbacks: []
@@ -52,7 +67,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   cachedDocObj[url] = cacheObject;
   _requestCache.set(doc, cachedDocObj);
 
-  if (callback && typeof callback === 'function') {
+  if (hasCallback) {
     cacheObject.callbacks.push(callback);
   }
 
@@ -61,7 +76,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     cacheObject.loaded = true;
     try {
       for (let i = 0; i < cacheObject.callbacks.length; i++) {
-        cacheObject.callbacks[i]();
+        runCallback(cacheObject.callbacks[i], cacheObject.error);
       }
     } catch (e) {
       logError('Error executing callback', 'adloader.js:loadExternalScript', e);
@@ -80,6 +95,10 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     if (cacheObject) {
       cacheObject.tag = jptScript;
     }
+    jptScript.addEventListener('error', function (e) {
+      cacheObject.error = e;
+      callback(e);
+    })
 
     if (jptScript.readyState) {
       jptScript.onreadystatechange = function () {
