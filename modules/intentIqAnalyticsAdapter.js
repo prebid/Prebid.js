@@ -343,6 +343,15 @@ function prepareData(data, result) {
     const pos = getUnitPosition(pbjs, data.adUnitCode);
     if (typeof pos === 'number') result.pos = pos;
   }
+  if (data.size) {
+    result.size = data.size;
+  }
+  if (typeof data.pos === 'number') {
+    result.pos = data.pos;
+  } else if (data.adUnitCode) {
+    const pos = getUnitPosition(pbjs, data.adUnitCode);
+    if (typeof pos === 'number') result.pos = pos;
+  }
 
   result.prebidAuctionId = data.auctionId || data.prebidAuctionId;
 
