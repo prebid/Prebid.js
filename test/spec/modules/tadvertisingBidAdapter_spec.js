@@ -423,6 +423,26 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(bid.mediaType).to.deep.equal("video");
     })
+
+    it('should return empty array when response has no body', function () {
+      const bidderRequest = getBidderRequest();
+      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const bidderResponse = { body: {} };
+
+      const interpretedBids = spec.interpretResponse(bidderResponse, bidRequest);
+
+      expect(interpretedBids).to.deep.equal([]);
+    })
+
+    it('should return empty array when response has only id and ext.uss', function () {
+      const bidderRequest = getBidderRequest();
+      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const bidderResponse = { body: { id: '10b1e33f-fddc-4621-a472-d7bff0529cbf', ext: { uss: 1 } } };
+
+      const interpretedBids = spec.interpretResponse(bidderResponse, bidRequest);
+
+      expect(interpretedBids).to.deep.equal([]);
+    })
   });
 
   describe('getUserSyncs', function() {

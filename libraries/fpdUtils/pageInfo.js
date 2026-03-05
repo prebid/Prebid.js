@@ -69,3 +69,12 @@ export function getReferrer(bidRequest = {}, bidderRequest = {}) {
   }
   return pageUrl;
 }
+
+/**
+ * get the document complexity
+ * @param document
+ * @returns {*|number}
+ */
+export function getDomComplexity(document) {
+  return document?.querySelectorAll('*')?.length ?? -1;
+}

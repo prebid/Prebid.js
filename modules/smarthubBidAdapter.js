@@ -25,12 +25,16 @@ const ALIASES = {
   'addigi': {area: '1', pid: '425'},
   'jambojar': {area: '1', pid: '426'},
   'anzu': {area: '1', pid: '445'},
+  'amcom': {area: '1', pid: '397'},
+  'adastra': {area: '1', pid: '33'},
+  'radiantfusion': {area: '1', pid: '455'},
 };
 
 const BASE_URLS = {
   'attekmi': 'https://prebid.attekmi.co/pbjs',
   'smarthub': 'https://prebid.attekmi.co/pbjs',
   'markapp': 'https://markapp-prebid.attekmi.co/pbjs',
+  'markapp-apac': 'https://markapp-apac-prebid.attekmi.co/pbjs',
   'jdpmedia': 'https://jdpmedia-prebid.attekmi.co/pbjs',
   'tredio': 'https://tredio-prebid.attekmi.co/pbjs',
   'felixads': 'https://felixads-prebid.attekmi.co/pbjs',
@@ -40,20 +44,23 @@ const BASE_URLS = {
   'jambojar': 'https://jambojar-prebid.attekmi.co/pbjs',
   'jambojar-apac': 'https://jambojar-apac-prebid.attekmi.co/pbjs',
   'anzu': 'https://anzu-prebid.attekmi.co/pbjs',
+  'amcom': 'https://amcom-prebid.attekmi.co/pbjs',
+  'adastra': 'https://adastra-prebid.attekmi.co/pbjs',
+  'radiantfusion': 'https://radiantfusion-prebid.attekmi.co/pbjs',
 };
 
 const adapterState = {};
 
 const _getPartnerUrl = (partner) => {
   const region = ALIASES[partner]?.region;
-  const partnerRegion = region ? `${partner}-${String(region).toLocaleLowerCase()}` : partner;
+  const partnerName = region ? `${partner}-${String(region).toLocaleLowerCase()}` : partner;
 
   const urls = Object.keys(BASE_URLS);
-  if (urls.includes(partnerRegion)) {
-    return BASE_URLS[partnerRegion];
+  if (urls.includes(partnerName)) {
+    return BASE_URLS[partnerName];
   }
 
-  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerRegion}`;
+  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
 }
 
 const _getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();

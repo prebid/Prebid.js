@@ -28,8 +28,8 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
  */
 const BIDDER_CODE = 'operaads';
 
-const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
-const USER_SYNC_ENDPOINT = 'https://s.adx.opera.com/usersync/page';
+const ENDPOINT = 'https://s.oa.opera.com/ortb/v2/';
+const USER_SYNC_ENDPOINT = 'https://s.oa.opera.com/usersync/page';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 

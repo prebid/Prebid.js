@@ -533,11 +533,6 @@ describe('YieldmoAdapter', function () {
         expect(utils.deepAccess(videoBid, 'params.video')['plcmt']).to.equal(1);
       });
 
-      it('should add start delay if plcmt value is not 1', function () {
-        const videoBid = mockVideoBid({}, {}, { plcmt: 2 });
-        expect(build([videoBid])[0].data.imp[0].video.startdelay).to.equal(0);
-      });
-
       it('should override mediaTypes.video.mimes prop if params.video.mimes is present', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['mimes'] = ['video/mp4'];
         utils.deepAccess(videoBid, 'params.video')['mimes'] = ['video/mkv'];

@@ -40,6 +40,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
+    'karma-safarinative-launcher',
     'karma-coverage',
     'karma-mocha',
     'karma-chai',
@@ -47,14 +48,14 @@ function newPluginsArray(browserstack) {
     'karma-sourcemap-loader',
     'karma-spec-reporter',
     'karma-webpack',
-    'karma-mocha-reporter'
+    'karma-mocha-reporter',
+    '@chiragrupani/karma-chromium-edge-launcher',
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
   }
   plugins.push('karma-firefox-launcher');
   plugins.push('karma-opera-launcher');
-  plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
   return plugins;
 }
@@ -84,13 +85,19 @@ function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
 }
 
 function setBrowsers(karmaConf, browserstack) {
+  karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+  karmaConf.customLaunchers.ChromeNoSandbox = {
+    base: 'ChromeHeadless',
+    // disable sandbox - necessary within Docker and when using versions installed through @puppeteer/browsers
+    flags: ['--no-sandbox']
+  }
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
+      build: process.env.BROWSERSTACK_BUILD_NAME
     }
-    if (process.env.TRAVIS) {
+    if (process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
@@ -99,14 +106,7 @@ function setBrowsers(karmaConf, browserstack) {
   } else {
     var isDocker = require('is-docker')();
     if (isDocker) {
-      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
-      karmaConf.customLaunchers.ChromeCustom = {
-        base: 'ChromeHeadless',
-        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
-        // more permissions than Docker allows by default)
-        flags: ['--no-sandbox']
-      }
-      karmaConf.browsers = ['ChromeCustom'];
+      karmaConf.browsers = ['ChromeNoSandbox'];
     } else {
       karmaConf.browsers = ['ChromeHeadless'];
     }
@@ -174,10 +174,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 1e5, // default 2000
-    browserNoActivityTimeout: 1e5, // default 10000
-    captureTimeout: 3e5, // default 60000,
-    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout: 1e4,
+    browserNoActivityTimeout: 3e4,
+    captureTimeout: 2e4,
+    browserDisconnectTolerance: 5,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins

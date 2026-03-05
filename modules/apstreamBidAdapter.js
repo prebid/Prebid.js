@@ -1,5 +1,6 @@
 import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -335,7 +336,7 @@ function injectPixels(ad, pixels, scripts) {
 }
 
 function getScreenParams() {
-  return `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
+  return `${window.screen.width}x${window.screen.height}@${getDevicePixelRatio(window)}`;
 }
 
 function getBids(bids) {

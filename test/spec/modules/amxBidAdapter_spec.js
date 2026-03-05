@@ -403,6 +403,23 @@ describe('AmxBidAdapter', () => {
         ],
         [
           {
+            all: {
+              bidders: ['amx'],
+            },
+          },
+          { ...base, t: 3 },
+        ],
+        [
+          {
+            all: {
+              bidders: '*',
+              filter: 'include',
+            },
+          },
+          { ...base, t: 3 },
+        ],
+        [
+          {
             image: {
               bidders: ['other'],
             },

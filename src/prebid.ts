@@ -32,17 +32,12 @@ import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {storageCallbacks} from './storageManager.js';
-import adapterManager, {
-  type AliasBidderOptions,
-  type BidRequest,
-  getS2SBidderSet
-} from './adapterManager.js';
+import adapterManager, {type AliasBidderOptions, type BidRequest, getS2SBidderSet} from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
-import type {EventHandler, EventIDs, Event} from "./events.js";
+import type {Event, EventHandler, EventIDs} from "./events.js";
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {type Defer, defer, PbPromise} from './utils/promise.js';
-import {pbYield} from './utils/yield.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
@@ -66,9 +61,10 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
-import {ORTB_AUDIO_PARAMS, fillAudioDefaults} from './audio.ts';
+import {fillAudioDefaults, ORTB_AUDIO_PARAMS} from './audio.ts';
 
 import {getGlobalVarName} from "./buildOptions.ts";
+import {yieldAll} from "./utils/yield.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -102,6 +98,7 @@ declare module './prebidGlobal' {
      */
     delayPrerendering?: boolean
     adUnits: AdUnitDefinition[];
+    pageViewIdPerBidder: Map<string | null, string>
   }
 }
 
@@ -113,6 +110,7 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
+pbjsInstance.pageViewIdPerBidder = pbjsInstance.pageViewIdPerBidder || new Map<string | null, string>();
 
 function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
@@ -156,7 +154,7 @@ export function syncOrtb2(adUnit, mediaType) {
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     } else if (ortbFieldValue === undefined) {
       deepSetValue(adUnit, `ortb2Imp.${mediaType}.${key}`, mediaTypesFieldValue);
-    } else {
+    } else if (!deepEqual(mediaTypesFieldValue, ortbFieldValue)) {
       logWarn(`adUnit ${adUnit.code}: specifies conflicting ortb2Imp.${mediaType}.${key} and mediaTypes.${mediaType}.${key}, the latter will be ignored`, adUnit);
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     }
@@ -483,6 +481,7 @@ declare module './prebidGlobal' {
     setBidderConfig: typeof config.setBidderConfig;
     processQueue: typeof processQueue;
     triggerBilling: typeof triggerBilling;
+    refreshPageViewId: typeof refreshPageViewId;
   }
 }
 
@@ -651,8 +650,7 @@ type RenderAdOptions = {
  * @param  id adId of the bid to render
  * @param options
  */
-async function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
-  await pbYield();
+function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
   renderAdDirect(doc, id, options);
 }
 addApiMethod('renderAd', renderAd);
@@ -769,26 +767,36 @@ declare module './events' {
     /**
      * Fired when `requestBids` is called.
      */
-    [REQUEST_BIDS]: [];
+    [REQUEST_BIDS]: [RequestBidsOptions];
   }
 }
 
 export const requestBids = (function() {
-  const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions): void {
-    let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
-    events.emit(REQUEST_BIDS);
-    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+  function filterAdUnits(adUnits, adUnitCodes) {
     if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
       adUnitCodes = [adUnitCodes];
     }
-    if (adUnitCodes && adUnitCodes.length) {
-      // if specific adUnitCodes supplied filter adUnits for those codes
-      adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
+    if (adUnitCodes == null || (Array.isArray(adUnitCodes) && adUnitCodes.length === 0)) {
+      return {
+        included: adUnits,
+        excluded: [],
+        adUnitCodes: adUnits.map(au => au.code).filter(uniques)
+      }
     } else {
-      // otherwise derive adUnitCodes from adUnits
-      adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+      adUnitCodes = adUnitCodes.filter(uniques);
+      return Object.assign({
+        adUnitCodes
+      }, adUnits.reduce(({included, excluded}, adUnit) => {
+        (adUnitCodes.includes(adUnit.code) ? included : excluded).push(adUnit);
+        return {included, excluded};
+      }, {included: [], excluded: []}))
     }
-    adUnitCodes = adUnitCodes.filter(uniques);
+  }
+
+  const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions): void {
+    let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
+    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+    ({included: adUnits, adUnitCodes} = filterAdUnits(adUnits, adUnitCodes));
     let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
@@ -808,13 +816,30 @@ export const requestBids = (function() {
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    const req = options as PrivRequestBidsOptions;
-    const adUnits = req.adUnits || pbjsInstance.adUnits;
-    req.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
+    const adUnits = options.adUnits || pbjsInstance.adUnits;
+    options.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
-    req.metrics = newMetrics();
-    req.metrics.checkpoint('requestBids');
-    req.defer = defer({ promiseFactory: (r) => new Promise(r)})
+    const metrics = newMetrics();
+    metrics.checkpoint('requestBids');
+
+    const {included, excluded, adUnitCodes} = filterAdUnits(adUnits, options.adUnitCodes);
+
+    events.emit(REQUEST_BIDS, Object.assign(options, {
+      adUnits: included,
+      adUnitCodes
+    }));
+
+    // ad units that were filtered out are re-included here, then filtered out again in `delegate`
+    // this is to avoid breaking requestBids hook that expect all ad units in the request (such as priceFloors)
+
+    const req = Object.assign({}, options, {
+      adUnits: options.adUnits.slice().concat(excluded),
+      // because of this double filtering logic, it's not clear
+      // what it means for an event handler to modify adUnitCodes - so don't allow it
+      adUnitCodes,
+      metrics,
+      defer: defer({promiseFactory: (r) => new Promise(r)})
+    });
     delegate.call(this, req);
     return req.defer.promise;
   })));
@@ -1210,18 +1235,21 @@ function quePush(command) {
   })
 }
 
-async function _processQueue(queue) {
-  for (const cmd of queue) {
-    if (typeof cmd.called === 'undefined') {
-      try {
-        cmd.call();
-        cmd.called = true;
-      } catch (e) {
-        logError('Error processing command :', 'prebid.js', e);
-      }
+function runCommand(cmd) {
+  if (typeof cmd.called === 'undefined') {
+    try {
+      cmd.call();
+      cmd.called = true;
+    } catch (e) {
+      logError('Error processing command :', 'prebid.js', e);
     }
-    await pbYield();
   }
+}
+function _processQueue(queue, cb?) {
+  yieldAll(
+    () => getGlobal().yield ?? true,
+    queue.map(cmd => () => runCommand(cmd)), cb
+  );
 }
 
 /**
@@ -1233,12 +1261,11 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, a
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
-  try {
-    await _processQueue(pbjsInstance.que);
-    await _processQueue(pbjsInstance.cmd);
-  } finally {
-    queSetupComplete.resolve();
-  }
+  _processQueue(pbjsInstance.que, () => {
+    _processQueue(pbjsInstance.cmd, () => {
+      queSetupComplete.resolve();
+    });
+  });
 })
 addApiMethod('processQueue', processQueue, false);
 
@@ -1258,5 +1285,16 @@ function triggerBilling({adId, adUnitCode}: {
     });
 }
 addApiMethod('triggerBilling', triggerBilling);
+
+/**
+ * Refreshes the previously generated page view ID. Can be used to instruct bidders
+ * that use page view ID to consider future auctions as part of a new page load.
+ */
+function refreshPageViewId() {
+  for (const key of pbjsInstance.pageViewIdPerBidder.keys()) {
+    pbjsInstance.pageViewIdPerBidder.set(key, generateUUID());
+  }
+}
+addApiMethod('refreshPageViewId', refreshPageViewId);
 
 export default pbjsInstance;

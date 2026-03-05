@@ -81,6 +81,7 @@ const c_SERVERRESPONSE_B = {
             cid: '01744fbb521e9fb10ffea926190effea',
             crid: 'a13cf884e66e7c660afec059c89d98b6',
             adomain: [
+              'adomain.com'
             ],
           },
         ],
@@ -112,6 +113,7 @@ const c_SERVERRESPONSE_V = {
             cid: '01744fbb521e9fb10ffea926190effea',
             crid: 'a13cf884e66e7c660afec059c89d98b6',
             adomain: [
+              'adomain.com'
             ],
           },
         ],
@@ -384,6 +386,16 @@ describe('Tappx bid adapter', function () {
     it('receive reponse without ad', function () {
       const bids = spec.interpretResponse(emptyServerResponse, c_BIDDERREQUEST_B);
       expect(bids).to.have.lengthOf(0);
+    });
+
+    it('receive reponse with adomain', function () {
+      const bids_B = spec.interpretResponse(c_SERVERRESPONSE_B, c_BIDDERREQUEST_B);
+      const bid_B = bids_B[0];
+      expect(bid_B.meta.advertiserDomains).to.deep.equal(['adomain.com']);
+
+      const bids_V = spec.interpretResponse(c_SERVERRESPONSE_V, c_BIDDERREQUEST_V);
+      const bid_V = bids_V[0];
+      expect(bid_V.meta.advertiserDomains).to.deep.equal(['adomain.com']);
     });
   });
 

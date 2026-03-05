@@ -35,7 +35,7 @@ const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
 const makeUid2OptoutContainer = (token) => ({uid2: {optout: true}});
 let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
-  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug, ...extraSettings
+  userSync: { auctionDelay: extraSettings.auctionDelay ?? auctionDelayMs, ...(extraSettings.syncDelay !== undefined && {syncDelay: extraSettings.syncDelay}), userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug
 });
 const makeOriginalIdentity = (identity, salt = 1) => ({
   identity: utils.cyrb53Hash(identity, salt),

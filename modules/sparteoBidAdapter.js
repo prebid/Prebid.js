@@ -12,7 +12,7 @@ const BIDDER_CODE = 'sparteo';
 const GVLID = 1028;
 const TTL = 60;
 const HTTP_METHOD = 'POST';
-const REQUEST_URL = 'https://bid.sparteo.com/auction';
+const REQUEST_URL = `https://bid.sparteo.com/auction?network_id=\${NETWORK_ID}\${SITE_DOMAIN_QUERY}\${APP_DOMAIN_QUERY}\${BUNDLE_QUERY}`;
 const USER_SYNC_URL_IFRAME = 'https://sync.sparteo.com/sync/iframe.html?from=prebidjs';
 let isSynced = window.sparteoCrossfire?.started || false;
 
@@ -25,14 +25,25 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    deepSetValue(request, 'site.publisher.ext.params.pbjsVersion', '$prebid.version$');
-
-    if (bidderRequest.bids[0].params.networkId) {
-      request.site.publisher.ext.params.networkId = bidderRequest.bids[0].params.networkId;
+    if (!!(bidderRequest?.ortb2?.site) && !!(bidderRequest?.ortb2?.app)) {
+      request.site = bidderRequest.ortb2.site;
+      delete request.app;
     }
 
-    if (bidderRequest.bids[0].params.publisherId) {
-      request.site.publisher.ext.params.publisherId = bidderRequest.bids[0].params.publisherId;
+    const hasSite = !!request.site;
+    const hasApp = !!request.app;
+    const root = hasSite ? 'site' : (hasApp ? 'app' : null);
+
+    if (root) {
+      deepSetValue(request, `${root}.publisher.ext.params.pbjsVersion`, '$prebid.version$');
+      const networkId = bidderRequest?.bids?.[0]?.params?.networkId;
+      if (networkId) {
+        deepSetValue(request, `${root}.publisher.ext.params.networkId`, networkId);
+      }
+      const pubId = bidderRequest?.bids?.[0]?.params?.publisherId;
+      if (pubId) {
+        deepSetValue(request, `${root}.publisher.ext.params.publisherId`, pubId);
+      }
     }
 
     return request;
@@ -105,6 +116,57 @@ function outstreamRender(bid) {
   });
 }
 
+function replaceMacros(payload, endpoint) {
+  const networkId =
+    payload?.site?.publisher?.ext?.params?.networkId ??
+    payload?.app?.publisher?.ext?.params?.networkId;
+
+  let siteDomain;
+  let appDomain;
+  let bundle;
+
+  if (payload?.site) {
+    siteDomain = payload.site?.domain;
+    if (!siteDomain && payload.site?.page) {
+      try { siteDomain = new URL(payload.site.page).hostname; } catch (e) { }
+    }
+    if (siteDomain) {
+      siteDomain = siteDomain.trim().split('/')[0].split(':')[0].replace(/^www\./, '');
+    } else {
+      logWarn('Domain not found. Missing the site.domain or the site.page field');
+      siteDomain = 'unknown';
+    }
+  } else if (payload?.app) {
+    appDomain = payload.app?.domain || '';
+    if (appDomain) {
+      appDomain = appDomain.trim().split('/')[0].split(':')[0].replace(/^www\./, '');
+    } else {
+      appDomain = 'unknown';
+    }
+
+    const raw = payload.app?.bundle ?? '';
+    const trimmed = String(raw).trim();
+    if (!trimmed || trimmed.toLowerCase() === 'null') {
+      logWarn('Bundle not found. Missing the app.bundle field.');
+      bundle = 'unknown';
+    } else {
+      bundle = trimmed;
+    }
+  }
+
+  const macroMap = {
+    NETWORK_ID: networkId ?? '',
+    BUNDLE_QUERY: payload?.app ? (bundle ? `&bundle=${encodeURIComponent(bundle)}` : '') : '',
+    SITE_DOMAIN_QUERY: siteDomain ? `&site_domain=${encodeURIComponent(siteDomain)}` : '',
+    APP_DOMAIN_QUERY: appDomain ? `&app_domain=${encodeURIComponent(appDomain)}` : ''
+  };
+
+  return endpoint.replace(
+    /\$\{(NETWORK_ID|SITE_DOMAIN_QUERY|APP_DOMAIN_QUERY|BUNDLE_QUERY)\}/g,
+    (_, key) => String(macroMap[key] ?? '')
+  );
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -166,9 +228,12 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const payload = converter.toORTB({bidRequests, bidderRequest})
 
+    const endpoint = bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL;
+    const url = replaceMacros(payload, endpoint);
+
     return {
       method: HTTP_METHOD,
-      url: bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL,
+      url: url,
       data: payload
     };
   },

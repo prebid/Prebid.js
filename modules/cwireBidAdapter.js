@@ -2,7 +2,6 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { getStorageManager } from "../src/storageManager.js";
 import { BANNER } from "../src/mediaTypes.js";
 import {
-  generateUUID,
   getParameterByName,
   isNumber,
   logError,
@@ -26,11 +25,6 @@ const CWID_KEY = "cw_cwid";
 export const BID_ENDPOINT = "https://prebid.cwi.re/v1/bid";
 export const EVENT_ENDPOINT = "https://prebid.cwi.re/v1/event";
 export const GVL_ID = 1081;
-
-/**
- * Allows limiting ad impressions per site render. Unique per prebid instance ID.
- */
-export const pageViewId = generateUUID();
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -248,7 +242,7 @@ export const spec = {
       slots: processed,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
-      pageViewId: pageViewId,
+      pageViewId: bidderRequest.pageViewId,
       networkBandwidth: getConnectionDownLink(window.navigator),
       sdk: {
         version: "$prebid.version$",

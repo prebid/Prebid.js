@@ -143,18 +143,32 @@ registerBidder(spec);
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
- * @returns {number} floor by imp type
+ * @returns {number|null} floor value, or null if not available
  */
 function applyFloor(slot) {
-  const floors = [];
+  // If Price Floors module is available, use it
   if (typeof slot.getFloor === 'function') {
-    Object.keys(slot.mediaTypes).forEach(type => {
-      if (SUPPORTED_MEDIA_TYPES.includes(type)) {
-        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' })?.floor);
+    try {
+      const floor = slot.getFloor({
+        currency: DEFAULT_CURRENCY_ARR[0],
+        mediaType: '*',
+        size: '*'
+      });
+
+      if (floor && floor.currency === DEFAULT_CURRENCY_ARR[0] && !isNaN(parseFloat(floor.floor))) {
+        return floor.floor;
       }
-    });
+    } catch (e) {
+      logError('RTB House: Error calling getFloor:', e);
+    }
   }
-  return floors.length > 0 ? Math.max(...floors) : parseFloat(slot.params.bidfloor);
+
+  // Fallback to bidfloor param if available
+  if (slot.params.bidfloor && !isNaN(parseFloat(slot.params.bidfloor))) {
+    return parseFloat(slot.params.bidfloor);
+  }
+
+  return null;
 }
 
 /**

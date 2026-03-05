@@ -39,6 +39,16 @@ sinon.useFakeXMLHttpRequest = fakeXhr.useFakeXMLHttpRequest.bind(fakeXhr);
 sinon.createFakeServer = fakeServer.create.bind(fakeServer);
 sinon.createFakeServerWithClock = fakeServerWithClock.create.bind(fakeServerWithClock);
 
+localStorage.clear();
+
+if (window.frameElement != null) {
+  // sometimes (e.g. chrome headless) the tests run in an iframe that is offset from the top window
+  // other times (e.g. browser debug page) they run in the top window
+  // this can cause inconsistencies with the percentInView libraries; if we are in a frame,
+  // fake the same dimensions as the top window
+  window.frameElement.getBoundingClientRect = () => window.top.getBoundingClientRect();
+}
+
 require('test/helpers/global_hooks.js');
 require('test/helpers/consentData.js');
 require('test/helpers/prebidGlobal.js');

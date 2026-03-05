@@ -344,17 +344,17 @@ describe('RTBHouseAdapter', () => {
       expect(data.source.tid).to.equal('bidderrequest-auction-id');
     });
 
-    it('should include bidfloor from floor module if avaiable', () => {
+    it('should include bidfloor from floor module if available', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].getFloor = () => ({floor: 1.22});
+      bidRequest[0].getFloor = () => ({floor: 1.22, currency: 'USD'});
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(1.22)
     });
 
-    it('should use bidfloor from floor module if both floor module and bid floor avaiable', () => {
+    it('should use bidfloor from floor module if both floor module and bid floor available', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].getFloor = () => ({floor: 1.22});
+      bidRequest[0].getFloor = () => ({floor: 1.22, currency: 'USD'});
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);

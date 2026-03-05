@@ -33,6 +33,7 @@ describe('51DegreesRtdProvider', function() {
     devicetype: 'Desktop',
     pixelratio: 1,
     deviceid: '17595-131215-132535-18092',
+    thirdpartycookiesenabled: 'True',
   };
 
   const fiftyOneDegreesDeviceX2scaling = {
@@ -61,6 +62,10 @@ describe('51DegreesRtdProvider', function() {
       pxratio: 1,
       ext: {
         fiftyonedegrees_deviceId: '17595-131215-132535-18092',
+        fod: {
+          deviceId: '17595-131215-132535-18092',
+          tpc: 1,
+        },
       },
     },
   };
@@ -362,7 +367,8 @@ describe('51DegreesRtdProvider', function() {
     it('does not set the deviceid if it is not provided', function() {
       const device = {...fiftyOneDegreesDevice};
       delete device.deviceid;
-      expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('ext');
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext).to.not.have.any.keys('fiftyonedegrees_deviceId');
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext.fod).to.not.have.any.keys('deviceId');
     });
 
     it('sets the model to hardwarename if hardwaremodel is not provided', function() {
@@ -399,6 +405,19 @@ describe('51DegreesRtdProvider', function() {
         h: expectedORTB2DeviceResult.device.h,
         w: expectedORTB2DeviceResult.device.w,
       });
+    });
+
+    it('does not set the tpc if thirdpartycookiesenabled is "Unknown"', function () {
+      const device = { ...fiftyOneDegreesDevice };
+      device.thirdpartycookiesenabled = 'Unknown';
+      expect(convert51DegreesDeviceToOrtb2(device).device.ext.fod).to.not.have.any.keys('tpc');
+    });
+
+    it('sets the tpc if thirdpartycookiesenabled is "True" or "False"', function () {
+      const deviceTrue = { ...fiftyOneDegreesDevice, thirdpartycookiesenabled: 'True' };
+      const deviceFalse = { ...fiftyOneDegreesDevice, thirdpartycookiesenabled: 'False' };
+      expect(convert51DegreesDeviceToOrtb2(deviceTrue).device.ext.fod).to.deep.include({ tpc: 1 });
+      expect(convert51DegreesDeviceToOrtb2(deviceFalse).device.ext.fod).to.deep.include({ tpc: 0 });
     });
   });
 

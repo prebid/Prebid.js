@@ -127,6 +127,23 @@ describe('banner', () => {
       assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting btype');
     });
 
+    it('should not warn if fields match', () => {
+      const adUnit = {
+        mediaTypes: {
+          banner: {
+            format: [{wratio: 1, hratio: 1}]
+          }
+        },
+        ortb2Imp: {
+          banner: {
+            format: [{wratio: 1, hratio: 1}]
+          }
+        }
+      }
+      syncOrtb2(adUnit, 'banner');
+      sinon.assert.notCalled(logWarnSpy);
+    })
+
     it('should omit sync if mediaType not present on adUnit', () => {
       const adUnit = {
         mediaTypes: {
