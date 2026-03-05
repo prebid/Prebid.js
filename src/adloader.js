@@ -26,7 +26,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     return;
   }
 
-  const hasCallback = typeof callback === 'function' || typeof callback?.success == 'function' || typeof callback?.error === 'function';
+  const hasCallback = typeof callback === 'function' || typeof callback?.success === 'function' || typeof callback?.error === 'function';
 
   function runCallback(cb, err) {
     if (err == null) {
