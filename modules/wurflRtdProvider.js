@@ -105,6 +105,15 @@ let tier;
 // overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
 let overQuota;
 
+// UACH (User-Agent Client Hints) high-entropy hints to collect
+const UACH_HINTS = ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList'];
+
+// uachPromise holds the pending UACH collection promise, started in init()
+let uachPromise = null;
+
+// resolvedUACH holds the resolved UACH data for synchronous access in onAuctionEndEvent
+let resolvedUACH = null;
+
 /**
  * Safely gets an object from localStorage with JSON parsing
  * @param {string} key The storage key
@@ -231,6 +240,13 @@ function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
  * @param {Set} bidders Set of bidder codes
  */
 function loadWurflJsAsync(config, bidders) {
+  // Collect UACH once: reuse existing promise or start new collection
+  if (!uachPromise && navigator?.userAgentData?.getHighEntropyValues) {
+    uachPromise = navigator.userAgentData.getHighEntropyValues(UACH_HINTS)
+      .then(ch => { resolvedUACH = ch; return ch; })
+      .catch(() => null);
+  }
+
   const altHost = config.params?.altHost ?? null;
   const isDebug = debugTurnedOn();
 
@@ -285,10 +301,9 @@ function loadWurflJsAsync(config, bidders) {
     }
   };
 
-  // Collect Client Hints if available, then load script
-  if (navigator?.userAgentData?.getHighEntropyValues) {
-    const hints = ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList'];
-    navigator.userAgentData.getHighEntropyValues(hints)
+  // Use shared UACH promise if available, otherwise load immediately
+  if (uachPromise) {
+    uachPromise
       .then(ch => {
         if (ch !== null) {
           url.searchParams.set('uach', JSON.stringify(ch));
@@ -1116,6 +1131,8 @@ const init = (config, userConsent) => {
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
+  resolvedUACH = null;
+  uachPromise = null;
 
   logger.logMessage('initialized', { version: MODULE_VERSION });
 
@@ -1380,7 +1397,8 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     tier: tier,
     over_quota: overQuota,
     consent_class: consentClass,
-    ad_units: adUnits
+    ad_units: adUnits,
+    uach: resolvedUACH
   };
 
   // Add A/B test fields if enabled
@@ -1421,6 +1439,11 @@ export const wurflSubmodule = {
   getBidRequestData,
   onAuctionEndEvent,
 }
+
+// Exported for testing only
+export const __testing__ = {
+  setResolvedUACH: (value) => { resolvedUACH = value; },
+};
 
 // Register the WURFL submodule as submodule of realTimeData
 submodule(REAL_TIME_MODULE, wurflSubmodule);

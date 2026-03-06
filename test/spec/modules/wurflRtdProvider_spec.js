@@ -1,6 +1,7 @@
 import {
   wurflSubmodule,
-  storage
+  storage,
+  __testing__
 } from 'modules/wurflRtdProvider';
 import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
@@ -2416,6 +2417,96 @@ describe('wurflRtdProvider', function () {
           value: originalGetDeviceInfo,
           configurable: true
         });
+      });
+    });
+
+    describe('onAuctionEndEvent: UACH in beacon payload', () => {
+      beforeEach(() => {
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
+          getHighestCpmBids: () => []
+        });
+      });
+
+      afterEach(() => {
+        __testing__.setResolvedUACH(null);
+      });
+
+      it('should include UACH data in beacon payload when client hints are resolved', (done) => {
+        const mockClientHints = {
+          architecture: 'arm',
+          bitness: '64',
+          model: 'Pixel 5',
+          platformVersion: '13.0.0',
+          uaFullVersion: '130.0.6723.58',
+          fullVersionList: [
+            { brand: 'Chromium', version: '130.0.6723.58' }
+          ]
+        };
+
+        // Inject resolved UACH directly (avoids Chrome Headless mock issues)
+        __testing__.setResolvedUACH(mockClientHints);
+
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          const auctionDetails = {
+            bidsReceived: [],
+            adUnits: [{
+              code: 'ad1',
+              bids: [{ bidder: 'bidder1' }]
+            }]
+          };
+
+          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+          expect(sendBeaconStub.calledOnce).to.be.true;
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.have.property('uach');
+          expect(payload.uach).to.deep.equal(mockClientHints);
+
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set uach to null in beacon payload when client hints are not available', (done) => {
+        // resolvedUACH is already null from init()
+
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          const auctionDetails = {
+            bidsReceived: [],
+            adUnits: [{
+              code: 'ad1',
+              bids: [{ bidder: 'bidder1' }]
+            }]
+          };
+
+          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+          expect(sendBeaconStub.calledOnce).to.be.true;
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.have.property('uach', null);
+
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
     });
   });
