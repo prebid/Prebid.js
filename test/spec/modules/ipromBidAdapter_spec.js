@@ -252,6 +252,34 @@ describe('iPROM Adapter', function () {
       expect(requests[0].data.source.ext.schain).to.deep.equal(schain);
     });
 
+    it('should include referer info in ORTB request site.ext when present', function () {
+      const bidRequestsWithOrtb = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, ortb: true }
+      }));
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequest);
+
+      expect(requests[0].data.site.ext.reachedTop).to.equal(true);
+      expect(requests[0].data.site.ext.numIframes).to.equal(1);
+      expect(requests[0].data.site.ext.stack).to.deep.equal([
+        'https://adserver.si/index.html',
+        'https://adserver.si/iframe1.html',
+      ]);
+    });
+
+    it('should not add referer ext fields to ORTB request when refererInfo is missing', function () {
+      const bidRequestsWithOrtb = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, ortb: true }
+      }));
+      const bidderRequestWithoutReferer = { ...bidderRequest, refererInfo: undefined };
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequestWithoutReferer);
+
+      expect(requests[0].data.site?.ext?.reachedTop).to.be.undefined;
+      expect(requests[0].data.site?.ext?.numIframes).to.be.undefined;
+      expect(requests[0].data.site?.ext?.stack).to.be.undefined;
+    });
+
     it('should group bids with different endpoints into separate requests', function () {
       const bidRequest1 = {
         ...bidRequests[0],

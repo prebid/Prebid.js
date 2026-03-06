@@ -13,6 +13,24 @@ const converter = ortbConverter({
   context: {
     netRevenue: DEFAULT_NETREVENUE,
     ttl: DEFAULT_TTL
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    const refererInfo = bidderRequest?.refererInfo;
+
+    if (refererInfo) {
+      const ext = {};
+      if (refererInfo.reachedTop != null) ext.reachedTop = refererInfo.reachedTop;
+      if (refererInfo.numIframes != null) ext.numIframes = refererInfo.numIframes;
+      if (refererInfo.stack != null) ext.stack = refererInfo.stack;
+
+      if (Object.keys(ext).length) {
+        if (!request.site) request.site = {};
+        request.site.ext = Object.assign({}, request.site.ext, ext);
+      }
+    }
+
+    return request;
   }
 });
 
