@@ -6,6 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
