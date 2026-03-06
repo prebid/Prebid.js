@@ -14,22 +14,13 @@ const GVLID = 596;
 
 // Internal state to store keyValues
 let keyValues = {};
-
-/** @type {RtdSubmodule} */
-export const subModuleObj = {
-  name: MODULE_NAME,
-  gvlid: GVLID,
-  init: init,
-  getBidRequestData: getBidRequestData,
-  getTargetingData: getTargetingData
-};
+let apiCallPromise = null;
 
 export const insurAdsRtdProvider = {
   name: MODULE_NAME,
   gvlid: GVLID,
   init: init,
   getBidRequestData: getBidRequestData,
-  getTargetingData: getTargetingData
 };
 
 function init(config, userConsent) {
@@ -41,7 +32,7 @@ function init(config, userConsent) {
   }
 
   // Start fetch immediately without blocking init
-  makeApiCall(publicId);
+  apiCallPromise = makeApiCall(publicId);
 
   logInfo(LOG_PREFIX + 'submodule init', config, userConsent);
   return true;
@@ -50,7 +41,7 @@ function init(config, userConsent) {
 function makeApiCall(publicId) {
   const currentUrl = encodeURIComponent(location.href);
 
-  fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
+  return fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
     keepalive: true,
     credentials: 'include',
     method: 'GET',
@@ -76,46 +67,40 @@ function makeApiCall(publicId) {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   logInfo(LOG_PREFIX + 'submodule getBidRequestData', reqBidsConfigObj, config, userConsent);
 
-  // Enrich bid requests with RTD data for insurads bidder
-  if (keyValues && Object.keys(keyValues).length > 0) {
-    reqBidsConfigObj.adUnits.forEach(adUnit => {
-      adUnit.bids.forEach(bid => {
-        if (bid.bidder === 'insurads') {
-          // Add RTD data to bid params so it can be accessed by the adapter
-          bid.params = bid.params || {};
+  // Wait for API call to complete before enriching bid requests
+  const timeout = config?.params?.timeout || 1000; // Default 1 second timeout
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, timeout));
 
-          bid.params.rtdData = keyValues;
-          logInfo(LOG_PREFIX + 'Enriched bid request for insurads', bid.params.rtdData);
-        }
-      });
+  Promise.race([apiCallPromise, timeoutPromise])
+    .then(() => {
+      // Enrich bid requests with RTD data for insurads bidder
+      if (keyValues && Object.keys(keyValues).length > 0) {
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            if (bid.bidder === 'insurads') {
+              // Add RTD data to bid params so it can be accessed by the adapter
+              bid.params = bid.params || {};
+
+              bid.params.rtdData = keyValues;
+              logInfo(LOG_PREFIX + 'Enriched bid request for insurads', bid.params.rtdData);
+            }
+          });
+        });
+      } else {
+        logInfo(LOG_PREFIX + 'No keyValues available for bid enrichment');
+      }
+
+      callback();
+    })
+    .catch((_e) => {
+      logInfo(LOG_PREFIX + 'Error waiting for API call');
+      callback();
     });
-  } else {
-    logInfo(LOG_PREFIX + 'No keyValues available for bid enrichment');
-  }
-
-  callback();
-}
-
-function getTargetingData(adUnitCodes, config, userConsent, auctionDetails) {
-  logInfo(LOG_PREFIX + 'submodule getTargetingData', adUnitCodes, config, userConsent);
-  const targetingData = {};
-
-  // Use the keyValues from the API response stored internally
-  if (!keyValues || Object.keys(keyValues).length === 0) {
-    logInfo(LOG_PREFIX + 'No keyValues available to set targeting data');
-    return targetingData;
-  }
-
-  adUnitCodes.forEach(code => {
-    targetingData[code] = keyValues;
-  });
-
-  return targetingData;
 }
 
 function beforeInit() {
   // take actions to get data as soon as possible
-  submodule('realTimeData', subModuleObj);
+  submodule('realTimeData', insurAdsRtdProvider);
 }
 
 beforeInit();

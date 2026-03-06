@@ -101,8 +101,9 @@ const converter = ortbConverter({
     // Get RTD data from bid params (set by insuradsRtdProvider)
     const rtdData = (context.bidRequest?.params as InsurAdsBidParams)?.rtdData || {};
 
-    // Add adserverTargeting with RTD keyValues
+    // Merge RTD keyValues with existing adserverTargeting
     bidResponse.adserverTargeting = {
+      ...bidResponse.adserverTargeting,
       ...rtdData
     };
     return bidResponse;
