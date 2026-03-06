@@ -163,7 +163,13 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
-    source: { tid: bidderRequest.ortb2?.source?.tid }
+    source: { tid: bidderRequest.ortb2?.source?.tid },
+    //FIXME: remove for prod
+    ext: {
+      impactify: {
+        formatOutput: 'json'
+      }
+    }
   };
 
   // Get the url parameters
@@ -335,8 +341,7 @@ export const spec = {
           ...seatbid.bid
             .filter((bid) => bid.price > 0)
             .map((bid) => {
-              const isInstream = impMap[bid.impid]?.video?.context === 'instream';
-              const isVast = bid.vastUrl || bid.vastXml;
+              const isPlayer = impMap[bid.impid]?.ext?.impactify?.format === 'player';
               return {
                 id: bid.id,
                 requestId: bid.impid,
@@ -354,11 +359,11 @@ export const spec = {
                     bid.adomain && bid.adomain.length ? bid.adomain : [],
                 },
 
-                ...(isInstream && isVast
+                ...(isPlayer
                   ? {
                       mediaType: "video",
                       vastUrl: bid.vastUrl,
-                      vastXml: bid.vastXml,
+                      vastXml: bid.vastXml || bid.adm,
                     }
                   : {
                       ad: bid.adm,
