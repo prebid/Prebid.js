@@ -4,7 +4,7 @@ import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } fro
 
 const BIDDER_CODE = 'adsmovil';
 const AD_URL = 'https://tag-ssp.adsmovil.com/pbjs';
-const SYNC_URL = 'http://sync-ssp.adsmovil.com';
+const SYNC_URL = 'https://sync-ssp.adsmovil.com';
 
 export const spec = {
   code: BIDDER_CODE,

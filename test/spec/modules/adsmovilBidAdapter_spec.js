@@ -484,7 +484,7 @@ describe('AdsmovilBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('http://sync-ssp.adsmovil.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal('https://sync-ssp.adsmovil.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, '1---');
@@ -493,7 +493,7 @@ describe('AdsmovilBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('http://sync-ssp.adsmovil.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal('https://sync-ssp.adsmovil.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, undefined, {
@@ -505,7 +505,7 @@ describe('AdsmovilBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('http://sync-ssp.adsmovil.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
+      expect(syncData[0].url).to.equal('https://sync-ssp.adsmovil.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
     });
   });
 });
