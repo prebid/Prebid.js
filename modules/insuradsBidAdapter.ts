@@ -1,4 +1,4 @@
-import { deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
+import { deepSetValue, generateUUID, logError } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
