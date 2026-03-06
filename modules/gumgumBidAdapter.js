@@ -288,6 +288,8 @@ function _getDeviceData(ortb2Data) {
     model: _device.model,
     ppi: _device.ppi,
     pxratio: _device.pxratio,
+    lmt: _device.lmt,
+    ifa: _device.ifa,
     foddid: _device?.ext?.fiftyonedegrees_deviceId,
   };
 
