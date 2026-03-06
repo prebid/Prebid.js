@@ -95,21 +95,28 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     if (cacheObject) {
       cacheObject.tag = jptScript;
     }
-    jptScript.addEventListener('error', function (e) {
+
+    function errorListener(e) {
       cacheObject.error = e;
-      callback(e);
-    })
+      exit();
+    }
+    jptScript.addEventListener('error', errorListener)
+
+    function exit() {
+      jptScript.removeEventListener('error', errorListener);
+      callback();
+    }
 
     if (jptScript.readyState) {
       jptScript.onreadystatechange = function () {
         if (jptScript.readyState === 'loaded' || jptScript.readyState === 'complete') {
           jptScript.onreadystatechange = null;
-          callback();
+          exit();
         }
       };
     } else {
       jptScript.onload = function () {
-        callback();
+        exit();
       };
     }
 

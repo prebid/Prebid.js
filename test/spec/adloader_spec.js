@@ -62,14 +62,17 @@ describe('adLoader', function () {
       sinon.assert.called(callback.success);
     });
 
-    it('should run error callback', () => {
+    it('should run error callback once', () => {
       const callback = {
         error: sinon.stub()
       }
       adLoader.loadExternalScript('test-3', MODULE_TYPE_PREBID, 'debugging', callback);
       const ev = new Event('error');
       scriptEl.dispatchEvent(ev);
-    })
+      scriptEl.dispatchEvent(ev);
+      sinon.assert.calledWith(callback.error, ev);
+      sinon.assert.calledOnce(callback.error);
+    });
 
     it('requires a url to be included once per document', function () {
       function getDocSpec() {
