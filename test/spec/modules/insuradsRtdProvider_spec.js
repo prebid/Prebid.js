@@ -99,11 +99,21 @@ describe('insurAdsRtdProvider', function () {
 
       insurAdsRtdProvider.init(sampleConfig);
 
-      // Give the promise time to resolve
+      // Give the promise time to resolve and then verify bid request enrichment
       setTimeout(() => {
-        const targetingData = insurAdsRtdProvider.getTargetingData(['ad-unit-1']);
-        expect(targetingData['ad-unit-1']).to.deep.equal(sampleKeyValues);
-        done();
+        const reqBidsConfigObj = {
+          adUnits: [{
+            code: 'ad-unit-1',
+            ortb2Imp: {
+              ext: {}
+            }
+          }]
+        };
+
+        insurAdsRtdProvider.getBidRequestData(reqBidsConfigObj, () => {
+          expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.insurads).to.deep.equal(sampleKeyValues);
+          done();
+        }, sampleConfig);
       }, 50);
     });
 
