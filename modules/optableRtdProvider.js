@@ -170,8 +170,19 @@ const getCachedTargeting = () => {
     try {
       const parsedData = JSON.parse(cacheData);
       const eidCount = parsedData?.ortb2?.user?.eids?.length || 0;
-      logMessage(`Found cached targeting with ${eidCount} EIDs`);
-      return eidCount > 0 ? parsedData : null;
+      const splitTestAssignment = parsedData?.split_test_assignment;
+
+      // Use cache if we have EIDs OR if split_test_assignment is "test"
+      if (eidCount > 0) {
+        logMessage(`Found cached targeting with ${eidCount} EIDs`);
+        return parsedData;
+      } else if (splitTestAssignment === 'test') {
+        logMessage(`Found cached targeting with split_test_assignment="${splitTestAssignment}" (no EIDs)`);
+        return parsedData;
+      }
+
+      logMessage(`Ignoring cached targeting: ${eidCount} EIDs, split_test_assignment="${splitTestAssignment || 'none'}"`);
+      return null;
     } catch (e) {
       logWarn('Failed to parse cached targeting', e);
     }
