@@ -50,6 +50,7 @@ function makeApiCall(publicId) {
     }
   }).then((response) => {
     if (!response.ok) {
+      keyValues = {};
       throw new Error('Network response was not ok');
     }
     return response.json();
@@ -58,9 +59,13 @@ function makeApiCall(publicId) {
     if (data && data.keyValues) {
       keyValues = data.keyValues;
       logInfo(LOG_PREFIX + 'Received keyValues from endpoint', data.keyValues);
+    } else {
+      keyValues = {};
+      logInfo(LOG_PREFIX + 'No keyValues in response, cleared cached values');
     }
   }).catch((_e) => {
-    // ignore errors for now
+    keyValues = {};
+    logInfo(LOG_PREFIX + 'API call failed, cleared cached keyValues');
   });
 }
 
