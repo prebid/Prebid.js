@@ -737,6 +737,7 @@ const spec = {
               },
               netRevenue: true,
               vurls,
+              eventtrackers: vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
