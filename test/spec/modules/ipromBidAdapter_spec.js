@@ -113,44 +113,113 @@ describe('iPROM Adapter', function () {
 
       expect(isValid).to.equal(false);
     });
+
+    it('should reject bid if endpoint param is not a valid URL', function () {
+      const invalidBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          endpoint: 'not-a-valid-url',
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(invalidBid);
+
+      expect(isValid).to.equal(false);
+    });
+
+    it('should accept bid if endpoint param is a valid URL', function () {
+      const validBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          endpoint: 'https://custom.iprom.net/programmatic',
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(validBid);
+
+      expect(isValid).to.equal(true);
+    });
+
+    it('should reject bid if ortb param is not a boolean', function () {
+      const invalidBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          ortb: 'true',
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(invalidBid);
+
+      expect(isValid).to.equal(false);
+    });
+
+    it('should accept bid if ortb param is true', function () {
+      const validBid = {
+        bidder: 'iprom',
+        params: {
+          id: '1234',
+          ortb: true,
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(validBid);
+
+      expect(isValid).to.equal(true);
+    });
   });
 
   describe('building requests', function () {
     it('should go to correct endpoint', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(request.method).to.exist;
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.exist;
-      expect(request.url).to.equal('https://core.iprom.net/programmatic');
+      expect(requests).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].method).to.exist;
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.exist;
+      expect(requests[0].url).to.equal('https://core.iprom.net/programmatic');
     });
 
-    it('should use custom endpoint from global bidder config', function () {
-      config.setConfig({
-        iprom: {
-          endpoint: 'https://global.iprom.net/programmatic'
-        }
-      });
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+    it('should use custom endpoint from ad unit params with legacy format', function () {
+      const bidRequestsWithCustomEndpoint = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, endpoint: 'https://global.iprom.net/programmatic' }
+      }));
+      const requests = spec.buildRequests(bidRequestsWithCustomEndpoint, bidderRequest);
 
-      expect(request.url).to.equal('https://global.iprom.net/programmatic');
-      expect(request.ortb).to.equal(true);
-      expect(request.data).to.be.an('object');
-      expect(request.data.imp).to.be.an('array').with.lengthOf(1);
-      expect(request.data.bids).to.be.undefined;
+      expect(requests[0].url).to.equal('https://global.iprom.net/programmatic');
+      expect(requests[0].ortb).to.be.undefined;
+      expect(requests[0].data).to.be.a('string');
     });
 
-    it('should ignore invalid custom endpoint and use default endpoint', function () {
-      config.setConfig({
-        iprom: {
-          endpoint: 'not-a-valid-url'
-        }
-      });
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+    it('should use ORTB format when ortb param is true', function () {
+      const bidRequestsWithOrtb = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, ortb: true }
+      }));
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequest);
 
-      expect(request.url).to.equal('https://core.iprom.net/programmatic');
-      expect(request.ortb).to.be.undefined;
-      expect(request.data).to.be.a('string');
+      expect(requests[0].url).to.equal('https://core.iprom.net/programmatic');
+      expect(requests[0].ortb).to.equal(true);
+      expect(requests[0].data).to.be.an('object');
+      expect(requests[0].data.imp).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].data.bids).to.be.undefined;
+    });
+
+    it('should use custom endpoint with ORTB format when both endpoint and ortb params are set', function () {
+      const bidRequestsWithBoth = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, endpoint: 'https://global.iprom.net/programmatic', ortb: true }
+      }));
+      const requests = spec.buildRequests(bidRequestsWithBoth, bidderRequest);
+
+      expect(requests[0].url).to.equal('https://global.iprom.net/programmatic');
+      expect(requests[0].ortb).to.equal(true);
+      expect(requests[0].data).to.be.an('object');
+      expect(requests[0].data.imp).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].data.bids).to.be.undefined;
     });
 
     it('should include schain in ORTB request when present in bidderRequest.ortb2', function () {
@@ -163,11 +232,10 @@ describe('iPROM Adapter', function () {
           hp: 1
         }]
       };
-      config.setConfig({
-        iprom: {
-          endpoint: 'https://global.iprom.net/programmatic'
-        }
-      });
+      const bidRequestsWithOrtb = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, endpoint: 'https://global.iprom.net/programmatic', ortb: true }
+      }));
       const bidderRequestWithGlobalSchain = {
         ...bidderRequest,
         ortb2: {
@@ -179,14 +247,76 @@ describe('iPROM Adapter', function () {
         }
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequestWithGlobalSchain);
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequestWithGlobalSchain);
 
-      expect(request.data.source.ext.schain).to.deep.equal(schain);
+      expect(requests[0].data.source.ext.schain).to.deep.equal(schain);
+    });
+
+    it('should group bids with different endpoints into separate requests', function () {
+      const bidRequest1 = {
+        ...bidRequests[0],
+        bidId: 'bid1',
+        params: { ...bidRequests[0].params, endpoint: 'https://endpoint1.iprom.net/programmatic' }
+      };
+      const bidRequest2 = {
+        ...bidRequests[0],
+        bidId: 'bid2',
+        params: { ...bidRequests[0].params, endpoint: 'https://endpoint2.iprom.net/programmatic' }
+      };
+      const requests = spec.buildRequests([bidRequest1, bidRequest2], bidderRequest);
+
+      expect(requests).to.be.an('array').with.lengthOf(2);
+      const urls = requests.map(r => r.url);
+      expect(urls).to.include('https://endpoint1.iprom.net/programmatic');
+      expect(urls).to.include('https://endpoint2.iprom.net/programmatic');
+    });
+
+    it('should group bids with same endpoint but different ortb into separate requests', function () {
+      const bidRequest1 = {
+        ...bidRequests[0],
+        bidId: 'bid1',
+        params: { ...bidRequests[0].params, ortb: true }
+      };
+      const bidRequest2 = {
+        ...bidRequests[0],
+        bidId: 'bid2',
+        params: { ...bidRequests[0].params, ortb: false }
+      };
+      const requests = spec.buildRequests([bidRequest1, bidRequest2], bidderRequest);
+
+      expect(requests).to.be.an('array').with.lengthOf(2);
+
+      const ortbRequest = requests.find(r => r.ortb === true);
+      const legacyRequest = requests.find(r => r.ortb === undefined);
+
+      expect(ortbRequest).to.exist;
+      expect(ortbRequest.data).to.be.an('object');
+      expect(ortbRequest.data.imp).to.be.an('array').with.lengthOf(1);
+
+      expect(legacyRequest).to.exist;
+      expect(legacyRequest.data).to.be.a('string');
+    });
+
+    it('should group bids with same endpoint and ortb into a single request', function () {
+      const bidRequest1 = {
+        ...bidRequests[0],
+        bidId: 'bid1',
+        params: { ...bidRequests[0].params, ortb: true }
+      };
+      const bidRequest2 = {
+        ...bidRequests[0],
+        bidId: 'bid2',
+        params: { ...bidRequests[0].params, ortb: true }
+      };
+      const requests = spec.buildRequests([bidRequest1, bidRequest2], bidderRequest);
+
+      expect(requests).to.be.an('array').with.lengthOf(1);
+      expect(requests[0].data.imp).to.be.an('array').with.lengthOf(2);
     });
 
     it('should add only selected referer info', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.referer).to.deep.equal({
         reachedTop: true,
@@ -220,8 +350,8 @@ describe('iPROM Adapter', function () {
     });
 
     it('should add adapter version', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.version).to.exist;
     });
@@ -235,8 +365,8 @@ describe('iPROM Adapter', function () {
           addtlConsent: 'addtl-consent'
         }
       };
-      const request = spec.buildRequests(bidRequests, bidderRequestWithTcf);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequestWithTcf);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.tcf).to.deep.equal({
         consentString: 'consent-string',
@@ -282,8 +412,8 @@ describe('iPROM Adapter', function () {
           }
         }
       };
-      const request = spec.buildRequests(bidRequests, bidderRequestWithSchain);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequestWithSchain);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.schain).to.deep.equal(schain);
     });
@@ -311,8 +441,8 @@ describe('iPROM Adapter', function () {
           }
         }
       };
-      const request = spec.buildRequests(bidRequests, bidderRequestWithFpdAndSchain);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequestWithFpdAndSchain);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.schain).to.deep.equal(schain);
       expect(requestparse.firstPartyData).to.be.undefined;
@@ -335,8 +465,8 @@ describe('iPROM Adapter', function () {
         ...bidderRequest,
         ortb2: firstPartyData
       };
-      const request = spec.buildRequests(bidRequests, bidderRequestWithFpd);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequestWithFpd);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.firstPartyData).to.deep.equal({
         user: {
@@ -349,8 +479,8 @@ describe('iPROM Adapter', function () {
     });
 
     it('should contain id and dimension', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const requestparse = JSON.parse(request.data);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const requestparse = JSON.parse(requests[0].data);
 
       expect(requestparse.bids[0].params.id).to.equal('1234');
       expect(requestparse.bids[0].params.dimension).to.equal('300x250');
@@ -371,8 +501,8 @@ describe('iPROM Adapter', function () {
         }
         ]};
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const bids = spec.interpretResponse(serverResponse, request);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, requests[0]);
 
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].requestId).to.equal('29a72b151f7bd3');
@@ -398,8 +528,8 @@ describe('iPROM Adapter', function () {
         }]
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const bids = spec.interpretResponse(serverResponse, request);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, requests[0]);
 
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].netRevenue).to.equal(false);
@@ -407,14 +537,13 @@ describe('iPROM Adapter', function () {
       expect(bids[0].currency).to.equal('USD');
     });
 
-    it('should parse OpenRTB response when custom endpoint is used', function () {
-      config.setConfig({
-        iprom: {
-          endpoint: 'https://global.iprom.net/programmatic'
-        }
-      });
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const impId = request.data.imp[0].id;
+    it('should parse OpenRTB response when ortb param is true', function () {
+      const bidRequestsWithOrtb = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, endpoint: 'https://global.iprom.net/programmatic', ortb: true }
+      }));
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequest);
+      const impId = requests[0].data.imp[0].id;
       const serverResponse = {
         body: {
           cur: 'EUR',
@@ -433,7 +562,7 @@ describe('iPROM Adapter', function () {
         }
       };
 
-      const bids = spec.interpretResponse(serverResponse, request);
+      const bids = spec.interpretResponse(serverResponse, requests[0]);
 
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].requestId).to.equal('29a72b151f7bd3');
@@ -447,8 +576,8 @@ describe('iPROM Adapter', function () {
         body: {}
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const bids = spec.interpretResponse(malformedServerResponse, request);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(malformedServerResponse, requests[0]);
 
       expect(bids).to.be.lengthOf(0);
     });
@@ -458,8 +587,8 @@ describe('iPROM Adapter', function () {
         body: []
       };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const bids = spec.interpretResponse(emptyServerResponse, request);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(emptyServerResponse, requests[0]);
 
       expect(bids).to.be.lengthOf(0);
     });

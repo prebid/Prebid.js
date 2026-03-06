@@ -1,6 +1,5 @@
 import { deepClone, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'iprom';
@@ -32,14 +31,12 @@ function isValidEndpointUrl(endpoint) {
   }
 }
 
-function getCustomEndpoint() {
-  const configuredEndpoint = config.getConfig(`${BIDDER_CODE}.endpoint`);
-
-  if (typeof configuredEndpoint === 'string' && isValidEndpointUrl(configuredEndpoint)) {
-    return configuredEndpoint;
+function resolveEndpoint(endpoint) {
+  if (typeof endpoint === 'string' && isValidEndpointUrl(endpoint)) {
+    return endpoint;
   }
 
-  return null;
+  return ENDPOINT_URL;
 }
 
 function extractReferer(refererInfo) {
@@ -184,25 +181,49 @@ export const spec = {
       return false;
     }
 
+    if (params.endpoint !== undefined && !isValidEndpointUrl(params.endpoint)) {
+      logError(`${bidderName}: Parameter 'endpoint' needs to be a valid URL`);
+      return false;
+    }
+
+    if (params.ortb !== undefined && typeof params.ortb !== 'boolean') {
+      logError(`${bidderName}: Parameter 'ortb' needs to be a boolean`);
+      return false;
+    }
+
     return true;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const customEndpoint = getCustomEndpoint();
+    const groups = {};
 
-    if (customEndpoint) {
-      // ORTB mode uses an object payload and is interpreted via converter.fromORTB.
-      return buildOrtbRequest(validBidRequests, bidderRequest, customEndpoint);
+    for (const bid of validBidRequests) {
+      const endpoint = resolveEndpoint(bid.params.endpoint);
+      const ortb = bid.params.ortb === true;
+      const key = `${endpoint}::${ortb}`;
+
+      if (!groups[key]) {
+        groups[key] = { endpoint, ortb, bids: [] };
+      }
+
+      groups[key].bids.push(bid);
     }
 
-    // Legacy mode uses a stringified JSON payload.
-    const payload = buildLegacyPayload(validBidRequests, bidderRequest);
+    return Object.values(groups).map(({ endpoint, ortb, bids }) => {
+      if (ortb) {
+        // ORTB mode uses an object payload and is interpreted via converter.fromORTB.
+        return buildOrtbRequest(bids, bidderRequest, endpoint);
+      }
 
-    return {
-      method: 'POST',
-      url: ENDPOINT_URL,
-      data: JSON.stringify(payload)
-    };
+      // Legacy mode uses a stringified JSON payload.
+      const payload = buildLegacyPayload(bids, bidderRequest);
+
+      return {
+        method: 'POST',
+        url: endpoint,
+        data: JSON.stringify(payload)
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, request) {
