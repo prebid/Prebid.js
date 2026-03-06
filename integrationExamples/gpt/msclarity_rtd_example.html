@@ -4,7 +4,11 @@
   <meta charset="utf-8"/>
   <title>MS Clarity RTD — Integration Example</title>
 
-  <!-- 1. Clarity JS tag (replace YOUR_PROJECT_ID) -->
+  <!--
+    Optional: Clarity JS tag.
+    If omitted, the RTD module auto-injects when it initialises.
+    Replace YOUR_PROJECT_ID with your Clarity project ID.
+  -->
   <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
       c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -13,22 +17,22 @@
     })(window, document, "clarity", "script", "YOUR_PROJECT_ID");
   </script>
 
-  <!-- 2. Prebid.js (built with msClarityRtdProvider + appnexusBidAdapter) -->
+  <!-- Prebid.js (built with msClarityRtdProvider + appnexusBidAdapter) -->
   <script src="../../build/dev/prebid.js"></script>
 
-  <!-- 3. GPT -->
+  <!-- GPT -->
   <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
 </head>
 <body>
 <h1>MS Clarity RTD — Integration Test</h1>
-<p>Open the browser console to see Clarity signals flowing into bid requests.</p>
-<p>Scroll down, click around, and watch engagement scores change between auctions.</p>
+<p>Open the browser console to see bucketed Clarity signals flowing into bid requests.</p>
+<p>Scroll down, click around, and watch feature values change between auctions.</p>
 
 <div id="ad-div-1" style="width:300px;height:250px;border:1px solid #ccc;margin:20px 0;"></div>
 
-<!-- filler content for scroll depth testing -->
+<!-- filler content for scroll-depth testing -->
 <div style="height:2000px;background:linear-gradient(to bottom,#f0f0f0,#d0d0d0);padding:20px;">
-  <p>Scroll down to increase scroll_depth signal...</p>
+  <p>Scroll down to increase the <code>scroll</code> feature...</p>
   <div style="margin-top:800px;">
     <p>You've scrolled past 40% of the page.</p>
   </div>
@@ -59,27 +63,13 @@
           params: {
             projectId: 'YOUR_PROJECT_ID',   // Replace with your Clarity project ID
             bidders: ['appnexus'],
-            signals: [
-              'scroll_depth',
-              'active_time',
-              'frustration',
-              'interaction_density',
-              'scroll_velocity',
-              'exit_probability',
-              'engagement_score'
-            ],
-            engagementScoreThresholds: {
-              low: 0.3,
-              medium: 0.6,
-              high: 0.8
-            },
             targetingPrefix: 'msc'
           }
         }]
       }
     });
 
-    // Ad units
+    // Ad units — only AppNexus receives Clarity signals
     pbjs.addAdUnits([
       {
         code: 'ad-div-1',
@@ -98,7 +88,7 @@
       bidsBackHandler: function (bidResponses) {
         console.log('=== BID RESPONSES ===', bidResponses);
 
-        // Log what Clarity signals were sent
+        // Log ORTB2 config to see Clarity features
         var ortb2 = pbjs.getConfig('ortb2');
         console.log('=== ORTB2 CONFIG ===', JSON.stringify(ortb2, null, 2));
 
@@ -114,9 +104,9 @@
 
           pbjs.setTargetingForGPTAsync();
 
-          // Log GAM targeting (includes Clarity key-values)
-          console.log('=== GAM TARGETING (slot1) ===', slot1.getTargetingMap());
-          console.log('=== GAM TARGETING (slot2) ===', slot2.getTargetingMap());
+          // Note: Clarity signals are NOT sent to GAM targeting — they are
+          // only available in per-bidder ORTB2 fragments (AppNexus only).
+          console.log('=== GPT SLOTS RENDERED (no Clarity KVs in GAM) ===');
 
           googletag.pubads().refresh();
         });

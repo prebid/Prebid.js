@@ -1,14 +1,13 @@
 /**
  * Microsoft Clarity RTD Module
  *
- * This RTD submodule collects behavioral signals from the user's session and
- * writes them into per-bidder ORTB2 fragments.  Signals are only distributed
- * to commercially approved bidders.
+ * Collects behavioral signals from a self-contained DOM tracker and writes
+ * bucketed features into per-bidder ORTB2 fragments.  Signals are only
+ * distributed to commercially approved bidders (currently AppNexus / Xandr).
  *
- * Signal collection uses a lightweight self-contained DOM tracker that starts
- * on init().  The Clarity JS tag is still injected for its own analytics /
- * session-recording functionality, but signals for bid-enrichment are computed
- * independently from DOM events (scroll, clicks, focus, etc.).
+ * The Clarity JS tag is auto-injected for its own analytics / session-recording
+ * functionality, but bid-enrichment signals are computed independently from
+ * DOM events (scroll, click, keydown, visibility changes).
  *
  * See: https://clarity.microsoft.com
  *
@@ -17,7 +16,7 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { logInfo, logWarn, logError, deepSetValue, mergeDeep, deepAccess } from '../src/utils.js';
+import { logInfo, logWarn, logError, deepSetValue, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
@@ -28,8 +27,8 @@ const MODULE_NAME = 'msClarity';
 const LOG_PREFIX = '[MsClarity RTD]';
 
 /**
- * Commercially approved bidders. Only these bidders will receive Clarity signals
- * in their ORTB2 fragments. Adding a new bidder here represents a commercial
+ * Commercially approved bidders.  Only these bidders receive Clarity signals
+ * in their ORTB2 fragments.  Adding a bidder here represents a commercial
  * agreement with Microsoft Clarity.
  */
 const APPROVED_BIDDERS = Object.freeze(['appnexus']);
@@ -37,118 +36,260 @@ const APPROVED_BIDDERS = Object.freeze(['appnexus']);
 /**
  * Default configuration values.
  */
-const DEFAULTS = {
-  signals: [
-    'scroll_depth',
-    'active_time',
-    'frustration',
-    'interaction_density',
-    'scroll_velocity',
-    'exit_probability',
-    'engagement_score'
-  ],
-  engagementScoreThresholds: { low: 0.3, medium: 0.6, high: 0.8 },
+const DEFAULTS = Object.freeze({
   targetingPrefix: 'msc',
-  waitForSignalsMs: 50,
-};
+});
+
+/** Idle threshold — stop counting active time after this gap. */
+const IDLE_MS = 10000;
+
+/** CSS selector for interactive elements (dead-click detection). */
+const INTERACTIVE_SELECTOR =
+  'a, button, input, select, textarea, label, summary, video, audio, ' +
+  '[role="button"], [role="link"], [onclick]';
+
+// ─── Bucket Functions (exported for testability) ─────────────────────────────
 
 /**
- * Internal state snapshot — refreshed once per auction cycle.
+ * Bucket raw scroll depth (0–1) into a categorical label.
+ *
+ * @param {number} depth - 0 to 1
+ * @returns {string}
  */
-let _lastSignals = null;
+export function scrollBucket(depth) {
+  if (depth <= 0) return 'none';
+  if (depth < 0.25) return 'shallow';
+  if (depth < 0.50) return 'mid';
+  if (depth < 0.75) return 'deep';
+  return 'complete';
+}
 
-// ─── Self-Contained Behavioral Tracker ────────────────────────────────────────
-// Computes scroll-depth, active-time, rage-clicks, dead-clicks, scroll-velocity,
-// and a composite engagement-score from DOM events.  Does NOT depend on any
-// external SDK or `clarity("get", ...)` API.
+/**
+ * Bucket active dwell time into a categorical label.
+ *
+ * @param {number} ms - active time in milliseconds
+ * @returns {string}
+ */
+export function dwellBucket(ms) {
+  if (ms < 5000) return 'bounce';
+  if (ms < 15000) return 'brief';
+  if (ms < 30000) return 'moderate';
+  if (ms < 60000) return 'long';
+  return 'extended';
+}
+
+/**
+ * Bucket frustration signals (rage + dead clicks) into a categorical label.
+ *
+ * @param {number} rageClicks
+ * @param {number} deadClicks
+ * @returns {string}
+ */
+export function frustrationBucket(rageClicks, deadClicks) {
+  const total = rageClicks + deadClicks;
+  if (total === 0) return 'none';
+  if (total <= 2) return 'mild';
+  if (total <= 5) return 'moderate';
+  return 'severe';
+}
+
+/**
+ * Bucket interaction rate (events per second of active time).
+ *
+ * @param {number} count  - interaction events
+ * @param {number} activeMs - active time in ms
+ * @returns {string}
+ */
+export function interactionBucket(count, activeMs) {
+  if (activeMs <= 0 || count <= 0) return 'passive';
+  const perSec = count / (activeMs / 1000);
+  if (perSec < 0.2) return 'light';
+  if (perSec < 0.5) return 'moderate';
+  if (perSec < 1.0) return 'active';
+  return 'intense';
+}
+
+/**
+ * Bucket scroll behaviour pattern based on direction changes and distance.
+ *
+ * @param {number} directionChanges
+ * @param {number} totalDistance - total pixels scrolled
+ * @returns {string}
+ */
+export function scrollPatternBucket(directionChanges, totalDistance) {
+  if (totalDistance <= 0) return 'none';
+  const ratio = directionChanges / (totalDistance / 1000);
+  if (ratio < 0.5) return 'scanning';
+  if (ratio < 2.0) return 'reading';
+  return 'searching';
+}
+
+/**
+ * Bucket user journey stage based on time, scroll depth, and interactions.
+ *
+ * @param {number} activeMs
+ * @param {number} scrollDepth - 0 to 1
+ * @param {number} interactions
+ * @returns {string}
+ */
+export function stageBucket(activeMs, scrollDepth, interactions) {
+  if (activeMs < 5000 && scrollDepth < 0.1) return 'landing';
+  if (activeMs < 15000 || scrollDepth < 0.3) return 'exploring';
+  if (interactions < 10) return 'engaged';
+  return 'converting';
+}
+
+/**
+ * Composite engagement bucket.  Weighted blend of scroll, time, interaction,
+ * minus a frustration penalty.
+ *
+ * @param {number} scrollDepth  - 0 to 1
+ * @param {number} activeMs
+ * @param {number} interactions
+ * @param {number} rageClicks
+ * @param {number} deadClicks
+ * @returns {string}
+ */
+export function engagementBucket(scrollDepth, activeMs, interactions, rageClicks, deadClicks) {
+  const scrollW = Math.min(1, scrollDepth) * 0.30;
+  const timeW = Math.min(1, activeMs / 60000) * 0.35;
+  const interW = Math.min(1, interactions / 20) * 0.20;
+  const frustPenalty = Math.min(0.15, (rageClicks + deadClicks) * 0.03);
+  const score = Math.max(0, Math.min(1, scrollW + timeW + interW + 0.15 - frustPenalty));
+
+  if (score < 0.25) return 'low';
+  if (score < 0.50) return 'medium';
+  if (score < 0.75) return 'high';
+  return 'very_high';
+}
+
+// ─── Self-Contained Behavioral Tracker ───────────────────────────────────────
 
 const _tracker = {
-  scrollDepth: 0,          // 0-1, high-water-mark
-  activeTimeMs: 0,         // ms of active engagement
-  rageClickCount: 0,       // 3+ clicks within 500ms in ≤30 px radius
-  deadClickCount: 0,       // clicks on non-interactive elements
+  scrollDepth: 0,
+  activeTimeMs: 0,
+  rageClickCount: 0,
+  deadClickCount: 0,
   totalClicks: 0,
-  scrollVelocity: 'none',  // 'slow' | 'medium' | 'fast' | 'none'
-  interactionDensity: 0,   // interactions per second of active time
-  _totalInteractions: 0,
+  totalInteractions: 0,
+  directionChanges: 0,
+  totalScrollDistance: 0,
   _lastActivity: 0,
-  _clickHistory: [],       // { time, x, y, target }
-  _scrollSamples: [],      // { time, y } — last 2 s for velocity
+  _lastScrollY: 0,
+  _lastScrollDir: 0,
+  _lastRageBurstTime: 0,
+  _clickHistory: [],
   _activeTimer: null,
+  _tabHidden: false,
+  _listeners: [],
   _initialized: false,
 };
 
-/** Idle threshold — if no activity for this long, stop counting active time. */
-const IDLE_MS = 30_000;
-
-/** Tags considered interactive for dead-click detection. */
-const INTERACTIVE_TAGS = new Set(['a', 'button', 'input', 'select', 'textarea', 'label', 'summary', 'video', 'audio']);
+/**
+ * Helper — register a listener and remember it for cleanup.
+ */
+function _addListener(target, event, handler, options) {
+  target.addEventListener(event, handler, options);
+  _tracker._listeners.push({ target, event, handler });
+}
 
 /**
- * Start the behavioral tracker.  Safe to call multiple times — only the
- * first invocation attaches event listeners.
+ * Reset tracker to initial state, remove event listeners and intervals.
+ * Exported for test isolation (called automatically by init()).
+ */
+export function resetTracker() {
+  if (_tracker._activeTimer) {
+    clearInterval(_tracker._activeTimer);
+  }
+  _tracker._listeners.forEach(({ target, event, handler }) => {
+    target.removeEventListener(event, handler);
+  });
+  _tracker.scrollDepth = 0;
+  _tracker.activeTimeMs = 0;
+  _tracker.rageClickCount = 0;
+  _tracker.deadClickCount = 0;
+  _tracker.totalClicks = 0;
+  _tracker.totalInteractions = 0;
+  _tracker.directionChanges = 0;
+  _tracker.totalScrollDistance = 0;
+  _tracker._lastActivity = 0;
+  _tracker._lastScrollY = 0;
+  _tracker._lastScrollDir = 0;
+  _tracker._lastRageBurstTime = 0;
+  _tracker._clickHistory = [];
+  _tracker._activeTimer = null;
+  _tracker._tabHidden = false;
+  _tracker._listeners = [];
+  _tracker._initialized = false;
+}
+
+/**
+ * Start the behavioral tracker.  Attaches scroll, click, keydown,
+ * touchstart, pointerdown, and visibilitychange listeners.
+ * Safe to call after resetTracker() to re-initialise.
  */
 function initTracker() {
   if (_tracker._initialized) return;
   _tracker._initialized = true;
   _tracker._lastActivity = Date.now();
+  _tracker._lastScrollY = window.scrollY || 0;
 
-  // ── Scroll depth (high-water-mark) + velocity samples ──────────────────
+  function markActive(now) {
+    _tracker._lastActivity = now || Date.now();
+    _tracker.totalInteractions++;
+  }
+
+  // ── Visibility tracking ─────────────────────────────────────────────────
+  _addListener(document, 'visibilitychange', () => {
+    _tracker._tabHidden = document.hidden;
+  });
+
+  // ── Scroll tracking (depth + direction changes + distance) ──────────────
   const onScroll = () => {
     const now = Date.now();
     markActive(now);
 
     const scrollTop = window.scrollY || window.pageYOffset || 0;
+    const winDim = getWinDimensions();
     const docHeight = Math.max(
       document.body.scrollHeight || 0,
       document.documentElement.scrollHeight || 0
-    ) - window.innerHeight;
+    ) - (winDim.innerHeight || 0);
 
     if (docHeight > 0) {
-      _tracker.scrollDepth = Math.max(_tracker.scrollDepth, Math.min(1, scrollTop / docHeight));
+      _tracker.scrollDepth = Math.max(
+        _tracker.scrollDepth,
+        Math.min(1, scrollTop / docHeight)
+      );
     }
 
-    // Keep last 2 s of scroll samples for velocity
-    _tracker._scrollSamples.push({ time: now, y: scrollTop });
-    _tracker._scrollSamples = _tracker._scrollSamples.filter(s => now - s.time < 2000);
+    // Direction changes + total distance
+    const delta = scrollTop - _tracker._lastScrollY;
+    _tracker.totalScrollDistance += Math.abs(delta);
 
-    if (_tracker._scrollSamples.length >= 2) {
-      const first = _tracker._scrollSamples[0];
-      const last = _tracker._scrollSamples[_tracker._scrollSamples.length - 1];
-      const dt = (last.time - first.time) / 1000; // seconds
-      if (dt > 0) {
-        const pxPerSec = Math.abs(last.y - first.y) / dt;
-        if (pxPerSec < 200) _tracker.scrollVelocity = 'slow';
-        else if (pxPerSec < 800) _tracker.scrollVelocity = 'medium';
-        else _tracker.scrollVelocity = 'fast';
-      }
+    const dir = delta > 0 ? 1 : (delta < 0 ? -1 : 0);
+    if (dir !== 0 && _tracker._lastScrollDir !== 0 && dir !== _tracker._lastScrollDir) {
+      _tracker.directionChanges++;
     }
+    if (dir !== 0) _tracker._lastScrollDir = dir;
+    _tracker._lastScrollY = scrollTop;
   };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll(); // seed initial depth
+  _addListener(window, 'scroll', onScroll, { passive: true });
 
-  // ── Active time — 1 s tick, only while user is active ──────────────────
-  function markActive(now) {
-    _tracker._lastActivity = now || Date.now();
-    _tracker._totalInteractions++;
-  }
-
-  ['mousemove', 'keydown', 'touchstart', 'pointerdown'].forEach(evt => {
-    window.addEventListener(evt, () => markActive(), { passive: true });
+  // ── Active time — 1 s tick, visibility-aware, idle-gated ───────────────
+  // No mousemove — it fires too frequently and inflates interaction count.
+  ['keydown', 'touchstart', 'pointerdown'].forEach(evt => {
+    _addListener(window, evt, () => markActive(), { passive: true });
   });
 
   _tracker._activeTimer = setInterval(() => {
-    if (Date.now() - _tracker._lastActivity < IDLE_MS) {
+    if (!_tracker._tabHidden && Date.now() - _tracker._lastActivity < IDLE_MS) {
       _tracker.activeTimeMs += 1000;
-    }
-    // Update interaction density
-    if (_tracker.activeTimeMs > 0) {
-      _tracker.interactionDensity = _tracker._totalInteractions / (_tracker.activeTimeMs / 1000);
     }
   }, 1000);
 
-  // ── Click tracking — rage-clicks & dead-clicks ─────────────────────────
-  window.addEventListener('click', (e) => {
+  // ── Click tracking — rage-clicks (deduplicated) & dead-clicks ──────────
+  _addListener(window, 'click', (e) => {
     const now = Date.now();
     markActive(now);
     _tracker.totalClicks++;
@@ -157,88 +298,63 @@ function initTracker() {
     const y = e.clientY;
     _tracker._clickHistory.push({ time: now, x, y });
 
-    // Keep only last 2 s
+    // Prune to last 2 seconds
     _tracker._clickHistory = _tracker._clickHistory.filter(c => now - c.time < 2000);
 
-    // Rage click: ≥ 3 clicks within 500 ms in a ≤ 30 px radius
+    // Rage click: ≥ 3 clicks in 500 ms within 30 px — deduplicated per burst
     const recent = _tracker._clickHistory.filter(c =>
       now - c.time < 500 &&
       Math.abs(c.x - x) < 30 &&
       Math.abs(c.y - y) < 30
     );
-    if (recent.length >= 3) {
+    if (recent.length >= 3 && (now - _tracker._lastRageBurstTime > 500)) {
       _tracker.rageClickCount++;
+      _tracker._lastRageBurstTime = now;
     }
 
-    // Dead click: non-interactive element
-    const tag = (e.target.tagName || '').toLowerCase();
-    const isInteractive = INTERACTIVE_TAGS.has(tag) ||
-      e.target.getAttribute('role') === 'button' ||
-      e.target.getAttribute('role') === 'link' ||
-      e.target.hasAttribute('onclick') ||
-      e.target.closest('a, button, [role="button"], [role="link"]');
-
-    if (!isInteractive) {
+    // Dead click: target not inside any interactive element
+    if (e.target && !e.target.closest(INTERACTIVE_SELECTOR)) {
       _tracker.deadClickCount++;
     }
   });
 
-  logInfo(`${LOG_PREFIX} Behavioral signal tracker started.`);
+  logInfo(`${LOG_PREFIX} Behavioral tracker started.`);
 }
 
+// ─── Feature Builder ─────────────────────────────────────────────────────────
+
 /**
- * Read the current tracker state into a signals object matching the module's
- * signal schema.  This replaces the old `collectSignals` / `clarityGet` path.
+ * Build the 7 bucketed features from current tracker state.
+ * Exported for testability.
  *
- * @param {string[]} requestedSignals
- * @returns {Object} signals
+ * @returns {Object} features
  */
-function collectSignals(requestedSignals) {
-  const signals = {};
-  const req = new Set(requestedSignals);
-
-  if (req.has('scroll_depth')) {
-    signals.scroll_depth = Math.round(_tracker.scrollDepth * 1000) / 1000; // 3 dp
-  }
-
-  if (req.has('active_time')) {
-    signals.active_time_ms = _tracker.activeTimeMs;
-  }
-
-  if (req.has('frustration')) {
-    signals.rage_click_count = _tracker.rageClickCount;
-    signals.dead_click_count = _tracker.deadClickCount;
-  }
-
-  if (req.has('interaction_density')) {
-    signals.interaction_density = Math.round(_tracker.interactionDensity * 100) / 100;
-  }
-
-  if (req.has('scroll_velocity') && _tracker.scrollVelocity !== 'none') {
-    signals.scroll_velocity = _tracker.scrollVelocity;
-  }
-
-  if (req.has('engagement_score')) {
-    // Composite: weighted blend of scroll, time, interaction, and frustration
-    const scrollW = _tracker.scrollDepth * 0.30;
-    const timeW = Math.min(1, _tracker.activeTimeMs / 60000) * 0.35;
-    const interW = Math.min(1, _tracker.totalClicks / 20) * 0.20;
-    const frustW = _tracker.rageClickCount === 0 ? 0.15 : 0;
-    signals.engagement_score = Math.round(Math.min(1, scrollW + timeW + interW + frustW) * 1000) / 1000;
-  }
-
-  return signals;
+export function buildFeatures() {
+  return {
+    scroll: scrollBucket(_tracker.scrollDepth),
+    dwell: dwellBucket(_tracker.activeTimeMs),
+    engagement: engagementBucket(
+      _tracker.scrollDepth,
+      _tracker.activeTimeMs,
+      _tracker.totalInteractions,
+      _tracker.rageClickCount,
+      _tracker.deadClickCount
+    ),
+    frustration: frustrationBucket(_tracker.rageClickCount, _tracker.deadClickCount),
+    interaction: interactionBucket(_tracker.totalInteractions, _tracker.activeTimeMs),
+    scroll_pattern: scrollPatternBucket(_tracker.directionChanges, _tracker.totalScrollDistance),
+    stage: stageBucket(_tracker.activeTimeMs, _tracker.scrollDepth, _tracker.totalInteractions),
+  };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Resolves the effective bidder list as the intersection of APPROVED_BIDDERS
- * and the publisher-configured bidders. If the publisher lists a bidder that
- * is not approved, a warning is logged and it is silently removed.
+ * Resolve the effective bidder list as the intersection of APPROVED_BIDDERS
+ * and the publisher-configured bidders.
  *
- * @param {Object} config - module config
- * @returns {string[]} effective bidder list
+ * @param {Object} config
+ * @returns {string[]}
  */
 function getEffectiveBidders(config) {
   const requested = deepAccess(config, 'params.bidders') || [...APPROVED_BIDDERS];
@@ -246,15 +362,17 @@ function getEffectiveBidders(config) {
   const rejected = requested.filter(b => !APPROVED_BIDDERS.includes(b));
 
   if (rejected.length > 0) {
-    logWarn(`${LOG_PREFIX} Bidders not approved for Clarity signals (ignored): ${rejected.join(', ')}. ` +
-      `Contact Microsoft Clarity for commercial access.`);
+    logWarn(
+      `${LOG_PREFIX} Bidders not approved for Clarity signals (ignored): ${rejected.join(', ')}. ` +
+      'Contact Microsoft Clarity for commercial access.'
+    );
   }
 
   return effective;
 }
 
 /**
- * Check whether the Clarity JS tag is present on the page (stub or full SDK).
+ * Check whether the Clarity JS tag is present on the page.
  * @returns {boolean}
  */
 function isClarityPresent() {
@@ -262,11 +380,9 @@ function isClarityPresent() {
 }
 
 /**
- * Inject the Microsoft Clarity bootstrap snippet into the page.
- * Clarity is injected for its own analytics / session-recording; signal
- * collection for bid-enrichment is handled by the self-contained tracker.
+ * Inject the Microsoft Clarity bootstrap snippet.
  *
- * @param {string} projectId - Clarity project identifier
+ * @param {string} projectId
  */
 function injectClarityScript(projectId) {
   try {
@@ -283,69 +399,43 @@ function injectClarityScript(projectId) {
 }
 
 /**
- * Compute bucketed engagement label from raw engagement score.
+ * Build keyword string from bucketed features for site.keywords.
  *
- * @param {number} score - 0 to 1
- * @param {Object} thresholds - { low, medium, high }
- * @returns {string} 'low' | 'medium' | 'high' | 'very_high'
- */
-function engagementBucket(score, thresholds) {
-  if (score == null) return undefined;
-  if (score < thresholds.low) return 'low';
-  if (score < thresholds.medium) return 'medium';
-  if (score < thresholds.high) return 'high';
-  return 'very_high';
-}
-
-/**
- * Build keyword string for adapters that consume site.keywords.
- *
- * @param {Object} signals
+ * @param {Object} features
  * @param {string} prefix
- * @param {Object} thresholds
  * @returns {string} comma-separated keywords
  */
-function buildKeywords(signals, prefix, thresholds) {
+function buildKeywords(features, prefix) {
   const kws = [];
 
-  if (signals.scroll_depth != null) {
-    const depth = signals.scroll_depth >= 0.5 ? 'deep' : 'shallow';
-    kws.push(`${prefix}_scroll=${depth}`);
-  }
+  kws.push(`${prefix}_scroll=${features.scroll}`);
+  kws.push(`${prefix}_dwell=${features.dwell}`);
+  kws.push(`${prefix}_engagement=${features.engagement}`);
+  kws.push(`${prefix}_interaction=${features.interaction}`);
+  kws.push(`${prefix}_stage=${features.stage}`);
 
-  if (signals.active_time_ms != null) {
-    const engaged = signals.active_time_ms >= 10000;
-    kws.push(`${prefix}_engaged=${engaged}`);
+  // Only include non-default values to reduce noise
+  if (features.frustration !== 'none') {
+    kws.push(`${prefix}_frustration=${features.frustration}`);
   }
-
-  if (signals.rage_click_count != null && signals.rage_click_count > 0) {
-    kws.push(`${prefix}_frustrated=true`);
-  }
-
-  if (signals.engagement_score != null) {
-    const bucket = engagementBucket(signals.engagement_score, thresholds);
-    if (bucket) kws.push(`${prefix}_engagement=${bucket}`);
-  }
-
-  if (signals.scroll_velocity != null) {
-    kws.push(`${prefix}_velocity=${signals.scroll_velocity}`);
+  if (features.scroll_pattern !== 'none') {
+    kws.push(`${prefix}_scroll_pattern=${features.scroll_pattern}`);
   }
 
   return kws.join(',');
 }
 
-// ─── RTD Submodule Interface ──────────────────────────────────────────────────
+// ─── RTD Submodule Interface ─────────────────────────────────────────────────
 
 /**
- * Module init — called once when the publisher config is loaded.
- * Returns true if Clarity is detected and config is valid.
+ * Module init — validates config, injects Clarity, starts tracker.
  *
  * @param {Object} config
  * @param {Object} userConsent
  * @returns {boolean}
  */
 function init(config, userConsent) {
-  _lastSignals = null;
+  resetTracker();
 
   const projectId = deepAccess(config, 'params.projectId');
   if (!projectId) {
@@ -353,9 +443,8 @@ function init(config, userConsent) {
     return false;
   }
 
-  // Inject Clarity for its own analytics / session-recording.
   if (!isClarityPresent()) {
-    logInfo(`${LOG_PREFIX} Clarity JS tag not found — injecting automatically for project ${projectId}.`);
+    logInfo(`${LOG_PREFIX} Clarity not found — injecting for project ${projectId}.`);
     injectClarityScript(projectId);
   }
 
@@ -365,7 +454,6 @@ function init(config, userConsent) {
     return false;
   }
 
-  // Start the self-contained behavioral tracker.
   initTracker();
 
   logInfo(`${LOG_PREFIX} Initialized for project ${projectId}, bidders: ${bidders.join(', ')}`);
@@ -373,69 +461,55 @@ function init(config, userConsent) {
 }
 
 /**
- * Pre-auction enrichment — collects Clarity signals and writes them into
+ * Pre-auction enrichment — builds bucketed features and writes them into
  * per-bidder ORTB2 fragments only for approved bidders.
  *
- * @param {Object} reqBidsConfigObj
+ * @param {Object}   reqBidsConfigObj
  * @param {function} callback
- * @param {Object} config
- * @param {Object} userConsent
+ * @param {Object}   config
+ * @param {Object}   userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   try {
-    const params = mergeDeep({}, DEFAULTS, config.params || {});
-    // mergeDeep concatenates arrays — if publisher explicitly set signals, honour their list
-    if (config.params && Array.isArray(config.params.signals)) {
-      params.signals = [...config.params.signals];
-    }
+    const prefix = deepAccess(config, 'params.targetingPrefix') || DEFAULTS.targetingPrefix;
     const bidders = getEffectiveBidders(config);
-    const signals = collectSignals(params.signals);
+    const features = buildFeatures();
+    const keywords = buildKeywords(features, prefix);
 
-    if (Object.keys(signals).length === 0) {
-      logInfo(`${LOG_PREFIX} No Clarity signals available yet.`);
-      callback();
-      return;
-    }
-
-    _lastSignals = signals;
-
-    const thresholds = params.engagementScoreThresholds;
-    const prefix = params.targetingPrefix;
-    const keywords = buildKeywords(signals, prefix, thresholds);
-
-    // ── Per-bidder ORTB2 fragments (gated access) ─────────────────────────
     reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
     reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {};
 
     bidders.forEach(bidder => {
-      // Site-level: page behavioral context
+      // Site-level: all bucketed features
       deepSetValue(
         reqBidsConfigObj,
         `ortb2Fragments.bidder.${bidder}.site.ext.data.msclarity`,
-        { ...signals }
+        { ...features }
       );
 
       // User-level: engagement summary
-      if (signals.engagement_score != null) {
-        deepSetValue(
-          reqBidsConfigObj,
-          `ortb2Fragments.bidder.${bidder}.user.ext.data.msclarity`,
-          {
-            engagement_score: signals.engagement_score,
-            engagement_bucket: engagementBucket(signals.engagement_score, thresholds)
-          }
-        );
-      }
+      deepSetValue(
+        reqBidsConfigObj,
+        `ortb2Fragments.bidder.${bidder}.user.ext.data.msclarity`,
+        { engagement: features.engagement }
+      );
 
       // Keywords for adapters that consume site.keywords (e.g., AppNexus)
       if (keywords) {
-        const existing = deepAccess(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.site.keywords`) || '';
+        const existing = deepAccess(
+          reqBidsConfigObj,
+          `ortb2Fragments.bidder.${bidder}.site.keywords`
+        ) || '';
         const merged = existing ? `${existing},${keywords}` : keywords;
-        deepSetValue(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.site.keywords`, merged);
+        deepSetValue(
+          reqBidsConfigObj,
+          `ortb2Fragments.bidder.${bidder}.site.keywords`,
+          merged
+        );
       }
     });
 
-    // ── Impression-level: enrich only ad units with approved bidder bids ──
+    // Impression-level: enrich ad units that have approved bidder bids
     const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits || [];
     const bidderSet = new Set(bidders);
 
@@ -445,62 +519,17 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
       adUnit.ortb2Imp = adUnit.ortb2Imp || {};
       deepSetValue(adUnit, 'ortb2Imp.ext.data.msclarity', {
-        scroll_depth: signals.scroll_depth,
-        engagement_score: signals.engagement_score,
+        scroll: features.scroll,
+        engagement: features.engagement,
       });
     });
 
-    logInfo(`${LOG_PREFIX} Enriched ${bidders.length} bidder(s) with ${Object.keys(signals).length} signals.`);
+    logInfo(`${LOG_PREFIX} Enriched ${bidders.length} bidder(s) with 7 features.`);
   } catch (e) {
-    logError(`${LOG_PREFIX} Error collecting Clarity signals:`, e);
+    logError(`${LOG_PREFIX} Error enriching bid requests:`, e);
   }
 
   callback();
-}
-
-/**
- * Ad server targeting — returns GAM key-values per ad unit.
- * Targeting is not bidder-gated (goes to the publisher's own ad server).
- *
- * @param {string[]} adUnitCodes
- * @param {Object} config
- * @param {Object} userConsent
- * @returns {Object<string, Object<string, string>>}
- */
-function getTargetingData(adUnitCodes, config, userConsent) {
-  if (!_lastSignals || Object.keys(_lastSignals).length === 0) {
-    return {};
-  }
-
-  const params = mergeDeep({}, DEFAULTS, (config && config.params) || {});
-  const prefix = params.targetingPrefix;
-  const thresholds = params.engagementScoreThresholds;
-
-  const targeting = {};
-
-  if (_lastSignals.scroll_depth != null) {
-    targeting[`${prefix}_scroll`] = _lastSignals.scroll_depth >= 0.5 ? 'deep' : 'shallow';
-  }
-  if (_lastSignals.active_time_ms != null) {
-    targeting[`${prefix}_engaged`] = String(_lastSignals.active_time_ms >= 10000);
-  }
-  if (_lastSignals.engagement_score != null) {
-    const bucket = engagementBucket(_lastSignals.engagement_score, thresholds);
-    if (bucket) targeting[`${prefix}_engagement`] = bucket;
-  }
-  if (_lastSignals.rage_click_count > 0) {
-    targeting[`${prefix}_frustrated`] = 'true';
-  }
-  if (_lastSignals.scroll_velocity) {
-    targeting[`${prefix}_velocity`] = _lastSignals.scroll_velocity;
-  }
-
-  const result = {};
-  adUnitCodes.forEach(code => {
-    result[code] = targeting;
-  });
-
-  return result;
 }
 
 /** @type {RtdSubmodule} */
@@ -508,7 +537,6 @@ export const msClaritySubmodule = {
   name: MODULE_NAME,
   init,
   getBidRequestData,
-  getTargetingData,
 };
 
 submodule('realTimeData', msClaritySubmodule);

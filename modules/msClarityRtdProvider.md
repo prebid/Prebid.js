@@ -2,17 +2,19 @@
 
 ## Overview
 
-The Microsoft Clarity RTD module reads real-time behavioral signals from an active [Microsoft Clarity](https://clarity.microsoft.com) session on the page and enriches bid requests with engagement and attention data.
+The Microsoft Clarity RTD module collects behavioral signals from a self-contained DOM tracker and enriches bid requests with **bucketed categorical features**. Signals are compact string labels (e.g. `"deep"`, `"moderate"`, `"engaged"`) — not raw numerics — making them directly usable in DSP targeting rules without additional processing.
 
-Signals are written into **per-bidder ORTB2 fragments** and are only distributed to commercially approved bidders. Currently, **AppNexus (Xandr)** is the only approved bidder.
+Signals are written into **per-bidder ORTB2 fragments** and are only distributed to commercially approved bidders. Currently, **AppNexus (Xandr)** is the only approved bidder. No signals are sent to the publisher's ad server (GAM) — this is a deliberate commercial gate.
+
+The Clarity JS tag is auto-injected for its own analytics / session-recording functionality, but bid-enrichment signals are computed independently from DOM events.
 
 ## Prerequisites
 
 1. A Microsoft Clarity account and project — sign up at https://clarity.microsoft.com
 2. Your Clarity **Project ID** (found in Project Settings)
 
-> **Note:** The module will automatically inject the Clarity JS tracking tag if it
-> is not already on the page. If you prefer to manage the tag yourself, add it
+> **Note:** The module automatically injects the Clarity JS tracking tag if it is
+> not already on the page. If you prefer to manage the tag yourself, add it
 > before Prebid loads and the module will use the existing instance.
 
 ## Integration
@@ -35,21 +37,7 @@ pbjs.setConfig({
       params: {
         projectId: 'abc123xyz',               // Required: Clarity project ID
         bidders: ['appnexus'],                 // Optional: defaults to all approved bidders
-        signals: [                             // Optional: defaults shown below
-          'scroll_depth',
-          'active_time',
-          'frustration',
-          'interaction_density',
-          'scroll_velocity',
-          'exit_probability',
-          'engagement_score'
-        ],
-        engagementScoreThresholds: {           // Optional: bucketing thresholds
-          low: 0.3,
-          medium: 0.6,
-          high: 0.8
-        },
-        targetingPrefix: 'msc'                 // Optional: GAM key-value prefix
+        targetingPrefix: 'msc'                 // Optional: prefix for site.keywords
       }
     }]
   }
@@ -62,80 +50,54 @@ pbjs.setConfig({
 |-------|------|----------|---------|-------------|
 | `projectId` | string | yes | — | Microsoft Clarity project ID |
 | `bidders` | string[] | no | `['appnexus']` | Bidders to receive signals. Must be a subset of approved bidders. Unapproved bidders are silently ignored with a console warning. |
-| `signals` | string[] | no | all signals | Which signals to collect. See Signal Reference below. |
-| `engagementScoreThresholds` | object | no | `{low:0.3, medium:0.6, high:0.8}` | Thresholds for bucketing `engagement_score` into targeting labels. |
-| `targetingPrefix` | string | no | `'msc'` | Prefix for GAM ad server targeting key-values. |
+| `targetingPrefix` | string | no | `'msc'` | Prefix for keyword key-values in `site.keywords`. |
 
-## Signal Reference
+## Feature Reference
 
-### Tier 1 — High Value, Low Latency
+All 7 features are always computed (they are lightweight bucket lookups). Values are categorical strings.
 
-| Signal | Key | Type | Description |
-|--------|-----|------|-------------|
-| Scroll Depth | `scroll_depth` | float 0–1 | Percentage of page viewed |
-| Active Time | `active_time_ms` | integer | Milliseconds of active interaction |
-| Rage Clicks | `rage_click_count` | integer | Rapid repeated clicks on same area |
-| Dead Clicks | `dead_click_count` | integer | Clicks on non-interactive elements |
-| Interaction Density | `interaction_density` | float | Events per time window |
-
-### Tier 2 — Valuable, Derived
-
-| Signal | Key | Type | Description |
-|--------|-----|------|-------------|
-| Scroll Velocity | `scroll_velocity` | string | `'slow'`, `'medium'`, or `'fast'` |
-| Exit Probability | `exit_probability` | float 0–1 | Likelihood user will leave |
-
-### Tier 3 — Composite
-
-| Signal | Key | Type | Description |
-|--------|-----|------|-------------|
-| Engagement Score | `engagement_score` | float 0–1 | Composite engagement metric |
+| Feature | Key | Values | Description |
+|---------|-----|--------|-------------|
+| Scroll Depth | `scroll` | `none`, `shallow`, `mid`, `deep`, `complete` | High-water-mark page scroll depth |
+| Dwell Time | `dwell` | `bounce`, `brief`, `moderate`, `long`, `extended` | Visibility-aware active dwell time |
+| Engagement | `engagement` | `low`, `medium`, `high`, `very_high` | Composite: scroll + dwell + interaction − frustration |
+| Frustration | `frustration` | `none`, `mild`, `moderate`, `severe` | Deduplicated rage clicks + dead clicks |
+| Interaction | `interaction` | `passive`, `light`, `moderate`, `active`, `intense` | Events per second of active time (no mousemove) |
+| Scroll Pattern | `scroll_pattern` | `none`, `scanning`, `reading`, `searching` | Direction changes vs. distance ratio |
+| Journey Stage | `stage` | `landing`, `exploring`, `engaged`, `converting` | Time + scroll + interaction thresholds |
 
 ## Where Data Is Written
 
-### Per-Bidder ORTB2 (Gated)
-
-Only approved bidders receive Clarity signals. Data is written to:
+### Per-Bidder ORTB2 (Gated — AppNexus only)
 
 ```
-ortb2Fragments.bidder.<bidder>.site.ext.data.msclarity = {
-  scroll_depth: 0.72,
-  active_time_ms: 14200,
-  rage_click_count: 0,
-  dead_click_count: 1,
-  interaction_density: 3.8,
-  scroll_velocity: "slow",
-  exit_probability: 0.15,
-  engagement_score: 0.84
+ortb2Fragments.bidder.appnexus.site.ext.data.msclarity = {
+  scroll: "deep",
+  dwell: "moderate",
+  engagement: "high",
+  frustration: "none",
+  interaction: "active",
+  scroll_pattern: "reading",
+  stage: "engaged"
 }
 
-ortb2Fragments.bidder.<bidder>.user.ext.data.msclarity = {
-  engagement_score: 0.84,
-  engagement_bucket: "very_high"
+ortb2Fragments.bidder.appnexus.user.ext.data.msclarity = {
+  engagement: "high"
 }
 
-ortb2Fragments.bidder.<bidder>.site.keywords = "msc_scroll=deep,msc_engaged=true,msc_engagement=very_high,msc_velocity=slow"
+ortb2Fragments.bidder.appnexus.site.keywords =
+  "msc_scroll=deep,msc_dwell=moderate,msc_engagement=high,msc_interaction=active,msc_stage=engaged"
 ```
+
+> `frustration` and `scroll_pattern` keywords are omitted when their value is `"none"`.
 
 ### Impression-Level (Ad Units with Approved Bidders)
 
 ```
 adUnit.ortb2Imp.ext.data.msclarity = {
-  scroll_depth: 0.72,
-  engagement_score: 0.84
+  scroll: "deep",
+  engagement: "high"
 }
-```
-
-### GAM Targeting (Ungated)
-
-Ad server targeting key-values are set for all ad units (publisher's own ad server):
-
-```
-msc_scroll=deep
-msc_engaged=true
-msc_engagement=very_high
-msc_frustrated=true   // only if rage clicks > 0
-msc_velocity=slow
 ```
 
 ## Approved Bidders
@@ -150,6 +112,7 @@ Other bidders interested in receiving Clarity behavioral signals should contact 
 
 - If the Clarity JS tag is not already on the page, the module automatically injects it using the configured `projectId`. The tag is loaded from `https://www.clarity.ms/tag/<projectId>`.
 - All signals are page-level behavioral data (scroll, clicks, timing) — **no PII** is collected or transmitted.
+- Signal values are bucketed categorical strings, not raw measurements, providing an additional privacy layer.
 - The module respects TCF/GPP consent signals passed via `userConsent`.
 - If `projectId` is not configured, the module silently disables itself.
 
