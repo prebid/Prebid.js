@@ -119,7 +119,7 @@ export function intersections(mkObserver) {
   const intersections = new WeakMap();
   let next = defer();
   function observerCallback(entries) {
-    entries.sort((left, right) => left.time - right.time).forEach(entry => {
+    entries.forEach(entry => {
       if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
         intersections.set(entry.target, entry)
         next.resolve();
