@@ -448,8 +448,14 @@ function constructFullUrl(data) {
         (cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
         (cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
         (cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1' : '&gdpr=0');
+
   url = appendSPData(url, partnerData);
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
+
+  if (reportMethod !== 'POST') {
+    url += '&payload=' + encodeURIComponent(JSON.stringify(report));
+  }
+
   url = handleAdditionalParams(
     currentBrowserLowerCase,
     url,
@@ -460,8 +466,7 @@ function constructFullUrl(data) {
   if (reportMethod === 'POST') {
     return { url, method: 'POST', payload: JSON.stringify(report) };
   }
-  url += '&payload=' + encodeURIComponent(JSON.stringify(report));
-  return { url, method: 'GET' };
+  return { url };
 }
 
 iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapter.enableAnalytics;
