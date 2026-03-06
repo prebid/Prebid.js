@@ -31,6 +31,8 @@ const interpretResponse = (serverResponse, request) => {
 
 export const spec = {
   code: BIDDER_CODE,
+  // TODO: set gvlid once confirmed with AI Digital / AdSmartX team
+  gvlid: undefined,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,

@@ -75,12 +75,8 @@ describe('AdSmartX bidderUtils', () => {
 
   describe('createBuildRequests and interpretResponse', () => {
     const endpointUrl = 'https://test.endpoint.com/ads';
-    const syncParamsRef = { current: {} };
     const converter = createConverter(defaultConfig);
-    const buildRequests = createBuildRequests(
-      { converter, endpointUrl, getPublisherUserId },
-      syncParamsRef
-    );
+    const buildRequests = createBuildRequests({ converter, endpointUrl });
 
     it('buildRequests returns POST request with endpoint and compressed option', () => {
       const validBidRequests = [
@@ -96,29 +92,6 @@ describe('AdSmartX bidderUtils', () => {
       expect(result.url).to.equal(endpointUrl);
       expect(result.options).to.deep.include({ endpointCompression: true });
       expect(result.data).to.be.an('object');
-    });
-
-    it('stores sync params when first bid has params', () => {
-      const syncRef = { current: {} };
-      const buildReq = createBuildRequests(
-        {
-          converter: createConverter(defaultConfig),
-          endpointUrl: 'https://x.com',
-          getPublisherUserId: () => 'stored-user',
-        },
-        syncRef
-      );
-      const validBidRequests = [
-        {
-          bidId: 'b1',
-          mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
-          params: { sspId: 's1', siteId: 'site1' },
-        },
-      ];
-      buildReq(validBidRequests, {});
-      expect(syncRef.current.sspId).to.equal('s1');
-      expect(syncRef.current.siteId).to.equal('site1');
-      expect(syncRef.current.sspUserId).to.equal('stored-user');
     });
   });
 
@@ -185,10 +158,9 @@ describe('AdSmartX bidderUtils', () => {
 
   describe('createGetUserSyncs', () => {
     const syncUrl = 'https://ads.example.com/sync';
-    const syncParamsRef = { current: {} };
 
     it('returns empty array when iframe and pixel disabled', () => {
-      const getUserSyncs = createGetUserSyncs(syncUrl, syncParamsRef);
+      const getUserSyncs = createGetUserSyncs(syncUrl);
       const result = getUserSyncs(
         { iframeEnabled: false, pixelEnabled: false },
         [],
@@ -200,7 +172,7 @@ describe('AdSmartX bidderUtils', () => {
     });
 
     it('returns sync with URL containing gdpr and iframe_enabled', () => {
-      const getUserSyncs = createGetUserSyncs(syncUrl, syncParamsRef);
+      const getUserSyncs = createGetUserSyncs(syncUrl);
       const result = getUserSyncs(
         { iframeEnabled: true, pixelEnabled: false },
         [],
@@ -215,9 +187,8 @@ describe('AdSmartX bidderUtils', () => {
       expect(result[0].url).to.include('iframe_enabled=true');
     });
 
-    it('appends ssp_id and ssp_site_id when syncParamsRef has them', () => {
-      const ref = { current: { sspId: 'ssp1', siteId: 'site1' } };
-      const getUserSyncs = createGetUserSyncs(syncUrl, ref);
+    it('always includes hardcoded ssp_id=630141 and no ssp_site_id', () => {
+      const getUserSyncs = createGetUserSyncs(syncUrl);
       const result = getUserSyncs(
         { iframeEnabled: true, pixelEnabled: false },
         [],
@@ -225,8 +196,8 @@ describe('AdSmartX bidderUtils', () => {
         undefined,
         undefined
       );
-      expect(result[0].url).to.include('ssp_id=ssp1');
-      expect(result[0].url).to.include('ssp_site_id=site1');
+      expect(result[0].url).to.include('ssp_id=630141');
+      expect(result[0].url).to.not.include('ssp_site_id');
     });
   });
 });
