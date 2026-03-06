@@ -240,13 +240,6 @@ function enrichDeviceBidder(reqBidsConfigObj, bidders, wjsDevice) {
  * @param {Set} bidders Set of bidder codes
  */
 function loadWurflJsAsync(config, bidders) {
-  // Collect UACH once: reuse existing promise or start new collection
-  if (!uachPromise && navigator?.userAgentData?.getHighEntropyValues) {
-    uachPromise = navigator.userAgentData.getHighEntropyValues(UACH_HINTS)
-      .then(ch => { resolvedUACH = ch; return ch; })
-      .catch(() => null);
-  }
-
   const altHost = config.params?.altHost ?? null;
   const isDebug = debugTurnedOn();
 
@@ -1150,6 +1143,13 @@ const init = (config, userConsent) => {
  * @param {Object} userConsent User consent data
  */
 const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
+  // Collect UACH once: reuse existing promise or start new collection
+  if (!uachPromise && navigator?.userAgentData?.getHighEntropyValues) {
+    uachPromise = navigator.userAgentData.getHighEntropyValues(UACH_HINTS)
+      .then(ch => { resolvedUACH = ch; return ch; })
+      .catch(() => null);
+  }
+
   // Start module execution timing
   WurflDebugger.moduleExecutionStart();
 
