@@ -34,7 +34,7 @@ describe('msClarityRtdProvider', function () {
     return {
       params: Object.assign({
         projectId: 'test-project-123',
-        bidders: ['appnexus'],
+        bidders: ['appnexus', 'msft'],
       }, overrides || {})
     };
   }
@@ -259,6 +259,12 @@ describe('msClarityRtdProvider', function () {
       expect(result).to.be.true;
     });
 
+    it('should return true when only msft is configured', function () {
+      window.clarity = function () {};
+      const result = msClaritySubmodule.init(makeConfig({ bidders: ['msft'] }), {});
+      expect(result).to.be.true;
+    });
+
     it('should default to APPROVED_BIDDERS when bidders not set', function () {
       window.clarity = function () {};
       const result = msClaritySubmodule.init(makeConfig({ bidders: undefined }), {});
@@ -293,13 +299,32 @@ describe('msClarityRtdProvider', function () {
       }, makeConfig(), {});
     });
 
+    it('should write all 7 features to msft site.ext.data.msclarity', function (done) {
+      const reqBids = makeReqBidsConfigObj();
+      msClaritySubmodule.getBidRequestData(reqBids, function () {
+        const site = deepAccess(reqBids, 'ortb2Fragments.bidder.msft.site.ext.data.msclarity');
+        expect(site).to.exist;
+        expect(site).to.have.all.keys(
+          'scroll', 'dwell', 'engagement', 'frustration',
+          'interaction', 'scroll_pattern', 'stage'
+        );
+        Object.values(site).forEach(v => expect(v).to.be.a('string'));
+        done();
+      }, makeConfig(), {});
+    });
+
     it('should write engagement to user.ext.data.msclarity', function (done) {
       const reqBids = makeReqBidsConfigObj();
       msClaritySubmodule.getBidRequestData(reqBids, function () {
-        const user = deepAccess(reqBids, 'ortb2Fragments.bidder.appnexus.user.ext.data.msclarity');
-        expect(user).to.exist;
-        expect(user.engagement).to.be.a('string');
-        expect(Object.keys(user)).to.deep.equal(['engagement']);
+        const userAN = deepAccess(reqBids, 'ortb2Fragments.bidder.appnexus.user.ext.data.msclarity');
+        expect(userAN).to.exist;
+        expect(userAN.engagement).to.be.a('string');
+        expect(Object.keys(userAN)).to.deep.equal(['engagement']);
+
+        const userMsft = deepAccess(reqBids, 'ortb2Fragments.bidder.msft.user.ext.data.msclarity');
+        expect(userMsft).to.exist;
+        expect(userMsft.engagement).to.be.a('string');
+        expect(Object.keys(userMsft)).to.deep.equal(['engagement']);
         done();
       }, makeConfig(), {});
     });
@@ -366,6 +391,10 @@ describe('msClarityRtdProvider', function () {
         {
           code: 'ad-slot-2',
           bids: [{ bidder: 'rubicon', params: { accountId: 456 } }]
+        },
+        {
+          code: 'ad-slot-3',
+          bids: [{ bidder: 'msft', params: { placement_id: '789' } }]
         }
       ];
 
@@ -379,6 +408,11 @@ describe('msClarityRtdProvider', function () {
 
         const imp2 = deepAccess(adUnits[1], 'ortb2Imp.ext.data.msclarity');
         expect(imp2).to.not.exist;
+
+        const imp3 = deepAccess(adUnits[2], 'ortb2Imp.ext.data.msclarity');
+        expect(imp3).to.exist;
+        expect(imp3.scroll).to.be.a('string');
+        expect(imp3.engagement).to.be.a('string');
 
         done();
       }, makeConfig(), {});

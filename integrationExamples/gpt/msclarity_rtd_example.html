@@ -17,7 +17,7 @@
     })(window, document, "clarity", "script", "YOUR_PROJECT_ID");
   </script>
 
-  <!-- Prebid.js (built with msClarityRtdProvider + appnexusBidAdapter) -->
+  <!-- Prebid.js (built with msClarityRtdProvider + appnexusBidAdapter + msftBidAdapter) -->
   <script src="../../build/dev/prebid.js"></script>
 
   <!-- GPT -->
@@ -62,24 +62,30 @@
           waitForIt: true,
           params: {
             projectId: 'YOUR_PROJECT_ID',   // Replace with your Clarity project ID
-            bidders: ['appnexus'],
+            bidders: ['appnexus', 'msft'],
             targetingPrefix: 'msc'
           }
         }]
       }
     });
 
-    // Ad units — only AppNexus receives Clarity signals
+    // Ad units — AppNexus and Microsoft receive Clarity signals
     pbjs.addAdUnits([
       {
         code: 'ad-div-1',
         mediaTypes: { banner: { sizes: [[300, 250]] } },
-        bids: [{ bidder: 'appnexus', params: { placementId: 13144370 } }]
+        bids: [
+          { bidder: 'appnexus', params: { placementId: 13144370 } },
+          { bidder: 'msft', params: { placement_id: '13144370' } }
+        ]
       },
       {
         code: 'ad-div-2',
         mediaTypes: { banner: { sizes: [[728, 90]] } },
-        bids: [{ bidder: 'appnexus', params: { placementId: 13144370 } }]
+        bids: [
+          { bidder: 'appnexus', params: { placementId: 13144370 } },
+          { bidder: 'msft', params: { placement_id: '13144370' } }
+        ]
       }
     ]);
 
@@ -105,7 +111,7 @@
           pbjs.setTargetingForGPTAsync();
 
           // Note: Clarity signals are NOT sent to GAM targeting — they are
-          // only available in per-bidder ORTB2 fragments (AppNexus only).
+          // only available in per-bidder ORTB2 fragments (AppNexus + Microsoft).
           console.log('=== GPT SLOTS RENDERED (no Clarity KVs in GAM) ===');
 
           googletag.pubads().refresh();

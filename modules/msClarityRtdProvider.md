@@ -4,7 +4,7 @@
 
 The Microsoft Clarity RTD module collects behavioral signals from a self-contained DOM tracker and enriches bid requests with **bucketed categorical features**. Signals are compact string labels (e.g. `"deep"`, `"moderate"`, `"engaged"`) — not raw numerics — making them directly usable in DSP targeting rules without additional processing.
 
-Signals are written into **per-bidder ORTB2 fragments** and are only distributed to commercially approved bidders. Currently, **AppNexus (Xandr)** is the only approved bidder. No signals are sent to the publisher's ad server (GAM) — this is a deliberate commercial gate.
+Signals are written into **per-bidder ORTB2 fragments** and are only distributed to commercially approved bidders. Currently, **AppNexus (Xandr)** and the **Microsoft Bid Adapter (`msft`)** are the approved bidders. No signals are sent to the publisher's ad server (GAM) — this is a deliberate commercial gate.
 
 The Clarity JS tag is auto-injected for its own analytics / session-recording functionality, but bid-enrichment signals are computed independently from DOM events.
 
@@ -22,7 +22,7 @@ The Clarity JS tag is auto-injected for its own analytics / session-recording fu
 ### Build
 
 ```bash
-gulp build --modules=rtdModule,msClarityRtdProvider,appnexusBidAdapter
+gulp build --modules=rtdModule,msClarityRtdProvider,appnexusBidAdapter,msftBidAdapter
 ```
 
 ### Configuration
@@ -49,7 +49,7 @@ pbjs.setConfig({
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `projectId` | string | yes | — | Microsoft Clarity project ID |
-| `bidders` | string[] | no | `['appnexus']` | Bidders to receive signals. Must be a subset of approved bidders. Unapproved bidders are silently ignored with a console warning. |
+| `bidders` | string[] | no | `['appnexus', 'msft']` | Bidders to receive signals. Must be a subset of approved bidders. Unapproved bidders are silently ignored with a console warning. |
 | `targetingPrefix` | string | no | `'msc'` | Prefix for keyword key-values in `site.keywords`. |
 
 ## Feature Reference
@@ -68,10 +68,12 @@ All 7 features are always computed (they are lightweight bucket lookups). Values
 
 ## Where Data Is Written
 
-### Per-Bidder ORTB2 (Gated — AppNexus only)
+### Per-Bidder ORTB2 (Gated — AppNexus + Microsoft)
+
+The same structure is written for each approved bidder (`appnexus`, `msft`):
 
 ```
-ortb2Fragments.bidder.appnexus.site.ext.data.msclarity = {
+orthb2Fragments.bidder.<bidder>.site.ext.data.msclarity = {
   scroll: "deep",
   dwell: "moderate",
   engagement: "high",
@@ -81,13 +83,18 @@ ortb2Fragments.bidder.appnexus.site.ext.data.msclarity = {
   stage: "engaged"
 }
 
-ortb2Fragments.bidder.appnexus.user.ext.data.msclarity = {
+orthb2Fragments.bidder.<bidder>.user.ext.data.msclarity = {
   engagement: "high"
 }
 
-ortb2Fragments.bidder.appnexus.site.keywords =
+orthb2Fragments.bidder.<bidder>.site.keywords =
   "msc_scroll=deep,msc_dwell=moderate,msc_engagement=high,msc_interaction=active,msc_stage=engaged"
 ```
+
+> **Note:** The `msft` adapter uses the standard `ortbConverter`, so `site.ext.data`,
+> `user.ext.data`, and `site.keywords` pass through directly to the OpenRTB2 request.
+> The `appnexus` adapter transforms `site.keywords` into its UT payload format via
+> `getANKeywordParam()` — both paths are supported.
 
 > `frustration` and `scroll_pattern` keywords are omitted when their value is `"none"`.
 
@@ -104,7 +111,8 @@ adUnit.ortb2Imp.ext.data.msclarity = {
 
 Access to Clarity signals in bid requests is commercially gated. Currently approved:
 
-- **appnexus** (Xandr / Microsoft Advertising)
+- **appnexus** (Xandr / Microsoft Advertising) — legacy UT endpoint
+- **msft** (Microsoft Bid Adapter) — OpenRTB2 endpoint
 
 Other bidders interested in receiving Clarity behavioral signals should contact Microsoft Clarity for commercial terms.
 

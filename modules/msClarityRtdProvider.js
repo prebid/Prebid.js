@@ -3,7 +3,8 @@
  *
  * Collects behavioral signals from a self-contained DOM tracker and writes
  * bucketed features into per-bidder ORTB2 fragments.  Signals are only
- * distributed to commercially approved bidders (currently AppNexus / Xandr).
+ * distributed to commercially approved bidders (currently AppNexus / Xandr
+ * and the Microsoft Bid Adapter).
  *
  * The Clarity JS tag is auto-injected for its own analytics / session-recording
  * functionality, but bid-enrichment signals are computed independently from
@@ -31,7 +32,7 @@ const LOG_PREFIX = '[MsClarity RTD]';
  * in their ORTB2 fragments.  Adding a bidder here represents a commercial
  * agreement with Microsoft Clarity.
  */
-const APPROVED_BIDDERS = Object.freeze(['appnexus']);
+const APPROVED_BIDDERS = Object.freeze(['appnexus', 'msft']);
 
 /**
  * Default configuration values.
