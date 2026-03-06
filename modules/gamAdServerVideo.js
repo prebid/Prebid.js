@@ -28,7 +28,7 @@ import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
 import {getGlobalVarName} from '../src/buildOptions.js';
-import { uspDataHandler } from '../src/consentHandler.js';
+import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -299,6 +299,7 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   const video = adUnit?.mediaTypes?.video;
   const sdkApis = (video?.api || []).join(',');
   const usPrivacy = uspDataHandler.getConsentData?.();
+  const gpp = gppDataHandler.getConsentData?.();
   // Adding parameters required by ima
   if (config.getConfig('cache.useLocal') && window.google?.ima) {
     vastUrl = new URL(vastUrl);
@@ -310,6 +311,12 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
     }
     if (usPrivacy) {
       vastUrl.searchParams.set('us_privacy', usPrivacy);
+    } else if (gpp) {
+      // Extract an usPrivacy string from the GPP string if possible
+      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
+      if (uspFromGpp) {
+        vastUrl.searchParams.set('us_privacy', uspFromGpp)
+      }
     }
 
     vastUrl = vastUrl.toString();
@@ -328,6 +335,41 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   }
 
   return gamVastWrapper;
+}
+/**
+ * Extract a US Privacy string from the GPP data
+ */
+function retrieveUspInfoFromGpp(gpp) {
+  if (!gpp) {
+    return undefined;
+  }
+  const parsedSections = gpp.gppData?.parsedSections;
+  if (parsedSections) {
+    if (parsedSections.uspv1) {
+      const usp = parsedSections.uspv1;
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`
+    } else {
+      let saleOptOut;
+      let saleOptOutNotice;
+      Object.values(parsedSections).forEach(parsedSection => {
+        (Array.isArray(parsedSection) ? parsedSection : [parsedSection]).forEach(ps => {
+          const sectionSaleOptOut = ps.SaleOptOut;
+          const sectionSaleOptOutNotice = ps.SaleOptOutNotice;
+          if (saleOptOut === undefined && saleOptOutNotice === undefined && sectionSaleOptOut != null && sectionSaleOptOutNotice != null) {
+            saleOptOut = sectionSaleOptOut;
+            saleOptOutNotice = sectionSaleOptOutNotice;
+          }
+        });
+      });
+      if (saleOptOut !== undefined && saleOptOutNotice !== undefined) {
+        const uspOptOutSale = saleOptOut === 0 ? '-' : saleOptOut === 1 ? 'Y' : 'N';
+        const uspOptOutNotice = saleOptOutNotice === 0 ? '-' : saleOptOutNotice === 1 ? 'Y' : 'N';
+        const uspLspa = uspOptOutSale === '-' && uspOptOutNotice === '-' ? '-' : 'Y';
+        return `1${uspOptOutNotice}${uspOptOutSale}${uspLspa}`;
+      }
+    }
+  }
+  return undefined
 }
 
 export async function getBase64BlobContent(blobUrl) {

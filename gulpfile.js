@@ -53,7 +53,7 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['build', 'dist'], {
+  return gulp.src(['.cache', 'build', 'dist'], {
     read: false,
     allowEmpty: true
   })
