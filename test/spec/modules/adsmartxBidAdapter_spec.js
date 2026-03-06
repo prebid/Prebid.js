@@ -179,8 +179,8 @@ describe('AdSmartX adapter', () => {
     it('should include GDPR and USP consent in the request', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const { regs, user } = request.data;
-      expect(regs.ext).to.have.property('gdpr', 1);
-      expect(user.ext).to.have.property('consent', 'consent123');
+      expect(regs).to.have.property('gdpr', 1);
+      expect(user).to.have.property('consent', 'consent123');
       expect(regs.ext).to.have.property('us_privacy', '1YNN');
     });
 
@@ -241,8 +241,8 @@ describe('AdSmartX adapter', () => {
         }
       };
       const request = spec.buildRequests([validBidRequest], noGdprBidderRequest);
-      expect(request.data.regs.ext).to.have.property('gdpr', 0);
-      expect(request.data.user.ext).to.have.property('consent', 'consent123');
+      expect(request.data.regs).to.have.property('gdpr', 0);
+      expect(request.data.user).to.have.property('consent', 'consent123');
     });
 
     it('should set regs and regs.ext to {} if not already set when only USP consent is present', () => {
@@ -499,7 +499,7 @@ describe('AdSmartX adapter', () => {
       expect(syncs).to.be.an('array').with.lengthOf(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
       expect(syncs[0]).to.have.property('url');
-      expect(syncs[0].url).to.include('https://ads.adsmartx.com/sync');
+      expect(syncs[0].url).to.include('https://sync.adsmartx.com/sync');
     });
 
     it('should return image sync when only pixelEnabled is true', () => {
@@ -584,30 +584,11 @@ describe('AdSmartX adapter', () => {
       expect(syncs[0].url).to.not.include('gpp=');
     });
 
-    it('should include custom sync parameters from bid params (sspId, siteId, sspUserId)', () => {
-      const bidWithParams = {
-        ...validBidRequest,
-        params: {
-          ...validBidRequest.params,
-          sspId: 'ssp123',
-          siteId: 'site456',
-          sspUserId: 'user789'
-        }
-      };
-
-      const testBidderRequest = {
-        ...bidderRequest,
-        bids: [bidWithParams]
-      };
-
-      // First build request to store sync params
-      spec.buildRequests([bidWithParams], testBidderRequest);
-
-      // Then call getUserSyncs
+    it('should always include hardcoded ssp_id in sync URL', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
-      expect(syncs[0].url).to.include('ssp_id=ssp123');
-      expect(syncs[0].url).to.include('ssp_site_id=site456');
-      expect(syncs[0].url).to.include('ssp_user_id=user789');
+      expect(syncs[0].url).to.include('ssp_id=630141');
+      expect(syncs[0].url).to.not.include('ssp_site_id');
+      expect(syncs[0].url).to.not.include('ssp_user_id');
     });
 
     it('should include iframe_enabled flag in sync URL', () => {
@@ -621,23 +602,6 @@ describe('AdSmartX adapter', () => {
     });
 
     it('should include all consent parameters together', () => {
-      const bidWithParams = {
-        ...validBidRequest,
-        params: {
-          ...validBidRequest.params,
-          sspId: 'ssp123',
-          siteId: 'site456',
-          sspUserId: 'user789'
-        }
-      };
-
-      const testBidderRequest = {
-        ...bidderRequest,
-        bids: [bidWithParams]
-      };
-
-      spec.buildRequests([bidWithParams], testBidderRequest);
-
       const gppConsent = {
         gppString: 'DBABLA~1YNN',
         applicableSections: [7]
@@ -656,9 +620,7 @@ describe('AdSmartX adapter', () => {
       expect(syncs[0].url).to.include('us_privacy=1YNN');
       expect(syncs[0].url).to.include('gpp=');
       expect(syncs[0].url).to.include('gpp_sid=7');
-      expect(syncs[0].url).to.include('ssp_id=ssp123');
-      expect(syncs[0].url).to.include('ssp_site_id=site456');
-      expect(syncs[0].url).to.include('ssp_user_id=user789');
+      expect(syncs[0].url).to.include('ssp_id=630141');
     });
 
     it('should handle missing GDPR consentString gracefully', () => {
@@ -672,59 +634,20 @@ describe('AdSmartX adapter', () => {
     });
 
     it('should retrieve sspUserId from ortb2.user.id when not in bid params', () => {
-      const bidWithoutUserId = {
-        ...validBidRequest,
-        params: {
-          ...validBidRequest.params,
-          sspId: 'ssp123'
-        }
-      };
-
-      const bidderRequestWithOrtb2 = {
-        ...bidderRequest,
-        bids: [bidWithoutUserId],
-        ortb2: {
-          user: {
-            id: 'ortb2-user-id-123'
-          }
-        }
-      };
-
-      spec.buildRequests([bidWithoutUserId], bidderRequestWithOrtb2);
-
+      // sspUserId is no longer forwarded to the sync URL; ssp_id is hardcoded
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
-      expect(syncs[0].url).to.include('ssp_user_id=ortb2-user-id-123');
+      expect(syncs[0].url).to.include('ssp_id=630141');
+      expect(syncs[0].url).to.not.include('ssp_user_id');
     });
 
     it('should prioritize sspUserId from bid params over ortb2.user.id', () => {
-      const bidWithUserId = {
-        ...validBidRequest,
-        params: {
-          ...validBidRequest.params,
-          sspUserId: 'bid-param-user-id'
-        }
-      };
-
-      const bidderRequestWithOrtb2 = {
-        ...bidderRequest,
-        bids: [bidWithUserId],
-        ortb2: {
-          user: {
-            id: 'ortb2-user-id-123'
-          }
-        }
-      };
-
-      spec.buildRequests([bidWithUserId], bidderRequestWithOrtb2);
-
+      // sspUserId is no longer forwarded to the sync URL; ssp_id is hardcoded
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
-      expect(syncs[0].url).to.include('ssp_user_id=bid-param-user-id');
-      expect(syncs[0].url).to.not.include('ortb2-user-id-123');
+      expect(syncs[0].url).to.include('ssp_id=630141');
+      expect(syncs[0].url).to.not.include('ssp_user_id');
     });
 
-    it('should generate sync URL with no query parameters when no data is available', () => {
-      // Clear any stored sync params by not calling buildRequests
-      // This tests the edge case where getUserSyncs is called without any prior context
+    it('should always include ssp_id and iframe_enabled in sync URL', () => {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true, pixelEnabled: false },
         [],
@@ -735,7 +658,8 @@ describe('AdSmartX adapter', () => {
 
       expect(syncs).to.be.an('array').with.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.include('https://ads.adsmartx.com/sync');
+      expect(syncs[0].url).to.include('https://sync.adsmartx.com/sync');
+      expect(syncs[0].url).to.include('ssp_id=630141');
       expect(syncs[0].url).to.include('iframe_enabled=true');
     });
   });
@@ -830,29 +754,11 @@ describe('AdSmartX adapter', () => {
       expect(request.data.ext).to.have.property('siteId', 'site456');
     });
 
-    it('should store sync parameters from first bid for getUserSyncs', () => {
-      const bidWithSyncParams = {
-        ...validBidRequest,
-        params: {
-          ...validBidRequest.params,
-          sspId: 'ssp789',
-          siteId: 'site012',
-          sspUserId: 'user345'
-        }
-      };
-
-      const testBidderRequest = {
-        ...bidderRequest,
-        bids: [bidWithSyncParams]
-      };
-
-      spec.buildRequests([bidWithSyncParams], testBidderRequest);
-
-      // Verify params are stored by calling getUserSyncs
+    it('should always include hardcoded ssp_id in sync URL regardless of bid params', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
-      expect(syncs[0].url).to.include('ssp_id=ssp789');
-      expect(syncs[0].url).to.include('ssp_site_id=site012');
-      expect(syncs[0].url).to.include('ssp_user_id=user345');
+      expect(syncs[0].url).to.include('ssp_id=630141');
+      expect(syncs[0].url).to.not.include('ssp_site_id');
+      expect(syncs[0].url).to.not.include('ssp_user_id');
     });
 
     it('should include bidfloor in impression when present in bid params', () => {

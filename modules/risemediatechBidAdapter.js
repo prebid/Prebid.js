@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { logInfo } from '../src/utils.js';
 import {
-  getPublisherUserId,
   createConverter,
   isBidRequestValid as validateBidRequest,
   createBuildRequests,
@@ -14,13 +13,11 @@ const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 60;
 
-const syncParamsRef = { current: {} };
 const converter = createConverter({ defaultCurrency: DEFAULT_CURRENCY, defaultTtl: DEFAULT_TTL });
 
 const isBidRequestValid = validateBidRequest;
 const buildRequests = createBuildRequests(
-  { converter, endpointUrl: ENDPOINT_URL, getPublisherUserId },
-  syncParamsRef
+  { converter, endpointUrl: ENDPOINT_URL }
 );
 
 const interpretResponse = (serverResponse, request) => {
@@ -32,7 +29,7 @@ const interpretResponse = (serverResponse, request) => {
 
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
   logInfo('User syncs are not implemented in this adapter yet.');
-  return null;
+  return [];
 };
 
 export const spec = {

@@ -2,7 +2,7 @@
 
 Module Name : AdSmartX Bidder Adapter
 Module Type : Bid Adapter
-Maintainer : prebid@risemediatech.io
+Maintainer : prebid@aidigital.com
 
 # Description
 Connects to AdSmartX Exchange for bids
@@ -14,7 +14,7 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
     var adUnits = [
         {
             code: 'test-banner-div',
-            mediatypes: {
+            mediaTypes: {
                 banner: {
                     sizes:[
                         [320,50]
@@ -42,7 +42,7 @@ This adapter is maintained by Smart Exchange, the legal entity behind this imple
     var videoAdUnit = [
         {
             code: 'adsmartx',
-            mediatypes: {
+            mediaTypes: {
                 video: {
                     playerSize: [640, 480],           // required
                     context: 'instream',

@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
-  getPublisherUserId,
   createConverter,
   isBidRequestValid as validateBidRequest,
   createBuildRequests,
@@ -15,15 +14,13 @@ const SYNC_URL = 'https://sync.adsmartx.com/sync';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 60;
 
-const syncParamsRef = { current: {} };
 const converter = createConverter({ defaultCurrency: DEFAULT_CURRENCY, defaultTtl: DEFAULT_TTL });
 
 const isBidRequestValid = validateBidRequest;
 const buildRequests = createBuildRequests(
-  { converter, endpointUrl: ENDPOINT_URL, getPublisherUserId },
-  syncParamsRef
+  { converter, endpointUrl: ENDPOINT_URL }
 );
-const getUserSyncs = createGetUserSyncs(SYNC_URL, syncParamsRef);
+const getUserSyncs = createGetUserSyncs(SYNC_URL);
 
 const interpretResponse = (serverResponse, request) => {
   return interpretResponseUtil(serverResponse, request, {

@@ -52,10 +52,10 @@ export function createConverter(config = {}) {
       }
       if (mediaTypes[BANNER]) {
         logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
-        imp.banner = { format: mediaTypes[BANNER].sizes.map(([w, h]) => ({ w, h })) };
+        imp.banner = { ...(imp.banner || {}), format: mediaTypes[BANNER].sizes.map(([w, h]) => ({ w, h })) };
       } else if (mediaTypes[VIDEO]) {
         logInfo('Adding video media type to impression:', mediaTypes[VIDEO]);
-        imp.video = { ...mediaTypes[VIDEO] };
+        imp.video = { ...(imp.video || {}), ...mediaTypes[VIDEO] };
       }
       return imp;
     },
@@ -87,14 +87,17 @@ export function createConverter(config = {}) {
         }
       }
 
+      if (bidderRequest.gdprConsent || bidderRequest.uspConsent) {
+        request.regs = request.regs || {};
+        request.user = request.user || {};
+      }
       if (bidderRequest.gdprConsent) {
         logInfo('Adding GDPR consent information to request:', bidderRequest.gdprConsent);
-        request.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
-        request.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
+        request.regs.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+        request.user.consent = bidderRequest.gdprConsent.consentString;
       }
       if (bidderRequest.uspConsent) {
         logInfo('Adding USP consent information to request:', bidderRequest.uspConsent);
-        request.regs = request.regs || {};
         request.regs.ext = request.regs.ext || {};
         request.regs.ext.us_privacy = bidderRequest.uspConsent;
       }
@@ -118,6 +121,7 @@ export function isBidRequestValid(bid) {
       logWarn('Invalid video bid request: Missing or invalid mimes.');
       return false;
     }
+    // w and h are optional; if provided they must be positive
     if (video.w != null && video.w <= 0) {
       logWarn('Invalid video bid request: Invalid width.');
       return false;
@@ -131,26 +135,15 @@ export function isBidRequestValid(bid) {
 }
 
 /**
- * Builds buildRequests function that uses the given converter and endpoint, and stores sync params.
- * @param {Object} config - { converter, endpointUrl, getPublisherUserId }
- * @param {Object} syncParamsRef - Mutable ref { current: {} } to store sync params for getUserSyncs
+ * Builds buildRequests function that uses the given converter and endpoint.
+ * @param {Object} config - { converter, endpointUrl }
  * @returns {function(Array, Object): Object}
  */
-export function createBuildRequests(config, syncParamsRef) {
-  const { converter, endpointUrl, getPublisherUserId: getUserId } = config;
+export function createBuildRequests(config) {
+  const { converter, endpointUrl } = config;
 
   return function buildRequests(validBidRequests, bidderRequest) {
     logInfo('Building server request for valid bid requests:', validBidRequests);
-
-    if (validBidRequests?.length > 0 && validBidRequests[0].params) {
-      const firstBid = validBidRequests[0];
-      syncParamsRef.current = {
-        sspId: firstBid.params.sspId,
-        siteId: firstBid.params.siteId,
-        sspUserId: getUserId(firstBid.params, bidderRequest),
-      };
-      logInfo('Stored sync parameters from bid params:', syncParamsRef.current);
-    }
 
     const request = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     logInfo('Converted to ORTB request:', request);
@@ -227,12 +220,11 @@ export function interpretResponse(serverResponse, request, config = {}) {
 }
 
 /**
- * Creates getUserSyncs function that builds sync URL with privacy and custom params.
- * @param {string} syncUrl - Base sync URL (e.g. 'https://ads.adsmartx.com/sync')
- * @param {Object} syncParamsRef - Same ref passed to createBuildRequests, read as syncParamsRef.current
+ * Creates getUserSyncs function that builds sync URL with privacy params.
+ * @param {string} syncUrl - Base sync URL (e.g. 'https://sync.adsmartx.com/sync')
  * @returns {function(Object, Array, Object, string, Object): Array}
  */
-export function createGetUserSyncs(syncUrl, syncParamsRef) {
+export function createGetUserSyncs(syncUrl) {
   return function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     logInfo('getUserSyncs called with options:', syncOptions);
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -253,15 +245,7 @@ export function createGetUserSyncs(syncUrl, syncParamsRef) {
       params.push('gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(',')));
     }
 
-    const syncParams = syncParamsRef.current || {};
-    if (syncParams.sspId) {
-      params.push('ssp_id=' + encodeURIComponent(syncParams.sspId));
-      logInfo('Adding ssp_id to sync URL:', syncParams.sspId);
-    }
-    if (syncParams.sspUserId) {
-      params.push('ssp_user_id=' + encodeURIComponent(syncParams.sspUserId));
-      logInfo('Adding ssp_user_id to sync URL:', syncParams.sspUserId);
-    }
+    params.push('ssp_id=630141');
     params.push('iframe_enabled=' + (syncOptions.iframeEnabled ? 'true' : 'false'));
 
     const queryString = params.length ? '?' + params.join('&') : '';
