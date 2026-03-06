@@ -403,7 +403,7 @@ describe('RiseMediaTech adapter', () => {
       expect(bids).to.be.an('array').with.lengthOf(1);
     });
 
-    it('should log a warning and not set mediaType for unknown mtype', () => {
+    it('should log a warning and default mediaType to banner for unknown mtype', () => {
       const responseWithUnknownMtype = {
         body: {
           id: '2def',
@@ -429,7 +429,7 @@ describe('RiseMediaTech adapter', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(responseWithUnknownMtype, request);
       expect(bids).to.be.an('array').with.lengthOf(1);
-      expect(bids[0].meta).to.not.have.property('mediaType');
+      expect(bids[0].mediaType).to.equal('banner');
     });
 
     it('should include dealId if present in the bid response', () => {
