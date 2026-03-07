@@ -716,6 +716,125 @@ describe('PubMatic adapter', () => {
             expect(imp).to.be.an('array');
             expect(imp[0]).to.have.property('native');
           });
+
+          describe('privacyLink handling in native request', () => {
+            it('should set ortb.privacy to 1 when privacyLink is present', () => {
+              const nativeParams = {
+                title: {
+                  required: true,
+                  length: 80
+                },
+                image: {
+                  required: true,
+                  sizes: [300, 250]
+                },
+                privacyLink: {
+                  required: false
+                }
+              };
+              const bidRequest = utils.deepClone(validBidRequests[0]);
+              delete bidRequest.mediaTypes.banner;
+              delete bidRequest.mediaTypes.video;
+              bidRequest.mediaTypes.native = nativeParams;
+              bidRequest.sizes = undefined;
+              const request = spec.buildRequests([bidRequest], bidderRequest);
+              const nativeRequest = JSON.parse(request.data.imp[0].native.request);
+              expect(nativeRequest).to.have.property('privacy', 1);
+            });
+
+            it('should skip privacyLink asset and not add it to assets array', () => {
+              const nativeParams = {
+                title: {
+                  required: true,
+                  length: 80
+                },
+                privacyLink: {
+                  required: false
+                }
+              };
+              const bidRequest = utils.deepClone(validBidRequests[0]);
+              delete bidRequest.mediaTypes.banner;
+              delete bidRequest.mediaTypes.video;
+              bidRequest.mediaTypes.native = nativeParams;
+              bidRequest.sizes = undefined;
+              const request = spec.buildRequests([bidRequest], bidderRequest);
+              const nativeRequest = JSON.parse(request.data.imp[0].native.request);
+              const privacyAsset = nativeRequest.assets.find(asset => asset.id === 'privacyLink');
+              expect(privacyAsset).to.be.undefined;
+            });
+
+            it('should set privacy to 1 even when privacyLink is required', () => {
+              const nativeParams = {
+                title: {
+                  required: true,
+                  length: 80
+                },
+                privacyLink: {
+                  required: true
+                }
+              };
+              const bidRequest = utils.deepClone(validBidRequests[0]);
+              delete bidRequest.mediaTypes.banner;
+              delete bidRequest.mediaTypes.video;
+              bidRequest.mediaTypes.native = nativeParams;
+              bidRequest.sizes = undefined;
+              const request = spec.buildRequests([bidRequest], bidderRequest);
+              const nativeRequest = JSON.parse(request.data.imp[0].native.request);
+              expect(nativeRequest).to.have.property('privacy', 1);
+            });
+
+            it('should handle multiple native assets with privacyLink', () => {
+              const nativeParams = {
+                title: {
+                  required: true,
+                  length: 80
+                },
+                image: {
+                  required: true,
+                  sizes: [300, 250]
+                },
+                sponsoredBy: {
+                  required: true
+                },
+                privacyLink: {
+                  required: false
+                }
+              };
+              const bidRequest = utils.deepClone(validBidRequests[0]);
+              delete bidRequest.mediaTypes.banner;
+              delete bidRequest.mediaTypes.video;
+              bidRequest.mediaTypes.native = nativeParams;
+              bidRequest.sizes = undefined;
+              const request = spec.buildRequests([bidRequest], bidderRequest);
+              const nativeRequest = JSON.parse(request.data.imp[0].native.request);
+              expect(nativeRequest).to.have.property('privacy', 1);
+              expect(nativeRequest.assets).to.be.an('array');
+              expect(nativeRequest.assets.length).to.be.greaterThan(0);
+              const privacyAsset = nativeRequest.assets.find(asset => asset.id === 'privacyLink');
+              expect(privacyAsset).to.be.undefined;
+            });
+
+            it('should not add privacy property when privacyLink is not present', () => {
+              const nativeParams = {
+                title: {
+                  required: true,
+                  length: 80
+                },
+                image: {
+                  required: true,
+                  sizes: [300, 250]
+                }
+              };
+              const bidRequest = utils.deepClone(validBidRequests[0]);
+              delete bidRequest.mediaTypes.banner;
+              delete bidRequest.mediaTypes.video;
+              bidRequest.mediaTypes.native = nativeParams;
+              bidRequest.sizes = undefined;
+              const request = spec.buildRequests([bidRequest], bidderRequest);
+              const nativeRequest = JSON.parse(request.data.imp[0].native.request);
+              expect(nativeRequest).to.not.have.property('privacy');
+            });
+          });
         });
       }
       describe('ShouldAddDealTargeting', () => {

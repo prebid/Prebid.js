@@ -256,6 +256,11 @@ const toOrtbNativeRequest = legacyNativeAssets => {
       continue;
     }
 
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
+      continue;
+    }
+
     const asset = legacyNativeAssets[key];
     const required = asset.required && isBoolean(asset.required) ? 1 : 0;
     const ortbAsset = { id: ortb.assets.length, required };
