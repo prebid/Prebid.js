@@ -119,6 +119,22 @@ export function buildGamVideoUrl(options) {
     gdprParams()
   );
 
+  // The IMA player adds usp info, but not gpp info
+  // For cases where the CMP only exposes gpp but not usp,
+  // it is better to derive an usp string from the gpp info and include it in the url
+  if (window.google?.ima) {
+    const usPrivacy = uspDataHandler.getConsentData?.();
+    const gpp = gppDataHandler.getConsentData?.();
+
+    if (!usPrivacy && gpp) {
+      // Extract an usPrivacy string from the GPP string if possible
+      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
+      if (uspFromGpp) {
+        queryParams['us_privacy'] = uspFromGpp;
+      }
+    }
+  }
+
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
 
@@ -299,7 +315,6 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   const video = adUnit?.mediaTypes?.video;
   const sdkApis = (video?.api || []).join(',');
   const usPrivacy = uspDataHandler.getConsentData?.();
-  const gpp = gppDataHandler.getConsentData?.();
   // Adding parameters required by ima
   if (config.getConfig('cache.useLocal') && window.google?.ima) {
     vastUrl = new URL(vastUrl);
@@ -311,14 +326,7 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
     }
     if (usPrivacy) {
       vastUrl.searchParams.set('us_privacy', usPrivacy);
-    } else if (gpp) {
-      // Extract an usPrivacy string from the GPP string if possible
-      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
-      if (uspFromGpp) {
-        vastUrl.searchParams.set('us_privacy', uspFromGpp)
-      }
     }
-
     vastUrl = vastUrl.toString();
   }
 
