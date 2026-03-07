@@ -147,7 +147,9 @@ function interpretResponse(serverResponse, bidRequest) {
     bidResponse.adUrl = xmlData.creativeURL;
   }
   if (xmlData.trackingUrl) {
-    bidResponse.vastImpUrl = xmlData.trackingUrl;
+    bidResponse.vastTrackers = {
+      impression: [xmlData.trackingUrl]
+    };
     bidResponse.trackingUrl = xmlData.trackingUrl;
   }
   bidResponses.push(bidResponse);

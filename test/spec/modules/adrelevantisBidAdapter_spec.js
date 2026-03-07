@@ -607,7 +607,8 @@ describe('AdrelevantisAdapter', function () {
 
       const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastXml');
-      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('vastTrackers');
+      expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
@@ -642,7 +643,8 @@ describe('AdrelevantisAdapter', function () {
 
       const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
-      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('vastTrackers');
+      expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 

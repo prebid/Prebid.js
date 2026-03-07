@@ -89,7 +89,9 @@ describe('gamAdpod', function () {
         'buyerMemberId': 9325
       },
       'vastUrl': 'http://some-vast-url.com',
-      'vastImpUrl': 'http://some-vast-imp-url.com',
+      'vastTrackers': {
+        'impression': ['http://some-vast-imp-url.com']
+      },
       'auctionId': 'ec266b31-d652-49c5-8295-e83fafe5532b',
       'responseTimestamp': 1548442460888,
       'requestTimestamp': 1548442460827,

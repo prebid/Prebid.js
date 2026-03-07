@@ -582,7 +582,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
-      vastImpUrl: rtbBid.notify_url,
+      vastTrackers: {
+        impression: [rtbBid.notify_url]
+      },
       ttl: 3600
     });
 
