@@ -36,11 +36,12 @@ type InsurAdsBidParams = RequireAtLeastOne<{
   allBids?: boolean;
   customId?: string;
   bidders?: Record<string, unknown>;
+  rtdData?: Record<string, string>;
 }, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    ['nexx360']: InsurAdsBidParams;
+    ['insurads']: InsurAdsBidParams;
   }
 }
 
@@ -94,6 +95,19 @@ const converter = ortbConverter({
     request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION);
     return request;
   },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    // Get RTD data from bid params (set by insuradsRtdProvider)
+    const rtdData = (context.bidRequest?.params as InsurAdsBidParams)?.rtdData || {};
+
+    // Merge RTD keyValues with existing adserverTargeting
+    bidResponse.adserverTargeting = {
+      ...bidResponse.adserverTargeting,
+      ...rtdData
+    };
+    return bidResponse;
+  },
 });
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
@@ -143,7 +157,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
+  getUserSyncs
 };
 
 registerBidder(spec);
