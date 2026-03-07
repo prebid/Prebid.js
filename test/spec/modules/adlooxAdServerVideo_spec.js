@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -17,7 +17,7 @@ describe('Adloox Ad Server Video', function () {
     mediaTypes: {
       video: {
         context: 'instream',
-        playerSize: [ 640, 480 ]
+        playerSize: [640, 480]
       }
     },
     bids: [
@@ -156,7 +156,7 @@ describe('Adloox Ad Server Video', function () {
         const BID = utils.deepClone(bid);
 
         const getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
-        getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
+        getWinningBidsStub.withArgs(adUnit.code).returns([BID]);
 
         const ret = buildVideoUrl({ url: vastUrl }, function () {});
         expect(ret).is.false;
@@ -203,7 +203,7 @@ describe('Adloox Ad Server Video', function () {
       beforeEach(function () {
         BID = utils.deepClone(bid);
         getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
-        getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
+        getWinningBidsStub.withArgs(adUnit.code).returns([BID]);
       });
       afterEach(function () {
         getWinningBidsStub.restore();

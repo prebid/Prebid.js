@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {idxIdSubmodule, storage} from 'modules/idxIdSystem.js';
+import { expect } from 'chai';
+import { idxIdSubmodule, storage } from 'modules/idxIdSystem.js';
 import 'src/prebid.js';
 
 const IDX_COOKIE_NAME = '_idx';

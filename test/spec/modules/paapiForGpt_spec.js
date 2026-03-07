@@ -7,8 +7,8 @@ import {
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
-import {deepSetValue} from '../../../src/utils.js';
-import {config} from 'src/config.js';
+import { deepSetValue } from '../../../src/utils.js';
+import { config } from 'src/config.js';
 
 describe('paapiForGpt module', () => {
   let sandbox, fledgeAuctionConfig;
@@ -68,14 +68,14 @@ describe('paapiForGpt module', () => {
           });
 
           it('should reset only sellers with no fresh config', () => {
-            setGptConfig('au', gptSlots, [{seller: 's1'}, {seller: 's2'}]);
+            setGptConfig('au', gptSlots, [{ seller: 's1' }, { seller: 's2' }]);
             gptSlots.forEach(slot => slot.setConfig.resetHistory());
-            setGptConfig('au', gptSlots, [{seller: 's1'}], true);
+            setGptConfig('au', gptSlots, [{ seller: 's1' }], true);
             gptSlots.forEach(slot => {
               sinon.assert.calledWith(slot.setConfig, {
                 componentAuction: [{
                   configKey: 's1',
-                  auctionConfig: {seller: 's1'}
+                  auctionConfig: { seller: 's1' }
                 }, {
                   configKey: 's2',
                   auctionConfig: null
@@ -85,7 +85,7 @@ describe('paapiForGpt module', () => {
           });
 
           it('should not reset sellers that were already reset', () => {
-            setGptConfig('au', gptSlots, [{seller: 's1'}]);
+            setGptConfig('au', gptSlots, [{ seller: 's1' }]);
             setGptConfig('au', gptSlots, [], true);
             gptSlots.forEach(slot => slot.setConfig.resetHistory());
             setGptConfig('au', gptSlots, [], true);
@@ -93,9 +93,9 @@ describe('paapiForGpt module', () => {
           })
 
           it('should keep track of configuration history by ad unit', () => {
-            setGptConfig('au1', gptSlots, [{seller: 's1'}]);
-            setGptConfig('au1', gptSlots, [{seller: 's2'}], false);
-            setGptConfig('au2', gptSlots, [{seller: 's3'}]);
+            setGptConfig('au1', gptSlots, [{ seller: 's1' }]);
+            setGptConfig('au1', gptSlots, [{ seller: 's2' }], false);
+            setGptConfig('au2', gptSlots, [{ seller: 's3' }]);
             gptSlots.forEach(slot => slot.setConfig.resetHistory());
             setGptConfig('au1', gptSlots, [], true);
             gptSlots.forEach(slot => {
@@ -137,11 +137,11 @@ describe('paapiForGpt module', () => {
     });
     it('should invoke once when adUnit is a string', () => {
       runHook('mock-au');
-      expectFilters({adUnitCode: 'mock-au'})
+      expectFilters({ adUnitCode: 'mock-au' })
     });
     it('should invoke once per ad unit when an array', () => {
       runHook(['au1', 'au2']);
-      expectFilters({adUnitCode: 'au1'}, {adUnitCode: 'au2'});
+      expectFilters({ adUnitCode: 'au1' }, { adUnitCode: 'au2' });
     })
   })
   describe('setPAAPIConfigForGpt', () => {
@@ -166,7 +166,7 @@ describe('paapiForGpt module', () => {
     });
 
     it('passes customSlotMatching to getSlots', () => {
-      getPAAPIConfig.returns({au1: {}});
+      getPAAPIConfig.returns({ au1: {} });
       setPAAPIConfigForGPT('mock-filters', 'mock-custom-matching');
       sinon.assert.calledWith(getSlots, ['au1'], 'mock-custom-matching');
     })
@@ -174,10 +174,10 @@ describe('paapiForGpt module', () => {
     it('sets GPT slot config for each ad unit that has PAAPI config, and resets the rest', () => {
       const cfg = {
         au1: {
-          componentAuctions: [{seller: 's1'}, {seller: 's2'}]
+          componentAuctions: [{ seller: 's1' }, { seller: 's2' }]
         },
         au2: {
-          componentAuctions: [{seller: 's3'}]
+          componentAuctions: [{ seller: 's3' }]
         },
         au3: null
       }

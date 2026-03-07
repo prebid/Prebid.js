@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/opscoBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {addFPDToBidderRequest} from "../../helpers/fpd.js";
+import { expect } from 'chai';
+import { spec } from 'modules/opscoBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { addFPDToBidderRequest } from "../../helpers/fpd.js";
 import 'modules/priceFloors.js';
 
 describe('opscoBidAdapter', function () {
@@ -32,36 +32,36 @@ describe('opscoBidAdapter', function () {
     });
 
     it('should return false when placementId is missing', function () {
-      const invalidBid = {...validBid};
+      const invalidBid = { ...validBid };
       delete invalidBid.params.placementId;
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('should return false when publisherId is missing', function () {
-      const invalidBid = {...validBid};
+      const invalidBid = { ...validBid };
       delete invalidBid.params.publisherId;
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('should return false when mediaTypes.banner.sizes is missing', function () {
-      const invalidBid = {...validBid};
+      const invalidBid = { ...validBid };
       delete invalidBid.mediaTypes.banner.sizes;
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('should return false when mediaTypes.banner is missing', function () {
-      const invalidBid = {...validBid};
+      const invalidBid = { ...validBid };
       delete invalidBid.mediaTypes.banner;
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('should return false when bid params are missing', function () {
-      const invalidBid = {bidder: 'opsco'};
+      const invalidBid = { bidder: 'opsco' };
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('should return false when bid params are empty', function () {
-      const invalidBid = {bidder: 'opsco', params: {}};
+      const invalidBid = { bidder: 'opsco', params: {} };
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
@@ -127,25 +127,25 @@ describe('opscoBidAdapter', function () {
     it('should send CCPA in the payload if present', async function () {
       const request = spec.buildRequests([validBid], await addFPDToBidderRequest({
         ...bidderRequest,
-        ...{uspConsent: '1YYY'}
+        ...{ uspConsent: '1YYY' }
       }));
       expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
     });
 
     it('should send eids in the payload if present', async function () {
-      const eids = [{source: 'test', uids: [{id: '123', ext: {}}]}];
+      const eids = [{ source: 'test', uids: [{ id: '123', ext: {} }] }];
       const request = spec.buildRequests([validBid], await addFPDToBidderRequest({
         ...bidderRequest,
-        ortb2: {user: {ext: {eids: eids}}}
+        ortb2: { user: { ext: { eids: eids } } }
       }));
       expect(request.data.user.ext.eids).to.deep.equal(eids);
     });
 
     it('should send schain in the payload if present', function () {
-      const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'exchange1.com', 'sid': '1234', 'hp': 1}]};
+      const schain = { 'ver': '1.0', 'complete': 1, 'nodes': [{ 'asi': 'exchange1.com', 'sid': '1234', 'hp': 1 }] };
       const request = spec.buildRequests([validBid], {
         ...bidderRequest,
-        ortb2: {source: {ext: {schain: schain}}}
+        ortb2: { source: { ext: { schain: schain } } }
       });
       expect(request.data.source.ext.schain).to.deep.equal(schain);
     });
@@ -241,10 +241,10 @@ describe('opscoBidAdapter', function () {
         ext: {
           usersync: {
             sovrn: {
-              syncs: [{type: 'iframe', url: 'https://sovrn.com/iframe_sync'}]
+              syncs: [{ type: 'iframe', url: 'https://sovrn.com/iframe_sync' }]
             },
             appnexus: {
-              syncs: [{type: 'image', url: 'https://appnexus.com/image_sync'}]
+              syncs: [{ type: 'image', url: 'https://appnexus.com/image_sync' }]
             }
           }
         }
@@ -257,26 +257,26 @@ describe('opscoBidAdapter', function () {
     });
 
     it('should return empty array if neither iframe nor pixel is enabled', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('should return syncs only for iframe sync type', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [RESPONSE]);
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
       expect(opts[0].url).to.equal(RESPONSE.body.ext.usersync.sovrn.syncs[0].url);
     });
 
     it('should return syncs only for pixel sync types', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [RESPONSE]);
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
       expect(opts[0].url).to.equal(RESPONSE.body.ext.usersync.appnexus.syncs[0].url);
     });
 
     it('should return syncs when both iframe and pixel are enabled', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [RESPONSE]);
       expect(opts.length).to.equal(2);
     });
   });

@@ -4,7 +4,7 @@ import {
   ADPLUS_COOKIE_NAME,
 } from 'modules/adplusIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const UID_VALUE = '191223.3413767593';
 

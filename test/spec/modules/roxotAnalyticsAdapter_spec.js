@@ -1,6 +1,6 @@
 import roxotAnalytic from 'modules/roxotAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
 const events = require('src/events');
@@ -179,7 +179,7 @@ describe('Roxot Prebid Analytic', function () {
 
       expect(server.requests.length).to.equal(1);
       expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost');
-      server.requests[0].respond(200, {'Content-Type': 'application/json'}, '{"a": 1, "i": 1, "bat": 1}');
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"a": 1, "i": 1, "bat": 1}');
 
       events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
@@ -258,7 +258,7 @@ describe('Roxot Prebid Analytic', function () {
 
       expect(server.requests.length).to.equal(1);
       expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost');
-      server.requests[0].respond(200, {'Content-Type': 'application/json'}, '{"a": 1, "i": 1, "bat": 1}');
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"a": 1, "i": 1, "bat": 1}');
 
       events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
@@ -410,7 +410,7 @@ describe('Roxot Prebid Analytic', function () {
 
       server.requests[0].respond(500);
 
-      expect(roxotAnalytic.getOptions().serverConfig).to.deep.equal({a: 1, i: 1, bat: 1, isError: 1});
+      expect(roxotAnalytic.getOptions().serverConfig).to.deep.equal({ a: 1, i: 1, bat: 1, isError: 1 });
     });
   });
 

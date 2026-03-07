@@ -1,7 +1,7 @@
-import {config} from 'src/config.js';
-import {ruleRegistry} from '../../../src/activities/rules.js';
-import {updateRulesFromConfig} from '../../../modules/allowActivities.js';
-import {activityParams} from '../../../src/activities/activityParams.js';
+import { config } from 'src/config.js';
+import { ruleRegistry } from '../../../src/activities/rules.js';
+import { updateRulesFromConfig } from '../../../modules/allowActivities.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('allowActivities config', () => {
   const MODULE_TYPE = 'test'
@@ -41,7 +41,7 @@ describe('allowActivities config', () => {
         default: false,
         rules: [
           {
-            condition({componentName}) {
+            condition({ componentName }) {
               return componentName === MODULE_NAME
             },
             allow: true
@@ -63,7 +63,7 @@ describe('allowActivities config', () => {
     it('are tested for their condition', () => {
       setupActivityConfig({
         rules: [{
-          condition({flag}) { return flag },
+          condition({ flag }) { return flag },
           allow: false
         }]
       });
@@ -74,7 +74,7 @@ describe('allowActivities config', () => {
 
     it('always apply if they have no condition', () => {
       setupActivityConfig({
-        rules: [{allow: false}]
+        rules: [{ allow: false }]
       });
       expect(isAllowed(ACTIVITY, params)).to.be.false;
     });
@@ -94,7 +94,7 @@ describe('allowActivities config', () => {
     it('does not pass private (underscored) parameters to condition', () => {
       setupActivityConfig({
         rules: [{
-          condition({_priv}) { return _priv },
+          condition({ _priv }) { return _priv },
           allow: false
         }]
       });
@@ -131,7 +131,7 @@ describe('allowActivities config', () => {
       setupActivityConfig({
         allow: false
       });
-      config.setConfig({allowActivities: {}});
+      config.setConfig({ allowActivities: {} });
       expect(isAllowed(ACTIVITY, params)).to.be.true;
     });
   });

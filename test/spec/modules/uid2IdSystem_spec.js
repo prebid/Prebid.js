@@ -1,16 +1,16 @@
-import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
-import {config} from 'src/config.js';
+import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
-import {requestBids} from '../../../src/prebid.js';
+import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
-import {hook} from 'src/hook.js';
-import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
-import {server} from 'test/mocks/xhr';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { hook } from 'src/hook.js';
+import { uninstall as uninstallTcfControl } from 'modules/tcfControl.js';
+import { server } from 'test/mocks/xhr';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const expect = require('chai').expect;
 
@@ -26,16 +26,16 @@ const refreshedToken = 'refreshed-advertising-token';
 const clientSideGeneratedToken = 'client-side-generated-advertising-token';
 const optoutToken = 'optout-token';
 
-const legacyConfigParams = {storage: null};
+const legacyConfigParams = { storage: null };
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
 const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
 
-const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
-const makeUid2OptoutContainer = (token) => ({uid2: {optout: true}});
+const makeUid2IdentityContainer = (token) => ({ uid2: { id: token } });
+const makeUid2OptoutContainer = (token) => ({ uid2: { optout: true } });
 let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
-  userSync: { auctionDelay: extraSettings.auctionDelay ?? auctionDelayMs, ...(extraSettings.syncDelay !== undefined && {syncDelay: extraSettings.syncDelay}), userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug
+  userSync: { auctionDelay: extraSettings.auctionDelay ?? auctionDelayMs, ...(extraSettings.syncDelay !== undefined && { syncDelay: extraSettings.syncDelay }), userIds: [{ name: 'uid2', params: { storage: useLocalStorage ? 'localStorage' : 'cookie', ...params } }] }, debug
 });
 const makeOriginalIdentity = (identity, salt = 1) => ({
   identity: utils.cyrb53Hash(identity, salt),
@@ -184,14 +184,14 @@ describe(`UID2 module`, function () {
   describe('Configuration', function() {
     it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
-      config.setConfig(makePrebidConfig({uid2Token}));
+      config.setConfig(makePrebidConfig({ uid2Token }));
       await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/v2/token/refresh');
     });
 
     it('When a baseUrl is provided in config, the module calls the provided endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
-      config.setConfig(makePrebidConfig({uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com'}));
+      config.setConfig(makePrebidConfig({ uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com' }));
       await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/v2/token/refresh');
     });
@@ -199,7 +199,7 @@ describe(`UID2 module`, function () {
 
   it('When a legacy value is provided directly in configuration, it is passed on', async function() {
     const valueConfig = makePrebidConfig();
-    valueConfig.userSync.userIds[0].value = {uid2: {id: legacyToken}}
+    valueConfig.userSync.userIds[0].value = { uid2: { id: legacyToken } }
     config.setConfig(valueConfig);
     const bid = await runAuction();
 
@@ -231,14 +231,14 @@ describe(`UID2 module`, function () {
     it('and a server cookie is used with a valid server cookie, it should provide the server cookie',
       async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(newServerCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
     it('and a token is provided in config, it should provide the config token',
-      createLegacyTest({uid2Token: apiHelpers.makeTokenResponse(initialToken)}, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
+      createLegacyTest({ uid2Token: apiHelpers.makeTokenResponse(initialToken) }, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
     it('and GDPR applies, no identity should be provided to the auction',
       createLegacyTest(legacyConfigParams, [expectNoIdentity], true));
     it('and GDPR applies, when getId is called directly it provides no identity', () => {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       const consentConfig = setGdprApplies();
       const configObj = makePrebidConfig(legacyConfigParams);
-      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], {gdpr: consentConfig.consentData});
+      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], { gdpr: consentConfig.consentData });
       expect(result?.id).to.not.exist;
     });
 
@@ -264,7 +264,7 @@ describe(`UID2 module`, function () {
     {
       name: 'Token provided in config call',
       setConfig: (token, extraConfig = {}) => {
-        const gen = makePrebidConfig({uid2Token: token}, extraConfig);
+        const gen = makePrebidConfig({ uid2Token: token }, extraConfig);
         return config.setConfig(gen);
       },
     },
@@ -325,7 +325,7 @@ describe(`UID2 module`, function () {
           it('the refreshed value from the cookie is used', async function() {
             const initialIdentity = apiHelpers.makeTokenResponse(initialToken, true, true);
             const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-            const moduleCookie = {originalToken: initialIdentity, latestToken: refreshedIdentity};
+            const moduleCookie = { originalToken: initialIdentity, latestToken: refreshedIdentity };
             coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
             scenario.setConfig(initialIdentity);
 
@@ -352,7 +352,7 @@ describe(`UID2 module`, function () {
 
       describe(`When a current token which should be refreshed is provided, and the auction is set to run immediately`, function() {
         beforeEach(function() {
-          scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true), {auctionDelay: 0, syncDelay: 1});
+          scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true), { auctionDelay: 0, syncDelay: 1 });
         });
         testApiSuccessAndFailure(async function() {
           apiHelpers.respondAfterDelay(10, server);
@@ -496,7 +496,7 @@ describe(`UID2 module`, function () {
           describe('When the storedToken is valid', function() {
             it('it should use the stored token in the auction', async function() {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
+              const moduleCookie = { originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity };
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
               config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com', auctionDelay: 0, syncDelay: 1 }));
               const bid = await runAuction();
@@ -507,7 +507,7 @@ describe(`UID2 module`, function () {
           describe('When the storedToken is expired and can be refreshed ', function() {
             testApiSuccessAndFailure(async function(apiSucceeds) {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true);
-              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
+              const moduleCookie = { originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity };
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
               config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
               apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
@@ -522,7 +522,7 @@ describe(`UID2 module`, function () {
           describe('When the storedToken is expired for refresh', function() {
             testApiSuccessAndFailure(async function(apiSucceeds) {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
-              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
+              const moduleCookie = { originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity };
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
               config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
               apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
@@ -537,7 +537,7 @@ describe(`UID2 module`, function () {
 
         it('when originalIdentity not match, the auction should has no uid2', async function() {
           const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-          const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), latestToken: refreshedIdentity};
+          const moduleCookie = { originalIdentity: makeOriginalIdentity('123@test.com'), latestToken: refreshedIdentity };
           coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
           config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
           const bid = await runAuction();
@@ -613,7 +613,7 @@ describe(`UID2 module`, function () {
     describe('when there is a non-cstg-derived token in the module cookie', function () {
       it('the auction use stored token if it is valid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken);
-        const moduleCookie = {originalToken: originalIdentity, latestToken: originalIdentity};
+        const moduleCookie = { originalToken: originalIdentity, latestToken: originalIdentity };
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();
@@ -622,7 +622,7 @@ describe(`UID2 module`, function () {
 
       it('the auction should has no uid2 if stored token is invalid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken, true, true, true);
-        const moduleCookie = {originalToken: originalIdentity, latestToken: originalIdentity};
+        const moduleCookie = { originalToken: originalIdentity, latestToken: originalIdentity };
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();
@@ -633,7 +633,7 @@ describe(`UID2 module`, function () {
     describe('when there is a cstg-derived token in the module cookie', function () {
       it('the auction use stored token if it is valid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken);
-        const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), originalToken: originalIdentity, latestToken: originalIdentity};
+        const moduleCookie = { originalIdentity: makeOriginalIdentity('123@test.com'), originalToken: originalIdentity, latestToken: originalIdentity };
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();
@@ -642,7 +642,7 @@ describe(`UID2 module`, function () {
 
       it('the auction should has no uid2 if stored token is invalid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken, true, true, true);
-        const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), originalToken: originalIdentity, latestToken: originalIdentity};
+        const moduleCookie = { originalIdentity: makeOriginalIdentity('123@test.com'), originalToken: originalIdentity, latestToken: originalIdentity };
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();
@@ -659,7 +659,7 @@ describe(`UID2 module`, function () {
   describe('eid', () => {
     it('uid2', function() {
       const userId = {
-        uid2: {'id': 'Sample_AD_Token'}
+        uid2: { 'id': 'Sample_AD_Token' }
       };
       const newEids = createEidsArray(userId);
       expect(newEids.length).to.equal(1);
@@ -674,7 +674,7 @@ describe(`UID2 module`, function () {
 
     it('uid2 with ext', function() {
       const userId = {
-        uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
+        uid2: { 'id': 'Sample_AD_Token', 'ext': { 'provider': 'some.provider.com' } }
       };
       const newEids = createEidsArray(userId);
       expect(newEids.length).to.equal(1);

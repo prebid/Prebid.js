@@ -1,34 +1,34 @@
-import {isArrayOfNums, isInteger, logError} from './utils.js';
-import {config} from './config.js';
-import {hook} from './hook.js';
-import {auctionManager} from './auctionManager.js';
-import type {AudioBid} from "./bidfactory.ts";
-import {type BaseMediaType} from "./mediaTypes.ts";
-import type {ORTBImp} from "./types/ortb/request";
-import type {AdUnitDefinition} from "./adUnits.ts";
-import {getGlobalVarName} from "./buildOptions.ts";
+import { isArrayOfNums, isInteger, logError } from './utils.js';
+import { config } from './config.js';
+import { hook } from './hook.js';
+import { auctionManager } from './auctionManager.js';
+import type { AudioBid } from "./bidfactory.ts";
+import { type BaseMediaType } from "./mediaTypes.ts";
+import type { ORTBImp } from "./types/ortb/request";
+import type { AdUnitDefinition } from "./adUnits.ts";
+import { getGlobalVarName } from "./buildOptions.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
 const ORTB_PARAMS = [
-  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-  [ 'minduration', isInteger ],
-  [ 'maxduration', isInteger ],
-  [ 'startdelay', isInteger ],
-  [ 'maxseq', isInteger ],
-  [ 'poddur', isInteger ],
-  [ 'protocols', isArrayOfNums ],
-  [ 'battr', isArrayOfNums ],
-  [ 'maxextended', isInteger ],
-  [ 'minbitrate', isInteger ],
-  [ 'maxbitrate', isInteger ],
-  [ 'delivery', isArrayOfNums ],
-  [ 'api', isArrayOfNums ],
-  [ 'companiontype', isArrayOfNums ],
-  [ 'feed', isInteger ],
-  [ 'stitched', isInteger ],
-  [ 'nvol', isInteger ],
+  ['mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string')],
+  ['minduration', isInteger],
+  ['maxduration', isInteger],
+  ['startdelay', isInteger],
+  ['maxseq', isInteger],
+  ['poddur', isInteger],
+  ['protocols', isArrayOfNums],
+  ['battr', isArrayOfNums],
+  ['maxextended', isInteger],
+  ['minbitrate', isInteger],
+  ['maxbitrate', isInteger],
+  ['delivery', isArrayOfNums],
+  ['api', isArrayOfNums],
+  ['companiontype', isArrayOfNums],
+  ['feed', isInteger],
+  ['stitched', isInteger],
+  ['nvol', isInteger],
 ] as const;
 
 /**
@@ -49,7 +49,7 @@ export function fillAudioDefaults(adUnit: AdUnitDefinition) {}
 /**
  * Validate that the assets required for audio context are present on the bid
  */
-export function isValidAudioBid(bid: AudioBid, {index = auctionManager.index} = {}): boolean {
+export function isValidAudioBid(bid: AudioBid, { index = auctionManager.index } = {}): boolean {
   const audioMediaType = index.getMediaTypes(bid)?.audio;
   const context = audioMediaType && audioMediaType?.context;
   const useCacheKey = audioMediaType && audioMediaType?.useCacheKey;

@@ -30,9 +30,9 @@ window.addEventListener('unhandledrejection', function (ev) {
 const sinon = require('sinon');
 globalThis.sinon = sinon;
 if (!sinon.sandbox) {
-  sinon.sandbox = {create: sinon.createSandbox.bind(sinon)};
+  sinon.sandbox = { create: sinon.createSandbox.bind(sinon) };
 }
-const {fakeServer, fakeServerWithClock, fakeXhr} = require('nise');
+const { fakeServer, fakeServerWithClock, fakeXhr } = require('nise');
 sinon.fakeServer = fakeServer;
 sinon.fakeServerWithClock = fakeServerWithClock;
 sinon.useFakeXMLHttpRequest = fakeXhr.useFakeXMLHttpRequest.bind(fakeXhr);

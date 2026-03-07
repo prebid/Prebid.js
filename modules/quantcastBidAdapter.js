@@ -1,9 +1,9 @@
-import {deepAccess, isArray, isEmpty, logError, logInfo} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {parseDomain} from '../src/refererDetection.js';
+import { deepAccess, isArray, isEmpty, logError, logInfo } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseDomain } from '../src/refererDetection.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -26,7 +26,7 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function makeVideoImp(bid) {
   const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
@@ -136,7 +136,7 @@ export const spec = {
     const uspConsent = deepAccess(bidderRequest, 'uspConsent');
     const referrer = deepAccess(bidderRequest, 'refererInfo.ref');
     const page = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
-    const domain = parseDomain(page, {noLeadingWww: true});
+    const domain = parseDomain(page, { noLeadingWww: true });
 
     // Check for GDPR consent for purpose 1, and drop request if consent has not been given
     // Remaining consent checks are performed server-side.
