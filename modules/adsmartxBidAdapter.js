@@ -1,15 +1,16 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { logInfo } from '../src/utils.js';
 import {
   createConverter,
   isBidRequestValid as validateBidRequest,
   createBuildRequests,
   interpretResponse as interpretResponseUtil,
+  createGetUserSyncs,
 } from '../libraries/adsmartxUtils/bidderUtils.js';
 
-const BIDDER_CODE = 'risemediatech';
-const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
+const BIDDER_CODE = 'adsmartx';
+const ENDPOINT_URL = 'https://ads.adsmartx.com/ads/rtb/prebid/js';
+const SYNC_URL = 'https://sync.adsmartx.com/sync';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 60;
 
@@ -19,6 +20,7 @@ const isBidRequestValid = validateBidRequest;
 const buildRequests = createBuildRequests(
   { converter, endpointUrl: ENDPOINT_URL }
 );
+const getUserSyncs = createGetUserSyncs(SYNC_URL);
 
 const interpretResponse = (serverResponse, request) => {
   return interpretResponseUtil(serverResponse, request, {
@@ -27,13 +29,10 @@ const interpretResponse = (serverResponse, request) => {
   });
 };
 
-const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  logInfo('User syncs are not implemented in this adapter yet.');
-  return [];
-};
-
 export const spec = {
   code: BIDDER_CODE,
+  // TODO: set gvlid once confirmed with AI Digital / AdSmartX team
+  gvlid: undefined,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
