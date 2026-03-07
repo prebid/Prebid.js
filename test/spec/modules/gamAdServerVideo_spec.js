@@ -872,7 +872,7 @@ describe('The DFP video support module', function () {
     server.respond();
   });
 
-  describe('Retrieve US Privacy string from GPP when using the IMA player and downloading VAST XMLs', () => {
+  describe('Retrieve US Privacy string from GPP when using the IMA player', () => {
     beforeEach(() => {
       config.setConfig({ cache: { useLocal: true } });
       // Install a fake IMA object, because the us_privacy is only set when IMA is available
@@ -901,7 +901,7 @@ describe('The DFP video support module', function () {
       );
       server.respondWith(gamWrapper);
 
-      const result = getVastXml({ url, adUnit: {}, bid: {} }, []).then(() => {
+      const result = getVastXml({url, adUnit: {}, bid: {}, params: {iu: '/19968336/prebid_cache_video_adunit'}}, []).then(() => {
         const request = server.requests[0];
         const url = new URL(request.url);
         return url.searchParams.get('us_privacy');
@@ -909,6 +909,11 @@ describe('The DFP video support module', function () {
       server.respond();
 
       return result;
+    }
+
+    function obtainUsPrivacyInGamVideoUrl() {
+      const url = 'https://pubads.g.doubleclick.net/gampad/ads'
+      return new URLSearchParams(buildDfpVideoUrl({url, adUnit: {}, bid: {}, params: {iu: '/19968336/prebid_cache_video_adunit'}})).get('us_privacy');
     }
 
     function mockGpp(gpp) {
@@ -936,12 +941,20 @@ describe('The DFP video support module', function () {
       }));
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal(usPrivacy)
+      expect(usPrivacyFromRequest).to.equal(usPrivacy);
+
+      // In this case, the IMA player will add the us_privacy string
+      // It is not included in the URL returned by Prebid
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.be.null;
     })
 
     it('no us_privacy when neither usp nor gpp is present', async () => {
       const usPrivacyFromRequqest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequqest).to.be.null;
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.be.null;
     })
 
     it('can retrieve from usp section in gpp', async () => {
@@ -955,7 +968,10 @@ describe('The DFP video support module', function () {
       }));
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY')
+      expect(usPrivacyFromRequest).to.equal('1YNY');
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.equal('1YNY');
     })
     it('can retrieve from usnat section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1004,6 +1020,9 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YYY');
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.equal('1YYY');
     })
     it('can retrieve from usnat section in gpp when usnat is an array', async() => {
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1032,6 +1051,9 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YNY');
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.equal('1YNY');
     })
     it('no us_privacy when either SaleOptOutNotice or SaleOptOut is missing', async () => {
       // Missing SaleOptOutNotice
@@ -1080,6 +1102,9 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.be.null;
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.be.null;
     })
     it('no us_privacy when either SaleOptOutNotice or SaleOptOut is null', async () => {
       // null SaleOptOut
@@ -1129,6 +1154,9 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.be.null;
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.be.null;
     })
 
     it('can retrieve from usca section in gpp', async () => {
@@ -1166,6 +1194,9 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YNY');
+
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+      expect(usPrivacyFromUrl).to.equal('1YNY');
     })
   });
 });
