@@ -1,31 +1,20 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { server } from '../../mocks/xhr.js';
-import { getWinDimensions } from '../../../src/utils.js';
-import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
+import * as utils from 'src/utils.js';
 
-import {
-  mediaSize,
-  spec,
-  BIDDER_CODE,
-  ENDPOINT_URL,
-  REQUEST_ROUTE,
-} from 'modules/hypelabBidAdapter.js';
+import { spec, BIDDER_CODE, ENDPOINT_URL } from 'modules/hypelabBidAdapter.js';
 
 import { BANNER } from 'src/mediaTypes.js';
-import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
+
+import 'src/prebid.js';
+import { hook } from '../../../src/hook.js';
 
 const mockValidBidRequest = {
   bidder: 'hypelab',
   params: {
     property_slug: 'prebid',
     placement_slug: 'test_placement',
-    uuid: '',
-    sdk_version: '0.1.0',
-    provider_name: 'react',
-    provider_version: '0.3.1',
   },
-  userIds: [],
   mediaTypes: {
     banner: {
       sizes: [[728, 90]],
@@ -36,292 +25,273 @@ const mockValidBidRequest = {
   bidId: '24d2b2c86c5e19',
   bidderRequestId: '1d1f40b509f18',
   auctionId: '3bf3b1fb-cb0a-4ee8-90ef-69b8e6e56dbd',
-  bidRequestsCount: 1,
-  bidderRequestsCount: 1,
-  bidderWinsCount: 0,
 };
 
 const mockValidBidRequests = [mockValidBidRequest];
 
-const mockServerResponse = {
-  body: {
-    status: 'success',
-    data: {
-      currency: 'USD',
-      campaign_slug: '9dbe230882',
-      creative_set_slug: '842984f045',
-      creative_set: {
-        image: {
-          url: 'https://cloudfront.net/up/asset/12345',
-          height: 90,
-          width: 728,
-        },
-      },
-      cpm: 1.5,
-      html: "<!DOCTYPE html>\n      <html lang=\"en\">\n          <head>\n              <meta charset=\"UTF-8\">\n              <title>Ad</title>\n              <style>\n                  html, body {\n                      margin: 0;\n                      padding: 0;\n                      overflow: hidden;\n                  }\n              </style>\n          </head>\n          <body>\n              <a\n            id=\"link\"\n            href=https://web.hypelab-staging.com/click?campaign_slug=9dbe230882&creative_set_slug=842984f045&placement_slug=test_placement \n            target=\"_blank\">\n            <img src=\"https://di30gnjrtlisb.cloudfront.net/up/asset/d1d1d65463/8eb7e9065e.jpg?tr=w-728,h-90\">\n        </a>\n        \n              <script>\n                  function track(type) {\n                      var request = new XMLHttpRequest();\n                      request.open('POST', 'https://api.hypelab-staging.com/v1/events');\n                      request.setRequestHeader('Content-Type', 'application/json');\n\n                      var event = {\n                          property_slug: 'prebid',\n                          placement_slug: 'test_placement',\n                          campaign_slug: '9dbe230882',\n                          creative_set_slug: '842984f045',\n                          type: type,\n                          uuid: '',\n                          wids: []\n                      };\n\n                      request.send(JSON.stringify(event));\n                  }\n\n                  document.getElementById('link').addEventListener('click', function() {\n                      track('click');\n                  });\n\n                  track('impression');\n              </script>\n          </body>\n      </html>\n    ",
-      advertiser_domains: ['ogx.com'],
-      media_type: 'banner',
-      ttl: 360,
-    },
-  },
-};
-
 const mockBidderRequest = {
   bidderCode: 'hypelab',
-  auctionId: '4462005b-ba06-49a9-a95d-0209c22f4606',
-  bidderRequestId: '1bf399761210ad',
+  auctionId: '3bf3b1fb-cb0a-4ee8-90ef-69b8e6e56dbd',
+  bidderRequestId: '1d1f40b509f18',
   bids: mockValidBidRequests,
-  auctionStart: 1684983987435,
   timeout: 2000,
+  ortb2: {
+    source: {
+      tid: '3bf3b1fb-cb0a-4ee8-90ef-69b8e6e56dbd',
+    },
+  },
   refererInfo: {
-    topmostLocation: 'https://example.com/hello_world.html',
-    location: 'https://example.com/hello_world.html',
-    canonicalUrl: null,
     page: 'https://example.com/hello_world.html',
-    domain: null,
+    domain: 'example.com',
     ref: null,
   },
 };
 
-const mockBidRequest = {
-  method: 'POST',
-  url: 'https://api.hypelab.com/v1/prebid_requests',
-  options: {
-    contentType: 'application/json',
-    withCredentials: false,
+const mockServerResponse = {
+  body: {
+    id: 'test-response-id',
+    cur: 'USD',
+    seatbid: [
+      {
+        bid: [
+          {
+            price: 1.5,
+            adm: '<div>ad markup</div>',
+            impid: '24d2b2c86c5e19',
+            crid: '842984f045',
+            w: 728,
+            h: 90,
+            adomain: ['ogx.com'],
+            burl: 'https://api.hypelab.com/v1/events/burl?price=${AUCTION_PRICE}',
+          },
+        ],
+      },
+    ],
   },
-  data: {
-    property_slug: 'prebid',
-    placement_slug: 'test_placement',
-    provider_version: '0.0.1',
-    provider_name: 'prebid',
-    location: 'https://example.com',
-    sdk_version: '7.51.0-pre',
-    sizes: [[728, 90]],
-    wids: [],
-    uuid: 'tmp_c5abf809-47d6-40b9-8274-372c6d816dd8',
-    bidRequestsCount: 1,
-    bidderRequestsCount: 1,
-    bidderWinsCount: 0,
-    floor: null,
-    dpr: 1,
-    wp: { ada: false, bnb: false, eth: false, sol: false, tron: false },
-    wpfs: { ada: [], bnb: [], eth: [], sol: [], tron: [] },
-    vp: [1920, 1080],
-    pp: [240, 360],
-  },
-  bidId: '2e02b562f700ae',
 };
 
 describe('hypelabBidAdapter', function () {
-  describe('mediaSize', function () {
-    it('when given an invalid media object', function () {
-      expect(mediaSize({})).to.eql({ width: 0, height: 0 });
-    });
-
-    it('when given a valid media object', function () {
-      expect(
-        mediaSize({ creative_set: { image: { width: 728, height: 90 } } })
-      ).to.eql({ width: 728, height: 90 });
-    });
+  before(function () {
+    hook.ready();
   });
 
   describe('isBidRequestValid', function () {
-    it('when given an invalid bid request', function () {
+    it('should return false when given an invalid bid request', function () {
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
 
-    it('when given a valid bid request', function () {
+    it('should return false when missing placement_slug', function () {
+      expect(
+        spec.isBidRequestValid({ params: { property_slug: 'test' } })
+      ).to.equal(false);
+    });
+
+    it('should return true when given a valid bid request', function () {
       expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
     });
   });
 
-  describe('Bidder code valid', function () {
-    it('should match BIDDER_CODE', function () {
+  describe('spec properties', function () {
+    it('should have correct bidder code', function () {
       expect(spec.code).to.equal(BIDDER_CODE);
     });
-  });
 
-  describe('Media types valid', function () {
-    it('should contain BANNER', function () {
+    it('should support banner media type', function () {
       expect(spec.supportedMediaTypes).to.contain(BANNER);
     });
   });
 
-  describe('Bid request valid', function () {
-    it('should validate correctly', function () {
-      expect(spec.isBidRequestValid(mockValidBidRequest)).to.equal(true);
+  describe('buildRequests', function () {
+    let requests;
+
+    before(function () {
+      requests = spec.buildRequests(mockValidBidRequests, mockBidderRequest);
+    });
+
+    it('should return an array of requests', function () {
+      expect(requests).to.be.an('array');
+      expect(requests).to.have.lengthOf(1);
+    });
+
+    it('should make a POST request to the correct endpoint', function () {
+      const request = requests[0];
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(ENDPOINT_URL);
+    });
+
+    it('should set withCredentials', function () {
+      expect(requests[0].options.withCredentials).to.equal(true);
+    });
+
+    it('should include imp.ext.bidder with property_slug and placement_slug', function () {
+      const bidder = requests[0].data.imp[0].ext.bidder;
+      expect(bidder.property_slug).to.equal('prebid');
+      expect(bidder.placement_slug).to.equal('test_placement');
+    });
+
+    it('should include imp.ext.bidder.pp', function () {
+      expect(requests[0].data.imp[0].ext.bidder).to.have.property('pp');
+    });
+
+    it('should set ext.source to prebid', function () {
+      expect(requests[0].data.ext.source).to.equal('prebid');
+    });
+
+    it('should include ext.dpr and ext.vp', function () {
+      const ext = requests[0].data.ext;
+      expect(ext.dpr).to.be.a('number');
+      expect(ext.vp).to.be.an('array');
+      expect(ext.vp).to.have.lengthOf(2);
+    });
+
+    it('should include ext.sdk_version', function () {
+      expect(requests[0].data.ext.sdk_version).to.be.a('string');
+    });
+
+    it('should include ext.provider_version', function () {
+      expect(requests[0].data.ext.provider_version).to.equal('0.0.4');
+    });
+
+    it('should set at to 1', function () {
+      expect(requests[0].data.at).to.equal(1);
+    });
+
+    it('should include USD in cur', function () {
+      expect(requests[0].data.cur).to.include('USD');
+    });
+
+    it('should include user.ext.wp and user.ext.wpfs', function () {
+      const user = requests[0].data.user;
+      expect(user.ext.wp).to.be.an('object');
+      expect(user.ext.wpfs).to.be.an('object');
+    });
+
+    it('should include user.ext.wids as empty array', function () {
+      expect(requests[0].data.user.ext.wids).to.deep.equal([]);
+    });
+
+    it('should set user.buyeruid from userIdAsEids', function () {
+      const bidRequestWithEids = {
+        ...mockValidBidRequest,
+        userIdAsEids: [
+          {
+            source: 'pubcid.org',
+            uids: [{ id: 'pubcid_id' }],
+          },
+        ],
+      };
+
+      const result = spec.buildRequests(
+        [bidRequestWithEids],
+        mockBidderRequest
+      );
+      expect(result[0].data.user.buyeruid).to.equal('pubcid_id');
+      expect(result[0].data.user.id).to.equal('pubcid_id');
+    });
+
+    it('should generate a temporary uuid when no userIdAsEids', function () {
+      const result = spec.buildRequests(
+        [mockValidBidRequest],
+        mockBidderRequest
+      );
+      expect(result[0].data.user.buyeruid).to.be.a('string');
+      expect(result[0].data.user.buyeruid).to.match(/^tmp_/);
+    });
+
+    it('should include banner format in imp', function () {
+      const imp = requests[0].data.imp[0];
+      expect(imp.banner).to.exist;
+      expect(imp.banner.format).to.be.an('array');
+      expect(imp.banner.format[0].w).to.equal(728);
+      expect(imp.banner.format[0].h).to.equal(90);
     });
   });
 
-  describe('buildRequests', () => {
-    it('returns a valid request', function () {
-      const result = spec.buildRequests(
+  describe('interpretResponse', function () {
+    let request;
+
+    before(function () {
+      const requests = spec.buildRequests(
         mockValidBidRequests,
         mockBidderRequest
       );
-      expect(result).to.be.an('array');
-
-      const first = result[0] || {};
-      expect(first).to.be.an('object');
-      expect(first.method).to.equal('POST');
-      expect(first.url).to.be.a('string');
-      expect(first.url).to.equal(ENDPOINT_URL + REQUEST_ROUTE);
-
-      const data = first.data || {};
-      expect(data).to.be.an('object');
-      expect(data.property_slug).to.be.a('string');
-      expect(data.placement_slug).to.be.a('string');
-      expect(data.bidRequestsCount).to.be.a('number');
-      expect(data.bidderRequestsCount).to.be.a('number');
-      expect(data.bidderWinsCount).to.be.a('number');
-      expect(data.dpr).to.be.a('number');
-      expect(data.location).to.be.a('string');
-      expect(data.floor).to.equal(null);
-      expect(data.dpr).to.equal(getDevicePixelRatio());
-      expect(data.wp).to.deep.equal({
-        ada: false,
-        bnb: false,
-        eth: false,
-        sol: false,
-        tron: false,
-      });
-      expect(data.wpfs).to.deep.equal({
-        ada: [],
-        bnb: [],
-        eth: [],
-        sol: [],
-        tron: [],
-      });
-      const winDimensions = getWinDimensions();
-      expect(data.vp).to.deep.equal([
-        Math.max(
-          winDimensions?.document.documentElement.clientWidth || 0,
-          winDimensions?.innerWidth || 0
-        ),
-        Math.max(
-          winDimensions?.document.documentElement.clientHeight || 0,
-          winDimensions?.innerHeight || 0
-        ),
-      ]);
-      expect(data.pp).to.deep.equal(null);
+      request = requests[0];
     });
 
-    it('should set uuid to the first id in userIdAsEids', () => {
-      mockValidBidRequests[0].userIdAsEids = [
-        {
-          source: 'pubcid.org',
-          uids: [
-            {
-              id: 'pubcid_id',
-            },
-          ],
-        },
-        {
-          source: 'criteo.com',
-          uids: [
-            {
-              id: 'criteo_id',
-            },
-          ],
-        },
-      ];
-
-      const result = spec.buildRequests(
-        mockValidBidRequests,
-        mockBidderRequest
-      );
-
-      const data = result[0].data || {};
-      expect(data.uuid).to.be.eq('pubcid_id');
-    });
-  });
-
-  describe('interpretResponse', () => {
-    it('successfully interpret a valid response', function () {
-      const result = spec.interpretResponse(mockServerResponse, mockBidRequest);
+    it('should return a valid bid from a valid response', function () {
+      const result = spec.interpretResponse(mockServerResponse, request);
 
       expect(result).to.be.an('array');
-      const data = result[0] || {};
-      expect(data).to.be.an('object');
-      expect(data.requestId).to.be.a('string');
-      expect(data.cpm).to.be.a('number');
-      expect(data.width).to.be.a('number');
-      expect(data.height).to.be.a('number');
-      expect(data.creativeId).to.be.a('string');
-      expect(data.currency).to.be.a('string');
-      expect(data.netRevenue).to.be.a('boolean');
-      expect(data.referrer).to.be.a('string');
-      expect(data.ttl).to.be.a('number');
-      expect(data.ad).to.be.a('string');
-      expect(data.mediaType).to.be.a('string');
-      expect(data.meta.advertiserDomains).to.be.an('array');
-      expect(data.meta.advertiserDomains[0]).to.be.a('string');
+      expect(result).to.have.lengthOf(1);
+
+      const bid = result[0];
+      expect(bid.cpm).to.equal(1.5);
+      expect(bid.width).to.equal(728);
+      expect(bid.height).to.equal(90);
+      expect(bid.creativeId).to.equal('842984f045');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.ad).to.equal('<div>ad markup</div>');
+      expect(bid.mediaType).to.equal(BANNER);
+      expect(bid.meta.advertiserDomains).to.deep.equal(['ogx.com']);
     });
 
-    it('should return a blank array if cpm is not set', () => {
-      mockServerResponse.body.data.cpm = undefined;
-      const result = spec.interpretResponse(mockServerResponse, mockBidRequest);
-      expect(result).to.eql([]);
+    it('should return an empty array for empty response', function () {
+      expect(spec.interpretResponse({}, request)).to.deep.equal([]);
+    });
+
+    it('should return an empty array for missing body', function () {
+      expect(spec.interpretResponse({ body: null }, request)).to.deep.equal([]);
+    });
+
+    it('should return an empty array for response with no seatbid', function () {
+      const result = spec.interpretResponse(
+        { body: { id: '1', seatbid: [] } },
+        request
+      );
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
     });
   });
 
-  describe('report', () => {
-    it('returns if REPORTING_ROUTE is not set', () => {
-      spec.REPORTING_ROUTE = '';
-      expect(spec.report('test', {})).to.be.undefined;
+  describe('onBidWon', function () {
+    let triggerPixelStub;
+
+    beforeEach(function () {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     });
 
-    it('makes a POST request if REPORTING_ROUTE is set', () => {
-      spec.report('test', {}, '/v1/events');
+    afterEach(function () {
+      triggerPixelStub.restore();
+    });
 
-      expect(server.requests[0].url).to.equals(
-        'https://api.hypelab.com/v1/events'
+    it('should fire burl pixel with auction price', function () {
+      const bid = {
+        cpm: 1.5,
+        burl: 'https://api.hypelab.com/v1/events/burl?price=${AUCTION_PRICE}',
+      };
+      spec.onBidWon(bid);
+      expect(triggerPixelStub.calledOnce).to.be.true;
+      expect(triggerPixelStub.getCall(0).args[0]).to.equal(
+        'https://api.hypelab.com/v1/events/burl?price=1.5'
       );
     });
-  });
 
-  describe('callbacks', () => {
-    const bid = {};
-    let reportStub;
-
-    beforeEach(() => (reportStub = sinon.stub(spec, 'report')));
-    afterEach(() => reportStub.restore());
-
-    describe('onTimeout', () => {
-      it('should call report with the correct data', () => {
-        spec.onTimeout(bid);
-
-        expect(reportStub.calledOnce).to.be.true;
-        expect(reportStub.getCall(0).args).to.eql(['timeout', bid]);
-      });
+    it('should use originalCpm when available', function () {
+      const bid = {
+        cpm: 1.2,
+        originalCpm: 1.5,
+        burl: 'https://api.hypelab.com/v1/events/burl?price=${AUCTION_PRICE}',
+      };
+      spec.onBidWon(bid);
+      expect(triggerPixelStub.calledOnce).to.be.true;
+      expect(triggerPixelStub.getCall(0).args[0]).to.equal(
+        'https://api.hypelab.com/v1/events/burl?price=1.5'
+      );
     });
 
-    describe('onSetTargeting', () => {
-      it('should call report with the correct data', () => {
-        spec.onSetTargeting(bid);
-
-        expect(reportStub.calledOnce).to.be.true;
-        expect(reportStub.getCall(0).args).to.eql(['setTargeting', bid]);
-      });
-    });
-
-    describe('onBidWon', () => {
-      it('should call report with the correct data', () => {
-        spec.onBidWon(bid);
-
-        expect(reportStub.calledOnce).to.be.true;
-        expect(reportStub.getCall(0).args).to.eql(['bidWon', bid]);
-      });
-    });
-
-    describe('onBidderError', () => {
-      it('should call report with the correct data', () => {
-        spec.onBidderError(bid);
-
-        expect(reportStub.calledOnce).to.be.true;
-        expect(reportStub.getCall(0).args).to.eql(['bidderError', bid]);
-      });
+    it('should not fire pixel when burl is missing', function () {
+      spec.onBidWon({ cpm: 1.5 });
+      expect(triggerPixelStub.called).to.be.false;
     });
   });
 });
