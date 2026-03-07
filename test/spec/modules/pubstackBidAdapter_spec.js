@@ -114,7 +114,7 @@ describe('pubstackBidAdapter', function () {
       expect(request.data.imp).to.have.lengthOf(1);
       expect(utils.deepAccess(request, 'data.imp.0.id')).to.equal('bid-1');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.adUnitName')).to.equal('adunit-1');
-      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.code')).to.equal('adunit-code');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.adUnitCode')).to.equal('adunit-code');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.height')).to.be.a('number');

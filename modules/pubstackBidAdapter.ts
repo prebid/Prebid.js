@@ -54,16 +54,18 @@ const getElementForAdUnitCode = (adUnitCode: string): HTMLElement | undefined =>
 
 const converter = ortbConverter({
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
-    const element = getElementForAdUnitCode(bidRequest.adUnitCode);
-    const placementInfo = getPlacementInfo(bidRequest);
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitName`, bidRequest.params.adUnitName);
-    deepSetValue(imp, `ext.prebid.placement.code`, bidRequest.adUnitCode);
+    const element = getElementForAdUnitCode(bidRequest.adUnitCode);
+    const placementDomId = element?.id ?? bidRequest.adUnitCode;
+    const placementInfo = getPlacementInfo({...bidRequest, adUnitCode: placementDomId});
     deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
     deepSetValue(imp, `ext.prebid.placement.viewability`, placementInfo.PlacementPercentView);
     deepSetValue(imp, `ext.prebid.placement.viewportDistance`, placementInfo.DistanceToView);
     deepSetValue(imp, `ext.prebid.placement.height`, placementInfo.ElementHeight);
     deepSetValue(imp, `ext.prebid.placement.auctionsCount`, placementInfo.AuctionsCount);
+    deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitName`, bidRequest.params.adUnitName);
+    deepSetValue(imp, `ext.prebid.placement.adUnitCode`, bidRequest.adUnitCode);
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
