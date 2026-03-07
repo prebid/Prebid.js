@@ -1,8 +1,11 @@
 import {config} from './config.js';
 import {logError} from './utils.js';
+import {BID_STATUS} from './constants.js';
 const CACHE_TTL_SETTING = 'minBidCacheTTL';
+const MIN_WINNING_BID_CACHE_TTL_SETTING = 'minWinningBidCacheTTL';
 let TTL_BUFFER = 1;
 let minCacheTTL = null;
+let minWinningBidCacheTTL = null;
 const listeners = [];
 
 declare module './config' {
@@ -21,6 +24,12 @@ declare module './config' {
      * If unset (the default), bids are kept for the lifetime of the page.
      */
     [CACHE_TTL_SETTING]?: number;
+    /**
+     * When set, overrides minBidCacheTTL for bids that have had targeting set (e.g. winning bids sent to the ad server).
+     * Useful with GPT lazy load when the scroll milestone for render may take a long time.
+     * If unset, minBidCacheTTL applies to all bids. Setting to Infinity keeps winning bids indefinitely.
+     */
+    [MIN_WINNING_BID_CACHE_TTL_SETTING]?: number;
   }
 }
 
@@ -40,14 +49,47 @@ export function getMinBidCacheTTL() {
   return minCacheTTL;
 }
 
+export function getMinWinningBidCacheTTL() {
+  return minWinningBidCacheTTL;
+}
+
+/**
+ * Returns the effective minimum cache TTL in seconds for a bid.
+ * When minWinningBidCacheTTL is set and the bid has had targeting set, uses that;
+ * otherwise uses minBidCacheTTL. Returns null if no minimum applies (bid kept for page lifetime).
+ */
+export function getEffectiveMinBidCacheTTL(bid) {
+  const baseTTL = minCacheTTL;
+  if (baseTTL == null && minWinningBidCacheTTL == null) {
+    return null;
+  }
+  if (bid?.status === BID_STATUS.BID_TARGETING_SET && typeof minWinningBidCacheTTL === 'number') {
+    return minWinningBidCacheTTL;
+  }
+  return baseTTL;
+}
+
+function notifyCacheTTLChange() {
+  listeners.forEach(l => l(minCacheTTL));
+}
+
 config.getConfig(CACHE_TTL_SETTING, (cfg) => {
   const prev = minCacheTTL;
   minCacheTTL = cfg?.[CACHE_TTL_SETTING];
   minCacheTTL = typeof minCacheTTL === 'number' ? minCacheTTL : null;
   if (prev !== minCacheTTL) {
-    listeners.forEach(l => l(minCacheTTL))
+    notifyCacheTTLChange();
   }
-})
+});
+
+config.getConfig(MIN_WINNING_BID_CACHE_TTL_SETTING, (cfg) => {
+  const prev = minWinningBidCacheTTL;
+  minWinningBidCacheTTL = cfg?.[MIN_WINNING_BID_CACHE_TTL_SETTING];
+  minWinningBidCacheTTL = typeof minWinningBidCacheTTL === 'number' ? minWinningBidCacheTTL : null;
+  if (prev !== minWinningBidCacheTTL) {
+    notifyCacheTTLChange();
+  }
+});
 
 export function onMinBidCacheTTLChange(listener) {
   listeners.push(listener);

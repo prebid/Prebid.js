@@ -29,7 +29,7 @@ import {type Metrics, useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
-import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
+import {getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 import type {Bid, BidResponse} from "./bidfactory.ts";
 import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
 import type {TargetingMap} from "./targeting.ts";
@@ -189,7 +189,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _bidderRequests: BidderRequest<BidderCode>[] = [];
   const _bidsReceived = ttlCollection<Bid>({
     startTime: (bid) => bid.responseTimestamp,
-    ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
+    ttl: (bid) => {
+      const minTTL = getEffectiveMinBidCacheTTL(bid);
+      return minTTL == null ? null : Math.max(minTTL, bid.ttl) * 1000;
+    }
   });
   let _noBids: BidRequest<BidderCode>[] = [];
   let _winningBids: Bid[] = [];
@@ -426,6 +429,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
   function setBidTargeting(bid) {
     adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
+    _bidsReceived.refresh();
   }
 
   events.on(EVENTS.SEAT_NON_BID, (event) => {
