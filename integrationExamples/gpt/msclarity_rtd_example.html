@@ -6,7 +6,8 @@
 
   <!--
     Optional: Clarity JS tag.
-    If omitted, the RTD module auto-injects when it initialises.
+    If you want the RTD module to inject it automatically, set
+    params.injectClarity = true in the config below.
     Replace YOUR_PROJECT_ID with your Clarity project ID.
   -->
   <script type="text/javascript">
@@ -27,6 +28,7 @@
 <h1>MS Clarity RTD — Integration Test</h1>
 <p>Open the browser console to see bucketed Clarity signals flowing into bid requests.</p>
 <p>Scroll down, click around, and watch feature values change between auctions.</p>
+<p><strong>Signals are written to global ORTB2 — all bidders receive them.</strong></p>
 
 <div id="ad-div-1" style="width:300px;height:250px;border:1px solid #ccc;margin:20px 0;"></div>
 
@@ -54,6 +56,8 @@
     pbjs.setConfig({ debug: true });
 
     // Configure RTD + Clarity
+    // Signals are written to global ORTB2 — available to all bidders.
+    // Set injectClarity: true to auto-inject the Clarity JS tag.
     pbjs.setConfig({
       realTimeData: {
         auctionDelay: 200,
@@ -62,14 +66,14 @@
           waitForIt: true,
           params: {
             projectId: 'YOUR_PROJECT_ID',   // Replace with your Clarity project ID
-            bidders: ['appnexus', 'msft'],
+            injectClarity: false,            // Set true to auto-inject Clarity tag
             targetingPrefix: 'msc'
           }
         }]
       }
     });
 
-    // Ad units — AppNexus and Microsoft receive Clarity signals
+    // Ad units — all bidders receive Clarity signals via global ORTB2
     pbjs.addAdUnits([
       {
         code: 'ad-div-1',
@@ -110,9 +114,8 @@
 
           pbjs.setTargetingForGPTAsync();
 
-          // Note: Clarity signals are NOT sent to GAM targeting — they are
-          // only available in per-bidder ORTB2 fragments (AppNexus + Microsoft).
-          console.log('=== GPT SLOTS RENDERED (no Clarity KVs in GAM) ===');
+          console.log('=== GPT SLOTS RENDERED ===');
+          console.log('Clarity signals are in global ORTB2 (site.ext.data.msclarity, user.data, site.keywords)');
 
           googletag.pubads().refresh();
         });
