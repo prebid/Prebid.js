@@ -326,7 +326,10 @@ describe('adtelligentBidAdapter', () => {
         Aid: 12345,
         Sizes: '480x360,640x480',
         PlacementId: 'adunit-code',
-        GPID: '12345/adunit-code'
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       };
       expect(data.BidRequests[0]).to.deep.equal(eq);
     });
@@ -340,7 +343,10 @@ describe('adtelligentBidAdapter', () => {
         Aid: 12345,
         Sizes: '300x250',
         PlacementId: 'adunit-code',
-        GPID: '12345/adunit-code'
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       };
 
       expect(data.BidRequests[0]).to.deep.equal(eq);
@@ -354,14 +360,20 @@ describe('adtelligentBidAdapter', () => {
         Aid: 12345,
         Sizes: '300x250',
         PlacementId: 'adunit-code',
-        GPID: '12345/adunit-code'
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       }, {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
         Sizes: '480x360,640x480',
         PlacementId: 'adunit-code',
-        GPID: '12345/adunit-code'
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       }]
 
       expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
