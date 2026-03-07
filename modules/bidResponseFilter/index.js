@@ -11,6 +11,17 @@ export const BID_MEDIA_TYPE_REJECTION_REASON = `Media type is not allowed`;
 let moduleConfig;
 let enabled = false;
 
+function getAllowedMediaTypes(bidRequest) {
+  const mediaTypes = Object.keys(bidRequest?.mediaTypes || {});
+
+  // On multi-format ad units, in-banner video should not satisfy plain video enforcement.
+  if (mediaTypes.length > 1 && bidRequest?.mediaTypes?.video?.context === 'inbanner') {
+    return mediaTypes.filter(mediaType => mediaType !== 'video');
+  }
+
+  return mediaTypes;
+}
+
 function init() {
   config.getConfig(MODULE_NAME, (cfg) => {
     moduleConfig = cfg[MODULE_NAME];
@@ -32,6 +43,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   const {bcat = [], badv = [], cattax = 1} = index.getOrtb2(bid) || {};
   const bidRequest = index.getBidRequest(bid);
   const battr = bidRequest?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
+  const allowedMediaTypes = getAllowedMediaTypes(bidRequest);
 
   const catConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {})};
   const advConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {})};
@@ -59,7 +71,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } else if ((attrConfig.enforce && battr.includes(metaAttr)) ||
     (attrConfig.blockUnknown && !metaAttr)) {
     reject(BID_ATTR_REJECTION_REASON);
-  } else if ((mediaTypesConfig.enforce && !Object.keys(bidRequest?.mediaTypes || {}).includes(metaMediaType)) ||
+  } else if ((mediaTypesConfig.enforce && !allowedMediaTypes.includes(metaMediaType)) ||
     (mediaTypesConfig.blockUnknown && !metaMediaType)) {
     reject(BID_MEDIA_TYPE_REJECTION_REASON);
   } else {
