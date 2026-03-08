@@ -5,11 +5,11 @@
   <title>MS Clarity RTD — Integration Example</title>
 
   <!--
-    Optional: Clarity JS tag.
-    If you want the RTD module to inject it automatically, set
-    params.injectClarity = true in the config below.
-    Replace YOUR_PROJECT_ID with your Clarity project ID.
+    The RTD module auto-injects the Clarity JS tag by default.
+    To disable auto-injection, set params.injectClarity = false and
+    include the Clarity snippet manually. Replace YOUR_PROJECT_ID below.
   -->
+  <!--
   <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
       c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -17,6 +17,7 @@
       y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "YOUR_PROJECT_ID");
   </script>
+  -->
 
   <!-- Prebid.js (built with msClarityRtdProvider + appnexusBidAdapter + msftBidAdapter) -->
   <script src="../../build/dev/prebid.js"></script>
@@ -57,7 +58,7 @@
 
     // Configure RTD + Clarity
     // Signals are written to global ORTB2 — available to all bidders.
-    // Set injectClarity: true to auto-inject the Clarity JS tag.
+    // The Clarity JS tag is auto-injected by default (set injectClarity: false to disable).
     pbjs.setConfig({
       realTimeData: {
         auctionDelay: 200,
@@ -66,7 +67,7 @@
           waitForIt: true,
           params: {
             projectId: 'YOUR_PROJECT_ID',   // Replace with your Clarity project ID
-            injectClarity: false,            // Set true to auto-inject Clarity tag
+            // injectClarity: false,          // Uncomment to disable auto-injection of Clarity tag
             targetingPrefix: 'msc'
           }
         }]
