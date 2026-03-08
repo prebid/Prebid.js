@@ -114,7 +114,7 @@ describe('mediaeyes adapter', function () {
       }
       let bidderRequest;
 
-      const result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   })

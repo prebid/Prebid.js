@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as floorProvider from '../../../../../libraries/pubmaticUtils/plugins/floorProvider.js';
 import * as priceFloors from '../../../../../modules/priceFloors.js';
 import * as pubmaticUtils from '../../../../../libraries/pubmaticUtils/pubmaticUtils.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 describe('FloorProvider', () => {
   const floorsobj = {
@@ -91,7 +91,7 @@ describe('FloorProvider', () => {
       getConfigByName: () => floorsobj
     });
 
-    const req = {err: 4};
+    const req = { err: 4 };
     const result = await floorProvider.processBidRequest(req);
 
     expect(result).to.equal(req);

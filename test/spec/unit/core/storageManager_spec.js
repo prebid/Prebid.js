@@ -10,18 +10,18 @@ import {
   storageCallbacks,
 } from 'src/storageManager.js';
 import adapterManager from 'src/adapterManager.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {hook} from '../../../../src/hook.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities/modules.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
+import { hook } from '../../../../src/hook.js';
+import { MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID } from '../../../../src/activities/modules.js';
+import { ACTIVITY_ACCESS_DEVICE } from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_WRITE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
-import {activityParams} from '../../../../src/activities/activityParams.js';
-import {registerActivityControl} from '../../../../src/activities/rules.js';
+import { activityParams } from '../../../../src/activities/activityParams.js';
+import { registerActivityControl } from '../../../../src/activities/rules.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -77,7 +77,7 @@ describe('storage manager', function() {
     let isAllowed;
 
     function mkManager(moduleType, moduleName) {
-      return newStorageManager({moduleType, moduleName}, {isAllowed});
+      return newStorageManager({ moduleType, moduleName }, { isAllowed });
     }
 
     beforeEach(() => {
@@ -125,7 +125,7 @@ describe('storage manager', function() {
         moduleType: MODULE_TYPE_PREBID,
         moduleName: 'mockMod',
         advertiseKeys: false
-      }, {isAllowed}).getCookie('foo');
+      }, { isAllowed }).getCookie('foo');
       expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.not.exist;
     })
 
@@ -146,7 +146,7 @@ describe('storage manager', function() {
     })
 
     it('should use bidder aliases when possible', () => {
-      adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({})}, 'mockBidder');
+      adapterManager.registerBidAdapter({ callBids: sinon.stub(), getSpec: () => ({}) }, 'mockBidder');
       adapterManager.aliasBidAdapter('mockBidder', 'mockAlias');
       const mgr = mkManager(MODULE_TYPE_BIDDER, 'mockBidder');
       config.runWithBidder('mockAlias', () => mgr.cookiesAreEnabled());
@@ -175,7 +175,7 @@ describe('storage manager', function() {
       });
 
       afterEach(function () {
-        Object.defineProperty(window, storage, {get: () => originalStorage});
+        Object.defineProperty(window, storage, { get: () => originalStorage });
         errorLogSpy.restore();
       })
 
@@ -228,8 +228,8 @@ describe('storage manager', function() {
     });
 
     it('should deny access when set', () => {
-      config.setConfig({deviceAccess: false});
-      sinon.assert.match(deviceAccessRule(), {allow: false});
+      config.setConfig({ deviceAccess: false });
+      sinon.assert.match(deviceAccessRule(), { allow: false });
     })
   });
 
@@ -295,14 +295,14 @@ describe('storage manager', function() {
               cookie: true
             }
           }
-        }).forEach(([t, {configValues, shouldWork: {cookie, html5}}]) => {
+        }).forEach(([t, { configValues, shouldWork: { cookie, html5 } }]) => {
           describe(`when ${t} is allowed`, () => {
             configValues.forEach(configValue => describe(`storageAllowed = ${configValue}`, () => {
               Object.entries({
                 [STORAGE_TYPE_LOCALSTORAGE]: 'allow localStorage',
                 [STORAGE_TYPE_COOKIES]: 'allow cookies'
               }).forEach(([type, desc]) => {
-                const shouldWork = isBidderAllowed && ({html5, cookie})[type];
+                const shouldWork = isBidderAllowed && ({ html5, cookie })[type];
                 it(`${shouldWork ? '' : 'NOT'} ${desc}`, () => {
                   const res = storageAllowedRule(activityParams(MODULE_TYPE_BIDDER, bidderCode, {
                     [ACTIVITY_PARAM_STORAGE_TYPE]: type
@@ -310,7 +310,7 @@ describe('storage manager', function() {
                   if (shouldWork) {
                     expect(res).to.not.exist;
                   } else {
-                    sinon.assert.match(res, {allow: false});
+                    sinon.assert.match(res, { allow: false });
                   }
                 });
               })
@@ -328,7 +328,7 @@ describe('canSetCookie', () => {
     allow = true;
     unregisterACRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => {
       if (params.component === 'prebid.storage') {
-        return {allow};
+        return { allow };
       }
     })
   });

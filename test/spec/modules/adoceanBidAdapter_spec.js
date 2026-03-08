@@ -36,7 +36,7 @@ describe('AdoceanAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bannerBid, {params: {masterId: 0}});
+      const invalidBid = Object.assign({}, bannerBid, { params: { masterId: 0 } });
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
