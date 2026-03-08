@@ -5,11 +5,11 @@
  * @module modules/airgridRtdProvider
  * @requires module:modules/realTimeData
  */
-import {submodule} from '../src/hook.js';
-import {deepAccess, deepSetValue, mergeDeep} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -81,7 +81,7 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
         segtax: 540,
       },
       name: 'airgrid',
-      segment: audiences.map((id) => ({id}))
+      segment: audiences.map((id) => ({ id }))
     }
   ]
   deepSetValue(agOrtb2, 'user.data', agUserData);

@@ -22,12 +22,12 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import {DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams} from '../libraries/gamUtils/gamUtils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
 import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 /**
  * @typedef {Object} DfpVideoParams
@@ -89,7 +89,7 @@ export function buildGamVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true });
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -118,6 +118,22 @@ export function buildGamVideoUrl(options) {
     { cust_params: encodedCustomParams },
     gdprParams()
   );
+
+  // The IMA player adds usp info, but not gpp info
+  // For cases where the CMP only exposes gpp but not usp,
+  // it is better to derive an usp string from the gpp info and include it in the url
+  if (window.google?.ima) {
+    const usPrivacy = uspDataHandler.getConsentData?.();
+    const gpp = gppDataHandler.getConsentData?.();
+
+    if (!usPrivacy && gpp) {
+      // Extract an usPrivacy string from the GPP string if possible
+      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
+      if (uspFromGpp) {
+        queryParams['us_privacy'] = uspFromGpp;
+      }
+    }
+  }
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
@@ -245,7 +261,7 @@ function getCustParams(bid, options, urlCustParams) {
   );
 
   // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
-  events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+  events.emit(EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet });
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = options?.params?.cust_params;
@@ -299,7 +315,6 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   const video = adUnit?.mediaTypes?.video;
   const sdkApis = (video?.api || []).join(',');
   const usPrivacy = uspDataHandler.getConsentData?.();
-  const gpp = gppDataHandler.getConsentData?.();
   // Adding parameters required by ima
   if (config.getConfig('cache.useLocal') && window.google?.ima) {
     vastUrl = new URL(vastUrl);
@@ -311,14 +326,7 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
     }
     if (usPrivacy) {
       vastUrl.searchParams.set('us_privacy', usPrivacy);
-    } else if (gpp) {
-      // Extract an usPrivacy string from the GPP string if possible
-      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
-      if (uspFromGpp) {
-        vastUrl.searchParams.set('us_privacy', uspFromGpp)
-      }
     }
-
     vastUrl = vastUrl.toString();
   }
 

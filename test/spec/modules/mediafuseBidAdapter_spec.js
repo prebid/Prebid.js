@@ -5,7 +5,7 @@ import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
@@ -98,7 +98,7 @@ describe('MediaFuseAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].private_sizes).to.exist;
-      expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
+      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 300, height: 250 }]);
     });
 
     it('should add publisher_id in request', function() {
@@ -177,7 +177,7 @@ describe('MediaFuseAdapter', function () {
     it('should populate the ad_types array on outstream requests', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
-      bidRequest.mediaTypes.video = {context: 'outstream'};
+      bidRequest.mediaTypes.video = { context: 'outstream' };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -313,7 +313,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
         external_uid: '123',
-        segments: [{id: 123}, {id: 987, value: 876}]
+        segments: [{ id: 123 }, { id: 987, value: 876 }]
       });
     });
 
@@ -590,22 +590,22 @@ describe('MediaFuseAdapter', function () {
         {
           mediaType: 'native',
           nativeParams: {
-            title: {required: true},
-            body: {required: true},
-            body2: {required: true},
-            image: {required: true, sizes: [100, 100]},
-            icon: {required: true},
-            cta: {required: false},
-            rating: {required: true},
-            sponsoredBy: {required: true},
-            privacyLink: {required: true},
-            displayUrl: {required: true},
-            address: {required: true},
-            downloads: {required: true},
-            likes: {required: true},
-            phone: {required: true},
-            price: {required: true},
-            salePrice: {required: true}
+            title: { required: true },
+            body: { required: true },
+            body2: { required: true },
+            image: { required: true, sizes: [100, 100] },
+            icon: { required: true },
+            cta: { required: false },
+            rating: { required: true },
+            sponsoredBy: { required: true },
+            privacyLink: { required: true },
+            displayUrl: { required: true },
+            address: { required: true },
+            downloads: { required: true },
+            likes: { required: true },
+            phone: { required: true },
+            price: { required: true },
+            salePrice: { required: true }
           }
         }
       );
@@ -614,22 +614,22 @@ describe('MediaFuseAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        title: {required: true},
-        description: {required: true},
-        desc2: {required: true},
-        main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
-        icon: {required: true},
-        ctatext: {required: false},
-        rating: {required: true},
-        sponsored_by: {required: true},
-        privacy_link: {required: true},
-        displayurl: {required: true},
-        address: {required: true},
-        downloads: {required: true},
-        likes: {required: true},
-        phone: {required: true},
-        price: {required: true},
-        saleprice: {required: true},
+        title: { required: true },
+        description: { required: true },
+        desc2: { required: true },
+        main_image: { required: true, sizes: [{ width: 100, height: 100 }] },
+        icon: { required: true },
+        ctatext: { required: false },
+        rating: { required: true },
+        sponsored_by: { required: true },
+        privacy_link: { required: true },
+        displayurl: { required: true },
+        address: { required: true },
+        downloads: { required: true },
+        likes: { required: true },
+        phone: { required: true },
+        price: { required: true },
+        saleprice: { required: true },
         privacy_supported: true
       });
       expect(payload.tags[0].hb_source).to.equal(1);
@@ -649,14 +649,14 @@ describe('MediaFuseAdapter', function () {
 
       let request = spec.buildRequests([bidRequest]);
       let payload = JSON.parse(request.data);
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
+      expect(payload.tags[0].sizes).to.deep.equal([{ width: 150, height: 100 }, { width: 300, height: 250 }]);
 
       delete bidRequest.sizes;
 
       request = spec.buildRequests([bidRequest]);
       payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+      expect(payload.tags[0].sizes).to.deep.equal([{ width: 1, height: 1 }]);
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {
@@ -673,7 +673,7 @@ describe('MediaFuseAdapter', function () {
               singleValNum: 123,
               emptyStr: '',
               emptyArr: [''],
-              badValue: {'foo': 'bar'} // should be dropped
+              badValue: { 'foo': 'bar' } // should be dropped
             }
           }
         }
@@ -748,7 +748,7 @@ describe('MediaFuseAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.deep.equal({withCredentials: true});
+      expect(request.options).to.deep.equal({ withCredentials: true });
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
@@ -902,7 +902,7 @@ describe('MediaFuseAdapter', function () {
         .returns(true);
 
       const request = spec.buildRequests([bidRequest]);
-      expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
+      expect(request.options.customHeaders).to.deep.equal({ 'X-Is-Test': 1 });
 
       config.getConfig.restore();
     });
@@ -1136,7 +1136,7 @@ describe('MediaFuseAdapter', function () {
           adUnitCode: 'code'
         }]
       };
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -1187,7 +1187,7 @@ describe('MediaFuseAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -1220,7 +1220,7 @@ describe('MediaFuseAdapter', function () {
         }]
       }
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastXml');
       expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
@@ -1255,7 +1255,7 @@ describe('MediaFuseAdapter', function () {
         }]
       }
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastUrl');
       expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
@@ -1295,7 +1295,7 @@ describe('MediaFuseAdapter', function () {
         }]
       };
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastUrl');
       expect(result[0].video.context).to.equal('adpod');
       expect(result[0].video.durationSeconds).to.equal(30);
@@ -1344,7 +1344,7 @@ describe('MediaFuseAdapter', function () {
         }]
       }
 
-      const result = spec.interpretResponse({ body: response1 }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
@@ -1372,7 +1372,7 @@ describe('MediaFuseAdapter', function () {
         }]
       };
 
-      const result = spec.interpretResponse({ body: outstreamResponse }, {bidderRequest});
+      const result = spec.interpretResponse({ body: outstreamResponse }, { bidderRequest });
       expect(result[0].renderer.config).to.deep.equal(
         bidderRequest.bids[0].renderer.options
       );
@@ -1400,7 +1400,7 @@ describe('MediaFuseAdapter', function () {
           }
         }]
       }
-      const result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseWithDeal }, { bidderRequest });
       expect(Object.keys(result[0].mediafuse)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
       expect(result[0].video.dealTier).to.equal(5);
     });
@@ -1415,7 +1415,7 @@ describe('MediaFuseAdapter', function () {
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
 
@@ -1429,7 +1429,7 @@ describe('MediaFuseAdapter', function () {
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseBrandId }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseBrandId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
 
@@ -1443,7 +1443,7 @@ describe('MediaFuseAdapter', function () {
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });

@@ -1,4 +1,4 @@
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 
 /**
  * Returns true if the given fingerprinting API is disabled via setConfig({ disableFingerprintingApis: [...] }).

@@ -14,7 +14,7 @@ const SCRIPT_URL = 'https://linkback.contentsfeed.com/src';
 export const A1_SEG_KEY = '__a1tg';
 export const A1_AUD_KEY = 'a1_gid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
 /** @type {RtdSubmodule} */
 export const subModuleObj = {
@@ -64,7 +64,7 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
     ext: {
       segtax: 900
     },
-    segment: a1seg.split(',').map(x => ({id: x}))
+    segment: a1seg.split(',').map(x => ({ id: x }))
   };
 
   const a1UserEid = {

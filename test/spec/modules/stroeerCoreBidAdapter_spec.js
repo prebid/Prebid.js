@@ -1,8 +1,8 @@
-import {assert} from 'chai';
-import {spec} from 'modules/stroeerCoreBidAdapter.js';
+import { assert } from 'chai';
+import { spec } from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
@@ -120,7 +120,7 @@ describe('stroeerCore bid adapter', function () {
 
   const buildBidderResponse = () => ({
     'bids': [{
-      'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>', 'tracking': {'brandId': 123}
+      'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>', 'tracking': { 'brandId': 123 }
     }, {
       'bidId': 'bid2', 'cpm': 7.3, 'width': 728, 'height': 90, 'ad': '<div>tag2</div>'
     }]
@@ -133,7 +133,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const createWindow = (href, params = {}) => {
-    const {parent, top, frameElement, placementElements = []} = params;
+    const { parent, top, frameElement, placementElements = [] } = params;
 
     const protocol = href.startsWith('https') ? 'https:' : 'http:';
     const win = {
@@ -196,7 +196,7 @@ describe('stroeerCore bid adapter', function () {
     const topWin = createWindow('http://www.abc.org/');
     topWin.innerHeight = 800;
 
-    const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
+    const midWin = createWindow('http://www.abc.org/', { parent: topWin, top: topWin, frameElement: createElement() });
     midWin.innerHeight = 400;
 
     const win = createWindow('http://www.xyz.com/', {
@@ -208,7 +208,7 @@ describe('stroeerCore bid adapter', function () {
     sandBox.stub(utils, 'getWindowSelf').returns(win);
     sandBox.stub(utils, 'getWindowTop').returns(topWin);
 
-    return {topWin, midWin, win};
+    return { topWin, midWin, win };
   }
 
   it('should support BANNER and VIDEO mediaType', function () {
@@ -352,19 +352,19 @@ describe('stroeerCore bid adapter', function () {
       describe('should use custom url if provided', () => {
         const samples = [{
           protocol: 'http:',
-          params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
+          params: { sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz' },
           expected: 'https://other.com:234/xyz'
         }, {
           protocol: 'https:',
-          params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
+          params: { sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz' },
           expected: 'https://other.com:234/xyz'
         }, {
           protocol: 'https:',
-          params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'},
+          params: { sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz' },
           expected: 'https://other.com:871/xyz'
         }, {
-          protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'https://hb.adscale.de:234/xyz'
-        }, ];
+          protocol: 'http:', params: { sid: 'ODA=', port: '234', path: '/xyz' }, expected: 'https://hb.adscale.de:234/xyz'
+        },];
 
         samples.forEach(sample => {
           it(`should use ${sample.expected} as endpoint when given params ${JSON.stringify(sample.params)} and protocol ${sample.protocol}`,
@@ -663,11 +663,11 @@ describe('stroeerCore bid adapter', function () {
         });
 
         const gdprSamples = [
-          {consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true},
-          {consentString: 'UGluZyBQb25n', gdprApplies: false},
-          {consentString: undefined, gdprApplies: true},
-          {consentString: undefined, gdprApplies: false},
-          {consentString: undefined, gdprApplies: undefined},
+          { consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true },
+          { consentString: 'UGluZyBQb25n', gdprApplies: false },
+          { consentString: undefined, gdprApplies: true },
+          { consentString: undefined, gdprApplies: false },
+          { consentString: undefined, gdprApplies: undefined },
         ];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
@@ -736,19 +736,19 @@ describe('stroeerCore bid adapter', function () {
 
           getFloorStub1
             .returns({})
-            .withArgs({currency: 'EUR', mediaType: BANNER, size: '*'})
-            .returns({currency: 'TRY', floor: 0.7})
-            .withArgs({currency: 'EUR', mediaType: 'banner', size: [300, 600]})
-            .returns({currency: 'TRY', floor: 1.3})
-            .withArgs({currency: 'EUR', mediaType: 'banner', size: [160, 60]})
-            .returns({currency: 'TRY', floor: 2.5})
+            .withArgs({ currency: 'EUR', mediaType: BANNER, size: '*' })
+            .returns({ currency: 'TRY', floor: 0.7 })
+            .withArgs({ currency: 'EUR', mediaType: 'banner', size: [300, 600] })
+            .returns({ currency: 'TRY', floor: 1.3 })
+            .withArgs({ currency: 'EUR', mediaType: 'banner', size: [160, 60] })
+            .returns({ currency: 'TRY', floor: 2.5 })
 
           getFloorStub2
             .returns({})
-            .withArgs({currency: 'EUR', mediaType: 'banner', size: '*'})
-            .returns({currency: 'USD', floor: 1.2})
-            .withArgs({currency: 'EUR', mediaType: 'banner', size: [728, 90]})
-            .returns({currency: 'USD', floor: 1.85})
+            .withArgs({ currency: 'EUR', mediaType: 'banner', size: '*' })
+            .returns({ currency: 'USD', floor: 1.2 })
+            .withArgs({ currency: 'EUR', mediaType: 'banner', size: [728, 90] })
+            .returns({ currency: 'USD', floor: 1.85 })
 
           bidReq.bids[0].getFloor = getFloorStub1;
           bidReq.bids[1].getFloor = getFloorStub2;
@@ -761,13 +761,13 @@ describe('stroeerCore bid adapter', function () {
 
           assert.nestedPropertyVal(firstBid, 'ban.fp.def', 0.7);
           assert.nestedPropertyVal(firstBid, 'ban.fp.cur', 'TRY');
-          assert.deepNestedPropertyVal(firstBid, 'ban.fp.siz', [{w: 300, h: 600, p: 1.3}, {w: 160, h: 60, p: 2.5}]);
+          assert.deepNestedPropertyVal(firstBid, 'ban.fp.siz', [{ w: 300, h: 600, p: 1.3 }, { w: 160, h: 60, p: 2.5 }]);
 
           assert.isTrue(getFloorStub1.calledThrice);
 
           assert.nestedPropertyVal(secondBid, 'ban.fp.def', 1.2);
           assert.nestedPropertyVal(secondBid, 'ban.fp.cur', 'USD');
-          assert.deepNestedPropertyVal(secondBid, 'ban.fp.siz', [{w: 728, h: 90, p: 1.85}]);
+          assert.deepNestedPropertyVal(secondBid, 'ban.fp.siz', [{ w: 728, h: 90, p: 1.85 }]);
 
           assert.isTrue(getFloorStub2.calledTwice);
         });
@@ -780,17 +780,17 @@ describe('stroeerCore bid adapter', function () {
 
           getFloorStub1
             .returns({})
-            .withArgs({currency: 'EUR', mediaType: 'video', size: '*'})
-            .returns({currency: 'NZD', floor: 3.25})
-            .withArgs({currency: 'EUR', mediaType: 'video', size: [640, 480]})
-            .returns({currency: 'NZD', floor: 4.10});
+            .withArgs({ currency: 'EUR', mediaType: 'video', size: '*' })
+            .returns({ currency: 'NZD', floor: 3.25 })
+            .withArgs({ currency: 'EUR', mediaType: 'video', size: [640, 480] })
+            .returns({ currency: 'NZD', floor: 4.10 });
 
           getFloorStub2
             .returns({})
-            .withArgs({currency: 'EUR', mediaType: 'video', size: '*'})
-            .returns({currency: 'GBP', floor: 4.75})
-            .withArgs({currency: 'EUR', mediaType: 'video', size: [1280, 720]})
-            .returns({currency: 'GBP', floor: 6.50})
+            .withArgs({ currency: 'EUR', mediaType: 'video', size: '*' })
+            .returns({ currency: 'GBP', floor: 4.75 })
+            .withArgs({ currency: 'EUR', mediaType: 'video', size: [1280, 720] })
+            .returns({ currency: 'GBP', floor: 6.50 })
 
           delete bidReq.bids[0].mediaTypes.banner;
           bidReq.bids[0].mediaTypes.video = {
@@ -815,13 +815,13 @@ describe('stroeerCore bid adapter', function () {
 
           assert.nestedPropertyVal(firstBid, 'vid.fp.def', 3.25);
           assert.nestedPropertyVal(firstBid, 'vid.fp.cur', 'NZD');
-          assert.deepNestedPropertyVal(firstBid, 'vid.fp.siz', [{w: 640, h: 480, p: 4.10}]);
+          assert.deepNestedPropertyVal(firstBid, 'vid.fp.siz', [{ w: 640, h: 480, p: 4.10 }]);
 
           assert.isTrue(getFloorStub1.calledTwice);
 
           assert.nestedPropertyVal(secondBid, 'vid.fp.def', 4.75);
           assert.nestedPropertyVal(secondBid, 'vid.fp.cur', 'GBP');
-          assert.deepNestedPropertyVal(secondBid, 'vid.fp.siz', [{w: 1280, h: 720, p: 6.50}]);
+          assert.deepNestedPropertyVal(secondBid, 'vid.fp.siz', [{ w: 1280, h: 720, p: 6.50 }]);
 
           assert.isTrue(getFloorStub2.calledTwice);
         });
@@ -842,8 +842,8 @@ describe('stroeerCore bid adapter', function () {
           assert.nestedPropertyVal(firstBid, 'ban.fp', undefined);
           assert.nestedPropertyVal(secondBid, 'ban.fp', undefined);
 
-          assert.isTrue(getFloorSpy.calledWith({currency: 'EUR', mediaType: 'banner', size: '*'}));
-          assert.isTrue(getFloorSpy.calledWith({currency: 'EUR', mediaType: 'banner', size: [728, 90]}));
+          assert.isTrue(getFloorSpy.calledWith({ currency: 'EUR', mediaType: 'banner', size: '*' }));
+          assert.isTrue(getFloorSpy.calledWith({ currency: 'EUR', mediaType: 'banner', size: [728, 90] }));
           assert.isTrue(getFloorSpy.calledTwice);
         });
 
@@ -852,9 +852,9 @@ describe('stroeerCore bid adapter', function () {
           const getFloorStub = sinon.stub();
 
           getFloorStub
-            .returns({currency: 'EUR', floor: 1.9})
-            .withArgs({currency: 'EUR', mediaType: BANNER, size: [160, 60]})
-            .returns({currency: 'EUR', floor: 2.7});
+            .returns({ currency: 'EUR', floor: 1.9 })
+            .withArgs({ currency: 'EUR', mediaType: BANNER, size: [160, 60] })
+            .returns({ currency: 'EUR', floor: 2.7 });
 
           bidReq.bids[0].getFloor = getFloorStub;
 
@@ -865,7 +865,7 @@ describe('stroeerCore bid adapter', function () {
 
           assert.nestedPropertyVal(bid, 'ban.fp.def', 1.9);
           assert.nestedPropertyVal(bid, 'ban.fp.cur', 'EUR');
-          assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{w: 160, h: 60, p: 2.7}]);
+          assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{ w: 160, h: 60, p: 2.7 }]);
         });
 
         it('should add the DSA signals', () => {
@@ -974,7 +974,7 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
           const sentOrtb2 = serverRequestInfo.data.ortb2;
-          assert.deepEqual(sentOrtb2, {site: {ext: ortb2.site.ext}})
+          assert.deepEqual(sentOrtb2, { site: { ext: ortb2.site.ext } })
         });
       });
     });
@@ -988,7 +988,7 @@ describe('stroeerCore bid adapter', function () {
     const invalidResponses = ['', '  ', ' ', undefined, null];
     invalidResponses.forEach(sample => {
       it('should ignore invalid responses (\"' + sample + '\") response', () => {
-        const result = spec.interpretResponse({body: sample});
+        const result = spec.interpretResponse({ body: sample });
         assert.isArray(result);
         assert.lengthOf(result, 0);
       });
@@ -997,19 +997,19 @@ describe('stroeerCore bid adapter', function () {
     it('should interpret a standard response', () => {
       const bidderResponse = buildBidderResponse();
 
-      const result = spec.interpretResponse({body: bidderResponse});
+      const result = spec.interpretResponse({ body: bidderResponse });
       assertStandardFieldsOnBannerBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
       assertStandardFieldsOnBannerBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
     });
 
     it('should return empty array, when response contains no bids', () => {
-      const result = spec.interpretResponse({body: {bids: []}});
+      const result = spec.interpretResponse({ body: { bids: [] } });
       assert.deepStrictEqual(result, []);
     });
 
     it('should interpret a video response', () => {
       const bidderResponse = buildBidderResponseWithVideo();
-      const bidResponses = spec.interpretResponse({body: bidderResponse});
+      const bidResponses = spec.interpretResponse({ body: bidderResponse });
       const videoBidResponse = bidResponses[0];
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
@@ -1035,7 +1035,7 @@ describe('stroeerCore bid adapter', function () {
         },
       });
 
-      const result = spec.interpretResponse({body: response});
+      const result = spec.interpretResponse({ body: response });
 
       const firstBidMeta = result[0].meta;
       assert.deepPropertyVal(firstBidMeta, 'advertiserDomains', ['website.org', 'domain.com']);
@@ -1074,13 +1074,13 @@ describe('stroeerCore bid adapter', function () {
     describe('when iframe option is enabled', () => {
       it('should perform user connect when there was a response', () => {
         const expectedUrl = 'https://js.adscale.de/pbsync.html';
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, ['']);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, ['']);
 
-        assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+        assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
       });
 
       it('should not perform user connect when there was no response', () => {
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, []);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, []);
 
         assert.deepStrictEqual(userSyncResponse, []);
       });
@@ -1089,26 +1089,26 @@ describe('stroeerCore bid adapter', function () {
         describe('and gdpr applies', () => {
           it('should place gdpr query param to the user sync url with value of 1', () => {
             const expectedUrl = 'https://js.adscale.de/pbsync.html?gdpr=1&gdpr_consent=';
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: true});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: true });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
         });
 
         describe('and gdpr does not apply', () => {
           it('should place gdpr query param to the user sync url with zero value', () => {
             const expectedUrl = 'https://js.adscale.de/pbsync.html?gdpr=0&gdpr_consent=';
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: false});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: false });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
 
           describe('because consent does not specify it', () => {
             it('should place gdpr query param to the user sync url with zero value', () => {
               const expectedUrl = 'https://js.adscale.de/pbsync.html?gdpr=0&gdpr_consent=';
-              const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {});
+              const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], {});
 
-              assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+              assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
             });
           });
         });
@@ -1117,17 +1117,17 @@ describe('stroeerCore bid adapter', function () {
           it('should pass consent string to gdpr consent query param', () => {
             const consentString = 'consent_string';
             const expectedUrl = `https://js.adscale.de/pbsync.html?gdpr=1&gdpr_consent=${consentString}`;
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: true, consentString});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: true, consentString });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
 
           it('should correctly escape invalid characters', () => {
             const consentString = 'consent ?stri&ng';
             const expectedUrl = `https://js.adscale.de/pbsync.html?gdpr=1&gdpr_consent=consent%20%3Fstri%26ng`;
-            const userSyncResponse = spec.getUserSyncs({iframeEnabled: true}, [''], {gdprApplies: true, consentString});
+            const userSyncResponse = spec.getUserSyncs({ iframeEnabled: true }, [''], { gdprApplies: true, consentString });
 
-            assert.deepStrictEqual(userSyncResponse, [{type: 'iframe', url: expectedUrl}]);
+            assert.deepStrictEqual(userSyncResponse, [{ type: 'iframe', url: expectedUrl }]);
           });
         });
       });
@@ -1135,13 +1135,13 @@ describe('stroeerCore bid adapter', function () {
 
     describe('when iframe option is disabled', () => {
       it('should not perform user connect even when there was a response', () => {
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: false}, ['']);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: false }, ['']);
 
         assert.deepStrictEqual(userSyncResponse, []);
       });
 
       it('should not perform user connect when there was no response', () => {
-        const userSyncResponse = spec.getUserSyncs({iframeEnabled: false}, []);
+        const userSyncResponse = spec.getUserSyncs({ iframeEnabled: false }, []);
 
         assert.deepStrictEqual(userSyncResponse, []);
       });

@@ -1,18 +1,18 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {deepAccess, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {Renderer} from '../src/Renderer.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { Renderer } from '../src/Renderer.js';
 
 const ADAPTER_VERSION = '2.1.0';
 const PREBID_VERSION = '$prebid.version$';
 
 const BIDDER_CODE = 'jixie';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
@@ -130,7 +130,7 @@ function createRenderer_(bidAd, scriptUrl, createFcn) {
     id: bidAd.adUnitCode,
     url: scriptUrl,
     loaded: false,
-    config: {'player_height': bidAd.height, 'player_width': bidAd.width},
+    config: { 'player_height': bidAd.height, 'player_width': bidAd.width },
     adUnitCode: bidAd.adUnitCode
   });
   try {
@@ -307,7 +307,7 @@ export const spec = {
       if (syncOptions.iframeEnabled) {
         syncs.push(sync.uf ? { url: sync.uf, type: 'iframe' } : { url: sync.up, type: 'image' });
       } else if (syncOptions.pixelEnabled && sync.up) {
-        syncs.push({url: sync.up, type: 'image'})
+        syncs.push({ url: sync.up, type: 'image' })
       }
     })
     return syncs;
