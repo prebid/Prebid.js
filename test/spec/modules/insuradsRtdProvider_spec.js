@@ -86,7 +86,7 @@ describe('insurAdsRtdProvider', function () {
 
       const fetchOptions = fetchStub.getCall(0).args[1];
       expect(fetchOptions.keepalive).to.be.true;
-      expect(fetchOptions.credentials).to.equal('include');
+      expect(fetchOptions.withCredentials).to.be.true;
       expect(fetchOptions.method).to.equal('GET');
       expect(fetchOptions.headers['Content-Type']).to.equal('application/json');
     });
