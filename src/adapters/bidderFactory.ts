@@ -283,7 +283,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
-        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid, {responseMediaType}))) {
+        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid, { responseMediaType }))) {
           addBidResponse(adUnitCode, bid);
         } else {
           addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID)

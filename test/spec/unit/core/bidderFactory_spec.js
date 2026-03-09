@@ -1711,7 +1711,7 @@ describe('bidderFactory', () => {
 
       function checkValid(bid, opts = {}) {
         return isValid('au', bid, {
-          index: stubAuctionIndex({bidRequests: [req]}),
+          index: stubAuctionIndex({ bidRequests: [req] }),
           ...opts,
         });
       }
@@ -1728,23 +1728,23 @@ describe('bidderFactory', () => {
       });
 
       it('should reject video bid when ad unit only has banner', () => {
-        expect(checkValid(mkResponse({mediaType: 'video'}))).to.be.false;
+        expect(checkValid(mkResponse({ mediaType: 'video' }))).to.be.false;
       });
 
       it('should accept video bid when ad unit has both banner and video', () => {
         req.mediaTypes = {
-          banner: {sizes: [[1, 2]]},
-          video: {context: 'instream'}
+          banner: { sizes: [[1, 2]] },
+          video: { context: 'instream' }
         };
-        expect(checkValid(mkResponse({mediaType: 'video', vastUrl: 'http://vast.xml'}))).to.be.true;
+        expect(checkValid(mkResponse({ mediaType: 'video', vastUrl: 'http://vast.xml' }))).to.be.true;
       });
 
       it('should skip media type check when adapter omits mediaType', () => {
         req.mediaTypes = {
-          video: {context: 'instream'}
+          video: { context: 'instream' }
         };
 
-        expect(checkValid(mkResponse({mediaType: 'banner'}), {responseMediaType: null})).to.be.true;
+        expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.true;
       });
     });
   });
