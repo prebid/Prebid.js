@@ -455,10 +455,8 @@ describe('InsurAds bid adapter tests', () => {
           imp: [{
             id: '44a2706ac3574',
             ext: {
-              nexx360: {
-                rtdData: {
-                  ia_test: 'ia_value'
-                }
+              rtdData: {
+                ia_test: 'ia_value'
               }
             }
           }]
