@@ -61,7 +61,6 @@ async function makeApiCall(publicId) {
       return;
     }
     const data = await response.json();
-    // Store the keyValues internally for later use in getTargetingData
     if (data && data.keyValues) {
       keyValues = data.keyValues;
       logInfo(LOG_PREFIX + 'Received keyValues from endpoint', data.keyValues);
