@@ -1,6 +1,6 @@
-import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -149,10 +149,10 @@ export const spec = {
       payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0});
+      payload.regs.ext = Object.assign(payload.regs.ext, { gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0 });
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      payload.user.ext = Object.assign(payload.user.ext, {consent: bidderRequest.gdprConsent.consentString});
+      payload.user.ext = Object.assign(payload.user.ext, { consent: bidderRequest.gdprConsent.consentString });
     }
     const postUrl = ENDPOINT_URL;
     return {

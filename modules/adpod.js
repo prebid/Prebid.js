@@ -30,13 +30,13 @@ import {
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
-import {checkAdUnitSetup} from '../src/prebid.js';
-import {checkVideoBidSetup} from '../src/video.js';
-import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
-import {store} from '../src/videoCache.js';
-import {config} from '../src/config.js';
-import {ADPOD} from '../src/mediaTypes.js';
-import {auctionManager} from '../src/auctionManager.js';
+import { checkAdUnitSetup } from '../src/prebid.js';
+import { checkVideoBidSetup } from '../src/video.js';
+import { getHook, module, setupBeforeHookFnOnce } from '../src/hook.js';
+import { store } from '../src/videoCache.js';
+import { config } from '../src/config.js';
+import { ADPOD } from '../src/mediaTypes.js';
+import { auctionManager } from '../src/auctionManager.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';

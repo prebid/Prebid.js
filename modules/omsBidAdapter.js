@@ -7,12 +7,12 @@ import {
   formatQS,
   deepAccess,
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
-import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes} from '../libraries/omsUtils/index.js';
-import {getRoundedViewability} from '../libraries/omsUtils/viewability.js';
+import { ajax } from '../src/ajax.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+import { getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes } from '../libraries/omsUtils/index.js';
+import { getRoundedViewability } from '../libraries/omsUtils/viewability.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -139,7 +139,7 @@ function buildRequests(bidReqs, bidderRequest) {
       data: JSON.stringify(payload),
     };
   } catch (e) {
-    logError(e, {bidReqs, bidderRequest});
+    logError(e, { bidReqs, bidderRequest });
   }
 }
 
@@ -158,7 +158,7 @@ function interpretResponse(serverResponse) {
     return response;
   }
 
-  const {body: {id, seatbid}} = serverResponse;
+  const { body: { id, seatbid } } = serverResponse;
 
   try {
     if (id && seatbid && seatbid.length > 0 && seatbid[0].bid && seatbid[0].bid.length > 0) {
@@ -189,7 +189,7 @@ function interpretResponse(serverResponse) {
       });
     }
   } catch (e) {
-    logError(e, {id, seatbid});
+    logError(e, { id, seatbid });
   }
 
   return response;

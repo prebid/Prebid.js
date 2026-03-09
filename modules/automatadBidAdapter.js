@@ -1,7 +1,7 @@
-import {logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import { logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER = 'automatad'
 
@@ -114,7 +114,7 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     const timeoutUrl = ENDPOINT_URL + '/timeout'
-    spec.ajaxCall(timeoutUrl, null, JSON.stringify(timeoutData), {method: 'POST', withCredentials: true})
+    spec.ajaxCall(timeoutUrl, null, JSON.stringify(timeoutData), { method: 'POST', withCredentials: true })
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return }
@@ -136,7 +136,7 @@ export const spec = {
       /\$\{AUCTION_ID\}/,
       bid.auctionId
     )
-    spec.ajaxCall(winUrl, null, null, {method: 'GET', withCredentials: true})
+    spec.ajaxCall(winUrl, null, null, { method: 'GET', withCredentials: true })
     return true
   },
 

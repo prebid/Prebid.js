@@ -163,7 +163,7 @@ function getGlobalRandom(auctionId: string, auctionIndex: AuctionIndex = auction
   if (!auctionId) {
     return Math.random();
   }
-  const auction = auctionIndex.getAuction({auctionId});
+  const auction = auctionIndex.getAuction({ auctionId });
   if (!globalRandomStore.has(auction)) {
     globalRandomStore.set(auction, Math.random());
   }
@@ -328,7 +328,7 @@ const schemaEvaluators = {
   },
   bidPrice: (args, context) => () => {
     const [operator, currency, value] = args || [];
-    const {cpm: bidPrice, currency: bidCurrency} = context.bid || {};
+    const { cpm: bidPrice, currency: bidCurrency } = context.bid || {};
     if (bidCurrency !== currency) {
       return false;
     }
@@ -404,7 +404,7 @@ export function registerActivities() {
         if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
         if (!auctionId) return;
 
-        const checkConditions = ({schema, conditions, stage}) => {
+        const checkConditions = ({ schema, conditions, stage }) => {
           for (const [index, schemaEntry] of schema.entries()) {
             const schemaFunction = evaluateSchema(schemaEntry.function, schemaEntry.args || [], params);
             if (evaluateCondition(conditions[index], schemaFunction)) {
@@ -421,11 +421,11 @@ export function registerActivities() {
         // evaluate applicable results for each model group
         for (const modelGroup of modelGroups) {
           // find first rule that matches conditions
-          const selectedRule = modelGroup.rules.find(rule => checkConditions({...rule, schema: modelGroup.schema}));
+          const selectedRule = modelGroup.rules.find(rule => checkConditions({ ...rule, schema: modelGroup.schema }));
           if (selectedRule) {
             results.push(...selectedRule.results);
           } else if (Array.isArray(modelGroup.defaultResults)) {
-            const defaults = modelGroup.defaultResults.map(result => ({...result, analyticsKey: modelGroup.analyticsKey}));
+            const defaults = modelGroup.defaultResults.map(result => ({ ...result, analyticsKey: modelGroup.analyticsKey }));
             results.push(...defaults);
           }
         }
@@ -441,7 +441,7 @@ export function registerActivities() {
         const allow = results
           .filter(result => ['excludeBidders', 'includeBidders'].includes(result.function))
           .every((result) => {
-            return result.args.every(({bidders}) => {
+            return result.args.every(({ bidders }) => {
               const bidderIncluded = bidders.includes(params[ACTIVITY_PARAM_COMPONENT_NAME]);
               return result.function === 'excludeBidders' ? !bidderIncluded : bidderIncluded;
             });
@@ -493,8 +493,8 @@ function init(config: ShapingRulesConfig) {
 
 export function reset() {
   try {
-    getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
-    getHook('startAuction').getHooks({hook: startAuctionHook}).remove();
+    getHook('requestBids').getHooks({ hook: requestBidsHook }).remove();
+    getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
     unregisterFunctions.forEach(unregister => unregister());
     unregisterFunctions.length = 0;
     auctionConfigStore.clear();

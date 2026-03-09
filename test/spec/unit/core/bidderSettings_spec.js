@@ -1,5 +1,5 @@
-import {bidderSettings, ScopedSettings} from '../../../../src/bidderSettings.js';
-import {expect} from 'chai';
+import { bidderSettings, ScopedSettings } from '../../../../src/bidderSettings.js';
+import { expect } from 'chai';
 import * as prebidGlobal from '../../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
@@ -14,14 +14,14 @@ describe('ScopedSettings', () => {
   describe('get', () => {
     it('should retrieve setting from scope', () => {
       data = {
-        scope: {key: 'value'}
+        scope: { key: 'value' }
       };
       expect(settings.get('scope', 'key')).to.equal('value');
     });
 
     it('can retrieve nested settings', () => {
       data = {
-        scope: {outer: {key: 'value'}}
+        scope: { outer: { key: 'value' } }
       }
       expect(settings.get('scope', 'outer.key')).to.equal('value');
     })

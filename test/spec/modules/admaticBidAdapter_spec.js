@@ -7,7 +7,7 @@ const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';
 
 describe('admaticBidAdapter', () => {
   const adapter = newBidder(spec);
-  const validRequest = [ {
+  const validRequest = [{
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
       'domain': 'https://www.admatic.com.tr',
@@ -241,7 +241,7 @@ describe('admaticBidAdapter', () => {
       'cur': 'USD',
       'bidder': 'admatic'
     }
-  } ];
+  }];
   const bidderRequest = {
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
@@ -795,64 +795,66 @@ describe('admaticBidAdapter', () => {
 
   describe('interpretResponse', function () {
     it('should get correct bid responses', function() {
-      const bids = { body: {
-        data: [
-          {
-            'id': 1,
-            'creative_id': '374',
-            'width': 300,
-            'height': 250,
-            'price': 0.01,
-            'type': 'banner',
-            'bidder': 'admatic',
-            'currency': 'TRY',
-            'mime_type': {
-              'name': 'backfill',
-              'force': false
+      const bids = {
+        body: {
+          data: [
+            {
+              'id': 1,
+              'creative_id': '374',
+              'width': 300,
+              'height': 250,
+              'price': 0.01,
+              'type': 'banner',
+              'bidder': 'admatic',
+              'currency': 'TRY',
+              'mime_type': {
+                'name': 'backfill',
+                'force': false
+              },
+              'adomain': ['admatic.com.tr'],
+              'party_tag': '<div></div>',
+              'iurl': 'https://www.admatic.com.tr'
             },
-            'adomain': ['admatic.com.tr'],
-            'party_tag': '<div></div>',
-            'iurl': 'https://www.admatic.com.tr'
-          },
-          {
-            'id': 2,
-            'creative_id': '3741',
-            'width': 300,
-            'height': 250,
-            'price': 0.01,
-            'currency': 'TRY',
-            'type': 'video',
-            'mime_type': {
-              'name': 'backfill',
-              'force': false
+            {
+              'id': 2,
+              'creative_id': '3741',
+              'width': 300,
+              'height': 250,
+              'price': 0.01,
+              'currency': 'TRY',
+              'type': 'video',
+              'mime_type': {
+                'name': 'backfill',
+                'force': false
+              },
+              'bidder': 'admatic',
+              'adomain': ['admatic.com.tr'],
+              'party_tag': '<VAST></VAST>',
+              'iurl': 'https://www.admatic.com.tr'
             },
-            'bidder': 'admatic',
-            'adomain': ['admatic.com.tr'],
-            'party_tag': '<VAST></VAST>',
-            'iurl': 'https://www.admatic.com.tr'
-          },
-          {
-            'id': 3,
-            'creative_id': '3742',
-            'width': 1,
-            'height': 1,
-            'price': 0.01,
-            'currency': 'TRY',
-            'type': 'native',
-            'mime_type': {
-              'name': 'backfill',
-              'force': false
-            },
-            'bidder': 'admatic',
-            'adomain': ['admatic.com.tr'],
-            'party_tag': '{"native":{"ver":"1.1","assets":[{"id":1,"title":{"text":"title"}},{"id":4,"data":{"value":"body"}},{"id":5,"data":{"value":"sponsored"}},{"id":6,"data":{"value":"cta"}},{"id":2,"img":{"url":"https://www.admatic.com.tr","w":1200,"h":628}},{"id":3,"img":{"url":"https://www.admatic.com.tr","w":640,"h":480}}],"link":{"url":"https://www.admatic.com.tr"},"imptrackers":["https://www.admatic.com.tr"]}}',
-            'iurl': 'https://www.admatic.com.tr'
-          }
-        ],
-        'cur': 'TRY',
-        'queryId': 'cdnbh24rlv0hhkpfpln0',
-        'status': true
-      }};
+            {
+              'id': 3,
+              'creative_id': '3742',
+              'width': 1,
+              'height': 1,
+              'price': 0.01,
+              'currency': 'TRY',
+              'type': 'native',
+              'mime_type': {
+                'name': 'backfill',
+                'force': false
+              },
+              'bidder': 'admatic',
+              'adomain': ['admatic.com.tr'],
+              'party_tag': '{"native":{"ver":"1.1","assets":[{"id":1,"title":{"text":"title"}},{"id":4,"data":{"value":"body"}},{"id":5,"data":{"value":"sponsored"}},{"id":6,"data":{"value":"cta"}},{"id":2,"img":{"url":"https://www.admatic.com.tr","w":1200,"h":628}},{"id":3,"img":{"url":"https://www.admatic.com.tr","w":640,"h":480}}],"link":{"url":"https://www.admatic.com.tr"},"imptrackers":["https://www.admatic.com.tr"]}}',
+              'iurl': 'https://www.admatic.com.tr'
+            }
+          ],
+          'cur': 'TRY',
+          'queryId': 'cdnbh24rlv0hhkpfpln0',
+          'status': true
+        }
+      };
 
       const expectedResponse = [
         {
@@ -1136,7 +1138,7 @@ describe('admaticBidAdapter', () => {
         ]
       };
 
-      const result = spec.interpretResponse(bids, {data: request});
+      const result = spec.interpretResponse(bids, { data: request });
       expect(result).to.eql(expectedResponse);
     });
 
@@ -1147,14 +1149,16 @@ describe('admaticBidAdapter', () => {
           'type': 'admatic'
         }
       };
-      const bids = { body: {
-        data: [],
-        'queryId': 'cdnbh24rlv0hhkpfpln0',
-        'status': true,
-        'cur': 'TRY'
-      }};
+      const bids = {
+        body: {
+          data: [],
+          'queryId': 'cdnbh24rlv0hhkpfpln0',
+          'status': true,
+          'cur': 'TRY'
+        }
+      };
 
-      const result = spec.interpretResponse(bids, {data: request});
+      const result = spec.interpretResponse(bids, { data: request });
       expect(result.length).to.equal(0);
     });
   });

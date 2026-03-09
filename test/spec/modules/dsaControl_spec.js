@@ -1,7 +1,7 @@
-import {addBidResponseHook, setMetaDsa, reset} from '../../../modules/dsaControl.js';
+import { addBidResponseHook, setMetaDsa, reset } from '../../../modules/dsaControl.js';
 import { REJECTION_REASON } from 'src/constants.js';
-import {auctionManager} from '../../../src/auctionManager.js';
-import {AuctionIndex} from '../../../src/auctionIndex.js';
+import { auctionManager } from '../../../src/auctionManager.js';
+import { AuctionIndex } from '../../../src/auctionIndex.js';
 
 describe('DSA transparency', () => {
   let sandbox;
@@ -25,7 +25,7 @@ describe('DSA transparency', () => {
       }
       auction = {
         getAuctionId: () => auctionId,
-        getFPD: () => ({global: fpd})
+        getFPD: () => ({ global: fpd })
       }
       sandbox.stub(auctionManager, 'index').get(() => new AuctionIndex(() => [auction]));
     });
@@ -46,7 +46,7 @@ describe('DSA transparency', () => {
       describe(`when regs.ext.dsa.dsarequired is ${required} (required)`, () => {
         beforeEach(() => {
           fpd = {
-            regs: {ext: {dsa: {dsarequired: required}}}
+            regs: { ext: { dsa: { dsarequired: required } } }
           };
         });
 
@@ -55,7 +55,7 @@ describe('DSA transparency', () => {
         });
 
         it('should accept bids that do', () => {
-          bid.meta = {dsa: {}};
+          bid.meta = { dsa: {} };
           expectAcceptance();
         });
 
@@ -65,12 +65,12 @@ describe('DSA transparency', () => {
           });
 
           it('should reject bids with adrender = 0 (advertiser will not render)', () => {
-            bid.meta = {dsa: {adrender: 0}};
+            bid.meta = { dsa: { adrender: 0 } };
             expectRejection(REJECTION_REASON.DSA_MISMATCH);
           });
 
           it('should accept bids with adrender = 1 (advertiser will render)', () => {
-            bid.meta = {dsa: {adrender: 1}};
+            bid.meta = { dsa: { adrender: 1 } };
             expectAcceptance();
           });
         });
@@ -80,12 +80,12 @@ describe('DSA transparency', () => {
           });
 
           it('should reject bids with adrender = 1 (advertiser will render)', () => {
-            bid.meta = {dsa: {adrender: 1}};
+            bid.meta = { dsa: { adrender: 1 } };
             expectRejection(REJECTION_REASON.DSA_MISMATCH);
           });
 
           it('should accept bids with adrender = 0 (advertiser will not render)', () => {
-            bid.meta = {dsa: {adrender: 0}};
+            bid.meta = { dsa: { adrender: 0 } };
             expectAcceptance();
           })
         })
@@ -96,7 +96,7 @@ describe('DSA transparency', () => {
         beforeEach(() => {
           if (required != null) {
             fpd = {
-              regs: {ext: {dsa: {dsarequired: required}}}
+              regs: { ext: { dsa: { dsarequired: required } } }
             }
           }
         });

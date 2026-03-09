@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/otmBidAdapter';
+import { expect } from 'chai';
+import { spec } from 'modules/otmBidAdapter';
 
 describe('otmBidAdapter', function () {
   it('pub_params', function () {
@@ -42,7 +42,7 @@ describe('otmBidAdapter', function () {
       sizes: [[240, 400]]
     }];
 
-    const bidderRequest = {refererInfo: {page: `https://github.com:3000/`, domain: 'github.com:3000'}}
+    const bidderRequest = { refererInfo: { page: `https://github.com:3000/`, domain: 'github.com:3000' } }
 
     const request = spec.buildRequests(bidRequestData, bidderRequest);
     const req_data = request[0].data;

@@ -2,7 +2,7 @@
  * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
  * @param {string} value string value to convert
  */
-import {deepClone, isPlainObject} from '../../src/utils.js';
+import { deepClone, isPlainObject } from '../../src/utils.js';
 
 export function convertCamelToUnderscore(value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) {

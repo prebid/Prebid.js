@@ -364,20 +364,20 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should include only imuid in extuid query when only imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid } }]);
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
 
       it('should include only id5id in extuid query when only id5id exists', function () {
         const id5id = 'id5id';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {id5id: {uid: id5id}}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id } } }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}`);
       });
 
       it('should include id5id and imuid in extuid query when id5id and imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
         const id5id = 'id5id';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {id5id: {uid: id5id}, imuid: imuid}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id }, imuid: imuid } }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}\tim:${imuid}`);
       });
 
