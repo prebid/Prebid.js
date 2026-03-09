@@ -58,10 +58,24 @@ export const spec = {
         netRevenue: true
       };
 
-      prBid.mediaType = rtbBid.ext?.mediaType || BANNER;
+      let mediaType = rtbBid.ext?.mediaType;
+      if (!mediaType) {
+        if (rtbBid.adm && rtbBid.adm.includes('<VAST')) {
+          mediaType = VIDEO;
+        } else {
+          mediaType = BANNER;
+        }
+      }
+
+      if (mediaType === VIDEO) {
+        prBid.mediaType = VIDEO;
+        prBid.vastXml = rtbBid.adm;
+      } else {
+        prBid.mediaType = BANNER;
+        prBid.ad = rtbBid.adm;
+      }
       prBid.width = rtbBid.w;
       prBid.height = rtbBid.h;
-      prBid.ad = rtbBid.adm;
       if (isArray(rtbBid.adomain)) {
         deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
       }
@@ -121,9 +135,15 @@ const cookImpBanner = ({ mediaTypes, params }) => {
 function cookImpVideo({ mediaTypes }) {
   const video = mediaTypes.video;
 
+  const size = Array.isArray(video.playerSize[0])
+    ? video.playerSize[0]
+    : video.playerSize;
+
+  const [w, h] = size;
+
   return {
-    w: video.playerSize[0][0],
-    h: video.playerSize[0][1],
+    w,
+    h,
     mimes: video.mimes || ['video/mp4'],
     protocols: video.protocols || [2, 3, 5, 6],
     placement: video.placement || 1
