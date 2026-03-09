@@ -1,13 +1,13 @@
 /**
  * GPT-specific slot configuration logic for PAAPI.
  */
-import {getHook, submodule} from '../src/hook.js';
-import {deepAccess, logInfo, logWarn, sizeTupleToSizeString} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getHook, submodule } from '../src/hook.js';
+import { deepAccess, logInfo, logWarn, sizeTupleToSizeString } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
-import {keyCompare} from '../src/utils/reducers.js';
-import {getGPTSlotsForAdUnits, targeting} from '../src/targeting.js';
+import { keyCompare } from '../src/utils/reducers.js';
+import { getGPTSlotsForAdUnits, targeting } from '../src/targeting.js';
 
 const MODULE = 'paapiForGpt';
 
@@ -18,7 +18,7 @@ config.getConfig('paapi', (cfg) => {
     logInfo(MODULE, 'enabling PAAPI configuration with setTargetingForGPTAsync')
     targeting.setTargetingForGPT.before(setTargetingHook);
   } else {
-    targeting.setTargetingForGPT.getHooks({hook: setTargetingHook}).remove();
+    targeting.setTargetingForGPT.getHooks({ hook: setTargetingHook }).remove();
   }
 });
 
@@ -26,7 +26,7 @@ export function setTargetingHookFactory(setPaapiConfig = getGlobal().setPAAPICon
   return function(next, adUnit, customSlotMatching) {
     const adUnitCodes = Array.isArray(adUnit) ? adUnit : [adUnit]
     adUnitCodes
-      .map(adUnitCode => adUnitCode == null ? undefined : {adUnitCode})
+      .map(adUnitCode => adUnitCode == null ? undefined : { adUnitCode })
       .forEach(filters => setPaapiConfig(filters, customSlotMatching))
     next(adUnit, customSlotMatching);
   }
@@ -49,10 +49,10 @@ export function slotConfigurator() {
       }
       Object.keys(previous).length ? PREVIOUSLY_SET[adUnitCode] = previous : delete PREVIOUSLY_SET[adUnitCode];
       const componentAuction = Object.entries(configsBySeller)
-        .map(([configKey, auctionConfig]) => ({configKey, auctionConfig}));
+        .map(([configKey, auctionConfig]) => ({ configKey, auctionConfig }));
       if (componentAuction.length > 0) {
         gptSlots.forEach(gptSlot => {
-          gptSlot.setConfig({componentAuction});
+          gptSlot.setConfig({ componentAuction });
           logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
           // reference https://developers.google.com/publisher-tag/reference#googletag.config.ComponentAuctionConfig
         });

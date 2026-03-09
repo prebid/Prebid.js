@@ -1,4 +1,4 @@
-import {auctionManager} from 'src/auctionManager.js';
+import { auctionManager } from 'src/auctionManager.js';
 import { scope3SubModule } from 'modules/scope3RtdProvider.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
@@ -584,7 +584,7 @@ describe('Scope3 RTD Module', function() {
         getFPD: () => { return reqBidsConfigObj.ortb2Fragments }
       });
 
-      const targetingData = scope3SubModule.getTargetingData([ reqBidsConfigObj.adUnits[0].code ], config, {}, { adUnits: reqBidsConfigObj.adUnits })
+      const targetingData = scope3SubModule.getTargetingData([reqBidsConfigObj.adUnits[0].code], config, {}, { adUnits: reqBidsConfigObj.adUnits })
       expect(targetingData['test-ad-unit-nocache']).to.be.an('object')
       expect(targetingData['test-ad-unit-nocache']['axei']).to.be.an('array')
       expect(targetingData['test-ad-unit-nocache']['axei'].length).to.equal(1)

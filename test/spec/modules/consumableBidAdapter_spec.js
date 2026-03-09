@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/consumableBidAdapter.js';
-import {createBid} from 'src/bidfactory.js';
-import {config} from 'src/config.js';
-import {deepClone} from 'src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/consumableBidAdapter.js';
+import { createBid } from 'src/bidfactory.js';
+import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
@@ -242,7 +242,7 @@ const AD_SERVER_RESPONSE = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 }
       },
       '123': {
         'adId': 2364764,
@@ -265,7 +265,7 @@ const AD_SERVER_RESPONSE = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 }
       }
     }
   }
@@ -299,7 +299,7 @@ const AD_SERVER_RESPONSE_2 = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5},
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 },
         'mediaType': 'banner',
         'cats': ['IAB1', 'IAB2', 'IAB3'],
         'networkId': 1234567,
@@ -325,7 +325,7 @@ const AD_SERVER_RESPONSE_2 = {
         'height': 90,
         'width': 728,
         'events': [],
-        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5},
+        'pricing': { 'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5 },
         'mediaType': 'banner',
         'cats': ['IAB1', 'IAB2'],
         'networkId': 2345678,
@@ -614,7 +614,7 @@ describe('Consumable BidAdapter', function () {
     })
 
     it('handles nobid responses', function () {
-      const EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, {'body': {'decisions': null}})
+      const EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, { 'body': { 'decisions': null } })
       const bids = spec.interpretResponse(EMPTY_RESP, BUILD_REQUESTS_OUTPUT);
 
       expect(bids).to.be.empty;
@@ -627,7 +627,7 @@ describe('Consumable BidAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const syncOptions = {'iframeEnabled': true};
+    const syncOptions = { 'iframeEnabled': true };
 
     it('handles empty sync options', function () {
       const opts = spec.getUserSyncs({});
@@ -724,7 +724,7 @@ describe('Consumable BidAdapter', function () {
     })
 
     it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
-      const syncOptions = {'pixelEnabled': true};
+      const syncOptions = { 'pixelEnabled': true };
       const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
 
       expect(opts.length).to.equal(1);

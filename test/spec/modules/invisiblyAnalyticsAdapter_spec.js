@@ -1,7 +1,7 @@
 import invisiblyAdapter from 'modules/invisiblyAnalyticsAdapter.js';
 import { expect } from 'chai';
-import {expectEvents} from '../../helpers/analytics.js';
-import {server} from '../../mocks/xhr.js';
+import { expectEvents } from '../../helpers/analytics.js';
+import { server } from '../../mocks/xhr.js';
 import { EVENTS, STATUS } from 'src/constants.js';
 const events = require('src/events');
 

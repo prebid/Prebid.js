@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/minutemediaBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
-import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
+import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 
 const ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-mm-multi';
 const TEST_ENDPOINT = 'https://hb.minutemedia-prebid.com/hb-multi-mm-test';
@@ -95,7 +95,7 @@ describe('minutemediaAdapter', function () {
         'mediaTypes': {
           'banner': {
             'sizes': [
-              [ 300, 250 ]
+              [300, 250]
             ]
           },
           'video': {
@@ -324,7 +324,7 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
-      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const bidderRequestWithUSP = Object.assign({ uspConsent: '1YNN' }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('us_privacy', '1YNN');
@@ -337,7 +337,7 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: false } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gdpr');
@@ -345,7 +345,7 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: true, consentString: 'test-consent-string' } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gdpr', true);
@@ -353,7 +353,7 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({ gppConsent: false }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gpp');
@@ -361,7 +361,7 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({ gppConsent: { gppString: 'test-consent-string', applicableSections: [7] } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gpp', 'test-consent-string');
@@ -422,15 +422,15 @@ describe('minutemediaAdapter', function () {
         'browsers': [
           {
             'brand': 'Chromium',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Google Chrome',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Not;A=Brand',
-            'version': [ '99', '0', '0', '0' ]
+            'version': ['99', '0', '0', '0']
           }
         ],
         'mobile': 0,
@@ -444,20 +444,20 @@ describe('minutemediaAdapter', function () {
           'sua': {
             'platform': {
               'brand': 'macOS',
-              'version': [ '12', '4', '0' ]
+              'version': ['12', '4', '0']
             },
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Not;A=Brand',
-                'version': [ '99', '0', '0', '0' ]
+                'version': ['99', '0', '0', '0']
               }
             ],
             'mobile': 0,

@@ -330,7 +330,7 @@ describe('freedomadnetworkAdapter', function() {
         meta: {
           libertas: {
             pxl: [
-              {url: 'https://pxl.nurl/track?bid=req456', type: 0}
+              { url: 'https://pxl.nurl/track?bid=req456', type: 0 }
             ],
           },
         },

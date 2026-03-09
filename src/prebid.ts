@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {getGlobal, type PrebidJS} from './prebidGlobal.js';
+import { getGlobal, type PrebidJS } from './prebidGlobal.js';
 import {
   deepAccess,
   deepClone,
@@ -24,22 +24,22 @@ import {
   uniques,
   unsupportedBidderMessage
 } from './utils.js';
-import {listenMessagesFromCreative} from './secureCreatives.js';
-import {userSync} from './userSync.js';
-import {config} from './config.js';
-import {auctionManager} from './auctionManager.js';
-import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
-import {hook, wrapHook} from './hook.js';
-import {loadSession} from './debugging.js';
-import {storageCallbacks} from './storageManager.js';
-import adapterManager, {type AliasBidderOptions, type BidRequest, getS2SBidderSet} from './adapterManager.js';
-import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
-import type {Event, EventHandler, EventIDs} from "./events.js";
+import { listenMessagesFromCreative } from './secureCreatives.js';
+import { userSync } from './userSync.js';
+import { config } from './config.js';
+import { auctionManager } from './auctionManager.js';
+import { isBidUsable, type SlotMatchingFn, targeting } from './targeting.js';
+import { hook, wrapHook } from './hook.js';
+import { loadSession } from './debugging.js';
+import { storageCallbacks } from './storageManager.js';
+import adapterManager, { type AliasBidderOptions, type BidRequest, getS2SBidderSet } from './adapterManager.js';
+import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
+import type { Event, EventHandler, EventIDs } from "./events.js";
 import * as events from './events.js';
-import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
-import {type Defer, defer, PbPromise} from './utils/promise.js';
-import {enrichFPD} from './fpd/enrichment.js';
-import {allConsent} from './consentHandler.js';
+import { type Metrics, newMetrics, useMetrics } from './utils/perfMetrics.js';
+import { type Defer, defer, PbPromise } from './utils/promise.js';
+import { enrichFPD } from './fpd/enrichment.js';
+import { allConsent } from './consentHandler.js';
 import {
   insertLocatorFrame,
   markBidAsRendered,
@@ -47,24 +47,24 @@ import {
   renderAdDirect,
   renderIfDeferred
 } from './adRendering.js';
-import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults, ORTB_VIDEO_PARAMS} from './video.js';
-import {ORTB_BANNER_PARAMS} from './banner.js';
-import {BANNER, VIDEO} from './mediaTypes.js';
-import {delayIfPrerendering} from './utils/prerendering.js';
-import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
-import {normalizeFPD} from './fpd/normalize.js';
-import type {Bid} from "./bidfactory.ts";
-import type {AdUnit, AdUnitDefinition, BidderParams} from "./adUnits.ts";
-import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
-import type {ORTBRequest} from "./types/ortb/request.d.ts";
-import type {DeepPartial} from "./types/objects.d.ts";
-import type {AnyFunction, Wraps} from "./types/functions.d.ts";
-import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
-import {fillAudioDefaults, ORTB_AUDIO_PARAMS} from './audio.ts';
+import { getHighestCpm } from './utils/reducers.js';
+import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
+import { ORTB_BANNER_PARAMS } from './banner.js';
+import { BANNER, VIDEO } from './mediaTypes.js';
+import { delayIfPrerendering } from './utils/prerendering.js';
+import { type BidAdapter, type BidderSpec, newBidder } from './adapters/bidderFactory.js';
+import { normalizeFPD } from './fpd/normalize.js';
+import type { Bid } from "./bidfactory.ts";
+import type { AdUnit, AdUnitDefinition, BidderParams } from "./adUnits.ts";
+import type { AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments } from "./types/common.d.ts";
+import type { ORTBRequest } from "./types/ortb/request.d.ts";
+import type { DeepPartial } from "./types/objects.d.ts";
+import type { AnyFunction, Wraps } from "./types/functions.d.ts";
+import type { BidderScopedSettings, BidderSettings } from "./bidderSettings.ts";
+import { fillAudioDefaults, ORTB_AUDIO_PARAMS } from './audio.ts';
 
-import {getGlobalVarName} from "./buildOptions.ts";
-import {yieldAll} from "./utils/yield.ts";
+import { getGlobalVarName } from "./buildOptions.ts";
+import { yieldAll } from "./utils/yield.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -172,14 +172,14 @@ function validateBannerMediaType(adUnit: AdUnit) {
     banner.format = format;
     try {
       formatSizes = format
-        .filter(({w, h, wratio, hratio}) => {
+        .filter(({ w, h, wratio, hratio }) => {
           if ((w ?? h) != null && (wratio ?? hratio) != null) {
             logWarn(`Ad unit banner.format specifies both w/h and wratio/hratio`, adUnit);
             return false;
           }
           return (w != null && h != null) || (wratio != null && hratio != null);
         })
-        .map(({w, h, wratio, hratio}) => [w ?? wratio, h ?? hratio]);
+        .map(({ w, h, wratio, hratio }) => [w ?? wratio, h ?? hratio]);
     } catch (e) {
       logError(`Invalid format definition on ad unit ${adUnit.code}`, format);
     }
@@ -352,7 +352,7 @@ function validateAdUnit(adUnitDef: AdUnitDefinition): AdUnit {
     return null;
   }
   if (adUnit.ortb2Imp != null && (bids == null || bids.length === 0)) {
-    adUnit.bids = [{bidder: null}]; // the 'null' bidder is treated as an s2s-only placeholder by adapterManager
+    adUnit.bids = [{ bidder: null }]; // the 'null' bidder is treated as an s2s-only placeholder by adapterManager
     logMessage(msg(`defines 'adUnit.ortb2Imp' with no 'adUnit.bids'; it will be seen only by S2S adapters`));
   }
 
@@ -786,17 +786,17 @@ export const requestBids = (function() {
       adUnitCodes = adUnitCodes.filter(uniques);
       return Object.assign({
         adUnitCodes
-      }, adUnits.reduce(({included, excluded}, adUnit) => {
+      }, adUnits.reduce(({ included, excluded }, adUnit) => {
         (adUnitCodes.includes(adUnit.code) ? included : excluded).push(adUnit);
-        return {included, excluded};
-      }, {included: [], excluded: []}))
+        return { included, excluded };
+      }, { included: [], excluded: [] }))
     }
   }
 
   const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions): void {
     let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
-    ({included: adUnits, adUnitCodes} = filterAdUnits(adUnits, adUnitCodes));
+    ({ included: adUnits, adUnitCodes } = filterAdUnits(adUnits, adUnitCodes));
     let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
@@ -805,7 +805,7 @@ export const requestBids = (function() {
 
     enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
-      return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+      return startAuction({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer });
     })
   }, 'requestBids');
 
@@ -822,7 +822,7 @@ export const requestBids = (function() {
     const metrics = newMetrics();
     metrics.checkpoint('requestBids');
 
-    const {included, excluded, adUnitCodes} = filterAdUnits(adUnits, options.adUnitCodes);
+    const { included, excluded, adUnitCodes } = filterAdUnits(adUnits, options.adUnitCodes);
 
     events.emit(REQUEST_BIDS, Object.assign(options, {
       adUnits: included,
@@ -838,7 +838,7 @@ export const requestBids = (function() {
       // what it means for an event handler to modify adUnitCodes - so don't allow it
       adUnitCodes,
       metrics,
-      defer: defer({promiseFactory: (r) => new Promise(r)})
+      defer: defer({ promiseFactory: (r) => new Promise(r) })
     });
     delegate.call(this, req);
     return req.defer.promise;
@@ -1161,7 +1161,7 @@ type MarkWinningBidAsUsedOptions = ({
 /**
  * Mark the winning bid as used, should only be used in conjunction with video
  */
-function markWinningBidAsUsed({adId, adUnitCode, analytics = false, events = false}: MarkWinningBidAsUsedOptions) {
+function markWinningBidAsUsed({ adId, adUnitCode, analytics = false, events = false }: MarkWinningBidAsUsedOptions) {
   let bids;
   if (adUnitCode && adId == null) {
     bids = targeting.getWinningBids(adUnitCode);
@@ -1273,7 +1273,7 @@ addApiMethod('processQueue', processQueue, false);
  * Manually trigger billing for a winning bid, idendified either by ad ID or ad unit code.
  * Used in conjunction with `adUnit.deferBilling`.
  */
-function triggerBilling({adId, adUnitCode}: {
+function triggerBilling({ adId, adUnitCode }: {
   adId?: string;
   adUnitCode?: AdUnitCode
 }) {

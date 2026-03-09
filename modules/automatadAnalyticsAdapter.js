@@ -14,7 +14,7 @@ import { getStorageManager } from '../src/storageManager.js'
 /** Prebid Event Handlers */
 
 const ADAPTER_CODE = 'automatadAnalytics'
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE})
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE })
 const trialCountMilsMapping = [1500, 3000, 5000, 10000];
 
 var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null; var __atmtdAnalyticsQueue = []; var qBeingUsed; var qTraversalComplete;
@@ -197,14 +197,14 @@ const initializeQueue = () => {
 
 // ANALYTICS ADAPTER
 
-const baseAdapter = adapter({analyticsType: 'bundle'});
+const baseAdapter = adapter({ analyticsType: 'bundle' });
 const atmtdAdapter = Object.assign({}, baseAdapter, {
 
   disableAnalytics() {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track({ eventType, args }) {
     const shouldNotPushToQueue = !self.qBeingUsed
     switch (eventType) {
       case EVENTS.AUCTION_INIT:

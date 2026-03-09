@@ -1,12 +1,12 @@
 import adapterManager from '../../../src/adapterManager.js';
 import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as events from '../../../src/events.js';
-import {EVENTS} from '../../../src/constants.js';
-import {generateUUID} from '../../../src/utils.js';
-import {server} from '../../mocks/xhr.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
-import {enrichEidsRule} from "../../../modules/tcfControl.ts";
+import { EVENTS } from '../../../src/constants.js';
+import { generateUUID } from '../../../src/utils.js';
+import { server } from '../../mocks/xhr.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import { enrichEidsRule } from "../../../modules/tcfControl.ts";
 import * as utils from '../../../src/utils.js';
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
@@ -188,7 +188,7 @@ describe('ID5 analytics adapter', () => {
           'criteoId': '_h_y_19IMUhMZG1TOTRReHFNc29TekJ3TzQ3elhnRU81ayUyQjhiRkdJJTJGaTFXJTJCdDRnVmN4S0FETUhQbXdmQWg0M3g1NWtGbGolMkZXalclMkJvWjJDOXFDSk1HU3ZKaVElM0QlM0Q',
           'id5id': {
             'uid': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
-            'ext': {'linkType': 1}
+            'ext': { 'linkType': 1 }
           },
           'tdid': '888a6042-8f99-483b-aa26-23c44bc9166b'
         },
@@ -203,7 +203,7 @@ describe('ID5 analytics adapter', () => {
           'uids': [{
             'id': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
             'atype': 1,
-            'ext': {'linkType': 1}
+            'ext': { 'linkType': 1 }
           }]
         }]
       }];
@@ -517,7 +517,7 @@ describe('ID5 analytics adapter', () => {
         'userId': {
           'id5id': {
             'uid': 'ID5-ZHMOQ99ulpk687Fd9xVwzxMsYtkQIJnI-qm3iWdtww!ID5*FSycZQy7v7zWXiKbEpPEWoB3_UiWdPGzh554ncYDvOkAAA3rajiR0yNrFAU7oDTu',
-            'ext': {'linkType': 1}
+            'ext': { 'linkType': 1 }
           }
         }
       }];

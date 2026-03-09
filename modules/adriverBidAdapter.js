@@ -1,5 +1,5 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
-import {logInfo, getWindowLocation, _each, getBidIdParameter, isPlainObject} from '../src/utils.js';
+import { logInfo, getWindowLocation, _each, getBidIdParameter, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -7,7 +7,7 @@ const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 const TIME_TO_LIVE = 3000;
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
 
@@ -73,7 +73,7 @@ export const spec = {
         }
         par = {
           'id': bid.params.placementId,
-          'ext': {'query': 'bn=15&custom=111=' + bid.bidId},
+          'ext': { 'query': 'bn=15&custom=111=' + bid.bidId },
           'banner': {
             'w': width || undefined,
             'h': height || undefined

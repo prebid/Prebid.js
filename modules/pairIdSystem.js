@@ -6,9 +6,9 @@
  */
 
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js'
 import { logInfo } from '../src/utils.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -18,7 +18,7 @@ const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
 const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function pairIdFromLocalStorage(key) {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
@@ -47,7 +47,7 @@ export const pairIdSubmodule = {
    * @returns {{pairId:string} | undefined }
    */
   decode(value) {
-    return value && Array.isArray(value) ? {'pairId': value} : undefined
+    return value && Array.isArray(value) ? { 'pairId': value } : undefined
   },
   /**
    * Performs action to obtain ID and return a value in the callback's response argument.
@@ -98,7 +98,7 @@ export const pairIdSubmodule = {
       logInfo('PairId not found.')
       return undefined;
     }
-    return {'id': ids};
+    return { 'id': ids };
   },
   eids: {
     'pairId': {

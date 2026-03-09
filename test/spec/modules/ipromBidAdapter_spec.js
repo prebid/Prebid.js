@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/ipromBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/ipromBidAdapter.js';
 
 describe('iPROM Adapter', function () {
   let bidRequests;
@@ -169,7 +169,8 @@ describe('iPROM Adapter', function () {
           ad: '<html><head><title>Iprom Header bidding example</title></head><body><img src="https://iprom.si/files/2015/08/iprom-logo.svg"></body></html>',
           aDomains: ['https://example.com'],
         }
-        ]};
+        ]
+      };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const bids = spec.interpretResponse(serverResponse, request);
