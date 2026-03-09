@@ -79,10 +79,10 @@ const converter = ortbConverter({
     deepSetValue(request, 'ext.prebid.version', getGlobal()?.version ?? 'unknown');
     deepSetValue(request, `ext.prebid.request.count`, cntRequest);
     deepSetValue(request, `ext.prebid.request.timeoutCount`, cntTimeouts);
-    if (placementEnv?.TabActive) deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
-    if (placementEnv?.PageHeight) deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
-    if (placementEnv?.ViewportHeight) deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
-    if (placementEnv?.TimeFromNavigation) deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
+    if (placementEnv?.TabActive !== undefined) deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
+    if (placementEnv?.PageHeight !== undefined) deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
+    if (placementEnv?.ViewportHeight !== undefined) deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
+    if (placementEnv?.TimeFromNavigation !== undefined) deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
     return request;
   },
 });

@@ -209,6 +209,31 @@ describe('pubstackBidAdapter', function () {
 
       expect(utils.deepAccess(request, 'data.ext.prebid.version')).to.equal('unknown');
     });
+
+    it('includes falsy placement environment values', function () {
+      const originalVisibility = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+      if (originalVisibility && originalVisibility.configurable === false) {
+        this.skip();
+      }
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        value: 'hidden'
+      });
+      sandbox.stub(performance, 'now').returns(0);
+
+      const bidRequest = createBidRequest({ bidId: 'bid-falsy-env' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.tabActive')).to.equal(false);
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.timeFromNavigation')).to.equal(0);
+
+      if (originalVisibility) {
+        Object.defineProperty(document, 'visibilityState', originalVisibility);
+      } else {
+        delete document.visibilityState;
+      }
+    });
   });
 
   describe('interpretResponse', function () {
