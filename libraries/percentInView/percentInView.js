@@ -187,8 +187,9 @@ export function percentInView(element, {w, h} = {}) {
     viewportIntersections.observe(element);
     return percentInViewStatic(element, {w, h});
   } else {
-    if (applySize(intersection.boundingClientRect, {w, h}).width !== intersection.boundingClientRect.width) {
-      // use odd w/h override
+    const adjusted = applySize(intersection.boundingClientRect, {w, h});
+    if (adjusted.width !== intersection.boundingClientRect.width || adjusted.height !== intersection.boundingClientRect.height) {
+      // use w/h override
       return percentInViewStatic(element, {w, h});
     }
     return intersection.isIntersecting ? intersection.intersectionRatio * 100 : 0;
