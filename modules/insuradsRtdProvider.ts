@@ -52,7 +52,13 @@ async function makeApiCall(publicId) {
     });
     if (!response.ok) {
       keyValues = {};
-      throw new Error('Network response was not ok');
+      logInfo(LOG_PREFIX + `Network error: ${response.status} ${response.statusText}, cleared cached values`);
+      return;
+    }
+    if (response.status === 204) {
+      keyValues = {};
+      logInfo(LOG_PREFIX + '204 No Content received, cleared cached values');
+      return;
     }
     const data = await response.json();
     // Store the keyValues internally for later use in getTargetingData
