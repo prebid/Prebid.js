@@ -1,4 +1,4 @@
-import {getAdUnitElement} from '../../../src/utils/adUnits.js';
+import { getAdUnitElement } from '../../../src/utils/adUnits.js';
 
 describe('ad unit utils', () => {
   let sandbox;
@@ -10,7 +10,7 @@ describe('ad unit utils', () => {
   });
   describe('getAdUnitElement', () => {
     beforeEach(() => {
-      sandbox.stub(document, 'getElementById').callsFake((id) => ({id}));
+      sandbox.stub(document, 'getElementById').callsFake((id) => ({ id }));
     });
     it('should return null on invalid input', () => {
       expect(getAdUnitElement({})).to.eql(null);

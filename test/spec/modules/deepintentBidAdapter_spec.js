@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/deepintentBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/deepintentBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
@@ -376,7 +376,7 @@ describe('Deepintent adapter', function () {
   });
   describe('GPP and coppa', function() {
     it('Request params check with GPP Consent', function () {
-      const bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
+      const bidderReq = { gppConsent: { gppString: 'gpp-string-test', applicableSections: [5] } };
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.regs.gpp).to.equal('gpp-string-test');
@@ -397,7 +397,7 @@ describe('Deepintent adapter', function () {
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
     it('should include coppa flag in bid request if coppa is set to true', () => {
-      const bidderReq = {ortb2: {regs: {coppa: 1}}};
+      const bidderReq = { ortb2: { regs: { coppa: 1 } } };
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.regs.coppa).to.equal(1);

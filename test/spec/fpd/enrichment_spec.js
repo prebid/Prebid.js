@@ -1,13 +1,13 @@
-import {dep, enrichFPD, getJsonLdKeywords, getMetaTagKeywords} from '../../../src/fpd/enrichment.js';
-import {hook} from '../../../src/hook.js';
-import {expect} from 'chai/index.mjs';
-import {config} from 'src/config.js';
+import { dep, enrichFPD, getJsonLdKeywords, getMetaTagKeywords } from '../../../src/fpd/enrichment.js';
+import { hook } from '../../../src/hook.js';
+import { expect } from 'chai/index.mjs';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
 import * as activities from 'src/activities/rules.js'
-import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
-import {ACTIVITY_PARAM_COMPONENT} from '../../../src/activities/params.js';
+import { CLIENT_SECTIONS } from '../../../src/fpd/oneClient.js';
+import { ACTIVITY_ACCESS_DEVICE } from '../../../src/activities/activities.js';
+import { ACTIVITY_PARAM_COMPONENT } from '../../../src/activities/params.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -63,7 +63,7 @@ describe('FPD enrichment', () => {
     describe(`${section}, when set`, () => {
       let ortb2;
       beforeEach(() => {
-        ortb2 = {[section]: {ext: {}}}
+        ortb2 = { [section]: { ext: {} } }
       })
 
       it('sets domain and publisher.domain', () => {
@@ -188,7 +188,7 @@ describe('FPD enrichment', () => {
 
       ['dooh', 'app'].forEach(prop => {
         it(`should not be set when ${prop} is set`, () => {
-          return fpd({[prop]: {foo: 'bar'}}).then(ortb2 => {
+          return fpd({ [prop]: { foo: 'bar' } }).then(ortb2 => {
             expect(ortb2.site).to.not.exist;
             sinon.assert.notCalled(utils.logWarn); // make sure we don't generate "both site and app are set" warnings
           })
@@ -244,7 +244,7 @@ describe('FPD enrichment', () => {
       it('sets w/h', () => {
         const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions');
 
-        getWinDimensionsStub.returns({screen: {width: 321, height: 123}});
+        getWinDimensionsStub.returns({ screen: { width: 321, height: 123 } });
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
@@ -256,7 +256,7 @@ describe('FPD enrichment', () => {
 
       it('sets ext.vpw/vph', () => {
         const getWinDimensionsStub = sandbox.stub(winDimensions, 'getWinDimensions');
-        getWinDimensionsStub.returns({innerWidth: 12, innerHeight: 21, screen: {}});
+        getWinDimensionsStub.returns({ innerWidth: 12, innerHeight: 21, screen: {} });
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device.ext, {
             vpw: 12,
@@ -306,7 +306,7 @@ describe('FPD enrichment', () => {
     describe('coppa', () => {
       [[true, 1], [false, 0]].forEach(([cfgVal, regVal]) => {
         it(`is set to ${regVal} if config = ${cfgVal}`, () => {
-          config.setConfig({coppa: cfgVal});
+          config.setConfig({ coppa: cfgVal });
           return fpd().then(ortb2 => {
             expect(ortb2.regs.coppa).to.eql(regVal);
           })
@@ -335,25 +335,25 @@ describe('FPD enrichment', () => {
       })
     });
     it('uses low entropy values if uaHints is []', () => {
-      sandbox.stub(dep, 'getLowEntropySUA').callsFake(() => ({mock: 'sua'}));
+      sandbox.stub(dep, 'getLowEntropySUA').callsFake(() => ({ mock: 'sua' }));
       config.setConfig({
         firstPartyData: {
           uaHints: [],
         }
       })
       return fpd().then(ortb2 => {
-        expect(ortb2.device.sua).to.eql({mock: 'sua'});
+        expect(ortb2.device.sua).to.eql({ mock: 'sua' });
       })
     });
     it('uses high entropy values otherwise', () => {
-      sandbox.stub(dep, 'getHighEntropySUA').callsFake((hints) => Promise.resolve({hints}));
+      sandbox.stub(dep, 'getHighEntropySUA').callsFake((hints) => Promise.resolve({ hints }));
       config.setConfig({
         firstPartyData: {
           uaHints: ['h1', 'h2']
         }
       });
       return fpd().then(ortb2 => {
-        expect(ortb2.device.sua).to.eql({hints: ['h1', 'h2']})
+        expect(ortb2.device.sua).to.eql({ hints: ['h1', 'h2'] })
       })
     });
   });
@@ -425,9 +425,9 @@ describe('FPD enrichment', () => {
 
   it('leaves only one of app, site, dooh', () => {
     return fpd({
-      app: {p: 'val'},
-      site: {p: 'val'},
-      dooh: {p: 'val'}
+      app: { p: 'val' },
+      site: { p: 'val' },
+      dooh: { p: 'val' }
     }).then(ortb2 => {
       expect(ortb2.app).to.not.exist;
       expect(ortb2.site).to.not.exist;

@@ -7,7 +7,7 @@ import {
 } from '../../../libraries/percentInView/percentInView.js';
 import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
 
-import {defer} from 'src/utils/promise.js';
+import { defer } from 'src/utils/promise.js';
 
 describe('percentInView', () => {
   let sandbox;
@@ -25,7 +25,7 @@ describe('percentInView', () => {
       for (const [x, y] of offsets) {
         win.frameElement = {
           getBoundingClientRect() {
-            return {left: x, top: y};
+            return { left: x, top: y };
           }
         };
         child = win;
@@ -36,14 +36,14 @@ describe('percentInView', () => {
     }
 
     it('returns 0, 0 for the top window', () => {
-      expect(getViewportOffset(mockWindow())).to.eql({x: 0, y: 0});
+      expect(getViewportOffset(mockWindow())).to.eql({ x: 0, y: 0 });
     });
 
     it('returns frame offset for a direct child', () => {
-      expect(getViewportOffset(mockWindow([[10, 20]]))).to.eql({x: 10, y: 20});
+      expect(getViewportOffset(mockWindow([[10, 20]]))).to.eql({ x: 10, y: 20 });
     });
     it('returns cumulative offests for descendants', () => {
-      expect(getViewportOffset(mockWindow([[10, 20], [20, 30]]))).to.eql({x: 30, y: 50});
+      expect(getViewportOffset(mockWindow([[10, 20], [20, 30]]))).to.eql({ x: 30, y: 50 });
     });
     it('does not choke when parent is not accessible', () => {
       const win = mockWindow([[10, 20]]);
@@ -52,7 +52,7 @@ describe('percentInView', () => {
           throw new Error();
         }
       });
-      expect(getViewportOffset(win)).to.eql({x: 0, y: 0});
+      expect(getViewportOffset(win)).to.eql({ x: 0, y: 0 });
     });
   });
 

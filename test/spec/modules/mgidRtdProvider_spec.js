@@ -1,7 +1,7 @@
 import { mgidSubmodule, storage } from '../../../modules/mgidRtdProvider.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as refererDetection from '../../../src/refererDetection.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('Mgid RTD submodule', () => {
   let clock;
@@ -26,7 +26,7 @@ describe('Mgid RTD submodule', () => {
   });
 
   it('init is successfull, when clientSiteId is defined', () => {
-    expect(mgidSubmodule.init({params: {clientSiteId: 123}})).to.be.true;
+    expect(mgidSubmodule.init({ params: { clientSiteId: 123 } })).to.be.true;
   });
 
   it('init is unsuccessfull, when clientSiteId is not defined', () => {
@@ -59,7 +59,7 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {
         gdpr: {
           gdprApplies: true,
@@ -71,7 +71,7 @@ describe('Mgid RTD submodule', () => {
 
     server.requests[0].respond(
       200,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       JSON.stringify(responseObj)
     );
 
@@ -134,13 +134,13 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {}
     );
 
     server.requests[0].respond(
       200,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       JSON.stringify({})
     );
 
@@ -168,7 +168,7 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {
         gdpr: {
           gdprApplies: false,
@@ -180,7 +180,7 @@ describe('Mgid RTD submodule', () => {
 
     server.requests[0].respond(
       200,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       JSON.stringify({})
     );
 
@@ -213,13 +213,13 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {}
     );
 
     server.requests[0].respond(
       200,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       JSON.stringify({})
     );
 
@@ -246,13 +246,13 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {}
     );
 
     server.requests[0].respond(
       200,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       JSON.stringify({})
     );
 
@@ -273,13 +273,13 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {}
     );
 
     server.requests[0].respond(
       200,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       '{'
     );
 
@@ -299,13 +299,13 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {}
     );
 
     server.requests[0].respond(
       204,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
     );
 
     assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {});
@@ -324,13 +324,13 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123}},
+      { params: { clientSiteId: 123 } },
       {}
     );
 
     server.requests[0].respond(
       500,
-      {'Content-Type': 'application/json'},
+      { 'Content-Type': 'application/json' },
       '{}'
     );
 
@@ -350,7 +350,7 @@ describe('Mgid RTD submodule', () => {
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
-      {params: {clientSiteId: 123, timeout: 500}},
+      { params: { clientSiteId: 123, timeout: 500 } },
       {}
     );
 

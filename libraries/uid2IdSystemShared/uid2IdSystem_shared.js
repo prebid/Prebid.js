@@ -33,14 +33,17 @@ export class Uid2ApiClient {
     }
     return arrayBuffer;
   }
+
   hasStatusResponse(response) {
     return typeof (response) === 'object' && response && response.status;
   }
+
   isValidRefreshResponse(response) {
     return this.hasStatusResponse(response) && (
       response.status === 'optout' || response.status === 'expired_token' || (response.status === 'success' && response.body && isValidIdentity(response.body))
     );
   }
+
   ResponseToRefreshResult(response) {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
@@ -48,6 +51,7 @@ export class Uid2ApiClient {
       return response;
     } else { return prependMessage(`Response didn't contain a valid status`); }
   }
+
   callRefreshApi(refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
     let resolvePromise;
@@ -98,10 +102,12 @@ export class Uid2ApiClient {
           rejectPromise(prependMessage(error));
         }
       }
-    }, refreshDetails.refresh_token, { method: 'POST',
+    }, refreshDetails.refresh_token, {
+      method: 'POST',
       customHeaders: {
         'X-UID2-Client-Version': this._clientVersion
-      } });
+      }
+    });
     return promise;
   }
 }
@@ -112,30 +118,39 @@ export class Uid2StorageManager {
     this._storageName = storageName;
     this._logInfo = (...args) => logInfoWrapper(logInfo, ...args);
   }
+
   readCookie(cookieName) {
     return this._storage.cookiesAreEnabled() ? this._storage.getCookie(cookieName) : null;
   }
+
   readLocalStorage(key) {
     return this._storage.localStorageIsEnabled() ? this._storage.getDataFromLocalStorage(key) : null;
   }
+
   readModuleCookie() {
     return this.parseIfContainsBraces(this.readCookie(this._storageName));
   }
+
   writeModuleCookie(value) {
     this._storage.setCookie(this._storageName, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
   }
+
   readModuleStorage() {
     return this.parseIfContainsBraces(this.readLocalStorage(this._storageName));
   }
+
   writeModuleStorage(value) {
     this._storage.setDataInLocalStorage(this._storageName, JSON.stringify(value));
   }
+
   readProvidedCookie(cookieName) {
     return JSON.parse(this.readCookie(cookieName));
   }
+
   parseIfContainsBraces(value) {
     return (value?.includes('{')) ? JSON.parse(value) : value;
   }
+
   storeValue(value) {
     if (this._preferLocalStorage) {
       this.writeModuleStorage(value);
@@ -176,7 +191,7 @@ export class Uid2StorageManager {
 
 function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
   _logInfo('UID2 base url provided: ', baseUrl);
-  const client = new Uid2ApiClient({baseUrl}, clientId, _logInfo, _logWarn);
+  const client = new Uid2ApiClient({ baseUrl }, clientId, _logInfo, _logWarn);
   return client.callRefreshApi(token).then((response) => {
     _logInfo('Refresh endpoint responded with:', response);
     const tokens = {
@@ -744,12 +759,14 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
       if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
         const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, logInfo, _logWarn);
         logInfo('Generate token using CSTG');
-        return { callback: (cb) => {
-          promise.then((result) => {
-            logInfo('Token generation responded, passing the new token on.', result);
-            cb(result);
-          }).catch((e) => { logError('error generating token: ', e); });
-        } };
+        return {
+          callback: (cb) => {
+            promise.then((result) => {
+              logInfo('Token generation responded, passing the new token on.', result);
+              cb(result);
+            }).catch((e) => { logError('error generating token: ', e); });
+          }
+        };
       }
     }
   }
@@ -764,12 +781,14 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (Date.now() > newestAvailableToken.identity_expires) {
     const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
     logInfo('Token is expired but can be refreshed, attempting refresh.');
-    return { callback: (cb) => {
-      promise.then((result) => {
-        logInfo('Refresh reponded, passing the updated token on.', result);
-        cb(result);
-      }).catch((e) => { logError('error refreshing token: ', e); });
-    } };
+    return {
+      callback: (cb) => {
+        promise.then((result) => {
+          logInfo('Refresh reponded, passing the updated token on.', result);
+          cb(result);
+        }).catch((e) => { logError('error refreshing token: ', e); });
+      }
+    };
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,

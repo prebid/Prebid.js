@@ -1,11 +1,11 @@
-import {deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn} from '../src/utils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import {ajax} from '../src/ajax.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { ajax } from '../src/ajax.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -791,8 +791,8 @@ const spec = {
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
-    const {iframeEnabled, pixelEnabled} = syncOptions;
-    const {gdprApplies, consentString = ''} = gdprConsent;
+    const { iframeEnabled, pixelEnabled } = syncOptions;
+    const { gdprApplies, consentString = '' } = gdprConsent;
     const mySyncs = [];
     if (iframeEnabled) {
       mySyncs.push({

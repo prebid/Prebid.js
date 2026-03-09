@@ -674,7 +674,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
       window.googletag.cmd.push(() => {
         window.googletag.pubads().getSlots().forEach(slot => {
           if (typeof slot.setTargeting !== 'undefined' && sirdataMergedList.length > 0) {
-            slot.setConfig({targeting: {'sd_rtd': sirdataMergedList}});
+            slot.setTargeting('sd_rtd', sirdataMergedList);
           }
         });
       });

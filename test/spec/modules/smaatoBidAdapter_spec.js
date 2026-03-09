@@ -1,6 +1,6 @@
-import {spec} from 'modules/smaatoBidAdapter.js';
+import { spec } from 'modules/smaatoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 
 // load modules that register ORTB processors
 import 'src/prebid.js'
@@ -72,32 +72,32 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('is invalid, when params object is empty', () => {
-      expect(spec.isBidRequestValid({params: {}})).to.be.false;
+      expect(spec.isBidRequestValid({ params: {} })).to.be.false;
     });
 
     it('is invalid, when publisherId is present but of wrong type', () => {
-      expect(spec.isBidRequestValid({params: {publisherId: 123}})).to.be.false;
+      expect(spec.isBidRequestValid({ params: { publisherId: 123 } })).to.be.false;
     });
 
     it('is invalid, when adbreakId param is present', () => {
-      expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456', adbreakId: '42'}})).to.be.false;
+      expect(spec.isBidRequestValid({ params: { publisherId: '123', adspaceId: '456', adbreakId: '42' } })).to.be.false;
     });
 
     describe('for supported requests', () => {
       it('is invalid, when adspaceId is missing', () => {
-        expect(spec.isBidRequestValid({params: {publisherId: '123'}})).to.be.false;
+        expect(spec.isBidRequestValid({ params: { publisherId: '123' } })).to.be.false;
       });
 
       it('is invalid, when adspaceId is present but of wrong type', () => {
-        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: 456}})).to.be.false;
+        expect(spec.isBidRequestValid({ params: { publisherId: '123', adspaceId: 456 } })).to.be.false;
       });
 
       it('is valid, when required params are present for minimal request', () => {
-        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456'}})).to.be.true;
+        expect(spec.isBidRequestValid({ params: { publisherId: '123', adspaceId: '456' } })).to.be.true;
       });
 
       it('is invalid, when forbidden adbreakId param is present', () => {
-        expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456', adbreakId: '42'}})).to.be.false;
+        expect(spec.isBidRequestValid({ params: { publisherId: '123', adspaceId: '456', adbreakId: '42' } })).to.be.false;
       });
     });
   });
@@ -273,7 +273,7 @@ describe('smaatoBidAdapterTest', () => {
           },
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.site.id).to.exist.and.to.be.a('string');
@@ -298,7 +298,7 @@ describe('smaatoBidAdapterTest', () => {
           },
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.dooh.id).to.exist.and.to.be.a('string');
@@ -328,7 +328,7 @@ describe('smaatoBidAdapterTest', () => {
           },
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.language).to.equal(language);
@@ -354,7 +354,7 @@ describe('smaatoBidAdapterTest', () => {
           },
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.coppa).to.equal(1);
@@ -383,7 +383,7 @@ describe('smaatoBidAdapterTest', () => {
           }
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.gpp).to.eql('gppString');
@@ -398,8 +398,8 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('sends instl if instl exists', () => {
-        const instl = {instl: 1};
-        const bidRequestWithInstl = Object.assign({}, singleBannerBidRequest, {ortb2Imp: instl});
+        const instl = { instl: 1 };
+        const bidRequestWithInstl = Object.assign({}, singleBannerBidRequest, { ortb2Imp: instl });
 
         const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
 
@@ -444,7 +444,7 @@ describe('smaatoBidAdapterTest', () => {
           }
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.gender).to.equal('M');
@@ -494,7 +494,7 @@ describe('smaatoBidAdapterTest', () => {
           }
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.dsa.dsarequired).to.eql(2);
@@ -511,7 +511,7 @@ describe('smaatoBidAdapterTest', () => {
           }
         };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([singleBannerBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.ext.dsa).to.be.undefined;
@@ -548,7 +548,7 @@ describe('smaatoBidAdapterTest', () => {
         skip: 1,
         skipmin: 5,
         api: [7],
-        ext: {rewarded: 0}
+        ext: { rewarded: 0 }
       };
       const VIDEO_OUTSTREAM_OPENRTB_IMP = {
         mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
@@ -615,8 +615,8 @@ describe('smaatoBidAdapterTest', () => {
         });
 
         it('sends instl if instl exists', () => {
-          const instl = {instl: 1};
-          const bidRequestWithInstl = Object.assign({}, singleVideoBidRequest, {ortb2Imp: instl});
+          const instl = { instl: 1 };
+          const bidRequestWithInstl = Object.assign({}, singleVideoBidRequest, { ortb2Imp: instl });
 
           const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
 
@@ -848,7 +848,7 @@ describe('smaatoBidAdapterTest', () => {
 
       it('when geo and ifa info present, then add both to device object', () => {
         const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
-        inAppBidRequest.params.app = {ifa: DEVICE_ID, geo: LOCATION};
+        inAppBidRequest.params.app = { ifa: DEVICE_ID, geo: LOCATION };
 
         const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
@@ -869,9 +869,9 @@ describe('smaatoBidAdapterTest', () => {
         };
 
         const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
-        inAppBidRequest.params.app = {ifa: DEVICE_ID, geo: LOCATION};
+        inAppBidRequest.params.app = { ifa: DEVICE_ID, geo: LOCATION };
 
-        const reqs = spec.buildRequests([inAppBidRequest], {...defaultBidderRequest, ortb2});
+        const reqs = spec.buildRequests([inAppBidRequest], { ...defaultBidderRequest, ortb2 });
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo.lat).to.equal(53.5488);
@@ -881,7 +881,7 @@ describe('smaatoBidAdapterTest', () => {
 
       it('when ifa is present but geo is missing, then add only ifa to device object', () => {
         const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
-        inAppBidRequest.params.app = {ifa: DEVICE_ID};
+        inAppBidRequest.params.app = { ifa: DEVICE_ID };
 
         const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
@@ -892,7 +892,7 @@ describe('smaatoBidAdapterTest', () => {
 
       it('when geo is present but ifa is missing, then add only geo to device object', () => {
         const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
-        inAppBidRequest.params.app = {geo: LOCATION};
+        inAppBidRequest.params.app = { geo: LOCATION };
 
         const reqs = spec.buildRequests([inAppBidRequest], defaultBidderRequest);
 
@@ -935,7 +935,7 @@ describe('smaatoBidAdapterTest', () => {
             tdid: '89145'
           },
           userIdAsEids: [
-            {id: 1}, {id: 2}
+            { id: 1 }, { id: 2 }
           ]
         };
 
@@ -979,7 +979,7 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('interpretResponse', () => {
-    function buildBidRequest(payloadAsJsObj = {imp: [{}]}) {
+    function buildBidRequest(payloadAsJsObj = { imp: [{}] }) {
       return {
         method: 'POST',
         url: 'https://prebid.ad.smaato.net/oapi/prebid',
@@ -1074,7 +1074,7 @@ describe('smaatoBidAdapterTest', () => {
           adm = '<VAST version="2.0"></VAST>';
           break;
         case ADTYPE_NATIVE:
-          adm = JSON.stringify({native: NATIVE_RESPONSE})
+          adm = JSON.stringify({ native: NATIVE_RESPONSE })
           break;
         default:
           throw Error('Invalid AdType');
@@ -1125,7 +1125,7 @@ describe('smaatoBidAdapterTest', () => {
     };
 
     it('returns empty array on no bid responses', () => {
-      const response_with_empty_body = {body: {}};
+      const response_with_empty_body = { body: {} };
 
       const bids = spec.interpretResponse(response_with_empty_body, buildBidRequest());
 
@@ -1264,7 +1264,7 @@ describe('smaatoBidAdapterTest', () => {
             }
           ]
         },
-        headers: {get: () => undefined}
+        headers: { get: () => undefined }
       };
     });
 
@@ -1290,7 +1290,7 @@ describe('smaatoBidAdapterTest', () => {
 
     it('uses net revenue flag send from server', () => {
       const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
-      resp.body.seatbid[0].bid[0].ext = {net: false};
+      resp.body.seatbid[0].bid[0].ext = { net: false };
 
       const bids = spec.interpretResponse(resp, buildBidRequest());
 
@@ -1337,7 +1337,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when pixelEnabled true then returns image sync', () => {
-      expect(spec.getUserSyncs({pixelEnabled: true}, null, null, null)).to.deep.equal(
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, null)).to.deep.equal(
         [
           {
             type: 'image',
@@ -1348,7 +1348,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when iframeEnabled true then returns iframe sync', () => {
-      expect(spec.getUserSyncs({iframeEnabled: true}, null, null, null)).to.deep.equal(
+      expect(spec.getUserSyncs({ iframeEnabled: true }, null, null, null)).to.deep.equal(
         [
           {
             type: 'iframe',
@@ -1359,8 +1359,8 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when iframeEnabled true and syncsPerBidder then returns iframe sync', () => {
-      config.setConfig({userSync: {syncsPerBidder: 5}});
-      expect(spec.getUserSyncs({iframeEnabled: true}, null, null, null)).to.deep.equal(
+      config.setConfig({ userSync: { syncsPerBidder: 5 } });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, null, null, null)).to.deep.equal(
         [
           {
             type: 'iframe',
@@ -1371,7 +1371,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when iframeEnabled and pixelEnabled true then returns iframe sync', () => {
-      expect(spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, null, null, null)).to.deep.equal(
+      expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, null, null, null)).to.deep.equal(
         [
           {
             type: 'iframe',
@@ -1382,7 +1382,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when pixelEnabled true and gdprConsent then returns image sync with gdpr params', () => {
-      expect(spec.getUserSyncs({pixelEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, { gdprApplies: true, consentString: CONSENT_STRING }, null)).to.deep.equal(
         [
           {
             type: 'image',
@@ -1393,7 +1393,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when iframeEnabled true and gdprConsent then returns iframe with gdpr params', () => {
-      expect(spec.getUserSyncs({iframeEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
+      expect(spec.getUserSyncs({ iframeEnabled: true }, null, { gdprApplies: true, consentString: CONSENT_STRING }, null)).to.deep.equal(
         [
           {
             type: 'iframe',
@@ -1404,7 +1404,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when pixelEnabled true and gdprConsent without gdpr then returns pixel sync with gdpr_consent', () => {
-      expect(spec.getUserSyncs({pixelEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, { consentString: CONSENT_STRING }, null), null).to.deep.equal(
         [
           {
             type: 'image',
@@ -1415,7 +1415,7 @@ describe('smaatoBidAdapterTest', () => {
     })
 
     it('when iframeEnabled true and gdprConsent without gdpr then returns iframe sync with gdpr_consent', () => {
-      expect(spec.getUserSyncs({iframeEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
+      expect(spec.getUserSyncs({ iframeEnabled: true }, null, { consentString: CONSENT_STRING }, null), null).to.deep.equal(
         [
           {
             type: 'iframe',

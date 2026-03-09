@@ -7,12 +7,12 @@ import {
   logWarn,
   formatQS
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const ADAPTER_VERSION = '1.21';
 const GVLID = 157;
@@ -40,7 +40,7 @@ let appId = '';
 
 export const spec = {
   code: 'beachfront',
-  supportedMediaTypes: [ VIDEO, BANNER ],
+  supportedMediaTypes: [VIDEO, BANNER],
   gvlid: GVLID,
   isBidRequestValid(bid) {
     if (isVideoBid(bid)) {

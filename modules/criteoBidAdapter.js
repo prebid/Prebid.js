@@ -1,15 +1,15 @@
-import {deepAccess, deepSetValue, logError, logInfo, logWarn, parseUrl, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
-import {ajax} from '../src/ajax.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
-import {config} from '../src/config.js';
+import { deepAccess, deepSetValue, logError, logInfo, logWarn, parseUrl, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -161,7 +161,7 @@ function bidResponse(buildBidResponse, bid, context) {
   }
 
   const bidResponse = buildBidResponse(bid, context);
-  const {bidRequest} = context;
+  const { bidRequest } = context;
 
   bidResponse.currency = bid?.ext?.cur;
 
@@ -370,7 +370,7 @@ export const spec = {
 
     const context = buildContext(bidRequests, bidderRequest);
     const url = buildCdbUrl(context);
-    const data = CONVERTER.toORTB({bidderRequest, bidRequests, context});
+    const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
 
     if (data) {
       return {
@@ -395,7 +395,7 @@ export const spec = {
       return []; // no bid
     }
 
-    const interpretedResponse = CONVERTER.fromORTB({response: response.body, request: request.data});
+    const interpretedResponse = CONVERTER.fromORTB({ response: response.body, request: request.data });
     return interpretedResponse.bids || [];
   },
 

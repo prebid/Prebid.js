@@ -1,13 +1,13 @@
-import {deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
@@ -36,7 +36,7 @@ const LOG_ERROR_MESS = {
   videoMissing: 'Bid request videoType property is missing - '
 };
 const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN', 'CHF', 'SEK'];
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const _bidResponseTimeLogged = [];
 export const spec = {
   code: BIDDER_CODE,
@@ -179,7 +179,7 @@ export const spec = {
       cur: [currency],
       source,
       ...(payloadUser && { user: payloadUser }),
-      ...(payloadRegs && {regs: payloadRegs}),
+      ...(payloadRegs && { regs: payloadRegs }),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
       ...(payloadContent && { content: payloadContent }),

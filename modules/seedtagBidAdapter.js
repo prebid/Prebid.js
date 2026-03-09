@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

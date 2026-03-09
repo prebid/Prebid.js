@@ -2,12 +2,12 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
+import { deepAccess, parseUrl, extractDomainFromHost, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -42,7 +42,7 @@ function getGdprQueryParams(gdprConsent) {
 function getBannerCoords(bidRequest) {
   const element = getAdUnitElement(bidRequest);
   if (element) {
-    const {left, top} = getBoundingClientRect(element);
+    const { left, top } = getBoundingClientRect(element);
     const viewport = getViewportCoordinates();
     return [Math.round(left + (viewport.left || 0)), Math.round(top + (viewport.top || 0))];
   }

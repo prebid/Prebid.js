@@ -316,7 +316,8 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the global placement id (gpid) if in adserver property', function () {
-      const req = { ...bidRequests[0],
+      const req = {
+        ...bidRequests[0],
         ortb2Imp: {
           ext: {
             gpid: '/17037559/jeusol/jeusol_D_1',
@@ -327,7 +328,8 @@ describe('gumgumAdapter', function () {
               }
             }
           }
-        } }
+        }
+      }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
@@ -850,7 +852,7 @@ describe('gumgumAdapter', function () {
           model: 'iPhone 12 Pro Max',
           os: 'iOS',
           osv: '17.4',
-          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
           sua: suaObject
@@ -1065,7 +1067,7 @@ describe('gumgumAdapter', function () {
       it('request size that  matches response size for in-slot', function () {
         const request = { ...bidRequest };
         const body = { ...serverResponse };
-        const expectedSize = [[ 320, 50 ], [300, 600], [300, 250]];
+        const expectedSize = [[320, 50], [300, 600], [300, 250]];
         let result;
         request.pi = 3;
         body.ad.width = 300;
