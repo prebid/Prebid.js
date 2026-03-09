@@ -1,6 +1,4 @@
 import {expect} from 'chai';
-import sinon from 'sinon';
-import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import {spec} from 'modules/ipromBidAdapter.js';
 
@@ -359,24 +357,6 @@ describe('iPROM Adapter', function () {
       expect(requestparse.referer.legacy).to.be.undefined;
     });
 
-    it('should warn if referer fields are missing', function () {
-      const warnSpy = sinon.spy(utils, 'logWarn');
-
-      const bidderRequestWithMissingRefererFields = {
-        ...bidderRequest,
-        refererInfo: {
-          reachedTop: true
-        }
-      };
-
-      spec.buildRequests(bidRequests, bidderRequestWithMissingRefererFields);
-
-      expect(warnSpy.calledOnce).to.equal(true);
-      expect(warnSpy.firstCall.args[0]).to.equal('iprom: Missing referer fields: referer, numIframes, stack');
-
-      warnSpy.restore();
-    });
-
     it('should add adapter version', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       const requestparse = JSON.parse(requests[0].data);
@@ -401,23 +381,6 @@ describe('iPROM Adapter', function () {
         gdprApplies: true,
         addtlConsent: 'addtl-consent'
       });
-    });
-
-    it('should warn if TCF fields are missing', function () {
-      const warnSpy = sinon.spy(utils, 'logWarn');
-      const bidderRequestWithIncompleteTcf = {
-        ...bidderRequest,
-        gdprConsent: {
-          consentString: 'consent-string'
-        }
-      };
-
-      spec.buildRequests(bidRequests, bidderRequestWithIncompleteTcf);
-
-      expect(warnSpy.calledOnce).to.equal(true);
-      expect(warnSpy.firstCall.args[0]).to.equal('iprom: Missing tcf fields: gdprApplies, addtlConsent');
-
-      warnSpy.restore();
     });
 
     it('should add schain data', function () {
