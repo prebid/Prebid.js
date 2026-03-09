@@ -141,6 +141,15 @@ function cookImpVideo({ mediaTypes }) {
 
   const [w, h] = size;
 
+  let placement = video.placement;
+  if (!placement && video.context) {
+    if (video.context === 'outstream') {
+      placement = 4;
+    } else if (video.context === 'instream') {
+      placement = 1;
+    }
+  }
+
   return {
     w,
     h,
