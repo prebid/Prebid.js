@@ -52,7 +52,8 @@ export const spec = {
     const timestamp = Date.now();
     const query = {
       ts: timestamp,
-      json: true};
+      json: true
+    };
 
     _each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId);
@@ -174,7 +175,7 @@ export const spec = {
       }
 
       const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
-        return bidRequest.params.adslotId == bidResponse.id;
+        return String(bidRequest.params.adslotId) === String(bidResponse.id);
       });
 
       if (matchedBid) {

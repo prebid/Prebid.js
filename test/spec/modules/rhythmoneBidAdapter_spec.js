@@ -1,5 +1,6 @@
-import {spec} from '../../../modules/rhythmoneBidAdapter.js';
+import { spec } from '../../../modules/rhythmoneBidAdapter.js';
 import * as utils from '../../../src/utils.js';
+import * as dnt from 'libraries/dnt/index.js';
 import * as sinon from 'sinon';
 
 var r1adapter = spec;
@@ -397,7 +398,7 @@ describe('rhythmone adapter tests', function () {
             'path': 'mypath'
           },
           'mediaTypes': {
-            'banner': {'sizes': [['400', '500'], ['4n0', '5g0']]}
+            'banner': { 'sizes': [['400', '500'], ['4n0', '5g0']] }
           },
           'adUnitCode': 'div-gpt-ad-1438287399331-0',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
@@ -434,7 +435,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var dntStub = sinon.stub(utils, 'getDNT').returns(1);
+      var dntStub = sinon.stub(dnt, 'getDNT').returns(1);
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 

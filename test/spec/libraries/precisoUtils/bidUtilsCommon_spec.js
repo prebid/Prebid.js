@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import { BANNER } from '../../../../src/mediaTypes.js';
 import * as utils from '../../../../src/utils.js';

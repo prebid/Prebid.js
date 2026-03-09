@@ -221,7 +221,7 @@ exports.matchBidsOnSize = function(lhs, rhs) {
   }
 
   var lstore = createObjectFromArray(configured);
-  var rstore = createObjectFromArray(rhs.map(bid => [ bid.banner.w + 'x' + bid.banner.h, bid ]));
+  var rstore = createObjectFromArray(rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
   var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
@@ -253,7 +253,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
       if (typeof optionalPassOnBid[i] !== 'undefined' && typeof optionalPassOnBid[i][j] !== 'undefined' && optionalPassOnBid[i][j]) continue;
 
       var bid = {};
-      bid.adomain = [ (DefaultAdDoman + adCount).toString() ];
+      bid.adomain = [(DefaultAdDoman + adCount).toString()];
       bid.adid = (DefaultCreativeID + adCount).toString();
       bid.impid = adCount.toString();
       bid.id = adCount.toString();
@@ -314,7 +314,7 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
         }
 
         if (typeof expectedResponse[placementCode] === 'undefined') {
-          expectedResponse[placementCode] = [ result ];
+          expectedResponse[placementCode] = [result];
         } else {
           expectedResponse[placementCode].push(result);
         }

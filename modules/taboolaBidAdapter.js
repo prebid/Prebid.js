@@ -1,12 +1,16 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -30,9 +34,9 @@ export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
  * 4. new user set it to 0
  */
 export const userData = {
-  storageManager: getStorageManager({bidderCode: BIDDER_CODE}),
+  storageManager: getStorageManager({ bidderCode: BIDDER_CODE }),
   getUserId: () => {
-    const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
+    const { getFromLocalStorage, getFromCookie, getFromTRC } = userData;
 
     try {
       return getFromLocalStorage() || getFromCookie() || getFromTRC();
@@ -41,7 +45,7 @@ export const userData = {
     }
   },
   getFromCookie() {
-    const {cookiesAreEnabled, getCookie} = userData.storageManager;
+    const { cookiesAreEnabled, getCookie } = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
       let userId;
@@ -74,7 +78,7 @@ export const userData = {
     return value;
   },
   getFromLocalStorage() {
-    const {hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage} = userData.storageManager;
+    const { hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage } = userData.storageManager;
 
     if (hasLocalStorage() && localStorageIsEnabled()) {
       return getDataFromLocalStorage(STORAGE_KEY);
@@ -95,6 +99,73 @@ export const internal = {
   }
 }
 
+export function detectBot() {
+  try {
+    return {
+      detected: !!(
+        window.__nightmare ||
+        window.callPhantom ||
+        window._phantom ||
+        /HeadlessChrome/.test(navigator.userAgent)
+      )
+    };
+  } catch (e) {
+    return { detected: false };
+  }
+}
+
+export function getPageVisibility() {
+  try {
+    return {
+      hidden: document.hidden,
+      state: document.visibilityState,
+      hasFocus: document.hasFocus()
+    };
+  } catch (e) {
+    return { hidden: false, state: 'visible', hasFocus: true };
+  }
+}
+
+export function getDeviceExtSignals(existingExt = {}) {
+  const viewport = getViewportCoordinates();
+  return {
+    ...existingExt,
+    bot: detectBot(),
+    visibility: getPageVisibility(),
+    scroll: {
+      top: Math.round(viewport.top),
+      left: Math.round(viewport.left)
+    }
+  };
+}
+
+export function getElementSignals(adUnitCode) {
+  try {
+    const element = document.getElementById(adUnitCode);
+    if (!element) return null;
+
+    const rect = getBoundingClientRect(element);
+    const winDimensions = getWinDimensions();
+    const rawViewability = percentInView(element);
+
+    const signals = {
+      placement: {
+        top: Math.round(rect.top),
+        left: Math.round(rect.left)
+      },
+      fold: rect.top < winDimensions.innerHeight ? 'above' : 'below'
+    };
+
+    if (rawViewability !== null && !isNaN(rawViewability)) {
+      signals.viewability = Math.round(rawViewability);
+    }
+
+    return signals;
+  } catch (e) {
+    return null;
+  }
+}
+
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -108,12 +179,15 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const reqData = buildRequest(imps, bidderRequest, context);
-    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData)
+    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData, context);
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
+    if (bid.burl) {
+      bidResponse.burl = bid.burl;
+    }
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
@@ -134,8 +208,13 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
-    const data = converter.toORTB({bidderRequest: bidderRequest, bidRequests: validBidRequests});
-    const {publisherId} = bidRequest.params;
+    const auctionId = bidderRequest.auctionId || validBidRequests[0]?.auctionId;
+    const data = converter.toORTB({
+      bidderRequest: bidderRequest,
+      bidRequests: validBidRequests,
+      context: { auctionId }
+    });
+    const { publisherId } = bidRequest.params;
     const url = END_POINT_URL + '?publisher=' + publisherId;
 
     return {
@@ -163,7 +242,7 @@ export const spec = {
         return [];
       }
     } else {
-      bids.push(...converter.fromORTB({response: serverResponse.body, request: request.data}).bids);
+      bids.push(...converter.fromORTB({ response: serverResponse.body, request: request.data }).bids);
     }
     if (isArray(serverResponse.body.ext?.igbid)) {
       serverResponse.body.ext.igbid.forEach((igbid) => {
@@ -212,9 +291,20 @@ export const spec = {
     return bids;
   },
   onBidWon: (bid) => {
-    if (bid.nurl) {
+    if (bid.nurl && !bid.deferBilling) {
       const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
       ajax(resolvedNurl);
+      bid.taboolaBillingFired = true;
+    }
+  },
+  onBidBillable: (bid) => {
+    if (bid.taboolaBillingFired) {
+      return;
+    }
+    const billingUrl = bid.burl || bid.nurl;
+    if (billingUrl) {
+      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
+      ajax(resolvedBillingUrl);
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -248,16 +338,16 @@ export const spec = {
     return syncs;
   },
   onTimeout: (timeoutData) => {
-    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), {method: 'POST'});
+    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), { method: 'POST' });
   },
 
   onBidderError: ({ error, bidderRequest }) => {
-    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({error, bidderRequest}), {method: 'POST'});
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({ error, bidderRequest }), { method: 'POST' });
   },
 };
 
-function getSiteProperties({publisherId}, refererInfo, ortb2) {
-  const {getPageUrl, getReferrer} = internal;
+function getSiteProperties({ publisherId }, refererInfo, ortb2) {
+  const { getPageUrl, getReferrer } = internal;
   return {
     id: publisherId,
     name: publisherId,
@@ -273,12 +363,21 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
   }
 }
 
-function fillTaboolaReqData(bidderRequest, bidRequest, data) {
-  const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
+function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
+  const { refererInfo, gdprConsent = {}, uspConsent } = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
-  deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
+
+  const ortb2Device = bidderRequest?.ortb2?.device || {};
+  const connectionType = getConnectionType();
+  const device = {
+    ...ortb2Device,
+    js: 1,
+    ...(connectionType && { connectiontype: connectionType }),
+    ext: getDeviceExtSignals(ortb2Device.ext)
+  };
+  deepSetValue(data, 'device', device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
-  if (data.user == undefined) {
+  if (data.user === undefined || data.user === null) {
     data.user = {
       buyeruid: 0,
       ext: {}
@@ -287,7 +386,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
   }
-  if (data.regs?.ext == undefined) {
+  if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
     }
@@ -320,16 +419,20 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
 
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
-  data.tmax = (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout);
+  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
   deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
   deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
+  const auctionId = context?.auctionId;
+  if (auctionId) {
+    deepSetValue(data, 'ext.prebid.auctionId', auctionId);
+  }
 }
 
 function fillTaboolaImpData(bid, imp) {
-  const {tagId, position} = bid.params;
+  const { tagId, position } = bid.params;
   imp.banner = getBanners(bid, position);
   imp.tagid = tagId;
 
@@ -343,11 +446,34 @@ function fillTaboolaImpData(bid, imp) {
       imp.bidfloorcur = CURRENCY;
     }
   } else {
-    const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
+    const { bidfloor = null, bidfloorcur = CURRENCY } = bid.params;
     imp.bidfloor = bidfloor;
     imp.bidfloorcur = bidfloorcur;
   }
   deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid);
+
+  if (bid.bidId) {
+    deepSetValue(imp, 'ext.prebid.bidId', bid.bidId);
+  }
+  if (bid.adUnitCode) {
+    deepSetValue(imp, 'ext.prebid.adUnitCode', bid.adUnitCode);
+  }
+  if (bid.adUnitId) {
+    deepSetValue(imp, 'ext.prebid.adUnitId', bid.adUnitId);
+  }
+
+  deepSetValue(imp, 'ext.prebid.bidRequestsCount', bid.bidRequestsCount);
+  deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
+  deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
+
+  const elementSignals = getElementSignals(bid.adUnitCode);
+  if (elementSignals) {
+    if (elementSignals.viewability !== undefined) {
+      deepSetValue(imp, 'ext.viewability', elementSignals.viewability);
+    }
+    deepSetValue(imp, 'ext.placement', elementSignals.placement);
+    deepSetValue(imp, 'ext.fold', elementSignals.fold);
+  }
 }
 
 function getBanners(bid, pos) {

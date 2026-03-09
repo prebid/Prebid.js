@@ -77,7 +77,6 @@ function copyVerbatim() {
     `${name}/**/*.json`,
     `${name}/**/*.d.ts`,
   ]).concat([
-    './package.json',
     '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
   ]), {base: '.', since: gulp.lastRun(copyVerbatim)})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))

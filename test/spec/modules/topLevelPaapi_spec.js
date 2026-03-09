@@ -4,8 +4,8 @@ import {
   registerSubmodule,
   reset as resetPaapi
 } from '../../../modules/paapi.js';
-import {config} from 'src/config.js';
-import {BID_STATUS, EVENTS} from 'src/constants.js';
+import { config } from 'src/config.js';
+import { BID_STATUS, EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import {
   getPaapiAdId,
@@ -15,9 +15,9 @@ import {
   parsePaapiSize, resizeCreativeHook,
   topLevelPAAPI
 } from '../../../modules/topLevelPaapi.js';
-import {auctionManager} from '../../../src/auctionManager.js';
-import {expect} from 'chai/index.js';
-import {getBidToRender} from '../../../src/adRendering.js';
+import { auctionManager } from '../../../src/auctionManager.js';
+import { expect } from 'chai/index.js';
+import { getBidToRender } from '../../../src/adRendering.js';
 
 describe('topLevelPaapi', () => {
   let sandbox, auctionConfig, next, auctionId, auctions;
@@ -33,7 +33,7 @@ describe('topLevelPaapi', () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     auctions = {};
-    sandbox.stub(auctionManager.index, 'getAuction').callsFake(({auctionId}) => auctions[auctionId]?.auction);
+    sandbox.stub(auctionManager.index, 'getAuction').callsFake(({ auctionId }) => auctions[auctionId]?.auction);
     next = sinon.stub();
     auctionId = 'auct';
     auctionConfig = {
@@ -74,7 +74,7 @@ describe('topLevelPaapi', () => {
         }
       };
     }
-    addPaapiConfigHook(next, {adUnitCode, auctionId: _auctionId}, {
+    addPaapiConfigHook(next, { adUnitCode, auctionId: _auctionId }, {
       config: {
         ...auctionConfig,
         auctionId: _auctionId,
@@ -84,8 +84,8 @@ describe('topLevelPaapi', () => {
   }
 
   function endAuctions() {
-    Object.entries(auctions).forEach(([auctionId, {adUnits}]) => {
-      events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: Object.keys(adUnits), adUnits: Object.values(adUnits)});
+    Object.entries(auctions).forEach(([auctionId, { adUnits }]) => {
+      events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: Object.keys(adUnits), adUnits: Object.values(adUnits) });
     });
   }
 
@@ -155,20 +155,20 @@ describe('topLevelPaapi', () => {
       Object.entries({
         'a string URN': {
           pack: (val) => val,
-          unpack: (urn) => ({urn}),
+          unpack: (urn) => ({ urn }),
           canRender: true,
         },
         'a frameConfig object': {
-          pack: (val) => ({val}),
-          unpack: (val) => ({frameConfig: {val}}),
+          pack: (val) => ({ val }),
+          unpack: (val) => ({ frameConfig: { val } }),
           canRender: false
         }
-      }).forEach(([t, {pack, unpack, canRender}]) => {
+      }).forEach(([t, { pack, unpack, canRender }]) => {
         describe(`when runAdAuction returns ${t}`, () => {
           let raa;
           beforeEach(() => {
             raa = sinon.stub().callsFake((cfg) => {
-              const {auctionId, adUnitCode} = cfg.componentAuctions[0];
+              const { auctionId, adUnitCode } = cfg.componentAuctions[0];
               return Promise.resolve(pack(`raa-${adUnitCode}-${auctionId}`));
             });
           });
@@ -196,7 +196,7 @@ describe('topLevelPaapi', () => {
               endAuctions();
             });
             it('should resolve to raa result', () => {
-              return getBids({adUnitCode: 'au', auctionId}).then(result => {
+              return getBids({ adUnitCode: 'au', auctionId }).then(result => {
                 sinon.assert.calledOnce(raa);
                 sinon.assert.calledWith(
                   raa,
@@ -211,7 +211,7 @@ describe('topLevelPaapi', () => {
                     ])
                   })
                 );
-                expectBids(result, {au: 'raa-au-auct'});
+                expectBids(result, { au: 'raa-au-auct' });
               });
             });
 
@@ -222,17 +222,17 @@ describe('topLevelPaapi', () => {
             }).forEach(([t, behavior]) => {
               it('should resolve to null when runAdAuction returns null', () => {
                 raa = sinon.stub().callsFake(behavior);
-                return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
-                  expectBids(result, {au: null});
+                return getBids({ adUnitCode: 'au', auctionId: 'auct' }).then(result => {
+                  expectBids(result, { au: null });
                 });
               });
             })
 
             it('should resolve to the same result when called again', () => {
-              getBids({adUnitCode: 'au', auctionId});
-              return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
+              getBids({ adUnitCode: 'au', auctionId });
+              return getBids({ adUnitCode: 'au', auctionId: 'auct' }).then(result => {
                 sinon.assert.calledOnce(raa);
-                expectBids(result, {au: 'raa-au-auct'});
+                expectBids(result, { au: 'raa-au-auct' });
               });
             });
 
@@ -242,8 +242,8 @@ describe('topLevelPaapi', () => {
               });
               it('should fire PAAPI_RUN_AUCTION', () => {
                 return Promise.all([
-                  getBids({adUnitCode: 'au', auctionId}),
-                  getBids({adUnitCode: 'other', auctionId})
+                  getBids({ adUnitCode: 'au', auctionId }),
+                  getBids({ adUnitCode: 'other', auctionId })
                 ]).then(() => {
                   sinon.assert.calledWith(events.emit, EVENTS.RUN_PAAPI_AUCTION, {
                     adUnitCode: 'au',
@@ -256,7 +256,7 @@ describe('topLevelPaapi', () => {
                 });
               });
               it('should fire PAAPI_BID', () => {
-                return getBids({adUnitCode: 'au', auctionId}).then(() => {
+                return getBids({ adUnitCode: 'au', auctionId }).then(() => {
                   sinon.assert.calledWith(events.emit, EVENTS.PAAPI_BID, sinon.match({
                     ...unpack('raa-au-auct'),
                     adUnitCode: 'au',
@@ -266,7 +266,7 @@ describe('topLevelPaapi', () => {
               });
               it('should fire PAAPI_NO_BID', () => {
                 raa = sinon.stub().callsFake(() => Promise.resolve(null));
-                return getBids({adUnitCode: 'au', auctionId}).then(() => {
+                return getBids({ adUnitCode: 'au', auctionId }).then(() => {
                   sinon.assert.calledWith(events.emit, EVENTS.PAAPI_NO_BID, sinon.match({
                     adUnitCode: 'au',
                     auctionId: 'auct'
@@ -276,20 +276,24 @@ describe('topLevelPaapi', () => {
 
               it('should fire PAAPI_ERROR', () => {
                 raa = sinon.stub().callsFake(() => Promise.reject(new Error('message')));
-                return getBids({adUnitCode: 'au', auctionId}).then(res => {
-                  expect(res).to.eql({au: null});
+                return getBids({ adUnitCode: 'au', auctionId }).then(res => {
+                  expect(res).to.eql({ au: null });
                   sinon.assert.calledWith(events.emit, EVENTS.PAAPI_ERROR, sinon.match({
                     adUnitCode: 'au',
                     auctionId: 'auct',
-                    error: sinon.match({message: 'message'})
+                    error: sinon.match({ message: 'message' })
                   }));
                 });
               });
             });
 
+            function getBidToRenderPm(adId, forRender = true) {
+              return new Promise((resolve) => getBidToRender(adId, forRender, resolve));
+            }
+
             it('should hook into getBidToRender', () => {
-              return getBids({adUnitCode: 'au', auctionId}).then(res => {
-                return getBidToRender(res.au.adId).then(bidToRender => [res.au, bidToRender])
+              return getBids({ adUnitCode: 'au', auctionId }).then(res => {
+                return getBidToRenderPm(res.au.adId).then(bidToRender => [res.au, bidToRender])
               }).then(([paapiBid, bidToRender]) => {
                 if (canRender) {
                   expect(bidToRender).to.eql(paapiBid)
@@ -318,8 +322,8 @@ describe('topLevelPaapi', () => {
 
               it(`should ${!canRender ? 'NOT' : ''} override winning bid for the same adUnit`, () => {
                 return Promise.all([
-                  getBids({adUnitCode: 'au', auctionId}).then(res => res.au),
-                  getBidToRender(mockContextual.adId)
+                  getBids({ adUnitCode: 'au', auctionId }).then(res => res.au),
+                  getBidToRenderPm(mockContextual.adId)
                 ]).then(([paapiBid, bidToRender]) => {
                   if (canRender) {
                     expect(bidToRender).to.eql(paapiBid);
@@ -332,14 +336,14 @@ describe('topLevelPaapi', () => {
 
               it('should not override when the ad unit has no paapi winner', () => {
                 mockContextual.adUnitCode = 'other';
-                return getBidToRender(mockContextual.adId).then(bidToRender => {
+                return getBidToRenderPm(mockContextual.adId).then(bidToRender => {
                   expect(bidToRender).to.eql(mockContextual);
                 })
               });
 
               it('should not override when already a paapi bid', () => {
-                return getBids({adUnitCode: 'au', auctionId}).then(res => {
-                  return getBidToRender(res.au.adId).then((bidToRender) => [bidToRender, res.au]);
+                return getBids({ adUnitCode: 'au', auctionId }).then(res => {
+                  return getBidToRenderPm(res.au.adId).then((bidToRender) => [bidToRender, res.au]);
                 }).then(([bidToRender, paapiBid]) => {
                   expect(bidToRender).to.eql(canRender ? paapiBid : mockContextual)
                 })
@@ -348,21 +352,21 @@ describe('topLevelPaapi', () => {
               if (canRender) {
                 it('should not not override when the bid was already rendered', () => {
                   getBids();
-                  return getBidToRender(mockContextual.adId).then((bid) => {
+                  return getBidToRenderPm(mockContextual.adId).then((bid) => {
                     // first pass - paapi wins over contextual
                     expect(bid.source).to.eql('paapi');
                     bid.status = BID_STATUS.RENDERED;
-                    return getBidToRender(mockContextual.adId, false).then(bidToRender => [bid, bidToRender])
+                    return getBidToRenderPm(mockContextual.adId, false).then(bidToRender => [bid, bidToRender])
                   }).then(([paapiBid, bidToRender]) => {
                     // if `forRender` = false (bit retrieved for x-domain events and such)
                     // the referenced bid is still paapi
                     expect(bidToRender).to.eql(paapiBid);
-                    return getBidToRender(mockContextual.adId);
+                    return getBidToRenderPm(mockContextual.adId);
                   }).then(bidToRender => {
                     // second pass, paapi has been rendered, contextual should win
                     expect(bidToRender).to.eql(mockContextual);
                     bidToRender.status = BID_STATUS.RENDERED;
-                    return getBidToRender(mockContextual.adId, false);
+                    return getBidToRenderPm(mockContextual.adId, false);
                   }).then(bidToRender => {
                     // if the contextual bid has been rendered, it's the one being referenced
                     expect(bidToRender).to.eql(mockContextual);
@@ -384,7 +388,7 @@ describe('topLevelPaapi', () => {
             return Promise.all(
               [
                 [
-                  {adUnitCode: 'au1', auctionId: 'auct1'},
+                  { adUnitCode: 'au1', auctionId: 'auct1' },
                   {
                     au1: 'raa-au1-auct1'
                   }
@@ -398,14 +402,14 @@ describe('topLevelPaapi', () => {
                   }
                 ],
                 [
-                  {auctionId: 'auct1'},
+                  { auctionId: 'auct1' },
                   {
                     au1: 'raa-au1-auct1',
                     au2: 'raa-au2-auct1'
                   }
                 ],
                 [
-                  {adUnitCode: 'au1'},
+                  { adUnitCode: 'au1' },
                   {
                     au1: 'raa-au1-auct2'
                   }
@@ -485,8 +489,8 @@ describe('topLevelPaapi', () => {
         });
       });
       it('does not touch non-paapi bids', () => {
-        getRenderingDataHook(next, {bid: 'data'}, {other: 'options'});
-        sinon.assert.calledWith(next, {bid: 'data'}, {other: 'options'});
+        getRenderingDataHook(next, { bid: 'data' }, { other: 'options' });
+        sinon.assert.calledWith(next, { bid: 'data' }, { other: 'options' });
       });
     });
 
@@ -495,15 +499,15 @@ describe('topLevelPaapi', () => {
         sandbox.stub(events, 'emit');
       });
       it('handles paapi bids', () => {
-        const bid = {source: 'paapi'};
+        const bid = { source: 'paapi' };
         markWinningBidHook(next, bid);
         sinon.assert.notCalled(next);
         sinon.assert.called(next.bail);
         sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
       });
       it('ignores non-paapi bids', () => {
-        markWinningBidHook(next, {other: 'bid'});
-        sinon.assert.calledWith(next, {other: 'bid'});
+        markWinningBidHook(next, { other: 'bid' });
+        sinon.assert.calledWith(next, { other: 'bid' });
         sinon.assert.notCalled(next.bail);
       });
     });

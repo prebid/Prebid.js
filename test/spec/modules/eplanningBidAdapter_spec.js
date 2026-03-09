@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import {init, getIds} from 'modules/userId/index.js';
+import { init, getIds } from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
-import {hook} from '../../../src/hook.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { hook } from '../../../src/hook.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 describe('E-Planning Adapter', function () {
@@ -1138,7 +1138,7 @@ describe('E-Planning Adapter', function () {
             return element;
           },
           observe: (element) => {
-            intersectionCallback([{'target': {'id': element.id}, 'isIntersecting': params[element.id].isIntersecting, 'intersectionRatio': params[element.id].ratio, 'boundingClientRect': {'width': params[element.id].width, 'height': params[element.id].height}}]);
+            intersectionCallback([{ 'target': { 'id': element.id }, 'isIntersecting': params[element.id].isIntersecting, 'intersectionRatio': params[element.id].ratio, 'boundingClientRect': { 'width': params[element.id].width, 'height': params[element.id].height } }]);
           },
         };
       };
@@ -1278,7 +1278,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementVisible();
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200 } });
       });
       it('when you have a render', function() {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
@@ -1316,7 +1316,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       beforeEach(function () {
         createElementOutOfView();
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200 } });
       });
 
       it('when you have a render', function() {
@@ -1342,7 +1342,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       it('should register visibility with more than 50%', function() {
         createPartiallyVisibleElement();
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200 } });
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
@@ -1351,7 +1351,7 @@ describe('E-Planning Adapter', function () {
       });
       it('you should not register visibility with less than 50%', function() {
         createPartiallyInvisibleElement();
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200 } });
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
@@ -1366,7 +1366,7 @@ describe('E-Planning Adapter', function () {
         const divId = 'div-gpt-ad-123';
         createPartiallyVisibleElement(divId);
         window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
-        setIntersectionObserverMock({[divId]: {'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200}});
+        setIntersectionObserverMock({ [divId]: { 'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200 } });
 
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
@@ -1381,7 +1381,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the width is zero but the height is within the range', function() {
         element.style.width = '0px';
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200 } });
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -1390,7 +1390,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 500, 'height': 0}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 500, 'height': 0 } });
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -1400,7 +1400,7 @@ describe('E-Planning Adapter', function () {
       it('if both are zero', function() {
         element.style.height = '0px';
         element.style.width = '0px';
-        setIntersectionObserverMock({[ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 0, 'height': 0}});
+        setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 0, 'height': 0 } });
         spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
@@ -1439,9 +1439,9 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW2);
         createElementVisible(ADUNIT_CODE_VIEW3);
         setIntersectionObserverMock({
-          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
-          [ADUNIT_CODE_VIEW2]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
-          [ADUNIT_CODE_VIEW3]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200}
+          [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200 },
+          [ADUNIT_CODE_VIEW2]: { 'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200 },
+          [ADUNIT_CODE_VIEW3]: { 'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200 }
         });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
@@ -1456,9 +1456,9 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
         setIntersectionObserverMock({
-          [ADUNIT_CODE_VIEW]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
-          [ADUNIT_CODE_VIEW2]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200},
-          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+          [ADUNIT_CODE_VIEW]: { 'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200 },
+          [ADUNIT_CODE_VIEW2]: { 'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200 },
+          [ADUNIT_CODE_VIEW3]: { 'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200 }
         });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
@@ -1474,9 +1474,9 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
         setIntersectionObserverMock({
-          [ADUNIT_CODE_VIEW]: {'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200},
-          [ADUNIT_CODE_VIEW2]: {'ratio': 0.3, 'isIntersecting': true, 'width': 200, 'height': 200},
-          [ADUNIT_CODE_VIEW3]: {'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200}
+          [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200 },
+          [ADUNIT_CODE_VIEW2]: { 'ratio': 0.3, 'isIntersecting': true, 'width': 200, 'height': 200 },
+          [ADUNIT_CODE_VIEW3]: { 'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200 }
         });
         respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);

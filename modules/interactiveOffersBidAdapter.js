@@ -1,6 +1,6 @@
-import {deepClone, isNumber, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { deepClone, isNumber, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'interactiveOffers';
 const ENDPOINT = 'https://prebid.ioadx.com/bidRequest/?partnerId=';
@@ -129,7 +129,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
     openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
 
     Object.keys(bid.mediaTypes).forEach(function(mediaType) {
-      if (mediaType == 'banner') {
+      if (mediaType === 'banner') {
         imp.banner = deepClone(DEFAULT['OpenRTBBidRequestImpBanner']);
         imp.banner.w = 0;
         imp.banner.h = 0;
@@ -139,7 +139,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
             imp.banner.w = adSize[0];
             imp.banner.h = adSize[1];
           }
-          imp.banner.format.push({w: adSize[0], h: adSize[1]});
+          imp.banner.format.push({ w: adSize[0], h: adSize[1] });
         });
       }
     });

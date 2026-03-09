@@ -166,6 +166,10 @@ export const spec = {
       });
     }
 
+    if (bidderRequest?.ortb2?.source?.ext?.schain) {
+      payload.schain = bidderRequest.ortb2.source.ext.schain;
+    }
+
     const params = validBidRequests[0].params;
     const url = params.endpoint ? params.endpoint : '//ads.resetsrv.com';
     return {

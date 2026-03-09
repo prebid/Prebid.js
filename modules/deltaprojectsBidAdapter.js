@@ -63,7 +63,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   if (gdprConsent) {
     user.ext = { consent: gdprConsent.consentString };
-    if (typeof gdprConsent.gdprApplies == 'boolean') {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
       regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
     }
   }
@@ -227,7 +227,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
 export function getBidFloor(bid, mediaType, size, currency) {
   if (isFn(bid.getFloor)) {
     const bidFloorCurrency = currency || 'USD';
-    const bidFloor = bid.getFloor({currency: bidFloorCurrency, mediaType: mediaType, size: size});
+    const bidFloor = bid.getFloor({ currency: bidFloorCurrency, mediaType: mediaType, size: size });
     if (isNumber(bidFloor?.floor)) {
       return bidFloor;
     }

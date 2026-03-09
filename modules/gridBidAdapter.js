@@ -47,13 +47,6 @@ const LOG_ERROR_MESS = {
 };
 
 const ALIAS_CONFIG = {
-  'trustx': {
-    endpoint: 'https://grid.bidswitch.net/hbjson?sp=trustx',
-    syncurl: 'https://x.bidswitch.net/sync?ssp=themediagrid',
-    bidResponseExternal: {
-      netRevenue: false
-    }
-  },
   'gridNM': {
     defaultParams: {
       multiRequest: true
@@ -66,8 +59,8 @@ let hasSynced = false;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['playwire', 'adlivetech', 'gridNM', { code: 'trustx', skipPbsAliasing: true }],
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  aliases: ['playwire', 'adlivetech', 'gridNM'],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -96,7 +89,7 @@ export const spec = {
     let userExt = null;
     let endpoint = null;
     let forceBidderName = false;
-    let {bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
+    let { bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent } = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
     const tmax = parseInt(timeout) || null;
@@ -269,7 +262,7 @@ export const spec = {
       }
 
       if (gdprConsent && gdprConsent.consentString) {
-        userExt = {consent: gdprConsent.consentString};
+        userExt = { consent: gdprConsent.consentString };
       }
 
       const ortb2UserExtDevice = deepAccess(bidderRequest, 'ortb2.user.ext.device');
@@ -355,7 +348,7 @@ export const spec = {
 
       if (uspConsent) {
         if (!request.regs) {
-          request.regs = {ext: {}};
+          request.regs = { ext: {} };
         }
         if (!request.regs.ext) {
           request.regs.ext = {};
@@ -372,7 +365,7 @@ export const spec = {
 
       if (ortb2Regs?.ext?.dsa) {
         if (!request.regs) {
-          request.regs = {ext: {}};
+          request.regs = { ext: {} };
         }
         if (!request.regs.ext) {
           request.regs.ext = {};
@@ -390,7 +383,7 @@ export const spec = {
         }
         const genre = deepAccess(site, 'content.genre');
         if (genre && typeof genre === 'string') {
-          request.site.content = {...request.site.content, genre};
+          request.site.content = { ...request.site.content, genre };
         }
         const data = deepAccess(site, 'content.data');
         if (data && data.length) {
@@ -399,7 +392,7 @@ export const spec = {
         }
         const id = deepAccess(site, 'content.id');
         if (id) {
-          request.site.content = {...request.site.content, id};
+          request.site.content = { ...request.site.content, id };
         }
       }
     });
@@ -490,7 +483,7 @@ export const spec = {
   },
 
   onDataDeletionRequest: function(data) {
-    spec.ajaxCall(USP_DELETE_DATA_HANDLER, null, null, {method: 'GET'});
+    spec.ajaxCall(USP_DELETE_DATA_HANDLER, null, null, { method: 'GET' });
   }
 };
 
@@ -508,7 +501,7 @@ function _getFloor (mediaTypes, bid) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: curMediaType,
-      size: bid.sizes.map(([w, h]) => ({w, h}))
+      size: bid.sizes.map(([w, h]) => ({ w, h }))
     });
 
     if (isPlainObject(floorInfo) &&

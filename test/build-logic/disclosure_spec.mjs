@@ -1,6 +1,6 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
-import {getDisclosureUrl} from '../../metadata/storageDisclosure.mjs';
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { getDisclosureUrl } from '../../metadata/storageDisclosure.mjs';
 
 describe('getDisclosureUrl', () => {
   let gvl;

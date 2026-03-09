@@ -1,5 +1,5 @@
-import {fillNativeImp, fillNativeResponse} from '../../../libraries/ortbConverter/processors/native.js';
-import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import { fillNativeImp, fillNativeResponse } from '../../../libraries/ortbConverter/processors/native.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('pbjs -> ortb native requests', () => {
   function toNative(bidRequest, context) {
@@ -13,25 +13,25 @@ describe('pbjs -> ortb native requests', () => {
   });
 
   it('should set imp.native according to nativeOrtbRequest', () => {
-    const nativeOrtbRequest = {ver: 'version', prop: 'value', assets: [{}]};
-    const imp = toNative({nativeOrtbRequest}, {});
+    const nativeOrtbRequest = { ver: 'version', prop: 'value', assets: [{}] };
+    const imp = toNative({ nativeOrtbRequest }, {});
     expect(imp.native.ver).to.eql('version');
     expect(JSON.parse(imp.native.request)).to.eql(nativeOrtbRequest);
   });
 
   it('should do nothing if context.mediaType is set but is not NATIVE', () => {
-    expect(toNative({nativeOrtbRequest: {ver: 'version'}}, {mediaType: BANNER})).to.eql({})
+    expect(toNative({ nativeOrtbRequest: { ver: 'version' } }, { mediaType: BANNER })).to.eql({})
   });
 
   it('should merge context.nativeRequest', () => {
-    const nativeOrtbRequest = {ver: 'version', eventtrackers: [{tracker: 'req'}], assets: [{}]};
-    const nativeDefaults = {eventtrackers: [{tracker: 'default'}], other: 'other'};
-    const imp = toNative({nativeOrtbRequest}, {nativeRequest: nativeDefaults});
+    const nativeOrtbRequest = { ver: 'version', eventtrackers: [{ tracker: 'req' }], assets: [{}] };
+    const nativeDefaults = { eventtrackers: [{ tracker: 'default' }], other: 'other' };
+    const imp = toNative({ nativeOrtbRequest }, { nativeRequest: nativeDefaults });
     expect(imp.native.ver).to.eql('version');
     expect(JSON.parse(imp.native.request)).to.eql({
       assets: [{}],
       ver: 'version',
-      eventtrackers: [{tracker: 'req'}],
+      eventtrackers: [{ tracker: 'req' }],
       other: 'other'
     });
   });
@@ -42,7 +42,7 @@ describe('pbjs -> ortb native requests', () => {
         something: 'orother'
       }
     }
-    fillNativeImp(imp, {nativeOrtbRequest: {ver: 'version'}}, {});
+    fillNativeImp(imp, { nativeOrtbRequest: { ver: 'version' } }, {});
     expect(imp.native.something).to.eql('orother')
   });
 
@@ -52,13 +52,13 @@ describe('pbjs -> ortb native requests', () => {
         battr: 'battr'
       }
     };
-    fillNativeImp(imp, {mediaTypes: {native: {sizes: [1, 2]}}}, {});
+    fillNativeImp(imp, { mediaTypes: { native: { sizes: [1, 2] } } }, {});
     expect(imp.native.battr).to.eql('battr');
   });
 
   it('should do nothing if there are no assets', () => {
     const imp = {};
-    fillNativeImp(imp, {nativeOrtbRequest: {assets: []}}, {});
+    fillNativeImp(imp, { nativeOrtbRequest: { assets: [] } }, {});
     expect(imp).to.eql({});
   })
 });
@@ -79,24 +79,24 @@ describe('ortb -> ortb native response', () => {
     describe(`when adm is ${t}`, () => {
       let bid;
       beforeEach(() => {
-        bid = {adm};
+        bid = { adm };
       })
       it('should set bidResponse.native', () => {
         const bidResponse = {
           mediaType: NATIVE
         };
         fillNativeResponse(bidResponse, bid, {});
-        expect(bidResponse.native).to.eql({ortb: MOCK_NATIVE_RESPONSE});
+        expect(bidResponse.native).to.eql({ ortb: MOCK_NATIVE_RESPONSE });
       });
     });
     it('should throw if response has no assets', () => {
-      expect(() => fillNativeResponse({mediaType: NATIVE}, {adm: {...MOCK_NATIVE_RESPONSE, assets: null}}, {})).to.throw;
+      expect(() => fillNativeResponse({ mediaType: NATIVE }, { adm: { ...MOCK_NATIVE_RESPONSE, assets: null } }, {})).to.throw;
     })
     it('should do nothing if bidResponse.mediaType is not NATIVE', () => {
       const bidResponse = {
         mediaType: BANNER
       };
-      fillNativeResponse(bidResponse, {adm: MOCK_NATIVE_RESPONSE}, {});
+      fillNativeResponse(bidResponse, { adm: MOCK_NATIVE_RESPONSE }, {});
       expect(bidResponse).to.eql({
         mediaType: BANNER
       })

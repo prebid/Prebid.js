@@ -14,8 +14,8 @@ import { getBidIdParameter, isEmpty } from '../src/utils.js';
  */
 
 const BIDDER_CODE = 'suim';
-const ENDPOINT = 'https://bid.suimad.com/api/v1/prebids';
-const SYNC_URL = 'https://bid.suimad.com/api/v1/logs/usersync';
+const ENDPOINT = 'https://ad.suimad.com/bid';
+const SYNC_URL = 'https://ad.suimad.com/usersync';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -60,7 +60,6 @@ export const spec = {
         data: data,
         options: {
           contentType: 'text/plain',
-          withCredentials: false,
         },
       };
     });

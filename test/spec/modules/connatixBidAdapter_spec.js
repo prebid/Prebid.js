@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { config } from 'src/config.js';
 import {
   _getBidRequests,
   _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
@@ -9,15 +10,15 @@ import {
   _getViewability as connatixGetViewability,
   hasQueryParams as connatixHasQueryParams,
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
-  readFromAllStorages as connatixReadFromAllStorages,
-  saveOnAllStorages as connatixSaveOnAllStorages,
+  readFromLocalStorage as connatixReadFromLocalStorage,
+  saveInLocalStorage as connatixSaveInLocalStorage,
   spec,
   storage
 } from '../../../modules/connatixBidAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import * as utils from '../../../src/utils.js';
+import * as winDimensions from '../../../src/utils/winDimensions.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -141,10 +142,12 @@ describe('connatixBidAdapter', function () {
     let element;
     let getBoundingClientRectStub;
     let topWinMock;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       element = document.createElement('div');
-      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
         document: {
@@ -153,10 +156,18 @@ describe('connatixBidAdapter', function () {
         innerWidth: 800,
         innerHeight: 600
       };
+      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => ({
+        document: {
+          documentElement: {
+            clientWidth: topWinMock.innerWidth,
+            clientHeight: topWinMock.innerHeight
+          }
+        }
+      }));
     });
 
     afterEach(() => {
-      getBoundingClientRectStub.restore();
+      sandbox.restore();
     });
 
     it('should return 0 if the document is not visible', () => {
@@ -179,25 +190,18 @@ describe('connatixBidAdapter', function () {
     it('should return the correct percentage if the element is partially in view', () => {
       const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
-      const getWinDimensionsStub = sinon.stub(utils, 'getWinDimensions');
-      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
-
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
-      getWinDimensionsStub.restore();
     });
 
     it('should return 0% if the element is not in view', () => {
-      const getWinDimensionsStub = sinon.stub(utils, 'getWinDimensions');
-      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
       const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
 
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(0);
-      getWinDimensionsStub.restore();
     });
 
     it('should use provided width and height if element dimensions are zero', () => {
@@ -217,10 +221,12 @@ describe('connatixBidAdapter', function () {
     let topWinMock;
     let querySelectorStub;
     let getElementByIdStub;
+    let sandbox;
 
     beforeEach(() => {
+      sandbox = sinon.createSandbox();
       element = document.createElement('div');
-      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
         document: {
@@ -230,14 +236,22 @@ describe('connatixBidAdapter', function () {
         innerHeight: 600
       };
 
-      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
-      getElementByIdStub = sinon.stub(document, 'getElementById');
+      querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
+      getElementByIdStub = sandbox.stub(document, 'getElementById');
+      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
+        {
+          document: {
+            documentElement: {
+              clientWidth: topWinMock.innerWidth,
+              clientHeight: topWinMock.innerHeight
+            }
+          }
+        }
+      ));
     });
 
     afterEach(() => {
-      getBoundingClientRectStub.restore();
-      querySelectorStub.restore();
-      getElementByIdStub.restore();
+      sandbox.restore();
     });
 
     it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {
@@ -575,7 +589,7 @@ describe('connatixBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest;
-    let setCookieStub, setDataInLocalStorageStub;
+    let setDataInLocalStorageStub;
     const bidderRequest = {
       refererInfo: {
         canonicalUrl: '',
@@ -605,17 +619,14 @@ describe('connatixBidAdapter', function () {
 
     this.beforeEach(function () {
       const mockIdentityProviderData = { mockKey: 'mockValue' };
-      const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
-      setCookieStub = sinon.stub(storage, 'setCookie');
       setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-      connatixSaveOnAllStorages('test_ids_cnx', mockIdentityProviderData, CNX_IDS_EXPIRY);
+      connatixSaveInLocalStorage('test_ids_cnx', mockIdentityProviderData);
 
       bid = mockBidRequest();
       serverRequest = spec.buildRequests([bid], bidderRequest);
     })
 
     this.afterEach(function() {
-      setCookieStub.restore();
       setDataInLocalStorageStub.restore();
     });
 
@@ -652,13 +663,13 @@ describe('connatixBidAdapter', function () {
   describe('interpretResponse', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
-    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
+    const Bid = { Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId, Lurl: 'test-lurl' };
 
     let serverResponse;
     this.beforeEach(function () {
       serverResponse = {
         body: {
-          Bids: [ Bid ]
+          Bids: [Bid]
         },
         headers: function() { }
       };
@@ -685,17 +696,18 @@ describe('connatixBidAdapter', function () {
     it('Should contains the same values as in the serverResponse', function() {
       const bidResponses = spec.interpretResponse(serverResponse);
 
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
       expect(bidResponse.requestId).to.equal(serverResponse.body.Bids[0].RequestId);
       expect(bidResponse.cpm).to.equal(serverResponse.body.Bids[0].Cpm);
       expect(bidResponse.ttl).to.equal(serverResponse.body.Bids[0].Ttl);
       expect(bidResponse.currency).to.equal('USD');
       expect(bidResponse.mediaType).to.equal(BANNER);
       expect(bidResponse.netRevenue).to.be.true;
+      expect(bidResponse.lurl).to.equal('test-lurl');
     });
 
     it('Should return n bid responses for n bids', function() {
-      serverResponse.body.Bids = [ { ...Bid }, { ...Bid } ];
+      serverResponse.body.Bids = [{ ...Bid }, { ...Bid }];
 
       const firstBidCpm = 4;
       serverResponse.body.Bids[0].Cpm = firstBidCpm;
@@ -712,10 +724,10 @@ describe('connatixBidAdapter', function () {
 
     it('Should contain specific values for banner bids', function () {
       const adHtml = 'ad html'
-      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+      serverResponse.body.Bids = [{ ...Bid, Ad: adHtml }];
 
       const bidResponses = spec.interpretResponse(serverResponse);
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
 
       expect(bidResponse.vastXml).to.be.undefined;
       expect(bidResponse.ad).to.equal(adHtml);
@@ -724,10 +736,10 @@ describe('connatixBidAdapter', function () {
 
     it('Should contain specific values for video bids', function () {
       const adVastXml = 'ad vast xml'
-      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+      serverResponse.body.Bids = [{ ...Bid, VastXml: adVastXml }];
 
       const bidResponses = spec.interpretResponse(serverResponse);
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
 
       expect(bidResponse.ad).to.be.undefined;
       expect(bidResponse.vastXml).to.equal(adVastXml);
@@ -740,48 +752,52 @@ describe('connatixBidAdapter', function () {
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync'
     const UserSyncEndpointWithParams = 'https://connatix.com/sync?param1=value1'
-    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
+    const Bid = { Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId };
 
     const serverResponse = {
       body: {
         UserSyncEndpoint,
-        Bids: [ Bid ]
+        Bids: [Bid]
       },
       headers: function() { }
     };
     const serverResponse2 = {
       body: {
         UserSyncEndpoint: UserSyncEndpointWithParams,
-        Bids: [ Bid ]
+        Bids: [Bid]
       },
       headers: function() { }
     };
 
+    afterEach(() => {
+      config.resetConfig();
+    });
+
     it('Should return an empty array when iframeEnabled: false', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [], {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array when serverResponses is emprt array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [], {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array when iframeEnabled: true but serverResponses in an empty array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [serverResponse], {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array when iframeEnabled: true but serverResponses in an not defined or null', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, undefined, {}, {}, {})).to.be.an('array').that.is.empty;
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, null, {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, undefined, {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, null, {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return one user sync object when iframeEnabled is true and serverResponses is not an empry array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [serverResponse], {}, {}, {})).to.be.an('array').that.is.not.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.not.empty;
     });
     it('Should return a list containing a single object having type: iframe and url: syncUrl', function () {
-      const userSyncList = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [serverResponse], undefined, undefined, undefined);
+      const userSyncList = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
       const { type, url } = userSyncList[0];
       expect(type).to.equal('iframe');
       expect(url).to.equal(UserSyncEndpoint);
     });
     it('Should append gdpr: 0 if gdprConsent object is provided but gdprApplies field is not provided', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
         {},
         undefined,
@@ -792,9 +808,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append gdpr having the value of gdprApplied if gdprConsent object is present and have gdprApplies field', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true},
+        { gdprApplies: true },
         undefined,
         undefined
       );
@@ -803,9 +819,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append gdpr_consent if gdprConsent object is present and have gdprApplies field', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'alabala'},
+        { gdprApplies: true, consentString: 'alabala' },
         undefined,
         undefined
       );
@@ -814,9 +830,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should encodeURI gdpr_consent corectly', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         undefined,
         undefined
       );
@@ -825,36 +841,50 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append usp_consent to the url if uspConsent is provided', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
         undefined
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
     });
-    it('Should not modify the sync url if gppConsent param is provided', function () {
+    it('Should append gpp and gpp_sid to the url if gppConsent param is provided', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
-        {consent: '1'}
+        { gppString: 'GPP', applicableSections: [2, 4] }
       );
       const { url } = userSyncList[0];
-      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
     });
     it('Should correctly append all consents to the sync url if the url contains query params', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse2],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
-        {consent: '1'}
+        { gppString: 'GPP', applicableSections: [2, 4] }
       );
       const { url } = userSyncList[0];
-      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
+    });
+    it('Should append coppa to the url if coppa is true', function () {
+      config.setConfig({
+        coppa: true
+      });
+      const userSyncList = spec.getUserSyncs(
+        { iframeEnabled: true, pixelEnabled: true },
+        [serverResponse],
+        { gdprApplies: true, consentString: 'test&2' },
+        '1YYYN',
+        { gppString: 'GPP', applicableSections: [2, 4] }
+      );
+      const { url } = userSyncList[0];
+      expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4&coppa=1`);
     });
   });
 
@@ -978,9 +1008,9 @@ describe('connatixBidAdapter', function () {
       expect(floor).to.equal(0);
     });
   });
+
   describe('getUserSyncs with message event listener', function() {
-    const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
-    const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
+    const CNX_IDS_LOCAL_STORAGE_KEY = 'cnx_user_ids';
     const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
 
     const mockData = {
@@ -1003,7 +1033,7 @@ describe('connatixBidAdapter', function () {
 
       if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
         if (data) {
-          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
+          connatixSaveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
         }
       }
     }
@@ -1012,12 +1042,9 @@ describe('connatixBidAdapter', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      sandbox.stub(storage, 'setCookie');
       sandbox.stub(storage, 'setDataInLocalStorage');
       sandbox.stub(window, 'removeEventListener');
-      sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getCookie');
       sandbox.stub(storage, 'getDataFromLocalStorage');
     });
 
@@ -1025,7 +1052,7 @@ describe('connatixBidAdapter', function () {
       sandbox.restore();
     });
 
-    it('Should set a cookie and save to local storage when a valid message is received', () => {
+    it('Should save to local storage when a valid message is received', () => {
       const fakeEvent = {
         data: { cnx: { message: 'cnx_all_identity_providers_resolved', data: mockData } },
         origin: 'https://cds.connatix.com',
@@ -1036,13 +1063,11 @@ describe('connatixBidAdapter', function () {
 
       expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
       expect(window.removeEventListener.calledWith('message', messageHandler)).to.be.true;
-      expect(storage.setCookie.calledWith(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, JSON.stringify(mockData), sinon.match.string)).to.be.true;
-      expect(storage.setDataInLocalStorage.calledWith(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, JSON.stringify(mockData))).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(CNX_IDS_LOCAL_STORAGE_KEY, JSON.stringify(mockData))).to.be.true;
 
-      storage.getCookie.returns(JSON.stringify(mockData));
       storage.getDataFromLocalStorage.returns(JSON.stringify(mockData));
 
-      const retrievedData = connatixReadFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY);
+      const retrievedData = connatixReadFromLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY);
       expect(retrievedData).to.deep.equal(mockData);
     });
 
@@ -1057,7 +1082,6 @@ describe('connatixBidAdapter', function () {
 
       expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
       expect(window.removeEventListener.notCalled).to.be.true;
-      expect(storage.setCookie.notCalled).to.be.true;
       expect(storage.setDataInLocalStorage.notCalled).to.be.true;
     });
 
@@ -1072,7 +1096,6 @@ describe('connatixBidAdapter', function () {
 
       expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
       expect(window.removeEventListener.notCalled).to.be.true;
-      expect(storage.setCookie.notCalled).to.be.true;
       expect(storage.setDataInLocalStorage.notCalled).to.be.true;
     });
   });

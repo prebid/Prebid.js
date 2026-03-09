@@ -93,7 +93,7 @@ const formatResponse = (bidResponse, mediaType, assets) => {
           response.ttl = 300;
           response.dealId = bidReq.dealId;
           response.mediaType = mediaType;
-          if (mediaType == 'native') {
+          if (mediaType === 'native') {
             const nativeResp = JSON.parse(bidReq.adm).native;
             const nativeData = {
               clickUrl: nativeResp.link.url,
@@ -160,7 +160,7 @@ const getSiteDetails = (bidderRequest) => {
     page = bidderRequest.refererInfo.page;
     name = bidderRequest.refererInfo.domain;
   }
-  return {page: page, name: name};
+  return { page: page, name: name };
 }
 // Function to build the user object
 const getUserDetails = (bidReq) => {
@@ -205,7 +205,7 @@ const getNativeAssestData = (params, assets) => {
 const getAssetData = (paramId, asset) => {
   let resp = '';
   for (let i = 0; i < asset.length; i++) {
-    if (asset[i].id == paramId) {
+    if (asset[i].id === paramId) {
       switch (asset[i].data.type) {
         case 1 : resp = 'sponsored';
           break;
@@ -222,7 +222,7 @@ const getAssetData = (paramId, asset) => {
 const getAssetImageDataType = (paramId, asset) => {
   let resp = '';
   for (let i = 0; i < asset.length; i++) {
-    if (asset[i].id == paramId) {
+    if (asset[i].id === paramId) {
       switch (asset[i].img.type) {
         case 1 : resp = 'icon';
           break;

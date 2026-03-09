@@ -5,8 +5,8 @@ import {
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
@@ -32,7 +32,7 @@ describe('LotameId', function() {
       'removeDataFromLocalStorage'
     );
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
-    if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+    if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
       requestHost = 'https://c.ltmsphrcl.net/id';
     } else {
       requestHost = 'https://id.crwdcntrl.net/id';

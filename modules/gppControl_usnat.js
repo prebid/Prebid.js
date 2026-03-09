@@ -1,5 +1,5 @@
-import {config} from '../src/config.js';
-import {setupRules} from '../libraries/mspa/activityControls.js';
+import { config } from '../src/config.js';
+import { setupRules } from '../libraries/mspa/activityControls.js';
 
 let setupDone = false;
 

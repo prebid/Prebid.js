@@ -1,5 +1,5 @@
-import type {DeepPartial} from "./objects.d.ts";
-import type {ORTBRequest} from "./ortb/request.d.ts";
+import type { DeepPartial } from "./objects.d.ts";
+import type { ORTBRequest } from "./ortb/request.d.ts";
 
 /**
  * Prebid-generated identifier.
@@ -14,6 +14,12 @@ export type Currency = string;
 export type AdUnitCode = string;
 export type Size = [number, number];
 export type ContextIdentifiers = {
+  /**
+   * Page view ID. Unique for a page view (one load of Prebid); can also be refreshed programmatically.
+   * Shared across all requests and responses within the page view, for the same bidder.
+   * Different bidders see a different page view ID.
+   */
+  pageViewId: Identifier;
   /**
    * Auction ID. Unique for any given auction, but shared across all requests and responses within that auction.
    */

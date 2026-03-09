@@ -10,12 +10,11 @@ const TIME_TO_LIVE = 360;
 
 export const spec = {
   code: BIDDER_CODE,
-
   isBidRequestValid: sspValidRequest,
   buildRequests: sspBuildRequests(DEFAULT_ENDPOINT),
   interpretResponse: sspInterpretResponse(TIME_TO_LIVE, ADOMAIN),
-  getUserSyncs: getUserSyncs(SYNC_ENDPOINT, {usp: 'usp', consent: 'consent'}),
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  getUserSyncs: getUserSyncs(SYNC_ENDPOINT, { usp: 'usp', consent: 'consent' }),
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);

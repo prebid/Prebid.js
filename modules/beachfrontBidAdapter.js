@@ -7,10 +7,11 @@ import {
   logWarn,
   formatQS
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const ADAPTER_VERSION = '1.21';
 const GVLID = 157;
@@ -38,7 +39,7 @@ let appId = '';
 
 export const spec = {
   code: 'beachfront',
-  supportedMediaTypes: [ VIDEO, BANNER ],
+  supportedMediaTypes: [VIDEO, BANNER],
   gvlid: GVLID,
   isBidRequestValid(bid) {
     if (isVideoBid(bid)) {
@@ -338,8 +339,8 @@ function createVideoRequestData(bid, bidderRequest) {
     deepSetValue(payload, 'user.ext.eids', eids);
   }
 
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (connection && connection.effectiveType) {
+  const connection = getConnectionInfo();
+  if (connection?.effectiveType) {
     deepSetValue(payload, 'device.connectiontype', connection.effectiveType);
   }
 

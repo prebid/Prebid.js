@@ -1,7 +1,7 @@
 import { ajax } from '../src/ajax.js';
 import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'colombia';
 const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
@@ -21,7 +21,7 @@ export const spec = {
     }
     const payloadArr = []
     let ctr = 1;
-    validBidRequests = validBidRequests.map(bidRequest => {
+    validBidRequests.forEach(bidRequest => {
       const params = bidRequest.params;
       const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
       const width = sizes.split('x')[0];

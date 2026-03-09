@@ -3,9 +3,9 @@ import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from 'src/adapterManager.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
-import {attachIdSystem} from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
 
 describe('33acrossIdSystem', () => {
   describe('name', () => {
@@ -86,7 +86,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 
@@ -134,7 +134,7 @@ describe('33acrossIdSystem', () => {
                   pid: '12345',
                   ...opts
                 },
-                enabledStorageTypes: [ 'cookie' ],
+                enabledStorageTypes: ['cookie'],
                 storage: { expires: 30 }
               });
 
@@ -172,7 +172,7 @@ describe('33acrossIdSystem', () => {
                   pid: '12345',
                   ...opts
                 },
-                enabledStorageTypes: [ 'html5' ],
+                enabledStorageTypes: ['html5'],
                 storage: {}
               });
 
@@ -208,7 +208,7 @@ describe('33acrossIdSystem', () => {
                   pid: '12345',
                   ...opts
                 },
-                enabledStorageTypes: [ 'cookie', 'html5' ],
+                enabledStorageTypes: ['cookie', 'html5'],
                 storage: {}
               });
 
@@ -250,7 +250,7 @@ describe('33acrossIdSystem', () => {
                 pid: '12345',
                 ...opts
               },
-              enabledStorageTypes: [ 'html5' ],
+              enabledStorageTypes: ['html5'],
               storage: {}
             });
 
@@ -260,6 +260,7 @@ describe('33acrossIdSystem', () => {
 
             const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
             const setCookie = sinon.stub(storage, 'setCookie');
+            const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
             sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
             request.respond(200, {
@@ -277,6 +278,7 @@ describe('33acrossIdSystem', () => {
 
             removeDataFromLocalStorage.restore();
             setCookie.restore();
+            cookiesAreEnabled.restore();
             domainUtils.domainOverride.restore();
           });
         });
@@ -293,7 +295,7 @@ describe('33acrossIdSystem', () => {
                   pid: '12345',
                   ...opts
                 },
-                enabledStorageTypes: [ 'cookie' ],
+                enabledStorageTypes: ['cookie'],
                 storage: { expires: 30 }
               });
 
@@ -331,7 +333,7 @@ describe('33acrossIdSystem', () => {
                   pid: '12345',
                   ...opts
                 },
-                enabledStorageTypes: [ 'html5' ],
+                enabledStorageTypes: ['html5'],
                 storage: {}
               });
 
@@ -367,7 +369,7 @@ describe('33acrossIdSystem', () => {
                   pid: '12345',
                   ...opts
                 },
-                enabledStorageTypes: [ 'cookie', 'html5' ],
+                enabledStorageTypes: ['cookie', 'html5'],
                 storage: {}
               });
 
@@ -409,7 +411,7 @@ describe('33acrossIdSystem', () => {
                 pid: '12345',
                 ...opts
               },
-              enabledStorageTypes: [ 'html5' ],
+              enabledStorageTypes: ['html5'],
               storage: {}
             });
 
@@ -419,6 +421,7 @@ describe('33acrossIdSystem', () => {
 
             const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
             const setCookie = sinon.stub(storage, 'setCookie');
+            const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
             sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
             request.respond(200, {
@@ -436,6 +439,7 @@ describe('33acrossIdSystem', () => {
 
             removeDataFromLocalStorage.restore();
             setCookie.restore();
+            cookiesAreEnabled.restore();
             domainUtils.domainOverride.restore();
           });
         });
@@ -452,7 +456,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               storeFpid: false
             },
-            enabledStorageTypes: [ 'cookie' ],
+            enabledStorageTypes: ['cookie'],
             storage: {
               expires: 30
             }
@@ -490,7 +494,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               storeFpid: false
             },
-            enabledStorageTypes: [ 'html5' ],
+            enabledStorageTypes: ['html5'],
             storage: {}
           });
 
@@ -528,7 +532,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               storeTpid: false
             },
-            enabledStorageTypes: [ 'cookie' ],
+            enabledStorageTypes: ['cookie'],
             storage: {
               expires: 30
             }
@@ -564,7 +568,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               storeTpid: false
             },
-            enabledStorageTypes: [ 'html5' ],
+            enabledStorageTypes: ['html5'],
             storage: {}
           });
 
@@ -600,7 +604,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 
@@ -642,7 +646,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdpr: {gdprApplies: true}
+          gdpr: { gdprApplies: true }
         });
 
         expect(logWarnSpy.calledOnceWithExactly('33acrossId: Submodule cannot be used where GDPR applies')).to.be.true;
@@ -660,7 +664,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdpr: {gdprApplies: false}
+          gdpr: { gdprApplies: false }
         });
 
         callback(completeCallback);
@@ -845,7 +849,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 
@@ -870,7 +874,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'cookie' ],
+          enabledStorageTypes: ['cookie'],
           storage: {}
         });
 
@@ -912,7 +916,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 
@@ -937,7 +941,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'cookie' ],
+          enabledStorageTypes: ['cookie'],
           storage: {}
         });
 
@@ -980,7 +984,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345',
             hem: '33acrossIdHmValue+'
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 
@@ -1007,7 +1011,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               hem: '33acrossIdHmValue+'
             },
-            enabledStorageTypes: [ 'html5' ],
+            enabledStorageTypes: ['html5'],
             storage: {}
           });
 
@@ -1043,7 +1047,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               hem: '33acrossIdHmValue+'
             },
-            enabledStorageTypes: [ 'cookie' ],
+            enabledStorageTypes: ['cookie'],
             storage: { expires: 30 }
           });
 
@@ -1094,7 +1098,7 @@ describe('33acrossIdSystem', () => {
               pid: '12345'
               // No hashed email via config option.
             },
-            enabledStorageTypes: [ 'html5' ],
+            enabledStorageTypes: ['html5'],
             storage: {}
           });
 
@@ -1120,7 +1124,7 @@ describe('33acrossIdSystem', () => {
               params: {
                 pid: '12345'
               },
-              enabledStorageTypes: [ 'html5' ],
+              enabledStorageTypes: ['html5'],
               storage: {}
             });
 
@@ -1155,7 +1159,7 @@ describe('33acrossIdSystem', () => {
               params: {
                 pid: '12345'
               },
-              enabledStorageTypes: [ 'cookie' ],
+              enabledStorageTypes: ['cookie'],
               storage: { expires: 30 }
             });
 
@@ -1192,7 +1196,7 @@ describe('33acrossIdSystem', () => {
             params: {
               pid: '12345'
             },
-            enabledStorageTypes: [ 'html5' ],
+            enabledStorageTypes: ['html5'],
             storage: {}
           });
 
@@ -1217,7 +1221,7 @@ describe('33acrossIdSystem', () => {
             params: {
               pid: '12345'
             },
-            enabledStorageTypes: [ 'cookie' ],
+            enabledStorageTypes: ['cookie'],
             storage: {}
           });
 
@@ -1466,7 +1470,7 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 

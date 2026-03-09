@@ -235,7 +235,7 @@ function postData() {
   syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   _logInfo(payloadString);
-  ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
+  ajax(conf.url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
 }
 
 function associateIds() {
@@ -278,7 +278,7 @@ export function setConfig(config) {
     _logInfo('Set default input scan ' + CONF_DEFAULT_INPUT_SCAN);
   }
 
-  if (typeof config.formElementId == 'string') {
+  if (typeof config.formElementId === 'string') {
     _logInfo('Looking for formElementId ' + config.formElementId);
   }
   conf = config;

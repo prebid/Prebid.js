@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js';
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js';
 import { triggerPixel, logInfo } from '../src/utils.js';
 import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapterManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -30,11 +30,11 @@ const GDPR_PRIVACY_STRING = gdprDataHandler.getConsentData();
 const US_PRIVACY_STRING = uspDataHandler.getConsentData();
 const MODULE_NAME = 'quantcastId';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
-  if (!window._qevents && clientId && clientId != '') {
+  if (!window._qevents && clientId) {
     var fpa = storage.getCookie(QUANTCAST_FPA);
     var fpan = '0';
     var domain = quantcastIdSubmodule.findRootDomain();
@@ -119,7 +119,7 @@ export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOS
       // publisher does not require legitimate interest
       qcRestriction !== 2 &&
       // purpose is a consent-first purpose or publisher has explicitly restricted to consent
-      (QC_TCF_CONSENT_FIRST_PURPOSES.indexOf(purpose) != -1 || qcRestriction === 1)
+      (QC_TCF_CONSENT_FIRST_PURPOSES.indexOf(purpose) !== -1 || qcRestriction === 1)
     ) {
       return true;
     } else if (
@@ -130,9 +130,9 @@ export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOS
       // there is legitimate interest for purpose
       purposeInterest &&
       // purpose's legal basis does not require consent
-      QC_TCF_CONSENT_ONLY_PUPROSES.indexOf(purpose) == -1 &&
+      QC_TCF_CONSENT_ONLY_PUPROSES.indexOf(purpose) === -1 &&
       // purpose is a legitimate-interest-first purpose or publisher has explicitly restricted to legitimate interest
-      (QC_TCF_CONSENT_FIRST_PURPOSES.indexOf(purpose) == -1 || qcRestriction === 2)
+      (QC_TCF_CONSENT_FIRST_PURPOSES.indexOf(purpose) === -1 || qcRestriction === 2)
     ) {
       return true;
     }
@@ -151,9 +151,9 @@ export function hasCCPAConsent(usPrivacyConsent) {
   if (
     usPrivacyConsent &&
     typeof usPrivacyConsent === 'string' &&
-    usPrivacyConsent.length == 4 &&
-    usPrivacyConsent.charAt(1) == 'Y' &&
-    usPrivacyConsent.charAt(2) == 'Y'
+    usPrivacyConsent.length === 4 &&
+    usPrivacyConsent.charAt(1) === 'Y' &&
+    usPrivacyConsent.charAt(2) === 'Y'
   ) {
     return false
   }

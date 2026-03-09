@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -198,12 +198,12 @@ describe('ImpactifyAdapter', function () {
 
     it('should return false when format is not equals to screen or display', () => {
       const bid = utils.deepClone(validBids[0]);
-      if (bid.params.format != 'screen' && bid.params.format != 'display') {
+      if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       }
 
       const bid2 = utils.deepClone(validBids[1]);
-      if (bid2.params.format != 'screen' && bid2.params.format != 'display') {
+      if (bid2.params.format !== 'screen' && bid2.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid2)).to.equal(false);
       }
     });

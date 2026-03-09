@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {logError, logInfo, deepClone} from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { logError, logInfo, deepClone } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
@@ -43,7 +43,7 @@ export const parseAdUnitCode = function (bidResponse) {
   return bidResponse.adUnitCode.toLowerCase();
 };
 
-export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
+export const appierAnalyticsAdapter = Object.assign(adapter({ DEFAULT_SERVER, analyticsType }), {
 
   cachedAuctions: {},
 
@@ -135,7 +135,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     message.adUnits[adUnitCode][bidder] = bidResponse;
   },
   createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
-    const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
+    const { auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids } = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
     message.auctionElapsed = (auctionEnd - timestamp);
@@ -176,7 +176,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       const adUnitCode = parseAdUnitCode(bid);
       const bidder = parseBidderCode(bid);
       message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
-      message.adUnits[adUnitCode][bidder] = {ad: bid.ad};
+      message.adUnits[adUnitCode][bidder] = { ad: bid.ad };
     });
     return message;
   },
@@ -207,7 +207,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
   handleBidWon(bidWonArgs) {
     this.sendEventMessage('imp', this.createImpressionMessage(bidWonArgs));
   },
-  track({eventType, args}) {
+  track({ eventType, args }) {
     if (analyticsOptions.sampled) {
       switch (eventType) {
         case BID_WON:

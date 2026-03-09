@@ -54,6 +54,11 @@ module.exports = {
       helpers.getPrecompiledPath(),
       'node_modules'
     ],
+    alias: {
+      // alias package.json instead of including it as part of precompilation output;
+      // a simple copy does not work as it contains relative paths (e.g. sideEffects)
+      'package.json': path.resolve(__dirname, 'package.json')
+    }
   },
   module: {
     rules: [

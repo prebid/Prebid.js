@@ -1,6 +1,6 @@
 // jscs:disable
 import { TARGETING_KEYS } from 'src/constants.js';
-import {createBid} from '../../src/bidfactory.js';
+import { createBid } from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {
@@ -660,6 +660,7 @@ export function getAdUnits() {
   return [
     {
       'code': '/19968336/header-bid-tag1',
+      transactionId: 'au1',
       'mediaTypes': {
         'banner': {
           'sizes': [[728, 90], [970, 90]]
@@ -689,6 +690,7 @@ export function getAdUnits() {
       ]
     },
     {
+      transactionId: 'au2',
       'code': '/19968336/header-bid-tag-0',
       'mediaTypes': {
         'banner': {
@@ -1287,7 +1289,7 @@ export function getCurrencyRates() {
   };
 }
 
-export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType}) {
+export function createBidReceived({ bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType }) {
   const bid = {
     'bidderCode': bidder,
     'width': '300',

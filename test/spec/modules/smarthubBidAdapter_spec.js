@@ -3,8 +3,8 @@ import { spec } from '../../../modules/smarthubBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'smarthub'
-const bidderAlias = 'markapp'
+const bidder = 'smarthub';
+const bidderAlias = 'markapp';
 
 describe('SmartHubBidAdapter', function () {
   const bids = [
@@ -22,6 +22,23 @@ describe('SmartHubBidAdapter', function () {
         token: 'testBanner',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 10,
+        pos: 1,
+      }
+    },
+    {
+      bidId: getUniqueIdentifierStr(),
+      bidder: 'Jambojar',
+      mediaTypes: {
+        [BANNER]: {
+          sizes: [[400, 350]]
+        }
+      },
+      params: {
+        seat: 'testSeat',
+        token: 'testBanner',
+        region: 'Apac',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
+        minBidfloor: 9,
         pos: 1,
       }
     },
@@ -125,7 +142,7 @@ describe('SmartHubBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let [serverRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
+    let [serverRequest, regionRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -139,11 +156,15 @@ describe('SmartHubBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(`https://prebid.attekmi.com/pbjs?partnerName=testname`);
+      expect(serverRequest.url).to.equal(`https://prebid.attekmi.co/pbjs?partnerName=testname`);
+    });
+
+    it('Returns valid URL if region added', function () {
+      expect(regionRequest.url).to.equal(`https://jambojar-apac-prebid.attekmi.co/pbjs`);
     });
 
     it('Returns valid URL if alias', function () {
-      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.com/pbjs`);
+      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.co/pbjs`);
     });
 
     it('Returns general data valid', function () {
@@ -425,7 +446,7 @@ describe('SmartHubBidAdapter', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, {});
+      }, undefined);
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -434,9 +455,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0&pid=360')
     });
     it('Should return array of objects with CCPA values', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
-        consentString: '1---'
-      });
+      const syncData = spec.getUserSyncs({}, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -445,7 +464,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0&pid=360')
     });
     it('Should return array of objects with GPP values', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+      const syncData = spec.getUserSyncs({}, {}, {}, undefined, {
         gppString: 'ab12345',
         applicableSections: [8]
       });
@@ -457,7 +476,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0&pid=360')
     });
     it('Should return iframe type if iframeEnabled is true', function() {
-      const syncData = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {});
+      const syncData = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, undefined, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')

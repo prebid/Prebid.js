@@ -1,10 +1,10 @@
-import {deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
@@ -35,7 +35,7 @@ const LOG_ERROR_MESS = {
   videoMissing: 'Bid request videoType property is missing - '
 };
 const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN', 'CHF', 'SEK'];
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const _bidResponseTimeLogged = [];
 export const spec = {
   code: BIDDER_CODE,
@@ -178,7 +178,7 @@ export const spec = {
       cur: [currency],
       source,
       ...(payloadUser && { user: payloadUser }),
-      ...(payloadRegs && {regs: payloadRegs}),
+      ...(payloadRegs && { regs: payloadRegs }),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
       ...(payloadContent && { content: payloadContent }),
@@ -311,6 +311,10 @@ function buildImpObject(bid) {
     impObject.ext.bidder.adslotExists = _isAdSlotExists(adUnitCode);
   }
 
+  if (bid.ortb2Imp?.ext?.gpid) {
+    impObject.ext.gpid = bid.ortb2Imp.ext.gpid;
+  }
+
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
   }
@@ -334,13 +338,13 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,
-          creativeId: serverBid.auid,
+          creativeId: serverBid.crid,
           currency: reqCurrency,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
           dealId: serverBid.dealid,
           meta: {
-            advertiserDomains: serverBid.advertiserDomains ? serverBid.advertiserDomains : [],
+            advertiserDomains: serverBid.adomain ? serverBid.adomain : [],
             mediaType: serverBid.mediaType
           },
         };

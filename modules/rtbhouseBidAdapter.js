@@ -1,9 +1,9 @@
-import {deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr} from '../src/utils.js';
-import {getOrigin} from '../libraries/getOrigin/index.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { interpretNativeBid, OPENRTB } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 const BIDDER_CODE = 'rtbhouse';
@@ -46,8 +46,8 @@ export const spec = {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      request.regs = {ext: {gdpr: gdpr}};
-      request.user = {ext: {consent: consentStr}};
+      request.regs = { ext: { gdpr: gdpr } };
+      request.user = { ext: { consent: consentStr } };
     }
     const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     if (bidSchain) {
@@ -64,7 +64,7 @@ export const spec = {
       if (request.user && request.user.ext) {
         request.user.ext = { ...request.user.ext, ...eids };
       } else {
-        request.user = {ext: eids};
+        request.user = { ext: eids };
       }
     }
 
@@ -85,6 +85,14 @@ export const spec = {
           }
         }
       });
+    }
+
+    if (bidderRequest.gppConsent?.gppString) {
+      deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (ortb2Params.regs?.gpp) {
+      deepSetValue(request, 'regs.gpp', ortb2Params.regs.gpp);
+      deepSetValue(request, 'regs.gpp_sid', ortb2Params.regs.gpp_sid);
     }
 
     const computedEndpointUrl = ENDPOINT_URL;
@@ -135,18 +143,32 @@ registerBidder(spec);
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
- * @returns {number} floor by imp type
+ * @returns {number|null} floor value, or null if not available
  */
 function applyFloor(slot) {
-  const floors = [];
+  // If Price Floors module is available, use it
   if (typeof slot.getFloor === 'function') {
-    Object.keys(slot.mediaTypes).forEach(type => {
-      if (SUPPORTED_MEDIA_TYPES.includes(type)) {
-        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' })?.floor);
+    try {
+      const floor = slot.getFloor({
+        currency: DEFAULT_CURRENCY_ARR[0],
+        mediaType: '*',
+        size: '*'
+      });
+
+      if (floor && floor.currency === DEFAULT_CURRENCY_ARR[0] && !isNaN(parseFloat(floor.floor))) {
+        return floor.floor;
       }
-    });
+    } catch (e) {
+      logError('RTB House: Error calling getFloor:', e);
+    }
   }
-  return floors.length > 0 ? Math.max(...floors) : parseFloat(slot.params.bidfloor);
+
+  // Fallback to bidfloor param if available
+  if (slot.params.bidfloor && !isNaN(parseFloat(slot.params.bidfloor))) {
+    return parseFloat(slot.params.bidfloor);
+  }
+
+  return null;
 }
 
 /**
@@ -350,7 +372,7 @@ function mapNativeAssets(slot) {
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
 function mapNativeImage(image, type) {
-  const img = {type: type};
+  const img = { type: type };
   if (image.aspect_ratios) {
     const ratio = image.aspect_ratios[0];
     const minWidth = ratio.min_width || 100;

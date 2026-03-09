@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {parseSizesInput} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput } from '../src/utils.js';
 
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -104,7 +104,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params});
+      requests.push({ data: params });
     })
     return {
       method: 'POST',
@@ -196,9 +196,9 @@ function getRr() {
     var rr = td.referrer;
   } catch (err) { return false }
 
-  if (typeof rr != 'undefined' && rr.length > 0) {
+  if (typeof rr !== 'undefined' && rr.length > 0) {
     return encodeURIComponent(rr);
-  } else if (typeof rr != 'undefined' && rr == '') {
+  } else if (typeof rr !== 'undefined' && rr === '') {
     return 'direct';
   }
 }
@@ -232,7 +232,7 @@ function get_pubdata(adds) {
     let index = 0;
     let url = '';
     for(var key in adds.pubdata) {
-      if (index == 0) {
+      if (index === 0) {
         url = url + encodeURIComponent('pubside_macro[' + key + ']') + '=' + encodeURIComponent(adds.pubdata[key]);
         index++;
       } else {

@@ -1,8 +1,31 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
 
-export function getBoundingBox(element, {w, h} = {}) {
-  let {width, height, left, top, right, bottom, x, y} = getBoundingClientRect(element);
+/**
+ * return the offset between the given window's viewport and the top window's.
+ */
+export function getViewportOffset(win = window) {
+  let x = 0;
+  let y = 0;
+  try {
+    while (win?.frameElement != null) {
+      const rect = getBoundingClientRect(win.frameElement);
+      x += rect.left;
+      y += rect.top;
+      win = win.parent;
+    }
+  } catch (e) {
+    // offset cannot be calculated as some parents are cross-frame
+    // fallback to 0,0
+    x = 0;
+    y = 0;
+  }
+
+  return { x, y };
+}
+
+export function getBoundingBox(element, { w, h } = {}) {
+  let { width, height, left, top, right, bottom, x, y } = getBoundingClientRect(element);
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -11,7 +34,7 @@ export function getBoundingBox(element, {w, h} = {}) {
     bottom = top + h;
   }
 
-  return {width, height, left, top, right, bottom, x, y};
+  return { width, height, left, top, right, bottom, x, y };
 }
 
 function getIntersectionOfRects(rects) {
@@ -41,17 +64,27 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-export const percentInView = (element, {w, h} = {}) => {
-  const elementBoundingBox = getBoundingBox(element, {w, h});
+export const percentInView = (element, { w, h } = {}) => {
+  const elementBoundingBox = getBoundingBox(element, { w, h });
 
-  const { innerHeight, innerWidth } = getWinDimensions();
+  // when in an iframe, the bounding box is relative to the iframe's viewport
+  // since we are intersecting it with the top window's viewport, attempt to
+  // compensate for the offset between them
+
+  const offset = getViewportOffset(element?.ownerDocument?.defaultView);
+  elementBoundingBox.left += offset.x;
+  elementBoundingBox.right += offset.x;
+  elementBoundingBox.top += offset.y;
+  elementBoundingBox.bottom += offset.y;
+
+  const dims = getWinDimensions();
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = getIntersectionOfRects([{
     left: 0,
     top: 0,
-    right: innerWidth,
-    bottom: innerHeight
+    right: dims.document.documentElement.clientWidth,
+    bottom: dims.document.documentElement.clientHeight
   }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;

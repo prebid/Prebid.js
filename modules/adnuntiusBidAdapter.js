@@ -1,10 +1,19 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, isArray, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {
+  convertObjectToArray,
+  deepAccess,
+  deepClone,
+  getUnixTimestampFromNow,
+  getWinDimensions,
+  isArray,
+  isEmpty,
+  isStr
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { toLegacyResponse, toOrtbNativeRequest } from '../src/native.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
@@ -218,6 +227,7 @@ const targetingTool = (function() {
           segments.push(...userdat.segment.map((segment) => {
             if (isStr(segment)) return segment;
             if (isStr(segment.id)) return segment.id;
+            return undefined;
           }).filter((seg) => !!seg));
         }
       });
@@ -293,10 +303,6 @@ export const spec = {
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
-    const win = getWindowTop() || window;
-    if (win.screen && win.screen.availHeight) {
-      queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
-    }
 
     const { innerWidth, innerHeight } = getWinDimensions();
 
@@ -352,7 +358,7 @@ export const spec = {
         networks[network].metaData = payloadRelatedData;
       }
 
-      const bidTargeting = {...bid.params.targeting || {}};
+      const bidTargeting = { ...bid.params.targeting || {} };
       targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
       const mediaTypes = bid.mediaTypes || {};
       const validMediaTypes = SUPPORTED_MEDIA_TYPES.filter(mt => {
@@ -369,7 +375,7 @@ export const spec = {
           return;
         }
         const targetId = (bid.params.targetId || bid.bidId) + (isSingleFormat || mediaType === BANNER ? '' : ('-' + mediaType));
-        const adUnit = {...bidTargeting, auId: bid.params.auId, targetId: targetId};
+        const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: targetId };
         if (mediaType === VIDEO) {
           adUnit.adType = 'VAST';
         } else if (mediaType === NATIVE) {
@@ -389,9 +395,9 @@ export const spec = {
                 'methods': [1]
               }
             ];
-            adUnit.nativeRequest = {ortb: nativeOrtb}
+            adUnit.nativeRequest = { ortb: nativeOrtb }
           } else {
-            adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
+            adUnit.nativeRequest = { ortb: mediaTypeData.ortb };
           }
         }
         const dealId = deepAccess(bid, 'params.dealId') || deepAccess(bid, 'params.inventory.pmp.deals');

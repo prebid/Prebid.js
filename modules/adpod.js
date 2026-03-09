@@ -30,13 +30,13 @@ import {
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
-import {checkAdUnitSetup} from '../src/prebid.js';
-import {checkVideoBidSetup} from '../src/video.js';
-import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
-import {store} from '../src/videoCache.js';
-import {config} from '../src/config.js';
-import {ADPOD} from '../src/mediaTypes.js';
-import {auctionManager} from '../src/auctionManager.js';
+import { checkAdUnitSetup } from '../src/prebid.js';
+import { checkVideoBidSetup } from '../src/video.js';
+import { getHook, module, setupBeforeHookFnOnce } from '../src/hook.js';
+import { store } from '../src/videoCache.js';
+import { config } from '../src/config.js';
+import { ADPOD } from '../src/mediaTypes.js';
+import { auctionManager } from '../src/auctionManager.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
@@ -587,7 +587,7 @@ export function getTargeting({ codes, callback } = {}) {
 function getAdPodAdUnits(codes) {
   return auctionManager.getAdUnits()
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
-    .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
+    .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) !== -1 : true);
 }
 
 /**
@@ -633,7 +633,7 @@ function getExclusiveBids(bidsReceived) {
 function getBidsForAdpod(bidsReceived, adPodAdUnits) {
   const adUnitCodes = adPodAdUnits.map((adUnit) => adUnit.code);
   return bidsReceived
-    .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1 && (bid.video && bid.video.context === ADPOD))
+    .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) !== -1 && (bid.video && bid.video.context === ADPOD))
 }
 
 const sharedMethods = {

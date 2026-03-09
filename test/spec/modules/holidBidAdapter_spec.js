@@ -130,6 +130,50 @@ describe('holidBidAdapterTests', () => {
       );
       expect(interpretedResponse[0].currency).to.equal(serverResponse.body.cur);
     });
+
+    it('should map adomain to meta.advertiserDomains and preserve existing meta fields', () => {
+      const serverResponseWithAdomain = {
+        body: {
+          id: 'test-id',
+          cur: 'USD',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: 'testbidid-2',
+                  impid: 'bid-id',
+                  price: 0.55,
+                  adm: '<div>ad</div>',
+                  crid: 'cr-2',
+                  w: 300,
+                  h: 250,
+                  // intentionally mixed-case + protocol + www to test normalization
+                  adomain: ['https://Holid.se', 'www.Example.COM'],
+                  ext: {
+                    prebid: {
+                      meta: {
+                        networkId: 42
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponseWithAdomain, bidRequestData);
+      expect(out).to.have.length(1);
+      expect(out[0].requestId).to.equal('bid-id');
+
+      // critical assertion: advertiserDomains normalized and present
+      expect(out[0].meta).to.have.property('advertiserDomains');
+      expect(out[0].meta.advertiserDomains).to.deep.equal(['holid.se', 'example.com']);
+
+      // ensure any existing meta (e.g., networkId) is preserved
+      expect(out[0].meta.networkId).to.equal(42);
+    });
   });
 
   describe('getUserSyncs', () => {

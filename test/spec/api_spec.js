@@ -1,7 +1,7 @@
 var assert = require('chai').assert;
 var prebid = require('../../src/prebid.js');
-const {getGlobalVarName} = require('../../src/buildOptions.js');
-const {getGlobal} = require('../../src/prebidGlobal.js');
+const { getGlobalVarName } = require('../../src/buildOptions.js');
+const { getGlobal } = require('../../src/prebidGlobal.js');
 
 describe('Publisher API', function () {
   // var assert = chai.assert;
@@ -33,6 +33,11 @@ describe('Publisher API', function () {
   });
 
   describe('has function', function () {
+    it('should have requestBids.before and .after', () => {
+      assert.isFunction(getGlobal().requestBids.before);
+      assert.isFunction(getGlobal().requestBids.after);
+    });
+
     it('should have function .getAdserverTargeting', function () {
       assert.isFunction(getGlobal().getAdserverTargeting);
     });

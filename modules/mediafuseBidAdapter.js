@@ -16,22 +16,22 @@ import {
   logMessage,
   logWarn
 } from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {bidderSettings} from '../src/bidderSettings.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
+import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ADPOD, BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
 import {
   getANKewyordParamFromMaps,
   getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
-import {chunk} from '../libraries/chunk/chunk.js';
+import { convertCamelToUnderscore, fill } from '../libraries/appnexusUtils/anUtils.js';
+import { chunk } from '../libraries/chunk/chunk.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -88,7 +88,7 @@ const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -129,7 +129,7 @@ export const spec = {
             const segs = [];
             userObjBid.params.user[param].forEach(val => {
               if (isNumber(val)) {
-                segs.push({'id': val});
+                segs.push({ 'id': val });
               } else if (isPlainObject(val)) {
                 segs.push(val);
               }
@@ -276,10 +276,10 @@ export const spec = {
       bidRequests[0].userIdAsEids.forEach(eid => {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
-          const tmp = {'source': eid.source, 'id': uid.id};
-          if (eid.source == 'adserver.org') {
+          const tmp = { 'source': eid.source, 'id': uid.id };
+          if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
-          } else if (eid.source == 'uidapi.com') {
+          } else if (eid.source === 'uidapi.com') {
             tmp.rti_partner = 'UID2';
           }
           eids.push(tmp);
@@ -348,7 +348,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent({ gdprConsent })) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -396,7 +396,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
           const scriptArray = nestedDoc.getElementsByTagName('script');
           for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
             const currentScript = scriptArray[j];
-            if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
+            if (currentScript.getAttribute('data-src') === jsTrackerSrc) {
               currentScript.setAttribute('src', newJsTrackerSrc);
               currentScript.setAttribute('data-src', '');
               if (currentScript.removeAttribute) {
@@ -565,12 +565,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       complete: 0,
       nodes: [{
         bsid: rtbBid.buyer_member_id.toString()
-      }]};
+      }]
+    };
 
     return dchain;
   }
   if (rtbBid.buyer_member_id) {
-    bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
+    bid.meta = Object.assign({}, bid.meta, { dchain: setupDChain(rtbBid) });
   }
 
   if (rtbBid.brand_id) {
@@ -625,7 +626,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     let jsTrackers = nativeAd.javascript_trackers;
 
-    if (jsTrackers == undefined) {
+    if (jsTrackers === undefined || jsTrackers === null) {
       jsTrackers = jsTrackerDisarmed;
     } else if (isStr(jsTrackers)) {
       jsTrackers = [jsTrackers, jsTrackerDisarmed];
@@ -832,6 +833,7 @@ function bidToTag(bid) {
                 if (v >= 1 && v <= 5) {
                   return v;
                 }
+                return undefined;
               }).filter(v => v);
               tag['video_frameworks'] = apiTmp;
             }
@@ -948,14 +950,14 @@ function createAdPodRequest(tags, adPodBid) {
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(tag => {
+      chunked[index].forEach(tag => {
         setVideoProperty(tag, 'minduration', duration);
         setVideoProperty(tag, 'maxduration', duration);
       });
     });
   } else {
     // all maxdurations should be the same
-    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+    request.forEach(tag => setVideoProperty(tag, 'maxduration', maxDuration));
   }
 
   return request;

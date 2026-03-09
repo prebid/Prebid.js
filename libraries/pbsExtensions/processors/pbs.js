@@ -1,12 +1,13 @@
-import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
-import {deepAccess, isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
-import {extPrebidMediaType} from './mediaType.js';
-import {setRequestExtPrebidAliases} from './aliases.js';
-import {setImpBidParams} from './params.js';
-import {setImpAdUnitCode} from './adUnitCode.js';
-import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
-import {setBidResponseVideoCache} from './video.js';
-import {addEventTrackers} from './eventTrackers.js';
+import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js';
+import { isPlainObject, isStr, mergeDeep } from '../../../src/utils.js';
+import { extPrebidMediaType } from './mediaType.js';
+import { setRequestExtPrebidAliases } from './aliases.js';
+import { setImpBidParams } from './params.js';
+import { setImpAdUnitCode } from './adUnitCode.js';
+import { setRequestExtPrebid, setRequestExtPrebidChannel } from './requestExtPrebid.js';
+import { setBidResponseVideoCache } from './video.js';
+import { addEventTrackers } from './eventTrackers.js';
+import { setRequestExtPrebidPageViewIds } from './pageViewIds.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -21,11 +22,15 @@ export const PBS_PROCESSORS = {
     extPrebidAliases: {
       // sets ext.prebid.aliases
       fn: setRequestExtPrebidAliases
-    }
+    },
+    extPrebidPageViewIds: {
+      // sets ext.prebid.page_view_ids
+      fn: setRequestExtPrebidPageViewIds
+    },
   },
   [IMP]: {
     params: {
-      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params, passed through transformBidParams if necessary
+      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params
       fn: setImpBidParams
     },
     adUnitCode: {
@@ -82,20 +87,36 @@ export const PBS_PROCESSORS = {
   },
   [RESPONSE]: {
     serverSideStats: {
-      // updates bidderRequest and bidRequests with serverErrors from ext.errors and serverResponseTimeMs from ext.responsetimemillis
+      // updates bidderRequest and bidRequests with fields from response.ext
+      // - bidder-scoped for 'errors' and 'responsetimemillis'
+      // - copy-as-is for all other fields
       fn(response, ortbResponse, context) {
-        Object.entries({
+        const bidder = context.bidderRequest?.bidderCode;
+        const ext = ortbResponse?.ext;
+        if (!ext) return;
+
+        const FIELD_MAP = {
           errors: 'serverErrors',
           responsetimemillis: 'serverResponseTimeMs'
-        }).forEach(([serverName, clientName]) => {
-          const value = deepAccess(ortbResponse, `ext.${serverName}.${context.bidderRequest.bidderCode}`);
-          if (value) {
-            context.bidderRequest[clientName] = value;
-            context.bidRequests.forEach(bid => {
-              bid[clientName] = value;
-            });
+        };
+
+        Object.entries(ext).forEach(([field, extValue]) => {
+          if (FIELD_MAP[field]) {
+            // Skip mapped fields if no bidder
+            if (!bidder) return;
+            const value = extValue?.[bidder];
+            if (value !== undefined) {
+              const clientName = FIELD_MAP[field];
+              context.bidderRequest[clientName] = value;
+              context.bidRequests?.forEach(bid => {
+                bid[clientName] = value;
+              });
+            }
+          } else if (extValue !== undefined) {
+            context.bidderRequest.pbsExt = context.bidderRequest.pbsExt || {};
+            context.bidderRequest.pbsExt[field] = extValue;
           }
-        })
+        });
       }
     },
   }

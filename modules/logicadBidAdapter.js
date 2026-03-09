@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { deepAccess } from '../src/utils.js';
 
@@ -54,7 +54,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     if (serverResponses.length > 0 && serverResponses[0].body.userSync &&
-      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type == 'image') {
+      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type === 'image') {
       return [{
         type: 'image',
         url: serverResponses[0].body.userSync.url
