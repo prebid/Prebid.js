@@ -1,17 +1,17 @@
 import { deepClone, generateUUID, getParameterByName, hasNonSerializableProperty, logError, parseUrl, logInfo } from '../src/utils.js';
-import {ajaxBuilder} from '../src/ajax.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { EVENTS } from '../src/constants.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { collectUtmTagData, trimAdUnit, trimBid, trimBidderRequest } from '../libraries/asteriobidUtils/asteriobidUtils.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'asteriobidpbm'});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'asteriobidpbm' });
 const DEFAULT_EVENT_URL = 'https://endpt.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
 const analyticsName = 'Asteriobid PBM Analytics';
@@ -26,7 +26,7 @@ var _bidRequestTimeout = 0;
 let flushInterval;
 var pmAnalyticsEnabled = false;
 
-const {width: x, height: y} = getViewportSize();
+const { width: x, height: y } = getViewportSize();
 
 var _pageView = {
   eventType: 'pageView',
@@ -43,8 +43,8 @@ var _eventQueue = [
   _pageView
 ];
 
-const prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
-  track({eventType, args}) {
+const prebidmanagerAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+  track({ eventType, args }) {
     handleEvent(eventType, args);
   }
 });

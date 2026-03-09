@@ -13,7 +13,7 @@ import {
   pick,
   uniques
 } from '../src/utils.js';
-import type {AdUnit} from '../src/adUnits.ts';
+import type { AdUnit } from '../src/adUnits.ts';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig: any = {};
@@ -158,7 +158,7 @@ const setPpsConfigFromTargetingSet = (next, targetingSet) => {
   // set gpt config
   const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
   const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
-  window.googletag.setConfig && window.googletag.setConfig({pps: { taxonomies: signals }});
+  window.googletag.setConfig && window.googletag.setConfig({ pps: { taxonomies: signals } });
   next(targetingSet);
 };
 
@@ -206,8 +206,8 @@ const handleSetGptConfig = moduleConfig => {
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
-    getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}).remove();
-    getHook('targetingDone').getHooks({hook: setPpsConfigFromTargetingSet}).remove();
+    getHook('makeBidRequests').getHooks({ hook: makeBidRequestsHook }).remove();
+    getHook('targetingDone').getHooks({ hook: setPpsConfigFromTargetingSet }).remove();
     hooksAdded = false;
   }
 };

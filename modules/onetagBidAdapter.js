@@ -9,7 +9,7 @@ import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

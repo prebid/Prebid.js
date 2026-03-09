@@ -3,7 +3,7 @@ import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
-import {expect, spy} from 'chai';
+import { expect, spy } from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.js';
 import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
@@ -82,7 +82,7 @@ describe('#bidViewability', function() {
           return (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode;
         }
       });
-      const newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
+      const newWinningBid = Object.assign({}, PBJS_WINNING_BID, { adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode });
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(newWinningBid);
       const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);

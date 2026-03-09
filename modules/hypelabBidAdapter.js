@@ -5,7 +5,7 @@ import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRa
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 export const BIDDER_CODE = 'hypelab';
 export const ENDPOINT_URL = 'https://api.hypelab.com';

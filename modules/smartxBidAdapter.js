@@ -20,7 +20,7 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

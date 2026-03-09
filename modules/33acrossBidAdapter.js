@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import {
   deepAccess,
   getWindowSelf,
@@ -11,13 +11,13 @@ import {
   mergeDeep,
   uniques
 } from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {isIframe} from '../libraries/omsUtils/index.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -82,8 +82,8 @@ function getTTXConfig() {
 }
 
 function collapseFalsy(obj) {
-  const data = Array.isArray(obj) ? [ ...obj ] : Object.assign({}, obj);
-  const falsyValuesToCollapse = [ null, undefined, '' ];
+  const data = Array.isArray(obj) ? [...obj] : Object.assign({}, obj);
+  const falsyValuesToCollapse = [null, undefined, ''];
 
   for (const key in data) {
     if (falsyValuesToCollapse.includes(data[key]) || (Array.isArray(data[key]) && data[key].length === 0)) {
@@ -167,7 +167,7 @@ function hasValidVideoProperties(bid) {
   }
 
   // If placement if defined, it must be a number
-  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
+  if ([videoParams.placement, videoParams.plcmt].some(value => (
     typeof value !== 'undefined' &&
     typeof value !== 'number'
   ))) {
@@ -188,7 +188,7 @@ function hasValidVideoProperties(bid) {
 
 // **************************** BUILD REQUESTS *************************** //
 function buildRequests(bidRequests, bidderRequest = {}) {
-  const convertedORTB = converter.toORTB({bidRequests, bidderRequest});
+  const convertedORTB = converter.toORTB({ bidRequests, bidderRequest });
   const {
     ttxSettings,
     gdprConsent,
@@ -281,10 +281,10 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
     ext: {
       ttx: {
         prebidStartedAt: Date.now(),
-        caller: [ {
+        caller: [{
           'name': 'prebidjs',
           'version': '$prebid.version$'
-        } ]
+        }]
       }
     },
     test: test === 1 ? 1 : null
@@ -337,7 +337,7 @@ function _buildImpORTB(bidRequest) {
 // BUILD REQUESTS: SIZE INFERENCE
 function _transformSizes(sizes) {
   if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
-    return [ _getSize(sizes) ];
+    return [_getSize(sizes)];
   }
 
   return sizes.map(_getSize);
@@ -388,7 +388,7 @@ function _buildBannerORTB(bidRequest) {
         formatExt = {
           ext: {
             ttx: {
-              bidfloors: [ bidfloors ]
+              bidfloors: [bidfloors]
             }
           }
         }
@@ -445,7 +445,7 @@ function _buildVideoORTB(bidRequest) {
       Object.assign(video, {
         ext: {
           ttx: {
-            bidfloors: [ bidfloors ]
+            bidfloors: [bidfloors]
           }
         }
       });
@@ -460,7 +460,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.w, size.h ]
+    size: [size.w, size.h]
   });
 
   if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
@@ -646,7 +646,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   aliases: BIDDER_ALIASES,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   gvlid: GVLID,
   isBidRequestValid,
   buildRequests,

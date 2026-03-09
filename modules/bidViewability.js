@@ -2,13 +2,13 @@
 // GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent
 // Does not work with other than GPT integration
 
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
-import {isAdUnitCodeMatchingSlot, logWarn} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { EVENTS } from '../src/constants.js';
+import { isAdUnitCodeMatchingSlot, logWarn } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
-import {fireViewabilityPixels} from '../libraries/bidViewabilityPixels/index.js';
+import {fireViewabilityPixels } from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';

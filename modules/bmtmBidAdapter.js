@@ -2,7 +2,7 @@ import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb?sid=';

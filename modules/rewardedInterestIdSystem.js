@@ -28,8 +28,8 @@
  * @return {Promise<string>}
  */
 
-import {submodule} from '../src/hook.js';
-import {logError} from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { logError } from '../src/utils.js';
 
 export const MODULE_NAME = 'rewardedInterestId';
 export const SOURCE = 'rewardedinterest.com';
@@ -103,7 +103,7 @@ export const rewardedInterestIdSubmodule = {
    * @returns {{rewardedInterestId: string}|undefined}
    */
   decode(value) {
-    return value ? {[MODULE_NAME]: value} : undefined;
+    return value ? { [MODULE_NAME]: value } : undefined;
   },
 
   /**

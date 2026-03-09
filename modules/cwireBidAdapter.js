@@ -11,7 +11,7 @@ import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingC
 import { hasPurpose1Consent } from "../src/utils/gdpr.js";
 import { sendBeacon } from "../src/ajax.js";
 import { isAutoplayEnabled } from "../libraries/autoplayDetection/autoplay.js";
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

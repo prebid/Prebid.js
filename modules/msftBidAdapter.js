@@ -31,7 +31,7 @@ import {
   logWarn,
   mergeDeep
 } from "../src/utils.js";
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = "msft";
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
@@ -377,7 +377,7 @@ export const spec = {
       return [{
         type: "iframe",
         url: "https://acdn.adnxs.com/dmp/async_usersync.html",
-      }, ];
+      },];
     }
 
     if (syncOptions.pixelEnabled) {

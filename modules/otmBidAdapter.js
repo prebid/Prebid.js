@@ -20,7 +20,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   url: OTM_BID_URL,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.

@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/logicadBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/logicadBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 describe('LogicadAdapter', function () {
@@ -379,10 +379,10 @@ describe('LogicadAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should perform usersync', function () {
-      let syncs = spec.getUserSyncs({pixelEnabled: false}, [serverResponse]);
+      let syncs = spec.getUserSyncs({ pixelEnabled: false }, [serverResponse]);
       expect(syncs).to.have.length(0);
 
-      syncs = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
+      syncs = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse]);
       expect(syncs).to.have.length(1);
 
       expect(syncs[0]).to.have.property('type', 'image');

@@ -18,7 +18,7 @@ import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const globals = {};
 const itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
