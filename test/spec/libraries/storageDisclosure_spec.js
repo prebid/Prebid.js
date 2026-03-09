@@ -1,5 +1,5 @@
-import {getStorageDisclosureSummary} from '../../../libraries/storageDisclosure/summary.js';
-import {dynamicDisclosureCollector} from '../../../modules/storageControl.js';
+import { getStorageDisclosureSummary } from '../../../libraries/storageDisclosure/summary.js';
+import { dynamicDisclosureCollector } from '../../../modules/storageControl.js';
 
 describe('storageDisclosure', () => {
   let moduleMeta;
@@ -38,7 +38,7 @@ describe('storageDisclosure', () => {
         disclosures: {
           url1: {
             disclosures: [
-              {identifier: 'foo'}
+              { identifier: 'foo' }
             ]
           }
         }
@@ -47,7 +47,7 @@ describe('storageDisclosure', () => {
         disclosures: {
           url2: {
             disclosures: [
-              {identifier: 'bar'}
+              { identifier: 'bar' }
             ]
           }
         }
@@ -71,7 +71,7 @@ describe('storageDisclosure', () => {
     const disclosures = {
       url: {
         disclosures: [
-          {identifier: 'foo'}
+          { identifier: 'foo' }
         ]
       }
     }

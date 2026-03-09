@@ -42,7 +42,7 @@ export const spec = {
   interpretResponse,
   onBidWon,
   getRequest: function(endpoint) {
-    ajax(endpoint, null, undefined, {method: 'GET'});
+    ajax(endpoint, null, undefined, { method: 'GET' });
   },
   getOS: function(ua) {
     if (ua.indexOf('Windows') !== -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') !== -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') !== -1) { return 'Linux'; } else { return 'Unknown'; }
@@ -209,7 +209,7 @@ function buildBannerImp(bidRequest, imp) {
     utils.deepSetValue(imp, 'banner.h', bannerSizes[0][1]);
   }
 
-  return {...imp};
+  return { ...imp };
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
@@ -245,7 +245,7 @@ function buildVideoOutstreamResponse(bidResponse, context) {
     bidResponse.renderer.render(bidResponse);
   }
 
-  return {...bidResponse};
+  return { ...bidResponse };
 }
 
 function getBidFloor(bid, bidderRequest) {

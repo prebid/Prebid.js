@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/fluctBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { spec } from 'modules/fluctBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);

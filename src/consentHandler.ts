@@ -1,7 +1,7 @@
-import {cyrb53Hash, isStr, timestamp} from './utils.js';
-import {defer, PbPromise} from './utils/promise.js';
-import {config} from './config.js';
-import type {ModuleType} from "./activities/modules.ts";
+import { cyrb53Hash, isStr, timestamp } from './utils.js';
+import { defer, PbPromise } from './utils/promise.js';
+import { config } from './config.js';
+import type { ModuleType } from "./activities/modules.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -212,7 +212,7 @@ export function gvlidRegistry() {
      *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName: string) {
-      const result: GVLIDResult = {modules: registry[moduleName] || {}};
+      const result: GVLIDResult = { modules: registry[moduleName] || {} };
       if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
         result.gvlid = flat[moduleName];
       }
@@ -266,7 +266,7 @@ export type AllConsentData = {
 }
 
 interface MultiHandler extends Pick<ConsentHandler<AllConsentData>, 'promise' | 'hash' | 'getConsentData' | 'reset'> {
-  getConsentMeta(): {[K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>}
+  getConsentMeta(): { [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']> }
 }
 
 export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {

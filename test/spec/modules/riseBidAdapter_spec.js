@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/riseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
-import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
+import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-multi-test';
@@ -104,7 +104,7 @@ describe('riseAdapter', function () {
         'mediaTypes': {
           'banner': {
             'sizes': [
-              [ 300, 250 ]
+              [300, 250]
             ]
           },
           'video': {
@@ -163,7 +163,7 @@ describe('riseAdapter', function () {
 
     const bidderRequest = {
       bidderCode: 'rise',
-      ortb2: {device: {}},
+      ortb2: { device: {} },
     }
     const placementId = '12345678';
     const api = [1, 2];
@@ -348,7 +348,7 @@ describe('riseAdapter', function () {
     });
 
     it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
-      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const bidderRequestWithUSP = Object.assign({ uspConsent: '1YNN' }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('us_privacy', '1YNN');
@@ -361,7 +361,7 @@ describe('riseAdapter', function () {
     });
 
     it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: false } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gdpr');
@@ -369,7 +369,7 @@ describe('riseAdapter', function () {
     });
 
     it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: true, consentString: 'test-consent-string' } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gdpr', true);
@@ -377,7 +377,7 @@ describe('riseAdapter', function () {
     });
 
     it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
-      const bidderRequestWithoutGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const bidderRequestWithoutGPP = Object.assign({ gppConsent: false }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithoutGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gpp');
@@ -385,7 +385,7 @@ describe('riseAdapter', function () {
     });
 
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'gpp-consent', applicableSections: [7]}}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({ gppConsent: { gppString: 'gpp-consent', applicableSections: [7] } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       console.log('request.data.params');
       console.log(request.data.params);
@@ -448,15 +448,15 @@ describe('riseAdapter', function () {
         'browsers': [
           {
             'brand': 'Chromium',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Google Chrome',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Not;A=Brand',
-            'version': [ '99', '0', '0', '0' ]
+            'version': ['99', '0', '0', '0']
           }
         ],
         'mobile': 0,
@@ -470,20 +470,20 @@ describe('riseAdapter', function () {
           'sua': {
             'platform': {
               'brand': 'macOS',
-              'version': [ '12', '4', '0' ]
+              'version': ['12', '4', '0']
             },
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Not;A=Brand',
-                'version': [ '99', '0', '0', '0' ]
+                'version': ['99', '0', '0', '0']
               }
             ],
             'mobile': 0,
@@ -514,7 +514,7 @@ describe('riseAdapter', function () {
           model: 'iPhone 12 Pro Max',
           os: 'iOS',
           osv: '17.4',
-          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
         },
       };
 

@@ -1,13 +1,13 @@
-import {init} from 'modules/userId/index.js';
+import { init } from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
 import * as idImportlibrary from 'modules/idImportLibrary.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
-import {config} from 'src/config.js';
-import {hook} from '../../../src/hook.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import { config } from 'src/config.js';
+import { hook } from '../../../src/hook.js';
 import * as activities from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';
-import {server} from 'test/mocks/xhr.js';
+import { server } from 'test/mocks/xhr.js';
 
 var expect = require('chai').expect;
 
@@ -110,7 +110,7 @@ describe('IdImportLibrary Tests', function () {
       refreshUserIdSpy = sinon.stub(getGlobal(), 'refreshUserIds');
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver').returns(mockMutationObserver);
-      userId = sandbox.stub(getGlobal(), 'getUserIds').returns({id: {'MOCKID': '1111'}});
+      userId = sandbox.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } });
       server.respondWith('POST', 'URL', [200,
         {
           'Content-Type': 'application/json',

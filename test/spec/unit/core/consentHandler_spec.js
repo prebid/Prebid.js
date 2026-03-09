@@ -1,4 +1,4 @@
-import {ConsentHandler, gvlidRegistry, multiHandler} from '../../../../src/consentHandler.js';
+import { ConsentHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
 
 describe('Consent data handler', () => {
   let handler;
@@ -18,7 +18,7 @@ describe('Consent data handler', () => {
   });
 
   it('should return data after setConsentData', () => {
-    const data = {consent: 'string'};
+    const data = { consent: 'string' };
     handler.enable();
     handler.setConsentData(data);
     expect(handler.getConsentData()).to.equal(data);
@@ -26,7 +26,7 @@ describe('Consent data handler', () => {
 
   it('should resolve .promise to data after setConsentData', (done) => {
     let actual = null;
-    const data = {consent: 'string'};
+    const data = { consent: 'string' };
     handler.enable();
     handler.promise.then((d) => actual = d);
     setTimeout(() => {
@@ -41,8 +41,8 @@ describe('Consent data handler', () => {
 
   it('should resolve .promise to new data if setConsentData is called a second time', (done) => {
     let actual = null;
-    const d1 = {data: '1'};
-    const d2 = {data: '2'};
+    const d1 = { data: '1' };
+    const d2 = { data: '2' };
     handler.enable();
     handler.promise.then((d) => actual = d);
     handler.setConsentData(d1);
@@ -63,25 +63,25 @@ describe('Consent data handler', () => {
     });
     it('changes when a field is updated', () => {
       const h1 = handler.hash;
-      handler.setConsentData({field: 'value', enabled: false});
+      handler.setConsentData({ field: 'value', enabled: false });
       const h2 = handler.hash;
       expect(h2).to.not.eql(h1);
-      handler.setConsentData({field: 'value', enabled: true});
+      handler.setConsentData({ field: 'value', enabled: true });
       const h3 = handler.hash;
       expect(h3).to.not.eql(h2);
       expect(h3).to.not.eql(h1);
     });
     it('does not change when fields are unchanged', () => {
-      handler.setConsentData({field: 'value', enabled: true});
+      handler.setConsentData({ field: 'value', enabled: true });
       const h1 = handler.hash;
-      handler.setConsentData({field: 'value', enabled: true});
+      handler.setConsentData({ field: 'value', enabled: true });
       expect(handler.hash).to.eql(h1);
     });
     it('does not change when non-hashFields are updated', () => {
       handler.hashFields = ['field', 'enabled'];
-      handler.setConsentData({field: 'value', enabled: true});
+      handler.setConsentData({ field: 'value', enabled: true });
       const h1 = handler.hash;
-      handler.setConsentData({field: 'value', enabled: true, other: 'data'});
+      handler.setConsentData({ field: 'value', enabled: true, other: 'data' });
       expect(handler.hash).to.eql(h1);
     })
   })
@@ -90,7 +90,7 @@ describe('Consent data handler', () => {
 describe('multiHandler', () => {
   let handlers, multi;
   beforeEach(() => {
-    handlers = {h1: {}, h2: {}};
+    handlers = { h1: {}, h2: {} };
     multi = multiHandler(handlers);
   });
 
@@ -147,23 +147,23 @@ describe('gvlidRegistry', () => {
   });
 
   it('returns undef when id cannoot be found', () => {
-    expect(registry.get('name')).to.eql({modules: {}})
+    expect(registry.get('name')).to.eql({ modules: {} })
   });
 
   it('does not register null ids', () => {
     registry.register('type', 'name', null);
-    expect(registry.get('type', 'name')).to.eql({modules: {}});
+    expect(registry.get('type', 'name')).to.eql({ modules: {} });
   })
 
   it('can retrieve registered GVL IDs', () => {
     registry.register('type', 'name', 123);
     registry.register('otherType', 'name', 123);
-    expect(registry.get('name')).to.eql({gvlid: 123, modules: {type: 123, otherType: 123}});
+    expect(registry.get('name')).to.eql({ gvlid: 123, modules: { type: 123, otherType: 123 } });
   });
 
   it('does not return `gvlid` if there is more than one', () => {
     registry.register('type', 'name', 123);
     registry.register('otherType', 'name', 321);
-    expect(registry.get('name')).to.eql({modules: {type: 123, otherType: 321}})
+    expect(registry.get('name')).to.eql({ modules: { type: 123, otherType: 321 } })
   });
 })

@@ -1,7 +1,7 @@
 import advRedAnalytics from 'modules/advRedAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
 

@@ -348,7 +348,7 @@ describe('JWPlayerProvider', function () {
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
       provider.init();
       const xml = '<VAST></VAST>';
-      const options = {foo: 'bar'};
+      const options = { foo: 'bar' };
       provider.setAdXml(xml, options);
       expect(loadSpy.calledOnceWith(xml, options)).to.be.true;
     });
@@ -2345,44 +2345,44 @@ describe('utils', function () {
 
     it('should return an empty object when width and aspectratio are not strings', function () {
       expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {width: 100})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2', width: 100})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { width: 100 })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '1:2', width: 100 })).to.deep.equal({});
     });
 
     it('should return an empty object when aspectratio is malformed', function () {
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '0.5', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1-2', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: ':2', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: ':', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2:3', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '0.5', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '1-2', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '1:', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: ':2', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: ':', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '1:2:3', width: '100%' })).to.deep.equal({});
     });
 
     it('should return an empty object when player container cannot be obtained', function () {
-      expect(getPlayerSizeFromAspectRatio({}, {aspectratio: '1:2', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => undefined }, {aspectratio: '1:2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({}, { aspectratio: '1:2', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => undefined }, { aspectratio: '1:2', width: '100%' })).to.deep.equal({});
     });
 
     it('should calculate the size given the width percentage and aspect ratio', function () {
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '2:1', width: '100%'})).to.deep.equal({ height: 320, width: 640 });
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '4:1', width: '70%'})).to.deep.equal({ height: 112, width: 448 });
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '2:1', width: '100%' })).to.deep.equal({ height: 320, width: 640 });
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '4:1', width: '70%' })).to.deep.equal({ height: 112, width: 448 });
     });
 
     it('should return the container height when smaller than the calculated height', function () {
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:1', width: '100%'})).to.deep.equal({ height: 480, width: 640 });
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '1:1', width: '100%' })).to.deep.equal({ height: 480, width: 640 });
     });
 
     it('should handle non-numeric aspect ratio values', function () {
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: 'abc:def', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: 'abc:def', width: '100%' })).to.deep.equal({});
     });
 
     it('should handle non-numeric width percentage', function () {
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '16:9', width: 'abc%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '16:9', width: 'abc%' })).to.deep.equal({});
     });
 
     it('should handle zero aspect ratio values', function () {
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '0:9', width: '100%'})).to.deep.equal({});
-      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '16:0', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '0:9', width: '100%' })).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, { aspectratio: '16:0', width: '100%' })).to.deep.equal({});
     });
   });
 
@@ -2493,7 +2493,7 @@ describe('utils', function () {
     it('should be FLOATING when player is floating', function () {
       const player = getPlayerMock();
       player.getFloating = () => true;
-      const placement = getPlacement({outstream: true}, player);
+      const placement = getPlacement({ outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.FLOATING);
     });
 
@@ -2501,19 +2501,19 @@ describe('utils', function () {
       const player = getPlayerMock();
       player.getFloating = () => false;
 
-      let placement = getPlacement({placement: 'banner', outstream: true}, player);
+      let placement = getPlacement({ placement: 'banner', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.BANNER);
 
-      placement = getPlacement({placement: 'article', outstream: true}, player);
+      placement = getPlacement({ placement: 'article', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.ARTICLE);
 
-      placement = getPlacement({placement: 'feed', outstream: true}, player);
+      placement = getPlacement({ placement: 'feed', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.FEED);
 
-      placement = getPlacement({placement: 'interstitial', outstream: true}, player);
+      placement = getPlacement({ placement: 'interstitial', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.INTERSTITIAL);
 
-      placement = getPlacement({placement: 'slider', outstream: true}, player);
+      placement = getPlacement({ placement: 'slider', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.SLIDER);
     });
 
@@ -2526,10 +2526,10 @@ describe('utils', function () {
       const player = getPlayerMock();
       player.getFloating = () => false;
 
-      let placement = getPlacement({placement: 'BANNER', outstream: true}, player);
+      let placement = getPlacement({ placement: 'BANNER', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.BANNER);
 
-      placement = getPlacement({placement: 'Article', outstream: true}, player);
+      placement = getPlacement({ placement: 'Article', outstream: true }, player);
       expect(placement).to.be.equal(PLACEMENT.ARTICLE);
     });
 
@@ -2537,7 +2537,7 @@ describe('utils', function () {
       const player = getPlayerMock();
       player.getFloating = () => false;
 
-      const placement = getPlacement({placement: 'unknown', outstream: true}, player);
+      const placement = getPlacement({ placement: 'unknown', outstream: true }, player);
       expect(placement).to.be.undefined;
     });
   });
@@ -2648,7 +2648,7 @@ describe('utils', function () {
   });
 
   describe('getIsoLanguageCode', function () {
-    const sampleAudioTracks = [{language: 'ht'}, {language: 'fr'}, {language: 'es'}, {language: 'pt'}];
+    const sampleAudioTracks = [{ language: 'ht' }, { language: 'fr' }, { language: 'es' }, { language: 'pt' }];
 
     it('should return undefined when audio tracks are unavailable', function () {
       const player = getPlayerMock();
@@ -2708,7 +2708,7 @@ describe('utils', function () {
 
     it('should handle audio tracks with missing language property', function () {
       const player = getPlayerMock();
-      player.getAudioTracks = () => [{}, {language: 'en'}, {}];
+      player.getAudioTracks = () => [{}, { language: 'en' }, {}];
       player.getCurrentAudioTrack = () => 0;
       const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.undefined;
@@ -2716,7 +2716,7 @@ describe('utils', function () {
 
     it('should handle audio tracks with null language property', function () {
       const player = getPlayerMock();
-      player.getAudioTracks = () => [{language: null}, {language: 'en'}, {}];
+      player.getAudioTracks = () => [{ language: null }, { language: 'en' }, {}];
       player.getCurrentAudioTrack = () => 0;
       const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.null;
@@ -2758,24 +2758,24 @@ describe('utils', function () {
     it('should convert segments to objects', function () {
       const segs = ['a', 'b'];
       expect(getSegments(segs)).to.deep.equal([
-        {id: 'a'},
-        {id: 'b'}
+        { id: 'a' },
+        { id: 'b' }
       ]);
     });
 
     it('should handle single segment', function () {
       const segs = ['single'];
       expect(getSegments(segs)).to.deep.equal([
-        {id: 'single'}
+        { id: 'single' }
       ]);
     });
 
     it('should handle segments with special characters', function () {
       const segs = ['segment-1', 'segment_2', 'segment 3'];
       expect(getSegments(segs)).to.deep.equal([
-        {id: 'segment-1'},
-        {id: 'segment_2'},
-        {id: 'segment 3'}
+        { id: 'segment-1' },
+        { id: 'segment_2' },
+        { id: 'segment 3' }
       ]);
     });
 
@@ -2795,7 +2795,7 @@ describe('utils', function () {
     });
 
     it('should set media id and segments', function () {
-      const segments = [{id: 'x'}];
+      const segments = [{ id: 'x' }];
       expect(getContentDatum('id1', segments)).to.deep.equal({
         name: 'jwplayer.com',
         segment: segments,
@@ -2813,7 +2813,7 @@ describe('utils', function () {
     });
 
     it('should set only segments when media id missing', function () {
-      const segments = [{id: 'y'}];
+      const segments = [{ id: 'y' }];
       expect(getContentDatum(null, segments)).to.deep.equal({
         name: 'jwplayer.com',
         segment: segments,

@@ -4,9 +4,9 @@
  */
 import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.js';
-import {logError} from '../../src/utils.js';
-import {PbPromise} from '../../src/utils/promise.js';
-import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import { logError } from '../../src/utils.js';
+import { PbPromise } from '../../src/utils/promise.js';
+import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 
 const submodules = [];
 
@@ -18,19 +18,19 @@ export function reset() {
   submodules.length = 0;
 }
 
-export function processFpd({global = {}, bidder = {}} = {}) {
+export function processFpd({ global = {}, bidder = {} } = {}) {
   const modConf = config.getConfig('firstPartyData') || {};
-  let result = PbPromise.resolve({global, bidder});
+  let result = PbPromise.resolve({ global, bidder });
   submodules.sort((a, b) => {
     return ((a.queue || 1) - (b.queue || 1));
   }).forEach(submodule => {
     result = result.then(
-      ({global, bidder}) => PbPromise.resolve(submodule.processFpd(modConf, {global, bidder}))
+      ({ global, bidder }) => PbPromise.resolve(submodule.processFpd(modConf, { global, bidder }))
         .catch((err) => {
           logError(`Error in FPD module ${submodule.name}`, err);
           return {};
         })
-        .then((result) => ({global: result.global || global, bidder: result.bidder || bidder}))
+        .then((result) => ({ global: result.global || global, bidder: result.bidder || bidder }))
     );
   });
   return result;
