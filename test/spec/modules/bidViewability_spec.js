@@ -3,7 +3,7 @@ import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
-import {expect, spy} from 'chai';
+import { expect, spy } from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.js';
 import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
@@ -79,7 +79,7 @@ describe('#bidViewability', function() {
           return (adUnitCode) => ('AD-' + slot.getAdUnitPath()) === adUnitCode;
         }
       });
-      const newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
+      const newWinningBid = Object.assign({}, PBJS_WINNING_BID, { adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode });
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(newWinningBid);
       const wb = bidViewability.getMatchingWinningBidForGPTSlot(gptSlot);
@@ -131,7 +131,7 @@ describe('#bidViewability', function() {
     });
 
     it('fire pixels if mentioned in module config', function() {
-      const moduleConfig = {firePixels: true};
+      const moduleConfig = { firePixels: true };
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
         const call = triggerPixelSpy.getCall(i);
@@ -142,7 +142,7 @@ describe('#bidViewability', function() {
     it('USP: should include the us_privacy key when USP Consent is available', function () {
       const uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
       uspDataHandlerStub.returns('1YYY');
-      const moduleConfig = {firePixels: true};
+      const moduleConfig = { firePixels: true };
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
         const call = triggerPixelSpy.getCall(i);
@@ -155,7 +155,7 @@ describe('#bidViewability', function() {
     });
 
     it('USP: should not include the us_privacy key when USP Consent is not available', function () {
-      const moduleConfig = {firePixels: true};
+      const moduleConfig = { firePixels: true };
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
         const call = triggerPixelSpy.getCall(i);
@@ -173,7 +173,7 @@ describe('#bidViewability', function() {
         consentString: 'consent',
         addtlConsent: 'moreConsent'
       });
-      const moduleConfig = {firePixels: true};
+      const moduleConfig = { firePixels: true };
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
         const call = triggerPixelSpy.getCall(i);
@@ -188,7 +188,7 @@ describe('#bidViewability', function() {
     });
 
     it('GDPR: should not include the GDPR keys when GDPR Consent is not available', function () {
-      const moduleConfig = {firePixels: true};
+      const moduleConfig = { firePixels: true };
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
         const call = triggerPixelSpy.getCall(i);
@@ -207,7 +207,7 @@ describe('#bidViewability', function() {
         gdprApplies: true,
         consentString: 'consent'
       });
-      const moduleConfig = {firePixels: true};
+      const moduleConfig = { firePixels: true };
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
         const call = triggerPixelSpy.getCall(i);

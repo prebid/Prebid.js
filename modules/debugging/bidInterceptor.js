@@ -4,11 +4,11 @@ import makeResponseResolvers from './responses.js';
  * @typedef {Number|String|boolean|null|undefined} Scalar
  */
 
-export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
-  const {deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep} = utils;
-  const responseResolvers = makeResponseResolvers({Renderer, BANNER, NATIVE, VIDEO});
+export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
+  const { deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep } = utils;
+  const responseResolvers = makeResponseResolvers({ Renderer, BANNER, NATIVE, VIDEO });
   function BidInterceptor(opts = {}) {
-    ({setTimeout: this.setTimeout = window.setTimeout.bind(window)} = opts);
+    ({ setTimeout: this.setTimeout = window.setTimeout.bind(window) } = opts);
     this.logger = opts.logger;
     this.rules = [];
   }
@@ -77,7 +77,7 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
         this.logger.logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
         return () => false;
       }
-      function matches(candidate, {ref = matchDef, args = []}) {
+      function matches(candidate, { ref = matchDef, args = [] }) {
         return Object.entries(ref).map(([key, val]) => {
           const cVal = candidate[key];
           if (val instanceof RegExp) {
@@ -87,12 +87,12 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
             return !!val(cVal, ...args);
           }
           if (typeof val === 'object') {
-            return matches(cVal, {ref: val, args});
+            return matches(cVal, { ref: val, args });
           }
           return cVal === val;
         }).every((i) => i);
       }
-      return (candidate, ...args) => matches(candidate, {args});
+      return (candidate, ...args) => matches(candidate, { args });
     },
     /**
      * @typedef {Function} ReplacerFn
@@ -115,18 +115,18 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
       replDef = replDef || {};
       let replFn;
       if (typeof replDef === 'function') {
-        replFn = ({args}) => replDef(...args);
+        replFn = ({ args }) => replDef(...args);
       } else if (typeof replDef !== 'object') {
         this.logger.logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
         replFn = () => ({});
       } else {
-        replFn = ({args, ref = replDef}) => {
+        replFn = ({ args, ref = replDef }) => {
           const result = Array.isArray(ref) ? [] : {};
           Object.entries(ref).forEach(([key, val]) => {
             if (typeof val === 'function') {
               result[key] = val(...args);
             } else if (val != null && typeof val === 'object') {
-              result[key] = replFn({args, ref: val})
+              result[key] = replFn({ args, ref: val })
             } else {
               result[key] = val;
             }
@@ -136,7 +136,7 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
       }
       return (bid, ...args) => {
         const response = this.responseDefaults(bid);
-        mergeDeep(response, replFn({args: [bid, ...args]}));
+        mergeDeep(response, replFn({ args: [bid, ...args] }));
         const resolver = responseResolvers[response.mediaType];
         resolver && resolver(bid, response);
         response.isDebug = true;
@@ -191,7 +191,7 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
       bids.forEach((bid) => {
         const rule = this.match(bid, bidRequest);
         if (rule != null) {
-          matches.push({rule: rule, bid: bid});
+          matches.push({ rule: rule, bid: bid });
         } else {
           remainder.push(bid);
         }
@@ -209,7 +209,7 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
      * returns {{bids: {}[], bidRequest: {}} remaining bids that did not match any rule (this applies also to
      * bidRequest.bids)
      */
-    intercept({bids, bidRequest, addBid, done}) {
+    intercept({ bids, bidRequest, addBid, done }) {
       if (bids == null) {
         bids = bidRequest.bids;
       }
@@ -230,7 +230,7 @@ export function makebidInterceptor({utils, BANNER, NATIVE, VIDEO, Renderer}) {
       } else {
         this.setTimeout(done, 0);
       }
-      return {bids, bidRequest};
+      return { bids, bidRequest };
     }
   });
   return BidInterceptor;

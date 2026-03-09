@@ -4,7 +4,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';

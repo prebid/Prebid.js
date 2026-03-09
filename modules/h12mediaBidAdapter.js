@@ -2,7 +2,7 @@ import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '..
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';

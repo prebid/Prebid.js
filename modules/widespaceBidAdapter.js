@@ -4,7 +4,7 @@ import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/u
 import { getStorageManager } from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';

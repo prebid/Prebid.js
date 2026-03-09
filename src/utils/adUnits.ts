@@ -1,6 +1,6 @@
-import type {AdUnitDefinition} from "../adUnits.ts";
-import type {BidRequest} from "../adapterManager.ts";
-import type {Bid} from "../bidfactory.ts";
+import type { AdUnitDefinition } from "../adUnits.ts";
+import type { BidRequest } from "../adapterManager.ts";
+import type { Bid } from "../bidfactory.ts";
 
 export function getAdUnitElement(bidRequest: BidRequest<any>): HTMLElement
 export function getAdUnitElement(bidResponse: Bid): HTMLElement

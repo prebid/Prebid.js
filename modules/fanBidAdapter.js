@@ -6,7 +6,7 @@ import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { Renderer } from '../src/Renderer.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'freedomadnetwork';
 const BIDDER_VERSION = '0.2.0';

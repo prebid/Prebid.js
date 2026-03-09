@@ -415,7 +415,7 @@ function makeDevice(fpd) {
     'js': 1,
     'language': getLanguage()
   }, fpd.device || {});
-  return {device: device};
+  return { device: device };
 }
 
 /**

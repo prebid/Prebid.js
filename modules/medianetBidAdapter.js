@@ -10,20 +10,20 @@ import {
   deepClone,
   deepSetValue, getWindowTop
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
-import {filterBidsListByFilters, getTopWindowReferrer} from '../libraries/medianetUtils/utils.js';
-import {errorLogger} from '../libraries/medianetUtils/logger.js';
-import {GLOBAL_VENDOR_ID, MEDIANET} from '../libraries/medianetUtils/constants.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { filterBidsListByFilters, getTopWindowReferrer } from '../libraries/medianetUtils/utils.js';
+import { errorLogger } from '../libraries/medianetUtils/logger.js';
+import { GLOBAL_VENDOR_ID, MEDIANET } from '../libraries/medianetUtils/constants.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -138,7 +138,7 @@ function getCoordinates(bidRequest) {
   let element = getAdUnitElement(bidRequest);
   if (!element && bidRequest.adUnitCode.indexOf('/') !== -1) {
     // now it means that adUnitCode is GAM AdUnitPath
-    const {divId} = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
+    const { divId } = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
     if (isStr(divId)) {
       element = document.getElementById(divId);
     }
@@ -169,7 +169,7 @@ function extParams(bidRequest, bidderRequests) {
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
   const uspApplies = !!(uspConsent);
   const coppaApplies = !!(config.getConfig('coppa'));
-  const {top = -1, right = -1, bottom = -1, left = -1} = getViewportCoordinates();
+  const { top = -1, right = -1, bottom = -1, left = -1 } = getViewportCoordinates();
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: 'v' + '$prebid.version$' },
@@ -177,11 +177,11 @@ function extParams(bidRequest, bidderRequests) {
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
     uspApplies && { usp_consent_string: uspConsent || '' },
-    {coppa_applies: coppaApplies},
+    { coppa_applies: coppaApplies },
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
-    !isEmpty(sChain) && {schain: sChain},
+    !isEmpty(sChain) && { schain: sChain },
     {
       vcoords: {
         top_left: { x: left, y: top },
@@ -280,7 +280,7 @@ function getBidFloorByType(bidRequest) {
   return floorInfo;
 }
 function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
-  const floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+  const floor = bidRequest.getFloor({ currency: 'USD', mediaType: mediaType, size: size }) || {};
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);
@@ -297,7 +297,7 @@ function getSlotVisibility(topLeft, size) {
     return 0;
   }
 
-  return getOverlapArea(topLeft, bottomRight, {x: 0, y: 0}, {x: windowSize.w, y: windowSize.h}) / maxArea;
+  return getOverlapArea(topLeft, bottomRight, { x: 0, y: 0 }, { x: windowSize.w, y: windowSize.h }) / maxArea;
 }
 
 // find the overlapping area between two rectangles
@@ -311,7 +311,7 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 }
 
 function normalizeCoordinates(coordinates) {
-  const {scrollX, scrollY} = window;
+  const { scrollX, scrollY } = window;
   return {
     top_left: {
       x: coordinates.top_left.x + scrollX,
@@ -506,11 +506,11 @@ export const spec = {
     const cookieSyncUrls = fetchCookieSyncUrls(serverResponses);
 
     if (syncOptions.iframeEnabled) {
-      return filterBidsListByFilters(cookieSyncUrls, {type: 'iframe'});
+      return filterBidsListByFilters(cookieSyncUrls, { type: 'iframe' });
     }
 
     if (syncOptions.pixelEnabled) {
-      return filterBidsListByFilters(cookieSyncUrls, {type: 'image'});
+      return filterBidsListByFilters(cookieSyncUrls, { type: 'image' });
     }
   },
 
@@ -554,7 +554,7 @@ export const spec = {
     } catch (e) {}
   },
 
-  onBidderError: ({error, bidderRequest}) => {
+  onBidderError: ({ error, bidderRequest }) => {
     try {
       const eventData = {
         name: EVENTS.BIDDER_ERROR,

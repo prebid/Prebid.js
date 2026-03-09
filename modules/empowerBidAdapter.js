@@ -13,7 +13,7 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { config } from "../src/config.js";
 import { VIDEO, BANNER } from "../src/mediaTypes.js";
 import { getConnectionType } from "../libraries/connectionInfo/connectionUtils.js";
-import {getDNT} from "../libraries/dnt/index.js";
+import { getDNT } from "../libraries/dnt/index.js";
 
 export const ENDPOINT = "https://bid.virgul.com/prebid";
 

@@ -1,6 +1,6 @@
 import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import {getDNT} from '../dnt/index.js';
+import { getDNT } from '../dnt/index.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 

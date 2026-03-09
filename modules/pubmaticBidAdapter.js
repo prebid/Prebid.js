@@ -9,7 +9,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

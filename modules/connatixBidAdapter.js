@@ -25,7 +25,7 @@ import {
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'connatix';
 

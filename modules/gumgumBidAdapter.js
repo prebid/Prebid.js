@@ -1,13 +1,13 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,7 +19,7 @@ import {getDNT} from '../libraries/dnt/index.js';
  */
 
 const BIDDER_CODE = 'gumgum';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALIAS_BIDDER_CODE = ['gg'];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -648,7 +648,7 @@ function interpretResponse(serverResponse, bidRequest) {
   // added logic for in-slot multi-szie
   } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [ width, height ] = current;
+      const [width, height] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];

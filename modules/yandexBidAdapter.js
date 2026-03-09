@@ -7,7 +7,7 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid

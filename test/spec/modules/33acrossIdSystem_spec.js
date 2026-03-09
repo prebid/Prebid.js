@@ -530,7 +530,7 @@ describe('33acrossIdSystem', () => {
               storeFpid: false,
               hem: '33acrossIdHmValue+'
             },
-            enabledStorageTypes: [ 'html5' ],
+            enabledStorageTypes: ['html5'],
             storage: {}
           });
 
@@ -1542,7 +1542,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345',
             storeFpid: false
           },
-          enabledStorageTypes: [ 'html5' ],
+          enabledStorageTypes: ['html5'],
           storage: {}
         });
 

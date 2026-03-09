@@ -25,7 +25,7 @@ import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 import { validateOrtbFields } from '../src/prebid.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';

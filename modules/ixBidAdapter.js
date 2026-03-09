@@ -22,8 +22,8 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const divIdCache = {};
 
@@ -975,7 +975,8 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         banner: {
           topframe,
           format: bannerImps.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
-        }};
+        }
+      };
 
       for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
         // We add sid and externalID in imp.ext therefore, remove from banner.format[].ext
@@ -1165,7 +1166,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
   });
 
   if (fpd.device) {
-    const sua = {...fpd.device.sua};
+    const sua = { ...fpd.device.sua };
     if (!isEmpty(sua)) {
       deepSetValue(r, 'device.sua', sua);
     }

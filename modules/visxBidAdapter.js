@@ -7,7 +7,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import {getAdUnitElement} from '../src/utils/adUnits.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
