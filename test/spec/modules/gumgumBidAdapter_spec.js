@@ -1308,10 +1308,22 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
       expect(bidRequest.data.lmt).to.equal(ortb2.device.lmt);
-      expect(bidRequest.data.ifa).to.equal(ortb2.device.ifa);
+      expect(bidRequest.data).to.not.have.property('ifa');
       expect(bidRequest.data).to.have.property('sua');
       expect(() => JSON.parse(bidRequest.data.sua)).to.not.throw();
       expect(JSON.parse(bidRequest.data.sua)).to.deep.equal(suaObject);
+    });
+
+    it('should include ifa when lmt is not 1', function () {
+      const ortb2 = {
+        device: {
+          lmt: 0,
+          ifa: 'test-ifa-id'
+        }
+      };
+      const bidRequest = spec.buildRequests(bidRequests, { ortb2 })[0];
+      expect(bidRequest.data.lmt).to.equal(0);
+      expect(bidRequest.data.ifa).to.equal('test-ifa-id');
     });
 
     it('should set tId from ortb2Imp.ext.tid if available', function () {

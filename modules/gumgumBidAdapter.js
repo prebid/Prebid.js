@@ -289,7 +289,7 @@ function _getDeviceData(ortb2Data) {
     ppi: _device.ppi,
     pxratio: _device.pxratio,
     lmt: _device.lmt,
-    ifa: _device.ifa,
+    ifa: _device.lmt !== 1 ? _device.ifa : undefined,
     foddid: _device?.ext?.fiftyonedegrees_deviceId,
   };
 
