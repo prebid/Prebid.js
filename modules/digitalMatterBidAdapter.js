@@ -1,9 +1,9 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'digitalMatter';
 const GVLID = 1345;
@@ -30,7 +30,7 @@ export const spec = {
     const common = bidderRequest.ortb2 || {};
     const site = common.site;
     const tid = common?.source?.tid;
-    const {user} = common || {};
+    const { user } = common || {};
 
     if (!site.page) {
       site.page = bidderRequest.refererInfo.page;
@@ -43,7 +43,7 @@ export const spec = {
     const cur = currency && [currency];
 
     const imp = validBidRequests.map((bid, id) => {
-      const {accountId, siteId} = bid.params;
+      const { accountId, siteId } = bid.params;
       const bannerParams = deepAccess(bid, 'mediaTypes.banner');
       const position = deepAccess(bid, 'mediaTypes.banner.pos') ?? 0;
 
@@ -110,7 +110,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponse) {
     const body = serverResponse.body || serverResponse;
-    const {cur} = body;
+    const { cur } = body;
     const bids = [];
 
     if (body && body.bids && Array.isArray(body.bids)) {
@@ -162,9 +162,9 @@ export const spec = {
 
               if (url) {
                 if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-                  userSyncs.push({type: 'image', url: url});
+                  userSyncs.push({ type: 'image', url: url });
                 } else if (type === 'iframe' && syncOptions.iframeEnabled) {
-                  userSyncs.push({type: 'iframe', url: url});
+                  userSyncs.push({ type: 'iframe', url: url });
                 }
               }
             })

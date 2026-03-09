@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js';
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js';
 import { triggerPixel, logInfo } from '../src/utils.js';
 import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapterManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -30,7 +30,7 @@ const GDPR_PRIVACY_STRING = gdprDataHandler.getConsentData();
 const US_PRIVACY_STRING = uspDataHandler.getConsentData();
 const MODULE_NAME = 'quantcastId';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID

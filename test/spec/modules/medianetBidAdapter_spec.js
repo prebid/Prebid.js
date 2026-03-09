@@ -1,11 +1,11 @@
-import {expect, assert} from 'chai';
-import {spec, EVENTS} from '../../../modules/medianetBidAdapter.js';
-import {POST_ENDPOINT} from '../../../libraries/medianetUtils/constants.js';
+import { expect, assert } from 'chai';
+import { spec, EVENTS } from '../../../modules/medianetBidAdapter.js';
+import { POST_ENDPOINT } from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
-import {server} from '../../mocks/xhr.js';
-import {resetWinDimensions} from '../../../src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { server } from '../../mocks/xhr.js';
+import { resetWinDimensions } from '../../../src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 getGlobal().version = getGlobal().version || 'version';
 const VALID_BID_REQUEST = [{
@@ -144,7 +144,7 @@ const VALID_BID_REQUEST_WITH_ORTB2 = [{
   'ortb2Imp': {
     'ext': {
       tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
-      'data': {'pbadslot': '/12345/my-gpt-tag-0'}
+      'data': { 'pbadslot': '/12345/my-gpt-tag-0' }
     }
   },
   'auctionsCount': 1
@@ -173,7 +173,7 @@ const VALID_BID_REQUEST_WITH_ORTB2 = [{
   'ortb2Imp': {
     'ext': {
       tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
-      'data': {'pbadslot': '/12345/my-gpt-tag-0'}
+      'data': { 'pbadslot': '/12345/my-gpt-tag-0' }
     }
   },
   'auctionsCount': 1
@@ -1511,7 +1511,7 @@ const SERVER_RESPONSE_PAAPI = {
               'callbackURL': 'https://test.com/paapi/v1/abcd'
             },
             'perBuyerSignals': {
-              'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+              'https://buyer.test.media.net': ['test_buyer_signals']
             },
             'perBuyerTimeouts': {
               '*': 200
@@ -1571,7 +1571,7 @@ const SERVER_RESPONSE_PAAPI_ORTB = {
                 'callbackURL': 'https://test.com/paapi/v1/abcd'
               },
               'perBuyerSignals': {
-                'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+                'https://buyer.test.media.net': ['test_buyer_signals']
               },
               'perBuyerTimeouts': {
                 '*': 200
@@ -2067,12 +2067,12 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have valid payload when PAAPI is enabled', function () {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, { ...VALID_AUCTIONDATA, paapi: { enabled: true } });
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAAPI);
     });
 
     it('should send whatever is set in ortb2imp.ext.ae in all bid requests when PAAPI is enabled', function () {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, { ...VALID_AUCTIONDATA, paapi: { enabled: true } });
       const data = JSON.parse(bidReq.data);
       expect(data).to.deep.equal(VALID_PAYLOAD_PAAPI);
       expect(data.imp[0].ext).to.have.property('ae');
@@ -2190,7 +2190,7 @@ describe('Media.net bid adapter', function () {
         getBoundingClientRect: () => boundingRect
       });
 
-      const bidRequest = [{...VALID_BID_REQUEST[0], adUnitCode: code}]
+      const bidRequest = [{ ...VALID_BID_REQUEST[0], adUnitCode: code }]
       const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);
       const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
@@ -2270,13 +2270,13 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id', function() {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, { ...VALID_AUCTIONDATA, paapi: { enabled: true } });
       const bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
       expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
 
     it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id for openRTB response', function() {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
+      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, { ...VALID_AUCTIONDATA, paapi: { enabled: true } });
       const bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
       expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
@@ -2366,7 +2366,7 @@ describe('Media.net bid adapter', function () {
     });
     it('should send bidderError data correctly', function () {
       const error = {
-        reason: {message: 'Failed to fetch', status: 500},
+        reason: { message: 'Failed to fetch', status: 500 },
         timedOut: true,
         status: 0
       }
@@ -2380,7 +2380,7 @@ describe('Media.net bid adapter', function () {
       }];
       sandbox.stub(window.navigator, 'sendBeacon').returns(false);
 
-      spec.onBidderError({error, bidderRequest: {bids}});
+      spec.onBidderError({ error, bidderRequest: { bids } });
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');

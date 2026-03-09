@@ -315,7 +315,7 @@ const setFloorInImp = (imp, bid) => {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
           if (isMultiFormatRequest && mediaType !== BANNER) {
             logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', imp.bidfloorcur);
-            imp[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur};
+            imp[mediaType]['ext'] = { 'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur };
           }
           logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
           bidFloor = bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor);
@@ -323,7 +323,7 @@ const setFloorInImp = (imp, bid) => {
         }
       });
       if (isMultiFormatRequest && mediaType === BANNER) {
-        imp[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur};
+        imp[mediaType]['ext'] = { 'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur };
       }
     });
   }
@@ -756,6 +756,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  alwaysHasCapacity: true,
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *

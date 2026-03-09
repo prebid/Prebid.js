@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   addBidResponseHook,
   adjustBidderRequestsHook,
@@ -8,8 +8,8 @@ import {
   targetBidPoolHook,
   validateMultibid
 } from 'modules/multibid/index.js';
-import {config} from 'src/config.js';
-import {getHighestCpm} from '../../../src/utils/reducers.js';
+import { config } from 'src/config.js';
+import { getHighestCpm } from '../../../src/utils/reducers.js';
 
 describe('multibid adapter', function () {
   const bidArray = [{
@@ -73,8 +73,8 @@ describe('multibid adapter', function () {
     'bidderRequestId': '10e78266423c0e',
     'bids': [{
       'bidder': 'bidderA',
-      'params': {'placementId': 1234567},
-      'crumbs': {'pubcid': 'fb4cfc66-ff3d-4fda-bef8-3f2cb6fe9412'},
+      'params': { 'placementId': 1234567 },
+      'crumbs': { 'pubcid': 'fb4cfc66-ff3d-4fda-bef8-3f2cb6fe9412' },
       'mediaTypes': {
         'banner': {
           'sizes': [[300, 250]]
@@ -97,8 +97,8 @@ describe('multibid adapter', function () {
     'bidderRequestId': '10e78266423c0e',
     'bids': [{
       'bidder': 'bidderB',
-      'params': {'placementId': 1234567},
-      'crumbs': {'pubcid': 'fb4cfc66-ff3d-4fda-bef8-3f2cb6fe9412'},
+      'params': { 'placementId': 1234567 },
+      'crumbs': { 'pubcid': 'fb4cfc66-ff3d-4fda-bef8-3f2cb6fe9412' },
       'mediaTypes': {
         'banner': {
           'sizes': [[300, 250]]
@@ -134,7 +134,7 @@ describe('multibid adapter', function () {
     });
 
     it('does not modify bidderRequest when no multibid config exists', function () {
-      const bidRequests = [{...bidderRequests[0]}];
+      const bidRequests = [{ ...bidderRequests[0] }];
 
       adjustBidderRequestsHook(callbackFn, bidRequests);
 
@@ -143,11 +143,11 @@ describe('multibid adapter', function () {
     });
 
     it('does modify bidderRequest when multibid config exists', function () {
-      const bidRequests = [{...bidderRequests[0]}];
+      const bidRequests = [{ ...bidderRequests[0] }];
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2 }] });
 
-      adjustBidderRequestsHook(callbackFn, [{...bidderRequests[0]}]);
+      adjustBidderRequestsHook(callbackFn, [{ ...bidderRequests[0] }]);
 
       expect(result).to.not.equal(null);
       expect(result).to.not.deep.equal(bidRequests);
@@ -155,11 +155,11 @@ describe('multibid adapter', function () {
     });
 
     it('does modify bidderRequest when multibid config exists using bidders array', function () {
-      const bidRequests = [{...bidderRequests[0]}];
+      const bidRequests = [{ ...bidderRequests[0] }];
 
-      config.setConfig({multibid: [{bidders: ['bidderA'], maxBids: 2}]});
+      config.setConfig({ multibid: [{ bidders: ['bidderA'], maxBids: 2 }] });
 
-      adjustBidderRequestsHook(callbackFn, [{...bidderRequests[0]}]);
+      adjustBidderRequestsHook(callbackFn, [{ ...bidderRequests[0] }]);
 
       expect(result).to.not.equal(null);
       expect(result).to.not.deep.equal(bidRequests);
@@ -167,11 +167,11 @@ describe('multibid adapter', function () {
     });
 
     it('does only modifies bidderRequest when multibid config exists for bidder', function () {
-      const bidRequests = [{...bidderRequests[0]}, {...bidderRequests[1]}];
+      const bidRequests = [{ ...bidderRequests[0] }, { ...bidderRequests[1] }];
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2 }] });
 
-      adjustBidderRequestsHook(callbackFn, [{...bidderRequests[0]}, {...bidderRequests[1]}]);
+      adjustBidderRequestsHook(callbackFn, [{ ...bidderRequests[0] }, { ...bidderRequests[1] }]);
 
       expect(result).to.not.equal(null);
       expect(result[0]).to.not.deep.equal(bidRequests[0]);
@@ -196,9 +196,9 @@ describe('multibid adapter', function () {
 
     it('adds original bids and does not modify', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      const bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
@@ -208,7 +208,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[1]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[1] });
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
@@ -219,11 +219,11 @@ describe('multibid adapter', function () {
 
     it('modifies and adds both bids based on multibid configuration', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      const bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].multibidPrefix = 'bidA';
       bids[0].originalBidder = 'bidderA';
@@ -236,7 +236,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[1]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[1] });
 
       bids[1].multibidPrefix = 'bidA';
       bids[1].originalBidder = 'bidderA';
@@ -255,7 +255,7 @@ describe('multibid adapter', function () {
 
     it('only modifies bids defined in the multibid configuration', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      const bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
 
       bids.push({
         'bidderCode': 'bidderB',
@@ -265,9 +265,9 @@ describe('multibid adapter', function () {
         'bidder': 'bidderB',
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].multibidPrefix = 'bidA';
       bids[0].originalBidder = 'bidderA';
@@ -280,7 +280,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[1]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[1] });
 
       bids[1].multibidPrefix = 'bidA';
       bids[1].originalBidder = 'bidderA';
@@ -296,7 +296,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[2]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[2] });
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
@@ -307,7 +307,7 @@ describe('multibid adapter', function () {
 
     it('only modifies and returns bids under limit for a specific bidder in the multibid configuration', function () {
       const adUnitCode = 'test.div';
-      let bids = [{...bidArray[0]}, {...bidArray[1]}];
+      let bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
 
       bids.push({
         'bidderCode': 'bidderA',
@@ -317,9 +317,9 @@ describe('multibid adapter', function () {
         'bidder': 'bidderA',
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].multibidPrefix = 'bidA';
       bids[0].originalBidder = 'bidderA';
@@ -332,7 +332,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[1]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[1] });
 
       bids[1].multibidPrefix = 'bidA';
       bids[1].originalBidder = 'bidderA';
@@ -348,14 +348,14 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[2]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[2] });
 
       expect(result).to.equal(null);
     });
 
     it('if no prefix in multibid configuration, modifies and returns bids under limit without preifx property', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      const bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
 
       bids.push({
         'bidderCode': 'bidderA',
@@ -365,9 +365,9 @@ describe('multibid adapter', function () {
         'bidder': 'bidderA',
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2 }] });
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].originalBidder = 'bidderA';
 
@@ -379,7 +379,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[1]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[1] });
 
       bids[1].originalBidder = 'bidderA';
       bids[1].originalRequestId = '2e6j8s05r4363h';
@@ -393,14 +393,14 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[2]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[2] });
 
       expect(result).to.equal(null);
     });
 
     it('does not include extra bids if cpm is less than floor value', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArrayAlt[1]}, {...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}];
+      const bids = [{ ...bidArrayAlt[1] }, { ...bidArrayAlt[0] }, { ...bidArrayAlt[2] }, { ...bidArrayAlt[3] }];
 
       bids.map(bid => {
         bid.floorData = {
@@ -424,9 +424,9 @@ describe('multibid adapter', function () {
         return bid;
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].multibidPrefix = 'bidA';
       bids[0].originalBidder = 'bidderA';
@@ -440,13 +440,13 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[1]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[1] });
 
       expect(result).to.equal(null);
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[2]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[2] });
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
@@ -457,7 +457,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[3]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[3] });
 
       expect(result).to.not.equal(null);
       expect(result.adUnitCode).to.not.equal(null);
@@ -469,7 +469,7 @@ describe('multibid adapter', function () {
 
     it('does  include extra bids if cpm is not less than floor value', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArrayAlt[1]}, {...bidArrayAlt[0]}];
+      const bids = [{ ...bidArrayAlt[1] }, { ...bidArrayAlt[0] }];
 
       bids.map(bid => {
         bid.floorData = {
@@ -493,9 +493,9 @@ describe('multibid adapter', function () {
         return bid;
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].multibidPrefix = 'bidA';
       bids[0].originalBidder = 'bidderA';
@@ -509,7 +509,7 @@ describe('multibid adapter', function () {
 
       result = null;
 
-      addBidResponseHook(callbackFn, adUnitCode, {...bids[0]});
+      addBidResponseHook(callbackFn, adUnitCode, { ...bids[0] });
 
       bids[0].multibidPrefix = 'bidA';
       bids[0].originalBidder = 'bidderA';
@@ -543,7 +543,7 @@ describe('multibid adapter', function () {
     });
 
     it('it does not run filter on bidsReceived if no multibid configuration found', function () {
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      const bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
       targetBidPoolHook(callbackFn, bids, getHighestCpm);
 
       expect(result).to.not.equal(null);
@@ -557,9 +557,9 @@ describe('multibid adapter', function () {
     });
 
     it('it does filter on bidsReceived if multibid configuration found with no prefix', function () {
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      const bids = [{ ...bidArray[0] }, { ...bidArray[1] }];
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2 }] });
 
       targetBidPoolHook(callbackFn, bids, getHighestCpm);
       bids.pop();
@@ -575,13 +575,13 @@ describe('multibid adapter', function () {
     });
 
     it('it sorts and creates dynamic alias on bidsReceived if multibid configuration found with prefix', function () {
-      const modifiedBids = [{...bidArray[1]}, {...bidArray[0]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
+      const modifiedBids = [{ ...bidArray[1] }, { ...bidArray[0] }].map(bid => {
+        addBidResponseHook(bidResponseCallback, 'test.div', { ...bid });
 
         return bidResult;
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
       targetBidPoolHook(callbackFn, modifiedBids, getHighestCpm);
 
@@ -600,13 +600,13 @@ describe('multibid adapter', function () {
     });
 
     it('it sorts by cpm treating dynamic alias as unique bid when no bid limit defined', function () {
-      const modifiedBids = [{...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}, {...bidArrayAlt[1]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
+      const modifiedBids = [{ ...bidArrayAlt[0] }, { ...bidArrayAlt[2] }, { ...bidArrayAlt[3] }, { ...bidArrayAlt[1] }].map(bid => {
+        addBidResponseHook(bidResponseCallback, 'test.div', { ...bid });
 
         return bidResult;
       });
 
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
       targetBidPoolHook(callbackFn, modifiedBids, getHighestCpm);
 
@@ -633,13 +633,13 @@ describe('multibid adapter', function () {
     });
 
     it('it should filter out dynamic bid when bid limit is less than unique bid pool', function () {
-      const modifiedBids = [{...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}, {...bidArrayAlt[1]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
+      const modifiedBids = [{ ...bidArrayAlt[0] }, { ...bidArrayAlt[2] }, { ...bidArrayAlt[3] }, { ...bidArrayAlt[1] }].map(bid => {
+        addBidResponseHook(bidResponseCallback, 'test.div', { ...bid });
 
         return bidResult;
       });
 
-      config.setConfig({ multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}] });
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
       targetBidPoolHook(callbackFn, modifiedBids, getHighestCpm, 3);
 
@@ -657,15 +657,15 @@ describe('multibid adapter', function () {
     });
 
     it('it should collect all bids from auction and bid cache then sort and filter', function () {
-      config.setConfig({ multibid: [{bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA'}] });
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 2, targetBiddercodePrefix: 'bidA' }] });
 
-      const modifiedBids = [{...bidArrayAlt[0]}, {...bidArrayAlt[2]}, {...bidArrayAlt[3]}, {...bidArrayAlt[1]}].map(bid => {
-        addBidResponseHook(bidResponseCallback, 'test.div', {...bid});
+      const modifiedBids = [{ ...bidArrayAlt[0] }, { ...bidArrayAlt[2] }, { ...bidArrayAlt[3] }, { ...bidArrayAlt[1] }].map(bid => {
+        addBidResponseHook(bidResponseCallback, 'test.div', { ...bid });
 
         return bidResult;
       });
 
-      const bidPool = [].concat.apply(modifiedBids, [{...bidCacheArray[0]}, {...bidCacheArray[1]}]);
+      const bidPool = [].concat.apply(modifiedBids, [{ ...bidCacheArray[0] }, { ...bidCacheArray[1] }]);
 
       expect(bidPool.length).to.equal(6);
 
@@ -688,53 +688,53 @@ describe('multibid adapter', function () {
 
   describe('validate multibid', function () {
     it('should fail validation for missing bidder name in entry', function () {
-      const conf = [{maxBids: 1}];
+      const conf = [{ maxBids: 1 }];
       const result = validateMultibid(conf);
 
       expect(result).to.equal(false);
     });
 
     it('should pass validation on all multibid entries', function () {
-      const conf = [{bidder: 'bidderA', maxBids: 1}, {bidder: 'bidderB', maxBids: 2}];
+      const conf = [{ bidder: 'bidderA', maxBids: 1 }, { bidder: 'bidderB', maxBids: 2 }];
       const result = validateMultibid(conf);
 
       expect(result).to.equal(true);
     });
 
     it('should fail validation for maxbids less than 1 in entry', function () {
-      const conf = [{bidder: 'bidderA', maxBids: 0}, {bidder: 'bidderB', maxBids: 2}];
+      const conf = [{ bidder: 'bidderA', maxBids: 0 }, { bidder: 'bidderB', maxBids: 2 }];
       const result = validateMultibid(conf);
 
       expect(result).to.equal(false);
     });
 
     it('should fail validation for maxbids greater than 9 in entry', function () {
-      const conf = [{bidder: 'bidderA', maxBids: 10}, {bidder: 'bidderB', maxBids: 2}];
+      const conf = [{ bidder: 'bidderA', maxBids: 10 }, { bidder: 'bidderB', maxBids: 2 }];
       const result = validateMultibid(conf);
 
       expect(result).to.equal(false);
     });
 
     it('should add multbid entries to global config', function () {
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 1}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 1 }] });
       const conf = config.getConfig('multibid');
 
-      expect(conf).to.deep.equal([{bidder: 'bidderA', maxBids: 1}]);
+      expect(conf).to.deep.equal([{ bidder: 'bidderA', maxBids: 1 }]);
     });
 
     it('should modify multbid entries and add to global config', function () {
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 0}, {bidder: 'bidderB', maxBids: 15}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 0 }, { bidder: 'bidderB', maxBids: 15 }] });
       const conf = config.getConfig('multibid');
 
-      expect(conf).to.deep.equal([{bidder: 'bidderA', maxBids: 1}, {bidder: 'bidderB', maxBids: 9}]);
+      expect(conf).to.deep.equal([{ bidder: 'bidderA', maxBids: 1 }, { bidder: 'bidderB', maxBids: 9 }]);
     });
 
     it('should filter multbid entry and add modified to global config', function () {
-      config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 0}, {maxBids: 15}]});
+      config.setConfig({ multibid: [{ bidder: 'bidderA', maxBids: 0 }, { maxBids: 15 }] });
       const conf = config.getConfig('multibid');
 
       expect(conf.length).to.equal(1);
-      expect(conf).to.deep.equal([{bidder: 'bidderA', maxBids: 1}]);
+      expect(conf).to.deep.equal([{ bidder: 'bidderA', maxBids: 1 }]);
     });
   });
 

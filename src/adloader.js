@@ -5,45 +5,6 @@ import { isActivityAllowed } from './activities/rules.js';
 import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
-// The below list contains modules or vendors whom Prebid allows to load external JS.
-const _approvedLoadExternalJSList = [
-  // Prebid maintained modules:
-  'debugging',
-  'outstream',
-  // RTD modules:
-  'aaxBlockmeter',
-  'adagio',
-  'adloox',
-  'arcspan',
-  'airgrid',
-  'browsi',
-  'brandmetrics',
-  'clean.io',
-  'humansecurityMalvDefense',
-  'humansecurity',
-  'confiant',
-  'contxtful',
-  'hadron',
-  'mediafilter',
-  'medianet',
-  'azerionedge',
-  'a1Media',
-  'geoedge',
-  'qortex',
-  'dynamicAdBoost',
-  '51Degrees',
-  'symitridap',
-  'wurfl',
-  'nodalsAi',
-  'anonymised',
-  'optable',
-  'oftmedia',
-  // UserId Submodules
-  'justtag',
-  'tncId',
-  'ftrackId',
-  'id5',
-];
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
@@ -64,10 +25,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     logError('cannot load external script without url and moduleCode');
     return;
   }
-  if (!_approvedLoadExternalJSList.includes(moduleCode)) {
-    logError(`${moduleCode} not whitelisted for loading external JavaScript`);
-    return;
-  }
+
   if (!doc) {
     doc = document; // provide a "valid" key for the WeakMap
   }

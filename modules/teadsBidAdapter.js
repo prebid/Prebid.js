@@ -1,10 +1,10 @@
-import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation} from '../src/utils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
-import {getHLen} from '../libraries/navigatorData/navigatorData.js';
-import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
+import { logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
@@ -25,7 +25,7 @@ const gdprStatus = {
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -346,14 +346,14 @@ function getFirstPartyTeadsIdParameter(validBidRequests) {
   const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userIdAsEids?.find(eid => eid.source === 'teads.com')?.uids?.[0].id;
 
   if (firstPartyTeadsIdFromUserIdModule) {
-    return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};
+    return { firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule };
   }
 
   if (storage.cookiesAreEnabled(null)) {
     const firstPartyTeadsIdFromCookie = storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null);
 
     if (firstPartyTeadsIdFromCookie) {
-      return {firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie};
+      return { firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie };
     }
   }
 

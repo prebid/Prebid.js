@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec, internal, BANNER_ENDPOINT_URL, NATIVE_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility} from 'modules/taboolaBidAdapter.js';
-import {config} from '../../../src/config.js'
+import { expect } from 'chai';
+import { spec, internal, BANNER_ENDPOINT_URL, NATIVE_ENDPOINT_URL, userData, EVENT_ENDPOINT, detectBot, getPageVisibility } from 'modules/taboolaBidAdapter.js';
+import { config } from '../../../src/config.js'
 import * as utils from '../../../src/utils.js'
-import {server} from '../../mocks/xhr.js'
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { server } from '../../mocks/xhr.js'
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Taboola Adapter', function () {
   let sandbox, hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
@@ -242,10 +242,10 @@ describe('Taboola Adapter', function () {
           publisherId: 'publisherId'
         }
       }
-      spec.onBidderError({error, bidderRequest});
+      spec.onBidderError({ error, bidderRequest });
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/bidError');
-      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal({error, bidderRequest});
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal({ error, bidderRequest });
     });
   });
 
@@ -303,16 +303,16 @@ describe('Taboola Adapter', function () {
           'buyeruid': 0,
           'ext': {},
         },
-        'regs': {'ext': {}, 'coppa': 0},
-        'source': {'fd': 1},
+        'regs': { 'ext': {}, 'coppa': 0 },
+        'source': { 'fd': 1 },
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
           'domain': commonBidderRequest.refererInfo.domain,
           'page': commonBidderRequest.refererInfo.page,
           'ref': commonBidderRequest.refererInfo.ref,
-          'publisher': {'id': commonBidRequest.params.publisherId},
-          'content': {'language': navigator.language}
+          'publisher': { 'id': commonBidRequest.params.publisherId },
+          'content': { 'language': navigator.language }
         },
         'bcat': [],
         'badv': [],
@@ -333,7 +333,7 @@ describe('Taboola Adapter', function () {
 
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params, ...optionalParams}
+        params: { ...commonBidRequest.params, ...optionalParams }
       };
 
       const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
@@ -344,7 +344,7 @@ describe('Taboola Adapter', function () {
     it('should pass bid floor', function () {
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params},
+        params: { ...commonBidRequest.params },
         getFloor: function() {
           return {
             currency: 'USD',
@@ -365,7 +365,7 @@ describe('Taboola Adapter', function () {
 
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params, ...optionalParams},
+        params: { ...commonBidRequest.params, ...optionalParams },
         getFloor: function() {
           return {
             currency: 'USD',
@@ -385,7 +385,7 @@ describe('Taboola Adapter', function () {
 
       const bidRequest = {
         ...defaultBidRequest,
-        params: {...commonBidRequest.params, ...optionalParams}
+        params: { ...commonBidRequest.params, ...optionalParams }
       };
 
       const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
@@ -401,7 +401,7 @@ describe('Taboola Adapter', function () {
       const bidRequest = {
         ...defaultBidRequest,
         ortb2Imp: ortb2Imp,
-        params: {...commonBidRequest.params}
+        params: { ...commonBidRequest.params }
       };
 
       const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
@@ -417,7 +417,7 @@ describe('Taboola Adapter', function () {
       const bidRequest = {
         ...defaultBidRequest,
         ortb2Imp: ortb2Imp,
-        params: {...commonBidRequest.params}
+        params: { ...commonBidRequest.params }
       };
 
       const [res] = spec.buildRequests([bidRequest], commonBidderRequest);
@@ -554,7 +554,7 @@ describe('Taboola Adapter', function () {
             }
           }
         }
-        const [res] = spec.buildRequests([defaultBidRequest], {...ortb2})
+        const [res] = spec.buildRequests([defaultBidRequest], { ...ortb2 })
         expect(res.data.user.data).to.deep.equal(ortb2.ortb2.user.data);
       });
     });
@@ -584,7 +584,7 @@ describe('Taboola Adapter', function () {
           }
         }
 
-        const [res] = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
+        const [res] = spec.buildRequests([defaultBidRequest], { ...commonBidderRequest, ortb2 })
         expect(res.data.regs.ext.gpp).to.equal('testGpp')
         expect(res.data.regs.ext.gpp_sid).to.deep.equal([1, 2, 3])
       });
@@ -601,7 +601,7 @@ describe('Taboola Adapter', function () {
       });
 
       it('should pass coppa consent', function () {
-        config.setConfig({coppa: true})
+        config.setConfig({ coppa: true })
 
         const [res] = spec.buildRequests([defaultBidRequest], commonBidderRequest)
         expect(res.data.regs.coppa).to.equal(1)
@@ -1079,8 +1079,8 @@ describe('Taboola Adapter', function () {
     });
 
     it('should return empty array if server response without seatbid', function () {
-      const overriddenServerResponse = {...serverResponse};
-      const seatbid = {...serverResponse.body.seatbid[0]};
+      const overriddenServerResponse = { ...serverResponse };
+      const seatbid = { ...serverResponse.body.seatbid[0] };
       overriddenServerResponse.body.seatbid[0] = {};
 
       const res = spec.interpretResponse(overriddenServerResponse, request)
@@ -1090,7 +1090,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should return empty array if server response without bids', function () {
-      const overriddenServerResponse = {...serverResponse};
+      const overriddenServerResponse = { ...serverResponse };
       const bid = [...serverResponse.body.seatbid[0].bid];
       overriddenServerResponse.body.seatbid[0].bid = {};
 
@@ -1542,42 +1542,42 @@ describe('Taboola Adapter', function () {
     const iframeUrl = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 
     it('should not return user sync if pixelEnabled is false and iframe disabled', function () {
-      const res = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: false});
+      const res = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false });
       expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return user sync if pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false});
-      expect(res).to.deep.equal([{type: 'image', url: usersyncUrl}]);
+      const res = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false });
+      expect(res).to.deep.equal([{ type: 'image', url: usersyncUrl }]);
     });
 
     it('should return user sync if iframeEnabled is true', function () {
-      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false});
-      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}]);
+      const res = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false });
+      expect(res).to.deep.equal([{ type: 'iframe', url: iframeUrl }]);
     });
 
     it('should return both user syncs if iframeEnabled is true and pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
-      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}, {type: 'image', url: usersyncUrl}]);
+      const res = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      expect(res).to.deep.equal([{ type: 'iframe', url: iframeUrl }, { type: 'image', url: usersyncUrl }]);
     });
 
     it('should pass consent tokens values', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'GDPR_CONSENT'}, 'USP_CONSENT')).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'GDPR_CONSENT' }, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
       }]);
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', {gppString: 'GPP_STRING', applicableSections: []})).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', { gppString: 'GPP_STRING', applicableSections: [] })).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', {gppString: 'GPP_STRING', applicableSections: [32, 51]})).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', { gppString: 'GPP_STRING', applicableSections: [32, 51] })).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=32%2C51`
       }]);
     });
@@ -2016,9 +2016,9 @@ describe('Taboola Adapter', function () {
     const nativeBidRequestParams = {
       mediaTypes: {
         native: {
-          title: {required: true, len: 150},
-          image: {required: true, sizes: [300, 250]},
-          sponsoredBy: {required: true}
+          title: { required: true, len: 150 },
+          image: { required: true, sizes: [300, 250] },
+          sponsoredBy: { required: true }
         }
       }
     };
@@ -2072,9 +2072,9 @@ describe('Taboola Adapter', function () {
             nativeOrtbRequest: {
               ver: '1.2',
               assets: [
-                {id: 1, required: 1, title: {len: 150}},
-                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}},
-                {id: 3, required: 1, data: {type: 1}}
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+                { id: 3, required: 1, data: { type: 1 } }
               ]
             },
             bidId: utils.generateUUID(),
@@ -2126,8 +2126,8 @@ describe('Taboola Adapter', function () {
             nativeOrtbRequest: {
               ver: '1.2',
               assets: [
-                {id: 1, required: 1, title: {len: 150}},
-                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
               ]
             },
             bidId: utils.generateUUID(),
@@ -2139,8 +2139,8 @@ describe('Taboola Adapter', function () {
           const nativeAdm = {
             ver: '1.2',
             assets: [
-              {id: 1, title: {text: 'Native Ad Title'}},
-              {id: 2, img: {url: 'https://example.com/image.jpg', w: 300, h: 250}}
+              { id: 1, title: { text: 'Native Ad Title' } },
+              { id: 2, img: { url: 'https://example.com/image.jpg', w: 300, h: 250 } }
             ],
             link: {
               url: 'https://example.com/click'
@@ -2192,17 +2192,17 @@ describe('Taboola Adapter', function () {
                 sizes: [[300, 250]]
               },
               native: {
-                title: {required: true, len: 150},
-                image: {required: true, sizes: [300, 250]},
-                sponsoredBy: {required: true}
+                title: { required: true, len: 150 },
+                image: { required: true, sizes: [300, 250] },
+                sponsoredBy: { required: true }
               }
             },
             nativeOrtbRequest: {
               ver: '1.2',
               assets: [
-                {id: 1, required: 1, title: {len: 150}},
-                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}},
-                {id: 3, required: 1, data: {type: 1}}
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+                { id: 3, required: 1, data: { type: 1 } }
               ]
             },
             bidId: utils.generateUUID(),
@@ -2262,8 +2262,8 @@ describe('Taboola Adapter', function () {
             nativeOrtbRequest: {
               ver: '1.2',
               assets: [
-                {id: 1, required: 1, title: {len: 150}},
-                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
               ]
             },
             bidId: utils.generateUUID(),
@@ -2302,8 +2302,8 @@ describe('Taboola Adapter', function () {
             nativeOrtbRequest: {
               ver: '1.2',
               assets: [
-                {id: 1, required: 1, title: {len: 150}},
-                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
               ]
             },
             bidId: utils.generateUUID(),
@@ -2332,8 +2332,8 @@ describe('Taboola Adapter', function () {
             nativeOrtbRequest: {
               ver: '1.2',
               assets: [
-                {id: 1, required: 1, title: {len: 150}},
-                {id: 2, required: 1, img: {type: 3, w: 300, h: 250}}
+                { id: 1, required: 1, title: { len: 150 } },
+                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
               ]
             },
             bidId: utils.generateUUID(),
@@ -2345,10 +2345,10 @@ describe('Taboola Adapter', function () {
           const nativeAdm = {
             ver: '1.2',
             assets: [
-              {id: 1, title: {text: 'Native Ad Title'}},
-              {id: 2, img: {url: 'https://example.com/image.jpg', w: 300, h: 250}}
+              { id: 1, title: { text: 'Native Ad Title' } },
+              { id: 2, img: { url: 'https://example.com/image.jpg', w: 300, h: 250 } }
             ],
-            link: {url: 'https://example.com/click'}
+            link: { url: 'https://example.com/click' }
           };
 
           const serverResponse = {
