@@ -31,6 +31,9 @@ function init(config, userConsent) {
     return false;
   }
 
+  // Reset keyValues to avoid stale values after failed/empty response
+  keyValues = {};
+
   // Start fetch immediately without blocking init
   apiCallPromise = makeApiCall(publicId);
 
@@ -60,6 +63,7 @@ async function makeApiCall(publicId) {
       logInfo(LOG_PREFIX + '204 No Content received, cleared cached values');
       return;
     }
+
     const data = await response.json();
     if (data && data.keyValues) {
       keyValues = data.keyValues;

@@ -86,7 +86,7 @@ describe('insurAdsRtdProvider', function () {
 
       const fetchOptions = fetchStub.getCall(0).args[1];
       expect(fetchOptions.keepalive).to.be.true;
-      expect(fetchOptions.withCredentials).to.be.true;
+      expect(fetchOptions.credentials).to.equal('include');
       expect(fetchOptions.method).to.equal('GET');
       expect(fetchOptions.headers['Content-Type']).to.equal('application/json');
     });
@@ -104,14 +104,23 @@ describe('insurAdsRtdProvider', function () {
         const reqBidsConfigObj = {
           adUnits: [{
             code: 'ad-unit-1',
-            ortb2Imp: {
-              ext: {}
-            }
+            bids: [
+              {
+                bidder: 'insurads',
+                params: { existing: 'keep' }
+              },
+              {
+                bidder: 'someOtherBidder',
+                params: {}
+              }
+            ]
           }]
         };
 
         insurAdsRtdProvider.getBidRequestData(reqBidsConfigObj, () => {
-          expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.insurads).to.deep.equal(sampleKeyValues);
+          expect(reqBidsConfigObj.adUnits[0].bids[0].params.rtdData).to.deep.equal(sampleKeyValues);
+          expect(reqBidsConfigObj.adUnits[0].bids[0].params.existing).to.equal('keep');
+          expect(reqBidsConfigObj.adUnits[0].bids[1].params.rtdData).to.equal(undefined);
           done();
         }, sampleConfig);
       }, 50);
