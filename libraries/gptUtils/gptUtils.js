@@ -1,5 +1,5 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import {deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot} from '../../src/utils.js';
+import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
 
 const slotInfoCache = new Map();
 
@@ -24,7 +24,7 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
  */
 export function setKeyValue(key, value) {
   if (!key || typeof key !== 'string') return false;
-  window.googletag = window.googletag || {cmd: []};
+  window.googletag = window.googletag || { cmd: [] };
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
     window.googletag.pubads().setTargeting(key, value);
@@ -71,7 +71,7 @@ export function getSignals(fpd) {
   const signals = Object.entries({
     [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
     [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
-  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
+  }).map(([taxonomy, values]) => values.length ? { taxonomy, values } : null)
     .filter(ob => ob);
 
   return signals;

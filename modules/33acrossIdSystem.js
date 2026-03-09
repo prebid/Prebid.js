@@ -170,7 +170,7 @@ function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, e
 }
 
 function updateSupplementalIdStorage(supplementalId, storageConfig) {
-  const [ key, id, clear ] = supplementalId;
+  const [key, id, clear] = supplementalId;
 
   if (clear) {
     deleteFromStorage(key);
@@ -222,7 +222,7 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, { gdpr: gdprConsentData } = {}) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 

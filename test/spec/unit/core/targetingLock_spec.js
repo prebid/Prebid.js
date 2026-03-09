@@ -1,5 +1,5 @@
-import {targetingLock} from '../../../../src/targeting/lock.js';
-import {config} from 'src/config.js';
+import { targetingLock } from '../../../../src/targeting/lock.js';
+import { config } from 'src/config.js';
 
 describe('Targeting lock', () => {
   let lock, clock, targeting, sandbox;
@@ -98,9 +98,7 @@ describe('Targeting lock', () => {
         lock.lock(targeting);
         eventHandlers.slotRenderEnded({
           slot: {
-            getConfig: sinon.stub().withArgs('targeting').returns({
-              k1: [targeting.k1]
-            })
+            getTargeting: (key) => [targeting[key]]
           }
         });
         expect(lock.isLocked(targeting)).to.be.false;

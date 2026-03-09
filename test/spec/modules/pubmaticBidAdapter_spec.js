@@ -3,7 +3,7 @@ import { spec, cpmAdjustment, addViewabilityToImp, shouldAddDealTargeting } from
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
@@ -53,7 +53,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      site: { domain: 'ebay.com', page: 'https://ebay.com', publisher: { id: '5670' } },
       source: {},
       user: {
         ext: {
@@ -136,7 +136,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      site: { domain: 'ebay.com', page: 'https://ebay.com', publisher: { id: '5670' } },
       source: {},
       user: {
         ext: {
@@ -195,7 +195,7 @@ describe('PubMatic adapter', () => {
       },
       'dealid': 'PUBDEAL1',
       'mtype': 2,
-      'params': {'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic'}
+      'params': { 'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic' }
     }]
   };
   firstResponse = {
@@ -255,7 +255,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: { domain: 'ebay.com', page: 'https://ebay.com' },
       source: {},
       user: {
         ext: {
@@ -287,7 +287,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: { domain: 'ebay.com', page: 'https://ebay.com' },
       source: {},
       user: {
         ext: {
@@ -1140,7 +1140,7 @@ describe('PubMatic adapter', () => {
           ]
         };
         beforeEach(() => {
-          bidderRequest.ortb2.regs = {ext: { dsa }};
+          bidderRequest.ortb2.regs = { ext: { dsa } };
         });
 
         it('should have DSA in regs.ext', () => {

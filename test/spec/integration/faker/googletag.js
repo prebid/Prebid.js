@@ -29,18 +29,6 @@ var Slot = function Slot({ code, divId }) {
       return [];
     },
 
-    getConfig: function getConfig(key) {
-      if (key === 'targeting') {
-        return this.targeting;
-      }
-    },
-
-    setConfig: function setConfig(config) {
-      if (config?.targeting) {
-        this.targeting = config.targeting;
-      }
-    },
-
     clearTargeting: function clearTargeting() {
       return window.googletag.pubads().getSlots();
     }
@@ -56,7 +44,7 @@ export function makeSlot() {
 }
 
 export function emitEvent(eventName, params) {
-  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({...params, eventName}));
+  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({ ...params, eventName }));
 }
 
 export function enable() {
@@ -64,18 +52,7 @@ export function enable() {
     _slots: [],
     _callbackMap: {},
     _ppid: undefined,
-    _targeting: {},
     cmd: [],
-    getConfig: function (key) {
-      if (key === 'targeting') {
-        return this._targeting;
-      }
-    },
-    setConfig: function (config) {
-      if (config?.targeting) {
-        Object.assign(this._targeting, config.targeting);
-      }
-    },
     pubads: function () {
       var self = this;
       return {
