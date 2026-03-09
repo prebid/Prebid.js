@@ -1,5 +1,6 @@
 import {
-  BANNER
+  BANNER,
+  VIDEO
 } from '../src/mediaTypes.js';
 import {
   registerBidder
@@ -10,7 +11,7 @@ const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
 
 export const spec = {
   code: 'mediaeyes',
-  supportedMediaTypes: BANNER,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     return !!(bid.params.itemId);
@@ -57,7 +58,7 @@ export const spec = {
         netRevenue: true
       };
 
-      prBid.mediaType = BANNER;
+      prBid.mediaType = rtbBid.ext?.mediaType || BANNER;
       prBid.width = rtbBid.w;
       prBid.height = rtbBid.h;
       prBid.ad = rtbBid.adm;
@@ -96,7 +97,13 @@ function cookingImp(bidReq) {
 
     imp.id = bidReq.bidId;
     imp.bidfloor = bidfloor;
-    imp.banner = cookImpBanner(bidReq);
+    if (bidReq.mediaTypes?.banner) {
+      imp.banner = cookImpBanner(bidReq);
+    }
+
+    if (bidReq.mediaTypes?.video) {
+      imp.video = cookImpVideo(bidReq);
+    }
   }
   return imp;
 }
@@ -110,6 +117,18 @@ const cookImpBanner = ({ mediaTypes, params }) => {
     h: sizes[0][1]
   }
 };
+
+function cookImpVideo({ mediaTypes }) {
+  const video = mediaTypes.video;
+
+  return {
+    w: video.playerSize[0][0],
+    h: video.playerSize[0][1],
+    mimes: video.mimes || ['video/mp4'],
+    protocols: video.protocols || [2,3,5,6],
+    placement: video.placement || 1
+  };
+}
 
 function getBidFloor(bidRequest) {
   let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
