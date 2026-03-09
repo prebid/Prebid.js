@@ -9,7 +9,7 @@ helping you maximize your advertising strategies.
 
 Compile the InsurAds RTD module into your Prebid build:
 
-`gulp serve --modules=rtdModule,insuradsBidAdapter,insurAdsRtdProvider`
+`gulp serve --modules=rtdModule,insuradsBidAdapter,insuradsRtdProvider`
 
 Please visit https://insurads.com/ for more information.
 
@@ -43,7 +43,7 @@ pbjs.setConfig({
 
 To view an example of InsurAds RTD provider:
 
-`gulp serve --modules=rtdModule,insuradsBidAdapter,insurAdsRtdProvider`
+`gulp serve --modules=rtdModule,insuradsBidAdapter,insuradsRtdProvider`
 
 and then point your browser at:
 
