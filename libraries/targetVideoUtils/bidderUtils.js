@@ -1,7 +1,7 @@
-import {SYNC_URL} from './constants.js';
-import {VIDEO} from '../../src/mediaTypes.js';
-import {getRefererInfo} from '../../src/refererDetection.js';
-import {createTrackPixelHtml, getBidRequest, formatQS} from '../../src/utils.js';
+import { SYNC_URL } from './constants.js';
+import { VIDEO } from '../../src/mediaTypes.js';
+import { getRefererInfo } from '../../src/refererDetection.js';
+import { createTrackPixelHtml, getBidRequest, formatQS } from '../../src/utils.js';
 
 export function getSizes(request) {
   let sizes = request.sizes;
@@ -18,7 +18,7 @@ export function getSizes(request) {
   return sizes;
 }
 
-export function formatRequest({payload, url, bidderRequest, bidId}) {
+export function formatRequest({ payload, url, bidderRequest, bidId }) {
   const request = {
     method: 'POST',
     data: JSON.stringify(payload),
@@ -94,7 +94,7 @@ export function bannerBid(serverBid, rtbBid, bidderRequest, margin) {
 }
 
 export function videoBid(serverBid, requestId, currency, params, ttl) {
-  const {ad, adUrl, vastUrl, vastXml} = getAd(serverBid);
+  const { ad, adUrl, vastUrl, vastXml } = getAd(serverBid);
 
   const bid = {
     requestId,
@@ -165,7 +165,7 @@ export function getAd(bid) {
       };
   }
 
-  return {ad, adUrl, vastXml, vastUrl};
+  return { ad, adUrl, vastXml, vastUrl };
 }
 
 export function getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, endpoint) {

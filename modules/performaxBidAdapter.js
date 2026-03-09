@@ -121,6 +121,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+<<<<<<< user-sync-reporting
     const data = converter.toORTB({bidderRequest, bidRequests})
 
     const uids = readData(UIDS_STORAGE_KEY, {});
@@ -139,10 +140,13 @@ export const spec = {
       };
     }
 
+=======
+    const data = converter.toORTB({ bidderRequest, bidRequests })
+>>>>>>> master
     return [{
       method: 'POST',
       url: ENDPOINT,
-      options: {'contentType': 'application/json'},
+      options: { 'contentType': 'application/json' },
       data: data
     }]
   },

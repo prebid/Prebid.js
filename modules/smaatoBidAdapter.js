@@ -1,13 +1,13 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {deepAccess, deepSetValue, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {NATIVE_IMAGE_TYPES} from '../src/constants.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
-import {fill} from '../libraries/appnexusUtils/anUtils.js';
-import {chunk} from '../libraries/chunk/chunk.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, deepSetValue, isEmpty, isNumber, logError, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { ADPOD, BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { NATIVE_IMAGE_TYPES } from '../src/constants.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { fill } from '../libraries/appnexusUtils/anUtils.js';
+import { chunk } from '../libraries/chunk/chunk.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -86,14 +86,15 @@ export const spec = {
       // separate requests per mediaType
       SUPPORTED_MEDIA_TYPES.forEach(mediaType => {
         if ((bid.mediaTypes && bid.mediaTypes[mediaType]) || (mediaType === NATIVE && bid.nativeOrtbRequest)) {
-          const data = converter.toORTB({bidderRequest, bidRequests: [bid], context: {mediaType}});
+          const data = converter.toORTB({ bidderRequest, bidRequests: [bid], context: { mediaType } });
           requests.push({
             method: 'POST',
             url: bid.params.endpoint || SMAATO_ENDPOINT,
             data: JSON.stringify(data),
             options: {
               withCredentials: true,
-              crossOrigin: true},
+              crossOrigin: true
+            },
             bidderRequest
           })
         }
@@ -143,7 +144,7 @@ export const spec = {
             advertiserDomains: bid.adomain,
             networkName: bid.bidderName,
             agencyId: seatbid.seat,
-            ...(bid.ext?.dsa && {dsa: bid.ext.dsa})
+            ...(bid.ext?.dsa && { dsa: bid.ext.dsa })
           }
         };
 
@@ -470,7 +471,7 @@ function createAdPodImp(imp, videoMediaType) {
 }
 
 function getAdPodNumberOfPlacements(videoMediaType) {
-  const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
+  const { adPodDurationSec, durationRangeSec, requireExactDuration } = videoMediaType
   const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
@@ -509,7 +510,7 @@ const addOptionalAdpodParameters = (videoMediaType) => {
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor === 'function') {
     const size = sizes.length === 1 ? sizes[0] : '*';
-    const floor = bidRequest.getFloor({currency: CURRENCY, mediaType: mediaType, size: size});
+    const floor = bidRequest.getFloor({ currency: CURRENCY, mediaType: mediaType, size: size });
     if (floor && !isNaN(floor.floor) && (floor.currency === CURRENCY)) {
       return floor.floor;
     }

@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
@@ -65,11 +65,11 @@ export const spec = {
       if (typeof adunitValue.getFloor === 'function') {
         if (Array.isArray(adunitValue.sizes)) {
           adunitValue.sizes.forEach(value => {
-            const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: value });
             if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor[value.join('x')] = tmpFloor; }
           });
         }
-        const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: '*' });
         if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
       }
       if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
@@ -194,7 +194,7 @@ export const spec = {
           if (!url) return;
           const method = (burl.method ?? "GET").toUpperCase();
           const data = (method === "POST" && burl.data ? burl.data : null);
-          ajax(url, null, data ? JSON.stringify(data) : null, {method: method, withCredentials: true});
+          ajax(url, null, data ? JSON.stringify(data) : null, { method: method, withCredentials: true });
         });
         return true;
       }
@@ -219,7 +219,7 @@ export const spec = {
         }
       }
     });
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), { method: 'POST', withCredentials: true });
     return true;
   }
 

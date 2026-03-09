@@ -1,8 +1,8 @@
-import {spec, converter} from 'modules/viantBidAdapter.js';
-import {assert, expect} from 'chai';
-import {deepClone} from '../../../src/utils.js';
-import {buildWindowTree} from '../../helpers/refererDetectionHelper.js';
-import {detectReferer} from '../../../src/refererDetection.js';
+import { spec, converter } from 'modules/viantBidAdapter.js';
+import { assert, expect } from 'chai';
+import { deepClone } from '../../../src/utils.js';
+import { buildWindowTree } from '../../helpers/refererDetectionHelper.js';
+import { detectReferer } from '../../../src/refererDetection.js';
 
 describe('viantOrtbBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
@@ -353,7 +353,7 @@ describe('viantOrtbBidAdapter', function () {
       }
 
       it('assert video and its fields is present in imp ', function () {
-        const requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
+        const requests = spec.buildRequests([makeBid()], { referrerInfo: {} });
         const clonedRequests = deepClone(requests)
         assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4')
         assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31)
@@ -400,8 +400,8 @@ describe('viantOrtbBidAdapter', function () {
 
     it('empty bid response test', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0];
-      const bidResponse = {nbr: 0}; // Unknown error
-      const bids = spec.interpretResponse({body: bidResponse}, request);
+      const bidResponse = { nbr: 0 }; // Unknown error
+      const bids = spec.interpretResponse({ body: bidResponse }, request);
       expect(bids.length).to.equal(0);
     });
 
@@ -421,7 +421,7 @@ describe('viantOrtbBidAdapter', function () {
         }],
         cur: 'USD'
       };
-      const bids = spec.interpretResponse({body: bidResponse}, request);
+      const bids = spec.interpretResponse({ body: bidResponse }, request);
       expect(bids.length).to.equal(1);
       const bid = bids[0];
       it('should return the proper mediaType', function () {
@@ -537,7 +537,7 @@ describe('viantOrtbBidAdapter', function () {
         ],
         'cur': 'USD'
       };
-      const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
+      const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request);
       expect(bids.length).to.equal(1);
       const bid = bids[0];
       it('should return the proper mediaType', function () {

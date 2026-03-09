@@ -1,7 +1,7 @@
-import {createTrackPixelHtml, logError, getBidIdParameter} from '../src/utils.js';
+import { createTrackPixelHtml, logError, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

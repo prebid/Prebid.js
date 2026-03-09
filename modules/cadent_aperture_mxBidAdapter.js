@@ -1,4 +1,4 @@
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import {
   _each,
   deepAccess, getBidIdParameter,
@@ -9,10 +9,10 @@ import {
   logError,
   logWarn
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {parseDomain} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { parseDomain } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -20,10 +20,10 @@ const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
-  { code: 'emx_digital'},
-  { code: 'cadent'},
-  { code: 'emxdigital'},
-  { code: 'cadentaperturemx'},
+  { code: 'emx_digital' },
+  { code: 'cadent' },
+  { code: 'emxdigital' },
+  { code: 'cadentaperturemx' },
 ];
 
 const EIDS_SUPPORTED = [
@@ -87,7 +87,8 @@ export const cadentAdapter = {
       h: screen.height,
       w: screen.width,
       devicetype: cadentAdapter.isMobile() ? 1 : cadentAdapter.isConnectedTV() ? 3 : 2,
-      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)};
+      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)
+    };
   },
   cleanProtocols: (video) => {
     if (video.protocols && video.protocols.includes(7)) {
@@ -173,7 +174,7 @@ export const cadentAdapter = {
 
   getGpp: (bidRequest, cadentData) => {
     if (bidRequest.gppConsent) {
-      const {gppString: gpp, applicableSections: gppSid} = bidRequest.gppConsent;
+      const { gppString: gpp, applicableSections: gppSid } = bidRequest.gppConsent;
       if (cadentData.regs) {
         cadentData.regs.gpp = gpp;
         cadentData.regs.gpp_sid = gppSid;
@@ -315,7 +316,7 @@ export const spec = {
           cadentData.user.ext.eids = eids;
         } else {
           cadentData.user = {
-            ext: {eids}
+            ext: { eids }
           };
         }
       }

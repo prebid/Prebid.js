@@ -4,12 +4,12 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {logError} from '../src/utils.js';
-import {gdprDataHandler, gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { logError } from '../src/utils.js';
+import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * The Taboola sync endpoint.
@@ -46,7 +46,7 @@ const userData = {
   },
 
   getFromLocalStorage() {
-    const {hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage} = sm;
+    const { hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage } = sm;
     if (hasLocalStorage() && localStorageIsEnabled()) {
       return getDataFromLocalStorage(STORAGE_KEY);
     }
@@ -54,7 +54,7 @@ const userData = {
   },
 
   getFromCookie() {
-    const {cookiesAreEnabled, getCookie} = sm;
+    const { cookiesAreEnabled, getCookie } = sm;
     if (cookiesAreEnabled()) {
       const mainCookieData = getCookie(COOKIE_KEY);
       if (mainCookieData) {
@@ -168,7 +168,7 @@ function saveUserIdInLocalStorage(id) {
 function callTaboolaUserSync(submoduleConfig, currentId, callback) {
   const skipSync = submoduleConfig?.params?.shouldSkipSync ?? true;
   if (skipSync) {
-    callback(currentId ? {taboolaId: currentId} : undefined);
+    callback(currentId ? { taboolaId: currentId } : undefined);
     return;
   }
   const syncUrl = buildTaboolaSyncUrl();
@@ -180,21 +180,21 @@ function callTaboolaUserSync(submoduleConfig, currentId, callback) {
           const data = JSON.parse(response);
           if (data && data.user && data.user.id) {
             saveUserIdInLocalStorage(data.user.id);
-            callback(data.user.id ? {taboolaId: data.user.id} : undefined);
+            callback(data.user.id ? { taboolaId: data.user.id } : undefined);
             return;
           }
         } catch (err) {
           logError('Taboola user-sync: error parsing JSON response', err);
         }
-        callback(currentId ? {taboolaId: currentId} : undefined);
+        callback(currentId ? { taboolaId: currentId } : undefined);
       },
       error: (err) => {
         logError('Taboola user-sync: network/endpoint error', err);
-        callback(currentId ? {taboolaId: currentId} : undefined);
+        callback(currentId ? { taboolaId: currentId } : undefined);
       }
     },
     undefined,
-    {method: 'GET', withCredentials: true}
+    { method: 'GET', withCredentials: true }
   );
 }
 
