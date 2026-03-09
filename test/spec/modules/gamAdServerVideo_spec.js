@@ -901,7 +901,7 @@ describe('The DFP video support module', function () {
       );
       server.respondWith(gamWrapper);
 
-      const result = getVastXml({url, adUnit: {}, bid: {}, params: {iu: '/19968336/prebid_cache_video_adunit'}}, []).then(() => {
+      const result = getVastXml({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } }, []).then(() => {
         const request = server.requests[0];
         const url = new URL(request.url);
         return url.searchParams.get('us_privacy');
@@ -913,7 +913,7 @@ describe('The DFP video support module', function () {
 
     function obtainUsPrivacyInGamVideoUrl() {
       const url = 'https://pubads.g.doubleclick.net/gampad/ads'
-      return new URLSearchParams(buildDfpVideoUrl({url, adUnit: {}, bid: {}, params: {iu: '/19968336/prebid_cache_video_adunit'}})).get('us_privacy');
+      return new URLSearchParams(buildDfpVideoUrl({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } })).get('us_privacy');
     }
 
     function mockGpp(gpp) {
