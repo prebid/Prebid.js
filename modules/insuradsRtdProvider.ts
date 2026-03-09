@@ -14,7 +14,7 @@ const GVLID = 596;
 
 // Internal state to store keyValues
 let keyValues = {};
-let apiCallPromise = null;
+let apiCallPromise = Promise.resolve();
 
 export const insurAdsRtdProvider = {
   name: MODULE_NAME,
@@ -38,23 +38,23 @@ function init(config, userConsent) {
   return true;
 }
 
-function makeApiCall(publicId) {
+async function makeApiCall(publicId) {
   const currentUrl = encodeURIComponent(location.href);
 
-  return fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
-    keepalive: true,
-    credentials: 'include',
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  }).then((response) => {
+  try {
+    const response = await fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
+      keepalive: true,
+      credentials: 'include',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     if (!response.ok) {
       keyValues = {};
       throw new Error('Network response was not ok');
     }
-    return response.json();
-  }).then((data) => {
+    const data = await response.json();
     // Store the keyValues internally for later use in getTargetingData
     if (data && data.keyValues) {
       keyValues = data.keyValues;
@@ -63,10 +63,10 @@ function makeApiCall(publicId) {
       keyValues = {};
       logInfo(LOG_PREFIX + 'No keyValues in response, cleared cached values');
     }
-  }).catch((_e) => {
+  } catch (_e) {
     keyValues = {};
     logInfo(LOG_PREFIX + 'API call failed, cleared cached keyValues');
-  });
+  }
 }
 
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
