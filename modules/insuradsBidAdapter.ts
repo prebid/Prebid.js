@@ -4,7 +4,7 @@ import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidd
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
@@ -83,6 +83,11 @@ const converter = ortbConverter({
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }
+    if (bidRequest.params.rtdData) {
+      deepSetValue(imp, 'ext.rtdData', bidRequest.params.rtdData);
+      delete bidRequest.params.rtdData;
+    }
+
     deepSetValue(imp, 'ext.nexx360', bidRequest.params);
     deepSetValue(imp, 'ext.nexx360.divId', divId);
     if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
@@ -95,20 +100,25 @@ const converter = ortbConverter({
     request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION);
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context);
-
-    // Get RTD data from bid params (set by insuradsRtdProvider)
-    const rtdData = (context.bidRequest?.params as InsurAdsBidParams)?.rtdData || {};
-
-    // Merge RTD keyValues with existing adserverTargeting
-    bidResponse.adserverTargeting = {
-      ...bidResponse.adserverTargeting,
-      ...rtdData
-    };
-    return bidResponse;
-  },
 });
+
+function getRtdTargetingFromRequest(request: any): Record<string, string> {
+  const targeting: Record<string, string> = {};
+  const imps = request?.data?.imp;
+  if (!Array.isArray(imps)) return targeting;
+
+  for (const imp of imps) {
+    const rtdData = imp?.ext?.rtdData;
+    if (!rtdData || typeof rtdData !== 'object') continue;
+
+    for (const [key, value] of Object.entries(rtdData)) {
+      if (value === null || value === undefined) continue;
+      targeting[key] = String(value);
+    }
+  }
+
+  return targeting;
+}
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
   if (bid.params.adUnitName && (typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '')) {
@@ -149,6 +159,25 @@ const buildRequests = (
   }
   return adapterRequest;
 }
+
+const interpretResponse = (serverResponse, request) => {
+  const responses: any[] = nexxInterpretResponse(serverResponse) as any;
+  const rtdTargeting = getRtdTargetingFromRequest(request);
+
+  if (!rtdTargeting || Object.keys(rtdTargeting).length === 0) {
+    return responses;
+  }
+
+  return responses.map((bidResponse) => {
+    return {
+      ...bidResponse,
+      adserverTargeting: {
+        ...(bidResponse?.adserverTargeting || {}),
+        ...rtdTargeting,
+      }
+    };
+  });
+};
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,

@@ -429,4 +429,69 @@ describe('InsurAds bid adapter tests', () => {
       sandbox.restore()
     });
   });
+
+  describe('interpretResponse()', () => {
+    it('merges rtdData into bidResponse.adserverTargeting', () => {
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: '44a2706ac3574',
+              price: 1.23,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adm: '<div>ad</div>',
+              adomain: ['example.com'],
+              ext: { mediaType: 'banner', ssp: 'insurads' }
+            }]
+          }]
+        }
+      };
+
+      const request = {
+        data: {
+          imp: [{
+            id: '44a2706ac3574',
+            ext: {
+              nexx360: {
+                rtdData: {
+                  ia_test: 'ia_value'
+                }
+              }
+            }
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids).to.have.length(1);
+      expect(bids[0]).to.have.property('adserverTargeting');
+      expect(bids[0].adserverTargeting).to.include({ ia_test: 'ia_value' });
+    });
+
+    it('does not throw if request is missing', () => {
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: '44a2706ac3574',
+              price: 1.23,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adm: '<div>ad</div>',
+              adomain: ['example.com'],
+              ext: { mediaType: 'banner', ssp: 'insurads' }
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.have.length(1);
+    });
+  });
 });
