@@ -16,9 +16,9 @@
  * @property {?boolean} allowAccess
  */
 
-import {submodule} from '../src/hook.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -27,7 +27,8 @@ import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/util
 /** @type {Object} */
 const MessageType = {
   IMPRESSION_REQUEST: 'rsdk:impression:req',
-  IMPRESSION_RESPONSE: 'rsdk:impression:res'};
+  IMPRESSION_RESPONSE: 'rsdk:impression:res'
+};
 /** @type {ModuleParams} */
 const DEFAULT_PARAMS = {
   initUrl: 'https://confirm.fiduciadlt.com/init',
@@ -64,10 +65,9 @@ function handleAdMessage(e) {
         // 3. Get AdUnit IDs for the selected slot
         if (adSlot) {
           adUnitId = adSlot.getAdUnitPath();
-          const targetingConfig = adSlot.getConfig('targeting') || {};
-          const rsdkAdId = targetingConfig.RSDK_ADID;
-          adDeliveryId = Array.isArray(rsdkAdId) && rsdkAdId.length
-            ? rsdkAdId[0]
+          adDeliveryId = adSlot.getTargeting('RSDK_ADID');
+          adDeliveryId = adDeliveryId.length
+            ? adDeliveryId[0]
             : `${timestamp()}-${generateUUID()}`;
         }
       }

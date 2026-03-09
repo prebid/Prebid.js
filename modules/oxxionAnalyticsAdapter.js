@@ -196,7 +196,7 @@ function handleBidWon(args) {
   args['cpmIncrement'] = increment;
   args['referer'] = encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation);
   if (typeof saveEvents.bidRequested === 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
-  ajax(endpoint + '.oxxion.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
+  ajax(endpoint + '.oxxion.io/analytics/bid_won', null, JSON.stringify(args), { method: 'POST', withCredentials: true });
 }
 
 function handleAuctionEnd() {
@@ -208,16 +208,16 @@ function handleAuctionEnd() {
         const tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
         if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
           alreadyCalled.push(tmpId);
-          ajax(endpoint + '.oxxion.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
+          ajax(endpoint + '.oxxion.io/analytics/creatives', null, JSON.stringify(bidResponse), { method: 'POST', withCredentials: true });
         }
       });
     }
     allEvents = {};
-  }, JSON.stringify(auctionEnd), {method: 'POST', withCredentials: true});
+  }, JSON.stringify(auctionEnd), { method: 'POST', withCredentials: true });
   auctionEnd = {};
 }
 
-const oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
+const oxxionAnalytics = Object.assign(adapter({ url, analyticsType }), {
   track({
     eventType,
     args
