@@ -30,6 +30,9 @@ const converter = ortbConverter({
       }
     }
 
+    if (!request.ext) request.ext = {};
+    request.ext.adapterVersion = VERSION;
+
     return request;
   }
 });
@@ -50,8 +53,12 @@ function isValidEndpointUrl(endpoint) {
 }
 
 function resolveEndpoint(endpoint) {
-  if (typeof endpoint === 'string' && isValidEndpointUrl(endpoint)) {
-    return endpoint;
+  if (typeof endpoint === 'string') {
+    if (isValidEndpointUrl(endpoint)) {
+      return endpoint;
+    } else {
+      logWarn(`${BIDDER_CODE}: Endpoint ${endpoint} is not a valid URL, using default endpoint`);
+    }
   }
 
   return ENDPOINT_URL;
@@ -73,10 +80,10 @@ function extractReferer(refererInfo) {
   logMissingFields('referer', missingRefererFields);
 
   const referer = {
-    reachedTop: refererInfo.reachedTop,
-    referer: refererUrl,
-    numIframes: refererInfo.numIframes,
-    stack: refererInfo.stack
+    reachedTop: refererInfo.reachedTop ?? null,
+    referer: refererUrl ?? null,
+    numIframes: refererInfo.numIframes ?? null,
+    stack: refererInfo.stack ?? null
   };
 
   return Object.values(referer).some(value => value != null) ? referer : null;
@@ -88,9 +95,9 @@ function extractTcf(gdprConsent) {
   }
 
   const tcf = {
-    consentString: gdprConsent.consentString,
-    gdprApplies: gdprConsent.gdprApplies,
-    addtlConsent: gdprConsent.addtlConsent
+    consentString: gdprConsent.consentString ?? null,
+    gdprApplies: gdprConsent.gdprApplies ?? null,
+    addtlConsent: gdprConsent.addtlConsent ?? null
   };
   const missingTcfFields = [];
 
