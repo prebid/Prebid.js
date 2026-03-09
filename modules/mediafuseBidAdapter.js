@@ -101,7 +101,8 @@ const converter = ortbConverter({
       if (isArray(sizes) && sizes.length > 0) {
         const size = isArray(sizes[0]) ? sizes[0] : sizes;
         imp.banner = {
-          w: size[0], h: size[1],
+          w: size[0],
+          h: size[1],
           format: sizes.map(s => {
             const sz = isArray(s) ? s : [s[0], s[1]];
             return { w: sz[0], h: sz[1] };
