@@ -675,13 +675,18 @@ export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.i
     return false;
   }
 
-  if (responseMediaType != null) {
-    const mediaTypes = index.getMediaTypes(bid);
-    if (mediaTypes && Object.keys(mediaTypes).length > 0) {
-      if (!mediaTypes.hasOwnProperty(responseMediaType)) {
-        logError(errorMessage(`Bid mediaType '${responseMediaType}' is not supported by the ad unit. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
-        return false;
-      }
+  const auctionOptions = config.getConfig('auctionOptions') || {};
+  const rejectUnknownMediaTypes = auctionOptions.rejectUnknownMediaTypes === true;
+  const rejectInvalidMediaTypes = auctionOptions.rejectInvalidMediaTypes !== false;
+  const mediaTypes = index.getMediaTypes(bid);
+  if (mediaTypes && Object.keys(mediaTypes).length > 0) {
+    if (responseMediaType == null && rejectUnknownMediaTypes) {
+      logError(errorMessage(`Bid mediaType is required. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+      return false;
+    }
+    if (responseMediaType != null && rejectInvalidMediaTypes && !mediaTypes.hasOwnProperty(responseMediaType)) {
+      logError(errorMessage(`Bid mediaType '${responseMediaType}' is not supported by the ad unit. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+      return false;
     }
   }
 

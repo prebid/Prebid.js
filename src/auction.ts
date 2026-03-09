@@ -143,6 +143,18 @@ export interface AuctionOptionsConfig {
    * to pre-10.12 rendering logic.
    */
   legacyRender?: boolean;
+
+  /**
+   * When true, reject bids without a response `mediaType` when the ad unit has an explicit mediaTypes list.
+   * Default is false to preserve legacy behavior for responses that omit mediaType.
+   */
+  rejectUnknownMediaTypes?: boolean;
+
+  /**
+   * When true, reject bids with a response `mediaType` that does not match the ad unit's explicit mediaTypes list.
+   * Default is true; set to false to keep mismatched mediaType responses.
+   */
+  rejectInvalidMediaTypes?: boolean;
 }
 
 export interface PriceBucketConfig {
