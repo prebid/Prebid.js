@@ -25,6 +25,7 @@ import {
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -111,7 +112,7 @@ export function _getViewability(element, topWin, { w, h } = {}) {
 }
 
 export function detectViewability(bid) {
-  const { params, adUnitCode } = bid;
+  const { params } = bid;
 
   const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
 
@@ -137,7 +138,7 @@ export function detectViewability(bid) {
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
     minSize = _getMinSize(bidParamSizes ?? [])
-    element = document.getElementById(adUnitCode);
+    element = getAdUnitElement(bid);
   }
 
   if (_isViewabilityMeasurable(element)) {
@@ -406,7 +407,7 @@ export const spec = {
     }
     const requestTimeout = connatixBidRequestTimeout.timeout;
     const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
-    spec.triggerEvent({type: 'Timeout', timeout, context});
+    spec.triggerEvent({ type: 'Timeout', timeout, context });
   },
 
   /**
@@ -416,9 +417,9 @@ export const spec = {
     if (bidWinData == null) {
       return;
     }
-    const {bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId} = bidWinData;
+    const { bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId } = bidWinData;
 
-    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
+    spec.triggerEvent({ type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context });
   },
 
   triggerEvent(data) {

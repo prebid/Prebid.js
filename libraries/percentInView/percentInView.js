@@ -21,11 +21,11 @@ export function getViewportOffset(win = window) {
     y = 0;
   }
 
-  return {x, y};
+  return { x, y };
 }
 
-export function getBoundingBox(element, {w, h} = {}) {
-  let {width, height, left, top, right, bottom, x, y} = getBoundingClientRect(element);
+export function getBoundingBox(element, { w, h } = {}) {
+  let { width, height, left, top, right, bottom, x, y } = getBoundingClientRect(element);
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -34,7 +34,7 @@ export function getBoundingBox(element, {w, h} = {}) {
     bottom = top + h;
   }
 
-  return {width, height, left, top, right, bottom, x, y};
+  return { width, height, left, top, right, bottom, x, y };
 }
 
 function getIntersectionOfRects(rects) {
@@ -64,8 +64,8 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-export const percentInView = (element, {w, h} = {}) => {
-  const elementBoundingBox = getBoundingBox(element, {w, h});
+export const percentInView = (element, { w, h } = {}) => {
+  const elementBoundingBox = getBoundingBox(element, { w, h });
 
   // when in an iframe, the bounding box is relative to the iframe's viewport
   // since we are intersecting it with the top window's viewport, attempt to

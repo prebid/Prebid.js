@@ -22,15 +22,17 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const divIdCache = {};
 
-export function getDivIdFromAdUnitCode(adUnitCode) {
+export function getDivIdFromAdUnit(adUnitCode, target) {
   if (divIdCache[adUnitCode]) {
     return divIdCache[adUnitCode];
   }
-  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  const element = getAdUnitElement(target);
+  const divId = element?.id ? element.id : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
   divIdCache[adUnitCode] = divId;
   return divId;
 }
@@ -973,7 +975,8 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         banner: {
           topframe,
           format: bannerImps.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
-        }};
+        }
+      };
 
       for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
         // We add sid and externalID in imp.ext therefore, remove from banner.format[].ext
@@ -1163,7 +1166,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
   });
 
   if (fpd.device) {
-    const sua = {...fpd.device.sua};
+    const sua = { ...fpd.device.sua };
     if (!isEmpty(sua)) {
       deepSetValue(r, 'device.sua', sua);
     }
@@ -1357,7 +1360,7 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = getDivIdFromAdUnitCode(adUnitCode);
+    const divId = getDivIdFromAdUnit(adUnitCode, validBidRequest);
     nativeImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     nativeImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1379,7 +1382,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = getDivIdFromAdUnitCode(adUnitCode);
+    const divId = getDivIdFromAdUnit(adUnitCode, validBidRequest);
     videoImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     videoImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1418,7 +1421,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   }
 
   const adUnitCode = validBidRequest.adUnitCode;
-  const divId = getDivIdFromAdUnitCode(adUnitCode);
+  const divId = getDivIdFromAdUnit(adUnitCode, validBidRequest);
   bannerImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
   bannerImps[validBidRequest.adUnitCode].divId = divId;
 
@@ -1486,7 +1489,7 @@ function createMissingBannerImp(bid, imp, newSize) {
 function outstreamRenderer(bid) {
   bid.renderer.push(function () {
     const adUnitCode = bid.adUnitCode;
-    const divId = getDivIdFromAdUnitCode(adUnitCode);
+    const divId = getDivIdFromAdUnit(adUnitCode, bid);
     if (!divId) {
       logWarn(`IX Bid Adapter: adUnitCode: ${divId} not found on page.`);
       return;

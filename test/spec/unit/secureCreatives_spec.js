@@ -1,21 +1,22 @@
-import {getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative} from 'src/secureCreatives.js';
+import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
-import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
-import {auctionManager} from 'src/auctionManager.js';
+import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
+import { auctionManager } from 'src/auctionManager.js';
 import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
-import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
+import { fireNativeTrackers, getAllAssetsMessage } from 'src/native.js';
 import * as events from 'src/events.js';
-import {config as configObj} from 'src/config.js';
+import { config as configObj } from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 import 'modules/nativeRendering.js';
+import * as adUnits from 'src/utils/adUnits';
 
-import {expect} from 'chai';
+import { expect } from 'chai';
 
-import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS} from 'src/constants.js';
-import {PUC_MIN_VERSION} from 'src/creativeRenderers.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
+import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
   let sandbox;
@@ -29,7 +30,7 @@ describe('secureCreatives', () => {
   });
 
   function makeEvent(ev) {
-    return Object.assign({origin: 'mock-origin', ports: []}, ev)
+    return Object.assign({ origin: 'mock-origin', ports: [] }, ev)
   }
 
   function receive(ev) {
@@ -124,7 +125,7 @@ describe('secureCreatives', () => {
       const adUnitCodes = getAdUnits().map(unit => unit.code);
       const bidsBackHandler = function() {};
       const timeout = 2000;
-      auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
+      auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout });
       resetAuction();
     });
 
@@ -149,7 +150,7 @@ describe('secureCreatives', () => {
     describe('Prebid Request', function() {
       it('should render', function () {
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -176,7 +177,7 @@ describe('secureCreatives', () => {
 
       it('should allow stale rendering without config', function () {
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -208,10 +209,10 @@ describe('secureCreatives', () => {
       });
 
       it('should stop stale rendering with config', function () {
-        configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
+        configObj.setConfig({ 'auctionOptions': { 'suppressStaleRender': true } });
 
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -242,7 +243,7 @@ describe('secureCreatives', () => {
           sinon.assert.notCalled(adResponse.renderer.render);
           sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
-          configObj.setConfig({'auctionOptions': {}});
+          configObj.setConfig({ 'auctionOptions': {} });
         });
       });
 
@@ -287,11 +288,11 @@ describe('secureCreatives', () => {
           source: {
             postMessage: sinon.stub()
           },
-          data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+          data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
         });
         return receive(ev).then(() => {
           sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
-            const {renderer, rendererVersion} = JSON.parse(ob);
+            const { renderer, rendererVersion } = JSON.parse(ob);
             return renderer === 'mock-renderer' && rendererVersion === PUC_MIN_VERSION;
           }));
         });
@@ -322,7 +323,7 @@ describe('secureCreatives', () => {
             source: {
               postMessage: sinon.stub()
             },
-            data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+            data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
           })
           return receive(ev).then(() => {
             sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
@@ -334,7 +335,7 @@ describe('secureCreatives', () => {
                 adTemplate: bid.native.adTemplate,
                 rendererUrl: bid.native.rendererUrl,
               })
-              expect(Object.fromEntries(native.assets.map(({key, value}) => [key, value]))).to.eql({
+              expect(Object.fromEntries(native.assets.map(({ key, value }) => [key, value]))).to.eql({
                 adTemplate: bid.native.adTemplate,
                 rendererUrl: bid.native.rendererUrl,
                 body: 'vbody'
@@ -540,6 +541,7 @@ describe('secureCreatives', () => {
           value = Array.isArray(value) ? value : [value];
           targeting[key] = value;
         }),
+        getConfig: sinon.stub().callsFake((key) => key === 'targeting' ? targeting : null),
         getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
         getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
       }
@@ -643,7 +645,7 @@ describe('secureCreatives', () => {
     it('should not change dimensions until they have been set externally', () => {
       const pm = resizeAnchor(ins, 100, 200);
       clock.tick(200);
-      expect(ins.style).to.eql({width: 'auto', height: 'auto'});
+      expect(ins.style).to.eql({ width: 'auto', height: 'auto' });
       setSize();
       clock.tick(200);
       return pm.then(() => {

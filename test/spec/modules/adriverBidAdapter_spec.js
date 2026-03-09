@@ -377,7 +377,7 @@ describe('adriverAdapter', function () {
           adUnitCode: 'code'
         }]
       };
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -393,7 +393,7 @@ describe('adriverAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });
@@ -517,7 +517,7 @@ describe('adriverAdapter', function () {
 
     const bitRequestGetFloorBySized = JSON.parse(JSON.stringify(bidRequests));
 
-    bitRequestGetFloorBySized[0].getFloor = (requestParams = {currency: 'USD', mediaType: '*', size: '*'}) => {
+    bitRequestGetFloorBySized[0].getFloor = (requestParams = { currency: 'USD', mediaType: '*', size: '*' }) => {
       if (requestParams.size.length === 2 && requestParams.size[0] === 300 && requestParams.size[1] === 250) {
         return {
           'currency': 'RUB',

@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnitCode } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnit } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
@@ -553,7 +553,7 @@ describe('IndexexchangeAdapter', function () {
         }
       },
       nativeOrtbRequest: {
-        assets: [{id: 0, required: 0, img: {type: 1}}, {id: 1, required: 1, title: {len: 140}}, {id: 2, required: 1, data: {type: 2}}, {id: 3, required: 1, img: {type: 3}}, {id: 4, required: false, video: {mimes: ['video/mp4', 'video/webm'], minduration: 0, maxduration: 120, protocols: [2, 3, 5, 6]}}]
+        assets: [{ id: 0, required: 0, img: { type: 1 } }, { id: 1, required: 1, title: { len: 140 } }, { id: 2, required: 1, data: { type: 2 } }, { id: 3, required: 1, img: { type: 3 } }, { id: 4, required: false, video: { mimes: ['video/mp4', 'video/webm'], minduration: 0, maxduration: 120, protocols: [2, 3, 5, 6] } }]
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
       transactionId: '273f49a8-7549-4218-a23c-e7ba59b47230',
@@ -912,7 +912,7 @@ describe('IndexexchangeAdapter', function () {
     '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' },
     'criteoID': { envelope: 'testcriteoID' },
     'euidID': { envelope: 'testeuid' },
-    pairId: {envelope: 'testpairId'}
+    pairId: { envelope: 'testpairId' }
   };
 
   const DEFAULT_USERID_PAYLOAD = [
@@ -1930,12 +1930,15 @@ describe('IndexexchangeAdapter', function () {
           dsaparams: [1]
         }]
       }
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {
-        ext: {
-          dsa: deepClone(dsa)
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: deepClone(dsa)
+            }
+          }
         }
-      }
-      }})[0];
+      })[0];
       const r = extractPayload(request);
 
       expect(r.regs.ext.dsa.dsarequired).to.equal(dsa.dsarequired);
@@ -1951,12 +1954,15 @@ describe('IndexexchangeAdapter', function () {
         datatopub: '2',
         transparency: 20
       }
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {
-        ext: {
-          dsa: deepClone(dsa)
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: deepClone(dsa)
+            }
+          }
         }
-      }
-      }})[0];
+      })[0];
       const r = extractPayload(request);
 
       expect(r.regs).to.be.undefined;
@@ -1976,18 +1982,21 @@ describe('IndexexchangeAdapter', function () {
           dsaparams: ['1']
         }]
       }
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {
-        ext: {
-          dsa: deepClone(dsa)
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: deepClone(dsa)
+            }
+          }
         }
-      }
-      }})[0];
+      })[0];
       const r = extractPayload(request);
 
       expect(r.regs).to.be.undefined;
     });
     it('should set gpp and gpp_sid field when defined', function () {
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {gpp: 'gpp', gpp_sid: [1]}} })[0];
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: { regs: { gpp: 'gpp', gpp_sid: [1] } } })[0];
       const r = extractPayload(request);
 
       expect(r.regs.gpp).to.equal('gpp');
@@ -1995,13 +2004,13 @@ describe('IndexexchangeAdapter', function () {
       expect(r.regs.gpp_sid).to.include(1);
     });
     it('should not set gpp, gpp_sid and dsa field when not defined', function () {
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {}} })[0];
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: { regs: {} } })[0];
       const r = extractPayload(request);
 
       expect(r.regs).to.be.undefined;
     });
     it('should not set gpp and gpp_sid field when fields arent strings or array defined', function () {
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {gpp: 1, gpp_sid: 'string'}} })[0];
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: { regs: { gpp: 1, gpp_sid: 'string' } } })[0];
       const r = extractPayload(request);
 
       expect(r.regs).to.be.undefined;
@@ -2502,22 +2511,23 @@ describe('IndexexchangeAdapter', function () {
             sua: {
               platform: {
                 brand: 'macOS',
-                version: [ '12', '6', '1' ]
+                version: ['12', '6', '1']
               },
               browsers: [
                 {
                   brand: 'Chromium',
-                  version: [ '107', '0', '5249', '119' ]
+                  version: ['107', '0', '5249', '119']
                 },
                 {
                   brand: 'Google Chrome',
-                  version: [ '107', '0', '5249', '119' ]
+                  version: ['107', '0', '5249', '119']
                 },
               ],
               mobile: 0,
               model: ''
             }
-          }};
+          }
+        };
 
         const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
         const payload = extractPayload(request);
@@ -2526,8 +2536,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       it('should not set device sua if not available in fpd', function () {
-        const ortb2 = {
-          device: {}};
+        const ortb2 = { device: {} };
 
         const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
         const payload = extractPayload(request);
@@ -4240,7 +4249,7 @@ describe('IndexexchangeAdapter', function () {
         };
 
         bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
-        bidderRequestWithFledgeEnabled.paapi = {enabled: true};
+        bidderRequestWithFledgeEnabled.paapi = { enabled: true };
 
         bidderRequestWithoutFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
       });
@@ -5169,7 +5178,8 @@ describe('IndexexchangeAdapter', function () {
         device: {
           ip: '192.168.1.1',
           ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
-        }};
+        }
+      };
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
       const payload = extractPayload(request);
       expect(payload.device.ip).to.equal('192.168.1.1')
@@ -5177,7 +5187,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should not add device.ip if neither ip nor ipv6 exists', () => {
-      const ortb2 = {device: {}};
+      const ortb2 = { device: {} };
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
       const payload = extractPayload(request);
       expect(payload.device.ip).to.be.undefined;
@@ -5204,7 +5214,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should not add device.geo if it does not exist', () => {
-      const ortb2 = {device: {}};
+      const ortb2 = { device: {} };
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
       const payload = extractPayload(request);
       expect(payload.device.geo).to.be.undefined;
@@ -5217,15 +5227,15 @@ describe('IndexexchangeAdapter', function () {
       const el = document.createElement('div');
       el.id = adUnitCode;
       document.body.appendChild(el);
-      expect(getDivIdFromAdUnitCode(adUnitCode)).to.equal(adUnitCode);
+      expect(getDivIdFromAdUnit(adUnitCode, { code: adUnitCode })).to.equal(adUnitCode);
       document.body.removeChild(el);
     });
 
     it('retrieves divId from GPT once and caches result', () => {
       const adUnitCode = 'div-ad2';
-      const stub = sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({divId: 'gpt-div'});
-      const first = getDivIdFromAdUnitCode(adUnitCode);
-      const second = getDivIdFromAdUnitCode(adUnitCode);
+      const stub = sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({ divId: 'gpt-div' });
+      const first = getDivIdFromAdUnit(adUnitCode, {});
+      const second = getDivIdFromAdUnit(adUnitCode, {});
       expect(first).to.equal('gpt-div');
       expect(second).to.equal('gpt-div');
       expect(stub.calledOnce).to.be.true;

@@ -1,13 +1,29 @@
-import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
-import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
+import { _each, deepAccess, getDefinedParams, isFn, isPlainObject, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag } from '../libraries/targetVideoUtils/bidderUtils.js';
+import { SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE } from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.floor) ? bid.params.floor : null;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'EUR',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+    return floor.floor;
+  }
+  return null;
+}
 
 export const spec = {
 
@@ -38,13 +54,15 @@ export const spec = {
       version: '$prebid.version$'
     };
 
-    for (let {params, bidId, sizes, mediaTypes, ...bid} of bidRequests) {
+    for (let { bidId, sizes, mediaTypes, ...bid } of bidRequests) {
       for (const mediaType in mediaTypes) {
         switch (mediaType) {
           case VIDEO: {
+            const params = bid.params;
             const video = mediaTypes[VIDEO];
             const placementId = params.placementId;
             const site = getSiteObj();
+            const floor = getBidFloor(bid);
 
             if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
@@ -70,6 +88,12 @@ export const spec = {
               },
               video: getDefinedParams(video, VIDEO_PARAMS)
             }
+
+            const bidFloor = typeof floor === 'string' ? Number(floor.trim())
+              : typeof floor === 'number' ? floor
+                : NaN;
+
+            if (Number.isFinite(bidFloor) && bidFloor > 0) imp.bidfloor = bidFloor;
 
             if (video.playerSize) {
               imp.video = Object.assign(
@@ -120,7 +144,7 @@ export const spec = {
               };
             }
 
-            const {ortb2} = bid;
+            const { ortb2 } = bid;
 
             if (ortb2?.source?.tid) {
               if (!payload.source) {

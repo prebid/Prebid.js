@@ -9,6 +9,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -95,7 +96,7 @@ const converter = ortbConverter({
     if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
     if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
-    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes);
+    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, bidRequest, bidRequest?.sizes);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
@@ -314,7 +315,7 @@ const setFloorInImp = (imp, bid) => {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
           if (isMultiFormatRequest && mediaType !== BANNER) {
             logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', imp.bidfloorcur);
-            imp[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur};
+            imp[mediaType]['ext'] = { 'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur };
           }
           logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
           bidFloor = bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor);
@@ -322,7 +323,7 @@ const setFloorInImp = (imp, bid) => {
         }
       });
       if (isMultiFormatRequest && mediaType === BANNER) {
-        imp[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur};
+        imp[mediaType]['ext'] = { 'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur };
       }
     });
   }
@@ -599,7 +600,7 @@ const BB_RENDERER = {
     }
 
     const rendererId = BB_RENDERER.getRendererId(PUBLICATION, bid.rendererCode);
-    const ele = document.getElementById(bid.adUnitCode); // NB convention
+    const ele = getAdUnitElement(bid);
 
     const renderer = window.bluebillywig.renderers.find(r => r._id === rendererId);
     if (renderer) renderer.bootstrap(config, ele);
@@ -701,10 +702,10 @@ function _getMinSize(sizes) {
 /**
  * Measures viewability for an element and adds it to the imp object at the ext level
  * @param {Object} imp - The impression object
- * @param {string} adUnitCode - The ad unit code for element identification
+ * @param {Object} bidRequest - The bid request for element identification
  * @param {Object} sizes - Sizes object with width and height properties
  */
-export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
+export const addViewabilityToImp = (imp, bidRequest, sizes) => {
   let elementSize = { w: 0, h: 0 };
 
   if (imp.video?.w > 0 && imp.video?.h > 0) {
@@ -713,7 +714,7 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   } else {
     elementSize = _getMinSize(sizes);
   }
-  const element = document.getElementById(adUnitCode);
+  const element = getAdUnitElement(bidRequest);
   if (!element) return;
 
   const viewabilityAmount = isViewabilityMeasurable(element)
@@ -734,6 +735,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  alwaysHasCapacity: true,
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *

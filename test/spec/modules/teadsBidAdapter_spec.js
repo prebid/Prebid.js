@@ -3,7 +3,7 @@ import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { spec, storage } from 'modules/teadsBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { getScreenOrientation } from 'src/utils.js';
-import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getDevicePixelRatio } from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -428,7 +428,7 @@ describe('teadsBidAdapter', () => {
               model: 'iPhone 12 Pro Max',
               os: 'iOS',
               osv: '17.4',
-              ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+              ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
             },
           },
         },
@@ -765,20 +765,20 @@ describe('teadsBidAdapter', () => {
               source: 2,
               platform: {
                 brand: 'macOS',
-                version: [ '12', '4', '0' ]
+                version: ['12', '4', '0']
               },
               browsers: [
                 {
                   brand: 'Chromium',
-                  version: [ '106', '0', '5249', '119' ]
+                  version: ['106', '0', '5249', '119']
                 },
                 {
                   brand: 'Google Chrome',
-                  version: [ '106', '0', '5249', '119' ]
+                  version: ['106', '0', '5249', '119']
                 },
                 {
                   brand: 'Not;A=Brand',
-                  version: [ '99', '0', '0', '0' ]
+                  version: ['99', '0', '0', '0']
                 }
               ],
               mobile: 0,
@@ -798,20 +798,20 @@ describe('teadsBidAdapter', () => {
         source: 2,
         platform: {
           brand: 'macOS',
-          version: [ '12', '4', '0' ]
+          version: ['12', '4', '0']
         },
         browsers: [
           {
             brand: 'Chromium',
-            version: [ '106', '0', '5249', '119' ]
+            version: ['106', '0', '5249', '119']
           },
           {
             brand: 'Google Chrome',
-            version: [ '106', '0', '5249', '119' ]
+            version: ['106', '0', '5249', '119']
           },
           {
             brand: 'Not;A=Brand',
-            version: [ '99', '0', '0', '0' ]
+            version: ['99', '0', '0', '0']
           }
         ],
         mobile: 0,
@@ -863,7 +863,7 @@ describe('teadsBidAdapter', () => {
 
     const toEid = (sourceId, value) => ({
       source: sourceId,
-      uids: [{id: value}]
+      uids: [{ id: value }]
     })
 
     describe('User IDs', function () {

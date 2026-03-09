@@ -16,21 +16,22 @@ import {
   logMessage,
   logWarn
 } from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {bidderSettings} from '../src/bidderSettings.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {
   getANKewyordParamFromMaps,
   getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {chunk} from '../libraries/chunk/chunk.js';
+import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import { chunk } from '../libraries/chunk/chunk.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -87,7 +88,7 @@ const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -128,7 +129,7 @@ export const spec = {
             const segs = [];
             userObjBid.params.user[param].forEach(val => {
               if (isNumber(val)) {
-                segs.push({'id': val});
+                segs.push({ 'id': val });
               } else if (isPlainObject(val)) {
                 segs.push(val);
               }
@@ -261,7 +262,7 @@ export const spec = {
       bidRequests[0].userIdAsEids.forEach(eid => {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
-          const tmp = {'source': eid.source, 'id': uid.id};
+          const tmp = { 'source': eid.source, 'id': uid.id };
           if (eid.source === 'adserver.org') {
             tmp.rti_partner = 'TDID';
           } else if (eid.source === 'uidapi.com') {
@@ -333,7 +334,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent({ gdprConsent })) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -550,12 +551,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       complete: 0,
       nodes: [{
         bsid: rtbBid.buyer_member_id.toString()
-      }]};
+      }]
+    };
 
     return dchain;
   }
   if (rtbBid.buyer_member_id) {
-    bid.meta = Object.assign({}, bid.meta, {dchain: setupDChain(rtbBid)});
+    bid.meta = Object.assign({}, bid.meta, { dchain: setupDChain(rtbBid) });
   }
 
   if (rtbBid.brand_id) {
@@ -933,19 +935,18 @@ function buildNativeRequest(params) {
 
 /**
  * This function hides google div container for outstream bids to remove unwanted space on page. Mediafuse renderer creates a new iframe outside of google iframe to render the outstream creative.
- * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
-  var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+function hidedfpContainer(container) {
+  var el = container.querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }
 }
 
-function hideSASIframe(elementId) {
+function hideSASIframe(container) {
   try {
     // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
-    const el = document.getElementById(elementId).querySelectorAll("script[id^='sas_script']");
+    const el = container.querySelectorAll("script[id^='sas_script']");
     if (el[0].nextSibling && el[0].nextSibling.localName === 'iframe') {
       el[0].nextSibling.style.setProperty('display', 'none');
     }
@@ -955,8 +956,9 @@ function hideSASIframe(elementId) {
 }
 
 function outstreamRender(bid) {
-  hidedfpContainer(bid.adUnitCode);
-  hideSASIframe(bid.adUnitCode);
+  const container = getAdUnitElement(bid);
+  hidedfpContainer(container);
+  hideSASIframe(container);
   // push to render queue because ANOutstreamVideo may not be loaded
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({

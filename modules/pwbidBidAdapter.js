@@ -4,7 +4,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -275,7 +275,7 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    var options = {contentType: 'text/plain'};
+    var options = { contentType: 'text/plain' };
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);

@@ -1,16 +1,17 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {deepSetValue, getWinDimensions, getWindowSelf, isPlainObject, replaceAuctionPrice} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js';
-import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
-import {percentInView} from '../libraries/percentInView/percentInView.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { deepSetValue, getWinDimensions, getWindowSelf, isPlainObject, replaceAuctionPrice } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -34,9 +35,9 @@ export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
  * 4. new user set it to 0
  */
 export const userData = {
-  storageManager: getStorageManager({bidderCode: BIDDER_CODE}),
+  storageManager: getStorageManager({ bidderCode: BIDDER_CODE }),
   getUserId: () => {
-    const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
+    const { getFromLocalStorage, getFromCookie, getFromTRC } = userData;
 
     try {
       return getFromLocalStorage() || getFromCookie() || getFromTRC();
@@ -45,7 +46,7 @@ export const userData = {
     }
   },
   getFromCookie() {
-    const {cookiesAreEnabled, getCookie} = userData.storageManager;
+    const { cookiesAreEnabled, getCookie } = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
       let userId;
@@ -78,7 +79,7 @@ export const userData = {
     return value;
   },
   getFromLocalStorage() {
-    const {hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage} = userData.storageManager;
+    const { hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage } = userData.storageManager;
 
     if (hasLocalStorage() && localStorageIsEnabled()) {
       return getDataFromLocalStorage(STORAGE_KEY);
@@ -139,9 +140,9 @@ export function getDeviceExtSignals(existingExt = {}) {
   };
 }
 
-export function getElementSignals(adUnitCode) {
+export function getElementSignals(bidRequest) {
   try {
-    const element = document.getElementById(adUnitCode);
+    const element = getAdUnitElement(bidRequest);
     if (!element) return null;
 
     const rect = getBoundingClientRect(element);
@@ -214,7 +215,7 @@ export const spec = {
       bidRequests: validBidRequests,
       context: { auctionId }
     });
-    const {publisherId} = bidRequest.params;
+    const { publisherId } = bidRequest.params;
     const url = END_POINT_URL + '?publisher=' + publisherId;
 
     return {
@@ -239,7 +240,7 @@ export const spec = {
     if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
       return [];
     } else {
-      bids.push(...converter.fromORTB({response: serverResponse.body, request: request.data}).bids);
+      bids.push(...converter.fromORTB({ response: serverResponse.body, request: request.data }).bids);
     }
     return bids;
   },
@@ -291,16 +292,16 @@ export const spec = {
     return syncs;
   },
   onTimeout: (timeoutData) => {
-    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), {method: 'POST'});
+    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), { method: 'POST' });
   },
 
   onBidderError: ({ error, bidderRequest }) => {
-    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({error, bidderRequest}), {method: 'POST'});
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({ error, bidderRequest }), { method: 'POST' });
   },
 };
 
-function getSiteProperties({publisherId}, refererInfo, ortb2) {
-  const {getPageUrl, getReferrer} = internal;
+function getSiteProperties({ publisherId }, refererInfo, ortb2) {
+  const { getPageUrl, getReferrer } = internal;
   return {
     id: publisherId,
     name: publisherId,
@@ -317,7 +318,7 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
 }
 
 function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
-  const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
+  const { refererInfo, gdprConsent = {}, uspConsent } = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
 
   const ortb2Device = bidderRequest?.ortb2?.device || {};
@@ -385,7 +386,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
 }
 
 function fillTaboolaImpData(bid, imp) {
-  const {tagId, position} = bid.params;
+  const { tagId, position } = bid.params;
   imp.banner = getBanners(bid, position);
   imp.tagid = tagId;
 
@@ -399,7 +400,7 @@ function fillTaboolaImpData(bid, imp) {
       imp.bidfloorcur = CURRENCY;
     }
   } else {
-    const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
+    const { bidfloor = null, bidfloorcur = CURRENCY } = bid.params;
     imp.bidfloor = bidfloor;
     imp.bidfloorcur = bidfloorcur;
   }
@@ -419,7 +420,7 @@ function fillTaboolaImpData(bid, imp) {
   deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
   deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
 
-  const elementSignals = getElementSignals(bid.adUnitCode);
+  const elementSignals = getElementSignals(bid);
   if (elementSignals) {
     if (elementSignals.viewability !== undefined) {
       deepSetValue(imp, 'ext.viewability', elementSignals.viewability);

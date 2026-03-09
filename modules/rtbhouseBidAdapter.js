@@ -1,9 +1,9 @@
-import {deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue} from '../src/utils.js';
-import {getOrigin} from '../libraries/getOrigin/index.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { interpretNativeBid, OPENRTB } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 const BIDDER_CODE = 'rtbhouse';
@@ -46,8 +46,8 @@ export const spec = {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      request.regs = {ext: {gdpr: gdpr}};
-      request.user = {ext: {consent: consentStr}};
+      request.regs = { ext: { gdpr: gdpr } };
+      request.user = { ext: { consent: consentStr } };
     }
     const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     if (bidSchain) {
@@ -64,7 +64,7 @@ export const spec = {
       if (request.user && request.user.ext) {
         request.user.ext = { ...request.user.ext, ...eids };
       } else {
-        request.user = {ext: eids};
+        request.user = { ext: eids };
       }
     }
 
@@ -372,7 +372,7 @@ function mapNativeAssets(slot) {
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
 function mapNativeImage(image, type) {
-  const img = {type: type};
+  const img = { type: type };
   if (image.aspect_ratios) {
     const ratio = image.aspect_ratios[0];
     const minWidth = ratio.min_width || 100;
