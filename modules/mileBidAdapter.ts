@@ -387,7 +387,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       site: deepAccess(bid, 'meta.domain') || '',
     }
 
-    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST'});
+    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
 
     // @ts-expect-error - bid.nurl is not defined
     if (bid.nurl) ajax(bid.nurl, null, null, { method: 'GET' });
@@ -421,7 +421,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       timedOutBids.push(timeoutNotificationData);
     });
 
-    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST'});
+    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' });
   },
 };
 

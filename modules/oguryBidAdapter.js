@@ -109,18 +109,18 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  const data = converter.toORTB({bidRequests, bidderRequest});
+  const data = converter.toORTB({ bidRequests, bidderRequest });
 
   return {
     method: 'POST',
     url: BID_HOST,
     data,
-    options: {contentType: 'application/json'},
+    options: { contentType: 'application/json' },
   };
 }
 
 function interpretResponse(response, request) {
-  return converter.fromORTB({response: response.body, request: request.data}).bids;
+  return converter.fromORTB({ response: response.body, request: request.data }).bids;
 }
 
 function getFloor(bid) {
@@ -153,7 +153,7 @@ function onBidWon(bid) {
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: window.location.href }), {
     method: 'POST',
     contentType: 'application/json'
   });

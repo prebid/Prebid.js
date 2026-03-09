@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 import { isStr, isPlainObject } from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -27,7 +27,7 @@ function readFromLocalStorage() {
 }
 
 export function getStorage() {
-  return getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: ZEOTAP_MODULE_NAME});
+  return getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: ZEOTAP_MODULE_NAME });
 }
 
 export const storage = getStorage();

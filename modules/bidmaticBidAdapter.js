@@ -12,7 +12,7 @@ import {
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
-import {getPlacementPositionUtils} from "../libraries/placementPositionInfo/placementPositionInfo.js";
+import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js";
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid

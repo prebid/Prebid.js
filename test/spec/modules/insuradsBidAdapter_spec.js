@@ -345,7 +345,7 @@ describe('InsurAds bid adapter tests', () => {
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
             bidderVersion: '7.1',
-            localStorage: { amxId: 'abcdef'},
+            localStorage: { amxId: 'abcdef' },
             sessionId: requestContent.ext.sessionId,
             requestCounter: 0,
           },

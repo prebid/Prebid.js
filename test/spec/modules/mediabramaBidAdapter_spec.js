@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/mediabramaBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/mediabramaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 import * as utils from '../../../src/utils.js';
 

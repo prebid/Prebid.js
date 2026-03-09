@@ -1,8 +1,8 @@
 /**
  * Collect PAAPI component auction configs from bid adapters and make them available through `pbjs.getPAAPIConfig()`
  */
-import {config} from '../src/config.js';
-import {getHook, hook, module} from '../src/hook.js';
+import { config } from '../src/config.js';
+import { getHook, hook, module } from '../src/hook.js';
 import {
   deepAccess,
   deepEqual,
@@ -13,16 +13,16 @@ import {
   mergeDeep,
   sizesToSizeTuples
 } from '../src/utils.js';
-import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
+import { IMP, PBS, registerOrtbProcessor, RESPONSE } from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
-import {currencyCompare} from '../libraries/currencyUtils/currency.js';
-import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {auctionStore} from '../libraries/weakStore/weakStore.js';
-import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
-import {defer, PbPromise} from '../src/utils/promise.js';
-import {auctionManager} from '../src/auctionManager.js';
+import { EVENTS } from '../src/constants.js';
+import { currencyCompare } from '../libraries/currencyUtils/currency.js';
+import { keyCompare, maximum, minimum } from '../src/utils/reducers.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { auctionStore } from '../libraries/weakStore/weakStore.js';
+import { adapterMetrics, guardTids } from '../src/adapters/bidderFactory.js';
+import { defer, PbPromise } from '../src/utils/promise.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 const MODULE = 'PAAPI';
 
@@ -92,12 +92,12 @@ function attachHandlers() {
 }
 
 function detachHandlers() {
-  getHook('addPaapiConfig').getHooks({hook: addPaapiConfigHook}).remove();
-  getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
-  getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
-  getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
-  getHook('processBidderRequests').getHooks({hook: buildPAAPIParams}).remove();
-  getHook('processBidderRequests').getHooks({hook: adAuctionHeadersHook}).remove();
+  getHook('addPaapiConfig').getHooks({ hook: addPaapiConfigHook }).remove();
+  getHook('makeBidRequests').getHooks({ hook: addPaapiData }).remove();
+  getHook('makeBidRequests').getHooks({ hook: markForFledge }).remove();
+  getHook('processBidderRequests').getHooks({ hook: parallelPaapiProcessing }).remove();
+  getHook('processBidderRequests').getHooks({ hook: buildPAAPIParams }).remove();
+  getHook('processBidderRequests').getHooks({ hook: adAuctionHeadersHook }).remove();
   events.off(EVENTS.AUCTION_INIT, onAuctionInit);
   events.off(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -161,7 +161,7 @@ export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config 
     });
 }
 
-function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adUnits}) {
+function onAuctionEnd({ auctionId, bidsReceived, bidderRequests, adUnitCodes, adUnits }) {
   const adUnitsByCode = Object.fromEntries(adUnits?.map(au => [au.code, au]) || []);
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = configsForAuction(auctionId);
@@ -177,7 +177,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
 
   if (pendingConfigs && pendingBuyers) {
     Object.entries(pendingBuyers).forEach(([adUnitCode, igbRequests]) => {
-      buyersToAuctionConfigs(igbRequests).forEach(([{bidder}, auctionConfig]) => append(pendingConfigs, adUnitCode, {id: getComponentSellerConfigId(bidder), config: auctionConfig}))
+      buyersToAuctionConfigs(igbRequests).forEach(([{ bidder }, auctionConfig]) => append(pendingConfigs, adUnitCode, { id: getComponentSellerConfigId(bidder), config: auctionConfig }))
     })
   }
 
@@ -197,14 +197,14 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
 
   const configsById = {};
   Object.entries(pendingConfigs || {}).forEach(([adUnitCode, auctionConfigs]) => {
-    auctionConfigs.forEach(({id, config}) => append(configsById, id, {
+    auctionConfigs.forEach(({ id, config }) => append(configsById, id, {
       adUnitCode,
       config: mergeDeep({}, signals[adUnitCode], config)
     }));
   });
 
   function resolveSignals(signals, deferrals) {
-    Object.entries(deferrals).forEach(([signal, {resolve, default: defaultValue}]) => {
+    Object.entries(deferrals).forEach(([signal, { resolve, default: defaultValue }]) => {
       let value = signals.hasOwnProperty(signal) ? signals[signal] : null;
       if (value == null && defaultValue == null) {
         value = undefined;
@@ -217,14 +217,14 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
     })
   }
 
-  Object.entries(deferredConfigs).forEach(([adUnitCode, {top, components}]) => {
+  Object.entries(deferredConfigs).forEach(([adUnitCode, { top, components }]) => {
     resolveSignals(signals[adUnitCode], top);
-    Object.entries(components).forEach(([configId, {deferrals}]) => {
+    Object.entries(components).forEach(([configId, { deferrals }]) => {
       const matchingConfigs = configsById.hasOwnProperty(configId) ? configsById[configId] : [];
       if (matchingConfigs.length > 1) {
         logWarn(`Received multiple PAAPI configs for the same bidder and seller (${configId}), active PAAPI auctions will only see the first`);
       }
-      const {config} = matchingConfigs.shift() ?? {config: {...signals[adUnitCode]}}
+      const { config } = matchingConfigs.shift() ?? { config: { ...signals[adUnitCode] } }
       resolveSignals(config, deferrals);
     })
   });
@@ -236,7 +236,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
     logError(`Received PAAPI configs after PAAPI auctions were already started in parallel with their contextual auction`, newConfigs)
   }
 
-  newConfigs.forEach(({adUnitCode, config}) => {
+  newConfigs.forEach(({ adUnitCode, config }) => {
     if (paapiConfigs[adUnitCode] == null) {
       paapiConfigs[adUnitCode] = {
         ...signals[adUnitCode],
@@ -256,7 +256,7 @@ function append(target, key, value) {
   target[key].push(value);
 }
 
-function setFPD(target, {ortb2, ortb2Imp}) {
+function setFPD(target, { ortb2, ortb2Imp }) {
   ortb2 != null && deepSetValue(target, 'prebid.ortb2', mergeDeep({}, ortb2, target.prebid?.ortb2));
   ortb2Imp != null && deepSetValue(target, 'prebid.ortb2Imp', mergeDeep({}, ortb2Imp, target.prebid?.ortb2Imp));
   return target;
@@ -272,7 +272,7 @@ function getComponentSellerConfigId(bidderCode) {
 
 export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
-    const {adUnitCode, auctionId, bidder} = request;
+    const { adUnitCode, auctionId, bidder } = request;
 
     function storePendingData(store, data) {
       const target = store(auctionId);
@@ -283,14 +283,14 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
       }
     }
 
-    const {config, igb} = paapiConfig;
+    const { config, igb } = paapiConfig;
     if (config) {
       config.auctionSignals = setFPD(config.auctionSignals || {}, request);
       const pbs = config.perBuyerSignals = config.perBuyerSignals ?? {};
       (config.interestGroupBuyers || []).forEach(buyer => {
         pbs[buyer] = setFPD(pbs[buyer] ?? {}, request);
       })
-      storePendingData(pendingConfigsForAuction, {id: getConfigId(bidder, config.seller), config});
+      storePendingData(pendingConfigsForAuction, { id: getConfigId(bidder, config.seller), config });
     }
     if (igb && checkOrigin(igb)) {
       igb.pbs = setFPD(igb.pbs || {}, request);
@@ -381,7 +381,7 @@ export function partitionBuyersByBidder(igbRequests) {
  * when not specified, the result will contain an entry for every ad unit that was involved in any auction.
  * @return {{[adUnitCode: string]: string}}
  */
-function expandFilters({auctionId, adUnitCode} = {}) {
+function expandFilters({ auctionId, adUnitCode } = {}) {
   let adUnitCodes = [];
   if (adUnitCode == null) {
     adUnitCodes = Object.keys(latestAuctionForAdUnit);
@@ -487,7 +487,7 @@ export function addPaapiData(next, adUnits, ...args) {
         adUnit.bids.forEach(bidReq => {
           if (!getFledgeConfig(bidReq.bidder).enabled) {
             deepSetValue(bidReq, 'ortb2Imp.ext.ae', 0);
-            bidReq.ortb2Imp.ext.igs = {ae: 0, biddable: 0};
+            bidReq.ortb2Imp.ext.igs = { ae: 0, biddable: 0 };
           }
         })
       }
@@ -501,7 +501,7 @@ export const NAVIGATOR_APIS = ['createAuctionNonce', 'getInterestGroupAdAuctionD
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
-      const {enabled} = getFledgeConfig(bidderReq.bidderCode);
+      const { enabled } = getFledgeConfig(bidderReq.bidderCode);
       Object.assign(bidderReq, {
         paapi: {
           enabled,
@@ -546,7 +546,7 @@ const validatePartialConfig = (() => {
   ];
 
   return function (config) {
-    const invalid = REQUIRED_SYNC_SIGNALS.find(({props, validate}) => props.every(prop => !config.hasOwnProperty(prop) || !config[prop] || !validate(config[prop])));
+    const invalid = REQUIRED_SYNC_SIGNALS.find(({ props, validate }) => props.every(prop => !config.hasOwnProperty(prop) || !config[prop] || !validate(config[prop])));
     if (invalid) {
       logError(`Partial PAAPI config has missing or invalid property "${invalid.props[0]}"`, config)
       return false;
@@ -593,7 +593,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
   function makeDeferrals(defaults = {}) {
     const promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
-      const def = defer({promiseFactory: (resolver) => new Promise(resolver)});
+      const def = defer({ promiseFactory: (resolver) => new Promise(resolver) });
       def.default = defaults.hasOwnProperty(signal) ? defaults[signal] : null;
       promises[signal] = def.promise;
       return [signal, def]
@@ -601,7 +601,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
     return [deferrals, promises];
   }
 
-  const {auctionId, paapi: {enabled, componentSeller} = {}} = bidderRequest;
+  const { auctionId, paapi: { enabled, componentSeller } = {} } = bidderRequest;
   const auctionConfigs = configsForAuction(auctionId);
   bids.map(bid => bid.adUnitCode).forEach(adUnitCode => {
     latestAuctionForAdUnit[adUnitCode] = auctionId;
@@ -613,10 +613,10 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
   if (enabled && spec.buildPAAPIConfigs) {
     const partialConfigs = callAdapterApi(spec, 'buildPAAPIConfigs', bids, bidderRequest)
     const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
-    (partialConfigs ?? []).forEach(({bidId, config, igb}) => {
+    (partialConfigs ?? []).forEach(({ bidId, config, igb }) => {
       const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
       if (!bidRequest) {
-        logError(`Received partial PAAPI config for unknown bidId`, {bidId, config});
+        logError(`Received partial PAAPI config for unknown bidId`, { bidId, config });
       } else {
         const adUnitCode = bidRequest.adUnitCode;
         latestAuctionForAdUnit[adUnitCode] = auctionId;
@@ -655,7 +655,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
               ...promises
             }
             deferredConfig.auctionConfig.componentAuctions.push(auctionConfig)
-            deferredConfig.components[configId] = {auctionConfig, deferrals};
+            deferredConfig.components[configId] = { auctionConfig, deferrals };
           }
         }
         if (componentSeller && igb && checkOrigin(igb)) {
@@ -663,12 +663,12 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
           const deferredConfig = getDeferredConfig();
           const partialConfig = buyersToAuctionConfigs([[bidRequest, igb]])[0][1];
           if (deferredConfig.components.hasOwnProperty(configId)) {
-            const {auctionConfig, deferrals} = deferredConfig.components[configId];
+            const { auctionConfig, deferrals } = deferredConfig.components[configId];
             if (!auctionConfig.interestGroupBuyers.includes(igb.origin)) {
               const immediate = {};
               Object.entries(partialConfig).forEach(([key, value]) => {
                 if (deferrals.hasOwnProperty(key)) {
-                  mergeDeep(deferrals[key], {default: value});
+                  mergeDeep(deferrals[key], { default: value });
                 } else {
                   immediate[key] = value;
                 }
@@ -684,7 +684,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
               ...getStaticSignals(bidRequest),
               ...promises,
             }
-            deferredConfig.components[configId] = {auctionConfig, deferrals};
+            deferredConfig.components[configId] = { auctionConfig, deferrals };
             deferredConfig.auctionConfig.componentAuctions.push(auctionConfig);
           }
         }
@@ -720,9 +720,9 @@ export function buildPAAPIParams(next, spec, bids, bidderRequest, ...args) {
   }
 }
 
-export function onAuctionInit({auctionId}) {
+export function onAuctionInit({ auctionId }) {
   if (moduleConfig.parallel) {
-    auctionManager.index.getAuction({auctionId}).requestsDone.then(() => {
+    auctionManager.index.getAuction({ auctionId }).requestsDone.then(() => {
       if (Object.keys(deferredConfigsForAuction(auctionId)).length > 0) {
         submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, configsForAuction(auctionId)));
       }
@@ -737,7 +737,7 @@ export function setImpExtAe(imp, bidRequest, context) {
   }
 }
 
-registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
+registerOrtbProcessor({ type: IMP, name: 'impExtAe', fn: setImpExtAe });
 
 export function parseExtIgi(response, ortbResponse, context) {
   paapiResponseParser(
@@ -783,8 +783,8 @@ export function parseExtPrebidFledge(response, ortbResponse, context) {
   )
 }
 
-registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
-registerOrtbProcessor({type: RESPONSE, name: 'extIgiIgs', fn: parseExtIgi});
+registerOrtbProcessor({ type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS] });
+registerOrtbProcessor({ type: RESPONSE, name: 'extIgiIgs', fn: parseExtIgi });
 
 // ...then, make them available in the adapter's response. This is the client side version, for which the
 // interpretResponse api is {fledgeAuctionConfigs: [{bidId, config}]}
