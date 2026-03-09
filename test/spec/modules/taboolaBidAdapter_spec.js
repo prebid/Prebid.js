@@ -2320,65 +2320,6 @@ describe('Taboola Adapter', function () {
           expect(bannerReq.data.imp).to.have.lengthOf(1);
           expect(nativeReq.data.imp).to.have.lengthOf(1);
         });
-
-        it('should use bid.mtype to determine response media type', function () {
-          const nativeBid = {
-            bidder: 'taboola',
-            params: {
-              publisherId: 'publisherId',
-              tagId: 'native-placement'
-            },
-            ...nativeBidRequestParams,
-            nativeOrtbRequest: {
-              ver: '1.2',
-              assets: [
-                { id: 1, required: 1, title: { len: 150 } },
-                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }
-              ]
-            },
-            bidId: utils.generateUUID(),
-            auctionId: utils.generateUUID(),
-          };
-
-          const [request] = spec.buildRequests([nativeBid], commonBidderRequest);
-
-          const nativeAdm = {
-            ver: '1.2',
-            assets: [
-              { id: 1, title: { text: 'Native Ad Title' } },
-              { id: 2, img: { url: 'https://example.com/image.jpg', w: 300, h: 250 } }
-            ],
-            link: { url: 'https://example.com/click' }
-          };
-
-          const serverResponse = {
-            body: {
-              id: 'response-id',
-              seatbid: [{
-                bid: [{
-                  id: 'bid-id',
-                  impid: request.data.imp[0].id,
-                  price: 1.5,
-                  adm: JSON.stringify(nativeAdm),
-                  adomain: ['example.com'],
-                  crid: 'creative-id',
-                  exp: 300,
-                  mtype: 4,
-                  nurl: 'https://example.com/win'
-                }],
-                seat: 'taboola'
-              }],
-              cur: 'USD'
-            }
-          };
-
-          const res = spec.interpretResponse(serverResponse, request);
-
-          expect(res).to.be.an('array').with.lengthOf(1);
-          expect(res[0].mediaType).to.equal('native');
-          expect(res[0].native).to.exist;
-          expect(res[0]).to.not.have.property('ad');
-        });
       });
     }
   });

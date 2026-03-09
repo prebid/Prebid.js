@@ -183,12 +183,6 @@ const converter = ortbConverter({
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if (bid.mtype === 4) {
-      context.mediaType = NATIVE;
-    } else if (bid.mtype === 1) {
-      context.mediaType = BANNER;
-    }
-
     if (context.mediaType === NATIVE) {
       const admObj = safeJSONParse(bid.adm);
       if (admObj?.native) {
