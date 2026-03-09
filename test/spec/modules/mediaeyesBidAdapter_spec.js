@@ -65,8 +65,8 @@ describe('mediaeyes adapter', function () {
           }
         },
         params: {
-            itemId: "4d27f3cc8bbd5bd153045e",
-            bidFloor: 0.01
+          itemId: "4d27f3cc8bbd5bd153045e",
+          bidFloor: 0.01
         }
       }
     ];
@@ -247,7 +247,6 @@ describe('mediaeyes adapter', function () {
 
   describe('video responses processing', function () {
     it('should return fully initialized video bid-response', function () {
-
       const bidRequest = spec.buildRequests(videoRequest);
 
       const resp = spec.interpretResponse(videoResponse, bidRequest[0])[0];
@@ -263,5 +262,4 @@ describe('mediaeyes adapter', function () {
       expect(resp).to.have.property('meta');
     });
   });
-
 });

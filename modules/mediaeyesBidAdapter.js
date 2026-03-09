@@ -125,7 +125,7 @@ function cookImpVideo({ mediaTypes }) {
     w: video.playerSize[0][0],
     h: video.playerSize[0][1],
     mimes: video.mimes || ['video/mp4'],
-    protocols: video.protocols || [2,3,5,6],
+    protocols: video.protocols || [2, 3, 5, 6],
     placement: video.placement || 1
   };
 }
