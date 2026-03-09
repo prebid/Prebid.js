@@ -46,7 +46,7 @@ function logMissingFields(scope, missingFields) {
 function isValidEndpointUrl(endpoint) {
   try {
     const parsedEndpoint = new URL(endpoint);
-    return parsedEndpoint.protocol === 'http:' || parsedEndpoint.protocol === 'https:';
+    return parsedEndpoint.protocol === 'https:';
   } catch (e) {
     return false;
   }
@@ -57,7 +57,7 @@ function resolveEndpoint(endpoint) {
     if (isValidEndpointUrl(endpoint)) {
       return endpoint;
     } else {
-      logWarn(`${BIDDER_CODE}: Endpoint ${endpoint} is not a valid URL, using default endpoint`);
+      logWarn(`${BIDDER_CODE}: Endpoint ${endpoint} is not a valid HTTPS URL, using default endpoint`);
     }
   }
 
@@ -207,7 +207,7 @@ export const spec = {
     }
 
     if (params.endpoint !== undefined && !isValidEndpointUrl(params.endpoint)) {
-      logError(`${bidderName}: Parameter 'endpoint' needs to be a valid URL`);
+      logError(`${bidderName}: Parameter 'endpoint' needs to be a valid HTTPS URL`);
       return false;
     }
 
