@@ -87,7 +87,7 @@ export function getFirstSize(sizes) {
 
 export function parseSizes(sizes) {
   return parseSizesInput(sizes).map(size => {
-    const [ width, height ] = size.split('x');
+    const [width, height] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
       h: parseInt(height, 10) || undefined
@@ -108,7 +108,7 @@ export function getTopWindowReferrer(bidderRequest) {
 }
 
 export function getTopWindowLocation(bidderRequest) {
-  return parseUrl(bidderRequest?.refererInfo?.page, {decodeSearchAsString: true});
+  return parseUrl(bidderRequest?.refererInfo?.page, { decodeSearchAsString: true });
 }
 
 export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
@@ -117,12 +117,12 @@ export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
   Object.keys(Object(bid.mediaTypes.video))
     .filter(key => !excludeProps.includes(key))
     .forEach(key => {
-      result[ key ] = bid.mediaTypes.video[ key ];
+      result[key] = bid.mediaTypes.video[key];
     });
   Object.keys(Object(bid.params.video))
     .filter(key => VIDEO_TARGETING.includes(key))
     .forEach(key => {
-      result[ key ] = bid.params.video[ key ];
+      result[key] = bid.params.video[key];
     });
   return result;
 }
@@ -215,13 +215,13 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   }
 
   if (coppa) {
-    o.regs.ext = {'coppa': 1};
+    o.regs.ext = { 'coppa': 1 };
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     const { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
-    o.user.ext = {'consent': consentString};
+    o.regs.ext = { 'gdpr': gdprApplies ? 1 : 0 };
+    o.user.ext = { 'consent': consentString };
   }
 
   return o;

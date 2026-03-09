@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {sizesToSizeTuples} from "../src/utils.js";
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { sizesToSizeTuples } from "../src/utils.js";
 
 const BIDDER_CODE = 'scalibur';
 const ENDPOINT_SERVER = new URLSearchParams(window.location.search).get('sclServer') || 'srv';
@@ -14,7 +14,7 @@ const BIDDER_VERSION = '1.0.0';
 const IFRAME_TYPE_Q_PARAM = 'iframe';
 const IMAGE_TYPE_Q_PARAM = 'img';
 const GVLID = 1471;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const STORAGE_KEY = `${BIDDER_CODE}_fp_data`;
 
 export const spec = {
@@ -92,7 +92,7 @@ export const spec = {
         }
 
         // Floor Price
-        const floor = bid.getFloor ? bid.getFloor({currency: DEFAULT_CURRENCY, mediaType: '*', size: '*'}) : {};
+        const floor = bid.getFloor ? bid.getFloor({ currency: DEFAULT_CURRENCY, mediaType: '*', size: '*' }) : {};
         imp.bidfloor = floor.floor || bid.params.bidfloor || 0;
         imp.bidfloorcur = floor.currency || bid.params.bidfloorcur || DEFAULT_CURRENCY;
 
@@ -212,10 +212,10 @@ export const spec = {
 
     const syncs = [];
     if (syncOptions.iframeEnabled) {
-      syncs.push({type: 'iframe', url: `${SYNC_IFRAME_URL}?${queryParams}`});
+      syncs.push({ type: 'iframe', url: `${SYNC_IFRAME_URL}?${queryParams}` });
     }
     if (syncOptions.pixelEnabled) {
-      syncs.push({type: 'image', url: `${SYNC_PIXEL_URL}?${queryParams}`});
+      syncs.push({ type: 'image', url: `${SYNC_PIXEL_URL}?${queryParams}` });
     }
     return syncs;
   },

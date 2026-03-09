@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import {deepAccess, deepClone, replaceAuctionPrice} from '../src/utils.js';
+import { deepAccess, deepClone, replaceAuctionPrice } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'dvgroup';
@@ -57,7 +57,7 @@ export const spec = {
       return [];
     }
 
-    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.ttl = bid.ttl || TIME_TO_LIVE;
@@ -92,7 +92,7 @@ export const spec = {
     return syncs;
   },
 
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);

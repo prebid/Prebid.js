@@ -492,32 +492,32 @@ describe('MGIDXBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     afterEach(function() {
-      config.setConfig({userSync: {syncsPerBidder: USERSYNC_DEFAULT_CONFIG.syncsPerBidder}});
+      config.setConfig({ userSync: { syncsPerBidder: USERSYNC_DEFAULT_CONFIG.syncsPerBidder } });
     });
     it('should do nothing on getUserSyncs without inputs', function () {
       expect(spec.getUserSyncs()).to.equal(undefined)
     });
     it('should return frame object with empty consents', function () {
-      const sync = spec.getUserSyncs({iframeEnabled: true})
+      const sync = spec.getUserSyncs({ iframeEnabled: true })
       expect(sync).to.have.length(1)
       expect(sync[0]).to.have.property('type', 'iframe')
       expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=&gdpr=0/)
     });
     it('should return frame object with gdpr consent', function () {
-      const sync = spec.getUserSyncs({iframeEnabled: true}, undefined, {consentString: 'consent', gdprApplies: true})
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, undefined, { consentString: 'consent', gdprApplies: true })
       expect(sync).to.have.length(1)
       expect(sync[0]).to.have.property('type', 'iframe')
       expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent&gdpr=1/)
     });
     it('should return frame object with gdpr + usp', function () {
-      const sync = spec.getUserSyncs({iframeEnabled: true}, undefined, {consentString: 'consent1', gdprApplies: true}, {'consentString': 'consent2'})
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
       expect(sync).to.have.length(1)
       expect(sync[0]).to.have.property('type', 'iframe')
       expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
     });
     it('should return img object with gdpr + usp', function () {
-      config.setConfig({userSync: {syncsPerBidder: undefined}});
-      const sync = spec.getUserSyncs({pixelEnabled: true}, undefined, {consentString: 'consent1', gdprApplies: true}, {'consentString': 'consent2'})
+      config.setConfig({ userSync: { syncsPerBidder: undefined } });
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
       expect(sync).to.have.length(USERSYNC_DEFAULT_CONFIG.syncsPerBidder)
       for (let i = 0; i < USERSYNC_DEFAULT_CONFIG.syncsPerBidder; i++) {
         expect(sync[i]).to.have.property('type', 'image')
@@ -525,14 +525,14 @@ describe('MGIDXBidAdapter', function () {
       }
     });
     it('should return frame object with gdpr + usp', function () {
-      const sync = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, undefined, {consentString: 'consent1', gdprApplies: true}, {'consentString': 'consent2'})
+      const sync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
       expect(sync).to.have.length(1)
       expect(sync[0]).to.have.property('type', 'iframe')
       expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
     });
     it('should return img (pixels) objects with gdpr + usp', function () {
-      const response = [{body: {ext: {cm: ['http://cm.mgid.com/i.gif?cdsp=1111', 'http://cm.mgid.com/i.gif']}}}]
-      const sync = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, response, {consentString: 'consent1', gdprApplies: true}, {'consentString': 'consent2'})
+      const response = [{ body: { ext: { cm: ['http://cm.mgid.com/i.gif?cdsp=1111', 'http://cm.mgid.com/i.gif'] } } }]
+      const sync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, response, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
       expect(sync).to.have.length(2)
       expect(sync[0]).to.have.property('type', 'image')
       expect(sync[0]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cdsp=1111&cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)

@@ -2,7 +2,7 @@
  * This module adds the LiveIntent provider to the Real Time Data module (rtdModule).
  */
 import { submodule } from '../src/hook.js';
-import {deepAccess, deepSetValue} from '../src/utils.js'
+import { deepAccess, deepSetValue } from '../src/utils.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

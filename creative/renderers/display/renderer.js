@@ -1,8 +1,8 @@
 import { registerReportingObserver } from '../../reporting.js';
 import { BROWSER_INTERVENTION, MESSAGE_EVENT } from '../../constants.js';
-import {ERROR_NO_AD} from './constants.js';
+import { ERROR_NO_AD } from './constants.js';
 
-export function render({ad, adUrl, width, height, instl}, {mkFrame, sendMessage}, win) {
+export function render({ ad, adUrl, width, height, instl }, { mkFrame, sendMessage }, win) {
   registerReportingObserver((report) => {
     sendMessage(MESSAGE_EVENT, {
       event: BROWSER_INTERVENTION,
@@ -24,7 +24,7 @@ export function render({ad, adUrl, width, height, instl}, {mkFrame, sendMessage}
         });
     }
     const doc = win.document;
-    const attrs = {width: width ?? '100%', height: height ?? '100%'};
+    const attrs = { width: width ?? '100%', height: height ?? '100%' };
     if (adUrl && !ad) {
       attrs.src = adUrl;
     } else {

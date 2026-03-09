@@ -2,7 +2,7 @@ import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
 
-import {getGlobal} from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 
 import {
   setConfig,
@@ -11,13 +11,13 @@ import {
   currencyRates,
   responseReady
 } from 'modules/currency.js';
-import {createBid} from '../../../src/bidfactory.js';
+import { createBid } from '../../../src/bidfactory.js';
 import * as utils from 'src/utils.js';
-import {EVENTS, REJECTION_REASON} from '../../../src/constants.js';
-import {server} from '../../mocks/xhr.js';
+import { EVENTS, REJECTION_REASON } from '../../../src/constants.js';
+import { server } from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 import { enrichFPD } from '../../../src/fpd/enrichment.js';
-import {requestBidsHook} from '../../../modules/currency.js';
+import { requestBidsHook } from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -90,7 +90,8 @@ describe('currency', function () {
         'defaultRates': {
           'GBP': { 'CNY': 66, 'JPY': 132, 'USD': 264 },
           'USD': { 'CNY': 60, 'GBP': 120, 'JPY': 240 }
-        } });
+        }
+      });
       fakeCurrencyFileServer.respond();
       expect(fakeCurrencyFileServer.requests.length).to.equal(2);
       expect(fakeCurrencyFileServer.requests[1].url).to.equal('https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=20030306');
@@ -305,7 +306,7 @@ describe('currency', function () {
     describe('when rates fail to load', () => {
       let bid, addBidResponse, reject;
       beforeEach(() => {
-        bid = makeBid({cpm: 100, currency: 'JPY', bidder: 'rubicoin'});
+        bid = makeBid({ cpm: 100, currency: 'JPY', bidder: 'rubicoin' });
         addBidResponse = sinon.spy();
         reject = sinon.spy();
       })
@@ -389,7 +390,7 @@ describe('currency', function () {
   describe('currency.addBidResponseDecorator', function () {
     let reject;
     beforeEach(() => {
-      reject = sinon.stub().returns({status: 'rejected'});
+      reject = sinon.stub().returns({ status: 'rejected' });
     });
 
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
@@ -457,9 +458,9 @@ describe('currency', function () {
 
     it('should reject bid when rates have not loaded when the auction times out', () => {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
-      setConfig({'adServerCurrency': 'JPY'});
-      const bid = makeBid({cpm: 1, currency: 'USD', auctionId: 'aid'});
-      const noConversionBid = makeBid({cpm: 1, currency: 'JPY', auctionId: 'aid'});
+      setConfig({ 'adServerCurrency': 'JPY' });
+      const bid = makeBid({ cpm: 1, currency: 'USD', auctionId: 'aid' });
+      const noConversionBid = makeBid({ cpm: 1, currency: 'JPY', auctionId: 'aid' });
       const reject = sinon.spy();
       const addBidResponse = sinon.spy();
       addBidResponseHook(addBidResponse, 'au', bid, reject);
@@ -557,7 +558,7 @@ describe('currency', function () {
     });
 
     it('should delay auction start when auctionDelay set in module config', () => {
-      setConfig({auctionDelay: 2000, adServerCurrency: 'USD'});
+      setConfig({ auctionDelay: 2000, adServerCurrency: 'USD' });
       const reqBidsConfigObj = {
         auctionId: '128937'
       };
@@ -567,7 +568,7 @@ describe('currency', function () {
     });
 
     it('should start auction when auctionDelay time passed', () => {
-      setConfig({auctionDelay: 2000, adServerCurrency: 'USD'});
+      setConfig({ auctionDelay: 2000, adServerCurrency: 'USD' });
       const reqBidsConfigObj = {
         auctionId: '128937'
       };
@@ -578,7 +579,7 @@ describe('currency', function () {
     });
 
     it('should run auction if rates were fetched before auctionDelay time', () => {
-      setConfig({auctionDelay: 3000, adServerCurrency: 'USD'});
+      setConfig({ auctionDelay: 3000, adServerCurrency: 'USD' });
       const reqBidsConfigObj = {
         auctionId: '128937'
       };

@@ -11,9 +11,9 @@ import {
   PREBID_STORAGE,
   yandexIdSubmodule,
 } from '../../../modules/yandexIdSystem.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {createSandbox} from 'sinon'
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { createSandbox } from 'sinon'
 import * as utils from '../../../src/utils.js';
 
 /**
