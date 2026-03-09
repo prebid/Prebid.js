@@ -663,13 +663,13 @@ describe('connatixBidAdapter', function () {
   describe('interpretResponse', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
-    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId, Lurl: 'test-lurl'};
+    const Bid = { Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId, Lurl: 'test-lurl' };
 
     let serverResponse;
     this.beforeEach(function () {
       serverResponse = {
         body: {
-          Bids: [ Bid ]
+          Bids: [Bid]
         },
         headers: function() { }
       };
@@ -696,7 +696,7 @@ describe('connatixBidAdapter', function () {
     it('Should contains the same values as in the serverResponse', function() {
       const bidResponses = spec.interpretResponse(serverResponse);
 
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
       expect(bidResponse.requestId).to.equal(serverResponse.body.Bids[0].RequestId);
       expect(bidResponse.cpm).to.equal(serverResponse.body.Bids[0].Cpm);
       expect(bidResponse.ttl).to.equal(serverResponse.body.Bids[0].Ttl);
@@ -707,7 +707,7 @@ describe('connatixBidAdapter', function () {
     });
 
     it('Should return n bid responses for n bids', function() {
-      serverResponse.body.Bids = [ { ...Bid }, { ...Bid } ];
+      serverResponse.body.Bids = [{ ...Bid }, { ...Bid }];
 
       const firstBidCpm = 4;
       serverResponse.body.Bids[0].Cpm = firstBidCpm;
@@ -724,10 +724,10 @@ describe('connatixBidAdapter', function () {
 
     it('Should contain specific values for banner bids', function () {
       const adHtml = 'ad html'
-      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+      serverResponse.body.Bids = [{ ...Bid, Ad: adHtml }];
 
       const bidResponses = spec.interpretResponse(serverResponse);
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
 
       expect(bidResponse.vastXml).to.be.undefined;
       expect(bidResponse.ad).to.equal(adHtml);
@@ -736,10 +736,10 @@ describe('connatixBidAdapter', function () {
 
     it('Should contain specific values for video bids', function () {
       const adVastXml = 'ad vast xml'
-      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+      serverResponse.body.Bids = [{ ...Bid, VastXml: adVastXml }];
 
       const bidResponses = spec.interpretResponse(serverResponse);
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
 
       expect(bidResponse.ad).to.be.undefined;
       expect(bidResponse.vastXml).to.equal(adVastXml);
@@ -752,19 +752,19 @@ describe('connatixBidAdapter', function () {
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync'
     const UserSyncEndpointWithParams = 'https://connatix.com/sync?param1=value1'
-    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
+    const Bid = { Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId };
 
     const serverResponse = {
       body: {
         UserSyncEndpoint,
-        Bids: [ Bid ]
+        Bids: [Bid]
       },
       headers: function() { }
     };
     const serverResponse2 = {
       body: {
         UserSyncEndpoint: UserSyncEndpointWithParams,
-        Bids: [ Bid ]
+        Bids: [Bid]
       },
       headers: function() { }
     };
@@ -774,30 +774,30 @@ describe('connatixBidAdapter', function () {
     });
 
     it('Should return an empty array when iframeEnabled: false', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [], {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array when serverResponses is emprt array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [], {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array when iframeEnabled: true but serverResponses in an empty array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [serverResponse], {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array when iframeEnabled: true but serverResponses in an not defined or null', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, undefined, {}, {}, {})).to.be.an('array').that.is.empty;
-      expect(spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, null, {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, undefined, {}, {}, {})).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, null, {}, {}, {})).to.be.an('array').that.is.empty;
     });
     it('Should return one user sync object when iframeEnabled is true and serverResponses is not an empry array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [serverResponse], {}, {}, {})).to.be.an('array').that.is.not.empty;
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], {}, {}, {})).to.be.an('array').that.is.not.empty;
     });
     it('Should return a list containing a single object having type: iframe and url: syncUrl', function () {
-      const userSyncList = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [serverResponse], undefined, undefined, undefined);
+      const userSyncList = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [serverResponse], undefined, undefined, undefined);
       const { type, url } = userSyncList[0];
       expect(type).to.equal('iframe');
       expect(url).to.equal(UserSyncEndpoint);
     });
     it('Should append gdpr: 0 if gdprConsent object is provided but gdprApplies field is not provided', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
         {},
         undefined,
@@ -808,9 +808,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append gdpr having the value of gdprApplied if gdprConsent object is present and have gdprApplies field', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true},
+        { gdprApplies: true },
         undefined,
         undefined
       );
@@ -819,9 +819,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append gdpr_consent if gdprConsent object is present and have gdprApplies field', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'alabala'},
+        { gdprApplies: true, consentString: 'alabala' },
         undefined,
         undefined
       );
@@ -830,9 +830,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should encodeURI gdpr_consent corectly', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         undefined,
         undefined
       );
@@ -841,9 +841,9 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append usp_consent to the url if uspConsent is provided', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
         undefined
       );
@@ -852,22 +852,22 @@ describe('connatixBidAdapter', function () {
     });
     it('Should append gpp and gpp_sid to the url if gppConsent param is provided', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
-        {gppString: 'GPP', applicableSections: [2, 4]}
+        { gppString: 'GPP', applicableSections: [2, 4] }
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
     });
     it('Should correctly append all consents to the sync url if the url contains query params', function () {
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse2],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
-        {gppString: 'GPP', applicableSections: [2, 4]}
+        { gppString: 'GPP', applicableSections: [2, 4] }
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4`);
@@ -877,11 +877,11 @@ describe('connatixBidAdapter', function () {
         coppa: true
       });
       const userSyncList = spec.getUserSyncs(
-        {iframeEnabled: true, pixelEnabled: true},
+        { iframeEnabled: true, pixelEnabled: true },
         [serverResponse],
-        {gdprApplies: true, consentString: 'test&2'},
+        { gdprApplies: true, consentString: 'test&2' },
         '1YYYN',
-        {gppString: 'GPP', applicableSections: [2, 4]}
+        { gppString: 'GPP', applicableSections: [2, 4] }
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN&gpp=GPP&gpp_sid=2,4&coppa=1`);

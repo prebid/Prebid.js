@@ -66,7 +66,7 @@ export const spec = {
       return {
         method: 'POST',
         url: requestUrl,
-        options: {withCredentials: true},
+        options: { withCredentials: true },
         data: {
           gdpr: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           gdpr_cs: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
@@ -219,7 +219,7 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const {document: {documentElement, body}} = getWinDimensions();
+    const { document: { documentElement, body } } = getWinDimensions();
     const width = body.clientWidth;
     const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
     return [width, height];

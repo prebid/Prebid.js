@@ -48,22 +48,22 @@ describe('optableBidAdapter', function() {
   });
 
   describe('buildPAAPIConfigs', () => {
-    function makeRequest({bidId, site = 'mockSite', ae = 1}) {
+    function makeRequest({ bidId, site = 'mockSite', ae = 1 }) {
       return {
         bidId,
         params: {
           site
         },
         ortb2Imp: {
-          ext: {ae}
+          ext: { ae }
         }
       }
     }
     it('should generate auction configs for ae requests', () => {
       const configs = spec.buildPAAPIConfigs([
-        makeRequest({bidId: 'bid1', ae: 1}),
-        makeRequest({bidId: 'bid2', ae: 0}),
-        makeRequest({bidId: 'bid3', ae: 1}),
+        makeRequest({ bidId: 'bid1', ae: 1 }),
+        makeRequest({ bidId: 'bid2', ae: 0 }),
+        makeRequest({ bidId: 'bid3', ae: 1 }),
       ]);
       expect(configs.map(cfg => cfg.bidId)).to.eql(['bid1', 'bid3']);
       configs.forEach(cfg => sinon.assert.match(cfg.config, {
