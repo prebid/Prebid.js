@@ -21,7 +21,7 @@ import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_
 
 const EVENTS_TOPIC = 'pre_lips';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout, headers) => {
     ajaxBuilder(timeout)(

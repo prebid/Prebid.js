@@ -1,16 +1,16 @@
-import {expect} from 'chai';
-import {geolocationSubmodule} from 'modules/geolocationRtdProvider.js';
+import { expect } from 'chai';
+import { geolocationSubmodule } from 'modules/geolocationRtdProvider.js';
 import * as activityRules from 'src/activities/rules.js';
 import 'src/prebid.js';
-import {PbPromise} from '../../../src/utils/promise.js';
-import {ACTIVITY_TRANSMIT_PRECISE_GEO} from '../../../src/activities/activities.js';
+import { PbPromise } from '../../../src/utils/promise.js';
+import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../../../src/activities/activities.js';
 
 describe('Geolocation RTD Provider', function () {
   let sandbox;
 
   before(() => {
     if (!navigator.permissions) {
-      navigator.permissions = {mock: true, query: false}
+      navigator.permissions = { mock: true, query: false }
     }
   });
 
@@ -48,13 +48,13 @@ describe('Geolocation RTD Provider', function () {
     beforeEach(() => {
       onDone = sinon.stub();
       permState = 'prompt';
-      rtdConfig = {params: {}};
+      rtdConfig = { params: {} };
       clock = sandbox.useFakeTimers({
         now: 11000,
         shouldClearNativeTimers: true
       });
       sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
-        cb({coords: {latitude: 1, longitude: 2}, timestamp: 1000});
+        cb({ coords: { latitude: 1, longitude: 2 }, timestamp: 1000 });
       });
       permGiven = new Promise((resolve) => {
         sandbox.stub(navigator.permissions, 'query').value(() => {
@@ -88,7 +88,7 @@ describe('Geolocation RTD Provider', function () {
         });
 
         it(`should set geolocation`, async () => {
-          const requestBidObject = {ortb2Fragments: {global: {}}};
+          const requestBidObject = { ortb2Fragments: { global: {} } };
           geolocationSubmodule.getBidRequestData(requestBidObject, onDone, rtdConfig);
           await permGiven;
           clock.tick(300);
@@ -112,7 +112,7 @@ describe('Geolocation RTD Provider', function () {
         beforeEach(setup);
 
         it(`should NOT set geo`, () => {
-          const req = {ortb2Fragments: {global: {}}};
+          const req = { ortb2Fragments: { global: {} } };
           geolocationSubmodule.getBidRequestData(req, onDone, rtdConfig);
           clock.tick(300);
           expect(req.ortb2Fragments.global.device?.geo).to.not.exist;

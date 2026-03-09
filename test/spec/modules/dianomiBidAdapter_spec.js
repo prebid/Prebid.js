@@ -164,7 +164,7 @@ describe('Dianomi adapter', () => {
         },
       ];
       const request = JSON.parse(
-        spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}, ortb2: {source: {tid: 'tid'}}}).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2: { source: { tid: 'tid' } } }).data
       );
 
       assert.equal(request.source.tid, 'tid');

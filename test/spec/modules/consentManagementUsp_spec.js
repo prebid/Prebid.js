@@ -8,9 +8,9 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import adapterManager, {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
-import {requestBids} from '../../../src/prebid.js';
-import {defer} from '../../../src/utils/promise.js';
+import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
+import { requestBids } from '../../../src/prebid.js';
+import { defer } from '../../../src/utils/promise.js';
 
 const expect = require('chai').expect;
 
@@ -79,7 +79,7 @@ describe('consentManagement', function () {
       });
 
       it('should use system default values', function () {
-        setConsentConfig({usp: {}});
+        setConsentConfig({ usp: {} });
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
@@ -113,7 +113,7 @@ describe('consentManagement', function () {
       });
 
       it('should immediately start looking up consent data', () => {
-        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        setConsentConfig({ usp: { cmpApi: 'invalid' } });
         expect(uspDataHandler.ready).to.be.true;
       });
     });
@@ -138,12 +138,12 @@ describe('consentManagement', function () {
       });
 
       it('should enable uspDataHandler', () => {
-        setConsentConfig({usp: {cmpApi: 'daa', timeout: 7500}});
+        setConsentConfig({ usp: { cmpApi: 'daa', timeout: 7500 } });
         expect(uspDataHandler.enabled).to.be.true;
       });
 
       it('should call setConsentData(null) on invalid CMP api', () => {
-        setConsentConfig({usp: {cmpApi: 'invalid'}});
+        setConsentConfig({ usp: { cmpApi: 'invalid' } });
         let hookRan = false;
         requestBidsHook(() => {
           hookRan = true;
@@ -296,7 +296,7 @@ describe('consentManagement', function () {
       });
 
       it('should call uspDataHandler.setConsentData(null) on timeout', (done) => {
-        setConsentConfig({usp: {timeout: 10}});
+        setConsentConfig({ usp: { timeout: 10 } });
         let hookRan = false;
         uspStub = sinon.stub(window, '__uspapi').callsFake(() => {});
         requestBidsHook(() => { hookRan = true; }, {});
@@ -338,7 +338,7 @@ describe('consentManagement', function () {
         if (event && event.data) {
           const data = event.data;
           if (data.__uspapiCall) {
-            const {command, version, callId} = data.__uspapiCall;
+            const { command, version, callId } = data.__uspapiCall;
             let response = mockApi(command, version, callId);
             if (response) {
               response = {
@@ -515,7 +515,7 @@ describe('consentManagement', function () {
           if (cmd === 'registerDeletion') {
             throw new Error('CMP not compliant');
           } else if (cmd === 'getUSPData') {
-            cb({uspString: 'string'}, true);
+            cb({ uspString: 'string' }, true);
           }
         });
         setConsentConfig(goodConfig);
@@ -527,7 +527,7 @@ describe('consentManagement', function () {
           if (cmd === 'registerDeletion') {
             cb(null, false);
           } else {
-            cb({uspString: 'string'}, true);
+            cb({ uspString: 'string' }, true);
           }
         });
         setConsentConfig(goodConfig);

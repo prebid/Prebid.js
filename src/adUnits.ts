@@ -1,8 +1,8 @@
-import type {AdUnitCode, BidderCode, ContextIdentifiers, Size} from "./types/common.d.ts";
-import type {ORTBImp} from "./types/ortb/request.d.ts";
-import type {Bid} from "./bidfactory.ts";
-import type {MediaTypes} from "./mediaTypes.ts";
-import type {DeepPartial} from "./types/objects.d.ts";
+import type { AdUnitCode, BidderCode, ContextIdentifiers, Size } from "./types/common.d.ts";
+import type { ORTBImp } from "./types/ortb/request.d.ts";
+import type { Bid } from "./bidfactory.ts";
+import type { MediaTypes } from "./mediaTypes.ts";
+import type { DeepPartial } from "./types/objects.d.ts";
 
 export interface RendererConfig {
   /**
