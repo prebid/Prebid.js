@@ -1746,6 +1746,58 @@ describe('bidderFactory', () => {
 
         expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.true;
       });
+
+      it('should reject unknown media type when configured and adapter omits mediaType', () => {
+        req.mediaTypes = {
+          video: { context: 'instream' }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectUnknownMediaTypes: true
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.false;
+      });
+
+      it('should keep legacy behavior when rejectUnknownMediaTypes is disabled', () => {
+        req.mediaTypes = {
+          video: { context: 'instream' }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectUnknownMediaTypes: false
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.true;
+      });
+
+      it('should allow mismatched media type when rejectInvalidMediaTypes is disabled', () => {
+        req.mediaTypes = {
+          banner: { sizes: [[1, 2]] }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectInvalidMediaTypes: false
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'video' }))).to.be.true;
+      });
+
+      it('should reject mismatched media type when rejectInvalidMediaTypes is enabled', () => {
+        req.mediaTypes = {
+          banner: { sizes: [[1, 2]] }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectInvalidMediaTypes: true
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'video' }))).to.be.false;
+      });
     });
   });
 
