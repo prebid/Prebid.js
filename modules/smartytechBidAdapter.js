@@ -1,10 +1,10 @@
-import {buildUrl, deepAccess, isArray, generateUUID} from '../src/utils.js'
+import { buildUrl, deepAccess, isArray, generateUUID } from '../src/utils.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {chunk} from '../libraries/chunk/chunk.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {findRootDomain} from '../src/fpd/rootDomain.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { chunk } from '../libraries/chunk/chunk.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { findRootDomain } from '../src/fpd/rootDomain.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -16,7 +16,7 @@ const AUID_COOKIE_NAME = '_smartytech_auid';
 const AUID_COOKIE_EXPIRATION_DAYS = 1825; // 5 years
 
 // Storage manager for cookies
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Get or generate Alias User ID (auId)
@@ -47,7 +47,7 @@ export function getAliasUserId() {
 }
 
 export const spec = {
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   code: BIDDER_CODE,
 
   isBidRequestValid: function (bidRequest) {

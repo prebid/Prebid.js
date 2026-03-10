@@ -1,7 +1,7 @@
-import {submodule} from '../src/hook.js';
-import {isFn, logError} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { submodule } from '../src/hook.js';
+import { isFn, logError } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 import '../src/adapterManager.js';
 
@@ -11,7 +11,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
   const placeholdersMap = {};
   let done = false;
   if (!observerAvailable) return complete();
-  const observer = new IntersectionObserver(observerCallback, {threshold: 0.5});
+  const observer = new IntersectionObserver(observerCallback, { threshold: 0.5 });
   const adUnitCodes = requestBidsObject.adUnitCodes || [];
   const auctionDelay = config.getConfig('realTimeData.auctionDelay') || 0;
   const waitForIt = providerConfig.waitForIt;

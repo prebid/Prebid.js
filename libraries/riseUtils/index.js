@@ -10,12 +10,12 @@ import {
   logInfo,
   triggerPixel
 } from '../../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
-import {config} from '../../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
+import { config } from '../../src/config.js';
 import { getDNT } from '../dnt/index.js';
-import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
+import { ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES } from './constants.js';
 
-import {getGlobalVarName} from '../../src/buildOptions.js';
+import { getGlobalVarName } from '../../src/buildOptions.js';
 
 export const makeBaseSpec = (baseUrl, modes) => {
   return {
@@ -350,7 +350,7 @@ export function buildBidResponse(adUnit) {
   } else if (adUnit.mediaType === BANNER) {
     bidResponse.ad = adUnit.ad;
   } else if (adUnit.mediaType === NATIVE) {
-    bidResponse.native = {ortb: adUnit.native};
+    bidResponse.native = { ortb: adUnit.native };
   }
 
   if (adUnit.adomain && adUnit.adomain.length) {

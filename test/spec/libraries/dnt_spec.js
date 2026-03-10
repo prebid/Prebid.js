@@ -1,4 +1,4 @@
-import {getDNT} from '../../../libraries/dnt/index.js';
+import { getDNT } from '../../../libraries/dnt/index.js';
 
 describe('dnt helper', () => {
   let win;

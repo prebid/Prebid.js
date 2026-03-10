@@ -1,23 +1,23 @@
-import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
-import {deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
-import {config} from '../../src/config.js';
-import {S2S} from '../../src/constants.js';
-import {createBid} from '../../src/bidfactory.js';
-import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
-import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
-import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
-import {IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
-import {redactor} from '../../src/activities/redactor.js';
-import {s2sActivityParams} from '../../src/adapterManager.js';
-import {activityParams} from '../../src/activities/activityParams.js';
-import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
-import {isActivityAllowed} from '../../src/activities/rules.js';
-import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
-import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
-import {minimum} from '../../src/utils/reducers.js';
-import {s2sDefaultConfig} from './index.js';
-import {premergeFpd} from './bidderConfig.js';
-import {ALL_MEDIATYPES, BANNER} from '../../src/mediaTypes.js';
+import { ortbConverter } from '../../libraries/ortbConverter/converter.js';
+import { deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp } from '../../src/utils.js';
+import { config } from '../../src/config.js';
+import { S2S } from '../../src/constants.js';
+import { createBid } from '../../src/bidfactory.js';
+import { pbsExtensions } from '../../libraries/pbsExtensions/pbsExtensions.js';
+import { setImpBidParams } from '../../libraries/pbsExtensions/processors/params.js';
+import { SUPPORTED_MEDIA_TYPES } from '../../libraries/pbsExtensions/processors/mediaType.js';
+import { IMP, REQUEST, RESPONSE } from '../../src/pbjsORTB.js';
+import { redactor } from '../../src/activities/redactor.js';
+import { s2sActivityParams } from '../../src/adapterManager.js';
+import { activityParams } from '../../src/activities/activityParams.js';
+import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
+import { isActivityAllowed } from '../../src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_TID } from '../../src/activities/activities.js';
+import { currencyCompare } from '../../libraries/currencyUtils/currency.js';
+import { minimum } from '../../src/utils/reducers.js';
+import { s2sDefaultConfig } from './index.js';
+import { premergeFpd } from './bidderConfig.js';
+import { ALL_MEDIATYPES, BANNER } from '../../src/mediaTypes.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -59,7 +59,7 @@ const PBS_CONVERTER = ortbConverter({
     if (!imps.length) {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
     } else {
-      const {s2sBidRequest} = context;
+      const { s2sBidRequest } = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = Math.floor(s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout));
@@ -200,7 +200,7 @@ const PBS_CONVERTER = ortbConverter({
         }).map(([bidder, ortb2]) => ({
           // ... but for bidder specific FPD we can use the actual bidder
           bidders: [bidder],
-          config: {ortb2: context.getRedactor(bidder).ortb2(ortb2)}
+          config: { ortb2: context.getRedactor(bidder).ortb2(ortb2) }
         }));
         if (fpdConfigs.length) {
           deepSetValue(ortbRequest, 'ext.prebid.bidderconfig', fpdConfigs);
@@ -219,16 +219,16 @@ const PBS_CONVERTER = ortbConverter({
                 bidders: [req.bidderCode],
                 schain: req?.bids?.[0]?.ortb2?.source?.ext?.schain
               })))
-            .filter(({bidders, schain}) => bidders?.length > 0 && schain)
-            .reduce((chains, {bidders, schain}) => {
+            .filter(({ bidders, schain }) => bidders?.length > 0 && schain)
+            .reduce((chains, { bidders, schain }) => {
               const key = JSON.stringify(schain);
               if (!chains.hasOwnProperty(key)) {
-                chains[key] = {bidders: new Set(), schain};
+                chains[key] = { bidders: new Set(), schain };
               }
               bidders.forEach((bidder) => chains[key].bidders.add(bidder));
               return chains;
             }, {})
-        ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
+        ).map(({ bidders, schain }) => ({ bidders: Array.from(bidders), schain }));
 
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);
@@ -246,7 +246,7 @@ const PBS_CONVERTER = ortbConverter({
     [RESPONSE]: {
       serverSideStats(orig, response, ortbResponse, context) {
         // override to process each request
-        context.actualBidderRequests.forEach(req => orig(response, ortbResponse, {...context, bidderRequest: req, bidRequests: req.bids}));
+        context.actualBidderRequests.forEach(req => orig(response, ortbResponse, { ...context, bidderRequest: req, bidRequests: req.bids }));
       },
       paapiConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
@@ -311,7 +311,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     proxyBidRequests.push({
       ...adUnit,
       adUnitCode: adUnit.code,
-      pbsData: {impId, actualBidRequests, adUnit},
+      pbsData: { impId, actualBidRequests, adUnit },
     });
   });
 
@@ -343,5 +343,5 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
 }
 
 export function interpretPBSResponse(response, request) {
-  return PBS_CONVERTER.fromORTB({response, request});
+  return PBS_CONVERTER.fromORTB({ response, request });
 }

@@ -2379,12 +2379,12 @@ describe('magnite analytics adapter', function () {
 
     it('adjusts the status according to the status map', () => {
       const statuses = [
-        {code: 0, status: 'no-bid'},
-        {code: 100, status: 'error', error: {code: 'request-error', description: 'general error'}},
-        {code: 101, status: 'error', error: {code: 'timeout-error', description: 'prebid server timeout'}},
-        {code: 200, status: 'rejected'},
-        {code: 202, status: 'rejected'},
-        {code: 301, status: 'rejected-ipf'}
+        { code: 0, status: 'no-bid' },
+        { code: 100, status: 'error', error: { code: 'request-error', description: 'general error' } },
+        { code: 101, status: 'error', error: { code: 'timeout-error', description: 'prebid server timeout' } },
+        { code: 200, status: 'rejected' },
+        { code: 202, status: 'rejected' },
+        { code: 301, status: 'rejected-ipf' }
       ];
       statuses.forEach((info, index) => {
         checkStatusAgainstCode(info.status, info.code, info.error, index);
