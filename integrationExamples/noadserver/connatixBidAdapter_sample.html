@@ -31,7 +31,7 @@
           bidder: 'connatix',
           params: {
             placementId: '30e91414-545c-4f45-a950-0bec9308ff22',
-            viewabilityContainerIdentifier: '#connatix-viewability-container'
+            viewabilityContainerIdentifier: 'video-container'
           }
         }]
       };
@@ -70,7 +70,7 @@
       });
     </script>
     <style>
-      #connatix-viewability-container {
+      #video-container {
         width: 300px;
         height: 250px;
         background: #eee;
@@ -84,8 +84,10 @@
 </head>
 <body>
   <div class="scroll-spacer"></div>
-  <div id="connatix-viewability-container" data-ad-unit="test-ad-unit">
-    Viewability container (scroll to change % in view)
+  <div id="video-container" data-ad-unit="test-ad-unit">
+      <h1>Sample video container</h1>
+      <p>Used to test viewability calculation</p>
+      <p>scroll to change % in view</p>
   </div>
   <div class="scroll-spacer"></div>
 </body>

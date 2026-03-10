@@ -95,6 +95,16 @@ export function _getMinSize(sizes) {
   });
 }
 
+function getViewabilityContainer(viewabilityContainerIdentifier) {
+  const hasHashPrefix = /^[#.[]/.test(viewabilityContainerIdentifier);
+
+  if (hasHashPrefix) {
+    return document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+  }
+
+  return document.getElementById(viewabilityContainerIdentifier) || window.top.document.getElementById(viewabilityContainerIdentifier);
+}
+
 export function detectViewability(bid) {
   const { params, adUnitCode } = bid;
 
@@ -106,7 +116,8 @@ export function detectViewability(bid) {
 
   if (isStr(viewabilityContainerIdentifier)) {
     try {
-      element = document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+      element = getViewabilityContainer(viewabilityContainerIdentifier);
+
       if (element) {
         bidParamSizes = [element.offsetWidth, element.offsetHeight];
         minSize = _getMinSize(bidParamSizes)
