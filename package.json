@@ -18,6 +18,7 @@
     "./customize/*": "./customize/*.mjs"
   },
   "scripts": {
+    "build": "gulp build",
     "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint"
