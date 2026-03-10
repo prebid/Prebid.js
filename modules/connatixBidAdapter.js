@@ -65,6 +65,7 @@ export function getBidFloor(bid) {
 
 export function validateBanner(mediaTypes) {
   if (!mediaTypes[BANNER]) {
+    // Undefined banner means no banner ads, which is a valid option
     return true;
   }
 
@@ -75,6 +76,7 @@ export function validateBanner(mediaTypes) {
 export function validateVideo(mediaTypes) {
   const video = mediaTypes[VIDEO];
   if (!video) {
+    // Undefined video means no video ads, which is a valid option
     return true;
   }
 
@@ -82,7 +84,10 @@ export function validateVideo(mediaTypes) {
 }
 
 export function _getMinSize(sizes) {
-  if (!sizes || sizes.length === 0) return undefined;
+  if (!sizes || sizes.length === 0) {
+    return;
+  }
+
   return sizes.reduce((minSize, currentSize) => {
     const minArea = minSize.w * minSize.h;
     const currentArea = currentSize.w * currentSize.h;
