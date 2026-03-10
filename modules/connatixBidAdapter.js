@@ -3,7 +3,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
-import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getViewability, isViewabilityMeasurable } from '../libraries/percentInView/percentInView.js';
 
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -90,26 +90,6 @@ export function _getMinSize(sizes) {
   });
 }
 
-export function _canSelectViewabilityContainer() {
-  try {
-    window.top.document.querySelector('#viewability-container');
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-export function _isViewabilityMeasurable(element) {
-  if (!element) return false;
-  return _canSelectViewabilityContainer(element);
-}
-
-export function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
-    : 0;
-}
-
 export function detectViewability(bid) {
   const { params, adUnitCode } = bid;
 
@@ -140,12 +120,12 @@ export function detectViewability(bid) {
     element = document.getElementById(adUnitCode);
   }
 
-  if (_isViewabilityMeasurable(element)) {
+  if (isViewabilityMeasurable(element)) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
     }
-    return Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj))
   }
 
   return null;
