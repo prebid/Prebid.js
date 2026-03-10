@@ -1,4 +1,4 @@
-import { deepClone, logError, logWarn } from '../src/utils.js';
+import { deepClone, deepSetValue, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
@@ -13,6 +13,17 @@ const converter = ortbConverter({
   context: {
     netRevenue: DEFAULT_NETREVENUE,
     ttl: DEFAULT_TTL
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    const { id, dimension } = bidRequest.params || {};
+
+    deepSetValue(imp, 'ext.bidder.id', id);
+    if (dimension != null) {
+      deepSetValue(imp, 'ext.bidder.dimension', dimension);
+    }
+
+    return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);

@@ -206,6 +206,34 @@ describe('iPROM Adapter', function () {
       expect(requests[0].data.bids).to.be.undefined;
     });
 
+    it('should include id and dimension in imp.ext.bidder for ORTB requests', function () {
+      const bidRequestsWithOrtb = bidRequests.map(bid => ({
+        ...bid,
+        params: { ...bid.params, ortb: true }
+      }));
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequest);
+
+      expect(requests[0].data.imp[0].ext.bidder).to.deep.equal({
+        id: '1234',
+        dimension: '300x250'
+      });
+    });
+
+    it('should include only id in imp.ext.bidder when dimension is not set', function () {
+      const bidRequestsWithOrtb = [{
+        ...bidRequests[0],
+        params: {
+          id: '1234',
+          ortb: true
+        }
+      }];
+      const requests = spec.buildRequests(bidRequestsWithOrtb, bidderRequest);
+
+      expect(requests[0].data.imp[0].ext.bidder).to.deep.equal({
+        id: '1234'
+      });
+    });
+
     it('should use custom endpoint with ORTB format when both endpoint and ortb params are set', function () {
       const bidRequestsWithBoth = bidRequests.map(bid => ({
         ...bid,
