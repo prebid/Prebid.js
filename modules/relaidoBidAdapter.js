@@ -23,7 +23,7 @@ const ADAPTER_VERSION = '1.2.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {

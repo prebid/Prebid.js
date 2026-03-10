@@ -107,10 +107,13 @@ module.exports = [
     },
     rules: {
       'comma-dangle': 'off',
+      '@stylistic/comma-dangle': 'off',
       semi: 'off',
+      '@stylistic/semi': 'off',
       'no-undef': 2,
       'no-console': 'error',
       'space-before-function-paren': 'off',
+      '@stylistic/space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
         'error',
@@ -164,19 +167,9 @@ module.exports = [
       'object-shorthand': 'off',
       'prefer-regex-literals': 'off',
       'no-case-declarations': 'off',
-      'no-useless-catch': 'off',
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
-      '@stylistic/array-bracket-spacing': 'off',
-      '@stylistic/object-curly-spacing': 'off',
-      '@stylistic/semi': 'off',
-      '@stylistic/space-before-function-paren': 'off',
       '@stylistic/multiline-ternary': 'off',
-      '@stylistic/computed-property-spacing': 'off',
-      '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/comma-dangle': 'off',
-      '@stylistic/object-curly-newline': 'off',
-      '@stylistic/object-property-newline': 'off',
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {

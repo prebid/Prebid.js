@@ -1,4 +1,4 @@
-import {gdprDataHandler} from '../../src/consentHandler.js';
+import { gdprDataHandler } from '../../src/consentHandler.js';
 
 /** Safe defaults which work on pretty much all video calls. */
 export const DEFAULT_DFP_PARAMS = {

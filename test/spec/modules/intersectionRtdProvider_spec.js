@@ -1,10 +1,10 @@
-import {config as _config, config} from 'src/config.js';
+import { config as _config, config } from 'src/config.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { intersectionSubmodule } from 'modules/intersectionRtdProvider.js';
 import * as utils from 'src/utils.js';
-import {getGlobal} from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 import 'src/prebid.js';
 
 describe('Intersection RTD Provider', function () {
@@ -15,7 +15,7 @@ describe('Intersection RTD Provider', function () {
     code: 'ad-slot-1',
     mediaTypes: {
       banner: {
-        sizes: [ [300, 250] ]
+        sizes: [[300, 250]]
       }
     },
     bids: [
@@ -24,8 +24,8 @@ describe('Intersection RTD Provider', function () {
       }
     ]
   };
-  const providerConfig = {name: 'intersection', waitForIt: true};
-  const rtdConfig = {realTimeData: {auctionDelay: 200, dataProviders: [providerConfig]}}
+  const providerConfig = { name: 'intersection', waitForIt: true };
+  const rtdConfig = { realTimeData: { auctionDelay: 200, dataProviders: [providerConfig] } }
   describe('IntersectionObserver not supported', function() {
     beforeEach(function() {
       sandbox = sinon.createSandbox();
@@ -60,9 +60,9 @@ describe('Intersection RTD Provider', function () {
                 intersectionRatio: 1,
                 isIntersecting: true,
                 time: Date.now(),
-                boundingClientRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0},
-                intersectionRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0},
-                rootRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0}
+                boundingClientRect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 },
+                intersectionRect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 },
+                rootRect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 }
               }
             ]);
           },
@@ -85,7 +85,7 @@ describe('Intersection RTD Provider', function () {
       pbjs.addAdUnits([utils.deepClone(adUnit)]);
       config.setConfig(rtdConfig);
       const onDone = sandbox.stub();
-      const requestBidObject = {adUnitCodes: [adUnit.code]};
+      const requestBidObject = { adUnitCodes: [adUnit.code] };
       intersectionSubmodule.init({});
       intersectionSubmodule.getBidRequestData(
         requestBidObject,
@@ -100,7 +100,7 @@ describe('Intersection RTD Provider', function () {
     it('should set intersection. (request with "adUnits")', function(done) {
       config.setConfig(rtdConfig);
       const onDone = sandbox.stub();
-      const requestBidObject = {adUnits: [utils.deepClone(adUnit)]};
+      const requestBidObject = { adUnits: [utils.deepClone(adUnit)] };
       intersectionSubmodule.init();
       intersectionSubmodule.getBidRequestData(
         requestBidObject,
@@ -132,12 +132,12 @@ describe('Intersection RTD Provider', function () {
       config.setConfig(rtdConfig);
       remove();
       const onDone = sandbox.stub();
-      const requestBidObject = {adUnits: [utils.deepClone(adUnit)]};
+      const requestBidObject = { adUnits: [utils.deepClone(adUnit)] };
       intersectionSubmodule.init({});
       intersectionSubmodule.getBidRequestData(
         requestBidObject,
         onDone,
-        {...providerConfig, test: 1}
+        { ...providerConfig, test: 1 }
       );
       setTimeout(function() {
         sinon.assert.calledOnce(onDone);
