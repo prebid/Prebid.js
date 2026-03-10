@@ -253,7 +253,7 @@ describe('percentInView', () => {
         isIntersecting: true,
         intersectionRatio: 1
       };
-      expect(percentInView({}, {w: 100, h: 200})).to.not.eql(100);
+      expect(percentInView({}, { w: 100, h: 200 })).to.not.eql(100);
     });
   });
 });

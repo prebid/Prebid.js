@@ -1,8 +1,8 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
-import {defer, PbPromise} from '../../src/utils/promise.js';
-import {startAuction} from '../../src/prebid.js';
-import {getAdUnitElement} from '../../src/utils/adUnits.js';
+import { defer, PbPromise } from '../../src/utils/promise.js';
+import { startAuction } from '../../src/prebid.js';
+import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
 /**
  * return the offset between the given window's viewport and the top window's.
@@ -41,7 +41,7 @@ function applySize(bbox, { w, h }) {
 }
 
 export function getBoundingBox(element, { w, h } = {}) {
-  return applySize(getBoundingClientRect(element), {w, h});
+  return applySize(getBoundingClientRect(element), { w, h });
 }
 
 function getIntersectionOfRects(rects) {
@@ -72,7 +72,7 @@ function getIntersectionOfRects(rects) {
 }
 
 const percentInViewStatic = (element, { w, h } = {}) => {
-  const elementBoundingBox = getBoundingBox(element, {w, h});
+  const elementBoundingBox = getBoundingBox(element, { w, h });
 
   // when in an iframe, the bounding box is relative to the iframe's viewport
   // since we are intersecting it with the top window's viewport, attempt to
@@ -181,16 +181,16 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
 
 startAuction.before(mkIntersectionHook());
 
-export function percentInView(element, {w, h} = {}) {
+export function percentInView(element, { w, h } = {}) {
   const intersection = viewportIntersections.getIntersection(element);
   if (intersection == null) {
     viewportIntersections.observe(element);
-    return percentInViewStatic(element, {w, h});
+    return percentInViewStatic(element, { w, h });
   } else {
-    const adjusted = applySize(intersection.boundingClientRect, {w, h});
+    const adjusted = applySize(intersection.boundingClientRect, { w, h });
     if (adjusted.width !== intersection.boundingClientRect.width || adjusted.height !== intersection.boundingClientRect.height) {
       // use w/h override
-      return percentInViewStatic(element, {w, h});
+      return percentInViewStatic(element, { w, h });
     }
     return intersection.isIntersecting ? intersection.intersectionRatio * 100 : 0;
   }
