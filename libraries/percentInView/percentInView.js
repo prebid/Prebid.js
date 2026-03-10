@@ -72,7 +72,7 @@ function getIntersectionOfRects(rects) {
 }
 
 const percentInViewStatic = (element, { w, h } = {}) => {
-  const elementBoundingBox = getBoundingBox(element, {w, h});
+  const elementBoundingBox = getBoundingBox(element, { w, h });
 
   // when in an iframe, the bounding box is relative to the iframe's viewport
   // since we are intersecting it with the top window's viewport, attempt to
