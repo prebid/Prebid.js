@@ -94,7 +94,7 @@ jobs:
               const comments = [];
 
               if (newJsFiles.length > 0) {
-                let jsComment = 'Whoa there partner! This project is changing to typescript. Please change the new JS files to TS. Thanks!\n\n';
+                let jsComment = 'Whoa there partner! This project is migrating to typescript. Consider changing the new JS files to TS, with well-defined types for what interacts with the prebid public API (for example: bid params and configuration). Thanks!\n\n';
                 newJsFiles.forEach((file) => {
                   jsComment += ` * \`${file}\`\n`;
                 });
