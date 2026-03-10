@@ -15,10 +15,10 @@
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import {EVENTS} from '../src/constants.js';
-import {logInfo, logWarn} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { EVENTS } from '../src/constants.js';
+import { logInfo, logWarn } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const ADAPTER_CODE = 'paywalls';
 const LOG_PREFIX = '[PaywallsAnalytics] ';
@@ -26,7 +26,7 @@ const LOG_PREFIX = '[PaywallsAnalytics] ';
 export const DEFAULT_SCRIPT_URL = '/pw/vai.js';
 export const VAI_WINDOW_KEY = '__PW_VAI__';
 
-const {AUCTION_END} = EVENTS;
+const { AUCTION_END } = EVENTS;
 
 // Track which auctions we've already emitted for (de-dup)
 let emittedAuctions = Object.create(null);
@@ -62,7 +62,7 @@ export function getVaiClassification() {
     if (typeof vai.exp === 'number' && vai.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
-    return {vat: vai.vat, act: vai.act};
+    return { vat: vai.vat, act: vai.act };
   }
   return null;
 }
@@ -133,7 +133,7 @@ export function emitMetrics(kvps) {
 
     case 'dataLayer':
       window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push(Object.assign({event: 'vai_auction'}, kvps));
+      window.dataLayer.push(Object.assign({ event: 'vai_auction' }, kvps));
       break;
 
     case 'callback':
@@ -162,7 +162,7 @@ export function emitMetrics(kvps) {
  * We only care about AUCTION_END — emit classification once per auction.
  * @param {{ eventType: string, args: object }} param
  */
-function handleEvent({eventType, args}) {
+function handleEvent({ eventType, args }) {
   if (!sampledIn) return;
   if (eventType !== AUCTION_END) return;
 
@@ -182,7 +182,7 @@ function handleEvent({eventType, args}) {
 // ---------------------------------------------------------------------------
 
 const paywallsAnalytics = Object.assign(
-  adapter({analyticsType: 'bundle'}),
+  adapter({ analyticsType: 'bundle' }),
   {
     track: handleEvent,
   }

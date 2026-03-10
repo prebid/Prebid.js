@@ -16,11 +16,11 @@
  * @see https://paywalls.net/docs/publishers/vai
  */
 
-import {submodule} from '../src/hook.js';
-import {mergeDeep, logInfo, logWarn} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { mergeDeep, logInfo, logWarn } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -40,7 +40,7 @@ const DEFAULT_WAIT_FOR_IT = 100;
 // Cached VAI payload from init (for early detection)
 let cachedVai = null;
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 // ---------------------------------------------------------------------------
 // Helpers
