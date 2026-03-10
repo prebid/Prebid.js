@@ -1291,6 +1291,8 @@ describe('gumgumAdapter', function () {
           ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+          lmt: 1,
+          ifa: 'test-ifa-id',
           sua: suaObject
 
         },
@@ -1309,9 +1311,23 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
+      expect(bidRequest.data.lmt).to.equal(ortb2.device.lmt);
+      expect(bidRequest.data).to.not.have.property('ifa');
       expect(bidRequest.data).to.have.property('sua');
       expect(() => JSON.parse(bidRequest.data.sua)).to.not.throw();
       expect(JSON.parse(bidRequest.data.sua)).to.deep.equal(suaObject);
+    });
+
+    it('should include ifa when lmt is not 1', function () {
+      const ortb2 = {
+        device: {
+          lmt: 0,
+          ifa: 'test-ifa-id'
+        }
+      };
+      const bidRequest = spec.buildRequests(bidRequests, { ortb2 })[0];
+      expect(bidRequest.data.lmt).to.equal(0);
+      expect(bidRequest.data.ifa).to.equal('test-ifa-id');
     });
 
     it('should set tId from ortb2Imp.ext.tid if available', function () {

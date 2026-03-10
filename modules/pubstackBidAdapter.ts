@@ -143,7 +143,7 @@ const getUserSyncs: GetUserSyncFn = (syncOptions, _serverResponses, gdprConsent,
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  aliases: [ {code: `${BIDDER_CODE}_server`, gvlid: GVLID} ],
+  aliases: [{ code: `${BIDDER_CODE}_server`, gvlid: GVLID }],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
