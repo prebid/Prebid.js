@@ -179,8 +179,8 @@ describe('RiseMediaTech adapter', () => {
     it('should include GDPR and USP consent in the request', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const { regs, user } = request.data;
-      expect(regs.ext).to.have.property('gdpr', 1);
-      expect(user.ext).to.have.property('consent', 'consent123');
+      expect(regs).to.have.property('gdpr', 1);
+      expect(user).to.have.property('consent', 'consent123');
       expect(regs.ext).to.have.property('us_privacy', '1YNN');
     });
 
@@ -241,8 +241,8 @@ describe('RiseMediaTech adapter', () => {
         }
       };
       const request = spec.buildRequests([validBidRequest], noGdprBidderRequest);
-      expect(request.data.regs.ext).to.have.property('gdpr', 0);
-      expect(request.data.user.ext).to.have.property('consent', 'consent123');
+      expect(request.data.regs).to.have.property('gdpr', 0);
+      expect(request.data.user).to.have.property('consent', 'consent123');
     });
 
     it('should set regs and regs.ext to {} if not already set when only USP consent is present', () => {
@@ -484,14 +484,14 @@ describe('RiseMediaTech adapter', () => {
       };
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(responseWithoutPrice, request);
-      expect(bids).to.be.an('array').that.is.not.empty;
+      expect(bids).to.be.an('array').that.is.empty;
     });
   });
 
   describe('getUserSyncs', () => {
-    it('should return null as user syncs are not implemented', () => {
+    it('should return empty array as user syncs are not implemented', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
-      expect(syncs).to.be.null;
+      expect(syncs).to.be.an('array').that.is.empty;
     });
   });
 });

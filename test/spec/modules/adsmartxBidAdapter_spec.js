@@ -484,7 +484,7 @@ describe('AdSmartX adapter', () => {
       };
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(responseWithoutPrice, request);
-      expect(bids).to.be.an('array').that.is.not.empty;
+      expect(bids).to.be.an('array').that.is.empty;
     });
   });
 

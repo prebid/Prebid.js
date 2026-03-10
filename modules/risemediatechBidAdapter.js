@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { logInfo } from '../src/utils.js';
 import {
   createConverter,
   isBidRequestValid as validateBidRequest,
@@ -28,7 +27,6 @@ const interpretResponse = (serverResponse, request) => {
 };
 
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  logInfo('User syncs are not implemented in this adapter yet.');
   return [];
 };
 
