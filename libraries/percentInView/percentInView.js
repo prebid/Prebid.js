@@ -1,8 +1,8 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
-import {defer, PbPromise} from '../../src/utils/promise.js';
-import {startAuction} from '../../src/prebid.js';
-import {getAdUnitElement} from '../../src/utils/adUnits.js';
+import { defer, PbPromise } from '../../src/utils/promise.js';
+import { startAuction } from '../../src/prebid.js';
+import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
 /**
  * return the offset between the given window's viewport and the top window's.
