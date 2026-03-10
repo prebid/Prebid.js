@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="../../../build/dist/prebid.js"></script>
+    <script async src="../../../build/dev/prebid.js"></script>
 
     <script>
       const adUnit = {
@@ -31,7 +31,7 @@
           bidder: 'connatix',
           params: {
             placementId: '30e91414-545c-4f45-a950-0bec9308ff22',
-            viewabilityContainerIdentifier: 'video-container'
+            viewabilityContainerIdentifier: 'connatix-viewability-container'
           }
         }]
       };
@@ -70,7 +70,7 @@
       });
     </script>
     <style>
-      #video-container {
+      #connatix-viewability-container {
         width: 300px;
         height: 250px;
         background: #eee;
@@ -83,11 +83,12 @@
     </style>
 </head>
 <body>
+  <h1>Connatix viewability demo</h1>
+  <p>Scroll the page to move the viewability container in and out of view. The reported viewability percentage updates based on how much of the container is visible. Open the browser console (debug mode) to inspect bid requests and viewability values.</p>
   <div class="scroll-spacer"></div>
-  <div id="video-container" data-ad-unit="test-ad-unit">
-      <h1>Sample video container</h1>
-      <p>Used to test viewability calculation</p>
-      <p>scroll to change % in view</p>
+  <div id="connatix-viewability-container" data-ad-unit="test-ad-unit">
+    <h1>Viewability Container</h1>
+    <p>scroll to change % in view</p>
   </div>
   <div class="scroll-spacer"></div>
 </body>
