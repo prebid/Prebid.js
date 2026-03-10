@@ -44,11 +44,11 @@ const MOCK_CONFIG_WITH_URL = {
   name: SUBMODULE_NAME,
   params: {
     scriptUrl: 'https://cdn.example.com/pw/vai.js',
-    waitForIt: 50,
+    timeout: 50,
   },
 };
 
-function makeReqBids(existingOrtb2 = {}, adUnits = [{code: 'ad-unit-1'}, {code: 'ad-unit-2'}]) {
+function makeReqBids(existingOrtb2 = {}, adUnits = [{ code: 'ad-unit-1' }, { code: 'ad-unit-2' }]) {
   return {
     ortb2Fragments: {
       global: existingOrtb2,
@@ -271,7 +271,7 @@ describe('paywallsRtdProvider', function () {
       const reqBids = makeReqBids();
       const fastConfig = {
         name: SUBMODULE_NAME,
-        params: { waitForIt: 10 },
+        params: { timeout: 10 },
       };
 
       // loadExternalScript does NOT set __PW_VAI__ — simulating timeout
@@ -313,7 +313,7 @@ describe('paywallsRtdProvider', function () {
       const reqBids = makeReqBids();
       const fastConfig = {
         name: SUBMODULE_NAME,
-        params: { waitForIt: 10 },
+        params: { timeout: 10 },
       };
 
       // Simulate script failing to load entirely
@@ -329,7 +329,7 @@ describe('paywallsRtdProvider', function () {
 
     it('injects pvtk at imp level on each ad unit', function (done) {
       window[VAI_WINDOW_KEY] = { ...MOCK_VAI };
-      const reqBids = makeReqBids({}, [{code: 'slot-a'}, {code: 'slot-b'}, {code: 'slot-c'}]);
+      const reqBids = makeReqBids({}, [{ code: 'slot-a' }, { code: 'slot-b' }, { code: 'slot-c' }]);
 
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         reqBids.adUnits.forEach(function (adUnit) {
@@ -378,7 +378,7 @@ describe('paywallsRtdProvider', function () {
       // Bug: if timeout fires before hook, the payload is dropped permanently.
       // Subsequent auctions keep degrading because loadExternalScript won't re-execute.
       const reqBids1 = makeReqBids();
-      const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
+      const fastConfig = { name: SUBMODULE_NAME, params: { timeout: 10 } };
 
       loadExternalScriptStub.callsFake(() => {
         // Simulate hook-only delivery AFTER timeout (no window global fallback)
@@ -413,10 +413,10 @@ describe('paywallsRtdProvider', function () {
       clock.tick(15);
     });
 
-    it('waitForIt=0 should be respected, not treated as falsy', function (done) {
-      // Bug: params.waitForIt || DEFAULT_WAIT_FOR_IT treats 0 as falsy
+    it('timeout=0 should be respected, not treated as falsy', function (done) {
+      // Bug: params.timeout || DEFAULT_WAIT_FOR_IT treats 0 as falsy
       const reqBids = makeReqBids();
-      const zeroConfig = { name: SUBMODULE_NAME, params: { waitForIt: 0 } };
+      const zeroConfig = { name: SUBMODULE_NAME, params: { timeout: 0 } };
       let callbackTime = null;
 
       loadExternalScriptStub.callsFake(() => {
@@ -436,11 +436,11 @@ describe('paywallsRtdProvider', function () {
     });
 
     it('should keep hook alive indefinitely after timeout for late delivery', function (done) {
-      // Scenario: slow network — script loads well after waitForIt timeout.
+      // Scenario: slow network — script loads well after timeout.
       // Hook delivery happens long after timeout. The hook is never removed
       // on a timer, so it captures the payload regardless of delay.
       const reqBids1 = makeReqBids();
-      const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
+      const fastConfig = { name: SUBMODULE_NAME, params: { timeout: 10 } };
       let scriptOnload;
 
       loadExternalScriptStub.callsFake((_url, _type, _name, onload) => {
@@ -481,7 +481,7 @@ describe('paywallsRtdProvider', function () {
     it('should not chain hooks across multiple degraded auctions', function (done) {
       // Scenario: VAI never arrives, multiple auctions fire.
       // Each auction should replace (not wrap) the hook to prevent unbounded closure growth.
-      const fastConfig = { name: SUBMODULE_NAME, params: { waitForIt: 10 } };
+      const fastConfig = { name: SUBMODULE_NAME, params: { timeout: 10 } };
       let auctionsDegraded = 0;
 
       loadExternalScriptStub.callsFake(() => {

@@ -189,7 +189,7 @@ function init(rtdConfig, userConsent) {
  * getBidRequestData — called before each auction.
  *
  * If VAI is already available, merges ORTB2 and calls callback immediately.
- * Otherwise, injects vai.js via loadExternalScript and waits (up to waitForIt ms)
+ * Otherwise, injects vai.js via loadExternalScript and waits (up to timeout ms)
  * for window.__PW_VAI__ to be populated (via script execution or __PW_VAI_HOOK__).
  *
  * CRITICAL: callback() MUST be called to unblock the auction. On timeout or
@@ -212,12 +212,12 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   // Slow path: need to inject vai.js and wait
   const params = (rtdConfig && rtdConfig.params) || {};
   const scriptUrl = params.scriptUrl || DEFAULT_SCRIPT_URL;
-  const rawWaitForIt = params.waitForIt;
-  const waitForIt = (typeof rawWaitForIt === 'number' && rawWaitForIt >= 0)
-    ? rawWaitForIt
+  const rawTimeout = params.timeout;
+  const timeout = (typeof rawTimeout === 'number' && rawTimeout >= 0)
+    ? rawTimeout
     : DEFAULT_WAIT_FOR_IT;
-  if (rawWaitForIt != null && (typeof rawWaitForIt !== 'number' || rawWaitForIt < 0)) {
-    logWarn(LOG_PREFIX + 'Invalid waitForIt value (' + rawWaitForIt + '); using default ' + DEFAULT_WAIT_FOR_IT);
+  if (rawTimeout != null && (typeof rawTimeout !== 'number' || rawTimeout < 0)) {
+    logWarn(LOG_PREFIX + 'Invalid timeout value (' + rawTimeout + '); using default ' + DEFAULT_WAIT_FOR_IT);
   }
 
   let resolved = false;
@@ -287,7 +287,7 @@ function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
   // Set up timeout (graceful degradation — never block the auction)
   timeoutId = setTimeout(function () {
     resolve(null);
-  }, waitForIt);
+  }, timeout);
 
   // Inject the script
   try {

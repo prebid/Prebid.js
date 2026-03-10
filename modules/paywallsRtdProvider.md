@@ -53,7 +53,7 @@ pbjs.setConfig({
 | `waitForIt`         | `Boolean` | Optional | Should be `true` when `auctionDelay` is set            | `false`          |
 | `params`            | `Object`  | Optional | Provider configuration                                 | `{}`             |
 | `params.scriptUrl`  | `String`  | Optional | URL of the VAI loader script                           | `'/pw/vai.js'`   |
-| `params.waitForIt`  | `Number`  | Optional | Max ms to wait for VAI before releasing the auction (distinct from the Boolean `waitForIt` above)    | `100`            |
+| `params.timeout`   | `Number`  | Optional | Max ms to wait for VAI before releasing the auction    | `100`            |
 
 ### Hosting Modes
 

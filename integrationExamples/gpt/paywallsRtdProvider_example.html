@@ -4,8 +4,8 @@
   Uses mock-vai.js to simulate VAI classification.
   Open browser DevTools console to check:
     ✓ vai.js loaded by RTD module
-    ✓ ortb2.site.ext.vai contains { iss, dom, jws }
-    ✓ ortb2.user.ext.vai contains { vat, act }
+    ✓ ortb2.site.ext.vai contains { iss, dom }
+    ✓ ortb2.user.ext.vai contains { vat, act, jws }
     ✓ getTargetingData returns { vai_vat, vai_act } per ad unit
     ✓ Auction completes within timing budget
 
@@ -87,7 +87,7 @@
           setStatus('test-site-vai', false, 'site.ext.vai should be absent in degrade mode but found: ' + JSON.stringify(siteVai));
         }
       } else {
-        if (siteVai && siteVai.iss && siteVai.dom && siteVai.jws) {
+        if (siteVai && siteVai.iss && siteVai.dom) {
           setStatus('test-site-vai', true, 'site.ext.vai: iss=' + siteVai.iss + ' dom=' + siteVai.dom);
         } else {
           setStatus('test-site-vai', false, 'site.ext.vai missing or incomplete: ' + JSON.stringify(siteVai));
