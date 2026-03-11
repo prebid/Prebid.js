@@ -89,8 +89,7 @@ function hasBannerMediaType(bid) {
 function hasMandatoryDisplayParams(bid) {
   const p = bid.params;
   return (
-    !!p.publisherId &&
-    !!p.adUnitId
+    !!p.publisherId
   );
 }
 
@@ -99,7 +98,6 @@ function hasMandatoryVideoParams(bid) {
 
   const isValid =
     !!bid.params.publisherId &&
-    !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
     !!videoParams.playerSize &&
     isArray(videoParams.playerSize) &&
@@ -250,13 +248,14 @@ export function getTimeoutUrl(data) {
     const params = data[0].params[0];
     const timeout = data[0].timeout;
 
-    queryParams =
-      '?publisherToken=' +
-      params.publisherId +
-      '&adUnitId=' +
-      params.adUnitId +
-      '&timeout=' +
-      timeout;
+    const qsParams = [
+      'publisherToken=' + params.publisherId,
+      'timeout=' + timeout
+    ];
+    if (params.adUnitId) {
+      qsParams.push('adUnitId=' + params.adUnitId);
+    }
+    queryParams = '?' + qsParams.join('&');
   }
   return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
 }
@@ -296,9 +295,12 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
+    const publisherId = validBidRequests[0].params.publisherId;
+    const integrationType = validBidRequests[0].params.integrationType || 'publisherToken';
+
     const payload = {
       url: bidderRequest.refererInfo.page,
-      publisherToken: validBidRequests[0].params.publisherId,
+      publisherToken: publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
@@ -307,7 +309,8 @@ export const spec = {
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
       user: { topics: [], eids: [] },
-      site: {}
+      site: {},
+      integrationType: integrationType
     };
 
     if (payload.cmp) {
@@ -370,6 +373,10 @@ export const spec = {
 
     if (bidderRequest.ortb2?.site?.pagecat) {
       payload.site.pagecat = bidderRequest.ortb2.site.pagecat
+    }
+
+    if (bidderRequest.ortb2) {
+      payload.ortb = bidderRequest.ortb2;
     }
 
     const payloadString = JSON.stringify(payload);

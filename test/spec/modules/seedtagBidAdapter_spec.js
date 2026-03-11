@@ -174,13 +174,13 @@ describe('Seedtag Adapter', function () {
           );
           expect(isBidRequestValid).to.equal(false);
         });
-        it('does not have the AdUnitId.', function () {
+        it('should be valid with only publisherId and no adUnitId', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               publisherId: PUBLISHER_ID,
             })
           );
-          expect(isBidRequestValid).to.equal(false);
+          expect(isBidRequestValid).to.equal(true);
         });
       });
 
@@ -712,6 +712,47 @@ describe('Seedtag Adapter', function () {
         expect(data.sua).to.be.undefined;
       });
     });
+
+    describe('integrationType param', function () {
+      it('should default to publisherToken when integrationType is not provided', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.integrationType).to.equal('publisherToken');
+      });
+
+      it('should use the provided integrationType value', function () {
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
+        bidRequests[0].params.integrationType = 'ronId';
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.integrationType).to.equal('ronId');
+      });
+    });
+
+    describe('ortb param', function () {
+      it('should add ortb param to payload when bidderRequest has ortb2', function () {
+        const ortb2 = {
+          site: { cat: ['IAB1'] },
+          user: { data: [{ name: 'test' }] },
+          bcat: ['IAB3'],
+        };
+        bidderRequest['ortb2'] = ortb2;
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.ortb).to.exist;
+        expect(data.ortb).to.deep.equal(ortb2);
+      });
+
+      it('should not add ortb param to payload when bidderRequest does not have ortb2', function () {
+        bidderRequest['ortb2'] = undefined;
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.ortb).to.be.undefined;
+      });
+    });
   })
   describe('interpret response method', function () {
     it('should return a void array, when the server response are not correct.', function () {
@@ -896,7 +937,7 @@ describe('Seedtag Adapter', function () {
       utils.triggerPixel.restore();
     });
 
-    it('should return the correct endpoint', function () {
+    it('should return the correct endpoint with adUnitId', function () {
       const params = { publisherId: '0000', adUnitId: '11111' };
       const timeout = 3000;
       const timeoutData = [{ params: [params], timeout }];
@@ -904,8 +945,21 @@ describe('Seedtag Adapter', function () {
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
         params.publisherId +
+        '&timeout=' +
+        timeout +
         '&adUnitId=' +
-        params.adUnitId +
+        params.adUnitId
+      );
+    });
+
+    it('should return the correct endpoint without adUnitId', function () {
+      const params = { publisherId: '0000' };
+      const timeout = 3000;
+      const timeoutData = [{ params: [params], timeout }];
+      const timeoutUrl = getTimeoutUrl(timeoutData);
+      expect(timeoutUrl).to.equal(
+        'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
+        params.publisherId +
         '&timeout=' +
         timeout
       );
@@ -920,10 +974,10 @@ describe('Seedtag Adapter', function () {
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
           params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
           '&timeout=' +
-          timeout
+          timeout +
+          '&adUnitId=' +
+          params.adUnitId
         )
       ).to.equal(true);
     });
