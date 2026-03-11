@@ -96,7 +96,21 @@ export function _getMinSize(sizes) {
 }
 
 function getDomElement(elementId) {
-  const getElementFromDoc = doc => doc.querySelector(elementId) || doc.getElementById(elementId);
+  const getElementFromDoc = doc => {
+    let element;
+
+    try {
+      element = doc.querySelector(elementId);
+    } catch (e) {
+      /*noop*/
+    }
+
+    if (!element) {
+      element = doc.getElementById(elementId);
+    }
+
+    return element;
+  };
 
   let viewabilityContainer = getElementFromDoc(document);
   if (viewabilityContainer) {
