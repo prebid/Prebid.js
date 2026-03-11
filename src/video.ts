@@ -1,52 +1,52 @@
-import {isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn} from './utils.js';
-import {config} from './config.js';
-import {hook} from './hook.js';
-import {auctionManager} from './auctionManager.js';
-import type {VideoBid} from "./bidfactory.ts";
-import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
-import type {ORTBImp} from "./types/ortb/request.d.ts";
-import type {Size} from "./types/common.d.ts";
-import type {AdUnitDefinition} from "./adUnits.ts";
+import { isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn } from './utils.js';
+import { config } from './config.js';
+import { hook } from './hook.js';
+import { auctionManager } from './auctionManager.js';
+import type { VideoBid } from "./bidfactory.ts";
+import { ADPOD, type BaseMediaType } from "./mediaTypes.ts";
+import type { ORTBImp } from "./types/ortb/request.d.ts";
+import type { Size } from "./types/common.d.ts";
+import type { AdUnitDefinition } from "./adUnits.ts";
 
-import {getGlobalVarName} from "./buildOptions.ts";
+import { getGlobalVarName } from "./buildOptions.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
 const ORTB_PARAMS = [
-  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-  [ 'minduration', isInteger ],
-  [ 'maxduration', isInteger ],
-  [ 'startdelay', isInteger ],
-  [ 'maxseq', isInteger ],
-  [ 'poddur', isInteger ],
-  [ 'protocols', isArrayOfNums ],
-  [ 'w', isInteger ],
-  [ 'h', isInteger ],
-  [ 'podid', isStr ],
-  [ 'podseq', isInteger ],
-  [ 'rqddurs', isArrayOfNums ],
-  [ 'placement', isInteger ], // deprecated, see plcmt
-  [ 'plcmt', isInteger ],
-  [ 'linearity', isInteger ],
-  [ 'skip', value => [1, 0].includes(value) ],
-  [ 'skipmin', isInteger ],
-  [ 'skipafter', isInteger ],
-  [ 'sequence', isInteger ], // deprecated
-  [ 'slotinpod', isInteger ],
-  [ 'mincpmpersec', isNumber ],
-  [ 'battr', isArrayOfNums ],
-  [ 'maxextended', isInteger ],
-  [ 'minbitrate', isInteger ],
-  [ 'maxbitrate', isInteger ],
-  [ 'boxingallowed', isInteger ],
-  [ 'playbackmethod', isArrayOfNums ],
-  [ 'playbackend', isInteger ],
-  [ 'delivery', isArrayOfNums ],
-  [ 'pos', isInteger ],
-  [ 'api', isArrayOfNums ],
-  [ 'companiontype', isArrayOfNums ],
-  [ 'poddedupe', isArrayOfNums ]
+  ['mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string')],
+  ['minduration', isInteger],
+  ['maxduration', isInteger],
+  ['startdelay', isInteger],
+  ['maxseq', isInteger],
+  ['poddur', isInteger],
+  ['protocols', isArrayOfNums],
+  ['w', isInteger],
+  ['h', isInteger],
+  ['podid', isStr],
+  ['podseq', isInteger],
+  ['rqddurs', isArrayOfNums],
+  ['placement', isInteger], // deprecated, see plcmt
+  ['plcmt', isInteger],
+  ['linearity', isInteger],
+  ['skip', value => [1, 0].includes(value)],
+  ['skipmin', isInteger],
+  ['skipafter', isInteger],
+  ['sequence', isInteger], // deprecated
+  ['slotinpod', isInteger],
+  ['mincpmpersec', isNumber],
+  ['battr', isArrayOfNums],
+  ['maxextended', isInteger],
+  ['minbitrate', isInteger],
+  ['maxbitrate', isInteger],
+  ['boxingallowed', isInteger],
+  ['playbackmethod', isArrayOfNums],
+  ['playbackend', isInteger],
+  ['delivery', isArrayOfNums],
+  ['pos', isInteger],
+  ['api', isArrayOfNums],
+  ['companiontype', isArrayOfNums],
+  ['poddedupe', isArrayOfNums]
 ] as const;
 
 /**
@@ -104,7 +104,7 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
 /**
  * Validate that the assets required for video context are present on the bid
  */
-export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = {}): boolean {
+export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } = {}): boolean {
   const videoMediaType = index.getMediaTypes(bid)?.video;
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;

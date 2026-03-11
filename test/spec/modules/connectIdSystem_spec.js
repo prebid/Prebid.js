@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
-import {server} from '../../mocks/xhr.js';
-import {parseQS, parseUrl} from 'src/utils.js';
+import { expect } from 'chai';
+import { connectIdSubmodule, storage } from 'modules/connectIdSystem.js';
+import { server } from '../../mocks/xhr.js';
+import { parseQS, parseUrl } from 'src/utils.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
@@ -96,20 +96,20 @@ describe('Yahoo ConnectID Submodule', () => {
         {
           detail: 'cookie data over local storage data',
           cookie: '{"connectId":"foo"}',
-          localStorage: JSON.stringify({connectId: 'bar'}),
-          expected: {connectId: 'foo'}
+          localStorage: JSON.stringify({ connectId: 'bar' }),
+          expected: { connectId: 'foo' }
         },
         {
           detail: 'cookie data if only cookie data exists',
           cookie: '{"connectId":"foo"}',
           localStorage: undefined,
-          expected: {connectId: 'foo'}
+          expected: { connectId: 'foo' }
         },
         {
           detail: 'local storage data if only it local storage data exists',
           cookie: undefined,
-          localStorage: JSON.stringify({connectId: 'bar'}),
-          expected: {connectId: 'bar'}
+          localStorage: JSON.stringify({ connectId: 'bar' }),
+          expected: { connectId: 'bar' }
         },
         {
           detail: 'undefined when both cookie and local storage are empty',
@@ -150,7 +150,7 @@ describe('Yahoo ConnectID Submodule', () => {
     describe('with valid module configuration', () => {
       describe('when data is in client storage', () => {
         it('returns an object with the stored ID from cookies for valid module configuration and sync is done', () => {
-          const cookieData = {connectId: 'foobar'};
+          const cookieData = { connectId: 'foobar' };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -164,7 +164,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
         it('returns an object with the stored ID from cookies for valid module configuration with no user sync', () => {
           const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
-          const cookieData = {connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days};
+          const cookieData = { connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -179,11 +179,11 @@ describe('Yahoo ConnectID Submodule', () => {
 
         it('returns an object with the stored ID and refreshes the storages with the new lastUsed', () => {
           const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
-          const cookieData = {connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days, lastUsed: 1};
+          const cookieData = { connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days, lastUsed: 1 };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(20);
-          const newCookieData = Object.assign({}, cookieData, {lastUsed: 20})
+          const newCookieData = Object.assign({}, cookieData, { lastUsed: 20 })
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
@@ -203,7 +203,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
         it('returns an object with the stored ID from cookies and no sync when puid stays the same', () => {
           const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
-          const cookieData = {connectId: 'foobar', puid: '123', lastSynced: last13Days};
+          const cookieData = { connectId: 'foobar', puid: '123', lastSynced: last13Days };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(20);
@@ -221,7 +221,7 @@ describe('Yahoo ConnectID Submodule', () => {
         it('returns an object with the stored ID from cookies and syncs because of expired auto generated puid', () => {
           const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
           const last31Days = Date.now() - (60 * 60 * 24 * 1000 * 31);
-          const cookieData = {connectId: 'foo', he: 'email', lastSynced: last13Days, puid: '9', lastUsed: last31Days};
+          const cookieData = { connectId: 'foo', he: 'email', lastSynced: last13Days, puid: '9', lastUsed: last31Days };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -259,7 +259,7 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('returns an object with the stored ID from localStorage for valid module configuration and sync is done', () => {
-          const localStorageData = {connectId: 'foobarbaz'};
+          const localStorageData = { connectId: 'foobarbaz' };
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -272,7 +272,7 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('returns an object with the stored ID from localStorage and refreshes the cookie storage', () => {
-          const localStorageData = {connectId: 'foobarbaz'};
+          const localStorageData = { connectId: 'foobarbaz' };
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(1);
@@ -294,7 +294,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const last2Days = Date.now() - (60 * 60 * 24 * 1000 * 2);
           const last21Days = Date.now() - (60 * 60 * 24 * 1000 * 21);
           const ttl = 10000;
-          const cookieData = {connectId: 'foo', he: 'email', lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl};
+          const cookieData = { connectId: 'foo', he: 'email', lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
 
           const result = invokeGetIdAPI({
@@ -311,7 +311,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const last2Days = Date.now() - (60 * 60 * 24 * 1000 * 2);
           const last21Days = Date.now() - (60 * 60 * 24 * 1000 * 21);
           const ttl = 60 * 60 * 24 * 1000 * 3;
-          const cookieData = {connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl};
+          const cookieData = { connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
 
           const result = invokeGetIdAPI({
@@ -328,7 +328,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const last2Days = Date.now() - (60 * 60 * 24 * 1000 * 2);
           const last21Days = Date.now() - (60 * 60 * 24 * 1000 * 21);
           const ttl = 60 * 60 * 24 * 1000 * 3;
-          const cookieData = {connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl};
+          const cookieData = { connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
 
           const result = invokeGetIdAPI({
@@ -346,7 +346,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const last2Days = Date.now() - (60 * 60 * 24 * 1000 * 2);
           const last21Days = Date.now() - (60 * 60 * 24 * 1000 * 21);
           const ttl = 60 * 60 * 24 * 1000 * 3;
-          const cookieData = {connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl};
+          const cookieData = { connectId: 'foo', he: HASHED_EMAIL, lastSynced: last2Days, puid: '9', lastUsed: last21Days, ttl };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
           getRefererInfoStub.returns({
@@ -396,7 +396,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('Makes an ajax GET request to the production API endpoint without the stored puid after 30 days', () => {
@@ -430,7 +430,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('Makes an ajax GET request to the production API endpoint with provided puid', () => {
@@ -465,11 +465,11 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('deletes local storage data when expiry has passed', () => {
-          const localStorageData = {connectId: 'foobarbaz', __expires: Date.now() - 10000};
+          const localStorageData = { connectId: 'foobarbaz', __expires: Date.now() - 10000 };
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -482,7 +482,7 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('will not delete local storage data when expiry has not passed', () => {
-          const localStorageData = {connectId: 'foobarbaz', __expires: Date.now() + 10000};
+          const localStorageData = { connectId: 'foobarbaz', __expires: Date.now() + 10000 };
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -596,7 +596,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('Makes an ajax GET request to the production API endpoint with pixelId and puid query params', () => {
@@ -621,7 +621,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('Makes an ajax GET request to the production API endpoint with pixelId, puid and he query params', () => {
@@ -648,7 +648,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('Makes an ajax GET request to the specified override API endpoint with query params', () => {
@@ -672,7 +672,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('Makes an ajax GET request to the specified override API endpoint without GPP', () => {
@@ -695,7 +695,7 @@ describe('Yahoo ConnectID Submodule', () => {
 
           expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
           expect(requestQueryParams).to.deep.equal(expectedParams);
-          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
         });
 
         it('sets the callbacks param of the ajax function call correctly', () => {
@@ -748,7 +748,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
           getAjaxFnStub.restore();
-          const upsResponse = {connectid: 'foobarbaz'};
+          const upsResponse = { connectid: 'foobarbaz' };
           const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
@@ -757,7 +757,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const request = server.requests[0];
           request.respond(
             200,
-            {'Content-Type': 'application/json'},
+            { 'Content-Type': 'application/json' },
             JSON.stringify(upsResponse)
           );
           const storage = Object.assign({}, upsResponse, {
@@ -784,7 +784,7 @@ describe('Yahoo ConnectID Submodule', () => {
           cookiesEnabledStub.returns(false);
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
-          const upsResponse = {connectid: 'barfoo'};
+          const upsResponse = { connectid: 'barfoo' };
           const expectedStoredData = {
             connectid: 'barfoo',
             puid: PUBLISHER_USER_ID,
@@ -798,7 +798,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const request = server.requests[0];
           request.respond(
             200,
-            {'Content-Type': 'application/json'},
+            { 'Content-Type': 'application/json' },
             JSON.stringify(upsResponse)
           );
           dateNowStub.restore();
@@ -812,7 +812,7 @@ describe('Yahoo ConnectID Submodule', () => {
           getAjaxFnStub.restore();
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
-          const upsResponse = {connectid: 'html5only'};
+          const upsResponse = { connectid: 'html5only' };
           const expectedStoredData = {
             connectid: 'html5only',
             puid: PUBLISHER_USER_ID,
@@ -822,11 +822,11 @@ describe('Yahoo ConnectID Submodule', () => {
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID
-          }, consentData, {type: 'html5'});
+          }, consentData, { type: 'html5' });
           const request = server.requests[0];
           request.respond(
             200,
-            {'Content-Type': 'application/json'},
+            { 'Content-Type': 'application/json' },
             JSON.stringify(upsResponse)
           );
           dateNowStub.restore();
@@ -841,7 +841,7 @@ describe('Yahoo ConnectID Submodule', () => {
           getAjaxFnStub.restore();
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
-          const upsResponse = {connectid: 'cookieonly'};
+          const upsResponse = { connectid: 'cookieonly' };
           const expectedStoredData = {
             connectid: 'cookieonly',
             puid: PUBLISHER_USER_ID,
@@ -852,11 +852,11 @@ describe('Yahoo ConnectID Submodule', () => {
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID
-          }, consentData, {type: 'cookie'});
+          }, consentData, { type: 'cookie' });
           const request = server.requests[0];
           request.respond(
             200,
-            {'Content-Type': 'application/json'},
+            { 'Content-Type': 'application/json' },
             JSON.stringify(upsResponse)
           );
           dateNowStub.restore();
@@ -869,27 +869,27 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('does not sync localStorage to cookie when storage type is html5', () => {
-          const localStorageData = {connectId: 'foobarbaz'};
+          const localStorageData = { connectId: 'foobarbaz' };
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
-          }, consentData, {type: 'html5'});
+          }, consentData, { type: 'html5' });
 
           expect(setCookieStub.called).to.be.false;
         });
 
         it('updates existing ID with html5 storage type without writing cookie', () => {
           const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
-          const cookieData = {connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days};
+          const cookieData = { connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days };
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(20);
-          const newCookieData = Object.assign({}, cookieData, {lastUsed: 20})
+          const newCookieData = Object.assign({}, cookieData, { lastUsed: 20 })
           const result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
-          }, consentData, {type: 'html5'});
+          }, consentData, { type: 'html5' });
           dateNowStub.restore();
 
           expect(result).to.be.an('object').that.has.all.keys('id');
@@ -903,7 +903,7 @@ describe('Yahoo ConnectID Submodule', () => {
           getAjaxFnStub.restore();
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
-          const upsResponse = {connectid: 'both'};
+          const upsResponse = { connectid: 'both' };
           const expectedStoredData = {
             connectid: 'both',
             puid: PUBLISHER_USER_ID,
@@ -914,11 +914,11 @@ describe('Yahoo ConnectID Submodule', () => {
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID
-          }, consentData, {type: 'cookie&html5'});
+          }, consentData, { type: 'cookie&html5' });
           const request = server.requests[0];
           request.respond(
             200,
-            {'Content-Type': 'application/json'},
+            { 'Content-Type': 'application/json' },
             JSON.stringify(upsResponse)
           );
           dateNowStub.restore();
@@ -982,12 +982,12 @@ describe('Yahoo ConnectID Submodule', () => {
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)', () => {
         expect(connectIdSubmodule.decode(responseData.payload)).to.deep.equal(
-          {connectId: responseData.expected}
+          { connectId: responseData.expected }
         );
       });
     });
 
-    [{}, '', {foo: 'bar'}].forEach((response) => {
+    [{}, '', { foo: 'bar' }].forEach((response) => {
       it(`should return undefined for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(connectIdSubmodule.decode(response)).to.be.undefined;
       });

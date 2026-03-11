@@ -1,8 +1,8 @@
-import {hadronIdSubmodule, storage, LS_TAM_KEY} from 'modules/hadronIdSystem.js';
-import {server} from 'test/mocks/xhr.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { hadronIdSubmodule, storage, LS_TAM_KEY } from 'modules/hadronIdSystem.js';
+import { server } from 'test/mocks/xhr.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 describe('HadronIdSystem', function () {
   const HADRON_TEST = 'tstCachedHadronId1';
@@ -23,7 +23,7 @@ describe('HadronIdSystem', function () {
       };
       getDataFromLocalStorageStub.withArgs(LS_TAM_KEY).returns(HADRON_TEST);
       const result = hadronIdSubmodule.getId(config);
-      expect(result).to.deep.equal({id: HADRON_TEST});
+      expect(result).to.deep.equal({ id: HADRON_TEST });
     });
 
     it('allows configurable id url', function () {

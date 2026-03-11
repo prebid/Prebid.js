@@ -635,14 +635,14 @@ describe('smilewantedBidAdapterTests', function () {
   });
 
   it('SmileWanted - Verify user sync - empty data', function () {
-    const syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, null);
+    const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, null);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     expect(syncs[0].url).to.equal('https://csync.smilewanted.com');
   });
 
   it('SmileWanted - Verify user sync', function () {
-    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+    let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
       consentString: 'foo'
     }, '1NYN');
     expect(syncs).to.have.lengthOf(1);

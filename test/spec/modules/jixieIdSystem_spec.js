@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { jixieIdSubmodule, storage } from 'modules/jixieIdSystem.js';
 import { server } from '../../mocks/xhr.js';
-import {parseUrl} from '../../../src/utils.js';
+import { parseUrl } from '../../../src/utils.js';
 
 const COOKIE_EXPIRATION_FUTURE = (new Date(Date.now() + 60 * 60 * 24 * 1000)).toUTCString();
 const COOKIE_EXPIRATION_PAST = (new Date(Date.now() - 60 * 60 * 24 * 1000)).toUTCString();
@@ -54,8 +54,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 stdjxidckname: STD_JXID_KEY,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             });
@@ -76,8 +76,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 stdjxidckname: STD_JXID_KEY,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             });
@@ -98,8 +98,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 stdjxidckname: STD_JXID_KEY,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             });
@@ -126,8 +126,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 accountid: ACCOUNTID,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             });
@@ -161,8 +161,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 stdjxidckname: STD_JXID_KEY,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             });
@@ -200,8 +200,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 stdjxidckname: STD_JXID_KEY,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             });
@@ -217,7 +217,7 @@ describe('JixieId  Submodule', () => {
         });
         context('when has rather stale pbjs jixie cookie', () => {
           it('should call the server and set the id; send available extra info (e.g. esha,psha, consent if available)', () => {
-            const consentData = {gdpr: {gdprApplies: 1, consentString: MOCK_CONSENT_STRING}};
+            const consentData = { gdpr: { gdprApplies: 1, consentString: MOCK_CONSENT_STRING } };
             storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE)
@@ -229,8 +229,8 @@ describe('JixieId  Submodule', () => {
               params: {
                 stdjxidckname: STD_JXID_KEY,
                 pubExtIds: [
-                  {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
-                  {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
+                  { pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME },
+                  { pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME }
                 ]
               }
             }, consentData);
