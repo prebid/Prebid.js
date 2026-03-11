@@ -102,7 +102,7 @@ function getDomElement(elementId) {
     try {
       element = doc.querySelector(elementId);
     } catch (e) {
-      /*noop*/
+      /* noop */
     }
 
     if (!element) {
