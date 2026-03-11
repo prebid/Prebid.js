@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec,
   REQUEST_URL,
@@ -6,9 +6,9 @@ import {
   masSizeOrdering,
   resetMgniConf
 } from 'modules/magniteBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
-import {config} from 'src/config.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';
@@ -18,7 +18,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 
-import {hook} from '../../../src/hook.js';
+import { hook } from '../../../src/hook.js';
 
 function getBannerBidRequest(overrides = {}) {
   return {
@@ -168,7 +168,7 @@ describe('the magnite adapter', function () {
 
     it('should return true when params are passed as strings that parse to numbers', function () {
       const bid = getBannerBidRequest({
-        params: {accountId: '1001', siteId: '2001', zoneId: '3001'}
+        params: { accountId: '1001', siteId: '2001', zoneId: '3001' }
       });
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -193,7 +193,7 @@ describe('the magnite adapter', function () {
 
     it('should return false when accountId is not a number', function () {
       const bid = getBannerBidRequest({
-        params: {accountId: 'abc', siteId: 2001, zoneId: 3001}
+        params: { accountId: 'abc', siteId: 2001, zoneId: 3001 }
       });
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -262,18 +262,18 @@ describe('the magnite adapter', function () {
     });
 
     it('should use a custom bid endpoint from config', function () {
-      config.setConfig({magnite: {bidEndpoint: 'https://custom.endpoint.com/bid'}});
+      config.setConfig({ magnite: { bidEndpoint: 'https://custom.endpoint.com/bid' } });
       const requests = spec.buildRequests([getBannerBidRequest()], bidderRequest);
       expect(requests[0].url).to.include('https://custom.endpoint.com/bid');
     });
 
     describe('request grouping', function () {
       it('should group bids by accountId-siteId-mediaType', function () {
-        const bid1 = getBannerBidRequest({bidId: 'bid-1'});
+        const bid1 = getBannerBidRequest({ bidId: 'bid-1' });
         const bid2 = getBannerBidRequest({
           bidId: 'bid-2',
           adUnitCode: 'adunit-banner-2',
-          params: {accountId: 1001, siteId: 2002, zoneId: 3002}
+          params: { accountId: 1001, siteId: 2002, zoneId: 3002 }
         });
         const requests = spec.buildRequests([bid1, bid2], bidderRequest);
         // Different siteIds => separate requests
@@ -281,8 +281,8 @@ describe('the magnite adapter', function () {
       });
 
       it('should combine bids with same accountId-siteId-mediaType into one request', function () {
-        const bid1 = getBannerBidRequest({bidId: 'bid-1', adUnitCode: 'adunit-1'});
-        const bid2 = getBannerBidRequest({bidId: 'bid-2', adUnitCode: 'adunit-2'});
+        const bid1 = getBannerBidRequest({ bidId: 'bid-1', adUnitCode: 'adunit-1' });
+        const bid2 = getBannerBidRequest({ bidId: 'bid-2', adUnitCode: 'adunit-2' });
         const requests = spec.buildRequests([bid1, bid2], bidderRequest);
         // Same accountId, siteId, mediaType => one request
         expect(requests.length).to.equal(1);
@@ -293,7 +293,7 @@ describe('the magnite adapter', function () {
         const multiformatBid = getBannerBidRequest({
           bidId: 'bid-multi',
           mediaTypes: {
-            banner: {sizes: [[300, 250]]},
+            banner: { sizes: [[300, 250]] },
             video: {
               context: 'instream',
               playerSize: [640, 480],
@@ -351,7 +351,7 @@ describe('the magnite adapter', function () {
       });
 
       it('should respect custom impLimit from config', function () {
-        config.setConfig({magnite: {impLimit: 3}});
+        config.setConfig({ magnite: { impLimit: 3 } });
         const bids = [];
         for (let i = 0; i < 7; i++) {
           bids.push(getBannerBidRequest({
@@ -372,7 +372,7 @@ describe('the magnite adapter', function () {
         const bid = getBannerBidRequest({
           bidId: 'bid-filter',
           mediaTypes: {
-            banner: {sizes: [[300, 250]]},
+            banner: { sizes: [[300, 250]] },
             video: {
               context: 'instream',
               playerSize: [640, 480],
@@ -426,7 +426,7 @@ describe('the magnite adapter', function () {
       });
 
       it('should use int_type from config for channel name', function () {
-        config.setConfig({magnite: {int_type: 'custom_integration'}});
+        config.setConfig({ magnite: { int_type: 'custom_integration' } });
         const requests = spec.buildRequests([getBannerBidRequest()], bidderRequest);
         expect(requests[0].data.ext.prebid.channel.name).to.equal('custom_integration');
       });
@@ -460,7 +460,7 @@ describe('the magnite adapter', function () {
 
       it('should set pos from params.position when not already set', function () {
         const bid = getBannerBidRequest({
-          params: {accountId: 1001, siteId: 2001, zoneId: 3001, position: 'atf'}
+          params: { accountId: 1001, siteId: 2001, zoneId: 3001, position: 'atf' }
         });
         const requests = spec.buildRequests([bid], bidderRequest);
         expect(requests[0].data.imp[0].banner.pos).to.equal(1);
@@ -468,7 +468,7 @@ describe('the magnite adapter', function () {
 
       it('should set pos to 3 for btf position', function () {
         const bid = getBannerBidRequest({
-          params: {accountId: 1001, siteId: 2001, zoneId: 3001, position: 'btf'}
+          params: { accountId: 1001, siteId: 2001, zoneId: 3001, position: 'btf' }
         });
         const requests = spec.buildRequests([bid], bidderRequest);
         expect(requests[0].data.imp[0].banner.pos).to.equal(3);
@@ -478,7 +478,7 @@ describe('the magnite adapter', function () {
         const bid = getBannerBidRequest({
           bidId: 'bid-multi',
           mediaTypes: {
-            banner: {sizes: [[300, 250]]},
+            banner: { sizes: [[300, 250]] },
             video: {
               context: 'instream',
               playerSize: [640, 480],
@@ -509,7 +509,7 @@ describe('the magnite adapter', function () {
             accountId: 1001,
             siteId: 2001,
             zoneId: 3001,
-            visitor: {age: '25', interests: ['sports', 'tech']}
+            visitor: { age: '25', interests: ['sports', 'tech'] }
           }
         });
         const requests = spec.buildRequests([bid], bidderRequest);
@@ -526,7 +526,7 @@ describe('the magnite adapter', function () {
             accountId: 1001,
             siteId: 2001,
             zoneId: 3001,
-            inventory: {rating: '5-star', prodtype: ['tech', 'mobile']}
+            inventory: { rating: '5-star', prodtype: ['tech', 'mobile'] }
           }
         });
         const requests = spec.buildRequests([bid], bidderRequest);
@@ -538,7 +538,7 @@ describe('the magnite adapter', function () {
 
     describe('ppuid handling', function () {
       it('should set user.id from config user.id when ortb user.id is not set', function () {
-        config.setConfig({'user': {id: 'config-ppuid-123'}});
+        config.setConfig({ 'user': { id: 'config-ppuid-123' } });
         const requests = spec.buildRequests([getBannerBidRequest()], bidderRequest);
         expect(requests[0].data.user.id).to.equal('config-ppuid-123');
       });
@@ -563,7 +563,7 @@ describe('the magnite adapter', function () {
     it('should return an empty array when response body has no seatbid', function () {
       const bidRequest = getBannerBidRequest();
       const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const bids = spec.interpretResponse({body: {nbr: 0}}, requests[0]);
+      const bids = spec.interpretResponse({ body: { nbr: 0 } }, requests[0]);
       expect(bids).to.be.an('array');
       expect(bids.length).to.equal(0);
     });
@@ -575,7 +575,7 @@ describe('the magnite adapter', function () {
         const bidRequest = getBannerBidRequest();
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const response = getSampleOrtbBidResponse(bidRequest.bidId);
-        bids = spec.interpretResponse({body: response}, requests[0]);
+        bids = spec.interpretResponse({ body: response }, requests[0]);
       });
 
       it('should return at least one bid', function () {
@@ -621,7 +621,7 @@ describe('the magnite adapter', function () {
           w: 640,
           h: 480
         });
-        bids = spec.interpretResponse({body: response}, requests[0]);
+        bids = spec.interpretResponse({ body: response }, requests[0]);
       });
 
       it('should return at least one bid', function () {
@@ -666,7 +666,7 @@ describe('the magnite adapter', function () {
           h: 480
         });
 
-        const bids = spec.interpretResponse({body: response}, requests[0]);
+        const bids = spec.interpretResponse({ body: response }, requests[0]);
         const bid = bids[0];
 
         expect(bid.vastUrl).to.equal('blob:test-url');
@@ -689,7 +689,7 @@ describe('the magnite adapter', function () {
           mediaTypes: {
             native: {
               ortb: {
-                assets: [{id: 0, required: 1, title: {len: 90}}]
+                assets: [{ id: 0, required: 1, title: { len: 90 } }]
               }
             }
           }
@@ -701,7 +701,7 @@ describe('the magnite adapter', function () {
           adm: undefined,
           mtype: 4
         });
-        const bids = spec.interpretResponse({body: response}, requests[0]);
+        const bids = spec.interpretResponse({ body: response }, requests[0]);
         expect(bids.length).to.be.greaterThan(0);
         expect(bids[0].mediaType).to.equal('native');
       });
@@ -713,7 +713,7 @@ describe('the magnite adapter', function () {
           adm_native: '{"native":{"ver":"1.1","assets":[]}}',
           adm: '<div>test ad</div>'
         });
-        const bids = spec.interpretResponse({body: response}, requests[0]);
+        const bids = spec.interpretResponse({ body: response }, requests[0]);
         expect(bids.length).to.be.greaterThan(0);
         // adm should remain unchanged since mediaType is banner, not native
         expect(bids[0].ad).to.equal('<div>test ad</div>');
@@ -723,7 +723,7 @@ describe('the magnite adapter', function () {
         const bidRequest = getBannerBidRequest();
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const response = getSampleOrtbBidResponse(bidRequest.bidId);
-        const bids = spec.interpretResponse({body: response}, requests[0]);
+        const bids = spec.interpretResponse({ body: response }, requests[0]);
         expect(bids.length).to.be.greaterThan(0);
         expect(bids[0].ad).to.equal('<div>test ad</div>');
       });
@@ -732,25 +732,25 @@ describe('the magnite adapter', function () {
 
   describe('getUserSyncs()', function () {
     it('should return undefined when iframe is not enabled', function () {
-      const result = spec.getUserSyncs({iframeEnabled: false}, []);
+      const result = spec.getUserSyncs({ iframeEnabled: false }, []);
       expect(result).to.be.undefined;
     });
 
     it('should return a sync object when iframe is enabled', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true}, []);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(result).to.be.an('object');
       expect(result.type).to.equal('iframe');
       expect(result.url).to.include(SYNC_URL);
     });
 
     it('should use the default SYNC_URL', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true}, []);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(result.url).to.equal(SYNC_URL);
     });
 
     it('should use a custom syncEndpoint from config', function () {
-      config.setConfig({magnite: {syncEndpoint: 'https://custom.sync.com/usync.html'}});
-      const result = spec.getUserSyncs({iframeEnabled: true}, []);
+      config.setConfig({ magnite: { syncEndpoint: 'https://custom.sync.com/usync.html' } });
+      const result = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(result.url).to.include('https://custom.sync.com/usync.html');
     });
 
@@ -760,7 +760,7 @@ describe('the magnite adapter', function () {
           gdprApplies: true,
           consentString: 'GDPR_CONSENT_STRING'
         };
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
         expect(result.url).to.include('gdpr=1');
         expect(result.url).to.include('gdpr_consent=GDPR_CONSENT_STRING');
       });
@@ -770,7 +770,7 @@ describe('the magnite adapter', function () {
           gdprApplies: false,
           consentString: 'GDPR_CONSENT_STRING'
         };
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
         expect(result.url).to.include('gdpr=0');
       });
 
@@ -779,7 +779,7 @@ describe('the magnite adapter', function () {
           gdprApplies: 'maybe',
           consentString: 'GDPR_CONSENT_STRING'
         };
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
         expect(result.url).to.not.include('gdpr=');
       });
 
@@ -788,7 +788,7 @@ describe('the magnite adapter', function () {
           gdprApplies: true,
           consentString: 123
         };
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
         expect(result.url).to.include('gdpr=1');
         expect(result.url).to.not.include('gdpr_consent=');
       });
@@ -796,12 +796,12 @@ describe('the magnite adapter', function () {
 
     describe('USP consent', function () {
       it('should add us_privacy param when uspConsent is present', function () {
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], undefined, '1YNN');
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, '1YNN');
         expect(result.url).to.include('us_privacy=1YNN');
       });
 
       it('should not add us_privacy param when uspConsent is undefined', function () {
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], undefined, undefined);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined);
         expect(result.url).to.not.include('us_privacy');
       });
     });
@@ -812,13 +812,13 @@ describe('the magnite adapter', function () {
           gppString: 'GPP_STRING',
           applicableSections: [6, 7]
         };
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, gppConsent);
         expect(result.url).to.include('gpp=GPP_STRING');
         expect(result.url).to.include('gpp_sid=6,7');
       });
 
       it('should not add gpp params when gppConsent is undefined', function () {
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], undefined, undefined, undefined);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, undefined);
         expect(result.url).to.not.include('gpp=');
       });
 
@@ -826,16 +826,16 @@ describe('the magnite adapter', function () {
         const gppConsent = {
           applicableSections: [6, 7]
         };
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, gppConsent);
         expect(result.url).to.not.include('gpp=');
       });
     });
 
     describe('combined consent params', function () {
       it('should include all consent params when all are present', function () {
-        const gdprConsent = {gdprApplies: true, consentString: 'GDPR_STRING'};
-        const gppConsent = {gppString: 'GPP_STRING', applicableSections: [6]};
-        const result = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent, '1YNN', gppConsent);
+        const gdprConsent = { gdprApplies: true, consentString: 'GDPR_STRING' };
+        const gppConsent = { gppString: 'GPP_STRING', applicableSections: [6] };
+        const result = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, '1YNN', gppConsent);
         expect(result.url).to.include('gdpr=1');
         expect(result.url).to.include('gdpr_consent=GDPR_STRING');
         expect(result.url).to.include('us_privacy=1YNN');
@@ -848,50 +848,50 @@ describe('the magnite adapter', function () {
   describe('masSizeOrdering()', function () {
     it('should sort 300x250 to the first position', function () {
       const sizes = [
-        {w: 728, h: 90},
-        {w: 300, h: 250},
-        {w: 160, h: 600}
+        { w: 728, h: 90 },
+        { w: 300, h: 250 },
+        { w: 160, h: 600 }
       ];
       const sorted = masSizeOrdering(sizes);
-      expect(sorted[0]).to.deep.equal({w: 300, h: 250});
+      expect(sorted[0]).to.deep.equal({ w: 300, h: 250 });
     });
 
     it('should order priority sizes as 300x250, 728x90, 160x600', function () {
       const sizes = [
-        {w: 160, h: 600},
-        {w: 728, h: 90},
-        {w: 300, h: 250}
+        { w: 160, h: 600 },
+        { w: 728, h: 90 },
+        { w: 300, h: 250 }
       ];
       const sorted = masSizeOrdering(sizes);
-      expect(sorted[0]).to.deep.equal({w: 300, h: 250});
-      expect(sorted[1]).to.deep.equal({w: 728, h: 90});
-      expect(sorted[2]).to.deep.equal({w: 160, h: 600});
+      expect(sorted[0]).to.deep.equal({ w: 300, h: 250 });
+      expect(sorted[1]).to.deep.equal({ w: 728, h: 90 });
+      expect(sorted[2]).to.deep.equal({ w: 160, h: 600 });
     });
 
     it('should place priority sizes before non-priority sizes', function () {
       const sizes = [
-        {w: 320, h: 50},
-        {w: 300, h: 250},
-        {w: 970, h: 250}
+        { w: 320, h: 50 },
+        { w: 300, h: 250 },
+        { w: 970, h: 250 }
       ];
       const sorted = masSizeOrdering(sizes);
-      expect(sorted[0]).to.deep.equal({w: 300, h: 250});
+      expect(sorted[0]).to.deep.equal({ w: 300, h: 250 });
     });
 
     it('should maintain relative order for non-priority sizes', function () {
       const sizes = [
-        {w: 320, h: 50},
-        {w: 970, h: 250}
+        { w: 320, h: 50 },
+        { w: 970, h: 250 }
       ];
       const sorted = masSizeOrdering(sizes);
-      expect(sorted[0]).to.deep.equal({w: 320, h: 50});
-      expect(sorted[1]).to.deep.equal({w: 970, h: 250});
+      expect(sorted[0]).to.deep.equal({ w: 320, h: 50 });
+      expect(sorted[1]).to.deep.equal({ w: 970, h: 250 });
     });
 
     it('should handle a single size', function () {
-      const sizes = [{w: 300, h: 250}];
+      const sizes = [{ w: 300, h: 250 }];
       const sorted = masSizeOrdering(sizes);
-      expect(sorted).to.deep.equal([{w: 300, h: 250}]);
+      expect(sorted).to.deep.equal([{ w: 300, h: 250 }]);
     });
 
     it('should handle an empty array', function () {
@@ -902,19 +902,19 @@ describe('the magnite adapter', function () {
 
   describe('config merging', function () {
     it('should read magnite config', function () {
-      config.setConfig({magnite: {int_type: 'magnite_test'}});
+      config.setConfig({ magnite: { int_type: 'magnite_test' } });
       const requests = spec.buildRequests([getBannerBidRequest()], getBidderRequest());
       expect(requests[0].data.ext.prebid.channel.name).to.equal('magnite_test');
     });
 
     it('should read rubicon config for backward compatibility', function () {
-      config.setConfig({rubicon: {int_type: 'rubicon_test'}});
+      config.setConfig({ rubicon: { int_type: 'rubicon_test' } });
       const requests = spec.buildRequests([getBannerBidRequest()], getBidderRequest());
       expect(requests[0].data.ext.prebid.channel.name).to.equal('rubicon_test');
     });
 
     it('should reset config with resetMgniConf', function () {
-      config.setConfig({magnite: {int_type: 'custom'}});
+      config.setConfig({ magnite: { int_type: 'custom' } });
       resetMgniConf();
       const requests = spec.buildRequests([getBannerBidRequest()], getBidderRequest());
       // After reset, should use default integration
