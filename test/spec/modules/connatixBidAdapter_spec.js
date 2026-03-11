@@ -172,7 +172,7 @@ describe('connatixBidAdapter', function () {
         height: 250
       });
 
-      const getElementByIdStub = sinon.stub(document, 'getElementById');
+      const getElementByIdStub = sandbox.stub(document, 'getElementById');
       getElementByIdStub.withArgs('validElement').returns(element);
 
       const result = connatixDetectViewability(bid);
