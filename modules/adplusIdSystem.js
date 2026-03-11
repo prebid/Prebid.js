@@ -34,16 +34,21 @@ const LOG_PREFIX = 'User ID - adplusId submodule: ';
  * @returns {Object} -
  */
 function getIdFromStorage() {
-  const lsDt = storage.getDataFromLocalStorage(ADPLUS_UID_NAME);
+  try {
+    const lsDt = storage.getDataFromLocalStorage(ADPLUS_UID_NAME);
 
-  if (lsDt) {
-    return JSON.parse(lsDt);
-  }
+    if (lsDt) {
+      return JSON.parse(lsDt);
+    }
 
-  const cookieDt = storage.getCookie(ADPLUS_UID_NAME);
+    const cookieDt = storage.getCookie(ADPLUS_UID_NAME);
 
-  if (cookieDt) {
-    return JSON.parse(cookieDt);
+    if (cookieDt) {
+      return JSON.parse(cookieDt);
+    }
+  } catch (error) {
+    logError(LOG_PREFIX + error);
+    clearStorage();
   }
 }
 
@@ -192,6 +197,7 @@ export const adplusIdSystemSubmodule = {
       const rotate = dt.rotateAt && dt.rotateAt <= now;
       if (rotate) {
         return {
+          id: dt,
           callback: function (callback) {
             fetchAdplusId(true, dt.uid, callback);
           }
