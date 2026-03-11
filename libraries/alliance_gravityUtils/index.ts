@@ -75,8 +75,6 @@ export const createRenderer = (
 export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp => {
   deepSetValue(imp, 'tagid', bidRequest.adUnitCode);
   deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode);
-  const divId = bidRequest.params.divId || bidRequest.adUnitCode;
-  deepSetValue(imp, 'ext.divId', divId);
   if (imp.video) {
     const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
