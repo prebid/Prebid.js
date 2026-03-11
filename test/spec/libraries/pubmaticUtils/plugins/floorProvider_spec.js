@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import * as floorProvider from '../../../../../libraries/pubmaticUtils/plugins/floorProvider.js';
 import * as priceFloors from '../../../../../modules/priceFloors.js';
 import * as pubmaticUtils from '../../../../../libraries/pubmaticUtils/pubmaticUtils.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 describe('FloorProvider', () => {
   const floorsobj = {
@@ -91,7 +91,7 @@ describe('FloorProvider', () => {
       getConfigByName: () => floorsobj
     });
 
-    const req = {err: 4};
+    const req = { err: 4 };
     const result = await floorProvider.processBidRequest(req);
 
     expect(result).to.equal(req);
@@ -179,6 +179,14 @@ describe('FloorProvider', () => {
       expect(floorProvider.getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
       expect(floorProvider.getBidder({})).to.equal(undefined);
       expect(floorProvider.getBidder(undefined)).to.equal(undefined);
+    });
+    it('getDOW should return result from getDayOfWeek', async () => {
+      const stub = sinon.stub(pubmaticUtils, 'getDayOfWeek').returns('0');
+      expect(floorProvider.getDOW()).to.equal('0');
+    });
+    it('getHOD should return result from getHourOfDay', async () => {
+      const stub = sinon.stub(pubmaticUtils, 'getHourOfDay').returns('15');
+      expect(floorProvider.getHOD()).to.equal('15');
     });
   });
 });

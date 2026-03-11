@@ -1,12 +1,12 @@
-import {submodule} from '../src/hook.js';
-import {config} from '../src/config.js';
-import {logError, logInfo, logWarn, mergeDeep} from '../src/utils.js';
-import {auctionStore} from '../libraries/weakStore/weakStore.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {emit} from '../src/events.js';
-import {BID_STATUS, EVENTS} from '../src/constants.js';
-import {PbPromise} from '../src/utils/promise.js';
-import {getBidToRender, getRenderingData, markWinningBid} from '../src/adRendering.js';
+import { submodule } from '../src/hook.js';
+import { config } from '../src/config.js';
+import { logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { auctionStore } from '../libraries/weakStore/weakStore.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { emit } from '../src/events.js';
+import { BID_STATUS, EVENTS } from '../src/constants.js';
+import { PbPromise } from '../src/utils/promise.js';
+import { getBidToRender, getRenderingData, markWinningBid } from '../src/adRendering.js';
 
 let getPAAPIConfig, expandFilters, moduleConfig;
 
@@ -17,14 +17,12 @@ config.getConfig('paapi', (cfg) => {
   moduleConfig = cfg.paapi?.topLevelSeller;
   if (moduleConfig) {
     getBidToRender.before(renderPaapiHook);
-    getBidToRender.after(renderOverrideHook);
     getRenderingData.before(getRenderingDataHook);
     markWinningBid.before(markWinningBidHook);
   } else {
-    getBidToRender.getHooks({hook: renderPaapiHook}).remove();
-    getBidToRender.getHooks({hook: renderOverrideHook}).remove();
-    getRenderingData.getHooks({hook: getRenderingDataHook}).remove();
-    markWinningBid.getHooks({hook: markWinningBidHook}).remove();
+    getBidToRender.getHooks({ hook: renderPaapiHook }).remove();
+    getRenderingData.getHooks({ hook: getRenderingDataHook }).remove();
+    markWinningBid.getHooks({ hook: markWinningBidHook }).remove();
   }
 });
 
@@ -40,32 +38,28 @@ function bidIfRenderable(bid) {
   return bid;
 }
 
-const forRenderStack = [];
-
-function renderPaapiHook(next, adId, forRender = true, override = PbPromise.resolve()) {
-  forRenderStack.push(forRender);
-  const ids = parsePaapiAdId(adId);
-  if (ids) {
-    override = override.then((bid) => {
-      if (bid) return bid;
-      const [auctionId, adUnitCode] = ids;
-      return paapiBids(auctionId)?.[adUnitCode]?.then(bid => {
-        if (!bid) {
-          logWarn(MODULE_NAME, `No PAAPI bid found for auctionId: "${auctionId}", adUnit: "${adUnitCode}"`);
-        }
-        return bidIfRenderable(bid);
-      });
-    });
-  }
-  next(adId, forRender, override);
-}
-
-function renderOverrideHook(next, bidPm) {
-  const forRender = forRenderStack.pop();
-  if (moduleConfig?.overrideWinner) {
-    bidPm = bidPm.then((bid) => {
-      if (isPaapiBid(bid) || bid?.status === BID_STATUS.RENDERED) return bid;
-      return getPAAPIBids({adUnitCode: bid.adUnitCode}).then(res => {
+function renderPaapiHook(next, adId, forRender = true, cb) {
+  PbPromise
+    .resolve()
+    .then(() => {
+      const ids = parsePaapiAdId(adId);
+      if (ids) {
+        const [auctionId, adUnitCode] = ids;
+        return paapiBids(auctionId)?.[adUnitCode]?.then(bid => {
+          if (!bid) {
+            logWarn(MODULE_NAME, `No PAAPI bid found for auctionId: "${auctionId}", adUnit: "${adUnitCode}"`);
+          }
+          return bidIfRenderable(bid);
+        });
+      }
+    })
+    .then((bid) => {
+      if (bid != null) return bid;
+      return new Promise(resolve => next(adId, forRender, resolve))
+    })
+    .then((bid) => {
+      if (bid == null || isPaapiBid(bid) || bid?.status === BID_STATUS.RENDERED) return bid;
+      return getPAAPIBids({ adUnitCode: bid.adUnitCode }).then(res => {
         const paapiBid = bidIfRenderable(res[bid.adUnitCode]);
         if (paapiBid) {
           if (!forRender) return paapiBid;
@@ -77,9 +71,8 @@ function renderOverrideHook(next, bidPm) {
         }
         return bid;
       });
-    });
-  }
-  next(bidPm);
+    })
+    .then(cb);
 }
 
 export function getRenderingDataHook(next, bid, options) {
@@ -117,7 +110,7 @@ function onAuctionConfig(auctionId, auctionConfigs) {
     Object.entries(auctionConfigs).forEach(([adUnitCode, auctionConfig]) => {
       mergeDeep(auctionConfig, base);
       if (moduleConfig.autorun ?? true) {
-        getPAAPIBids({adUnitCode, auctionId});
+        getPAAPIBids({ adUnitCode, auctionId });
       }
     });
   }
@@ -163,7 +156,7 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
       .map(([adUnitCode, auctionId]) => {
         const bids = paapiBids(auctionId);
         if (bids && !bids.hasOwnProperty(adUnitCode)) {
-          const auctionConfig = getPAAPIConfig({adUnitCode, auctionId})[adUnitCode];
+          const auctionConfig = getPAAPIConfig({ adUnitCode, auctionId })[adUnitCode];
           if (auctionConfig) {
             emit(EVENTS.RUN_PAAPI_AUCTION, {
               auctionId,
@@ -186,12 +179,12 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
                   emit(EVENTS.PAAPI_BID, bid);
                   return bid;
                 } else {
-                  emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode, auctionConfig});
+                  emit(EVENTS.PAAPI_NO_BID, { auctionId, adUnitCode, auctionConfig });
                   return null;
                 }
               }).catch(error => {
                 logError(MODULE_NAME, `error (auction "${auctionId}", adUnit "${adUnitCode}"):`, error);
-                emit(EVENTS.PAAPI_ERROR, {auctionId, adUnitCode, error, auctionConfig});
+                emit(EVENTS.PAAPI_ERROR, { auctionId, adUnitCode, error, auctionConfig });
                 return null;
               });
           }

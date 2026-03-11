@@ -1,6 +1,7 @@
 import {
   wurflSubmodule,
-  storage
+  storage,
+  __testing__
 } from 'modules/wurflRtdProvider';
 import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
@@ -79,8 +80,6 @@ describe('wurflRtdProvider', function () {
     const expectedData = JSON.stringify({ bidders: ['bidder1', 'bidder2'] });
 
     let sandbox;
-    // originalUserAgentData to restore after tests
-    let originalUAData;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
@@ -88,7 +87,6 @@ describe('wurflRtdProvider', function () {
         init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
         complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
       };
-      originalUAData = window.navigator.userAgentData;
       // Initialize module with clean state for each test
       wurflSubmodule.init({ params: {} });
     });
@@ -97,10 +95,6 @@ describe('wurflRtdProvider', function () {
       // Restore the original functions
       sandbox.restore();
       window.WURFLPromises = undefined;
-      Object.defineProperty(window.navigator, 'userAgentData', {
-        value: originalUAData,
-        configurable: true,
-      });
     });
 
     // Bid request config
@@ -120,79 +114,21 @@ describe('wurflRtdProvider', function () {
       }
     };
 
-    // Client Hints tests
-    describe('Client Hints support', () => {
-      it('should collect and send client hints when available', (done) => {
-        const clock = sinon.useFakeTimers();
-        reqBidsConfigObj.ortb2Fragments.global.device = {};
+    // SUA (Structured User Agent) tests
+    describe('SUA support', () => {
+      const mockSUA = {
+        source: 2,
+        platform: { brand: 'Android', version: ['13', '0', '0'] },
+        browsers: [{ brand: 'Chromium', version: ['130', '0', '6723', '58'] }],
+        mobile: 1,
+        model: 'Pixel 5',
+        architecture: 'arm',
+        bitness: '64'
+      };
+
+      it('should read SUA from ortb2Fragments and send it in WURFL.js URL', (done) => {
+        reqBidsConfigObj.ortb2Fragments.global.device = { sua: mockSUA };
         reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-        // Mock Client Hints
-        const mockClientHints = {
-          architecture: 'arm',
-          bitness: '64',
-          model: 'Pixel 5',
-          platformVersion: '13.0.0',
-          uaFullVersion: '130.0.6723.58',
-          fullVersionList: [
-            { brand: 'Chromium', version: '130.0.6723.58' }
-          ]
-        };
-
-        const getHighEntropyValuesStub = sandbox.stub().resolves(mockClientHints);
-        Object.defineProperty(navigator, 'userAgentData', {
-          value: { getHighEntropyValues: getHighEntropyValuesStub },
-          configurable: true,
-          writable: true
-        });
-
-        // Empty cache to trigger async load
-        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-        sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-        const callback = async () => {
-          // Verify client hints were requested
-          expect(getHighEntropyValuesStub.calledOnce).to.be.true;
-          expect(getHighEntropyValuesStub.calledWith(
-            ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList']
-          )).to.be.true;
-
-          try {
-            // Use tickAsync to properly handle promise microtasks
-            await clock.tickAsync(1);
-
-            // Now verify WURFL.js was loaded with client hints in URL
-            expect(loadExternalScriptStub.called).to.be.true;
-            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
-
-            const url = new URL(scriptUrl);
-            const uachParam = url.searchParams.get('uach');
-            expect(uachParam).to.not.be.null;
-
-            const parsedHints = JSON.parse(uachParam);
-            expect(parsedHints).to.deep.equal(mockClientHints);
-
-            clock.restore();
-            done();
-          } catch (err) {
-            clock.restore();
-            done(err);
-          }
-        };
-
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
-      })
-      it('should load WURFL.js without client hints when not available', (done) => {
-        reqBidsConfigObj.ortb2Fragments.global.device = {};
-        reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-        // No client hints available
-        Object.defineProperty(navigator, 'userAgentData', {
-          value: undefined,
-          configurable: true,
-          writable: true
-        });
 
         // Empty cache to trigger async load
         sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
@@ -200,13 +136,40 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
         const callback = () => {
-          // Verify WURFL.js was loaded without uach parameter
+          // Verify WURFL.js was loaded with SUA in URL
+          expect(loadExternalScriptStub.called).to.be.true;
+          const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+
+          const url = new URL(scriptUrl);
+          const suaParam = url.searchParams.get('sua');
+          expect(suaParam).to.not.be.null;
+
+          const parsedSUA = JSON.parse(suaParam);
+          expect(parsedSUA).to.deep.equal(mockSUA);
+
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should load WURFL.js without SUA when not available in ortb2Fragments', (done) => {
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        // Empty cache to trigger async load
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const callback = () => {
+          // Verify WURFL.js was loaded without sua parameter
           expect(loadExternalScriptStub.calledOnce).to.be.true;
           const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
 
           const url = new URL(scriptUrl);
-          const uachParam = url.searchParams.get('uach');
-          expect(uachParam).to.be.null;
+          const suaParam = url.searchParams.get('sua');
+          expect(suaParam).to.be.null;
 
           done();
         };
@@ -249,15 +212,9 @@ describe('wurflRtdProvider', function () {
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
 
-      it('should use expired cached data and trigger async refresh (without Client Hints)', (done) => {
+      it('should use expired cached data and trigger async refresh (without SUA)', (done) => {
         reqBidsConfigObj.ortb2Fragments.global.device = {};
         reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-        Object.defineProperty(navigator, 'userAgentData', {
-          value: undefined,
-          configurable: true,
-          writable: true
-        });
         // Setup cache with expired TTL
         const pastExpiry = Date.now() - 1000; // expired 1 second ago
         const cachedData = {
@@ -436,12 +393,17 @@ describe('wurflRtdProvider', function () {
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
       });
 
-      it('should send beacon with ab_name and ab_variant for control group', (done) => {
+      it('should send beacon with ab_name and ab_variant for control group (no cache)', (done) => {
         sandbox.stub(Math, 'random').returns(0.75); // Control group
         const config = { params: { abTest: true, abName: 'test_sept', abSplit: 0.5 } };
 
         // Initialize with A/B test config
         wurflSubmodule.init(config);
+
+        // No cache
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
         const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
 
@@ -472,7 +434,7 @@ describe('wurflRtdProvider', function () {
           const payload = JSON.parse(beaconCall.args[1]);
           expect(payload).to.have.property('ab_name', 'test_sept');
           expect(payload).to.have.property('ab_variant', 'control');
-          expect(payload).to.have.property('enrichment', 'none');
+          expect(payload).to.have.property('enrichment', 'none_lce');
           done();
         };
 
@@ -489,7 +451,7 @@ describe('wurflRtdProvider', function () {
 
         it('should assign control group when split is 0', (done) => {
           sandbox.stub(Math, 'random').returns(0.01);
-          const config = { params: { abTest: true, abName: 'test_split', abSplit: 0, abExcludeLCE: false } };
+          const config = { params: { abTest: true, abName: 'test_split', abSplit: 0 } };
           wurflSubmodule.init(config);
 
           const cachedData = { WURFL, wurfl_pbjs };
@@ -511,7 +473,7 @@ describe('wurflRtdProvider', function () {
 
         it('should assign treatment group when split is 1', (done) => {
           sandbox.stub(Math, 'random').returns(0.99);
-          const config = { params: { abTest: true, abName: 'test_split', abSplit: 1, abExcludeLCE: false } };
+          const config = { params: { abTest: true, abName: 'test_split', abSplit: 1 } };
           wurflSubmodule.init(config);
 
           const cachedData = { WURFL, wurfl_pbjs };
@@ -533,7 +495,7 @@ describe('wurflRtdProvider', function () {
 
         it('should use default abName when not provided', (done) => {
           sandbox.stub(Math, 'random').returns(0.25);
-          const config = { params: { abTest: true, abSplit: 0.5, abExcludeLCE: false } };
+          const config = { params: { abTest: true, abSplit: 0.5 } };
           wurflSubmodule.init(config);
 
           const cachedData = { WURFL, wurfl_pbjs };
@@ -572,101 +534,9 @@ describe('wurflRtdProvider', function () {
           wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
         });
 
-        it('should exclude LCE from A/B test when abExcludeLCE is true (control group)', (done) => {
+        it('should skip enrichment for control group with cache and set enrichment to none', (done) => {
           sandbox.stub(Math, 'random').returns(0.75); // Control group
-          const config = { params: { abTest: true, abName: 'test_lce', abSplit: 0.5, abExcludeLCE: true } };
-          wurflSubmodule.init(config);
-
-          // Trigger LCE (no cache)
-          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
-          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-          sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
-          sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
-            getHighestCpmBids: () => []
-          });
-
-          reqBidsConfigObj.ortb2Fragments.global.device = {};
-          reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-          const callback = () => {
-            // Control group should still enrich with LCE when excluded
-            expect(reqBidsConfigObj.ortb2Fragments.global.device).to.have.property('js', 1);
-
-            const auctionDetails = {
-              bidsReceived: [
-                { requestId: 'req1', bidderCode: 'bidder1', adUnitCode: 'ad1', cpm: 1.5, currency: 'USD' }
-              ],
-              adUnits: [
-                {
-                  code: 'ad1',
-                  bids: [{ bidder: 'bidder1' }]
-                }
-              ]
-            };
-
-            wurflSubmodule.onAuctionEndEvent(auctionDetails, config, null);
-
-            const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-            // Beacon should NOT include ab_name and ab_variant when LCE excluded
-            expect(payload).to.not.have.property('ab_name');
-            expect(payload).to.not.have.property('ab_variant');
-            done();
-          };
-
-          wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
-        });
-
-        it('should exclude LCE from A/B test when abExcludeLCE is true (treatment group)', (done) => {
-          sandbox.stub(Math, 'random').returns(0.25); // Treatment group
-          const config = { params: { abTest: true, abName: 'test_lce', abSplit: 0.5, abExcludeLCE: true } };
-          wurflSubmodule.init(config);
-
-          // Trigger LCE (no cache)
-          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
-          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-          sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
-          sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
-            getHighestCpmBids: () => []
-          });
-
-          reqBidsConfigObj.ortb2Fragments.global.device = {};
-          reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-          const callback = () => {
-            // Treatment group should enrich with LCE
-            expect(reqBidsConfigObj.ortb2Fragments.global.device).to.have.property('js', 1);
-
-            const auctionDetails = {
-              bidsReceived: [
-                { requestId: 'req1', bidderCode: 'bidder1', adUnitCode: 'ad1', cpm: 1.5, currency: 'USD' }
-              ],
-              adUnits: [
-                {
-                  code: 'ad1',
-                  bids: [{ bidder: 'bidder1' }]
-                }
-              ]
-            };
-
-            wurflSubmodule.onAuctionEndEvent(auctionDetails, config, null);
-
-            const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-            // Beacon should NOT include ab_name and ab_variant when LCE excluded
-            expect(payload).to.not.have.property('ab_name');
-            expect(payload).to.not.have.property('ab_variant');
-            done();
-          };
-
-          wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
-        });
-
-        it('should include WURFL in A/B test when abExcludeLCE is true (control group)', (done) => {
-          sandbox.stub(Math, 'random').returns(0.75); // Control group
-          const config = { params: { abTest: true, abName: 'test_wurfl', abSplit: 0.5, abExcludeLCE: true } };
+          const config = { params: { abTest: true, abName: 'test_wurfl', abSplit: 0.5 } };
           wurflSubmodule.init(config);
 
           // Provide WURFL cache
@@ -702,18 +572,21 @@ describe('wurflRtdProvider', function () {
             wurflSubmodule.onAuctionEndEvent(auctionDetails, config, null);
 
             const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-            // Beacon should include ab_name and ab_variant for WURFL
             expect(payload).to.have.property('ab_name', 'test_wurfl');
             expect(payload).to.have.property('ab_variant', 'control');
+            expect(payload).to.have.property('enrichment', 'none');
+            // Beacon metadata should be read from cache even in control group
+            expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+            expect(payload).to.have.property('sampling_rate', 100);
             done();
           };
 
           wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
         });
 
-        it('should include LCE in A/B test when abExcludeLCE is false (control group)', (done) => {
+        it('should skip enrichment for control group without cache and set enrichment to none_lce', (done) => {
           sandbox.stub(Math, 'random').returns(0.75); // Control group
-          const config = { params: { abTest: true, abName: 'test_include_lce', abSplit: 0.5, abExcludeLCE: false } };
+          const config = { params: { abTest: true, abName: 'test_none_lce', abSplit: 0.5 } };
           wurflSubmodule.init(config);
 
           // Trigger LCE (no cache)
@@ -730,7 +603,7 @@ describe('wurflRtdProvider', function () {
           reqBidsConfigObj.ortb2Fragments.bidder = {};
 
           const callback = () => {
-            // Control group should skip enrichment even with LCE
+            // Control group should skip enrichment
             expect(reqBidsConfigObj.ortb2Fragments.global.device).to.deep.equal({});
 
             const auctionDetails = {
@@ -748,18 +621,25 @@ describe('wurflRtdProvider', function () {
             wurflSubmodule.onAuctionEndEvent(auctionDetails, config, null);
 
             const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-            // Beacon should include ab_name and ab_variant
-            expect(payload).to.have.property('ab_name', 'test_include_lce');
+            expect(payload).to.have.property('ab_name', 'test_none_lce');
             expect(payload).to.have.property('ab_variant', 'control');
+            expect(payload).to.have.property('enrichment', 'none_lce');
+            // No cache → beacon metadata stays at defaults
+            expect(payload).to.have.property('wurfl_id', '');
+            expect(payload).to.have.property('sampling_rate', 100);
+
+            // Verify per-bidder enrichment also gets none_lce
+            const bidderEntry = payload.ad_units[0].bidders.find(b => b.bidder === 'bidder1');
+            expect(bidderEntry.bdr_enrich).to.equal('none_lce');
             done();
           };
 
           wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
         });
 
-        it('should include LCE in A/B test when abExcludeLCE is false (treatment group)', (done) => {
+        it('should enrich with LCE for treatment group without cache', (done) => {
           sandbox.stub(Math, 'random').returns(0.25); // Treatment group
-          const config = { params: { abTest: true, abName: 'test_include_lce', abSplit: 0.5, abExcludeLCE: false } };
+          const config = { params: { abTest: true, abName: 'test_lce_treatment', abSplit: 0.5 } };
           wurflSubmodule.init(config);
 
           // Trigger LCE (no cache)
@@ -794,55 +674,9 @@ describe('wurflRtdProvider', function () {
             wurflSubmodule.onAuctionEndEvent(auctionDetails, config, null);
 
             const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-            // Beacon should include ab_name and ab_variant
-            expect(payload).to.have.property('ab_name', 'test_include_lce');
+            expect(payload).to.have.property('ab_name', 'test_lce_treatment');
             expect(payload).to.have.property('ab_variant', 'treatment');
-            done();
-          };
-
-          wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, {});
-        });
-
-        it('should default abExcludeLCE to true', (done) => {
-          sandbox.stub(Math, 'random').returns(0.75); // Control group
-          const config = { params: { abTest: true, abName: 'test_default', abSplit: 0.5 } }; // No abExcludeLCE specified
-          wurflSubmodule.init(config);
-
-          // Trigger LCE (no cache)
-          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
-          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-          sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
-          sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
-            getHighestCpmBids: () => []
-          });
-
-          reqBidsConfigObj.ortb2Fragments.global.device = {};
-          reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-          const callback = () => {
-            // Should behave like abExcludeLCE: true (control enriches with LCE)
-            expect(reqBidsConfigObj.ortb2Fragments.global.device).to.have.property('js', 1);
-
-            const auctionDetails = {
-              bidsReceived: [
-                { requestId: 'req1', bidderCode: 'bidder1', adUnitCode: 'ad1', cpm: 1.5, currency: 'USD' }
-              ],
-              adUnits: [
-                {
-                  code: 'ad1',
-                  bids: [{ bidder: 'bidder1' }]
-                }
-              ]
-            };
-
-            wurflSubmodule.onAuctionEndEvent(auctionDetails, config, null);
-
-            const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-            // Beacon should NOT include ab_name and ab_variant (default is true)
-            expect(payload).to.not.have.property('ab_name');
-            expect(payload).to.not.have.property('ab_variant');
+            expect(payload).to.have.property('enrichment', 'lce');
             done();
           };
 
@@ -1027,7 +861,7 @@ describe('wurflRtdProvider', function () {
           expect(device.hwv).to.be.a('string');
         }
 
-        // pxratio from devicePixelRatio is acceptable (not a flagged fingerprinting API)
+        // pxratio uses OS-based hardcoded values (v2.4.0+), not window.devicePixelRatio (fingerprinting API)
         if (device.pxratio !== undefined) {
           expect(device.pxratio).to.be.a('number');
         }
@@ -1168,6 +1002,122 @@ describe('wurflRtdProvider', function () {
 
         const callback = () => {
           expect(reqBidsConfigObj.ortb2Fragments.global.device.ext.wurfl.is_robot).to.be.false;
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+    });
+
+    describe('LCE pxratio (OS-based device pixel ratio)', () => {
+      let originalUserAgent;
+
+      beforeEach(() => {
+        // Setup empty cache to trigger LCE
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        // Save original userAgent
+        originalUserAgent = navigator.userAgent;
+      });
+
+      afterEach(() => {
+        // Restore original userAgent
+        Object.defineProperty(navigator, 'userAgent', {
+          value: originalUserAgent,
+          configurable: true,
+          writable: true
+        });
+      });
+
+      it('should set pxratio to 2.0 for Android devices', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          const device = reqBidsConfigObj.ortb2Fragments.global.device;
+          expect(device.pxratio).to.equal(2.0);
+          expect(device.os).to.equal('Android');
+          expect(device.devicetype).to.equal(4); // PHONE
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set pxratio to 3.0 for iOS (iPhone) devices', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          const device = reqBidsConfigObj.ortb2Fragments.global.device;
+          expect(device.pxratio).to.equal(3.0);
+          expect(device.os).to.equal('iOS');
+          expect(device.devicetype).to.equal(4); // PHONE
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set pxratio to 2.0 for iPadOS (iPad) devices', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          const device = reqBidsConfigObj.ortb2Fragments.global.device;
+          expect(device.pxratio).to.equal(2.0);
+          expect(device.os).to.equal('iPadOS');
+          expect(device.devicetype).to.equal(5); // TABLET
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set pxratio to 1.0 for desktop/other devices (default)', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          const device = reqBidsConfigObj.ortb2Fragments.global.device;
+          expect(device.pxratio).to.equal(1.0);
+          expect(device.os).to.equal('Windows');
+          expect(device.devicetype).to.equal(2); // PERSONAL_COMPUTER
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set pxratio to 1.0 for macOS devices (default)', (done) => {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          configurable: true,
+          writable: true
+        });
+
+        const callback = () => {
+          const device = reqBidsConfigObj.ortb2Fragments.global.device;
+          expect(device.pxratio).to.equal(1.0);
+          expect(device.os).to.equal('macOS');
+          expect(device.devicetype).to.equal(2); // PERSONAL_COMPUTER
           done();
         };
 
@@ -2423,6 +2373,95 @@ describe('wurflRtdProvider', function () {
           value: originalGetDeviceInfo,
           configurable: true
         });
+      });
+    });
+
+    describe('onAuctionEndEvent: SUA in beacon payload', () => {
+      const mockSUA = {
+        source: 2,
+        platform: { brand: 'Android', version: ['13', '0', '0'] },
+        browsers: [{ brand: 'Chromium', version: ['130', '0', '6723', '58'] }],
+        mobile: 1,
+        model: 'Pixel 5',
+        architecture: 'arm',
+        bitness: '64'
+      };
+
+      beforeEach(() => {
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
+          getHighestCpmBids: () => []
+        });
+      });
+
+      afterEach(() => {
+        __testing__.setCachedSUA(null);
+      });
+
+      it('should include SUA data in beacon payload when available in ortb2Fragments', (done) => {
+        // Set SUA in ortb2Fragments so getBidRequestData picks it up
+        reqBidsConfigObj.ortb2Fragments.global.device.sua = mockSUA;
+
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          const auctionDetails = {
+            bidsReceived: [],
+            adUnits: [{
+              code: 'ad1',
+              bids: [{ bidder: 'bidder1' }]
+            }]
+          };
+
+          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+          expect(sendBeaconStub.calledOnce).to.be.true;
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.have.property('sua');
+          expect(payload.sua).to.deep.equal(mockSUA);
+
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('should set sua to null in beacon payload when SUA is not available', (done) => {
+        // No SUA in ortb2Fragments
+
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          const auctionDetails = {
+            bidsReceived: [],
+            adUnits: [{
+              code: 'ad1',
+              bids: [{ bidder: 'bidder1' }]
+            }]
+          };
+
+          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+          expect(sendBeaconStub.calledOnce).to.be.true;
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.have.property('sua', null);
+
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
     });
   });

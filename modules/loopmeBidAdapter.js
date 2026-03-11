@@ -16,7 +16,7 @@ export const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'ext.bidder', {...bidRequest.params});
+    deepSetValue(imp, 'ext.bidder', { ...bidRequest.params });
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -31,19 +31,19 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
 
-  isBidRequestValid: ({params = {}}) => Boolean(params.publisherId),
+  isBidRequestValid: ({ params = {} }) => Boolean(params.publisherId),
 
   buildRequests: (bidRequests, bidderRequest) =>
-    ({url, method: 'POST', data: converter.toORTB({bidRequests, bidderRequest})}),
+    ({ url, method: 'POST', data: converter.toORTB({ bidRequests, bidderRequest }) }),
 
-  interpretResponse: ({body}, {data}) => converter.fromORTB({ request: data, response: body }).bids,
+  interpretResponse: ({ body }, { data }) => converter.fromORTB({ request: data, response: body }).bids,
 
   getUserSyncs: (syncOptions, serverResponses) =>
-    serverResponses.flatMap(({body}) =>
+    serverResponses.flatMap(({ body }) =>
       (body.ext?.usersyncs || [])
-        .filter(({type}) => type === 'image' || type === 'iframe')
-        .filter(({url}) => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')))
-        .filter(({type}) => (type === 'image' && syncOptions.pixelEnabled) || (type === 'iframe' && syncOptions.iframeEnabled))
+        .filter(({ type }) => type === 'image' || type === 'iframe')
+        .filter(({ url }) => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')))
+        .filter(({ type }) => (type === 'image' && syncOptions.pixelEnabled) || (type === 'iframe' && syncOptions.iframeEnabled))
     )
 }
 registerBidder(spec);

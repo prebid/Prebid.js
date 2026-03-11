@@ -13,6 +13,8 @@
       mediaTypes: {
         video: {
             playerSize: [640, 360], 
+            playbackmethod: [2, 6],
+            api: [2, 7, 8],
         }
       },
       video: {
@@ -95,9 +97,11 @@
 
             const bid = bidResponse.bids[0];
 
+            const adUnit = adUnits.find(au => au.code === 'div-gpt-ad-51545-0');
+
             const vastXml = await pbjs.adServers.gam.getVastXml({
               bid,
-              adUnit: 'div-gpt-ad-51545-0',
+              adUnit,
               params: {
                 iu: '/41758329/localcache',
                 url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp",

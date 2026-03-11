@@ -1,5 +1,5 @@
-import {canAccessWindowTop, internal as utilsInternals} from '../utils.js';
-import {CachedApiWrapper} from './cachedApiWrapper.js';
+import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
+import { CachedApiWrapper } from './cachedApiWrapper.js';
 
 const CHECK_INTERVAL_MS = 20;
 
@@ -34,22 +34,22 @@ const winDimensions = new CachedApiWrapper(
 );
 
 export const internal = {
-  reset: winDimensions.reset,
+  winDimensions,
 };
 
 export const getWinDimensions = (() => {
   let lastCheckTimestamp;
   return function () {
     if (!lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.reset();
+      internal.winDimensions.reset();
       lastCheckTimestamp = Date.now();
     }
-    return winDimensions.obj;
+    return internal.winDimensions.obj;
   }
 })();
 
 export function resetWinDimensions() {
-  internal.reset();
+  internal.winDimensions.reset();
 }
 
 export function getScreenOrientation(win) {

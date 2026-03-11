@@ -3,7 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahooAds';
@@ -71,7 +71,7 @@ function getSize(size) {
 
 function transformSizes(sizes) {
   if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
-    return [ getSize(sizes) ];
+    return [getSize(sizes)];
   }
   return sizes.map(getSize);
 }
@@ -288,6 +288,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
         }
       },
       source: {
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           hb: 1,
           adapterver: ADAPTER_VERSION,
@@ -490,17 +491,22 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     const allowedUserNumbers = ['yob'];
     const allowedUserArrays = ['data'];
-    const allowedUserObjects = ['ext'];
     outBoundBidRequest.user = validateAppendObject('string', allowedUserStrings, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
-    outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
+    // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
+    if (userObject.ext && isPlainObject(userObject.ext)) {
+      outBoundBidRequest.user.ext = {
+        ...outBoundBidRequest.user.ext,
+        ...userObject.ext
+      };
+    }
   };
 
   return outBoundBidRequest;
 };
 
-function generateServerRequest({payload, requestOptions, bidderRequest}) {
+function generateServerRequest({ payload, requestOptions, bidderRequest }) {
   const pubIdMode = getPubIdMode(bidderRequest);
   const overrideEndpoint = getConfigValue(bidderRequest, 'endpoint');
   let sspEndpoint = overrideEndpoint || SSP_ENDPOINT_DCN_POS;
@@ -607,13 +613,13 @@ export const spec = {
       filteredBidRequests.forEach(bid => {
         appendImpObject(bid, payload);
       });
-      return [generateServerRequest({payload, requestOptions, bidderRequest})];
+      return [generateServerRequest({ payload, requestOptions, bidderRequest })];
     }
 
     return filteredBidRequests.map(bid => {
       const payloadClone = generateOpenRtbObject(bidderRequest, bid);
       appendImpObject(bid, payloadClone);
-      return generateServerRequest({payload: payloadClone, requestOptions, bidderRequest: bid});
+      return generateServerRequest({ payload: payloadClone, requestOptions, bidderRequest: bid });
     });
   },
 

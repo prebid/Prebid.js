@@ -1,6 +1,6 @@
-import {adjustCpm} from '../../../../src/utils/cpm.js';
-import {ScopedSettings} from '../../../../src/bidderSettings.js';
-import {expect} from 'chai/index.js';
+import { adjustCpm } from '../../../../src/utils/cpm.js';
+import { ScopedSettings } from '../../../../src/bidderSettings.js';
+import { expect } from 'chai/index.js';
 
 describe('adjustCpm', () => {
   const bidderCode = 'mockBidder';
@@ -22,14 +22,14 @@ describe('adjustCpm', () => {
 
   it('always provides an object as bidResponse for the adjustment fn', () => {
     bs.get.callsFake(() => adjustmentFn);
-    adjustCpm(1, null, {bidder: bidderCode}, {index, bs});
+    adjustCpm(1, null, { bidder: bidderCode }, { index, bs });
     sinon.assert.calledWith(adjustmentFn, 1, {});
   });
 
   describe('when no bidRequest is provided', () => {
     Object.entries({
       'unavailable': undefined,
-      'found': {foo: 'bar'}
+      'found': { foo: 'bar' }
     }).forEach(([t, req]) => {
       describe(`and it is ${t} in the index`, () => {
         beforeEach(() => {
@@ -38,8 +38,8 @@ describe('adjustCpm', () => {
         });
 
         it('provides it to the adjustment fn', () => {
-          const bidResponse = {bidderCode};
-          adjustCpm(1, bidResponse, undefined, {index, bs});
+          const bidResponse = { bidderCode };
+          adjustCpm(1, bidResponse, undefined, { index, bs });
           sinon.assert.calledWith(index.getBidRequest, bidResponse);
           sinon.assert.calledWith(adjustmentFn, 1, bidResponse, req);
         })
@@ -48,18 +48,18 @@ describe('adjustCpm', () => {
   });
 
   Object.entries({
-    'bidResponse': [{bidderCode}],
-    'bidRequest': [null, {bidder: bidderCode}],
+    'bidResponse': [{ bidderCode }],
+    'bidRequest': [null, { bidder: bidderCode }],
   }).forEach(([t, [bidResp, bidReq]]) => {
     describe(`when passed ${t}`, () => {
       beforeEach(() => {
         bs.get.callsFake((bidder) => { if (bidder === bidderCode) return adjustmentFn });
       });
       it('retrieves the correct bidder code', () => {
-        expect(adjustCpm(1, bidResp, bidReq, {bs, index})).to.eql(2);
+        expect(adjustCpm(1, bidResp, bidReq, { bs, index })).to.eql(2);
       });
       it('passes them to the adjustment fn', () => {
-        adjustCpm(1, bidResp, bidReq, {bs, index});
+        adjustCpm(1, bidResp, bidReq, { bs, index });
         sinon.assert.calledWith(adjustmentFn, 1, bidResp == null ? sinon.match.any : bidResp, bidReq);
       });
     });
@@ -73,7 +73,7 @@ describe('adjustAlternateBids', () => {
   });
 
   function runAdjustment(cpm, bidderCode, adapterCode) {
-    return adjustCpm(cpm, {bidderCode, adapterCode}, null, {bs: new ScopedSettings(() => bs)});
+    return adjustCpm(cpm, { bidderCode, adapterCode }, null, { bs: new ScopedSettings(() => bs) });
   }
 
   it('should fall back to the adapter adjustment fn when adjustAlternateBids is true', () => {

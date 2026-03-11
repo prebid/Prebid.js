@@ -9,20 +9,21 @@ import {
   triggerPixel
 } from './utils.js';
 import * as events from './events.js';
-import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
-import {config} from './config.js';
-import {executeRenderer, isRendererRequired} from './Renderer.js';
-import {VIDEO} from './mediaTypes.js';
-import {auctionManager} from './auctionManager.js';
-import {getCreativeRenderer} from './creativeRenderers.js';
-import {hook} from './hook.js';
-import {fireNativeTrackers} from './native.js';
-import {PbPromise} from './utils/promise.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR } from './constants.js';
+import { config } from './config.js';
+import { executeRenderer, isRendererRequired } from './Renderer.js';
+import { VIDEO } from './mediaTypes.js';
+import { auctionManager } from './auctionManager.js';
+import { getCreativeRenderer } from './creativeRenderers.js';
+import { hook } from './hook.js';
+import { fireNativeTrackers } from './native.js';
 import adapterManager from './adapterManager.js';
-import {useMetrics} from './utils/perfMetrics.js';
-import {filters} from './targeting.js';
-import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
-import type {Bid} from "./bidfactory.ts";
+import { useMetrics } from './utils/perfMetrics.js';
+import { filters } from './targeting.js';
+import { EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG } from './eventTrackers.js';
+import type { Bid } from "./bidfactory.ts";
+import { yieldsIf } from "./utils/yield.ts";
+import { PbPromise } from "./utils/promise.ts";
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -55,10 +56,13 @@ declare module './events' {
   }
 }
 
-export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
-  return override
-    .then(bid => bid ?? auctionManager.findBidByAdId(adId))
-    .catch(() => {})
+/**
+ * NOTE: this is here to support PAAPI, which is soon to be removed;
+ *  and should *not* be made asynchronous or it breaks `legacyRender` (unyielding)
+ *  rendering logic
+ */
+export const getBidToRender = hook('sync', function (adId, forRender, cb) {
+  cb(auctionManager.findBidByAdId(adId));
 })
 
 export const markWinningBid = hook('sync', function (bid) {
@@ -122,7 +126,7 @@ type AdRenderSucceededData = {
  * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
  */
 export function emitAdRenderSucceeded({ doc, bid, id }) {
-  const data: AdRenderSucceededData = { doc, bid, adId: id};
+  const data: AdRenderSucceededData = { doc, bid, adId: id };
 
   adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
@@ -176,7 +180,7 @@ export function handleCreativeEvent(data, bidResponse) {
   }
 }
 
-export function handleNativeMessage(data, bidResponse, {resizeFn, fireTrackers = fireNativeTrackers}) {
+export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers = fireNativeTrackers }) {
   switch (data.action) {
     case 'resizeNativeHeight':
       resizeFn(data.width, data.height);
@@ -207,7 +211,7 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
+  const { ad, adUrl, cpm, originalCpm, width, height, instl } = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -221,7 +225,7 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
   };
 })
 
-export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe()}) {
+export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
   if (isMainDocument || videoBid) {
     emitAdRenderFail({
@@ -233,8 +237,8 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
     return;
   }
   const data = getRenderingData(bidResponse, options);
-  renderFn(Object.assign({adId: bidResponse.adId}, data));
-  const {width, height} = data;
+  renderFn(Object.assign({ adId: bidResponse.adId }, data));
+  const { width, height } = data;
   if ((width ?? height) != null) {
     resizeFn(width, height);
   }
@@ -242,17 +246,17 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
 
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
-  const {bidResponse, doc} = args;
+  const { bidResponse, doc } = args;
   if (isRendererRequired(bidResponse.renderer)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
-    emitAdRenderSucceeded({doc, bid: bidResponse, id: bidResponse.adId})
+    emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
     next.bail();
   } else {
     next(args);
   }
 }, 100)
 
-export function handleRender({renderFn, resizeFn, adId, options, bidResponse, doc}) {
+export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({
@@ -278,7 +282,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
     }
 
     try {
-      doRender({renderFn, resizeFn, bidResponse, options, doc});
+      doRender({ renderFn, resizeFn, bidResponse, options, doc });
     } catch (e) {
       emitAdRenderFail({
         reason: AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -331,10 +335,15 @@ export function renderIfDeferred(bidResponse) {
   }
 }
 
-export function renderAdDirect(doc, adId, options) {
+let legacyRender = false;
+config.getConfig('auctionOptions', (opts) => {
+  legacyRender = opts.auctionOptions?.legacyRender ?? false
+});
+
+export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDirect(doc, adId, options) {
   let bid;
   function fail(reason, message) {
-    emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
+    emitAdRenderFail(Object.assign({ id: adId, bid }, { reason, message }));
   }
   function resizeFn(width, height) {
     const frame = doc.defaultView?.frameElement;
@@ -349,7 +358,7 @@ export function renderAdDirect(doc, adId, options) {
       }
     }
   }
-  const messageHandler = creativeMessageHandler({resizeFn});
+  const messageHandler = creativeMessageHandler({ resizeFn });
 
   function waitForDocumentReady(doc) {
     return new PbPromise<void>((resolve) => {
@@ -362,20 +371,26 @@ export function renderAdDirect(doc, adId, options) {
   }
 
   function renderFn(adData) {
-    PbPromise.all([
-      getCreativeRenderer(bid),
-      waitForDocumentReady(doc)
-    ]).then(([render]) => render(adData, {
-      sendMessage: (type, data) => messageHandler(type, data, bid),
-      mkFrame: createIframe,
-    }, doc.defaultView))
-      .then(
-        () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
-        (e) => {
-          fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
-          e?.stack && logError(e);
-        }
-      );
+    if (adData.ad && legacyRender) {
+      doc.write(adData.ad);
+      doc.close();
+      emitAdRenderSucceeded({ doc, bid, id: bid.adId });
+    } else {
+      PbPromise.all([
+        getCreativeRenderer(bid),
+        waitForDocumentReady(doc)
+      ]).then(([render]) => render(adData, {
+        sendMessage: (type, data) => messageHandler(type, data, bid),
+        mkFrame: createIframe,
+      }, doc.defaultView))
+        .then(
+          () => emitAdRenderSucceeded({ doc, bid, id: bid.adId }),
+          (e) => {
+            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
+            e?.stack && logError(e);
+          }
+        );
+    }
     // TODO: this is almost certainly the wrong way to do this
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
     insertElement(creativeComment, doc, 'html');
@@ -384,15 +399,15 @@ export function renderAdDirect(doc, adId, options) {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      getBidToRender(adId).then(bidResponse => {
+      getBidToRender(adId, true, (bidResponse) => {
         bid = bidResponse;
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
+        handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough }, bidResponse, doc });
       });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);
   }
-}
+});
 
 /**
  * Insert an invisible, named iframe that can be used by creatives to locate the window Prebid is running in

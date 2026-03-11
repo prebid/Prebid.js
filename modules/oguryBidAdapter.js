@@ -2,6 +2,7 @@
 
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
@@ -25,7 +26,7 @@ export const ortbConverterProps = {
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
-    deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
+    deepSetValue(req, 'device.pxratio', getDevicePixelRatio(getWindowContext()));
     deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
@@ -108,18 +109,18 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  const data = converter.toORTB({bidRequests, bidderRequest});
+  const data = converter.toORTB({ bidRequests, bidderRequest });
 
   return {
     method: 'POST',
     url: BID_HOST,
     data,
-    options: {contentType: 'application/json'},
+    options: { contentType: 'application/json' },
   };
 }
 
 function interpretResponse(response, request) {
-  return converter.fromORTB({response: response.body, request: request.data}).bids;
+  return converter.fromORTB({ response: response.body, request: request.data }).bids;
 }
 
 function getFloor(bid) {
@@ -152,7 +153,7 @@ function onBidWon(bid) {
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: window.location.href }), {
     method: 'POST',
     contentType: 'application/json'
   });

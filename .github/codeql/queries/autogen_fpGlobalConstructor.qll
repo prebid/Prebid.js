@@ -6,15 +6,15 @@ class GlobalConstructor extends string {
   
   GlobalConstructor() {
       
-      ( this = "OfflineAudioContext"  and weight = 1111.66 )
+      ( this = "SharedWorker"  and weight = 74.12 )
        or 
-      ( this = "SharedWorker"  and weight = 93.35 )
+      ( this = "OfflineAudioContext"  and weight = 1062.83 )
        or 
-      ( this = "RTCPeerConnection"  and weight = 49.52 )
+      ( this = "RTCPeerConnection"  and weight = 36.17 )
        or 
-      ( this = "Gyroscope"  and weight = 98.72 )
+      ( this = "Gyroscope"  and weight = 100.27 )
        or 
-      ( this = "AudioWorkletNode"  and weight = 72.93 )
+      ( this = "AudioWorkletNode"  and weight = 145.12 )
   }  
 
   float getWeight() {

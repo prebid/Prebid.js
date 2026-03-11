@@ -434,7 +434,7 @@ describe('BoldwinBidAdapter', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, {});
+      }, undefined);
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -443,9 +443,7 @@ describe('BoldwinBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://sync.videowalldirect.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
-        consentString: '1---'
-      });
+      const syncData = spec.getUserSyncs({}, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -454,7 +452,7 @@ describe('BoldwinBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://sync.videowalldirect.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+      const syncData = spec.getUserSyncs({}, {}, {}, undefined, {
         gppString: 'abc123',
         applicableSections: [8]
       });

@@ -1,5 +1,6 @@
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -10,7 +11,7 @@ const CONSTANTS = {
   BIDDER_CODE: 'apstream',
   GVLID: 394
 };
-const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: CONSTANTS.BIDDER_CODE });
 
 var dsuModule = (function() {
   'use strict';
@@ -18,7 +19,7 @@ var dsuModule = (function() {
   var DSU_KEY = 'apr_dsu';
   var DSU_VERSION_NUMBER = '1';
   var SIGNATURE_SALT = 'YicAu6ZpNG';
-  var DSU_CREATOR = {'USERREPORT': '1'};
+  var DSU_CREATOR = { 'USERREPORT': '1' };
 
   function stringToU8(str) {
     if (typeof TextEncoder === 'function') {
@@ -335,7 +336,7 @@ function injectPixels(ad, pixels, scripts) {
 }
 
 function getScreenParams() {
-  return `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
+  return `${window.screen.width}x${window.screen.height}@${getDevicePixelRatio(window)}`;
 }
 
 function getBids(bids) {

@@ -13,17 +13,18 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
-import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
+import { getAd } from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
-const NM_VERSION = '4.5.0';
+const NM_VERSION = '4.5.1';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -148,6 +149,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    const bidIds = new Map()
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
@@ -178,12 +180,16 @@ export const spec = {
     _each(validBidRequests, (bid, i) => {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid);
-      const {cur, mediaTypes} = getCurrency(bid);
+      const { cur, mediaTypes } = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
-      const imp = getImp(bid, id, mediaTypes);
+
+      const impId = String(i + 1)
+      bidIds.set(impId, bid.bidId)
+
+      const imp = getImp(impId, bid, id, mediaTypes);
       setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
       postBody.imp.push(imp);
-      postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
+      postBody.ext.next_mil_imps.push(getExtNextMilImp(impId, bid));
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -196,21 +202,23 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true,
       },
+
+      bidIds,
     });
 
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bid.impid;
+        const requestId = bidRequest.bidIds.get(bid.impid);
 
-        const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
+        const { ad, adUrl, vastUrl, vastXml } = getAd(bid);
 
         const bidResponse = {
           requestId,
@@ -251,7 +259,7 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
 
     const pixels = [];
-    const getSetPixelFunc = type => url => { pixels.push({type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type)}) };
+    const getSetPixelFunc = type => url => { pixels.push({ type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type) }) };
     const getSetPixelsFunc = type => response => { deepAccess(response, `body.ext.sync.${type}`, []).forEach(getSetPixelFunc(type)) };
 
     const setPixel = (type, url) => { (getSetPixelFunc(type))(url) };
@@ -327,11 +335,11 @@ export const spec = {
   },
 };
 
-export function getExtNextMilImp(bid) {
+export function getExtNextMilImp(impId, bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
-  const {adSlots, allowedAds} = bid.params
+  const { adSlots, allowedAds } = bid.params
   const nextMilImp = {
-    impId: bid.bidId,
+    impId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
@@ -346,10 +354,10 @@ export function getExtNextMilImp(bid) {
   return nextMilImp;
 }
 
-export function getImp(bid, id, mediaTypes) {
-  const {banner, video} = mediaTypes;
+export function getImp(impId, bid, id, mediaTypes) {
+  const { banner, video } = mediaTypes;
   const imp = {
-    id: bid.bidId,
+    id: impId,
     ext: {
       prebid: {
         storedrequest: {
@@ -374,8 +382,8 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} });
-  const {w, h} = (format[0] || {})
+  const format = (banner.data?.sizes || []).map(s => { return { w: s[0], h: s[1] } });
+  const { w, h } = (format[0] || {})
   imp.banner = {
     w,
     h,
@@ -491,13 +499,13 @@ function getCurrency(bid = {}) {
   for (const mediaType of types) {
     const mediaTypeData = deepAccess(bid, `mediaTypes.${mediaType}`);
     if (mediaTypeData) {
-      mediaTypes[mediaType] = {data: mediaTypeData};
+      mediaTypes[mediaType] = { data: mediaTypeData };
     } else {
       continue;
     };
 
     if (typeof bid.getFloor === 'function') {
-      const floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      const floorInfo = bid.getFloor({ currency, mediaType, size: '*' });
       mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
       mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
@@ -509,7 +517,7 @@ function getCurrency(bid = {}) {
 
   if (!cur.length) cur.push(DEFAULT_CURRENCY);
 
-  return {cur, mediaTypes};
+  return { cur, mediaTypes };
 }
 
 export function getPlacementId(bid) {
@@ -576,14 +584,16 @@ function getDeviceObj() {
 }
 
 function getDeviceConnectionType() {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (connection?.type === 'ethernet') return 1;
-  if (connection?.type === 'wifi') return 2;
+  const connection = getConnectionInfo();
+  const connectionType = connection?.type;
+  const effectiveType = connection?.effectiveType;
+  if (connectionType === 'ethernet') return 1;
+  if (connectionType === 'wifi') return 2;
 
-  if (connection?.effectiveType === 'slow-2g') return 3;
-  if (connection?.effectiveType === '2g') return 4;
-  if (connection?.effectiveType === '3g') return 5;
-  if (connection?.effectiveType === '4g') return 6;
+  if (effectiveType === 'slow-2g') return 3;
+  if (effectiveType === '2g') return 4;
+  if (effectiveType === '3g') return 5;
+  if (effectiveType === '4g') return 6;
 
   return undefined;
 }
@@ -601,13 +611,13 @@ export function getSourceObj(validBidRequests, bidderRequest) {
 }
 
 function getSua() {
-  const {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  const { brands, mobile, platform } = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {
     browsers: brands,
     mobile: Number(!!mobile),
-    platform: (platform && {brand: platform}) || undefined,
+    platform: (platform && { brand: platform }) || undefined,
   };
 }
 
