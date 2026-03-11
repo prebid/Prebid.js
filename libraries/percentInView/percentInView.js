@@ -1,6 +1,6 @@
 import { getWinDimensions, inIframe } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
-import { defer, PbPromise } from '../../src/utils/promise.js';
+import { defer, PbPromise, delay } from '../../src/utils/promise.js';
 import { startAuction } from '../../src/prebid.js';
 import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
@@ -169,13 +169,23 @@ export function intersections(mkObserver) {
   }
 }
 
-export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback));
+export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback, {
+  // update percentInView when visibility varies by 1%
+  threshold: Array.from({ length: 101 }, (e, i) => i / 100)
+}));
 
 export function mkIntersectionHook(intersections = viewportIntersections) {
   return function (next, request) {
-    PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
-      intersections.observe(getAdUnitElement(adUnit))
-    )).then(() => next.call(this, request));
+    PbPromise.race([
+      PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
+        intersections.observe(getAdUnitElement(adUnit))
+      )),
+      // according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
+      // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+      // However, browsers appear to run it even when the element is outside the DOM
+      // just to be sure, cap the amount of time we wait for intersections
+      delay(20)
+    ]).then(() => next.call(this, request));
   }
 }
 
