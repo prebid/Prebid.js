@@ -79,6 +79,8 @@ describe('Debugging', () => {
       expect(hookRan).to.be.false;
       loader.resolve();
       return loader.promise.then(() => {
+        return Promise.resolve();
+      }).then(() => {
         expect(hookRan).to.be.true;
       });
     });
@@ -88,6 +90,17 @@ describe('Debugging', () => {
       debugging.disable();
       hook();
       expect(hookRan).to.be.true;
+    });
+
+    it('should continue when module cannot be loaded', () => {
+      debugging.enable();
+      hook();
+      loader.reject();
+      return loader.promise.catch(() => {
+        return Promise.resolve();
+      }).then(() => {
+        expect(hookRan).to.be.true;
+      })
     })
   });
 });
