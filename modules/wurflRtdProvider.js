@@ -105,14 +105,8 @@ let tier;
 // overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
 let overQuota;
 
-// UACH (User-Agent Client Hints) high-entropy hints to collect
-const UACH_HINTS = ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList'];
-
-// uachPromise holds the pending UACH collection promise, started in init()
-let uachPromise = null;
-
-// resolvedUACH holds the resolved UACH data for synchronous access in onAuctionEndEvent
-let resolvedUACH = null;
+// cachedSUA holds the ORTB 2.6 SUA from Prebid's enrichment pipeline
+let cachedSUA = null;
 
 /**
  * Safely gets an object from localStorage with JSON parsing
@@ -294,21 +288,10 @@ function loadWurflJsAsync(config, bidders) {
     }
   };
 
-  // Use shared UACH promise if available, otherwise load immediately
-  if (uachPromise) {
-    uachPromise
-      .then(ch => {
-        if (ch !== null) {
-          url.searchParams.set('uach', JSON.stringify(ch));
-        }
-      })
-      .finally(() => {
-        loadWurflJs(url.toString());
-      });
-  } else {
-    // Load script immediately when Client Hints not available
-    loadWurflJs(url.toString());
+  if (cachedSUA) {
+    url.searchParams.set('sua', JSON.stringify(cachedSUA));
   }
+  loadWurflJs(url.toString());
 }
 
 /**
@@ -1124,8 +1107,7 @@ const init = (config, userConsent) => {
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
-  resolvedUACH = null;
-  uachPromise = null;
+  cachedSUA = null;
 
   logger.logMessage('initialized', { version: MODULE_VERSION });
 
@@ -1143,13 +1125,6 @@ const init = (config, userConsent) => {
  * @param {Object} userConsent User consent data
  */
 const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
-  // Collect UACH once: reuse existing promise or start new collection
-  if (!uachPromise && navigator?.userAgentData?.getHighEntropyValues) {
-    uachPromise = navigator.userAgentData.getHighEntropyValues(UACH_HINTS)
-      .then(ch => { resolvedUACH = ch; return ch; })
-      .catch(() => null);
-  }
-
   // Start module execution timing
   WurflDebugger.moduleExecutionStart();
 
@@ -1161,6 +1136,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
       bidderEnrichment.set(bid.bidder, ENRICHMENT_TYPE.UNKNOWN);
     });
   });
+
+  // Read SUA from Prebid's enrichment pipeline (already resolved, publisher-controlled hints)
+  cachedSUA = reqBidsConfigObj.ortb2Fragments?.global?.device?.sua || null;
 
   // Determine enrichment type based on cache availability
   WurflDebugger.cacheReadStart();
@@ -1398,7 +1376,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     over_quota: overQuota,
     consent_class: consentClass,
     ad_units: adUnits,
-    uach: resolvedUACH
+    sua: cachedSUA
   };
 
   // Add A/B test fields if enabled
@@ -1442,7 +1420,7 @@ export const wurflSubmodule = {
 
 // Exported for testing only
 export const __testing__ = {
-  setResolvedUACH: (value) => { resolvedUACH = value; },
+  setCachedSUA: (value) => { cachedSUA = value; },
 };
 
 // Register the WURFL submodule as submodule of realTimeData
