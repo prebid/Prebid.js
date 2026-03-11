@@ -1,9 +1,9 @@
-import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
-import {expect} from 'chai';
-import {TARGETING_KEYS} from 'src/constants.js';
+import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
+import { expect } from 'chai';
+import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
-import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
+import { binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad } from 'src/utils.js';
+import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
@@ -198,7 +198,7 @@ describe('Utils', function () {
         in: '1x',
         out: []
       }
-    }).forEach(([t, {in: input, out}]) => {
+    }).forEach(([t, { in: input, out }]) => {
       it(`can parse ${t}`, () => {
         expect(sizesToSizeTuples(input)).to.eql(out);
       })
@@ -285,13 +285,13 @@ describe('Utils', function () {
     it('should return size string with input single size array', function () {
       var size = [300, 250];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('should return size string with input single size array', function () {
       var size = ['300', '250'];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('return undefined using string input', function () {
@@ -705,7 +705,7 @@ describe('Utils', function () {
     it('deep copies objects', function () {
       const adUnit = [{
         code: 'swan',
-        mediaTypes: {video: {context: 'outstream'}},
+        mediaTypes: { video: { context: 'outstream' } },
         renderer: {
           render: bid => player.render(bid),
           url: '/video/renderer.js'
@@ -820,7 +820,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { noDecodeWholeURL: true });
       });
 
       it('extracts the search query', function () {
@@ -840,7 +840,7 @@ describe('Utils', function () {
           hostname: 'example.com',
           port: 3000,
           pathname: '/pathname/',
-          search: {foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx'},
+          search: { foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx' },
           hash: 'hash'
         })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test&bar=foo%26foo%3Dxxx#hash');
       });
@@ -856,7 +856,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { decodeSearchAsString: true });
       });
 
       it('extracts the search query', function () {
@@ -1109,8 +1109,8 @@ describe('Utils', function () {
       function Typed(obj) {
         Object.assign(this, obj);
       }
-      const obj = {key: 'value'};
-      expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
+      const obj = { key: 'value' };
+      expect(deepEqual({ outer: obj }, { outer: new Typed(obj) }, { checkTypes: true })).to.be.false;
     });
     it('should work when adding properties to the prototype of Array', () => {
       after(function () {
@@ -1206,13 +1206,13 @@ describe('Utils', function () {
 
   describe('convertObjectToArray', () => {
     it('correctly converts object to array', () => {
-      const obj = {key: 1, anotherKey: 'fred', third: ['fred'], fourth: {sub: {obj: 'test'}}};
+      const obj = { key: 1, anotherKey: 'fred', third: ['fred'], fourth: { sub: { obj: 'test' } } };
       const array = utils.convertObjectToArray(obj);
 
-      expect(JSON.stringify(array[0])).equal(JSON.stringify({'key': 1}))
-      expect(JSON.stringify(array[1])).equal(JSON.stringify({'anotherKey': 'fred'}))
-      expect(JSON.stringify(array[2])).equal(JSON.stringify({'third': ['fred']}))
-      expect(JSON.stringify(array[3])).equal(JSON.stringify({'fourth': {sub: {obj: 'test'}}}));
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }))
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }))
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }))
+      expect(JSON.stringify(array[3])).equal(JSON.stringify({ 'fourth': { sub: { obj: 'test' } } }));
       expect(array.length).to.equal(4);
     });
   });
@@ -1246,7 +1246,7 @@ describe('Utils', function () {
       expect(result).to.equal(`{"key1":"val1","key2":{"key3":100,"key4":true}}`);
     });
     it('return empty string for stringify errors', () => {
-      const jsonObj = {k: 2n};
+      const jsonObj = { k: 2n };
       const result = utils.safeJSONEncode(jsonObj);
       expect(result).to.equal('');
     });
@@ -1422,7 +1422,7 @@ describe('memoize', () => {
           [100, 5]
         ]
       }
-    ].forEach(({arr, tests}) => {
+    ].forEach(({ arr, tests }) => {
       describe(`on ${arr}`, () => {
         tests.forEach(([el, pos]) => {
           it(`finds index for ${el} => ${pos}`, () => {

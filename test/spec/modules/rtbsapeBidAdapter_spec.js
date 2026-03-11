@@ -1,19 +1,19 @@
-import {expect} from 'chai';
-import {spec} from 'modules/rtbsapeBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/rtbsapeBidAdapter.js';
 import 'src/prebid.js';
 import * as utils from 'src/utils.js';
-import {executeRenderer, Renderer} from 'src/Renderer.js';
+import { executeRenderer, Renderer } from 'src/Renderer.js';
 
 describe('rtbsapeBidAdapterTests', function () {
   describe('isBidRequestValid', function () {
     it('valid', function () {
-      expect(spec.isBidRequestValid({bidder: 'rtbsape', mediaTypes: {banner: true}, params: {placeId: 4321}})).to.equal(true);
-      expect(spec.isBidRequestValid({bidder: 'rtbsape', mediaTypes: {video: true}, params: {placeId: 4321}})).to.equal(true);
+      expect(spec.isBidRequestValid({ bidder: 'rtbsape', mediaTypes: { banner: true }, params: { placeId: 4321 } })).to.equal(true);
+      expect(spec.isBidRequestValid({ bidder: 'rtbsape', mediaTypes: { video: true }, params: { placeId: 4321 } })).to.equal(true);
     });
 
     it('invalid', function () {
-      expect(spec.isBidRequestValid({bidder: 'rtbsape', mediaTypes: {banner: true}, params: {}})).to.equal(false);
-      expect(spec.isBidRequestValid({bidder: 'rtbsape', params: {placeId: 4321}})).to.equal(false);
+      expect(spec.isBidRequestValid({ bidder: 'rtbsape', mediaTypes: { banner: true }, params: {} })).to.equal(false);
+      expect(spec.isBidRequestValid({ bidder: 'rtbsape', params: { placeId: 4321 } })).to.equal(false);
     });
   });
 
@@ -21,7 +21,7 @@ describe('rtbsapeBidAdapterTests', function () {
     const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'rtbsape',
-      params: {placeId: 4321},
+      params: { placeId: 4321 },
       sizes: [[240, 400]]
     }];
     const bidderRequest = {
@@ -54,7 +54,7 @@ describe('rtbsapeBidAdapterTests', function () {
           }]
         }
       };
-      const bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      const bids = spec.interpretResponse(serverResponse, { data: { bids: [{ mediaTypes: { banner: true } }] } });
       expect(bids).to.have.lengthOf(1);
       const bid = bids[0];
       expect(bid.cpm).to.equal(2.21);
@@ -123,7 +123,7 @@ describe('rtbsapeBidAdapterTests', function () {
         let spy = false;
 
         window.sapeRtbPlayerHandler = function (id, w, h, m) {
-          const player = {addSlot: () => [id, w, h, m]}
+          const player = { addSlot: () => [id, w, h, m] }
           expect(spy).to.equal(false);
           spy = sinon.spy(player, 'addSlot');
           return player;
@@ -168,7 +168,7 @@ describe('rtbsapeBidAdapterTests', function () {
           }]
         }
       };
-      const bids = spec.interpretResponse(serverResponse, {data: {bids: [{mediaTypes: {banner: true}}]}});
+      const bids = spec.interpretResponse(serverResponse, { data: { bids: [{ mediaTypes: { banner: true } }] } });
       expect(bids).to.have.lengthOf(1);
       const bid = bids[0];
       expect(bid.cpm).to.equal(2.23);
@@ -182,9 +182,9 @@ describe('rtbsapeBidAdapterTests', function () {
   });
 
   it('getUserSyncs', function () {
-    const syncs = spec.getUserSyncs({iframeEnabled: true});
+    const syncs = spec.getUserSyncs({ iframeEnabled: true });
     expect(syncs).to.be.an('array').that.to.have.lengthOf(1);
-    expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://www.acint.net/mc/?dp=141'});
+    expect(syncs[0]).to.deep.equal({ type: 'iframe', url: 'https://www.acint.net/mc/?dp=141' });
   });
 
   describe('onBidWon', function () {
@@ -197,12 +197,12 @@ describe('rtbsapeBidAdapterTests', function () {
     });
 
     it('called once', function () {
-      spec.onBidWon({cpm: '2.21', nurl: 'https://ssp-rtb.sape.ru/track?event=win'});
+      spec.onBidWon({ cpm: '2.21', nurl: 'https://ssp-rtb.sape.ru/track?event=win' });
       expect(utils.triggerPixel.calledOnce).to.equal(true);
     });
 
     it('called false', function () {
-      spec.onBidWon({cpm: '2.21'});
+      spec.onBidWon({ cpm: '2.21' });
       expect(utils.triggerPixel.called).to.equal(false);
     });
   });

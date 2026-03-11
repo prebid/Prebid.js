@@ -2,7 +2,7 @@
  * Module for getting and setting Prebid configuration.
 */
 
-import {isValidPriceConfig} from './cpmBucketManager.js';
+import { isValidPriceConfig } from './cpmBucketManager.js';
 import {
   deepAccess,
   deepClone,
@@ -16,11 +16,11 @@ import {
   logWarn,
   mergeDeep
 } from './utils.js';
-import {DEBUG_MODE} from './constants.js';
-import type {UserSyncConfig} from "./userSync.ts";
-import type {DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty} from "./types/objects.d.ts";
-import type {BidderCode} from "./types/common.d.ts";
-import type {ORTBRequest} from "./types/ortb/request.d.ts";
+import { DEBUG_MODE } from './constants.js';
+import type { UserSyncConfig } from "./userSync.ts";
+import type { DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty } from "./types/objects.d.ts";
+import type { BidderCode } from "./types/common.d.ts";
+import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import { Bid } from './bidfactory.ts';
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
@@ -103,7 +103,7 @@ function attachProperties(config, useDefaultValues = true) {
 
   function setProp(name, val) {
     if (!values.hasOwnProperty(name)) {
-      Object.defineProperty(config, name, {enumerable: true});
+      Object.defineProperty(config, name, { enumerable: true });
     }
     values[name] = val;
   }
@@ -273,7 +273,7 @@ type BidderConfig = {
   config: PartialConfig;
 }
 
-type TopicalConfig<S extends string> = {[K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown};
+type TopicalConfig<S extends string> = { [K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown };
 type UnregistrationFn = () => void;
 
 type GetConfigOptions = {
@@ -510,7 +510,7 @@ export function newConfig() {
       if (topic === ALL_TOPICS) {
         callback(getConfig());
       } else {
-        callback({[topic]: getConfig(topic)});
+        callback({ [topic]: getConfig(topic) });
       }
     }
 

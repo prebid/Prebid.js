@@ -1,4 +1,4 @@
-import {defer} from '../../../../src/utils/promise.js';
+import { defer } from '../../../../src/utils/promise.js';
 
 describe('defer', () => {
   Object.entries({

@@ -1,14 +1,14 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   createDomain,
   storage
 } from 'modules/tagorasBidAdapter';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {config} from '../../../src/config.js';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -19,7 +19,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -103,9 +103,9 @@ const ORTB2_DEVICE = {
       'version': ['8', '0', '0']
     },
     'browsers': [
-      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+      { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+      { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+      { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
     ],
     'mobile': 1,
     'model': 'SM-G955U',
@@ -122,7 +122,7 @@ const ORTB2_DEVICE = {
   model: 'iPhone 12 Pro Max',
   os: 'iOS',
   osv: '17.4',
-  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+  ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
 };
 
 const BIDDER_REQUEST = {
@@ -193,9 +193,8 @@ const VIDEO_SERVER_RESPONSE = {
 
 const ORTB2_OBJ = {
   "device": ORTB2_DEVICE,
-  "regs": {"coppa": 0, "gpp": "gpp_string", "gpp_sid": [7]},
-  "site": {"content": {"language": "en"}
-  }
+  "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
+  "site": { "content": { "language": "en" } }
 };
 
 const REQUEST = {
@@ -208,7 +207,7 @@ const REQUEST = {
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -329,9 +328,9 @@ describe('TagorasBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -402,9 +401,9 @@ describe('TagorasBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
@@ -449,7 +448,7 @@ describe('TagorasBidAdapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -458,7 +457,7 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
@@ -466,7 +465,7 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
@@ -478,7 +477,7 @@ describe('TagorasBidAdapter', function () {
       config.setConfig({
         coppa: 1
       });
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
@@ -496,7 +495,7 @@ describe('TagorasBidAdapter', function () {
         applicableSections: [7]
       }
 
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
@@ -512,12 +511,12 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -590,9 +589,9 @@ describe('TagorasBidAdapter', function () {
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return {lipbid: id};
+            return { lipbid: id };
           case 'id5id':
-            return {uid: id};
+            return { uid: id };
           default:
             return id;
         }
@@ -613,7 +612,7 @@ describe('TagorasBidAdapter', function () {
       bid.userIdAsEids = [
         {
           "source": "audigent.com",
-          "uids": [{"id": "fakeidi6j6dlc6e"}]
+          "uids": [{ "id": "fakeidi6j6dlc6e" }]
         }
       ]
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
@@ -624,11 +623,11 @@ describe('TagorasBidAdapter', function () {
       bid.userIdAsEids = [
         {
           "source": "audigent.com",
-          "uids": [{"id": "fakeidi6j6dlc6e"}]
+          "uids": [{ "id": "fakeidi6j6dlc6e" }]
         },
         {
           "source": "rwdcntrl.net",
-          "uids": [{"id": "fakeid6f35197d5c", "atype": 1}]
+          "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
         }
       ]
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
@@ -643,7 +642,7 @@ describe('TagorasBidAdapter', function () {
           eids: [
             {
               "source": "pubcid.org",
-              "uids": [{"id": "fakeid8888dlc6e"}]
+              "uids": [{ "id": "fakeid8888dlc6e" }]
             }
           ]
         }
@@ -658,11 +657,11 @@ describe('TagorasBidAdapter', function () {
           eids: [
             {
               "source": "pubcid.org",
-              "uids": [{"id": "fakeid8888dlc6e"}]
+              "uids": [{ "id": "fakeid8888dlc6e" }]
             },
             {
               "source": "adserver.org",
-              "uids": [{"id": "fakeid495ff1"}]
+              "uids": [{ "id": "fakeid495ff1" }]
             }
           ]
         }
@@ -675,18 +674,18 @@ describe('TagorasBidAdapter', function () {
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cID': '1'});
-      const pid = extractPID({'Pid': '2'});
-      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -746,7 +745,7 @@ describe('TagorasBidAdapter', function () {
         now
       });
       setStorageItem(storage, 'myKey', 2020);
-      const {value, created} = getStorageItem(storage, 'myKey');
+      const { value, created } = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -762,8 +761,8 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 

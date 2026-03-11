@@ -1,6 +1,6 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/ablidaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/ablidaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
@@ -17,7 +17,7 @@ describe('ablidaBidAdapter', function () {
       bidderRequestsCount: 1,
       bidderWinsCount: 0,
       bidId: '1234asdf1234',
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: {
         placementId: 123
       },
@@ -42,7 +42,7 @@ describe('ablidaBidAdapter', function () {
         bidderRequestId: '14d2939272a26a',
         bidderRequestsCount: 1,
         bidderWinsCount: 0,
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         params: {
           placementId: 123
         },
@@ -81,7 +81,7 @@ describe('ablidaBidAdapter', function () {
         device: 'desktop',
         gdprConsent: undefined,
         jaySupported: true,
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         placementId: 'testPlacementId',
         width: 300,
         height: 200,

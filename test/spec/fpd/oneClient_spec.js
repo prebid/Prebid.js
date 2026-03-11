@@ -1,4 +1,4 @@
-import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
+import { clientSectionChecker } from '../../../src/fpd/oneClient.js';
 
 describe('onlyOneClientSection', () => {
   const oneClient = clientSectionChecker();
@@ -11,7 +11,7 @@ describe('onlyOneClientSection', () => {
     [['dooh', 'site'], 'dooh']
   ].forEach(([sections, winner]) => {
     it(`should leave only ${winner} in request when it contains ${sections.join(', ')}`, () => {
-      const req = Object.fromEntries(sections.map(s => [s, {foo: 'bar'}]));
+      const req = Object.fromEntries(sections.map(s => [s, { foo: 'bar' }]));
       oneClient(req);
       expect(Object.keys(req)).to.eql([winner]);
     })

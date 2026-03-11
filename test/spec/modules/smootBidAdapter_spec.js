@@ -544,7 +544,7 @@ describe('SmootBidAdapter', function () {
           consentString: 'ALL',
           gdprApplies: true,
         },
-        {}
+        undefined
       );
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object');
@@ -560,9 +560,7 @@ describe('SmootBidAdapter', function () {
         {},
         {},
         {},
-        {
-          consentString: '1---',
-        }
+        '1---'
       );
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object');
@@ -578,7 +576,7 @@ describe('SmootBidAdapter', function () {
         {},
         {},
         {},
-        {},
+        undefined,
         {
           gppString: 'abc123',
           applicableSections: [8],

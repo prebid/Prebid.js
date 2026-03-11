@@ -1,6 +1,6 @@
-import {cacheWithLocation, detectReferer, ensureProtocol, parseDomain} from 'src/refererDetection.js';
-import {config} from 'src/config.js';
-import {expect} from 'chai';
+import { cacheWithLocation, detectReferer, ensureProtocol, parseDomain } from 'src/refererDetection.js';
+import { config } from 'src/config.js';
+import { expect } from 'chai';
 
 import { buildWindowTree } from '../helpers/refererDetectionHelper.js';
 
@@ -48,7 +48,7 @@ describe('Referer detection', () => {
       });
 
       it('Should set page and canonical to pageUrl value set in config if present, even if canonical url is also present in head', () => {
-        config.setConfig({'pageUrl': 'https://www.set-from-config.com/path'});
+        config.setConfig({ 'pageUrl': 'https://www.set-from-config.com/path' });
         const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
         const result = detectReferer(testWindow)();
 
@@ -67,7 +67,7 @@ describe('Referer detection', () => {
       });
 
       it('Should set page with query params if canonical url is present without query params but the current page does have them', () => {
-        config.setConfig({'pageUrl': 'https://www.set-from-config.com/path'});
+        config.setConfig({ 'pageUrl': 'https://www.set-from-config.com/path' });
         const testWindow = buildWindowTree(['https://example.com/some/page?query1=123&query2=456'], 'https://othersite.com/', 'https://example.com/canonical/page');
         const result = detectReferer(testWindow)();
 
@@ -132,7 +132,7 @@ describe('Referer detection', () => {
       });
 
       it('Should override canonical URL (and page) with config pageUrl', () => {
-        config.setConfig({'pageUrl': 'https://testurl.com'});
+        config.setConfig({ 'pageUrl': 'https://testurl.com' });
 
         const testWindow = buildWindowTree(['https://example.com/some/page', 'https://example.com/other/page', 'https://example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
         const result = detectReferer(testWindow)();
@@ -449,7 +449,7 @@ describe('ensureProtocol', () => {
             url: 'example.com/page',
             expect: `${protocol}//example.com/page`
           }
-        }).forEach(([t, {url, expect: expected}]) => {
+        }).forEach(([t, { url, expect: expected }]) => {
           it(`should handle URLs with ${t} protocols`, () => {
             expect(ensureProtocol(url, win)).to.equal(expected);
           });
@@ -480,7 +480,7 @@ describe('parseDomain', () => {
     'without.www.example.com': 'without.www.example.com'
   }).forEach(([input, expected]) => {
     it('should remove leading www if requested', () => {
-      expect(parseDomain(input, {noLeadingWww: true})).to.equal(expected);
+      expect(parseDomain(input, { noLeadingWww: true })).to.equal(expected);
     })
   });
   Object.entries({
@@ -489,7 +489,7 @@ describe('parseDomain', () => {
     'http://sub.example.com:8443': 'sub.example.com'
   }).forEach(([input, expected]) => {
     it('should remove port if requested', () => {
-      expect(parseDomain(input, {noPort: true})).to.equal(expected);
+      expect(parseDomain(input, { noPort: true })).to.equal(expected);
     })
   })
 });
@@ -530,7 +530,7 @@ describe('cacheWithLocation', () => {
 
     it('should not cache when canonical URL changes', () => {
       let canonical = 'foo';
-      win.document.querySelector.callsFake(() => ({href: canonical}));
+      win.document.querySelector.callsFake(() => ({ href: canonical }));
       cached();
       expect(cached()).to.eql(RESULT);
       canonical = 'bar';

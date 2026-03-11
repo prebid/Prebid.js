@@ -1,12 +1,12 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {generateUUID, deepSetValue, isEmpty, replaceAuctionPrice} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { generateUUID, deepSetValue, isEmpty, replaceAuctionPrice } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
@@ -14,7 +14,7 @@ const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
 const NATIVENDO_KEY = 'nativendo_id';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {
@@ -52,7 +52,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const oRtbRequest = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    const oRtbRequest = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     const eids = getEids(validBidRequests[0]);
 
     // check for url in params and set in site object

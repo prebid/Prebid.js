@@ -1,8 +1,8 @@
-import {assert, expect} from 'chai';
+import { assert, expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {spec} from 'modules/unicornBidAdapter.js';
+import { spec } from 'modules/unicornBidAdapter.js';
 import * as _ from 'lodash';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const bidRequests = [
   {

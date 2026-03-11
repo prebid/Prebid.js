@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
