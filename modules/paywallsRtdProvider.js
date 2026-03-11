@@ -7,8 +7,8 @@
  * automates VAI loading, timing, and ORTB2 injection.
  *
  * ORTB2 placement (canonical split):
- *   site.ext.vai — { iss, dom }
- *   user.ext.vai — { iss, mstk, vat, act, jws }
+ *   site.ext.data.vai — { iss, dom }
+ *   user.ext.data.vai — { iss, mstk, vat, act, jws }
  *   imp[].ext.vai — { pvtk }
  *
  * @module modules/paywallsRtdProvider
@@ -88,8 +88,8 @@ export function getVaiPayload() {
 /**
  * Build the canonical ORTB2 split placement from a VAI payload.
  *
- * site.ext.vai — domain provenance (iss, dom)
- * user.ext.vai — actor classification + signed assertion (iss, vat, act, mstk, jws)
+ * site.ext.data.vai — domain provenance (iss, dom)
+ * user.ext.data.vai — actor classification + signed assertion (iss, vat, act, mstk, jws)
  *
  * imp-level pvtk enrichment is handled separately in mergeOrtb2Fragments.
  *
@@ -100,20 +100,24 @@ export function buildOrtb2(vai) {
   return {
     site: {
       ext: {
-        vai: {
-          iss: vai.iss,
-          dom: vai.dom,
+        data: {
+          vai: {
+            iss: vai.iss,
+            dom: vai.dom,
+          }
         }
       }
     },
     user: {
       ext: {
-        vai: {
-          iss: vai.iss,
-          vat: vai.vat,
-          act: vai.act,
-          mstk: vai.mstk,
-          jws: vai.jws,
+        data: {
+          vai: {
+            iss: vai.iss,
+            vat: vai.vat,
+            act: vai.act,
+            mstk: vai.mstk,
+            jws: vai.jws,
+          }
         }
       }
     }

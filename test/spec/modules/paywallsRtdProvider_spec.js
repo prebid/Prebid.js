@@ -113,8 +113,8 @@ describe('paywallsRtdProvider', function () {
       const reqBids = makeReqBids();
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         const global = reqBids.ortb2Fragments.global;
-        expect(global.site.ext.vai).to.include({ dom: 'example.com' });
-        expect(global.user.ext.vai).to.include({ vat: 'HUMAN', act: 'ACT-1' });
+        expect(global.site.ext.data.vai).to.include({ dom: 'example.com' });
+        expect(global.user.ext.data.vai).to.include({ vat: 'HUMAN', act: 'ACT-1' });
       }, MOCK_CONFIG, {});
     });
 
@@ -138,17 +138,17 @@ describe('paywallsRtdProvider', function () {
   // -------------------------------------------------------------------------
 
   describe('buildOrtb2', function () {
-    it('places site fields at site.ext.vai', function () {
+    it('places site fields at site.ext.data.vai', function () {
       const ortb2 = buildOrtb2(MOCK_VAI);
-      expect(ortb2.site.ext.vai).to.deep.equal({
+      expect(ortb2.site.ext.data.vai).to.deep.equal({
         iss: MOCK_VAI.iss,
         dom: MOCK_VAI.dom,
       });
     });
 
-    it('places user fields at user.ext.vai', function () {
+    it('places user fields at user.ext.data.vai', function () {
       const ortb2 = buildOrtb2(MOCK_VAI);
-      expect(ortb2.user.ext.vai).to.deep.equal({
+      expect(ortb2.user.ext.data.vai).to.deep.equal({
         iss: MOCK_VAI.iss,
         vat: MOCK_VAI.vat,
         act: MOCK_VAI.act,
@@ -205,12 +205,12 @@ describe('paywallsRtdProvider', function () {
 
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         const global = reqBids.ortb2Fragments.global;
-        expect(global.site.ext.vai.dom).to.equal('example.com');
-        expect(global.site.ext.vai.iss).to.equal('paywalls.net');
-        expect(global.user.ext.vai.jws).to.equal(MOCK_VAI.jws);
-        expect(global.user.ext.vai.mstk).to.equal(MOCK_VAI.mstk);
-        expect(global.user.ext.vai.vat).to.equal('HUMAN');
-        expect(global.user.ext.vai.act).to.equal('ACT-1');
+        expect(global.site.ext.data.vai.dom).to.equal('example.com');
+        expect(global.site.ext.data.vai.iss).to.equal('paywalls.net');
+        expect(global.user.ext.data.vai.jws).to.equal(MOCK_VAI.jws);
+        expect(global.user.ext.data.vai.mstk).to.equal(MOCK_VAI.mstk);
+        expect(global.user.ext.data.vai.vat).to.equal('HUMAN');
+        expect(global.user.ext.data.vai.act).to.equal('ACT-1');
         // pvtk should be set at imp level on each ad unit
         reqBids.adUnits.forEach(function (adUnit) {
           expect(adUnit.ortb2Imp.ext.vai.pvtk).to.equal(MOCK_VAI.pvtk);
@@ -231,7 +231,7 @@ describe('paywallsRtdProvider', function () {
         // Original data should be preserved
         expect(global.site.name).to.equal('MySite');
         // VAI data should be merged
-        expect(global.site.ext.vai.dom).to.equal('example.com');
+        expect(global.site.ext.data.vai.dom).to.equal('example.com');
         done();
       }, MOCK_CONFIG, {});
     });
@@ -248,7 +248,7 @@ describe('paywallsRtdProvider', function () {
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         expect(loadExternalScriptStub.calledOnce).to.be.true;
         const global = reqBids.ortb2Fragments.global;
-        expect(global.site.ext.vai.dom).to.equal('example.com');
+        expect(global.site.ext.data.vai.dom).to.equal('example.com');
         done();
       }, MOCK_CONFIG, {});
     });
@@ -283,7 +283,7 @@ describe('paywallsRtdProvider', function () {
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         // Callback should fire even without VAI data — graceful degradation
         const global = reqBids.ortb2Fragments.global;
-        expect(global).to.not.have.nested.property('site.ext.vai');
+        expect(global).to.not.have.nested.property('site.ext.data.vai');
         done();
       }, fastConfig, {});
     });
@@ -303,8 +303,8 @@ describe('paywallsRtdProvider', function () {
 
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         const global = reqBids.ortb2Fragments.global;
-        expect(global.site.ext.vai.dom).to.equal('example.com');
-        expect(global.user.ext.vai.vat).to.equal('HUMAN');
+        expect(global.site.ext.data.vai.dom).to.equal('example.com');
+        expect(global.user.ext.data.vai.vat).to.equal('HUMAN');
         done();
       }, MOCK_CONFIG, {});
     });
@@ -349,7 +349,7 @@ describe('paywallsRtdProvider', function () {
       paywallsSubmodule.getBidRequestData(reqBids, function () {
         // Global ORTB2 should still be enriched
         const global = reqBids.ortb2Fragments.global;
-        expect(global.user.ext.vai.vat).to.equal('HUMAN');
+        expect(global.user.ext.data.vai.vat).to.equal('HUMAN');
         // But ad units should NOT have ortb2Imp.ext.vai
         reqBids.adUnits.forEach(function (adUnit) {
           expect(adUnit).to.not.have.nested.property('ortb2Imp.ext.vai');
@@ -394,7 +394,7 @@ describe('paywallsRtdProvider', function () {
       paywallsSubmodule.getBidRequestData(reqBids1, function () {
         // First auction degraded — expected
         const global1 = reqBids1.ortb2Fragments.global;
-        expect(global1).to.not.have.nested.property('site.ext.vai');
+        expect(global1).to.not.have.nested.property('site.ext.data.vai');
 
         // Now hook delivers late payload (at t=20ms)
         clock.tick(15);
@@ -403,8 +403,8 @@ describe('paywallsRtdProvider', function () {
         const reqBids2 = makeReqBids();
         paywallsSubmodule.getBidRequestData(reqBids2, function () {
           const global2 = reqBids2.ortb2Fragments.global;
-          expect(global2.user.ext.vai.vat).to.equal('HUMAN');
-          expect(global2.user.ext.vai.act).to.equal('ACT-1');
+          expect(global2.user.ext.data.vai.vat).to.equal('HUMAN');
+          expect(global2.user.ext.data.vai.act).to.equal('ACT-1');
           done();
         }, fastConfig, {});
       }, fastConfig, {});
@@ -468,8 +468,8 @@ describe('paywallsRtdProvider', function () {
         const reqBids2 = makeReqBids();
         paywallsSubmodule.getBidRequestData(reqBids2, function () {
           const global2 = reqBids2.ortb2Fragments.global;
-          expect(global2.user.ext.vai.vat).to.equal('HUMAN');
-          expect(global2.user.ext.vai.act).to.equal('ACT-1');
+          expect(global2.user.ext.data.vai.vat).to.equal('HUMAN');
+          expect(global2.user.ext.data.vai.act).to.equal('ACT-1');
           done();
         }, fastConfig, {});
       }, fastConfig, {});
