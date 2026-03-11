@@ -96,13 +96,10 @@ export function _getMinSize(sizes) {
 }
 
 function getViewabilityContainer(viewabilityContainerIdentifier) {
-  const hasHashPrefix = /^[#.[]/.test(viewabilityContainerIdentifier);
-
-  if (hasHashPrefix) {
-    return document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
-  }
-
-  return document.getElementById(viewabilityContainerIdentifier) || window.top.document.getElementById(viewabilityContainerIdentifier);
+    return document.querySelector(viewabilityContainerIdentifier) ||
+      window.top.document.querySelector(viewabilityContainerIdentifier) ||
+      document.getElementById(viewabilityContainerIdentifier) ||
+      window.top.document.getElementById(viewabilityContainerIdentifier);
 }
 
 export function detectViewability(bid) {
