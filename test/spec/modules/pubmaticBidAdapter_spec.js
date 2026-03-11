@@ -748,7 +748,6 @@ describe('PubMatic adapter', () => {
             expect(nativeRequest).to.have.property('privacy').equal(1);
             expect(nativeRequest.assets).to.deep.equal([]);
           });
-
         });
       }
       describe('ShouldAddDealTargeting', () => {
