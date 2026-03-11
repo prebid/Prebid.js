@@ -105,6 +105,10 @@ function mockBidRequest(bid, opts) {
   const defaultMediaType = {
     banner: {
       sizes: [[300, 250], [300, 600]]
+    },
+    video: {
+      context: 'outstream',
+      renderer: {}
     }
   }
   const mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
@@ -1159,7 +1163,7 @@ describe('auctionmanager.js', function () {
           bids[0],
           {
             bidderCode: BIDDER_CODE,
-            mediaType: 'video-outstream',
+            mediaType: 'video',
           }
         );
         spec.interpretResponse.returns(bids1);
