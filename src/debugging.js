@@ -1,7 +1,7 @@
 import { config } from './config.js';
 import { getHook, hook } from './hook.js';
 import { getGlobal } from './prebidGlobal.js';
-import { logMessage, prefixLog } from './utils.js';
+import { logError, logMessage, prefixLog } from './utils.js';
 import { createBid } from './bidfactory.js';
 import { loadExternalScript } from './adloader.js';
 import { PbPromise } from './utils/promise.js';
@@ -19,8 +19,8 @@ function isDebuggingInstalled() {
 }
 
 function loadScript(url) {
-  return new PbPromise((resolve) => {
-    loadExternalScript(url, MODULE_TYPE_PREBID, 'debugging', resolve);
+  return new PbPromise((resolve, reject) => {
+    loadExternalScript(url, MODULE_TYPE_PREBID, 'debugging', { success: resolve, error: reject });
   });
 }
 
@@ -63,7 +63,11 @@ export function debuggingControls({ load = debuggingModuleLoader(), hook = getHo
   let promise = null;
   let enabled = false;
   function waitForDebugging(next, ...args) {
-    return (promise || PbPromise.resolve()).then(() => next.apply(this, args))
+    return (promise || PbPromise.resolve())
+      .catch((e) => {
+        logError(`Could not load debugging module`, e);
+      })
+      .then(() => next.apply(this, args))
   }
   function enable() {
     if (!enabled) {
