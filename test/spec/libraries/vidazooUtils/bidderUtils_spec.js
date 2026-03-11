@@ -862,4 +862,446 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(data.ortb2Imp).to.deep.equal(baseBid.ortb2Imp);
     });
   });
+
+  describe('createInterpretResponseFn', function () {
+    it('should return empty array when serverResponse is null', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const result = interpretResponse(null, {});
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when serverResponse has no body', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const result = interpretResponse({}, {});
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when results is not iterable', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const result = interpretResponse({body: {results: null}}, {});
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should skip results with no ad', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{creativeId: '123', price: 1.5, width: 300, height: 250}]
+        }
+      };
+      const result = interpretResponse(serverResponse, {data: {bidId: 'bid-1'}});
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should skip results with no price', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{creativeId: '123', ad: '<div>ad</div>', width: 300, height: 250}]
+        }
+      };
+      const result = interpretResponse(serverResponse, {data: {bidId: 'bid-1'}});
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should parse a valid banner response', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-1',
+            ad: '<div>banner</div>',
+            price: 2.5,
+            width: 728,
+            height: 90,
+            currency: 'USD',
+            exp: 120,
+            advertiserDomains: ['adv.com'],
+            mediaType: 'banner'
+          }]
+        }
+      };
+      const request = {data: {bidId: 'bid-1'}};
+      const bids = interpretResponse(serverResponse, request);
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.requestId).to.equal('bid-1');
+      expect(bid.cpm).to.equal(2.5);
+      expect(bid.width).to.equal(728);
+      expect(bid.height).to.equal(90);
+      expect(bid.creativeId).to.equal('cr-1');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.be.true;
+      expect(bid.ttl).to.equal(120);
+      expect(bid.ad).to.equal('<div>banner</div>');
+      expect(bid.meta.advertiserDomains).to.deep.equal(['adv.com']);
+    });
+
+    it('should parse a valid video response with vastXml', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-2',
+            ad: '<VAST></VAST>',
+            price: 5.0,
+            width: 640,
+            height: 480,
+            mediaType: 'video'
+          }]
+        }
+      };
+      const request = {data: {bidId: 'bid-2'}};
+      const bids = interpretResponse(serverResponse, request);
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.vastXml).to.equal('<VAST></VAST>');
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.ad).to.be.undefined;
+    });
+
+    it('should default currency to USD and ttl to TTL_SECONDS when not provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-3',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-3'}});
+      expect(bids[0].currency).to.equal('USD');
+      expect(bids[0].ttl).to.equal(300);
+    });
+
+    it('should include nurl in response when provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-4',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            nurl: 'https://win.example.com/nurl'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-4'}});
+      expect(bids[0].nurl).to.equal('https://win.example.com/nurl');
+    });
+
+    it('should not include nurl when not provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-5',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-5'}});
+      expect(bids[0].nurl).to.be.undefined;
+    });
+
+    it('should use metaData directly when provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const metaData = {advertiserDomains: ['test.com'], networkId: 123};
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-6',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            metaData: metaData
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-6'}});
+      expect(bids[0].meta).to.deep.equal(metaData);
+    });
+
+    it('should default advertiserDomains to empty array when neither metaData nor advertiserDomains provided', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-7',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-7'}});
+      expect(bids[0].meta).to.deep.equal({advertiserDomains: []});
+    });
+
+    it('should handle multiple results', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [
+            {creativeId: 'cr-a', ad: '<div>a</div>', price: 1.0, width: 300, height: 250},
+            {creativeId: 'cr-b', ad: '<div>b</div>', price: 2.0, width: 728, height: 90},
+            {creativeId: 'cr-c', price: 3.0, width: 300, height: 600}
+          ]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-multi'}});
+      expect(bids).to.have.lengthOf(2);
+      expect(bids[0].creativeId).to.equal('cr-a');
+      expect(bids[1].creativeId).to.equal('cr-b');
+    });
+
+    it('should use bidId from result in singleRequest mode for vidazoo', function () {
+      const sandbox = sinon.createSandbox();
+      sandbox.stub(config, 'getConfig').withArgs('vidazoo.singleRequest').returns(true);
+      const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-sr',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            bidId: 'result-bid-id'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'request-bid-id'}});
+      expect(bids[0].requestId).to.equal('result-bid-id');
+      sandbox.restore();
+    });
+
+    it('should use request bidId when not in singleRequest mode', function () {
+      const interpretResponse = utilities.createInterpretResponseFn('tagoras', false);
+      const serverResponse = {
+        body: {
+          results: [{
+            creativeId: 'cr-ns',
+            ad: '<div>ad</div>',
+            price: 1.0,
+            width: 300,
+            height: 250,
+            bidId: 'result-bid-id'
+          }]
+        }
+      };
+      const bids = interpretResponse(serverResponse, {data: {bidId: 'request-bid-id'}});
+      expect(bids[0].requestId).to.equal('request-bid-id');
+    });
+  });
+
+  describe('createBuildRequestsFn', function () {
+    let sandbox;
+    let storageMock;
+
+    const createDomain = (subDomain) => `https://${subDomain || 'exchange'}.example.com`;
+
+    const makeBid = (overrides = {}) => ({
+      params: {cId: 'test-cid', pId: 'test-pid', bidFloor: 0.1},
+      bidId: 'bid-1',
+      adUnitCode: 'ad-unit-1',
+      sizes: [[300, 250]],
+      schain: null,
+      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      ortb2Imp: {ext: {tid: 'txn-1'}},
+      bidderRequestId: 'br-1',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0,
+      ...overrides
+    });
+
+    const baseBidderRequest = {
+      refererInfo: {page: 'https://publisher.com', ref: 'https://referrer.com'},
+      timeout: 3000,
+      ortb2: {
+        site: {cat: [], pagecat: [], content: {data: [], language: 'en'}},
+        user: {data: []},
+        device: {},
+        regs: {coppa: 0}
+      }
+    };
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(bidderSettings, 'get').returns(true);
+      storageMock = {
+        setDataInLocalStorage: sinon.stub(),
+        getDataFromLocalStorage: sinon.stub().returns(null)
+      };
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should build one request per bid in normal (non-singleRequest) mode', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const bids = [makeBid({bidId: 'bid-1'}), makeBid({bidId: 'bid-2'})];
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].data.bidId).to.equal('bid-1');
+      expect(requests[1].data.bidId).to.equal('bid-2');
+    });
+
+    it('should use POST method', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const requests = buildRequests([makeBid()], baseBidderRequest);
+      expect(requests[0].method).to.equal('POST');
+    });
+
+    it('should construct correct URL with subDomain and cId', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const bid = makeBid({params: {cId: 'my-cid', pId: 'my-pid', subDomain: 'custom'}});
+      const requests = buildRequests([bid], baseBidderRequest);
+      expect(requests[0].url).to.equal('https://custom.example.com/prebid/multi/my-cid');
+    });
+
+    it('should use default subDomain when not provided in params', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const requests = buildRequests([makeBid()], baseBidderRequest);
+      expect(requests[0].url).to.include('https://exchange.example.com/prebid/multi/test-cid');
+    });
+
+    it('should use page URL from refererInfo', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const requests = buildRequests([makeBid()], baseBidderRequest);
+      expect(requests[0].data.url).to.equal(encodeURIComponent('https://publisher.com'));
+    });
+
+    it('should fall back to topmostLocation when page is not available', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const bidderReq = {
+        ...baseBidderRequest,
+        refererInfo: {topmostLocation: 'https://topmost.com', ref: 'https://referrer.com'}
+      };
+      const requests = buildRequests([makeBid()], bidderReq);
+      expect(requests[0].data.url).to.equal(encodeURIComponent('https://topmost.com'));
+    });
+
+    it('should use bidderRequest.timeout as bidderTimeout', function () {
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
+      const requests = buildRequests([makeBid()], baseBidderRequest);
+      expect(requests[0].data.bidderTimeout).to.equal(3000);
+    });
+
+    it('should pass createUniqueRequestData through to buildRequestData', function () {
+      const uniqueDataFn = sinon.stub().returns({sessionId: 'sess-xyz'});
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, uniqueDataFn, storageMock, 'tagoras', '1.0.0', false);
+      const requests = buildRequests([makeBid()], baseBidderRequest);
+      expect(uniqueDataFn.calledOnce).to.be.true;
+      expect(requests[0].data.sessionId).to.equal('sess-xyz');
+    });
+
+    it('should send banner bids as single batched request in singleRequest mode for vidazoo', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
+      const bids = [
+        makeBid({bidId: 'bid-1'}),
+        makeBid({bidId: 'bid-2'}),
+        makeBid({bidId: 'bid-3'})
+      ];
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data.bids).to.be.an('array');
+      expect(requests[0].data.bids).to.have.lengthOf(3);
+    });
+
+    it('should send video bids individually even in singleRequest mode', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
+      const bids = [
+        makeBid({bidId: 'banner-1', mediaTypes: {banner: {sizes: [[300, 250]]}}}),
+        makeBid({bidId: 'video-1', mediaTypes: {video: {playerSize: [[640, 480]]}}}),
+        makeBid({bidId: 'video-2', mediaTypes: {video: {playerSize: [[640, 480]]}}})
+      ];
+      const requests = buildRequests(bids, baseBidderRequest);
+      const bannerRequests = requests.filter(r => r.data.bids);
+      const videoRequests = requests.filter(r => !r.data.bids);
+      expect(bannerRequests).to.have.lengthOf(1);
+      expect(bannerRequests[0].data.bids).to.have.lengthOf(1);
+      expect(videoRequests).to.have.lengthOf(2);
+    });
+
+    it('should not use singleRequest mode for non-allowed bidders', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'tagoras.singleRequest') return true;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', true);
+      const bids = [makeBid({bidId: 'bid-1'}), makeBid({bidId: 'bid-2'})];
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(2);
+      requests.forEach(r => expect(r.data.bids).to.be.undefined);
+    });
+
+    it('should not use singleRequest mode when allowSingleRequest is false', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', false);
+      const bids = [makeBid({bidId: 'bid-1'}), makeBid({bidId: 'bid-2'})];
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(2);
+      requests.forEach(r => expect(r.data.bids).to.be.undefined);
+    });
+
+    it('should chunk banner bids according to chunkSize config', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        if (key === 'vidazoo.chunkSize') return 2;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
+      const bids = [
+        makeBid({bidId: 'bid-1'}),
+        makeBid({bidId: 'bid-2'}),
+        makeBid({bidId: 'bid-3'}),
+        makeBid({bidId: 'bid-4'}),
+        makeBid({bidId: 'bid-5'})
+      ];
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(3);
+      expect(requests[0].data.bids).to.have.lengthOf(2);
+      expect(requests[1].data.bids).to.have.lengthOf(2);
+      expect(requests[2].data.bids).to.have.lengthOf(1);
+    });
+
+    it('should cap chunkSize at 20', function () {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'vidazoo.singleRequest') return true;
+        if (key === 'vidazoo.chunkSize') return 50;
+        return undefined;
+      });
+      const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
+      const bids = Array.from({length: 25}, (_, i) => makeBid({bidId: `bid-${i}`}));
+      const requests = buildRequests(bids, baseBidderRequest);
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].data.bids).to.have.lengthOf(20);
+      expect(requests[1].data.bids).to.have.lengthOf(5);
+    });
+  });
 })
