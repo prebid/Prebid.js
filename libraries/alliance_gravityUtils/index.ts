@@ -15,7 +15,8 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
   serverResponses[0].hasOwnProperty('body') &&
   serverResponses[0].body.hasOwnProperty('ext') &&
   serverResponses[0].body.ext.hasOwnProperty('cookies') &&
-  typeof serverResponses[0].body.ext.cookies === 'object') {
+  typeof serverResponses[0].body.ext.cookies === 'object' &&
+  Array.isArray(serverResponses[0].body.ext.cookies)) {
     return serverResponses[0].body.ext.cookies.slice(0, 5);
   } else {
     return [];
