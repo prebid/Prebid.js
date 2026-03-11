@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import { logInfo, isArray } from '../src/utils.js';
-import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -33,7 +33,7 @@ export const pubProvidedIdSubmodule = {
    * @returns {{pubProvidedId: Array}} or undefined if value doesn't exists
    */
   decode(value) {
-    const res = value ? {pubProvidedId: value} : undefined;
+    const res = value ? { pubProvidedId: value } : undefined;
     logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res));
     return res;
   },
@@ -53,7 +53,7 @@ export const pubProvidedIdSubmodule = {
     if (typeof configParams.eidsFunction === 'function') {
       res = res.concat(configParams.eidsFunction());
     }
-    return {id: res};
+    return { id: res };
   }
 };
 

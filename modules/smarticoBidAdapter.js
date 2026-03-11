@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',
@@ -66,7 +66,7 @@ export const spec = {
       url: SMARTICO_CONFIG.bidRequestUrl,
       bids: validBidRequests,
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
+      data: { bidParams: bidParams, auctionId: bidderRequest.auctionId }
     }
     return ServerRequestObjects;
   },

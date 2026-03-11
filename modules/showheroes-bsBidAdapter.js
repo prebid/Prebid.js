@@ -96,7 +96,7 @@ export const spec = {
       return [];
     }
 
-    return converter.fromORTB({response: response.body, request: request.data}).bids;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];

@@ -1,10 +1,10 @@
-import {logError, logInfo, logMessage} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { logError, logInfo, logMessage } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js'
-import {getStorageManager} from '../src/storageManager.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
+import { getStorageManager } from '../src/storageManager.js';
 
 const analyticsType = 'endpoint';
 const MODULE_NAME = `eightPod`;
@@ -14,7 +14,7 @@ const MODULE = `${MODULE_NAME}AnalyticProvider`;
  * Custom tracking server that gets internal events from EightPod's ad unit
  */
 const trackerUrl = 'https://demo.8pod.com/tracker/track';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME })
 
 const {
   BID_WON
@@ -26,7 +26,7 @@ let context = {};
 /**
  * Create eightPod Analytic adapter
  */
-const eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}), {
+const eightPodAnalytics = Object.assign(adapter({ url: trackerUrl, analyticsType }), {
   /**
    * Execute on bid won - setup basic settings, save context about EightPod's bid. We will send it with our events later
    */
@@ -162,7 +162,7 @@ function sendEvents() {
  * Send event to our custom tracking server
  */
 function sendEventsApi(eventList, callbacks) {
-  ajax(trackerUrl, callbacks, JSON.stringify(eventList), {keepalive: true});
+  ajax(trackerUrl, callbacks, JSON.stringify(eventList), { keepalive: true });
 }
 
 /**

@@ -1,17 +1,17 @@
 'use strict';
 
-import {deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-import {config} from '../src/config.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { config } from '../src/config.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';
 const USER_SYNC_IFRAME_URL = 'https://ad-cdn.technoratimedia.com/html/usersync.html';
 const USER_SYNC_PIXEL_URL = 'https://sync.technoratimedia.com/services';
-const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'plcmt', 'linearity', 'mimes', 'protocols', 'api' ];
+const VIDEO_PARAMS = ['minduration', 'maxduration', 'startdelay', 'placement', 'plcmt', 'linearity', 'mimes', 'protocols', 'api'];
 const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
@@ -23,7 +23,7 @@ export const spec = {
     { code: 'synacormedia' },
     { code: 'imds' }
   ],
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   sizeMap: {},
 
   isVideoBid: function(bid) {
@@ -229,7 +229,7 @@ export const spec = {
     if (!serverResponse.body || typeof serverResponse.body !== 'object') {
       return;
     }
-    const {id, seatbid: seatbids} = serverResponse.body;
+    const { id, seatbid: seatbids } = serverResponse.body;
     const bids = [];
     if (id && seatbids) {
       seatbids.forEach(seatbid => {

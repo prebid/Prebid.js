@@ -1,9 +1,9 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {config} from 'src/config.js';
-import {spec} from 'modules/apstreamBidAdapter.js';
+import { assert, expect } from 'chai';
+import { config } from 'src/config.js';
+import { spec } from 'modules/apstreamBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const validBidRequests = [{
   bidId: 'bidId',
@@ -60,7 +60,7 @@ describe('AP Stream adapter', function() {
     });
 
     it('should return false when publisherId is configured and two media types', function() {
-      bid.mediaTypes.video = {sizes: [300, 250]};
+      bid.mediaTypes.video = { sizes: [300, 250] };
       assert.isFalse(spec.isBidRequestValid(bid))
     });
 
@@ -76,7 +76,7 @@ describe('AP Stream adapter', function() {
       const request = spec.buildRequests(validBidRequests, { })[0];
 
       assert.equal(request.method, 'GET');
-      assert.deepEqual(request.options, {withCredentials: false});
+      assert.deepEqual(request.options, { withCredentials: false });
       assert.ok(request.data);
     });
 

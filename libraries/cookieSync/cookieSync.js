@@ -2,7 +2,7 @@ import { getStorageManager } from '../../src/storageManager.js';
 const COOKIE_KEY_MGUID = '__mguid_';
 
 export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, cookieOrigin, ckIframeUrl, cookieTime) {
-  const storage = getStorageManager({bidderCode: bidderCode});
+  const storage = getStorageManager({ bidderCode: bidderCode });
   const origin = encodeURIComponent(location.origin || `https://${location.host}`);
   let syncParamUrl = `dm=${origin}`;
 

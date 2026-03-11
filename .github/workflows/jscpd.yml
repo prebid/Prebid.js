@@ -56,7 +56,7 @@ jobs:
 
     - name: Upload unfiltered jscpd report
       if: always()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: unfiltered-jscpd-report
         path: ./jscpd-report.json
@@ -89,7 +89,7 @@ jobs:
 
     - name: Upload filtered jscpd report
       if: env.filtered_report_exists == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: filtered-jscpd-report
         path: ./filtered-jscpd-report.json
@@ -119,7 +119,7 @@ jobs:
 
     - name: Upload comment data
       if: env.filtered_report_exists == 'true'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: comment
         path: ${{ runner.temp }}/comment.json

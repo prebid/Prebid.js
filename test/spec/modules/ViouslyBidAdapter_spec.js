@@ -1,10 +1,10 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import { deepClone, mergeDeep } from 'src/utils';
 import { BANNER, VIDEO } from 'src/mediaTypes';
 import { createEidsArray } from 'modules/userId/eids.js';
 
-import {spec as adapter} from 'modules/viouslyBidAdapter';
+import { spec as adapter } from 'modules/viouslyBidAdapter';
 
 import sinon from 'sinon';
 import { config } from 'src/config.js';
