@@ -700,7 +700,7 @@ describe('advertisingBidAdapter ', function () {
         mediaTypes: {
           video: {
             context: 'instream',
-            playerSize: [[ 640, 480 ]],
+            playerSize: [[640, 480]],
             startdelay: 1,
             linearity: 1,
             plcmt: 1,
@@ -709,7 +709,7 @@ describe('advertisingBidAdapter ', function () {
         },
         adUnitCode: 'video1',
         transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
-        sizes: [[ 640, 480 ]],
+        sizes: [[640, 480]],
         bidId: '2624fabbb078e8',
         bidderRequestId: '117954d20d7c9c',
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',

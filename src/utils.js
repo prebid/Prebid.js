@@ -1,14 +1,14 @@
-import {config} from './config.js';
+import { config } from './config.js';
 
-import {EVENTS} from './constants.js';
-import {PbPromise} from './utils/promise.js';
+import { EVENTS } from './constants.js';
+import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
-import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
+import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
-export {getWinDimensions, resetWinDimensions, getScreenOrientation} from './utils/winDimensions.js';
+export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
 const consoleExists = Boolean(window.console);
 const consoleLogExists = Boolean(consoleExists && window.console.log);
 const consoleInfoExists = Boolean(consoleExists && window.console.info);
@@ -164,7 +164,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 }
 
 export function sizeTupleToRtbSize(size) {
-  return {w: size[0], h: size[1]};
+  return { w: size[0], h: size[1] };
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -662,7 +662,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, {AUCTION_PRICE: cpm})
+  return replaceMacros(str, { AUCTION_PRICE: cpm })
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -820,7 +820,7 @@ export function isAdUnitCodeMatchingSlot(slot) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -1137,7 +1137,7 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
  */
 export function convertObjectToArray(obj) {
   return Object.keys(obj).map(key => {
-    return {[key]: obj[key]};
+    return { [key]: obj[key] };
   });
 }
 

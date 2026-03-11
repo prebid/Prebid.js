@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, formatQS, isFn, isPlainObject } from '../src/utils.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'stackadapt';
 const ENDPOINT_URL = 'https://pjs.srv.stackadapt.com/br';

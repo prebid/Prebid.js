@@ -5,6 +5,7 @@ import * as utils from '../../../src/utils.js';
 describe('mediaeyes adapter', function () {
   let request;
   let bannerResponse, invalidResponse;
+  let videoRequest, videoResponse;
 
   beforeEach(function () {
     request = [
@@ -51,6 +52,38 @@ describe('mediaeyes adapter', function () {
     invalidResponse = {
       'body': {
 
+      }
+    };
+    videoRequest = [
+      {
+        bidder: 'mediaeyes',
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[640, 480]],
+            mimes: ['video/mp4']
+          }
+        },
+        params: {
+          itemId: "4d27f3cc8bbd5bd153045e",
+          bidFloor: 0.01
+        }
+      }
+    ];
+    videoResponse = {
+      body: {
+        id: "3c51f851-56d8-4515-b4bb-e5a1612cede3",
+        seatbid: [{
+          bid: [{
+            impid: "3db1c7f2867eb5",
+            price: 0.5,
+            crid: "6808552",
+            w: 640,
+            h: 480,
+            adm: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\">...</VAST>",
+            adomain: ["mediaeyes.vn"],
+          }]
+        }]
       }
     };
   });
@@ -114,7 +147,7 @@ describe('mediaeyes adapter', function () {
       }
       let bidderRequest;
 
-      const result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   })
@@ -178,6 +211,55 @@ describe('mediaeyes adapter', function () {
       let data = JSON.parse(request[0].data);
       data = data.imp[0];
       expect(data.bidfloor).to.equal(1);
+    });
+  });
+
+  describe('video validations', function () {
+    it('isBidValid : video itemId is passed', function () {
+      const bid = {
+        bidder: 'mediaeyes',
+        mediaTypes: {
+          video: {
+            playerSize: [[640, 480]]
+          }
+        },
+        params: {
+          itemId: '4d27f3cc8bbd5bd153045e'
+        }
+      };
+
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equals(true);
+    });
+  });
+
+  describe('video request building', function () {
+    it('should build video request correctly', function () {
+      const bidRequest = spec.buildRequests(videoRequest);
+
+      const data = JSON.parse(bidRequest[0].data);
+
+      expect(data.imp[0]).to.have.property('video');
+      expect(data.imp[0].video).to.have.property('w');
+      expect(data.imp[0].video).to.have.property('h');
+    });
+  });
+
+  describe('video responses processing', function () {
+    it('should return fully initialized video bid-response', function () {
+      const bidRequest = spec.buildRequests(videoRequest);
+
+      const resp = spec.interpretResponse(videoResponse, bidRequest[0])[0];
+
+      expect(resp).to.have.property('requestId');
+      expect(resp).to.have.property('cpm');
+      expect(resp).to.have.property('width');
+      expect(resp).to.have.property('height');
+      expect(resp).to.have.property('creativeId');
+      expect(resp).to.have.property('currency');
+      expect(resp).to.have.property('ttl');
+
+      expect(resp).to.have.property('meta');
     });
   });
 });

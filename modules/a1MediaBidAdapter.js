@@ -89,10 +89,10 @@ export const spec = {
         adm: replaceAuctionPrice(bidItem.adm, bidItem.price),
         nurl: replaceAuctionPrice(bidItem.nurl, bidItem.price)
       }));
-      return {...seatbidItem, bid: parsedBid};
+      return { ...seatbidItem, bid: parsedBid };
     });
 
-    const responseBody = {...serverResponse.body, seatbid: parsedSeatbid};
+    const responseBody = { ...serverResponse.body, seatbid: parsedSeatbid };
     const bids = converter.fromORTB({
       response: responseBody,
       request: bidRequest.data,
