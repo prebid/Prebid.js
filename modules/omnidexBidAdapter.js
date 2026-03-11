@@ -6,7 +6,7 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -43,6 +43,7 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   onBidWon,
+  onBidBillable,
   gvlid: GVLID,
 };
 

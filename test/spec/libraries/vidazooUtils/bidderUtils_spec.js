@@ -1,0 +1,585 @@
+import {
+  createSessionId,
+  isBidRequestValid,
+  hashCode,
+  extractPID,
+  extractCID,
+  extractSubDomain,
+  getStorageItem,
+  setStorageItem,
+  tryParseJSON,
+  getUniqueDealId,
+  getNextDealId,
+  onBidWon,
+  onBidBillable,
+  getTopWindowQueryParams,
+  getVidazooSessionId,
+  getCacheOpt,
+  createUserSyncGetter,
+  appendUserIdsToRequestPayload
+} from 'libraries/vidazooUtils/bidderUtils.js'
+import {expect} from "chai";
+import sinon from "sinon";
+import * as utils from 'src/utils.js';
+import {config} from 'src/config.js';
+
+describe('Vidazoo Bidder Utils Tests', function () {
+  describe('createSessionId', function () {
+    it('Should return string with wsid_', function () {
+      const result = createSessionId()
+      expect(result).to.exist.and.to.include('wsid_');
+    });
+  });
+
+  describe('extractCID', function () {
+    it('should return undefined when param not supported', function () {
+      const cid = extractCID({'c_id': '1'});
+      expect(cid).to.be.undefined;
+    });
+    it('should return value when param supported: cID', function () {
+      const cid = extractCID({'cID': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: cId', function () {
+      const cid = extractCID({'cId': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: CID', function () {
+      const cid = extractCID({'CID': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: CId', function () {
+      const cid = extractCID({'CId': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: cid', function () {
+      const cid = extractCID({'cid': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: Cid', function () {
+      const cid = extractCID({'Cid': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: CiD', function () {
+      const cid = extractCID({'CiD': '1'});
+      expect(cid).to.be.equal('1');
+    });
+    it('should return value when param supported: ciD', function () {
+      const cid = extractCID({'ciD': '1'});
+      expect(cid).to.be.equal('1');
+    });
+  });
+
+  describe('extractPID', function () {
+    it('should return undefined when param not supported', function () {
+      const pid = extractPID({'p_id': '1'});
+      expect(pid).to.be.undefined;
+    });
+    it('should return value when param supported: pId', function () {
+      const pid = extractPID({'pId': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: PID', function () {
+      const pid = extractPID({'PID': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: pID', function () {
+      const pid = extractPID({'pID': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: PId', function () {
+      const pid = extractPID({'PId': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: pid', function () {
+      const pid = extractPID({'pid': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: piD', function () {
+      const pid = extractPID({'piD': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: Pid', function () {
+      const pid = extractPID({'Pid': '2'});
+      expect(pid).to.be.equal('2');
+    });
+    it('should return value when param supported: PiD', function () {
+      const pid = extractPID({'PiD': '2'});
+      expect(pid).to.be.equal('2');
+    });
+  });
+
+  describe('extractSubDomain', function () {
+    it('should return undefined when param not supported', function () {
+      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      expect(subDomain).to.be.undefined;
+    });
+    it('should return value when param supported: subDomain', function () {
+      const subDomain = extractSubDomain({'subDomain': 'prebid'});
+      expect(subDomain).to.be.equal('prebid');
+    });
+    it('should return value when param supported: SubDomain', function () {
+      const subDomain = extractSubDomain({'SubDomain': 'prebid'});
+      expect(subDomain).to.be.equal('prebid');
+    });
+    it('should return value when param supported: Subdomain', function () {
+      const subDomain = extractSubDomain({'Subdomain': 'prebid'});
+      expect(subDomain).to.be.equal('prebid');
+    });
+    it('should return value when param supported: subdomain', function () {
+      const subDomain = extractSubDomain({'subdomain': 'prebid'});
+      expect(subDomain).to.be.equal('prebid');
+    });
+    it('should return value when param supported: SUBDOMAIN', function () {
+      const subDomain = extractSubDomain({'SUBDOMAIN': 'prebid'});
+      expect(subDomain).to.be.equal('prebid');
+    });
+    it('should return value when param supported: subDOMAIN', function () {
+      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      expect(subDomain).to.be.equal('prebid');
+    });
+  });
+
+  describe('isBidRequestValid', function () {
+    it('should require cId', function () {
+      const isValid = isBidRequestValid({
+        params: {
+          pId: 'pid'
+        }
+      });
+      expect(isValid).to.be.false;
+    });
+
+    it('should require pId', function () {
+      const isValid = isBidRequestValid({
+        params: {
+          cId: 'cid'
+        }
+      });
+      expect(isValid).to.be.false;
+    });
+
+    it('should validate correctly', function () {
+      const isValid = isBidRequestValid({
+        params: {
+          cId: 'cid',
+          pId: 'pid'
+        }
+      });
+      expect(isValid).to.be.true;
+    });
+  });
+  describe('tryParseJSON', function () {
+    it('should parse JSON value', function () {
+      const data = JSON.stringify({event: 'send'});
+      const {event} = tryParseJSON(data);
+      expect(event).to.be.equal('send');
+    });
+
+    it('should get original value on parse fail', function () {
+      const value = 21;
+      const parsed = tryParseJSON(value);
+      expect(typeof parsed).to.be.equal('number');
+      expect(parsed).to.be.equal(value);
+    });
+  });
+
+  describe('setStorageItem and getStorageItem', function () {
+    it('should set JSON value in local storage when value is object', function () {
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const key = 'newKey';
+      const value = {'a': 1};
+      const timestamp = Date.now();
+      // test the set
+      setStorageItem(storageMock, key, value, timestamp);
+      expect(storageMock.setDataInLocalStorage.calledOnce).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledWith(key, JSON.stringify({value, created: timestamp}))).to.be.true;
+      // now test the get
+      const result = getStorageItem(storageMock, key);
+      expect(result.created).to.be.equal(timestamp);
+      expect(result.value).to.be.deep.equal(value);
+      expect(typeof result.value).to.be.equal('object');
+      expect(typeof result.created).to.be.equal('number');
+    });
+    it('should set JSON value in local storage when value is string', function () {
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const key = 'newKey';
+      const value = "stringValue";
+      const timestamp = Date.now();
+      // test the set
+      setStorageItem(storageMock, key, value, timestamp);
+      expect(storageMock.setDataInLocalStorage.calledOnce).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledWith(key, JSON.stringify({value, created: timestamp}))).to.be.true;
+      // now test the get
+      const result = getStorageItem(storageMock, key);
+      expect(storageMock.getDataFromLocalStorage.calledOnce).to.be.true;
+      expect(storageMock.getDataFromLocalStorage.calledWith(key, null)).to.be.true;
+      expect(result.created).to.be.equal(timestamp);
+      expect(result.value).to.be.equal(value);
+      expect(typeof result.value).to.be.equal('string');
+      expect(typeof result.created).to.be.equal('number');
+    });
+  });
+
+  describe('getCacheOpt', function () {
+    it('should set undefined value when key was not set prior the call', function () {
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const now = Date.now();
+      const clock = sinon.useFakeTimers({
+        shouldAdvanceTime: true,
+        now
+      });
+
+      const key = 'newKey';
+      const result = getCacheOpt(storageMock, key);
+      expect(storageMock.getDataFromLocalStorage.calledOnce).to.be.true;
+      expect(storageMock.getDataFromLocalStorage.calledWith(key, null)).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledOnce).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledWith(key, String(now), null)).to.be.true;
+      expect(result).to.be.equal(String(now));
+      clock.restore();
+    });
+    it('should get value that was previously set', function () {
+      const value = "something"
+      const localStore = {newKey: value};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const now = Date.now();
+      const clock = sinon.useFakeTimers({
+        shouldAdvanceTime: true,
+        now
+      });
+
+      const key = 'newKey';
+      const result = getCacheOpt(storageMock, key);
+      expect(storageMock.getDataFromLocalStorage.calledOnce).to.be.true;
+      expect(storageMock.getDataFromLocalStorage.calledWith(key, null)).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledOnce).to.be.false;
+      expect(result).to.be.equal(value);
+      clock.restore();
+    });
+  });
+
+  describe('getUniqueDealId', function () {
+    it('should get current unique deal id', function (done) {
+      const key = 'myDealKey';
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const uniqueDealId = getUniqueDealId(storageMock, key, 0);
+      // waiting some time so `now` will become past
+      setTimeout(() => {
+        const current = getUniqueDealId(storageMock, key);
+        expect(current).to.be.equal(uniqueDealId);
+        done();
+      }, 200);
+    });
+
+    it('should get new unique deal id on expiration', function (done) {
+      const key = 'myDealKey';
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const uniqueDealId = getUniqueDealId(storageMock, key, 0);
+      // waiting some time so `now` will become past
+      setTimeout(() => {
+        const current = getUniqueDealId(storageMock, key, 100);
+        expect(current).to.not.be.equal(uniqueDealId);
+        done();
+      }, 200)
+    });
+  });
+
+  describe('getNextDealId', function () {
+    it('should get the next deal id', function () {
+      const key = 'myDealKey';
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      const dealId = getNextDealId(storageMock, key);
+      const nextDealId = getNextDealId(storageMock, key);
+      expect(dealId).to.be.equal(1);
+      expect(nextDealId).to.be.equal(2);
+    });
+
+    it('should get the first deal id on expiration', function (done) {
+      const key = 'myDealKey';
+      const localStore = {};
+      const storageMock = {
+        setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
+        getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
+      };
+      setTimeout(function () {
+        const dealId = getNextDealId(storageMock, key, 100);
+        expect(dealId).to.be.equal(1);
+        done();
+      }, 200);
+    });
+  });
+  describe('hashCode', function () {
+    it('should result with _ as a prefix and 8 digits', function () {
+      const result = hashCode("code")
+      expect(result).to.be.equal("_3059181");
+    })
+    it('should result with ^ as a prefix and 10 digits', function () {
+      const result = hashCode("1234567890", "^")
+      expect(result).to.be.equal("^-2054162789");
+    })
+  });
+
+  describe('onBidWon', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should call triggerPixel with nurl', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        nurl: 'https://test.com/win-notice?test=123',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      onBidWon(bid);
+      expect(utils.triggerPixel.called).to.be.true;
+
+      const url = utils.triggerPixel.args[0];
+
+      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+    });
+
+    it('should not call triggerPixel when nurl not passed in bid', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      onBidWon(bid);
+      expect(utils.triggerPixel.called).to.be.false;
+    });
+  });
+
+  describe('onBidBillable', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should call triggerPixel with burl', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        burl: 'https://test.com/billing-notice?test=123',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      onBidBillable(bid);
+      expect(utils.triggerPixel.called).to.be.true;
+
+      const url = utils.triggerPixel.args[0];
+
+      expect(url[0]).to.be.equal('https://test.com/billing-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+    });
+
+    it('should not call triggerPixel when burl not passed in bid', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      onBidBillable(bid);
+      expect(utils.triggerPixel.called).to.be.false;
+    });
+  });
+
+  describe('createUserSyncGetter', function () {
+    let sandbox;
+    const iframeSyncUrl = 'https://sync.example.com/api/sync/iframe';
+    const imageSyncUrl = 'https://sync.example.com/api/sync/image';
+    const responses = [{body: {cid: 'testcid'}, headers: {'x-us-iframe-base-url': 'ifheader.example.com', 'x-us-image-base-url': 'imheader.example.com'}}];
+    const gdprConsent = {gdprApplies: true, consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA'};
+    const uspConsent = '1YNN';
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(config, 'getConfig').withArgs('coppa').returns(false);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should return iframe sync when iframeEnabled is true and iframeSyncUrl is provided', function () {
+      const getUserSyncs = createUserSyncGetter({iframeSyncUrl, imageSyncUrl});
+      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responses, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.be.equal('iframe');
+      expect(syncs[0].url).to.include(iframeSyncUrl);
+      expect(syncs[0].url).to.include('cid=testcid');
+      expect(syncs[0].url).to.include('gdpr=1');
+      expect(syncs[0].url).to.include('us_privacy=1YNN');
+    });
+    it('should return iframe sync from header when iframeEnabled is false but iframeHeader exists', function () {
+      const getUserSyncs = createUserSyncGetter({});
+      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responses, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.be.equal('iframe');
+      expect(syncs[0].url).to.include('https://sync.ifheader.example.com/api/sync/iframe/');
+      expect(syncs[0].url).to.include('cid=testcid');
+    });
+    it('should return image sync when pixelEnabled is true and imageSyncUrl is provided', function () {
+      const getUserSyncs = createUserSyncGetter({iframeSyncUrl, imageSyncUrl});
+      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responses, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.be.equal('image');
+      expect(syncs[0].url).to.include(imageSyncUrl);
+      expect(syncs[0].url).to.include('cid=testcid');
+      expect(syncs[0].url).to.include('gdpr=1');
+      expect(syncs[0].url).to.include('us_privacy=1YNN');
+    });
+    it('should return image sync from header when pixelEnabled is false but imageHeader exists', function () {
+      const getUserSyncs = createUserSyncGetter({});
+      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responses, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.be.equal('image');
+      expect(syncs[0].url).to.include('https://sync.imheader.example.com/api/sync/image/');
+      expect(syncs[0].url).to.include('cid=testcid');
+    });
+    it('should return empty syncs when iframeEnabled, pixelEnabled are false and no headers', function () {
+      const getUserSyncs = createUserSyncGetter({});
+      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
+      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: false}, responsesNoHeaders, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+    });
+  });
+
+  describe('appendUserIdsToRequestPayload', function () {
+    it('should extract lipbid from lipb provider', function () {
+      const payload = {};
+      const userIds = {
+        lipb: {lipbid: 'lipb-id-123'}
+      };
+      appendUserIdsToRequestPayload(payload, userIds);
+      expect(payload['uid.lipb']).to.be.equal('lipb-id-123');
+    });
+
+    it('should extract uid from id5id provider', function () {
+      const payload = {};
+      const userIds = {
+        id5id: {uid: 'id5-uid-456'}
+      };
+      appendUserIdsToRequestPayload(payload, userIds);
+      expect(payload['uid.id5id']).to.be.equal('id5-uid-456');
+    });
+
+    it('should use raw value for other providers', function () {
+      const payload = {};
+      const userIds = {
+        tdid: 'tdid-value-789',
+        criteoId: 'criteo-value-000'
+      };
+      appendUserIdsToRequestPayload(payload, userIds);
+      expect(payload['uid.tdid']).to.be.equal('tdid-value-789');
+      expect(payload['uid.criteoId']).to.be.equal('criteo-value-000');
+    });
+
+    it('should handle all provider types together', function () {
+      const payload = {};
+      const userIds = {
+        lipb: {lipbid: 'lipb-id'},
+        id5id: {uid: 'id5-uid'},
+        tdid: 'tdid-value'
+      };
+      appendUserIdsToRequestPayload(payload, userIds);
+      expect(payload['uid.lipb']).to.be.equal('lipb-id');
+      expect(payload['uid.id5id']).to.be.equal('id5-uid');
+      expect(payload['uid.tdid']).to.be.equal('tdid-value');
+    });
+
+    it('should not modify payload when userIds is empty', function () {
+      const payload = {existing: 'value'};
+      appendUserIdsToRequestPayload(payload, {});
+      expect(Object.keys(payload)).to.have.lengthOf(1);
+      expect(payload.existing).to.be.equal('value');
+    });
+  });
+})

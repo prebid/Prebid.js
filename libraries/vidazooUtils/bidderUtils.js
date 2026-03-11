@@ -10,7 +10,14 @@ import {
   getWinDimensions
 } from '../../src/utils.js';
 import {chunk} from '../chunk/chunk.js';
-import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
+import {
+  CURRENCY,
+  DEAL_ID_EXPIRY,
+  MULTI_REQ_LIST,
+  SESSION_ID_KEY,
+  TTL_SECONDS,
+  UNIQUE_DEAL_ID_EXPIRY
+} from './constants.js';
 import {bidderSettings} from '../../src/bidderSettings.js';
 import {config} from '../../src/config.js';
 import {BANNER, VIDEO} from '../../src/mediaTypes.js';
@@ -152,6 +159,30 @@ export function onBidWon(bid) {
   triggerPixel(url);
 }
 
+export function onBidBillable(bid) {
+  if (!bid.burl) {
+    return;
+  }
+  const billBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(billBid);
+  const url = bid.burl + (bid.burl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
+}
+
 /**
  * Create the spec function for getting user syncs
  *
@@ -179,18 +210,34 @@ export function createUserSyncGetter(options = {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
     }
+    const iframeHeader = responses?.[0]?.headers?.['x-us-iframe-base-url']
+    const imageHeader = responses?.[0]?.headers?.['x-us-image-base-url']
 
-    if (iframeEnabled && options.iframeSyncUrl) {
-      syncs.push({
-        type: 'iframe',
-        url: `${options.iframeSyncUrl}/${params}`
-      });
+    if (iframeEnabled) {
+      if (options.iframeSyncUrl) {
+        syncs.push({
+          type: 'iframe',
+          url: `${options.iframeSyncUrl}/${params}`
+        });
+      } else if (iframeHeader) {
+        syncs.push({
+          type: 'iframe',
+          url: `https://sync.${iframeHeader}/api/sync/iframe/${params}`
+        });
+      }
     }
-    if (pixelEnabled && options.imageSyncUrl) {
-      syncs.push({
-        type: 'image',
-        url: `${options.imageSyncUrl}/${params}`
-      });
+    if (pixelEnabled) {
+      if (options.imageSyncUrl) {
+        syncs.push({
+          type: 'image',
+          url: `${options.imageSyncUrl}/${params}`
+        });
+      } else if (imageHeader) {
+        syncs.push({
+          type: 'image',
+          url: `https://sync.${imageHeader}/api/sync/image/${params}`
+        });
+      }
     }
     return syncs;
   }
@@ -390,7 +437,8 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
       return [];
     }
 
-    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
+    const allowed = allowSingleRequest && MULTI_REQ_LIST.includes(bidderCode)
+    const singleRequestMode = allowed && config.getConfig(`${bidderCode}.singleRequest`);
     const reqBidId = request?.data?.bidId;
     const {results} = serverResponse.body;
 
@@ -469,10 +517,11 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
-    const dto = {
-      method: 'POST', url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`, data: data
+    return {
+      method: 'POST',
+      url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+      data: data
     };
-    return dto;
   }
 
   function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
@@ -483,7 +532,11 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
       const sizes = parseSizesInput(bid.sizes);
       return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData)
     });
-    const chunkSize = Math.min(20, config.getConfig(`${bidderCode}.chunkSize`) || 10);
+    let chSize = 10
+    if (config.getConfig(`${bidderCode}.chunkSize`) && typeof config.getConfig(`${bidderCode}.chunkSize`) === 'number') {
+      chSize = config.getConfig(`${bidderCode}.chunkSize`);
+    }
+    const chunkSize = Math.min(20, chSize);
 
     const chunkedData = chunk(data, chunkSize);
     return chunkedData.map(chunk => {
@@ -502,8 +555,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
-
-    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
+    const allowed = allowSingleRequest && MULTI_REQ_LIST.includes(bidderCode)
+    const singleRequestMode = allowed && config.getConfig(`${bidderCode}.singleRequest`);
 
     const requests = [];
 
@@ -516,7 +569,6 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
       }
 
       // video bids are sent as a single request for each bid
-
       const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
       videoBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
@@ -524,6 +576,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
         requests.push(request);
       });
     } else {
+      // bulk bids request
       validBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
         const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);

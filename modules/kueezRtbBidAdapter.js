@@ -5,7 +5,7 @@ import {
   createBuildRequestsFn,
   createInterpretResponseFn,
   createUserSyncGetter,
-  isBidRequestValid,
+  isBidRequestValid, onBidBillable, onBidWon,
   tryParseJSON
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
@@ -28,6 +28,8 @@ export const spec = {
     imageSyncUrl: 'https://sync.kueezrtb.com/api/sync/image'
   }),
   createFirstPartyData,
+  onBidWon,
+  onBidBillable,
 };
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
