@@ -27,7 +27,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 export const ADPLUS_UID_NAME = '_adplus_uid_v2';
 export const ADPLUS_PB_CLIENT_ID = 'xqkDY946ohWmBm3gWXDTfD';
 export const API_URL = `https://id.ad-plus.com.tr/v2?client_id=${ADPLUS_PB_CLIENT_ID}`;
-export const ROTATION_INTERVAL = 4 * 60 * 60 * 1000; // 4 Hours
+export const ROTATION_INTERVAL = 1 * 60 * 60 * 1000; // 1 Hour
 const LOG_PREFIX = 'User ID - adplusId submodule: ';
 
 /**
