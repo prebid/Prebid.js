@@ -56,8 +56,8 @@ describe('percentInView', () => {
     });
   });
 
-  async function delay() {
-    await new Promise(resolve => setTimeout(resolve, 10));
+  async function delay(ms = 10) {
+    await new Promise(resolve => setTimeout(resolve, ms));
   }
 
   describe('intersections', () => {
@@ -227,6 +227,19 @@ describe('percentInView', () => {
         await delay();
         sinon.assert.calledWith(next, request);
       });
+
+      it('should continue if promises never resolve', async () => {
+        hook(next, request);
+        await delay(100);
+        sinon.assert.called(next);
+      });
+
+      it('should not delay if there are no elements to observe', async () => {
+        request.adUnits = [];
+        hook(next, request);
+        await delay();
+        sinon.assert.called(next);
+      })
     });
   });
 
