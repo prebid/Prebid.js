@@ -72,7 +72,7 @@ module.exports = {
         if (!isES5Mode) {
           return [];
         } else {
-          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase, ES5: true});
+          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), ES5: true});
           return [
             {
               test: /\.node_modules\/.*\.js$/,

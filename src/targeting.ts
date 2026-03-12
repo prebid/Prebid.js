@@ -513,12 +513,27 @@ export function newTargeting(auctionManager) {
     const customKeysByUnit = {};
     const alwaysIncludeDeals = config.getConfig('targetingControls.alwaysIncludeDeals');
 
-    bidsReceived.forEach(bid => {
+    const bidTargetingExclusion = config.getConfig('bidTargetingExclusion');
+
+    const initiallyFilteredBids = bidsReceived.filter(bid => {
       const adUnitIsEligible = adUnitCodes.includes(bid.adUnitCode);
       const cpmAllowed = bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
       const isPreferredDeal = alwaysIncludeDeals && bid.dealId;
+      return adUnitIsEligible && (isPreferredDeal || cpmAllowed);
+    });
 
-      if (adUnitIsEligible && (isPreferredDeal || cpmAllowed)) {
+    initiallyFilteredBids.forEach(bid => {
+      let notExcludedByConfig = true;
+      if (typeof bidTargetingExclusion === 'function') {
+        try {
+          notExcludedByConfig = bidTargetingExclusion(bid, initiallyFilteredBids);
+        } catch (e) {
+          logWarn(`Error in bidTargetingExclusion function - excluding bid ${bid.bidderCode} [${bid.adUnitCode}]`);
+          notExcludedByConfig = false;
+        }
+      }
+
+      if (notExcludedByConfig) {
         filteredBids.push(bid);
         Object.keys(bid.adserverTargeting)
           .filter(getCustomKeys())

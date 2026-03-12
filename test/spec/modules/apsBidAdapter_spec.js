@@ -213,6 +213,30 @@ describe('apsBidAdapter', () => {
       expect(result.data.ext.account).to.equal(undefined);
     });
 
+    it('should include agerange in request ext when configured', () => {
+      bidderRequest.ortb2 = {
+        regs: {
+          ext: { agerange: 2 },
+        },
+      };
+
+      const result = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(result.data.regs.ext.agerange).to.equal(2);
+    });
+
+    it('should include agerange in request ext when configured, even when 0', () => {
+      bidderRequest.ortb2 = {
+        regs: {
+          ext: { agerange: 0 },
+        },
+      };
+
+      const result = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(result.data.regs.ext.agerange).to.equal(0);
+    });
+
     it('should remove sensitive geo data from device', () => {
       bidderRequest.ortb2 = {
         device: {
