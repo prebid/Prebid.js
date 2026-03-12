@@ -3,12 +3,9 @@
 // Does not work with other than GPT integration
 
 import { config } from '../src/config.js';
-import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
 import { isAdUnitCodeMatchingSlot, logWarn } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import adapterManager from '../src/adapterManager.js';
-import {fireViewabilityPixels, triggerBidViewable} from '../libraries/bidViewabilityPixels/index.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';

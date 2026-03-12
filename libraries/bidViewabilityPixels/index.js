@@ -2,7 +2,7 @@ import { EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_ME
 import { filterEventTrackers, legacyPropertiesToOrtbNative } from '../../src/native.js';
 import { triggerPixel, insertHtmlIntoIframe } from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import {EVENTS} from '../../src/constants.js';
+import { EVENTS } from '../../src/constants.js';
 import adapterManager from '../../src/adapterManager.js';
 
 /**

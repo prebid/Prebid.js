@@ -2,7 +2,7 @@ import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
-import {fireViewabilityPixels, triggerBidViewable} from '../libraries/bidViewabilityPixels/index.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
