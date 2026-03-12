@@ -4,7 +4,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import {
   buildUrl,
-  deepAccess, generateUUID, getBidIdParameter,
+  deepAccess,
+  getBidIdParameter,
   getValue,
   isArray,
   isPlainObject,
@@ -23,10 +24,24 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.collectiveaudience.co/bid';
-const COOKIE_NAME = 'beopid';
+const COOKIE_NAME = 'caudid';
 const TCF_VENDOR_ID = 666;
 
-const validIdRegExp = /^[0-9a-fA-F]{24}$/
+const validIdRegExp = /^[0-9a-fA-F]{24}$/;
+
+/**
+ * Generates a 24-char hex string compatible with MongoDB ObjectId semantics
+ * (4-byte timestamp + 12 random hex chars). Used for first-party user id (caudid).
+ * @see https://www.mongodb.com/docs/manual/reference/method/objectid/
+ * @return {string}
+ */
+function generateObjectId() {
+  const timestamp = (Math.floor(Date.now() / 1000)).toString(16);
+  const randomPart = Array.from({ length: 16 }, () =>
+    (Math.floor(Math.random() * 16)).toString(16)
+  ).join('');
+  return (timestamp + randomPart).toLowerCase();
+}
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
@@ -68,14 +83,15 @@ export const spec = {
     const kwdsFromRequest = firstSlot.kwds;
     const keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
-    let beopid = '';
+    let caudid = '';
     if (storage.cookiesAreEnabled) {
-      beopid = storage.getCookie(COOKIE_NAME, undefined);
-      if (!beopid) {
-        beopid = generateUUID();
+      caudid = storage.getCookie(COOKIE_NAME, undefined);
+      if (!caudid || !validIdRegExp.test(caudid)) {
+        caudid = generateObjectId();
         const expirationDate = new Date();
-        expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
-        storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
+        // Align with documented duration (~1 year, below 13‑month cap in terms)
+        expirationDate.setTime(expirationDate.getTime() + 86400 * 365 * 1000);
+        storage.setCookie(COOKIE_NAME, caudid, expirationDate.toUTCString());
       }
     } else {
       storage.setCookie(COOKIE_NAME, '', 0);
@@ -91,7 +107,7 @@ export const spec = {
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
       dbg: false,
-      fg: beopid,
+      fg: caudid,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,

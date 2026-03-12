@@ -381,14 +381,15 @@ describe('BeOp Bid Adapter tests', () => {
   describe('Ensure first party cookie is well managed', function () {
     const bidRequests = [];
 
-    it(`should generate a new uuid`, function () {
+    it('should set fg to a 24-char hex ObjectID (caudid) when no cookie present', function () {
       const bid = Object.assign({}, validBid);
       bidRequests.push(bid);
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       expect(payload.fg).to.exist;
-    })
-  })
+      expect(payload.fg).to.match(/^[0-9a-f]{24}$/);
+    });
+  });
   describe('slot name normalization', function () {
     it('should preserve non-GPT adUnitCode unchanged (case-sensitive)', function () {
       const bid = Object.assign({}, validBid);
