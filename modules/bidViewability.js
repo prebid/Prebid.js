@@ -8,7 +8,7 @@ import { EVENTS } from '../src/constants.js';
 import { isAdUnitCodeMatchingSlot, logWarn } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
-import { fireViewabilityPixels } from '../libraries/bidViewabilityPixels/index.js';
+import {fireViewabilityPixels, triggerBidViewable} from '../libraries/bidViewabilityPixels/index.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
@@ -33,16 +33,7 @@ export const impressionViewableHandler = (globalModuleConfig, event) => {
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
   } else {
-    fireViewabilityPixels(respectiveBid);
-    // trigger respective bidder's onBidViewable handler
-    adapterManager.callBidViewableBidder(respectiveBid.adapterCode || respectiveBid.bidder, respectiveBid);
-
-    if (respectiveBid.deferBilling) {
-      adapterManager.triggerBilling(respectiveBid);
-    }
-
-    // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
-    events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
+    triggerBidViewable(respectiveBid);
   }
 };
 

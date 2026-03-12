@@ -5,6 +5,8 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
 import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
+import * as bidViewability from '../../../modules/bidViewability.js';
+import adapterManager from '../../../src/adapterManager.js';
 
 describe('#bidViewabilityIO', function() {
   const makeElement = (id) => {
@@ -144,6 +146,26 @@ describe('#bidViewabilityIO', function() {
       const func = bidViewabilityIO.markViewed(bidWithEmptyTrackers, mockEntry, mockObserver);
       func();
       expect(triggerPixelSpy.callCount).to.equal(0);
+    });
+
+    it('should call onBidViewable', () => {
+      sandbox.stub(adapterManager, 'callBidViewableBidder');
+      const bid = {
+        bidder: 'mockBidder',
+        ...banner_bid
+      }
+      bidViewabilityIO.markViewed(bid, mockEntry, mockObserver)();
+      sinon.assert.calledWith(adapterManager.callBidViewableBidder, 'mockBidder', bid);
+    });
+
+    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function() {
+      sandbox.stub(adapterManager, 'triggerBilling');
+      const bid = {
+        ...banner_bid,
+        deferBilling: true
+      }
+      bidViewabilityIO.markViewed(bid, mockEntry, mockObserver)();
+      sinon.assert.called(adapterManager.triggerBilling);
     });
   })
 
