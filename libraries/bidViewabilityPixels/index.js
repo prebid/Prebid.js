@@ -1,6 +1,9 @@
 import { EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from '../../src/eventTrackers.js';
 import { filterEventTrackers, legacyPropertiesToOrtbNative } from '../../src/native.js';
 import { triggerPixel, insertHtmlIntoIframe } from '../../src/utils.js';
+import * as events from '../../src/events.js';
+import { EVENTS } from '../../src/constants.js';
+import adapterManager from '../../src/adapterManager.js';
 
 /**
  * Collects viewable tracking URLs from bid.eventtrackers for EVENT_TYPE_VIEWABLE (IMG and JS methods).
@@ -44,4 +47,14 @@ export function fireViewabilityPixels(bid) {
     const markup = js.map(url => `<script async src="${url}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);
   }
+}
+
+export function triggerBidViewable(bid) {
+  fireViewabilityPixels(bid);
+  // trigger respective bidder's onBidViewable handler
+  adapterManager.callBidViewableBidder(bid.adapterCode || bid.bidder, bid);
+  if (bid.deferBilling) {
+    adapterManager.triggerBilling(bid);
+  }
+  events.emit(EVENTS.BID_VIEWABLE, bid);
 }
