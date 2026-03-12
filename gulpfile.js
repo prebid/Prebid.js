@@ -540,7 +540,10 @@ gulp.task('update-codeql', function (done) {
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
-gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist', 'setup-npmignore'));
+// build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
+gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
+// prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
+gulp.task('prepare-release', gulp.series('build', 'setup-npmignore'))
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
