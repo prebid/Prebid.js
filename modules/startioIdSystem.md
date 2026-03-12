@@ -1,6 +1,6 @@
 ## Start.io User ID Submodule
 
-The Start.io User ID submodule generates and persists a unique user identifier by fetching it from a publisher-supplied endpoint. The ID is stored in both cookies and local storage for subsequent page loads and is made available to other Prebid.js modules via the standard `eids` interface.
+The Start.io User ID submodule generates and persists a unique user identifier by fetching it from a Start.io-managed endpoint. This endpoint is fixed within the submodule implementation and is not configurable via Prebid.js parameters. The ID is stored in both cookies and local storage for subsequent page loads and is made available to other Prebid.js modules via the standard `eids` interface.
 
 For integration support, contact prebid@start.io.
 
