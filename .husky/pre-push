@@ -1,0 +1,35 @@
+#!/bin/sh
+# Lint only .js/.ts files changed in the commits being pushed.
+# stdin: <local_ref> <local_sha> <remote_ref> <remote_sha> per ref
+
+set -e
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] && continue
+  [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+
+  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+    range="0000000000000000000000000000000000000000 $local_sha"
+  else
+    range="$remote_sha $local_sha"
+  fi
+
+  files=$(git diff --name-only --diff-filter=ACMR $range 2>/dev/null || true)
+  [ -z "$files" ] && continue
+
+  lintable=""
+  for f in $files; do
+    [ ! -f "$f" ] && continue
+    case "$f" in
+      *.js|*.ts) lintable="$lintable $f" ;;
+    esac
+  done
+
+  [ -z "$lintable" ] && continue
+
+  echo "Pre-push: linting changed .js/.ts files..."
+  if ! npx eslint --cache --cache-strategy content -- ${lintable# }; then
+    echo "Push aborted: fix ESLint errors in the changed files above."
+    exit 1
+  fi
+done

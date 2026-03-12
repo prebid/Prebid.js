@@ -21,7 +21,8 @@
     "build": "gulp build",
     "serve": "gulp serve",
     "test": "gulp test",
-    "lint": "gulp lint"
+    "lint": "gulp lint",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -82,6 +83,7 @@
     "fs-extra": "^11.3.1",
     "globals": "^16.3.0",
     "gulp": "^5.0.1",
+    "husky": "^9.0.11",
     "gulp-clean": "^0.4.0",
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
