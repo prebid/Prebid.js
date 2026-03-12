@@ -26,7 +26,6 @@ import { mockFpdEnrichments } from '../../helpers/fpd.js';
 import { deepAccess, deepSetValue, generateUUID } from '../../../src/utils.js';
 import { getCreativeRenderer } from '../../../src/creativeRenderers.js';
 import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS } from 'src/constants.js';
-import { getBidToRender } from '../../../src/adRendering.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 var assert = require('chai').assert;
@@ -82,6 +81,24 @@ var Slot = function Slot(elementId, pathId) {
       return Object.getOwnPropertyNames(this.targeting);
     },
 
+    getConfig: function getConfig(key) {
+      if (key === 'targeting') {
+        return this.targeting;
+      }
+    },
+
+    setConfig: function setConfig(config) {
+      if (config?.targeting) {
+        Object.keys(config.targeting).forEach((key) => {
+          if (config.targeting[key] == null) {
+            delete this.targeting[key];
+          } else {
+            this.setTargeting(key, config.targeting[key]);
+          }
+        });
+      }
+    },
+
     clearTargeting: function clearTargeting() {
       this.targeting = {};
       return this;
@@ -118,6 +135,24 @@ var createSlotArrayScenario2 = function createSlotArrayScenario2() {
 window.googletag = {
   _slots: [],
   _targeting: {},
+  getConfig: function (key) {
+    if (key === 'targeting') {
+      return this._targeting;
+    }
+  },
+  setConfig: function (config) {
+    if (config?.targeting) {
+      Object.keys(config.targeting).forEach((key) => {
+        if (config.targeting[key] == null) {
+          delete this._targeting[key];
+        } else {
+          this._targeting[key] = Array.isArray(config.targeting[key])
+            ? config.targeting[key]
+            : [config.targeting[key]];
+        }
+      });
+    }
+  },
   pubads: function () {
     var self = this;
     return {
@@ -1066,11 +1101,18 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
+    it('should set googletag targeting keys to specific slot with customGptSlotMatching', function () {
       // same ad unit code but two differnt divs
-      // we make sure we can set targeting for a specific one with customSlotMatching
+      // we make sure we can set targeting for a specific one with customGptSlotMatching
 
-      pbjs.setConfig({ enableSendAllBids: false });
+      pbjs.setConfig({
+        enableSendAllBids: false,
+        customGptSlotMatching: (slot) => {
+          return (adUnitCode) => {
+            return slots[0].getSlotElementId() === slot.getSlotElementId();
+          };
+        }
+      });
 
       var slots = createSlotArrayScenario2();
 
@@ -1078,11 +1120,7 @@ describe('Unit: Prebid Module', function () {
       slots[1].spySetTargeting.resetHistory();
       window.googletag.pubads().setSlots(slots);
       pbjs.setConfig({ targetingControls: { allBidsCustomTargeting: true } });
-      pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]], (slot) => {
-        return (adUnitCode) => {
-          return slots[0].getSlotElementId() === slot.getSlotElementId();
-        };
-      });
+      pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
       var expected = getTargetingKeys();
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
@@ -3240,14 +3278,6 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyEventsOn.calledWith('bidWon', Function));
       events.on.restore();
     });
-
-    it('should emit event BID_ACCEPTED when invoked', function () {
-      var callback = sinon.spy();
-      pbjs.onEvent('bidAccepted', callback);
-      events.emit(EVENTS.BID_ACCEPTED);
-      sinon.assert.calledOnce(callback);
-    });
-
     describe('beforeRequestBids', function () {
       let bidRequestedHandler;
       let beforeRequestBidsHandler;

@@ -46,7 +46,6 @@ export const spec = {
       const DOMAIN = bid.params.pageurl || REFERER;
       const GDPR = BIDDER_GDPR || bid.params.gdpr || null;
       const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null;
-      const DNT = bid.params.dnt || null;
       const BID_FLOOR = 0;
       const VIDEO_BID = bid.video ? bid.video : {};
 
@@ -75,10 +74,6 @@ export const spec = {
           }
         }
       };
-
-      if (isSet(DNT)) {
-        requestData.device.dnt = DNT;
-      }
 
       if (isSet(config.getConfig('coppa'))) {
         requestData.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;

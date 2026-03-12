@@ -10,27 +10,16 @@ import { config as configObj } from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 import 'modules/nativeRendering.js';
+import * as adUnits from 'src/utils/adUnits';
 
 import { expect } from 'chai';
 
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
-import { getBidToRender } from '../../../src/adRendering.js';
 import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
   let sandbox;
-
-  function getBidToRenderHook(next, ...args) {
-    // make sure that bids can be retrieved asynchronously
-    setTimeout(() => next(...args))
-  }
-  before(() => {
-    getBidToRender.before(getBidToRenderHook);
-  });
-  after(() => {
-    getBidToRender.getHooks({ hook: getBidToRenderHook }).remove()
-  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -552,6 +541,7 @@ describe('secureCreatives', () => {
           value = Array.isArray(value) ? value : [value];
           targeting[key] = value;
         }),
+        getConfig: sinon.stub().callsFake((key) => key === 'targeting' ? targeting : null),
         getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
         getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
       }

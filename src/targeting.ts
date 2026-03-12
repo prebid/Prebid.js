@@ -5,7 +5,6 @@ import { config } from './config.js';
 import { BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS } from './constants.js';
 import * as events from './events.js';
 import { hook } from './hook.js';
-import { ADPOD } from './mediaTypes.js';
 import {
   deepAccess,
   deepClone,
@@ -133,13 +132,12 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
  * Return a map where each code in `adUnitCodes` maps to a list of GPT slots that match it.
  *
  * @param adUnitCodes
- * @param customSlotMatching
  * @param getSlots
  */
-export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], customSlotMatching, getSlots = () => window.googletag.pubads().getSlots()): ByAdUnit<googletag.Slot[]> {
+export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], getSlots = () => window.googletag.pubads().getSlots()): ByAdUnit<googletag.Slot[]> {
   return getSlots().reduce((auToSlots, slot) => {
-    const customMatch = isFn(customSlotMatching) && customSlotMatching(slot);
-    Object.keys(auToSlots).filter(isFn(customMatch) ? customMatch : isAdUnitCodeMatchingSlot(slot)).forEach(au => auToSlots[au].push(slot));
+    Object.keys(auToSlots).filter(isAdUnitCodeMatchingSlot(slot))
+      .forEach(au => auToSlots[au].push(slot));
     return auToSlots;
   }, Object.fromEntries(adUnitCodes.map(au => [au, []])));
 }
@@ -306,13 +304,13 @@ export function newTargeting(auctionManager) {
       return flatTargeting;
     },
 
-    setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[], customSlotMatching?: SlotMatchingFn) {
+    setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[]) {
       // get our ad unit codes
       const targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
 
       const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
 
-      Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet), customSlotMatching)).forEach(([targetId, slots]) => {
+      Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet))).forEach(([targetId, slots]) => {
         slots.forEach(slot => {
           // now set new targeting keys
           Object.keys(targetingSet[targetId]).forEach(key => {
@@ -324,7 +322,8 @@ export function newTargeting(auctionManager) {
             targetingSet[targetId][key] = value;
           });
           logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingSet[targetId]);
-          slot.updateTargetingFromMap(Object.assign({}, resetMap, targetingSet[targetId]))
+          const targetingMap = Object.assign({}, resetMap, targetingSet[targetId]);
+          slot.setConfig({ targeting: targetingMap } as any);
           lock.lock(targetingSet[targetId]);
         })
       })
@@ -678,7 +677,7 @@ export function newTargeting(auctionManager) {
       const cacheFilter = bidCacheEnabled || isBidFromLastAuction;
       const bidFilter = cacheFilter && filterFunctionResult;
 
-      if (bidFilter && bid?.video?.context !== ADPOD && isBidUsable(bid)) {
+      if (bidFilter && isBidUsable(bid)) {
         bid.latestTargetedAuctionId = latestAuctionForAdUnit[bid.adUnitCode];
         bids.push(bid)
       }

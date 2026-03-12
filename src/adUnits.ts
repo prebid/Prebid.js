@@ -89,6 +89,11 @@ export interface AdUnitDefinition {
    */
   code: AdUnitCode;
   /**
+   * A DOM element corresponding to this ad unit.
+   * By default, this is `document.getElementById(adUnit.code)`.
+   */
+  element?: HTMLElement;
+  /**
    * Bid requests representing demand partners and associated parameters.
    */
   bids?: AdUnitBidDefinition[];
