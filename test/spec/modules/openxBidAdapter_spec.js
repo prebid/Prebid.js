@@ -1712,53 +1712,53 @@ describe('OpenxRtbAdapter', function () {
       it('should correctly return both banner and video bids', function () {
         const bidRequestConfigs = [
           {
-            bidder: 'openx', 
-            params: { 
-              unit: '1', 
-              delDomain: 'test-del-domain' 
+            bidder: 'openx',
+            params: {
+              unit: '1',
+              delDomain: 'test-del-domain'
             },
             adUnitCode: 'au-1',
-            mediaTypes: { 
-              banner: { 
-                sizes: [[300, 250]] 
-              } 
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
             },
-            bidId: 'bid-id-banner', 
-            bidderRequestId: 'br-1', 
+            bidId: 'bid-id-banner',
+            bidderRequestId: 'br-1',
             auctionId: 'a-1'
           },
           {
-            bidder: 'openx', 
-            params: { 
-              unit: '2', 
-              delDomain: 'test-del-domain' 
+            bidder: 'openx',
+            params: {
+              unit: '2',
+              delDomain: 'test-del-domain'
             },
-            adUnitCode: 'au-2', 
-            mediaTypes: { 
-              video: { 
-                playerSize: [640, 480] 
-              } 
+            adUnitCode: 'au-2',
+            mediaTypes: {
+              video: {
+                playerSize: [640, 480]
+              }
             },
-            bidId: 'bid-id-video', 
-            bidderRequestId: 'br-1', 
+            bidId: 'bid-id-video',
+            bidderRequestId: 'br-1',
             auctionId: 'a-1'
           }
         ];
-        const bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
+        const bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
         const bidResponse = {
           seatbid: [{
             bid: [
-              { 
-                impid: 'bid-id-banner', 
-                price: 1, 
-                adm: '<div>ad</div>', 
-                mtype: 1 
+              {
+                impid: 'bid-id-banner',
+                price: 1,
+                adm: '<div>ad</div>',
+                mtype: 1
               },
-              { 
-                impid: 'bid-id-video', 
-                price: 2, 
-                adm: '<VAST/>', 
-                mtype: 2 
+              {
+                impid: 'bid-id-video',
+                price: 2,
+                adm: '<VAST/>',
+                mtype: 2
               }
             ]
           }],
