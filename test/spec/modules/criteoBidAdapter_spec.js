@@ -1,18 +1,18 @@
-import {expect} from 'chai';
-import {spec, storage} from 'modules/criteoBidAdapter.js';
+import { expect } from 'chai';
+import { spec, storage } from 'modules/criteoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import * as ajax from 'src/ajax.js';
-import {config} from '../../../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import { config } from '../../../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/userId/index.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 
-import {hook} from '../../../src/hook.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { hook } from '../../../src/hook.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('The Criteo bidding adapter', function () {
   let sandbox, ajaxStub, logWarnStub;
@@ -80,7 +80,7 @@ describe('The Criteo bidding adapter', function () {
 
       const gppConsent = {
         gppString: 'gpp_string',
-        applicableSections: [ 1, 2 ]
+        applicableSections: [1, 2]
       };
 
       const gdprConsent = {
@@ -1182,7 +1182,7 @@ describe('The Criteo bidding adapter', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.regs.ext.gpp).to.equal('gpp_consent_string');
       expect(ortbRequest.regs.ext.gpp_sid).to.deep.equal([0, 1, 2]);
     });
@@ -1222,7 +1222,7 @@ describe('The Criteo bidding adapter', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.regs.ext.dsa).to.deep.equal(dsa);
     });
 
@@ -1235,7 +1235,7 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           ortb2: {
             source: {
-              ext: {schain: expectedSchain}
+              ext: { schain: expectedSchain }
             }
           },
           adUnitCode: 'bid-123',
@@ -1255,7 +1255,7 @@ describe('The Criteo bidding adapter', function () {
         ...bidderRequest,
         ortb2: {
           source: {
-            ext: {schain: expectedSchain}
+            ext: { schain: expectedSchain }
           }
         }
       };
@@ -1547,8 +1547,8 @@ describe('The Criteo bidding adapter', function () {
               segtax: 3
             },
             segment: [
-              {'id': '1001'},
-              {'id': '1002'}
+              { 'id': '1001' },
+              { 'id': '1002' }
             ]
           }]
         },
@@ -1566,8 +1566,8 @@ describe('The Criteo bidding adapter', function () {
             segtax: 3
           },
           segment: [
-            {'id': '1001'},
-            {'id': '1002'}
+            { 'id': '1001' },
+            { 'id': '1002' }
           ]
         }],
         ext: {
@@ -1606,13 +1606,13 @@ describe('The Criteo bidding adapter', function () {
         user: userData
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
-      expect(ortbRequest.user).to.deep.equal({...userData, ext: {...userData.ext, consent: 'consentDataString'}});
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
+      expect(ortbRequest.user).to.deep.equal({ ...userData, ext: { ...userData.ext, consent: 'consentDataString' } });
       expect(ortbRequest.site).to.deep.equal({
         ...siteData,
         page: refererUrl,
         domain: 'criteo.com',
-        publisher: {...ortbRequest.site.publisher, domain: 'criteo.com'}
+        publisher: { ...ortbRequest.site.publisher, domain: 'criteo.com' }
       });
       expect(ortbRequest.imp[0].ext.bidfloor).to.equal(0.75);
       expect(ortbRequest.imp[0].ext.data.someContextAttribute).to.equal('abc')
@@ -1621,7 +1621,7 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a request when coppa flag is true', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({coppa: true});
+      config.setConfig({ coppa: true });
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
     });
@@ -1629,7 +1629,7 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a request when coppa flag is false', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({coppa: false});
+      config.setConfig({ coppa: false });
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.coppa).to.equal(0);
     });
@@ -1676,8 +1676,8 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
         'banner': {
-          '300x250': {'currency': 'USD', 'floor': 1},
-          '728x90': {'currency': 'USD', 'floor': 2}
+          '300x250': { 'currency': 'USD', 'floor': 1 },
+          '728x90': { 'currency': 'USD', 'floor': 2 }
         }
       });
     });
@@ -1703,8 +1703,8 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
         'banner': {
-          '300x250': {'currency': 'EUR', 'floor': 1},
-          '728x90': {'currency': 'EUR', 'floor': 1}
+          '300x250': { 'currency': 'EUR', 'floor': 1 },
+          '728x90': { 'currency': 'EUR', 'floor': 1 }
         }
       });
     });
@@ -1744,8 +1744,8 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
         'video': {
-          '300x250': {'currency': 'USD', 'floor': 1},
-          '728x90': {'currency': 'USD', 'floor': 2}
+          '300x250': { 'currency': 'USD', 'floor': 1 },
+          '728x90': { 'currency': 'USD', 'floor': 2 }
         }
       });
     });
@@ -1811,14 +1811,14 @@ describe('The Criteo bidding adapter', function () {
         expect(ortbRequest.imp[0].ext.data.someContextAttribute).to.deep.equal('abc');
         expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
           'banner': {
-            '300x250': {'currency': 'USD', 'floor': 1},
-            '728x90': {'currency': 'USD', 'floor': 2}
+            '300x250': { 'currency': 'USD', 'floor': 1 },
+            '728x90': { 'currency': 'USD', 'floor': 2 }
           },
           'video': {
-            '640x480': {'currency': 'EUR', 'floor': 3.2}
+            '640x480': { 'currency': 'EUR', 'floor': 3.2 }
           },
           'native': {
-            '*': {'currency': 'YEN', 'floor': 4.99}
+            '*': { 'currency': 'YEN', 'floor': 4.99 }
           }
         });
       });
@@ -2008,21 +2008,21 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should interpret correctly gzip configuration given as a string', async function() {
-      bidderConfigStub.returns({criteo: {gzipEnabled: 'false'}});
+      bidderConfigStub.returns({ criteo: { gzipEnabled: 'false' } });
 
       const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
       expect(request.options.endpointCompression).to.be.false;
     });
 
     it('should interpret correctly gzip configuration given as a boolean', async function () {
-      bidderConfigStub.returns({criteo: {gzipEnabled: false}});
+      bidderConfigStub.returns({ criteo: { gzipEnabled: false } });
 
       const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
       expect(request.options.endpointCompression).to.be.false;
     });
 
     it('should default to true when it receives an invalid configuration', async function () {
-      bidderConfigStub.returns({criteo: {gzipEnabled: 'randomString'}});
+      bidderConfigStub.returns({ criteo: { gzipEnabled: 'randomString' } });
 
       const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
       expect(request.options.endpointCompression).to.be.true;
@@ -2178,9 +2178,9 @@ describe('The Criteo bidding adapter', function () {
 
     it('should return an empty array when parsing a well-formed no bid response', async function () {
       const bidRequests = [];
-      const response = {seatbid: []};
+      const response = { seatbid: [] };
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const bids = spec.interpretResponse({body: response}, request);
+      const bids = spec.interpretResponse({ body: response }, request);
       expect(bids).to.have.lengthOf(0);
     });
 
@@ -2199,7 +2199,7 @@ describe('The Criteo bidding adapter', function () {
       }];
       const response = mockResponse('test-bidId', BANNER);
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const bids = spec.interpretResponse({body: response}, request);
+      const bids = spec.interpretResponse({ body: response }, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].mediaType).to.equal(BANNER);
       expect(bids[0].requestId).to.equal('test-bidId');
@@ -2237,7 +2237,7 @@ describe('The Criteo bidding adapter', function () {
         }];
         const response = mockResponse('test-bidId', VIDEO);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].requestId).to.equal('test-bidId');
@@ -2273,7 +2273,7 @@ describe('The Criteo bidding adapter', function () {
         }];
         const response = mockResponse('test-bidId', VIDEO);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].requestId).to.equal('test-bidId');
@@ -2302,7 +2302,7 @@ describe('The Criteo bidding adapter', function () {
         }];
         const response = mockResponse('test-bidId', NATIVE);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].requestId).to.equal('test-bidId');
@@ -2353,7 +2353,7 @@ describe('The Criteo bidding adapter', function () {
       }];
       const response = mockResponse('test-bidId2', BANNER);
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const bids = spec.interpretResponse({body: response}, request);
+      const bids = spec.interpretResponse({ body: response }, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].mediaType).to.equal(BANNER);
       expect(bids[0].requestId).to.equal('test-bidId2');
@@ -2402,7 +2402,7 @@ describe('The Criteo bidding adapter', function () {
         }];
         const response = mockResponse('test-bidId', VIDEO);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].requestId).to.equal('test-bidId');
@@ -2442,7 +2442,7 @@ describe('The Criteo bidding adapter', function () {
         }];
         const response = mockResponse('test-bidId', NATIVE);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].requestId).to.equal('test-bidId');
@@ -2593,7 +2593,7 @@ describe('The Criteo bidding adapter', function () {
         },
       };
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const interpretedResponse = spec.interpretResponse({body: response}, request);
+      const interpretedResponse = spec.interpretResponse({ body: response }, request);
       expect(interpretedResponse).to.have.property('bids');
       expect(interpretedResponse).to.have.property('paapi');
       expect(interpretedResponse.bids).to.have.lengthOf(0);
@@ -2670,7 +2670,7 @@ describe('The Criteo bidding adapter', function () {
         };
 
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
 
         expect(bids).to.have.lengthOf(1);
 
@@ -2839,7 +2839,7 @@ describe('The Criteo bidding adapter', function () {
       ];
 
       for (const nativeParams of nativeParamsWithoutSendId) {
-        let transformedBidRequests = {...bidRequests};
+        let transformedBidRequests = { ...bidRequests };
         transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
         spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
       }

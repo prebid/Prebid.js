@@ -226,7 +226,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    const payload = converter.toORTB({bidRequests, bidderRequest})
+    const payload = converter.toORTB({ bidRequests, bidderRequest })
 
     const endpoint = bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL;
     const url = replaceMacros(payload, endpoint);
@@ -239,7 +239,7 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, requests) {
-    const bids = converter.fromORTB({response: serverResponse.body, request: requests.data}).bids;
+    const bids = converter.fromORTB({ response: serverResponse.body, request: requests.data }).bids;
 
     return bids;
   },

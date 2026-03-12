@@ -1,9 +1,9 @@
 import { amxIdSubmodule, storage } from 'modules/amxIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 const TEST_ID = '51b561e3-0d82-4aea-8487-093fffca4a3a';
 const ERROR_CODES = [404, 501, 500, 403];

@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 export const IS_DEV = location.hostname === 'localhost'
 export const BIDDER_CODE = 'afp'
@@ -66,12 +66,12 @@ const createRenderer = (bid, dataToCreatePlace) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid({mediaTypes, params}) {
+  isBidRequestValid({ mediaTypes, params }) {
     if (typeof params !== 'object' || typeof mediaTypes !== 'object') {
       return false
     }
 
-    const {placeId, placeType, imageUrl, imageWidth, imageHeight} = params
+    const { placeId, placeType, imageUrl, imageWidth, imageHeight } = params
     const media = mediaTypes[mediaTypeByPlaceType[placeType]]
 
     if (placeId && media) {
@@ -94,14 +94,16 @@ export const spec = {
     }
     return false
   },
-  buildRequests(validBidRequests, {refererInfo, gdprConsent}) {
+  buildRequests(validBidRequests, { refererInfo, gdprConsent }) {
     const payload = {
       pageUrl: IS_DEV ? TEST_PAGE_URL : refererInfo.page,
       gdprConsent: gdprConsent,
       bidRequests: validBidRequests.map(validBidRequest => {
-        const {bidId, ortb2Imp, sizes, params: {
-          placeId, placeType, imageUrl, imageWidth, imageHeight
-        }} = validBidRequest
+        const {
+          bidId, ortb2Imp, sizes, params: {
+            placeId, placeType, imageUrl, imageWidth, imageHeight
+          }
+        } = validBidRequest
         bidRequestMap[bidId] = validBidRequest
         const bidRequest = {
           bidId,
@@ -133,7 +135,7 @@ export const spec = {
     let bids = serverResponse.body && serverResponse.body.bids
     bids = Array.isArray(bids) ? bids : []
 
-    return bids.map(({bidId, cpm, width, height, creativeId, currency, netRevenue, adSettings, placeSettings}, index) => {
+    return bids.map(({ bidId, cpm, width, height, creativeId, currency, netRevenue, adSettings, placeSettings }, index) => {
       const bid = {
         requestId: bidId,
         cpm,

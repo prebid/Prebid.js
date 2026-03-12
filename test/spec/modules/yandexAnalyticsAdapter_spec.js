@@ -127,7 +127,7 @@ describe('Yandex analytics adapter testing', () => {
 
     clock.tick(1501);
 
-    const [ sentEvents ] = window[counterWindowKey].pbjs.getCall(0).args;
+    const [sentEvents] = window[counterWindowKey].pbjs.getCall(0).args;
     chai.expect(sentEvents).to.deep.equal(eventsToSend);
   });
 
@@ -152,7 +152,7 @@ describe('Yandex analytics adapter testing', () => {
     };
     clock.tick(2001);
 
-    const [ sentEvents ] = counterPbjsMethod.getCall(0).args;
+    const [sentEvents] = counterPbjsMethod.getCall(0).args;
     chai.expect(sentEvents).to.deep.equal([
       prebidInitEvent,
       {

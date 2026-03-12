@@ -1,9 +1,9 @@
-import {_each, deepAccess, isArray, isEmpty, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { _each, deepAccess, isArray, isEmpty, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'ccx'
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
 const SUPPORTED_VIDEO_MIMES = ['video/mp4', 'video/x-flv']
@@ -72,13 +72,13 @@ function _buildBid (bid, bidderRequest) {
   const sizes = deepAccess(bid, 'mediaTypes.banner.sizes') || deepAccess(bid, 'mediaTypes.video.playerSize') || deepAccess(bid, 'sizes')
 
   if (deepAccess(bid, 'mediaTypes.banner') || deepAccess(bid, 'mediaType') === 'banner' || (!deepAccess(bid, 'mediaTypes.video') && !deepAccess(bid, 'mediaType'))) {
-    placement.banner = {'format': []}
+    placement.banner = { 'format': [] }
     if (isArray(sizes[0])) {
       _each(sizes, function (size) {
-        placement.banner.format.push({'w': size[0], 'h': size[1]})
+        placement.banner.format.push({ 'w': size[0], 'h': size[1] })
       })
     } else {
-      placement.banner.format.push({'w': sizes[0], 'h': sizes[1]})
+      placement.banner.format.push({ 'w': sizes[0], 'h': sizes[1] })
     }
   } else if (deepAccess(bid, 'mediaTypes.video') || deepAccess(bid, 'mediaType') === 'video') {
     placement.video = {}
@@ -102,7 +102,7 @@ function _buildBid (bid, bidderRequest) {
     }
   }
 
-  placement.ext = {'pid': bid.params.placementId}
+  placement.ext = { 'pid': bid.params.placementId }
 
   if (bidderRequest.paapi?.enabled) {
     placement.ext.ae = bid?.ortb2Imp?.ext?.ae
@@ -181,7 +181,7 @@ export const spec = {
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
       requestBody.id = bidderRequest.bidderRequestId;
-      requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
+      requestBody.ext = { 'ce': (storage.cookiesAreEnabled() ? 1 : 0) }
 
       // Attaching GDPR Consent Params
       if (bidderRequest && bidderRequest.gdprConsent) {
