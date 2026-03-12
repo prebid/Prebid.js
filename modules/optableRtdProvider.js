@@ -18,6 +18,8 @@ const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODU
 // localStorage key for targeting cache (direct API mode only)
 const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
 
+// Also look at
+
 // Storage key prefix for passport (visitor ID) - compatible with Web SDK format
 const PASSPORT_KEY_PREFIX = 'OPTABLE_PASSPORT_';
 
@@ -172,11 +174,11 @@ const getCachedTargeting = () => {
       const eidCount = parsedData?.ortb2?.user?.eids?.length || 0;
       const splitTestAssignment = parsedData?.split_test_assignment;
 
-      // Use cache if we have EIDs OR if split_test_assignment is "test"
+      // Use cache if we have EIDs OR if we have a split_test_assignment (test or control)
       if (eidCount > 0) {
         logMessage(`Found cached targeting with ${eidCount} EIDs`);
         return parsedData;
-      } else if (splitTestAssignment === 'test') {
+      } else if (splitTestAssignment) {
         logMessage(`Found cached targeting with split_test_assignment="${splitTestAssignment}" (no EIDs)`);
         return parsedData;
       }
