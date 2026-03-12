@@ -33,18 +33,23 @@ const validIdRegExp = /^[0-9a-fA-F]{24}$/;
 
 /**
  * Generates a 24-char hex string compatible with MongoDB ObjectId semantics
- * (4-byte timestamp + 12 random hex chars). Used for first-party user id (caudid).
+ * (4-byte timestamp + 16 random hex chars). Used for first-party user id (caudid).
+ * Timestamp is padded to 8 hex chars so that a client clock in the past (or mocked Date)
+ * cannot produce a shorter string that would fail the 24-char validation on later requests.
  * @see https://www.mongodb.com/docs/manual/reference/method/objectid/
  * @return {string}
  */
 function generateObjectId() {
-  const timestamp = (Math.floor(Date.now() / 1000)).toString(16);
+  const timestamp = (Math.floor(Date.now() / 1000)).toString(16).padStart(8, '0');
   const randomPart = Array.from({ length: 16 }, () =>
     (Math.floor(Math.random() * 16)).toString(16)
   ).join('');
   return (timestamp + randomPart).toLowerCase();
 }
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+/** Exported for unit tests (caudid / caudid_date cookie behavior). */
+export const __storage = storage;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -86,7 +91,7 @@ export const spec = {
     const keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
     let caudid = '';
-    if (storage.cookiesAreEnabled) {
+    if (storage.cookiesAreEnabled()) {
       caudid = storage.getCookie(COOKIE_NAME, undefined);
       if (!caudid || !validIdRegExp.test(caudid)) {
         caudid = generateObjectId();
