@@ -6,8 +6,8 @@ import {
   disable,
   getTrackersFromBidResponse
 } from 'libraries/vastTrackers/vastTrackers.js';
-import {MODULE_TYPE_ANALYTICS} from '../../../src/activities/modules.js';
-import {AuctionIndex} from '../../../src/auctionIndex.js';
+import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
+import { AuctionIndex } from '../../../src/auctionIndex.js';
 
 describe('vast trackers', () => {
   let sandbox, tracker, auction, bid, bidRequest, index;
@@ -27,10 +27,10 @@ describe('vast trackers', () => {
         return 'aid';
       },
       getProperties() {
-        return {auction: 'props'};
+        return { auction: 'props' };
       },
       getBidRequests() {
-        return [{bids: [bidRequest]}]
+        return [{ bids: [bidRequest] }]
       }
     };
     sandbox = sinon.createSandbox();
@@ -52,28 +52,28 @@ describe('vast trackers', () => {
   after(disable);
 
   it('insert into tracker list', function () {
-    const trackers = getVastTrackers(bid, {index});
+    const trackers = getVastTrackers(bid, { index });
     expect(trackers).to.be.an('object');
     expect(trackers.impression).to.be.an('array');
     expect(trackers.impression).to.include('https://vasttracking.mydomain.com/vast?cpm=1');
   });
 
   it('insert trackers in vastXml', function () {
-    const trackers = getVastTrackers(bid, {index});
+    const trackers = getVastTrackers(bid, { index });
     let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
     vastXml = insertVastTrackers(trackers, vastXml);
     expect(vastXml).to.equal('<VAST><Ad><Wrapper><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1]]></Impression></Wrapper></Ad></VAST>');
   });
 
   it('should pass request and auction properties to trackerFn', () => {
-    const bid = {requestId: 'bid', auctionId: 'aid'};
-    getVastTrackers(bid, {index});
-    sinon.assert.calledWith(tracker, bid, sinon.match({auction: auction.getProperties(), bidRequest}))
+    const bid = { requestId: 'bid', auctionId: 'aid' };
+    getVastTrackers(bid, { index });
+    sinon.assert.calledWith(tracker, bid, sinon.match({ auction: auction.getProperties(), bidRequest }))
   })
 
   if (FEATURES.VIDEO) {
     it('should add trackers to bid response', () => {
-      cacheVideoBidHook({index})(sinon.stub(), 'au', bid);
+      cacheVideoBidHook({ index })(sinon.stub(), 'au', bid);
       expect(bid.vastTrackers).to.be.an('object');
       expect(bid.vastTrackers.impression).to.eql([
         'https://vasttracking.mydomain.com/vast?cpm=1'
@@ -98,7 +98,7 @@ describe('vast trackers', () => {
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'errorTest', errorTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Error><![CDATA[https://error.mydomain.com/error?cpm=1]]></Error>');
@@ -114,7 +114,7 @@ describe('vast trackers', () => {
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'errorTest', errorTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       let vastXml = '<VAST><Ad><InLine></InLine></Ad></VAST>';
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Error><![CDATA[https://error1.mydomain.com/error]]></Error>');
@@ -131,7 +131,7 @@ describe('vast trackers', () => {
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'mixedTest', mixedTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Impression><![CDATA[https://impression.mydomain.com/imp]]></Impression>');
@@ -150,13 +150,13 @@ describe('vast trackers', () => {
           impression: [],
           error: [],
           trackingEvents: [
-            {event: 'start', url: 'https://tracking.mydomain.com/start'}
+            { event: 'start', url: 'https://tracking.mydomain.com/start' }
           ]
         };
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'playbackTest', playbackTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       let vastXml = '<VAST><Ad><InLine><Creatives><Creative><Linear><Duration>00:00:30</Duration></Linear></Creative></Creatives></InLine></Ad></VAST>';
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking>');
@@ -169,13 +169,13 @@ describe('vast trackers', () => {
           impression: [],
           error: [],
           trackingEvents: [
-            {event: 'start', url: 'https://tracking.mydomain.com/start'}
+            { event: 'start', url: 'https://tracking.mydomain.com/start' }
           ]
         };
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'appendTest', playbackTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       let vastXml = '<VAST><Ad><InLine><Creatives><Creative><Linear><Duration>00:00:30</Duration><TrackingEvents><Tracking event="complete"><![CDATA[https://existing.com/complete]]></Tracking></TrackingEvents></Linear></Creative></Creatives></InLine></Ad></VAST>';
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Tracking event="complete"><![CDATA[https://existing.com/complete]]></Tracking>');
@@ -188,13 +188,13 @@ describe('vast trackers', () => {
           impression: [],
           error: [],
           trackingEvents: [
-            {event: 'start', url: 'https://tracking.mydomain.com/start'}
+            { event: 'start', url: 'https://tracking.mydomain.com/start' }
           ]
         };
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'createStructureTest', playbackTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
       vastXml = insertVastTrackers(trackers, vastXml);
       expect(vastXml).to.contain('<Creatives>');
@@ -210,17 +210,17 @@ describe('vast trackers', () => {
           impression: [],
           error: [],
           trackingEvents: [
-            {event: 'start', url: 'https://tracking.mydomain.com/start'},
-            {event: 'midpoint'}, // missing url
-            {url: 'https://tracking.mydomain.com/invalid'}, // missing event
-            {event: '', url: 'https://tracking.mydomain.com/empty'}, // empty event
-            {event: 'complete', url: ''} // empty url
+            { event: 'start', url: 'https://tracking.mydomain.com/start' },
+            { event: 'midpoint' }, // missing url
+            { url: 'https://tracking.mydomain.com/invalid' }, // missing event
+            { event: '', url: 'https://tracking.mydomain.com/empty' }, // empty event
+            { event: 'complete', url: '' } // empty url
           ]
         };
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'validationTest', invalidTracker);
 
-      const trackers = getVastTrackers(bid, {index});
+      const trackers = getVastTrackers(bid, { index });
       // Only the valid tracker should be included
       expect(trackers.trackingEvents).to.have.lengthOf(1);
       expect(trackers.trackingEvents[0].event).to.equal('start');
@@ -247,7 +247,7 @@ describe('vast trackers', () => {
         vastImpUrl: 'https://bidder.com/impression'
       };
 
-      const trackers = getVastTrackers(bidWithImpUrl, {index});
+      const trackers = getVastTrackers(bidWithImpUrl, { index });
       expect(trackers).to.be.an('object');
       expect(trackers.impression).to.include('https://bidder.com/impression');
     });
@@ -267,7 +267,7 @@ describe('vast trackers', () => {
         vastImpUrl: ['https://bidder1.com/impression', 'https://bidder2.com/impression']
       };
 
-      const trackers = getVastTrackers(bidWithImpUrls, {index});
+      const trackers = getVastTrackers(bidWithImpUrls, { index });
       expect(trackers).to.be.an('object');
       expect(trackers.impression).to.include('https://bidder1.com/impression');
       expect(trackers.impression).to.include('https://bidder2.com/impression');
@@ -288,13 +288,13 @@ describe('vast trackers', () => {
         vastImpUrl: ''
       };
 
-      const trackers = getVastTrackers(bidWithEmptyImpUrl, {index});
+      const trackers = getVastTrackers(bidWithEmptyImpUrl, { index });
       expect(trackers.impression).to.have.lengthOf(1);
       expect(trackers.impression).to.include('https://analytics.com/impression');
     });
 
     it('getTrackersFromBidResponse should include string vastImpUrl in impression', function () {
-      const trackers = getTrackersFromBidResponse({vastImpUrl: 'https://bidder.com/impression'});
+      const trackers = getTrackersFromBidResponse({ vastImpUrl: 'https://bidder.com/impression' });
 
       expect(trackers).to.be.an('object');
       expect(trackers.impression).to.have.lengthOf(1);
@@ -302,7 +302,7 @@ describe('vast trackers', () => {
     });
 
     it('getTrackersFromBidResponse should include array vastImpUrl in impression', function () {
-      const trackers = getTrackersFromBidResponse({vastImpUrl: ['https://bidder1.com/imp', 'https://bidder2.com/imp']});
+      const trackers = getTrackersFromBidResponse({ vastImpUrl: ['https://bidder1.com/imp', 'https://bidder2.com/imp'] });
 
       expect(trackers).to.be.an('object');
       expect(trackers.impression).to.have.lengthOf(2);
@@ -350,11 +350,11 @@ describe('vast trackers', () => {
         vastTrackers: {
           impression: ['https://bidder.com/impression'],
           error: ['https://bidder.com/error'],
-          trackingEvents: [{event: 'start', url: 'https://bidder.com/start'}]
+          trackingEvents: [{ event: 'start', url: 'https://bidder.com/start' }]
         }
       };
 
-      const trackers = getVastTrackers(bidWithTrackers, {index});
+      const trackers = getVastTrackers(bidWithTrackers, { index });
       expect(trackers).to.be.an('object');
       expect(trackers.impression).to.include('https://bidder.com/impression');
       expect(trackers.error).to.include('https://bidder.com/error');
@@ -367,7 +367,7 @@ describe('vast trackers', () => {
         return {
           impression: ['https://analytics.com/impression'],
           error: ['https://analytics.com/error'],
-          trackingEvents: [{event: 'complete', url: 'https://analytics.com/complete'}]
+          trackingEvents: [{ event: 'complete', url: 'https://analytics.com/complete' }]
         };
       });
       registerVastTrackers(MODULE_TYPE_ANALYTICS, 'analyticsTest', analyticsTracker);
@@ -377,11 +377,11 @@ describe('vast trackers', () => {
         vastTrackers: {
           impression: ['https://bidder.com/impression'],
           error: ['https://bidder.com/error'],
-          trackingEvents: [{event: 'start', url: 'https://bidder.com/start'}]
+          trackingEvents: [{ event: 'start', url: 'https://bidder.com/start' }]
         }
       };
 
-      const trackers = getVastTrackers(bidWithTrackers, {index});
+      const trackers = getVastTrackers(bidWithTrackers, { index });
       expect(trackers.impression).to.have.lengthOf(2);
       expect(trackers.impression).to.include('https://analytics.com/impression');
       expect(trackers.impression).to.include('https://bidder.com/impression');
@@ -394,7 +394,7 @@ describe('vast trackers', () => {
         vastTrackers: {
           impression: ['https://imp1.com', 'https://imp2.com'],
           error: ['https://error.com'],
-          trackingEvents: [{event: 'start', url: 'https://start.com'}]
+          trackingEvents: [{ event: 'start', url: 'https://start.com' }]
         }
       };
 

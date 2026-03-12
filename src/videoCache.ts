@@ -60,7 +60,7 @@ function wrapURI(uri: string, trackers?: VastTrackers) {
   let trackingEventsXml = '';
   if (trackers?.trackingEvents?.length) {
     const trackingTags = trackers.trackingEvents
-      .map(({event, url}) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`)
+      .map(({ event, url }) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`)
       .join('');
     trackingEventsXml = `<Creative><Linear><TrackingEvents>${trackingTags}</TrackingEvents></Linear></Creative>`;
   }

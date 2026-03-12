@@ -1,11 +1,11 @@
-import {callPrebidCache} from '../../src/auction.js';
-import {VIDEO} from '../../src/mediaTypes.js';
-import {logError, logWarn, isEmptyStr} from '../../src/utils.js';
-import {isArray, isPlainObject, isStr} from '../../src/utils/objects.js';
-import {isActivityAllowed} from '../../src/activities/rules.js';
-import {ACTIVITY_REPORT_ANALYTICS} from '../../src/activities/activities.js';
-import {activityParams} from '../../src/activities/activityParams.js';
-import {auctionManager} from '../../src/auctionManager.js';
+import { callPrebidCache } from '../../src/auction.js';
+import { VIDEO } from '../../src/mediaTypes.js';
+import { logError, logWarn, isEmptyStr } from '../../src/utils.js';
+import { isArray, isPlainObject, isStr } from '../../src/utils/objects.js';
+import { isActivityAllowed } from '../../src/activities/rules.js';
+import { ACTIVITY_REPORT_ANALYTICS } from '../../src/activities/activities.js';
+import { activityParams } from '../../src/activities/activityParams.js';
+import { auctionManager } from '../../src/auctionManager.js';
 
 /**
  * VAST Trackers Structure:
@@ -35,15 +35,15 @@ export function enable() {
 
 export function disable() {
   if (enabled) {
-    callPrebidCache.getHooks({hook: addTrackersToResponse}).remove();
+    callPrebidCache.getHooks({ hook: addTrackersToResponse }).remove();
     enabled = false;
   }
 }
 
-export function cacheVideoBidHook({index = auctionManager.index} = {}) {
+export function cacheVideoBidHook({ index = auctionManager.index } = {}) {
   return function addTrackersToResponse(next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
-      const vastTrackers = getVastTrackers(bidResponse, {index});
+      const vastTrackers = getVastTrackers(bidResponse, { index });
       if (vastTrackers) {
         bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml);
         bidResponse.vastTrackers = vastTrackers;
@@ -58,7 +58,7 @@ enable();
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
   if (typeof trackerFn === 'function') {
-    vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn});
+    vastTrackers.push({ 'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn });
   }
 }
 
@@ -140,7 +140,7 @@ function insertLinearTrackingEvents(doc, wrapper, trackers) {
  * @param {Array<{event: string, url: string}>} trackers - Array of tracking event objects
  */
 function appendTrackingElements(doc, trackingEvents, trackers) {
-  trackers.forEach(({event, url}) => {
+  trackers.forEach(({ event, url }) => {
     const trackingElement = doc.createElement('Tracking');
     trackingElement.setAttribute('event', event);
     trackingElement.appendChild(doc.createCDATASection(url));
@@ -148,7 +148,7 @@ function appendTrackingElements(doc, trackingEvents, trackers) {
   });
 }
 
-export function getVastTrackers(bid, {index = auctionManager.index}) {
+export function getVastTrackers(bid, { index = auctionManager.index }) {
   const mergedTrackers = {
     impression: [],
     error: [],
@@ -161,10 +161,10 @@ export function getVastTrackers(bid, {index = auctionManager.index}) {
       moduleName,
       trackerFn
     }) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
-  ).forEach(({trackerFn}) => {
+  ).forEach(({ trackerFn }) => {
     const auction = index.getAuction(bid).getProperties();
     const bidRequest = index.getBidRequest(bid);
-    const trackersToAdd = trackerFn(bid, {auction, bidRequest});
+    const trackersToAdd = trackerFn(bid, { auction, bidRequest });
     mergeTrackersInto(mergedTrackers, trackersToAdd);
   });
 
