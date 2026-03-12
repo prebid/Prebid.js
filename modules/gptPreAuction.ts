@@ -229,3 +229,4 @@ const handleSetGptConfig = moduleConfig => {
 
 config.getConfig('gptPreAuction', config => handleSetGptConfig(config.gptPreAuction));
 handleSetGptConfig({});
+
