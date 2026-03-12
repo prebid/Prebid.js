@@ -12,7 +12,7 @@ import {
 import {chunk} from '../chunk/chunk.js';
 import {
   CURRENCY,
-  DEAL_ID_EXPIRY,
+  DEAL_ID_EXPIRY, IFRAME_SYNC_DEFAULT_URL, IMAGE_SYNC_DEFAULT_URL,
   MULTI_REQ_LIST,
   SESSION_ID_KEY,
   TTL_SECONDS,
@@ -33,6 +33,11 @@ export function getTopWindowQueryParams() {
   } catch (e) {
     return '';
   }
+}
+
+function isValidParamsHost(params) {
+  // valid is params:{host: 'twist.win'}
+  return params && params.host && typeof params.host === 'string' && params.host.split('.').length === 2
 }
 
 export function extractCID(params) {
@@ -210,8 +215,7 @@ export function createUserSyncGetter(options = {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
     }
-    const iframeHeader = responses?.[0]?.headers?.['x-us-iframe-base-url']
-    const imageHeader = responses?.[0]?.headers?.['x-us-image-base-url']
+    const UsBaseHeader = responses?.[0]?.headers?.['x-us-base-url']
 
     if (iframeEnabled) {
       if (options.iframeSyncUrl) {
@@ -219,10 +223,15 @@ export function createUserSyncGetter(options = {
           type: 'iframe',
           url: `${options.iframeSyncUrl}/${params}`
         });
-      } else if (iframeHeader) {
+      } else if (UsBaseHeader) {
         syncs.push({
           type: 'iframe',
-          url: `https://sync.${iframeHeader}/api/sync/iframe/${params}`
+          url: `https://sync.${UsBaseHeader}/api/sync/iframe/${params}`
+        });
+      } else {
+        syncs.push({
+          type: 'iframe',
+          url: `${IFRAME_SYNC_DEFAULT_URL}/${params}`
         });
       }
     }
@@ -232,10 +241,15 @@ export function createUserSyncGetter(options = {
           type: 'image',
           url: `${options.imageSyncUrl}/${params}`
         });
-      } else if (imageHeader) {
+      } else if (UsBaseHeader) {
         syncs.push({
           type: 'image',
-          url: `https://sync.${imageHeader}/api/sync/image/${params}`
+          url: `https://sync.${UsBaseHeader}/api/sync/image/${params}`
+        });
+      } else {
+        syncs.push({
+          type: 'image',
+          url: `${IMAGE_SYNC_DEFAULT_URL}/${params}`
         });
       }
     }
@@ -517,11 +531,20 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
-    return {
-      method: 'POST',
-      url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
-      data: data
-    };
+    // when params are populated with valid host (params: {host: "example.com"} try to add host to url
+    if (isValidParamsHost(params)) {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
+        data: data
+      };
+    } else {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+        data: data
+      };
+    }
   }
 
   function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {

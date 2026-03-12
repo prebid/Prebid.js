@@ -8,6 +8,6 @@ export const OPT_TIME_KEY = 'vdzHum';
 
 // ALIASES item example: { code: "adapter_name", gvlid?: 0000, skipPbsAliasing?: false },
 export const ALIASES = [];
-export const MULTI_REQ_LIST = ['vidazoo'];
+export const MULTI_REQ_LIST = ['vidazoo', 'twistdigital'];
 export const IFRAME_SYNC_DEFAULT_URL = 'https://sync.cootlogix.com/api/sync/iframe'
 export const IMAGE_SYNC_DEFAULT_URL = 'https://sync.cootlogix.com/api/sync/image'

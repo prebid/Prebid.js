@@ -40,10 +40,7 @@ function createUniqueRequestData(hashUrl) {
 
 const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, true);
 const interpretResponse = createInterpretResponseFn(BIDDER_CODE, true);
-const getUserSyncs = createUserSyncGetter({  // TODO check how to send domain from backend!
-  iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe',
-  imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
-});
+const getUserSyncs = createUserSyncGetter();
 
 export const spec = {
   code: BIDDER_CODE,

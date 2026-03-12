@@ -668,6 +668,28 @@ describe('VidazooBidAdapter', function () {
       expect(requests[0].data.fledge).to.equal(1);
     });
 
+    it('should build video request with base url from valid params.host', function () {
+      const videoWithHost = VIDEO_BID
+      videoWithHost.params.host = 'example.com'
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN, 'example.com')}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
+    it('should build video request with default base url ,invalid params.host', function () {
+      const videoWithHost = VIDEO_BID
+      videoWithHost.params.host = 'examplecom'
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
     after(function () {
       getGlobal().bidderSettings = {};
       config.resetConfig();

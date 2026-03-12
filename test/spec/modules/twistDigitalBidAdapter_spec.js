@@ -648,6 +648,17 @@ describe('TwistDigitalBidAdapter', function () {
       expect(requests[0].data.fledge).to.equal(1);
     });
 
+    it('should build video request with right url domain despite params.host', function () {
+      const videoBidWithHost = VIDEO_BID
+      videoBidWithHost.params.host = "example.com";
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
     after(function () {
       getGlobal().bidderSettings = {};
       config.resetConfig();

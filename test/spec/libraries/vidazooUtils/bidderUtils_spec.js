@@ -3,7 +3,11 @@ import {expect} from "chai";
 import sinon from "sinon";
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import {SESSION_ID_KEY} from "../../../../libraries/vidazooUtils/constants.js";
+import {
+  IFRAME_SYNC_DEFAULT_URL,
+  IMAGE_SYNC_DEFAULT_URL,
+  SESSION_ID_KEY
+} from "../../../../libraries/vidazooUtils/constants.js";
 import {getStorageItem} from "libraries/vidazooUtils/bidderUtils.js";
 import {bidderSettings} from 'src/bidderSettings.js';
 
@@ -459,7 +463,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     let sandbox;
     const iframeSyncUrl = 'https://sync.example.com/api/sync/iframe';
     const imageSyncUrl = 'https://sync.example.com/api/sync/image';
-    const responses = [{body: {cid: 'testcid'}, headers: {'x-us-iframe-base-url': 'ifheader.example.com', 'x-us-image-base-url': 'imheader.example.com'}}];
+    const responses = [{body: {cid: 'testcid'}, headers: {'x-us-base-url': 'other-example.com'}}];
     const gdprConsent = {gdprApplies: true, consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA'};
     const uspConsent = '1YNN';
 
@@ -487,7 +491,16 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('iframe');
-      expect(syncs[0].url).to.include('https://sync.ifheader.example.com/api/sync/iframe/');
+      expect(syncs[0].url).to.include('https://sync.other-example.com/api/sync/iframe/');
+      expect(syncs[0].url).to.include('cid=testcid');
+    });
+    it('should return iframe sync from header when iframeEnabled is false and iframeHeader unpresent', function () {
+      const getUserSyncs = utilities.createUserSyncGetter({});
+      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
+      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responsesNoHeaders, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.be.equal('iframe');
+      expect(syncs[0].url).to.include(IFRAME_SYNC_DEFAULT_URL);
       expect(syncs[0].url).to.include('cid=testcid');
     });
     it('should return image sync when pixelEnabled is true and imageSyncUrl is provided', function () {
@@ -505,7 +518,16 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('image');
-      expect(syncs[0].url).to.include('https://sync.imheader.example.com/api/sync/image/');
+      expect(syncs[0].url).to.include('https://sync.other-example.com/api/sync/image/');
+      expect(syncs[0].url).to.include('cid=testcid');
+    });
+    it('should return image sync from header when pixelEnabled is false and imageHeader unpresent', function () {
+      const getUserSyncs = utilities.createUserSyncGetter({});
+      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
+      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responsesNoHeaders, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.be.equal('image');
+      expect(syncs[0].url).to.include(IMAGE_SYNC_DEFAULT_URL);
       expect(syncs[0].url).to.include('cid=testcid');
     });
     it('should return empty syncs when iframeEnabled, pixelEnabled are false and no headers', function () {
@@ -513,6 +535,12 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
       const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: false}, responsesNoHeaders, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(0);
+    });
+    it('should return empty syncs when iframeEnabled, pixelEnabled are true and no headers', function () {
+      const getUserSyncs = utilities.createUserSyncGetter({});
+      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
+      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: true}, responsesNoHeaders, gdprConsent, uspConsent);
+      expect(syncs).to.have.lengthOf(2);
     });
   });
 
