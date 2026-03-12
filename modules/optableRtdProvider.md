@@ -47,10 +47,12 @@ Makes direct HTTP calls to Optable targeting API without any external SDK.
 
 ### Mode Detection
 
-The module automatically detects which mode to use:
-1. If `window.optable` is present → SDK mode
-2. If SDK absent but host/node/site configured → Direct API mode
-3. If neither → Error
+The module automatically detects which mode to use at runtime:
+1. **First:** Checks if `window.optable[instance]` is present → **SDK mode** (Direct API params ignored)
+2. **Second:** If SDK absent but `host`/`node`/`site` configured → **Direct API mode**
+3. **Otherwise:** Error (neither mode available)
+
+**Important:** If the Optable Web SDK is loaded on the page, the module will always use SDK mode, even if Direct API parameters (`host`, `node`, `site`) are configured. The Direct API parameters are only used when the SDK is not present.
 
 ## Usage
 
@@ -168,7 +170,7 @@ pbjs.setConfig({
 | params.site       | String   | Site identifier configured in your DCN                                                                                                                                                                                                   | None    | **Yes** | Direct API |
 | params.cookies    | Boolean  | Cookie mode. Set to `false` for cookieless targeting using passport                                                                                                                                                                     | `true`  | No | Direct API |
 | params.timeout    | String   | API timeout hint (e.g., `"500ms"`)                                                                                                                                                                                                      | `null`  | No | Direct API |
-| params.ids        | Array    | Array of user identifier strings. These are combined with identifiers auto-extracted from Prebid userId module                                                                                                                          | `[]`    | No | Direct API |
+| params.ids        | Array    | Array of user identifier strings in Optable format (e.g., `"e:hash"`, `"c:ppid"`, `"__passport__"`). Use this to pass Optable-specific identifiers.                                                                                    | `[]`    | No | Direct API |
 | params.hids       | Array    | Array of hint identifier strings                                                                                                                                                                                                    | `[]`    | No | Direct API |
 | params.handleRtd  | Function | Custom function to handle/enrich RTD data. Function signature: `(reqBidsConfigObj, targetingData, mergeFn) => {}`. If not provided, the module uses a default handler that merges targeting data into ortb2Fragments.global            | `null`  | No | Both |
 
@@ -188,10 +190,10 @@ Before calling the targeting API, the module automatically:
 
 - Generates a session ID (once per page load)
 - Extracts consent information from Prebid's consent management modules (GPP/GDPR)
-- Collects user identifiers from:
-  - The `ids` parameter in configuration
-  - Prebid's userId module (via `ortb2.user.ext.eids`)
+- Collects user identifiers from the `ids` parameter in configuration
 - Retrieves the passport (visitor ID) from localStorage for cookieless mode
+
+**Note:** The module does NOT extract identifiers from Prebid's userId module for the targeting API call. Those identifiers are in ORTB format and are handled separately in bid requests.
 
 ### 3. API Call
 
@@ -256,46 +258,21 @@ The consent strings are automatically passed to the targeting API. No additional
 
 ## Identifier Collection
 
-User identifiers are collected from two sources:
-
-### 1. Configuration
-
-Provide identifiers directly in the RTD configuration:
+User identifiers are provided via the `ids` parameter in the RTD configuration:
 
 ```javascript
 params: {
   host: 'dcn.customer.com',
   node: 'prod-us',
   site: 'my-site',
-  ids: ['email-hash-123', 'phone-hash-456'],
+  ids: ['e:email-hash-123', 'c:phone-hash-456'],  // Optable-specific ID format
   hids: ['hint-id-789']
 }
 ```
 
-### 2. Prebid userId Module
+**Important:** The module does NOT automatically extract identifiers from Prebid's userId module (those are in ORTB format, not Optable's ID format). Optable-specific identifiers must be provided via the `ids` parameter.
 
-The module automatically extracts identifiers from other Prebid userId modules:
-
-```javascript
-// If you have other userId modules configured
-pbjs.setConfig({
-  userSync: {
-    userIds: [{
-      name: 'id5Id',
-      params: {
-        partner: 173
-      }
-    }, {
-      name: 'unifiedId',
-      params: {
-        // ...
-      }
-    }]
-  }
-});
-```
-
-All identifiers are combined and sent to the targeting API.
+**Note:** If you have Prebid userId modules configured (ID5, Unified ID, etc.), those EIDs will still be included in bid requests via the standard ORTB `user.ext.eids` path, but they are not sent to the Optable targeting API.
 
 ## Cookie vs Cookieless Mode
 
@@ -329,14 +306,33 @@ In cookieless mode:
 - The API returns an updated passport, which is stored for future calls
 - No cookies are set or read
 
+**Passport Storage Format:**
+- Storage key: `OPTABLE_PASSPORT_{base64(host/node)}`
+- Example: For `host="dcn.customer.com"` and `node="prod-us"`, the key is `OPTABLE_PASSPORT_` + base64 encoded `"dcn.customer.com/prod-us"`
+- This format is compatible with the Optable Web SDK, allowing seamless migration between Direct API mode and SDK mode
+
 ## Caching
 
-The module caches targeting responses in localStorage under the key `optable-cache:targeting` to improve performance:
+The module caches targeting responses in localStorage to improve page load performance:
 
-- On the first page view, an API call is made
-- The response is cached in localStorage
-- On subsequent page views, cached data is used immediately
-- A new API call updates the cache in the background
+**Cache Key:** `optable-cache:targeting`
+
+**Cache Behavior:**
+- **First page view (no cache):** API call is made synchronously, response is cached
+- **Subsequent page views (cache present):**
+  - Cached data is used immediately (no delay)
+  - On first auction only: Background API call refreshes the cache
+  - On subsequent auctions: No additional API calls (already refreshed)
+- **Cache validity:** Cache is used if it contains EIDs (`user.eids.length > 0`) OR has a `split_test_assignment` field
+
+**Cache Invalidation:**
+- The cache is replaced (not merged) on each successful API response
+- If an API call returns an empty response or fails, the existing cache is preserved
+- No automatic TTL-based expiry (cache persists until next successful API response)
+
+**Empty Response Handling:**
+- If the API returns 0 EIDs and no `split_test_assignment`, the cache is **not** updated
+- This prevents temporary API issues from clearing valid cached data
 
 ## Node Configuration
 
@@ -456,11 +452,13 @@ params: {
 
 The following Web SDK features are intentionally **not** supported in this RTD module to maintain simplicity:
 
-- A/B testing framework
+- Client-side A/B testing / traffic splitting framework (server-side split test assignment from DCN is supported via `split_test_assignment` field)
 - Additional targeting signals (page URL ref)
 - Ad server targeting keywords (use Web SDK for this)
 - Event dispatching system
 - Complex multi-storage key strategies
+
+**Note:** Server-side split testing is supported. If the targeting API returns a `split_test_assignment` field (e.g., "test" or "control"), it will be injected into `ortb2Imp.ext.optable.splitTestAssignment` for all ad units.
 
 See `modules/optableRtdProvider_EXCLUDED_FEATURES.md` for details.
 
