@@ -417,7 +417,7 @@ describe('Deepintent adapter', function () {
       expect(data.badv).to.deep.equal(['example.com']);
     });
     it('should not add bcat or badv when bidderRequest.ortb2 does not have them', function() {
-      const bidderReq = {ortb2: {}};
+      const bidderReq = { ortb2: {} };
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.bcat).to.be.undefined;
