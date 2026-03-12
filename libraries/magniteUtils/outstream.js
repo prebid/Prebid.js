@@ -1,5 +1,6 @@
 import { Renderer } from '../../src/Renderer.js';
 import { logWarn } from '../../src/utils.js';
+import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
 export const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.3.7.js';
 
@@ -26,7 +27,7 @@ export function hideSmartAdServerIframe(adUnit) {
 
 export function renderBid(bid) {
   // hide existing ad units
-  let adUnitElement = document.getElementById(bid.adUnitCode);
+  let adUnitElement = getAdUnitElement(bid);
   if (!adUnitElement) {
     logWarn(`Magnite: unable to find ad unit element with id "${bid.adUnitCode}" for rendering.`);
     return;
