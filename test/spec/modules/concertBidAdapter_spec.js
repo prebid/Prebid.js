@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
 import { hook } from 'src/hook.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('ConcertAdapter', function () {
   let bidRequests;
@@ -301,7 +301,7 @@ describe('ConcertAdapter', function () {
     });
 
     it('should return empty bids if there are no bids from the server', function() {
-      const bids = spec.interpretResponse({ body: {bids: []} }, bidRequest);
+      const bids = spec.interpretResponse({ body: { bids: [] } }, bidRequest);
       expect(bids).to.have.lengthOf(0);
     });
   });

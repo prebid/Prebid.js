@@ -1,8 +1,8 @@
-import {submodule} from '../src/hook.js';
-import {buildUrl, deepAccess, formatQS, logError, parseSizesInput} from '../src/utils.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams} from '../libraries/gamUtils/gamUtils.js';
-import {registerVideoSupport} from '../src/adServerManager.js';
+import { submodule } from '../src/hook.js';
+import { buildUrl, deepAccess, formatQS, logError, parseSizesInput } from '../src/utils.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
+import { registerVideoSupport } from '../src/adServerManager.js';
 
 export const adpodUtils = {};
 
@@ -20,7 +20,7 @@ export const adpodUtils = {};
  * @param {DfpAdpodOptions} options
  * @returns {string} A URL which calls DFP with custom adpod targeting key values to compete with rest of the demand in DFP
  */
-export function buildAdpodVideoUrl({code, params, callback} = {}) {
+export function buildAdpodVideoUrl({ code, params, callback } = {}) {
   // TODO: the public API for this does not take in enough info to fill all DFP params (adUnit/bid),
   // and is marked "alpha": https://docs.prebid.org/dev-docs/publisher-api-reference/adServers.gam.buildAdpodVideoUrl.html
   if (!params || !callback) {

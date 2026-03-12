@@ -256,6 +256,11 @@ const toOrtbNativeRequest = legacyNativeAssets => {
       continue;
     }
 
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
+      continue;
+    }
+
     const asset = legacyNativeAssets[key];
     const required = asset.required && isBoolean(asset.required) ? 1 : 0;
     const ortbAsset = { id: ortb.assets.length, required };
@@ -315,7 +320,7 @@ const setFloorInImp = (imp, bid) => {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
           if (isMultiFormatRequest && mediaType !== BANNER) {
             logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', imp.bidfloorcur);
-            imp[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur};
+            imp[mediaType]['ext'] = { 'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur };
           }
           logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
           bidFloor = bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor);
@@ -323,7 +328,7 @@ const setFloorInImp = (imp, bid) => {
         }
       });
       if (isMultiFormatRequest && mediaType === BANNER) {
-        imp[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur};
+        imp[mediaType]['ext'] = { 'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur };
       }
     });
   }

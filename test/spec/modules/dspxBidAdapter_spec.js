@@ -3,7 +3,7 @@ import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from '../../../src/utils.js';
-import {BANNER} from '../../../src/mediaTypes.js';
+import { BANNER } from '../../../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
@@ -282,7 +282,7 @@ describe('dspxAdapter', function () {
         'dev': {
           'endpoint': 'http://localhost',
           'placement': '107',
-          'pfilter': {'test': 1}
+          'pfilter': { 'test': 1 }
         }
       },
       'mediaTypes': {
@@ -316,7 +316,7 @@ describe('dspxAdapter', function () {
       },
       gdprConsent: {
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-        vendorData: {someData: 'value'},
+        vendorData: { someData: 'value' },
         gdprApplies: true
       }
     };
@@ -328,7 +328,7 @@ describe('dspxAdapter', function () {
       },
       gdprConsent: {
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-        vendorData: {someData: 'value'},
+        vendorData: { someData: 'value' },
         gdprApplies: true
       },
       ortb2: {
@@ -427,7 +427,7 @@ describe('dspxAdapter', function () {
     });
 
     // bidfloor tests
-    const getFloorResponse = {currency: 'EUR', floor: 5};
+    const getFloorResponse = { currency: 'EUR', floor: 5 };
     let testBidRequest = deepClone(bidRequests[1]);
     let floorRequest = spec.buildRequests([testBidRequest], bidderRequestWithoutGdpr)[0];
 
@@ -477,7 +477,7 @@ describe('dspxAdapter', function () {
       },
       gdprConsent: {
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-        vendorData: {someData: 'value'},
+        vendorData: { someData: 'value' },
         gdprApplies: true
       }
     };
@@ -516,7 +516,7 @@ describe('dspxAdapter', function () {
                   segclass: 'v1',
                 },
                 segment: [
-                  {id: '717'}, {id: '808'},
+                  { id: '717' }, { id: '808' },
                 ]
               }
             ]
@@ -537,13 +537,13 @@ describe('dspxAdapter', function () {
                 segment: []
               },
               {
-                segment: [{id: ''}]
+                segment: [{ id: '' }]
               },
               {
-                segment: [{id: null}]
+                segment: [{ id: null }]
               },
               {
-                segment: [{id: 'dummy'}, {id: '123'}]
+                segment: [{ id: 'dummy' }, { id: '123' }]
               },
               {
                 ext: {
@@ -599,7 +599,7 @@ describe('dspxAdapter', function () {
         'ttl': 60,
         'netRevenue': true,
         'zone': '6682',
-        'renderer': {id: 1, url: '//player.example.com', options: {}}
+        'renderer': { id: 1, url: '//player.example.com', options: {} }
       }
     };
     const serverVideoResponseVastUrl = {
@@ -616,7 +616,7 @@ describe('dspxAdapter', function () {
         'zone': '6682',
         'vastUrl': 'https://local/vasturl1',
         'videoCacheKey': 'cache_123',
-        'bid_appendix': {'someField': 'someValue'}
+        'bid_appendix': { 'someField': 'someValue' }
       }
     };
 
@@ -632,7 +632,7 @@ describe('dspxAdapter', function () {
       ttl: 60,
       type: 'sspHTML',
       ad: '<!-- test creative -->',
-      meta: {advertiserDomains: ['bdomain']},
+      meta: { advertiserDomains: ['bdomain'] },
     }, {
       requestId: '23beaa6af6cdde',
       cpm: 0.5,
@@ -646,7 +646,7 @@ describe('dspxAdapter', function () {
       type: 'vast2',
       vastXml: '{"reason":7001,"status":"accepted"}',
       mediaType: 'video',
-      meta: {advertiserDomains: []},
+      meta: { advertiserDomains: [] },
       renderer: {}
     }, {
       requestId: '23beaa6af6cdde',
@@ -662,7 +662,7 @@ describe('dspxAdapter', function () {
       vastUrl: 'https://local/vasturl1',
       videoCacheKey: 'cache_123',
       mediaType: 'video',
-      meta: {advertiserDomains: []},
+      meta: { advertiserDomains: [] },
       someField: 'someValue'
     }];
 
@@ -762,17 +762,17 @@ describe('dspxAdapter', function () {
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for iframe`, function () {
-      const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
+      const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, { consentString: 'anyString' });
       expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for image`, function () {
-      const [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      const [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('image');
     });
     it(`we have valid sync url for image and iframe`, function () {
-      const userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+      const userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.length).to.be.equal(3);
       expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
       expect(userSync[0].type).to.be.equal('iframe');

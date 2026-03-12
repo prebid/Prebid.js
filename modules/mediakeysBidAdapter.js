@@ -1,4 +1,4 @@
-import {getDNT} from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js';
 import {
   cleanObj,
   deepAccess,
@@ -17,10 +17,10 @@ import {
   mergeDeep,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -81,7 +81,8 @@ const ORTB_VIDEO_PARAMS = {
   playbackend: value => [1, 2, 3].indexOf(value) !== -1,
   delivery: value => [1, 2, 3].indexOf(value) !== -1,
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)};
+  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)
+};
 
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
@@ -226,7 +227,7 @@ function createBannerImp(bid) {
     const format = [];
     sizes.forEach(function (size) {
       if (size.length && size.length > 1) {
-        format.push({w: size[0], h: size[1]});
+        format.push({ w: size[0], h: size[1] });
       }
     });
     banner.format = format;

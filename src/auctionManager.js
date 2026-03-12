@@ -27,7 +27,7 @@
 
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import {AuctionIndex} from './auctionIndex.js';
+import { AuctionIndex } from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {ttlCollection} from './utils/ttlCollection.js';
@@ -100,7 +100,7 @@ export function newAuctionManager() {
     getAdUnitCodes: {
       post: uniques,
     }
-  }).forEach(([mgrMethod, {name = mgrMethod, pre, post}]) => {
+  }).forEach(([mgrMethod, { name = mgrMethod, pre, post }]) => {
     const mapper = pre == null
       ? (auction) => auction[name]()
       : (auction) => pre(auction) ? auction[name]() : [];

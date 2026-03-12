@@ -1,8 +1,8 @@
 /* eslint dot-notation:0, quote-props:0 */
-import {expect} from 'chai';
-import {spec} from 'modules/pulsepointBidAdapter.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {deepClone} from '../../../src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pulsepointBidAdapter.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { deepClone } from '../../../src/utils.js';
 import 'modules/consentManagementTcf';
 import 'modules/consentManagementUsp';
 import 'modules/userId/index';
@@ -134,20 +134,26 @@ describe('PulsePoint Adapter Tests', function () {
       bidfloor: 1.5,
       badv: ['cocacola.com', 'lays.com']
     },
-    ortb2: {source: {ext: {schain: {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [
-        {
-          'asi': 'exchange1.com',
-          'sid': '1234',
-          'hp': 1,
-          'rid': 'bid-request-1',
-          'name': 'publisher',
-          'domain': 'publisher.com'
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'exchange1.com',
+                'sid': '1234',
+                'hp': 1,
+                'rid': 'bid-request-1',
+                'name': 'publisher',
+                'domain': 'publisher.com'
+              }
+            ]
+          }
         }
-      ]
-    }}}}
+      }
+    }
   }];
 
   const bidderRequest = {
@@ -174,11 +180,11 @@ describe('PulsePoint Adapter Tests', function () {
     // slot 1
     expect(ortbRequest.imp[0].tagid).to.equal('t10000');
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
-    expect(ortbRequest.imp[0].banner.format).to.deep.eq([{'w': 728, 'h': 90}, {'w': 160, 'h': 600}]);
+    expect(ortbRequest.imp[0].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }, { 'w': 160, 'h': 600 }]);
     // slot 2
     expect(ortbRequest.imp[1].tagid).to.equal('t20000');
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
-    expect(ortbRequest.imp[1].banner.format).to.deep.eq([{'w': 728, 'h': 90}]);
+    expect(ortbRequest.imp[1].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }]);
   });
 
   it('Verify parse response', async function () {
@@ -199,7 +205,7 @@ describe('PulsePoint Adapter Tests', function () {
         }]
       }]
     };
-    const bids = spec.interpretResponse({body: ortbResponse}, request);
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
     expect(bids).to.have.lengthOf(1);
     // verify first bid
     const bid = bids[0];
@@ -218,7 +224,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify full passback', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
-    const bids = spec.interpretResponse({body: null}, request)
+    const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 
@@ -266,11 +272,11 @@ describe('PulsePoint Adapter Tests', function () {
       const ortbRequest = request.data;
       const nativeResponse = {
         assets: [
-          {id: 1, img: {type: 3, url: 'https://images.cdn.brand.com/123'}},
-          {id: 2, title: {text: 'Ad Title'}},
-          {id: 3, data: {type: 1, value: 'Sponsored By: Brand'}}
+          { id: 1, img: { type: 3, url: 'https://images.cdn.brand.com/123' } },
+          { id: 2, title: { text: 'Ad Title' } },
+          { id: 3, data: { type: 1, value: 'Sponsored By: Brand' } }
         ],
-        link: {url: 'https://brand.clickme.com/'},
+        link: { url: 'https://brand.clickme.com/' },
         imptrackers: ['https://imp1.trackme.com/', 'https://imp1.contextweb.com/']
 
       };
@@ -284,7 +290,7 @@ describe('PulsePoint Adapter Tests', function () {
           }]
         }]
       };
-      const bids = spec.interpretResponse({body: ortbResponse}, request);
+      const bids = spec.interpretResponse({ body: ortbResponse }, request);
       // verify bid
       const bid = bids[0];
       expect(bid.cpm).to.equal(1.25);

@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   convertObjectToArray,
   deepAccess,
@@ -10,10 +10,10 @@ import {
   isEmpty,
   isStr
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { toLegacyResponse, toOrtbNativeRequest } from '../src/native.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
@@ -358,7 +358,7 @@ export const spec = {
         networks[network].metaData = payloadRelatedData;
       }
 
-      const bidTargeting = {...bid.params.targeting || {}};
+      const bidTargeting = { ...bid.params.targeting || {} };
       targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
       const mediaTypes = bid.mediaTypes || {};
       const validMediaTypes = SUPPORTED_MEDIA_TYPES.filter(mt => {
@@ -375,7 +375,7 @@ export const spec = {
           return;
         }
         const targetId = (bid.params.targetId || bid.bidId) + (isSingleFormat || mediaType === BANNER ? '' : ('-' + mediaType));
-        const adUnit = {...bidTargeting, auId: bid.params.auId, targetId: targetId};
+        const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: targetId };
         if (mediaType === VIDEO) {
           adUnit.adType = 'VAST';
         } else if (mediaType === NATIVE) {
@@ -395,9 +395,9 @@ export const spec = {
                 'methods': [1]
               }
             ];
-            adUnit.nativeRequest = {ortb: nativeOrtb}
+            adUnit.nativeRequest = { ortb: nativeOrtb }
           } else {
-            adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
+            adUnit.nativeRequest = { ortb: mediaTypeData.ortb };
           }
         }
         const dealId = deepAccess(bid, 'params.dealId') || deepAccess(bid, 'params.inventory.pmp.deals');

@@ -1,11 +1,11 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
 
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -17,7 +17,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'gumgum';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALIAS_BIDDER_CODE = ['gg'];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -288,6 +288,8 @@ function _getDeviceData(ortb2Data) {
     model: _device.model,
     ppi: _device.ppi,
     pxratio: _device.pxratio,
+    lmt: _device.lmt,
+    ifa: _device.lmt !== 1 ? _device.ifa : undefined,
     foddid: _device?.ext?.fiftyonedegrees_deviceId,
   };
 
@@ -299,6 +301,78 @@ function _getDeviceData(ortb2Data) {
       }
       return r;
     }, {});
+}
+
+/**
+ * Retrieves content metadata from the ORTB2 object
+ * Supports both site.content and app.content (site takes priority)
+ * @param {Object} ortb2Data ORTB2 object
+ * @returns {Object} Content parameters
+ */
+function _getContentParams(ortb2Data) {
+  // Check site.content first, then app.content
+  const siteContent = deepAccess(ortb2Data, 'site.content');
+  const appContent = deepAccess(ortb2Data, 'app.content');
+  const content = siteContent || appContent;
+
+  if (!content) {
+    return {};
+  }
+
+  const contentParams = {};
+  contentParams.itype = siteContent ? 'site' : 'app';
+
+  // Basic content fields
+  if (content.id) contentParams.cid = content.id;
+  if (content.episode !== undefined && content.episode !== null) contentParams.cepisode = content.episode;
+  if (content.title) contentParams.ctitle = content.title;
+  if (content.series) contentParams.cseries = content.series;
+  if (content.season) contentParams.cseason = content.season;
+  if (content.genre) contentParams.cgenre = content.genre;
+  if (content.contentrating) contentParams.crating = content.contentrating;
+  if (content.userrating) contentParams.cur = content.userrating;
+  if (content.context !== undefined && content.context !== null) contentParams.cctx = content.context;
+  if (content.livestream !== undefined && content.livestream !== null) contentParams.clive = content.livestream;
+  if (content.len !== undefined && content.len !== null) contentParams.clen = content.len;
+  if (content.language) contentParams.clang = content.language;
+  if (content.url) contentParams.curl = content.url;
+  if (content.cattax !== undefined && content.cattax !== null) contentParams.cattax = content.cattax;
+  if (content.prodq !== undefined && content.prodq !== null) contentParams.cprodq = content.prodq;
+  if (content.qagmediarating !== undefined && content.qagmediarating !== null) contentParams.cqag = content.qagmediarating;
+
+  // Handle keywords - can be string or array
+  if (content.keywords) {
+    if (Array.isArray(content.keywords)) {
+      contentParams.ckw = content.keywords.join(',');
+    } else if (typeof content.keywords === 'string') {
+      contentParams.ckw = content.keywords;
+    }
+  }
+
+  // Handle cat array
+  if (content.cat && Array.isArray(content.cat) && content.cat.length > 0) {
+    contentParams.ccat = content.cat.join(',');
+  }
+
+  // Handle producer fields
+  if (content.producer) {
+    if (content.producer.id) contentParams.cpid = content.producer.id;
+    if (content.producer.name) contentParams.cpname = content.producer.name;
+  }
+
+  // Channel fields
+  if (content.channel) {
+    if (content.channel.id) contentParams.cchannelid = content.channel.id;
+    if (content.channel.name) contentParams.cchannel = content.channel.name;
+    if (content.channel.domain) contentParams.cchanneldomain = content.channel.domain;
+  }
+
+  // Network fields
+  if (content.network) {
+    if (content.network.name) contentParams.cnetwork = content.network.name;
+  }
+
+  return contentParams;
 }
 
 /**
@@ -464,9 +538,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
       setIrisId(data, bidderRequest.ortb2.site, params);
-      const curl = bidderRequest.ortb2.site.content?.url;
-      if (curl) data.curl = curl;
     }
+    // Extract content metadata from ortb2
+    const contentParams = _getContentParams(bidderRequest?.ortb2);
+    Object.assign(data, contentParams);
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
     }
@@ -679,7 +754,7 @@ function interpretResponse(serverResponse, bidRequest) {
   // added logic for in-slot multi-szie
   } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [ width, height ] = current;
+      const [width, height] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];

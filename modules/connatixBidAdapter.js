@@ -3,7 +3,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
-import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getViewability, isViewabilityMeasurable } from '../libraries/percentInView/percentInView.js';
 
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -65,6 +65,7 @@ export function getBidFloor(bid) {
 
 export function validateBanner(mediaTypes) {
   if (!mediaTypes[BANNER]) {
+    // Undefined banner means no banner ads, which is a valid option
     return true;
   }
 
@@ -75,6 +76,7 @@ export function validateBanner(mediaTypes) {
 export function validateVideo(mediaTypes) {
   const video = mediaTypes[VIDEO];
   if (!video) {
+    // Undefined video means no video ads, which is a valid option
     return true;
   }
 
@@ -82,7 +84,10 @@ export function validateVideo(mediaTypes) {
 }
 
 export function _getMinSize(sizes) {
-  if (!sizes || sizes.length === 0) return undefined;
+  if (!sizes || sizes.length === 0) {
+    return;
+  }
+
   return sizes.reduce((minSize, currentSize) => {
     const minArea = minSize.w * minSize.h;
     const currentArea = currentSize.w * currentSize.h;
@@ -90,24 +95,32 @@ export function _getMinSize(sizes) {
   });
 }
 
-export function _canSelectViewabilityContainer() {
-  try {
-    window.top.document.querySelector('#viewability-container');
-    return true;
-  } catch (e) {
-    return false;
+function getDomElement(elementId) {
+  const getElementFromDoc = doc => {
+    let element;
+
+    try {
+      element = doc.querySelector(elementId);
+    } catch (e) {
+      /* noop */
+    }
+
+    if (!element) {
+      element = doc.getElementById(elementId);
+    }
+
+    return element;
+  };
+
+  let viewabilityContainer = getElementFromDoc(document);
+  if (viewabilityContainer) {
+    return viewabilityContainer;
   }
-}
 
-export function _isViewabilityMeasurable(element) {
-  if (!element) return false;
-  return _canSelectViewabilityContainer(element);
-}
-
-export function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
-    : 0;
+  const topDocument = window.top.document;
+  if (document !== topDocument) {
+    return getElementFromDoc(topDocument);
+  }
 }
 
 export function detectViewability(bid) {
@@ -121,7 +134,8 @@ export function detectViewability(bid) {
 
   if (isStr(viewabilityContainerIdentifier)) {
     try {
-      element = document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+      element = getDomElement(viewabilityContainerIdentifier);
+
       if (element) {
         bidParamSizes = [element.offsetWidth, element.offsetHeight];
         minSize = _getMinSize(bidParamSizes)
@@ -140,12 +154,12 @@ export function detectViewability(bid) {
     element = document.getElementById(adUnitCode);
   }
 
-  if (_isViewabilityMeasurable(element)) {
+  if (isViewabilityMeasurable(element)) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
     }
-    return Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj))
   }
 
   return null;
@@ -406,7 +420,7 @@ export const spec = {
     }
     const requestTimeout = connatixBidRequestTimeout.timeout;
     const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
-    spec.triggerEvent({type: 'Timeout', timeout, context});
+    spec.triggerEvent({ type: 'Timeout', timeout, context });
   },
 
   /**
@@ -416,9 +430,9 @@ export const spec = {
     if (bidWinData == null) {
       return;
     }
-    const {bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId} = bidWinData;
+    const { bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId } = bidWinData;
 
-    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
+    spec.triggerEvent({ type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context });
   },
 
   triggerEvent(data) {

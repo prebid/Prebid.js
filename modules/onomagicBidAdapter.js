@@ -5,10 +5,10 @@ import {
   logError,
   logWarn
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes} from '../libraries/omsUtils/index.js';
-import {getRoundedViewability} from '../libraries/omsUtils/viewability.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getAdMarkup, getBidFloor, getDeviceType, getProcessedSizes } from '../libraries/omsUtils/index.js';
+import { getRoundedViewability } from '../libraries/omsUtils/viewability.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -74,10 +74,10 @@ function buildRequests(bidReqs, bidderRequest) {
       method: 'POST',
       url: URL,
       data: JSON.stringify(onomagicBidReq),
-      options: {contentType: 'text/plain', withCredentials: false}
+      options: { contentType: 'text/plain', withCredentials: false }
     };
   } catch (e) {
-    logError(e, {bidReqs, bidderRequest});
+    logError(e, { bidReqs, bidderRequest });
   }
 }
 
@@ -98,7 +98,7 @@ function interpretResponse(serverResponse) {
     logWarn('Onomagic server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
   }
-  const { body: {id, seatbid} } = serverResponse;
+  const { body: { id, seatbid } } = serverResponse;
   try {
     const onomagicBidResponses = [];
     if (id &&
@@ -126,7 +126,7 @@ function interpretResponse(serverResponse) {
     }
     return onomagicBidResponses;
   } catch (e) {
-    logError(e, {id, seatbid});
+    logError(e, { id, seatbid });
   }
 }
 
