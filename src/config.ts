@@ -257,7 +257,7 @@ export interface Config {
   ortb2?: DeepPartial<ORTBRequest>;
   /**
    * When set, only bids for which this function returns a truthy value are included in setTargeting.
-   * The function is called with the bid and the initially filtered bids (bidsReceived).
+   * The function is called with the bid and the initially filtered bids (bidsReceived) that passed adunit, zero cpm, and other filters for comparison purposes within the function.
    * Return false to exclude a bid from targeting.
    */
   bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
