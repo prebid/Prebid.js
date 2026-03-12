@@ -614,7 +614,7 @@ describe('mediafuseBidAdapter', function () {
         const trkTracker = trackers.find(t => t.includes('trk.js'));
         expect(trkTracker).to.include('data-src=');
         // Verify the original 'src=1' param is now 'data-src=1' (not a bare 'src=')
-        expect(trkTracker).to.not.match(/(?<!data-)src=1/);
+        expect(trkTracker).to.not.match(/[^-]src=1/);
       });
 
       it('should handle viewability.config disarming', function () {

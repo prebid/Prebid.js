@@ -137,6 +137,11 @@ const converter = ortbConverter({
           extANData.banner_frameworks = bannerFrameworks;
         }
       }
+      if (bidderParams.position === 'above') {
+        imp.banner.pos = 1;
+      } else if (bidderParams.position === 'below') {
+        imp.banner.pos = 3;
+      }
     }
 
     const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
@@ -691,7 +696,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
     loaded: () => logMessage('Mediafuse outstream video loaded event'),
     ended: () => {
       logMessage('Mediafuse outstream renderer video event');
-      const el = document.querySelector(`#${adUnitCode}`);
+      const el = document.getElementById(adUnitCode);
       if (el) {
         el.style.display = 'none';
       }
@@ -766,6 +771,9 @@ function hasOmidSupport(bid) {
   const videoParams = bid?.mediaTypes?.video?.api;
   if (bidderParams?.frameworks && isArray(bidderParams.frameworks)) {
     hasOmid = bidderParams.frameworks.includes(OMID_FRAMEWORK);
+  }
+  if (!hasOmid && isArray(bidderParams?.video?.frameworks)) {
+    hasOmid = bidderParams.video.frameworks.includes(OMID_FRAMEWORK);
   }
   if (!hasOmid && isArray(videoParams)) {
     hasOmid = videoParams.includes(OMID_API);
