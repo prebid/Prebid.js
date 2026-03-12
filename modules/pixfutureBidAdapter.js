@@ -31,10 +31,16 @@ export const spec = {
   },
 
   isBidRequestValid(bid) {
-    return !!(bid.sizes && bid.bidId && bid.params &&
-      (bid.params.pix_id && (typeof bid.params.pix_id === 'string')));
-  },
+    const hasBanner = bid.sizes && bid.sizes.length;
+    const hasVideo = bid.mediaTypes && bid.mediaTypes.video;
 
+    return !!(
+      bid.bidId &&
+      bid.params &&
+      typeof bid.params.pix_id === 'string' &&
+      (hasBanner || hasVideo)
+    );
+  },
   buildRequests(validBidRequests, bidderRequest) {
     const tags = validBidRequests.map(bidToTag);
     const hostname = this.getHostname();
@@ -180,15 +186,12 @@ export const spec = {
     const gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
     const consent = gdprConsent ? encodeURIComponent(gdprConsent.consentString || '') : '';
 
-    // Attaching GDPR Consent Params in UserSync url
     syncurl += '&gdprconcent=' + gdpr + '&adsync=' + consent;
 
-    // CCPA
     if (uspConsent) {
       syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
 
-    // coppa compliance
     if (config.getConfig('coppa') === true) {
       syncurl += '&coppa=1';
     }
@@ -250,7 +253,6 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
   return bid;
 }
 
-// Functions related optional parameters
 function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
