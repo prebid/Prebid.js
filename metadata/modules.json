@@ -2957,6 +2957,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "embimedia",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3065,6 +3072,13 @@
       "componentName": "madvertise",
       "aliasOf": null,
       "gvlid": 153,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "magnite",
+      "aliasOf": null,
+      "gvlid": 52,
       "disclosureURL": null
     },
     {

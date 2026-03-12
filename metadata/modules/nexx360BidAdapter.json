@@ -6,15 +6,15 @@
       "disclosures": []
     },
     "https://static.first-id.fr/tcf/cookie.json": {
-      "timestamp": "2026-03-02T14:45:57.804Z",
+      "timestamp": "2026-03-12T20:11:26.237Z",
       "disclosures": []
     },
     "https://i.plug.it/banners/js/deviceStorage.json": {
-      "timestamp": "2026-03-02T14:45:57.826Z",
+      "timestamp": "2026-03-12T20:11:26.259Z",
       "disclosures": []
     },
     "https://player.glomex.com/.well-known/deviceStorage.json": {
-      "timestamp": "2026-03-02T14:45:57.949Z",
+      "timestamp": "2026-03-12T20:11:26.390Z",
       "disclosures": [
         {
           "identifier": "glomexUser",
@@ -46,7 +46,7 @@
       ]
     },
     "https://gdpr.pubx.ai/devicestoragedisclosure.json": {
-      "timestamp": "2026-03-02T14:45:57.949Z",
+      "timestamp": "2026-03-12T20:11:26.390Z",
       "disclosures": [
         {
           "identifier": "pubx:defaults",
@@ -61,7 +61,7 @@
       ]
     },
     "https://yieldbird.com/devicestorage.json": {
-      "timestamp": "2026-03-02T14:45:58.021Z",
+      "timestamp": "2026-03-12T20:11:26.404Z",
       "disclosures": []
     }
   },
