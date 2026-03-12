@@ -1,11 +1,12 @@
 'use strict';
 import { getDNT } from '../libraries/dnt/index.js';
-import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
+import { deepAccess, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { buildImpressionList, interpretCommonResponse } from '../libraries/rhythmoneMarsUtils/index.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
@@ -30,38 +31,17 @@ function MarsmediaAdapter() {
   };
 
   function frameImp(BRs, bidderRequest) {
-    var impList = [];
-    var isSecure = 0;
-    if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
-      // clever trick to get the protocol
-      // TODO: this should probably use parseUrl
-      var el = document.createElement('a');
-      el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol === 'https:') ? 1 : 0;
-    }
-    for (var i = 0; i < BRs.length; i++) {
-      slotsToBids[BRs[i].adUnitCode] = BRs[i];
-      var impObj = {};
-      impObj.id = BRs[i].adUnitCode;
-      impObj.secure = isSecure;
-
-      if (deepAccess(BRs[i], 'mediaTypes.banner') || deepAccess(BRs[i], 'mediaType') === 'banner') {
-        const banner = frameBanner(BRs[i]);
-        if (banner) {
-          impObj.banner = banner;
-        }
+    return buildImpressionList(BRs, bidderRequest, slotsToBids, {
+      frameExt,
+      getFloor: _getFloor,
+      defaultVideoConfig: {
+        SUPPORTED_VIDEO_MIMES,
+        SUPPORTED_VIDEO_PROTOCOLS,
+        SUPPORTED_VIDEO_PLAYBACK_METHODS,
+        SUPPORTED_VIDEO_DELIVERY,
+        SUPPORTED_VIDEO_API
       }
-      if (deepAccess(BRs[i], 'mediaTypes.video') || deepAccess(BRs[i], 'mediaType') === 'video') {
-        impObj.video = frameVideo(BRs[i]);
-      }
-      if (!(impObj.banner || impObj.video)) {
-        continue;
-      }
-      impObj.bidfloor = _getFloor(BRs[i]);
-      impObj.ext = frameExt(BRs[i]);
-      impList.push(impObj);
-    }
-    return impList;
+    });
   }
 
   function frameSite(bidderRequest) {
@@ -94,69 +74,6 @@ function MarsmediaAdapter() {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
       dnt: getDNT() ? 1 : 0,
-    }
-  }
-
-  function getValidSizeSet(dimensionList) {
-    const w = parseInt(dimensionList[0]);
-    const h = parseInt(dimensionList[1]);
-    // clever check for NaN
-    if (! (w !== w || h !== h)) {  // eslint-disable-line
-      return [w, h];
-    }
-    return false;
-  }
-
-  function frameBanner(adUnit) {
-    // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
-    var sizeList = adUnit.sizes;
-    if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
-      sizeList = adUnit.mediaTypes.banner.sizes;
-    }
-    var sizeStringList = parseSizesInput(sizeList);
-    var format = [];
-    sizeStringList.forEach(function(size) {
-      if (size) {
-        var dimensionList = getValidSizeSet(size.split('x'));
-        if (dimensionList) {
-          format.push({
-            'w': dimensionList[0],
-            'h': dimensionList[1],
-          });
-        }
-      }
-    });
-    if (format.length) {
-      return {
-        'format': format
-      };
-    }
-
-    return false;
-  }
-
-  function frameVideo(bid) {
-    var size = [];
-    if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
-      var dimensionSet = bid.mediaTypes.video.playerSize;
-      if (isArray(bid.mediaTypes.video.playerSize[0])) {
-        dimensionSet = bid.mediaTypes.video.playerSize[0];
-      }
-      var validSize = getValidSizeSet(dimensionSet)
-      if (validSize) {
-        size = validSize;
-      }
-    }
-    return {
-      mimes: deepAccess(bid, 'mediaTypes.video.mimes') || SUPPORTED_VIDEO_MIMES,
-      protocols: deepAccess(bid, 'mediaTypes.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS,
-      w: size[0],
-      h: size[1],
-      startdelay: deepAccess(bid, 'mediaTypes.video.startdelay') || 0,
-      skip: deepAccess(bid, 'mediaTypes.video.skip') || 0,
-      playbackmethod: deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
-      delivery: deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
-      api: deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
     }
   }
 
@@ -276,51 +193,32 @@ function MarsmediaAdapter() {
   };
 
   this.interpretResponse = function (serverResponse) {
-    let responses = serverResponse.body || [];
-    const bids = [];
-    let i = 0;
+    return interpretCommonResponse(serverResponse, slotsToBids, {
+      baseBidResponse(bid) {
+        return {
+          nurl: bid.nurl
+        };
+      },
+      videoBidResponse(bid) {
+        const videoResponse = {
+          mediaType: 'video',
+          ttl: 600
+        };
 
-    if (responses.seatbid) {
-      const temp = [];
-      for (i = 0; i < responses.seatbid.length; i++) {
-        for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
-          temp.push(responses.seatbid[i].bid[j]);
-        }
-      }
-      responses = temp;
-    }
-
-    for (i = 0; i < responses.length; i++) {
-      const bid = responses[i];
-      const bidRequest = slotsToBids[bid.impid];
-      const bidResponse = {
-        requestId: bidRequest.bidId,
-        cpm: parseFloat(bid.price),
-        width: bid.w,
-        height: bid.h,
-        creativeId: bid.crid,
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 350,
-        nurl: bid.nurl
-      };
-
-      if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         if (bid.adm.charAt(0) === '<') {
-          bidResponse.vastXml = bid.adm;
+          videoResponse.vastXml = bid.adm;
         } else {
-          bidResponse.vastUrl = bid.adm;
+          videoResponse.vastUrl = bid.adm;
         }
-        bidResponse.mediaType = 'video';
-        bidResponse.ttl = 600;
-      } else {
-        bidResponse.ad = bid.adm;
+
+        return videoResponse;
+      },
+      bannerBidResponse(bid) {
+        return {
+          ad: bid.adm
+        };
       }
-
-      bids.push(bidResponse);
-    }
-
-    return bids;
+    });
   };
 
   function sendbeacon(bid, type) {
