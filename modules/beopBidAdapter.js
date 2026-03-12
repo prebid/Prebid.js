@@ -25,7 +25,9 @@ import { getStorageManager } from '../src/storageManager.js';
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.collectiveaudience.co/bid';
 const COOKIE_NAME = 'caudid';
+const COOKIE_DATE_NAME = 'caudid_date';
 const TCF_VENDOR_ID = 666;
+const COOKIE_MAX_AGE_MS = 86400 * 365 * 1000; // 1 year
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/;
 
@@ -89,12 +91,14 @@ export const spec = {
       if (!caudid || !validIdRegExp.test(caudid)) {
         caudid = generateObjectId();
         const expirationDate = new Date();
-        // Align with documented duration (~1 year, below 13‑month cap in terms)
-        expirationDate.setTime(expirationDate.getTime() + 86400 * 365 * 1000);
+        expirationDate.setTime(expirationDate.getTime() + COOKIE_MAX_AGE_MS);
         storage.setCookie(COOKIE_NAME, caudid, expirationDate.toUTCString());
+        const dateValue = String(Date.now());
+        storage.setCookie(COOKIE_DATE_NAME, dateValue, expirationDate.toUTCString());
       }
     } else {
       storage.setCookie(COOKIE_NAME, '', 0);
+      storage.setCookie(COOKIE_DATE_NAME, '', 0);
     }
 
     const payloadObject = {
