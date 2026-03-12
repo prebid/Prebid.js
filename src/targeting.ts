@@ -523,7 +523,15 @@ export function newTargeting(auctionManager) {
     });
 
     initiallyFilteredBids.forEach(bid => {
-      const notExcludedByConfig = typeof bidTargetingExclusion !== 'function' || bidTargetingExclusion(bid, initiallyFilteredBids) !== false;
+      let notExcludedByConfig = true;
+      if (typeof bidTargetingExclusion === 'function') {
+        try {
+          notExcludedByConfig = bidTargetingExclusion(bid, initiallyFilteredBids);
+        } catch (e) {
+          logWarn(`Error in bidTargetingExclusion function - excluding bid ${bid.bidderCode} [${bid.adUnitCode}]`);
+          notExcludedByConfig = false;
+        }
+      }
 
       if (notExcludedByConfig) {
         filteredBids.push(bid);
