@@ -167,6 +167,9 @@ pbjs.setConfig({
         },
         {
             name: "mygaruId"
+        },
+        {
+            name: "startioId"
         }
         ],
         syncDelay: 5000,
