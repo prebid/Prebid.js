@@ -9,7 +9,7 @@ import {
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
-import {getPlacementPositionUtils} from "../libraries/placementPositionInfo/placementPositionInfo.js";
+import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js";
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
