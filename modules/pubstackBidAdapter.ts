@@ -54,16 +54,18 @@ const getElementForAdUnitCode = (adUnitCode: string): HTMLElement | undefined =>
 
 const converter = ortbConverter({
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
-    const element = getElementForAdUnitCode(bidRequest.adUnitCode);
-    const placementInfo = getPlacementInfo(bidRequest);
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitName`, bidRequest.params.adUnitName);
-    deepSetValue(imp, `ext.prebid.placement.code`, bidRequest.adUnitCode);
-    deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
-    deepSetValue(imp, `ext.prebid.placement.viewability`, placementInfo.PlacementPercentView);
-    deepSetValue(imp, `ext.prebid.placement.viewportDistance`, placementInfo.DistanceToView);
-    deepSetValue(imp, `ext.prebid.placement.height`, placementInfo.ElementHeight);
-    deepSetValue(imp, `ext.prebid.placement.auctionsCount`, placementInfo.AuctionsCount);
+    deepSetValue(imp, `ext.prebid.placement.adUnitCode`, bidRequest.adUnitCode);
+    const element = getElementForAdUnitCode(bidRequest.adUnitCode);
+    if (element) {
+      const placementInfo = getPlacementInfo({ ...bidRequest, adUnitCode: element.id });
+      deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
+      deepSetValue(imp, `ext.prebid.placement.viewability`, placementInfo.PlacementPercentView);
+      deepSetValue(imp, `ext.prebid.placement.viewportDistance`, placementInfo.DistanceToView);
+      deepSetValue(imp, `ext.prebid.placement.height`, placementInfo.ElementHeight);
+      deepSetValue(imp, `ext.prebid.placement.auctionsCount`, placementInfo.AuctionsCount);
+    }
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -77,10 +79,10 @@ const converter = ortbConverter({
     deepSetValue(request, 'ext.prebid.version', getGlobal()?.version ?? 'unknown');
     deepSetValue(request, `ext.prebid.request.count`, cntRequest);
     deepSetValue(request, `ext.prebid.request.timeoutCount`, cntTimeouts);
-    deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
-    deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
-    deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
-    deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
+    if (placementEnv?.TabActive !== undefined) deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
+    if (placementEnv?.PageHeight !== undefined) deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
+    if (placementEnv?.ViewportHeight !== undefined) deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
+    if (placementEnv?.TimeFromNavigation !== undefined) deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
     return request;
   },
 });

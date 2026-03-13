@@ -3,12 +3,17 @@ import { spec } from 'modules/pubstackBidAdapter';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { hook } from 'src/hook.js';
+import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
+import sinon from 'sinon';
 import 'src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 
 describe('pubstackBidAdapter', function () {
+  let sandbox;
+
   const baseBidRequest = {
     adUnitCode: 'adunit-code',
     auctionId: 'auction-1',
@@ -77,10 +82,12 @@ describe('pubstackBidAdapter', function () {
 
   beforeEach(function () {
     config.resetConfig();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
     config.resetConfig();
+    sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -114,7 +121,7 @@ describe('pubstackBidAdapter', function () {
       expect(request.data.imp).to.have.lengthOf(1);
       expect(utils.deepAccess(request, 'data.imp.0.id')).to.equal('bid-1');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.adUnitName')).to.equal('adunit-1');
-      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.code')).to.equal('adunit-code');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.adUnitCode')).to.equal('adunit-code');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.height')).to.be.a('number');
@@ -160,6 +167,72 @@ describe('pubstackBidAdapter', function () {
       const secondBidRequest = createBidRequest({ bidId: 'bid-timeout-rate-2' });
       const secondRequest = spec.buildRequests([secondBidRequest], createBidderRequest(secondBidRequest));
       expect(utils.deepAccess(secondRequest, 'data.ext.prebid.request.timeoutCount')).to.equal(1);
+    });
+
+    it('uses GPT slot divId when ad unit element is missing', function () {
+      const div = document.createElement('div');
+      div.id = 'gpt-div-id';
+      document.body.appendChild(div);
+
+      sandbox.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({ divId: 'gpt-div-id' });
+
+      const bidRequest = createBidRequest({ adUnitCode: 'missing-adunit' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.domId')).to.equal('gpt-div-id');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
+
+      document.body.removeChild(div);
+    });
+
+    it('omits placement details when no element is found', function () {
+      sandbox.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns(undefined);
+
+      const bidRequest = createBidRequest({ adUnitCode: 'missing-element' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.domId')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.height')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.auctionsCount')).to.equal(undefined);
+    });
+
+    it('uses unknown version when prebid global is unavailable', function () {
+      sandbox.stub(prebidGlobal, 'getGlobal').returns(null);
+
+      const bidRequest = createBidRequest({ bidId: 'bid-no-global' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.ext.prebid.version')).to.equal('unknown');
+    });
+
+    it('includes falsy placement environment values', function () {
+      const originalVisibility = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+      if (originalVisibility && originalVisibility.configurable === false) {
+        this.skip();
+      }
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        value: 'hidden'
+      });
+      sandbox.stub(performance, 'now').returns(0);
+
+      const bidRequest = createBidRequest({ bidId: 'bid-falsy-env' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.tabActive')).to.equal(false);
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.timeFromNavigation')).to.equal(0);
+
+      if (originalVisibility) {
+        Object.defineProperty(document, 'visibilityState', originalVisibility);
+      } else {
+        delete document.visibilityState;
+      }
     });
   });
 
