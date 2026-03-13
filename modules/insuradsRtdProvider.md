@@ -1,0 +1,59 @@
+## InsurAds Real-time Data Submodule
+
+The [InsurAds](https://insurads.com) real-time data module in Prebid enables publishers to leverage
+contextual targeting and audience segmentation capabilities. This module provides real-time
+key-value targeting data that seamlessly integrates into your existing Prebid deployment,
+helping you maximize your advertising strategies.
+
+## Building Prebid with InsurAds Support
+
+Compile the InsurAds RTD module into your Prebid build:
+
+`gulp serve --modules=rtdModule,insuradsBidAdapter,insuradsRtdProvider`
+
+Please visit https://insurads.com/ for more information.
+
+```javascript
+pbjs.setConfig({
+    ...
+    realTimeData: {
+        auctionDelay: 1000,
+        dataProviders: [{
+            name: 'insuradsRtd',
+            waitForIt: true,
+            params: {
+                publicId: 'YOUR_PUBLIC_ID'
+            }
+        }]
+    }
+    ...
+});
+```
+
+### Parameter Descriptions for the InsurAds Configuration Section
+
+| Name              | Type    | Description                                                               | Notes                    |
+|:------------------|:--------|:--------------------------------------------------------------------------|:-------------------------|
+| name              | String  | Real time data module name                                                | Always 'insuradsRtd'     |
+| waitForIt         | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
+| params            | Object  |                                                                           |                          |
+| params.publicId   | String  | This is the Public ID value obtained from InsurAds                        | Required                 |
+
+## Testing
+
+To view an example of InsurAds RTD provider:
+
+`gulp serve --modules=rtdModule,insuradsBidAdapter,insuradsRtdProvider`
+
+and then point your browser at:
+
+`http://localhost:9999/integrationExamples/gpt/insurads.html`
+
+## How It Works
+
+The InsurAds RTD provider:
+
+1. Fetches contextual targeting data from the InsurAds API using your `publicId`
+2. Stores the returned key-values internally
+3. Applies the key-values as targeting data to all ad units in the auction
+4. Enhances ad targeting without requiring additional code changes
