@@ -9,6 +9,9 @@
  * module already injects VAI into ORTB2 so SSPs and GAM can report
  * on it natively.
  *
+ * Publishers must load vai.js before Prebid.js initializes:
+ *   <script src="/pw/vai.js"></script>
+ *
  * @module modules/paywallsAnalyticsAdapter
  * @see https://paywalls.net/docs/publishers/vai
  */
@@ -17,13 +20,10 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { logInfo, logWarn } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const ADAPTER_CODE = 'paywalls';
 const LOG_PREFIX = '[PaywallsAnalytics] ';
 
-export const DEFAULT_SCRIPT_URL = '/pw/vai.js';
 export const VAI_WINDOW_KEY = '__PW_VAI__';
 
 const { AUCTION_END } = EVENTS;
@@ -37,7 +37,6 @@ let emittedAuctions = Object.create(null);
 
 export let adapterConfig = {
   output: 'callback',   // 'gtag' | 'dataLayer' | 'callback'
-  scriptUrl: DEFAULT_SCRIPT_URL,
   samplingRate: 1.0,
   callback: null,
 };
@@ -45,11 +44,8 @@ export let adapterConfig = {
 // Whether this page session is sampled in
 let sampledIn = true;
 
-// Whether VAI script injection has been attempted
-let vaiInjected = false;
-
 // ---------------------------------------------------------------------------
-// VAI loading
+// VAI reading
 // ---------------------------------------------------------------------------
 
 /**
@@ -67,29 +63,6 @@ export function getVaiClassification() {
   return null;
 }
 
-/**
- * Ensure VAI is available on the page.
- * If window.__PW_VAI__ is not yet present, inject the script.
- * @param {string} scriptUrl
- */
-export function ensureVai(scriptUrl) {
-  const existing = getVaiClassification();
-  if (existing) {
-    logInfo(LOG_PREFIX + 'VAI already present. vat=' + existing.vat);
-    return;
-  }
-  if (vaiInjected) {
-    return;
-  }
-  vaiInjected = true;
-  logInfo(LOG_PREFIX + 'injecting vai.js from ' + scriptUrl);
-  try {
-    loadExternalScript(scriptUrl, MODULE_TYPE_ANALYTICS, ADAPTER_CODE);
-  } catch (e) {
-    logWarn(LOG_PREFIX + 'failed to load vai.js:', e);
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Metrics computation
 // ---------------------------------------------------------------------------
@@ -97,8 +70,8 @@ export function ensureVai(scriptUrl) {
 /**
  * Build the KVP object emitted per auction.
  * Only contains VAI classification — vat and act.
- * UNKNOWN values signal that VAI was not available (script failed to
- * load, timed out, or returned an invalid response).
+ * UNKNOWN values signal that VAI was not available (publisher did not
+ * load vai.js, or it returned an invalid/expired response).
  * @returns {object}  The KVP metrics object
  */
 export function computeMetrics() {
@@ -192,7 +165,7 @@ const paywallsAnalytics = Object.assign(
 paywallsAnalytics.originEnableAnalytics = paywallsAnalytics.enableAnalytics;
 
 /**
- * Override enableAnalytics to parse config and inject VAI.
+ * Override enableAnalytics to parse config.
  * @param {object} config
  */
 paywallsAnalytics.enableAnalytics = function (config) {
@@ -200,7 +173,6 @@ paywallsAnalytics.enableAnalytics = function (config) {
 
   // Parse config
   adapterConfig.output = options.output || 'callback';
-  adapterConfig.scriptUrl = options.scriptUrl || DEFAULT_SCRIPT_URL;
   const rawRate = typeof options.samplingRate === 'number' ? options.samplingRate : 1.0;
   adapterConfig.samplingRate = Math.max(0, Math.min(1, rawRate));
   if (rawRate !== adapterConfig.samplingRate) {
@@ -216,12 +188,6 @@ paywallsAnalytics.enableAnalytics = function (config) {
 
   // Reset state
   emittedAuctions = Object.create(null);
-  vaiInjected = false;
-
-  // Ensure VAI is on the page only when this session is sampled in
-  if (sampledIn) {
-    ensureVai(adapterConfig.scriptUrl);
-  }
 
   // Call original enable (wires up event listeners)
   paywallsAnalytics.originEnableAnalytics(config);
@@ -239,10 +205,8 @@ adapterManager.registerAnalyticsAdapter({
  */
 export function resetForTesting(overrides) {
   emittedAuctions = Object.create(null);
-  vaiInjected = false;
   sampledIn = true;
   adapterConfig.output = 'callback';
-  adapterConfig.scriptUrl = DEFAULT_SCRIPT_URL;
   adapterConfig.samplingRate = 1.0;
   adapterConfig.callback = null;
   if (overrides) {

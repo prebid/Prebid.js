@@ -4,7 +4,11 @@
  *
  * VAI classifies page impressions by actor type (vat) and confidence tier
  * (act), producing a cryptographically signed assertion. The RTD submodule
- * automates VAI loading, timing, and ORTB2 injection.
+ * reads the VAI payload from window.__PW_VAI__ (populated by the
+ * publisher's vai.js script tag) and injects it into ORTB2.
+ *
+ * Publishers must load vai.js before Prebid.js initializes:
+ *   <script src="/pw/vai.js"></script>
  *
  * ORTB2 placement (canonical split):
  *   site.ext.data.vai — { iss, dom }
@@ -18,9 +22,6 @@
 
 import { submodule } from '../src/hook.js';
 import { mergeDeep, logInfo, logWarn } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -30,17 +31,7 @@ const LOG_PREFIX = '[PaywallsRtd] ';
 const MODULE_NAME = 'realTimeData';
 
 export const SUBMODULE_NAME = 'paywalls';
-export const DEFAULT_SCRIPT_URL = '/pw/vai.js';
 export const VAI_WINDOW_KEY = '__PW_VAI__';
-export const VAI_HOOK_KEY = '__PW_VAI_HOOK__';
-export const VAI_LS_KEY = '__pw_vai__';
-
-const DEFAULT_WAIT_FOR_IT = 100;
-
-// Cached VAI payload from init (for early detection)
-let cachedVai = null;
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,29 +50,15 @@ function isValid(vai) {
 }
 
 /**
- * Attempt to read a VAI payload from window or localStorage.
+ * Read the VAI payload from the window global.
+ * Returns the payload if valid and unexpired, null otherwise.
  * @returns {object|null}
  */
 export function getVaiPayload() {
-  // 1. Check window global (set by vai.js <script> tag)
-  const winPayload = window[VAI_WINDOW_KEY];
-  if (isValid(winPayload)) {
-    return winPayload;
+  const vai = window[VAI_WINDOW_KEY];
+  if (isValid(vai)) {
+    return vai;
   }
-
-  // 2. Check localStorage cache
-  try {
-    const raw = storage.getDataFromLocalStorage(VAI_LS_KEY);
-    if (raw) {
-      const cached = JSON.parse(raw);
-      if (isValid(cached)) {
-        return cached;
-      }
-    }
-  } catch (e) {
-    logWarn(LOG_PREFIX + 'localStorage read failed:', e);
-  }
-
   return null;
 }
 
@@ -125,23 +102,9 @@ export function buildOrtb2(vai) {
 }
 
 /**
- * Merge VAI signals into the global ORTB2 config via Prebid's config system.
- * Used during init for early injection.
- * @param {object} vai
- */
-function mergeOrtb2Config(vai) {
-  // In modern Prebid, direct config.getConfig('ortb2') is restricted.
-  // During init, we cache the VAI payload so getBidRequestData can use it
-  // immediately without script injection.
-  cachedVai = vai;
-  logInfo(LOG_PREFIX + 'cached VAI for early injection. vat=' + vai.vat + ' act=' + vai.act);
-}
-
-/**
  * Merge VAI signals into the request-level ORTB2 fragments.
- * Used during getBidRequestData.
  *
- * - site.ext.vai and user.ext.vai are merged into ortb2Fragments.global
+ * - site.ext.data.vai and user.ext.data.vai are merged into ortb2Fragments.global
  * - imp[].ext.vai.pvtk is merged into each ad unit's ortb2Imp (if pvtk is available)
  *
  * @param {object} reqBidsConfigObj
@@ -172,32 +135,22 @@ function mergeOrtb2Fragments(reqBidsConfigObj, vai) {
 /**
  * init — called once when the submodule is registered.
  *
- * Checks for an existing VAI payload (window global or localStorage).
- * If valid+unexpired, caches it so getBidRequestData can inject ORTB2
- * immediately on the first call without script injection.
- *
  * @param {object} rtdConfig  Provider configuration from realTimeData.dataProviders
  * @param {object} userConsent  Consent data
  * @returns {boolean}  true to signal success; false would disable the module
  */
 function init(rtdConfig, userConsent) {
-  cachedVai = null;
-  const vai = getVaiPayload();
-  if (vai) {
-    mergeOrtb2Config(vai);
-  }
   return true;
 }
 
 /**
  * getBidRequestData — called before each auction.
  *
- * If VAI is already available, merges ORTB2 and calls callback immediately.
- * Otherwise, injects vai.js via loadExternalScript and waits (up to timeout ms)
- * for window.__PW_VAI__ to be populated (via script execution or __PW_VAI_HOOK__).
+ * Reads window.__PW_VAI__ — if valid and unexpired, merges ORTB2.
+ * If absent or expired, calls callback immediately (graceful degradation).
  *
- * CRITICAL: callback() MUST be called to unblock the auction. On timeout or
- * error, callback fires without enrichment (graceful degradation).
+ * Fully synchronous — the publisher is responsible for loading vai.js
+ * before Prebid runs.
  *
  * @param {object} reqBidsConfigObj  The bid request config with ortb2Fragments
  * @param {function} callback  Must be called when done
@@ -205,109 +158,13 @@ function init(rtdConfig, userConsent) {
  * @param {object} userConsent  Consent data
  */
 function getBidRequestData(reqBidsConfigObj, callback, rtdConfig, userConsent) {
-  // Fast path: VAI already available (from window, localStorage, or cached from init)
-  const existing = getVaiPayload() || (isValid(cachedVai) ? cachedVai : null);
-  if (existing) {
-    mergeOrtb2Fragments(reqBidsConfigObj, existing);
-    callback();
-    return;
+  const vai = getVaiPayload();
+  if (vai) {
+    mergeOrtb2Fragments(reqBidsConfigObj, vai);
+  } else {
+    logWarn(LOG_PREFIX + 'VAI unavailable — proceeding without enrichment');
   }
-
-  // Slow path: need to inject vai.js and wait
-  const params = (rtdConfig && rtdConfig.params) || {};
-  const scriptUrl = params.scriptUrl || DEFAULT_SCRIPT_URL;
-  const rawTimeout = params.timeout;
-  const timeout = (typeof rawTimeout === 'number' && rawTimeout >= 0)
-    ? rawTimeout
-    : DEFAULT_WAIT_FOR_IT;
-  if (rawTimeout != null && (typeof rawTimeout !== 'number' || rawTimeout < 0)) {
-    logWarn(LOG_PREFIX + 'Invalid timeout value (' + rawTimeout + '); using default ' + DEFAULT_WAIT_FOR_IT);
-  }
-
-  let resolved = false;
-  let enriched = false;
-  let pollId = null;
-  let timeoutId = null;
-
-  function restoreHook() {
-    if (window[VAI_HOOK_KEY] === hookHandler) {
-      delete window[VAI_HOOK_KEY];
-    }
-  }
-
-  function cleanup() {
-    if (pollId != null) { clearInterval(pollId); pollId = null; }
-    if (timeoutId != null) { clearTimeout(timeoutId); timeoutId = null; }
-  }
-
-  function resolve(vai) {
-    const validVai = !!(vai && isValid(vai));
-    if (resolved) {
-      // Even after timeout, store late payloads so subsequent auctions can use them
-      if (!enriched && validVai) {
-        window[VAI_WINDOW_KEY] = vai;
-        enriched = true;
-        restoreHook();
-        logInfo(LOG_PREFIX + 'late VAI payload stored for subsequent auctions. vat=' + vai.vat);
-      }
-      return;
-    }
-    resolved = true;
-    enriched = validVai;
-    cleanup();
-    if (validVai) {
-      window[VAI_WINDOW_KEY] = vai;
-      restoreHook();
-      mergeOrtb2Fragments(reqBidsConfigObj, vai);
-    } else {
-      // Hook stays installed — no timer-based removal.
-      // It will self-clean when vai.js eventually delivers a valid payload
-      // (captured in the post-resolve branch above), ensuring subsequent
-      // auctions can use the data regardless of how late it arrives.
-      logWarn(LOG_PREFIX + 'VAI unavailable — proceeding without enrichment');
-    }
-    callback();
-  }
-
-  // Set up the hook that vai.js may call.
-  // __PW_VAI_HOOK__ is owned by this module — we overwrite unconditionally
-  // (consistent with Prebid.js conventions; see medianet, gamera, brandmetrics).
-  // If our own handler from a prior degraded auction is still installed, we
-  // simply replace it (no chaining) to prevent unbounded closure accumulation.
-  function hookHandler(vaiData) {
-    resolve(vaiData);
-  }
-  window[VAI_HOOK_KEY] = hookHandler;
-
-  // Set up a poll interval to check for window.__PW_VAI__
-  const pollInterval = 10; // ms
-  pollId = setInterval(function () {
-    const vai = window[VAI_WINDOW_KEY];
-    if (vai && isValid(vai)) {
-      resolve(vai);
-    }
-  }, pollInterval);
-
-  // Set up timeout (graceful degradation — never block the auction)
-  timeoutId = setTimeout(function () {
-    resolve(null);
-  }, timeout);
-
-  // Inject the script
-  try {
-    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, function () {
-      logInfo(LOG_PREFIX + 'vai.js loaded from ' + scriptUrl);
-      // After script loads, check once more if __PW_VAI__ is set
-      // (script may have set it synchronously)
-      const vai = window[VAI_WINDOW_KEY];
-      if (vai && isValid(vai)) {
-        resolve(vai);
-      }
-    });
-  } catch (e) {
-    logWarn(LOG_PREFIX + 'loadExternalScript failed:', e);
-    resolve(null);
-  }
+  callback();
 }
 
 /**

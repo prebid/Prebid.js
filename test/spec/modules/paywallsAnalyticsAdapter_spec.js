@@ -2,17 +2,14 @@ import paywallsAnalytics, {
   getVaiClassification,
   computeMetrics,
   emitMetrics,
-  ensureVai,
   adapterConfig,
   resetForTesting,
-  DEFAULT_SCRIPT_URL,
   VAI_WINDOW_KEY,
 } from 'modules/paywallsAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {expectEvents} from '../../helpers/analytics.js';
-import {EVENTS} from 'src/constants.js';
+import { expect } from 'chai';
+import { expectEvents } from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
-import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
@@ -41,7 +38,7 @@ describe('PaywallsAnalyticsAdapter', function () {
       resetForTesting();
       adapterManager.enableAnalytics({
         provider: 'paywalls',
-        options: {output: 'callback', callback: function () {}}
+        options: { output: 'callback', callback: function () {} }
       });
     });
 
@@ -63,19 +60,19 @@ describe('PaywallsAnalyticsAdapter', function () {
   });
 
   // -----------------------------------------------------------------------
-  // VAI loading
+  // VAI classification reading
   // -----------------------------------------------------------------------
 
-  describe('VAI loading', function () {
+  describe('getVaiClassification', function () {
     afterEach(function () {
       delete window[VAI_WINDOW_KEY];
       resetForTesting();
     });
 
     it('should detect VAI when window.__PW_VAI__ is present', function () {
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1' };
       const result = getVaiClassification();
-      expect(result).to.deep.equal({vat: 'HUMAN', act: 'ACT-1'});
+      expect(result).to.deep.equal({ vat: 'HUMAN', act: 'ACT-1' });
     });
 
     it('should return null when window.__PW_VAI__ is absent', function () {
@@ -85,31 +82,24 @@ describe('PaywallsAnalyticsAdapter', function () {
     });
 
     it('should return null for invalid VAI (missing vat)', function () {
-      window[VAI_WINDOW_KEY] = {act: 'ACT-1'};
+      window[VAI_WINDOW_KEY] = { act: 'ACT-1' };
       expect(getVaiClassification()).to.be.null;
     });
 
     it('should return null for invalid VAI (missing act)', function () {
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN'};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN' };
       expect(getVaiClassification()).to.be.null;
     });
 
     it('should return null for expired VAI', function () {
       const nowSec = Math.floor(Date.now() / 1000);
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1', exp: nowSec - 1};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1', exp: nowSec - 1 };
       expect(getVaiClassification()).to.be.null;
     });
 
-    it('should skip VAI injection when __PW_VAI__ is already present', function () {
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
-      sandbox.stub(events, 'getEvents').returns([]);
-      adapterManager.enableAnalytics({
-        provider: 'paywalls',
-        options: {output: 'callback', callback: function () {}}
-      });
-      expect(window[VAI_WINDOW_KEY].vat).to.equal('HUMAN');
-      events.getEvents.restore();
-      paywallsAnalytics.disableAnalytics();
+    it('should return null for truthy but invalid __PW_VAI__', function () {
+      window[VAI_WINDOW_KEY] = { invalid: true };
+      expect(getVaiClassification()).to.be.null;
     });
   });
 
@@ -123,26 +113,26 @@ describe('PaywallsAnalyticsAdapter', function () {
     });
 
     it('should return vat and act when VAI is present', function () {
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1' };
       const result = computeMetrics();
-      expect(result).to.deep.equal({vai_vat: 'HUMAN', vai_act: 'ACT-1'});
+      expect(result).to.deep.equal({ vai_vat: 'HUMAN', vai_act: 'ACT-1' });
     });
 
     it('should return UNKNOWN when VAI is absent', function () {
       delete window[VAI_WINDOW_KEY];
       const result = computeMetrics();
-      expect(result).to.deep.equal({vai_vat: 'UNKNOWN', vai_act: 'UNKNOWN'});
+      expect(result).to.deep.equal({ vai_vat: 'UNKNOWN', vai_act: 'UNKNOWN' });
     });
 
     it('should return UNKNOWN when VAI is expired', function () {
       const nowSec = Math.floor(Date.now() / 1000);
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1', exp: nowSec - 1};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1', exp: nowSec - 1 };
       const result = computeMetrics();
-      expect(result).to.deep.equal({vai_vat: 'UNKNOWN', vai_act: 'UNKNOWN'});
+      expect(result).to.deep.equal({ vai_vat: 'UNKNOWN', vai_act: 'UNKNOWN' });
     });
 
     it('should only contain vai_vat and vai_act keys', function () {
-      window[VAI_WINDOW_KEY] = {vat: 'AI_AGENT', act: 'ACT-2'};
+      window[VAI_WINDOW_KEY] = { vat: 'AI_AGENT', act: 'ACT-2' };
       const result = computeMetrics();
       expect(Object.keys(result)).to.have.lengthOf(2);
       expect(result).to.have.all.keys('vai_vat', 'vai_act');
@@ -164,14 +154,14 @@ describe('PaywallsAnalyticsAdapter', function () {
         const gtagStub = sandbox.stub();
         window.gtag = gtagStub;
 
-        const kvps = {vai_vat: 'HUMAN', vai_act: 'ACT-1'};
+        const kvps = { vai_vat: 'HUMAN', vai_act: 'ACT-1' };
         adapterConfig.output = 'gtag';
         emitMetrics(kvps);
 
         expect(gtagStub.calledOnce).to.be.true;
         expect(gtagStub.firstCall.args[0]).to.equal('event');
         expect(gtagStub.firstCall.args[1]).to.equal('vai_auction');
-        expect(gtagStub.firstCall.args[2]).to.deep.include({vai_vat: 'HUMAN'});
+        expect(gtagStub.firstCall.args[2]).to.deep.include({ vai_vat: 'HUMAN' });
 
         delete window.gtag;
       });
@@ -179,7 +169,7 @@ describe('PaywallsAnalyticsAdapter', function () {
       it('should warn when gtag is not present', function () {
         delete window.gtag;
         adapterConfig.output = 'gtag';
-        emitMetrics({vai_vat: 'HUMAN', vai_act: 'ACT-1'});
+        emitMetrics({ vai_vat: 'HUMAN', vai_act: 'ACT-1' });
       });
     });
 
@@ -188,7 +178,7 @@ describe('PaywallsAnalyticsAdapter', function () {
         window.dataLayer = [];
         adapterConfig.output = 'dataLayer';
 
-        const kvps = {vai_vat: 'HUMAN', vai_act: 'ACT-1'};
+        const kvps = { vai_vat: 'HUMAN', vai_act: 'ACT-1' };
         emitMetrics(kvps);
 
         expect(window.dataLayer.length).to.equal(1);
@@ -203,7 +193,7 @@ describe('PaywallsAnalyticsAdapter', function () {
         delete window.dataLayer;
         adapterConfig.output = 'dataLayer';
 
-        emitMetrics({vai_vat: 'HUMAN', vai_act: 'ACT-1'});
+        emitMetrics({ vai_vat: 'HUMAN', vai_act: 'ACT-1' });
 
         expect(window.dataLayer).to.be.an('array');
         expect(window.dataLayer.length).to.equal(1);
@@ -218,7 +208,7 @@ describe('PaywallsAnalyticsAdapter', function () {
         adapterConfig.output = 'callback';
         adapterConfig.callback = cb;
 
-        const kvps = {vai_vat: 'HUMAN', vai_act: 'ACT-1'};
+        const kvps = { vai_vat: 'HUMAN', vai_act: 'ACT-1' };
         emitMetrics(kvps);
 
         expect(cb.calledOnce).to.be.true;
@@ -228,13 +218,13 @@ describe('PaywallsAnalyticsAdapter', function () {
       it('should handle callback errors gracefully', function () {
         adapterConfig.output = 'callback';
         adapterConfig.callback = function () { throw new Error('test error'); };
-        emitMetrics({vai_vat: 'HUMAN', vai_act: 'ACT-1'});
+        emitMetrics({ vai_vat: 'HUMAN', vai_act: 'ACT-1' });
       });
 
       it('should warn when callback is not a function', function () {
         adapterConfig.output = 'callback';
         adapterConfig.callback = null;
-        emitMetrics({vai_vat: 'HUMAN', vai_act: 'ACT-1'});
+        emitMetrics({ vai_vat: 'HUMAN', vai_act: 'ACT-1' });
       });
     });
   });
@@ -250,14 +240,13 @@ describe('PaywallsAnalyticsAdapter', function () {
       callbackSpy = sandbox.stub();
       sandbox.stub(events, 'getEvents').returns([]);
       resetForTesting();
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1' };
 
       adapterManager.enableAnalytics({
         provider: 'paywalls',
         options: {
           output: 'callback',
           callback: callbackSpy,
-          scriptUrl: '/fake/vai.js',
         }
       });
     });
@@ -270,7 +259,7 @@ describe('PaywallsAnalyticsAdapter', function () {
     });
 
     it('should emit vat and act on auctionEnd', function () {
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'test-001'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'test-001' });
       clock.tick(200);
 
       expect(callbackSpy.calledOnce).to.be.true;
@@ -281,18 +270,18 @@ describe('PaywallsAnalyticsAdapter', function () {
     });
 
     it('should emit once per auction (de-dup)', function () {
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'test-dedup'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'test-dedup' });
       clock.tick(200);
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'test-dedup'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'test-dedup' });
       clock.tick(200);
 
       expect(callbackSpy.calledOnce).to.be.true;
     });
 
     it('should emit separately for different auctions', function () {
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'auction-A'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-A' });
       clock.tick(200);
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'auction-B'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-B' });
       clock.tick(200);
 
       expect(callbackSpy.calledTwice).to.be.true;
@@ -308,9 +297,9 @@ describe('PaywallsAnalyticsAdapter', function () {
     });
 
     it('should ignore non-AUCTION_END events', function () {
-      events.emit(EVENTS.BID_RESPONSE, {auctionId: 'test-001', cpm: 2.50});
-      events.emit(EVENTS.BID_WON, {auctionId: 'test-001'});
-      events.emit(EVENTS.NO_BID, {auctionId: 'test-001'});
+      events.emit(EVENTS.BID_RESPONSE, { auctionId: 'test-001', cpm: 2.50 });
+      events.emit(EVENTS.BID_WON, { auctionId: 'test-001' });
+      events.emit(EVENTS.NO_BID, { auctionId: 'test-001' });
       clock.tick(200);
 
       expect(callbackSpy.called).to.be.false;
@@ -330,7 +319,7 @@ describe('PaywallsAnalyticsAdapter', function () {
     it('should skip emission when sampled out', function () {
       const cb = sandbox.stub();
       sandbox.stub(events, 'getEvents').returns([]);
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1' };
 
       sandbox.stub(Math, 'random').returns(0.5);
       adapterManager.enableAnalytics({
@@ -342,7 +331,7 @@ describe('PaywallsAnalyticsAdapter', function () {
         }
       });
 
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'sampled-out'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'sampled-out' });
       clock.tick(200);
 
       expect(cb.called).to.be.false;
@@ -352,34 +341,10 @@ describe('PaywallsAnalyticsAdapter', function () {
       paywallsAnalytics.disableAnalytics();
     });
 
-    it('should not load vai.js when sampled out', function () {
-      const cb = sandbox.stub();
-      sandbox.stub(events, 'getEvents').returns([]);
-      delete window[VAI_WINDOW_KEY];
-      loadExternalScriptStub.resetHistory();
-
-      sandbox.stub(Math, 'random').returns(0.9);
-      adapterManager.enableAnalytics({
-        provider: 'paywalls',
-        options: {
-          output: 'callback',
-          callback: cb,
-          samplingRate: 0.1,
-          scriptUrl: '/pw/vai.js'
-        }
-      });
-
-      expect(loadExternalScriptStub.called).to.be.false;
-
-      Math.random.restore();
-      events.getEvents.restore();
-      paywallsAnalytics.disableAnalytics();
-    });
-
     it('should emit when sampled in', function () {
       const cb = sandbox.stub();
       sandbox.stub(events, 'getEvents').returns([]);
-      window[VAI_WINDOW_KEY] = {vat: 'HUMAN', act: 'ACT-1'};
+      window[VAI_WINDOW_KEY] = { vat: 'HUMAN', act: 'ACT-1' };
 
       sandbox.stub(Math, 'random').returns(0.01);
       adapterManager.enableAnalytics({
@@ -391,7 +356,7 @@ describe('PaywallsAnalyticsAdapter', function () {
         }
       });
 
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'sampled-in'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'sampled-in' });
       clock.tick(200);
 
       expect(cb.calledOnce).to.be.true;
@@ -399,37 +364,6 @@ describe('PaywallsAnalyticsAdapter', function () {
       Math.random.restore();
       events.getEvents.restore();
       paywallsAnalytics.disableAnalytics();
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // Bug reproductions (from bot review feedback)
-  // -----------------------------------------------------------------------
-
-  describe('bug reproductions', function () {
-    afterEach(function () {
-      delete window[VAI_WINDOW_KEY];
-      resetForTesting();
-    });
-
-    it('ensureVai should inject script when __PW_VAI__ is truthy but invalid', function () {
-      // Bug: ensureVai() checks `if (window[VAI_WINDOW_KEY])` which is truthy
-      // for objects missing vat/act, preventing injection
-      window[VAI_WINDOW_KEY] = { invalid: true };
-      resetForTesting();
-      loadExternalScriptStub.resetHistory();
-
-      // Call ensureVai directly — it should detect the invalid payload and inject
-      ensureVai('/pw/vai.js');
-
-      // Proves the object is invalid for classification
-      const classification = getVaiClassification();
-      expect(classification).to.be.null;
-
-      // With the bug, loadExternalScript would NOT be called because
-      // ensureVai saw a truthy window.__PW_VAI__ and returned early.
-      // After fix, it should call loadExternalScript.
-      expect(loadExternalScriptStub.called).to.be.true;
     });
   });
 
@@ -449,11 +383,10 @@ describe('PaywallsAnalyticsAdapter', function () {
         options: {
           output: 'callback',
           callback: cb,
-          scriptUrl: '/nonexistent-vai.js'
         }
       });
 
-      events.emit(EVENTS.AUCTION_END, {auctionId: 'degraded'});
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'degraded' });
       clock.tick(200);
 
       expect(cb.calledOnce).to.be.true;
@@ -483,30 +416,10 @@ describe('PaywallsAnalyticsAdapter', function () {
       delete window[VAI_WINDOW_KEY];
     });
 
-    it('should use default scriptUrl when not provided', function () {
-      adapterManager.enableAnalytics({
-        provider: 'paywalls',
-        options: {output: 'callback', callback: function () {}}
-      });
-      expect(adapterConfig.scriptUrl).to.equal(DEFAULT_SCRIPT_URL);
-    });
-
-    it('should use custom scriptUrl when provided', function () {
-      adapterManager.enableAnalytics({
-        provider: 'paywalls',
-        options: {
-          output: 'callback',
-          callback: function () {},
-          scriptUrl: 'https://cdn.example.com/vai.js'
-        }
-      });
-      expect(adapterConfig.scriptUrl).to.equal('https://cdn.example.com/vai.js');
-    });
-
     it('should default samplingRate to 1.0', function () {
       adapterManager.enableAnalytics({
         provider: 'paywalls',
-        options: {output: 'callback', callback: function () {}}
+        options: { output: 'callback', callback: function () {} }
       });
       expect(adapterConfig.samplingRate).to.equal(1.0);
     });
@@ -514,7 +427,7 @@ describe('PaywallsAnalyticsAdapter', function () {
     it('should default output to callback', function () {
       adapterManager.enableAnalytics({
         provider: 'paywalls',
-        options: {callback: function () {}}
+        options: { callback: function () {} }
       });
       expect(adapterConfig.output).to.equal('callback');
     });

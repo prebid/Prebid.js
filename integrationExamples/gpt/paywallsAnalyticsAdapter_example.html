@@ -5,8 +5,16 @@
   on each auction.  Uses a single appnexus test placement (nobid is fine —
   the adapter fires on AUCTION_END regardless of bid outcome).
 
-  Serve with:  npx gulp serve-fast --modules=rtdModule,paywallsRtdProvider,paywallsAnalyticsAdapter,appnexusBidAdapter
+  Publishers must load vai.js before Prebid.js initializes.
+  The analytics adapter reads window.__PW_VAI__ directly.
+
+  Serve with:  npx gulp serve-fast --modules=paywallsAnalyticsAdapter,appnexusBidAdapter
   Then open:   http://localhost:9999/integrationExamples/gpt/paywallsAnalyticsAdapter_example.html
+
+  Modes:
+    ?degrade  — skip vai.js loading to test graceful degradation
+    ?real     — use real VAI from production (requires network)
+    (default) — use mock-vai.js for deterministic testing
 -->
 <html>
 <head>
@@ -21,17 +29,34 @@
   </style>
 
   <script>
+    var degradeMode = location.search.indexOf('degrade') !== -1;
+    var realMode = location.search.indexOf('real') !== -1;
+  </script>
+
+  <!-- Load vai.js BEFORE Prebid — the analytics adapter reads window.__PW_VAI__ -->
+  <script id="vai-script"></script>
+  <script>
+    (function() {
+      var script = document.getElementById('vai-script');
+      if (degradeMode) {
+        script.remove();
+      } else if (realMode) {
+        script.src = 'https://paywalls.net/pw/vai.js';
+      } else {
+        script.src = '/integrationExamples/gpt/mock-vai.js';
+      }
+    })();
+  </script>
+
+  <script>
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
   </script>
+  <!-- Load Prebid dev build -->
   <script src="../../build/dev/prebid.js" async></script>
 
   <script>
-    var degradeMode = location.search.indexOf('degrade') !== -1;
-    var realMode = location.search.indexOf('real') !== -1;
-
     if (degradeMode) {
-      try { localStorage.removeItem('__pw_vai__'); } catch (e) {}
       delete window.__PW_VAI__;
       document.title = 'Paywalls Analytics — Degradation Test';
     }
@@ -94,22 +119,8 @@
 
     // ─── Prebid config ──────────────────────────────────────────
     pbjs.que.push(function () {
-      var vaiScriptUrl = degradeMode
-        ? '/integrationExamples/gpt/nonexistent-vai.js'
-        : realMode
-          ? 'http://127.0.0.1:8080/pw/vai.js'
-          : '/integrationExamples/gpt/mock-vai.js';
-
       pbjs.setConfig({
-        debug: true,
-        realTimeData: {
-          auctionDelay: 2000,
-          dataProviders: [{
-            name: 'paywalls',
-            waitForIt: true,
-            params: { scriptUrl: vaiScriptUrl }
-          }]
-        }
+        debug: true
       });
 
       pbjs.enableAnalytics([{
@@ -121,7 +132,6 @@
             collectedMetrics = metrics;
             setTimeout(runAssertions, 100);
           },
-          scriptUrl: vaiScriptUrl,
           samplingRate: 1.0
         }
       }]);
@@ -161,7 +171,7 @@
 
   <p style="color:#666; font-size:0.9em;">
     <code>?degrade</code> — test with VAI unavailable &nbsp;|&nbsp;
-    <code>?real</code> — use real VAI from <code>127.0.0.1:8080</code>
+    <code>?real</code> — use real VAI from production
   </p>
 </body>
 </html>
