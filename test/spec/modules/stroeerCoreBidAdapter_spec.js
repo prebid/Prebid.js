@@ -850,8 +850,8 @@ describe('stroeerCore bid adapter', function () {
           assert.nestedPropertyVal(firstBid, 'ban.fp', undefined);
           assert.nestedPropertyVal(secondBid, 'vid.fp', undefined);
 
-          assert.isTrue(getFloorSpy.calledWith({currency: 'EUR', mediaType: 'video', size: '*'}));
-          assert.isTrue(getFloorSpy.calledWith({currency: 'EUR', mediaType: 'video', size: [1280, 720]}));
+          assert.isTrue(getFloorSpy.calledWith({ currency: 'EUR', mediaType: 'video', size: '*' }));
+          assert.isTrue(getFloorSpy.calledWith({ currency: 'EUR', mediaType: 'video', size: [1280, 720] }));
           assert.isTrue(getFloorSpy.calledTwice);
         });
 
@@ -1043,8 +1043,8 @@ describe('stroeerCore bid adapter', function () {
             const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
             const [bid1, bid2] = serverRequestInfo.data.bids;
 
-            assert.deepEqual(bid1.ortb2Imp, {ext: {gpid: '/8292/homepage-top'}});
-            assert.deepEqual(bid2.ortb2Imp, {ext: {gpid: '/2231/bottom'}});
+            assert.deepEqual(bid1.ortb2Imp, { ext: { gpid: '/8292/homepage-top' } });
+            assert.deepEqual(bid2.ortb2Imp, { ext: { gpid: '/2231/bottom' } });
           });
         });
       });
