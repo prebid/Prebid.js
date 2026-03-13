@@ -12,7 +12,7 @@ The Paywalls RTD module integrates [VAI (Validated Actor Inventory)](https://pay
 
 The module automates VAI loading, timing, and signal injection:
 
-- **ORTB2 enrichment** — VAI signals are split across `site.ext.vai` (domain provenance), `user.ext.vai` (actor classification + signed assertion), and `imp[].ext.vai` (pageview correlation), available to all ORTB2-native bid adapters.
+- **ORTB2 enrichment** — VAI signals are split across `site.ext.data.vai` (domain provenance), `user.ext.data.vai` (actor classification + signed assertion), and `imp[].ext.vai` (pageview correlation), available to all ORTB2-native bid adapters.
 - **GAM targeting** — `vai_vat` and `vai_act` key-value pairs are set per ad unit for Google Ad Manager line item targeting.
 - **Graceful degradation** — if VAI is unavailable or times out, the auction proceeds normally without enrichment.
 
@@ -68,17 +68,19 @@ In both cases, `vai.js` makes a request to fetch `vai.json`, which contains the 
 
 VAI signals are placed in the global ORTB2 within the `site`, `user`, and `imp` sections:
 
-### `site.ext.vai` — Domain Provenance
+### `site.ext.data.vai` — Domain Provenance
 
-Fields that describe the assertion context (who issued it, for which domain). The `dom` value can be cryptographically verified through the signed `jws` in `user.ext.vai`.
+Fields that describe the assertion context (who issued it, for which domain). The `dom` value can be cryptographically verified through the signed `jws` in `user.ext.data.vai`.
 
 ```json
 {
   "site": {
     "ext": {
-      "vai": {
-        "iss": "paywalls.net",
-        "dom": "example.com"
+      "data": {
+        "vai": {
+          "iss": "paywalls.net",
+          "dom": "example.com"
+        }
       }
     }
   }
@@ -90,7 +92,7 @@ Fields that describe the assertion context (who issued it, for which domain). Th
 | `iss` | Issuer — bare domain (e.g. `paywalls.net`)       |
 | `dom` | Domain the assertion covers                      |
 
-### `user.ext.vai` — Actor Classification
+### `user.ext.data.vai` — Actor Classification
 
 Fields that describe the classified actor and the signed assertion:
 
@@ -98,12 +100,14 @@ Fields that describe the classified actor and the signed assertion:
 {
   "user": {
     "ext": {
-      "vai": {
-        "iss": "paywalls.net",
-        "mstk": "01J4X9K2ABCDEF01234567",
-        "vat": "HUMAN",
-        "act": "ACT-1",
-        "jws": "eyJhbGciOiJFZERTQSIs..."
+      "data": {
+        "vai": {
+          "iss": "paywalls.net",
+          "mstk": "01J4X9K2ABCDEF01234567",
+          "vat": "HUMAN",
+          "act": "ACT-1",
+          "jws": "eyJhbGciOiJFZERTQSIs..."
+        }
       }
     }
   }
