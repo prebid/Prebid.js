@@ -1,8 +1,8 @@
-import {buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -93,7 +93,7 @@ export const spec = {
     return {
       method: 'POST',
       url: buildEndpointUrl(anyBid.params),
-      data: {...basePayload, bids: [...bannerBids, ...videoBids]}
+      data: { ...basePayload, bids: [...bannerBids, ...videoBids] }
     };
   },
 
@@ -113,7 +113,7 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
-          meta: {...bidResponse.meta},
+          meta: { ...bidResponse.meta },
           mediaType,
         };
 
@@ -151,6 +151,7 @@ const isMainPageAccessible = () => {
 }
 
 const elementInView = (elementId) => {
+  // TODO this should use getAdUnitElement
   const resolveElement = (elId) => {
     const win = getWindowSelf();
 
@@ -176,12 +177,12 @@ const elementInView = (elementId) => {
   return undefined;
 }
 
-const buildEndpointUrl = ({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) => {
+const buildEndpointUrl = ({ host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH }) => {
   if (securePort) {
     port = securePort;
   }
 
-  return buildUrl({protocol: 'https', hostname, port, pathname});
+  return buildUrl({ protocol: 'https', hostname, port, pathname });
 }
 
 const getGdprParams = gdprConsent => {
@@ -261,7 +262,7 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
       mediaType: mediaType,
       size: [size[0], size[1]]
     }) || {};
-    return {...floor, size};
+    return { ...floor, size };
   });
 
   const floorWithCurrency = (([defaultFloor].concat(sizeFloors)) || []).find(floor => floor.currency);

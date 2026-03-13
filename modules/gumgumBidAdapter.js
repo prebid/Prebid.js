@@ -1,11 +1,13 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import {getDevicePixelRatio} from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -17,7 +19,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'gumgum';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALIAS_BIDDER_CODE = ['gg'];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -279,7 +281,7 @@ function _getDeviceData(ortb2Data) {
     ipv6: _device.ipv6,
     ua: _device.ua,
     sua: _device.sua ? JSON.stringify(_device.sua) : undefined,
-    dnt: _device.dnt,
+    dnt: getDNT() ? 1 : 0,
     os: _device.os,
     osv: _device.osv,
     dt: _device.devicetype,
@@ -288,6 +290,8 @@ function _getDeviceData(ortb2Data) {
     model: _device.model,
     ppi: _device.ppi,
     pxratio: _device.pxratio,
+    lmt: _device.lmt,
+    ifa: _device.lmt !== 1 ? _device.ifa : undefined,
     foddid: _device?.ext?.fiftyonedegrees_deviceId,
   };
 
@@ -323,53 +327,28 @@ function getGreatestDimensions(sizes) {
   return [maxw, maxh];
 }
 
-function getFirstUid(eid) {
-  if (!eid || !Array.isArray(eid.uids)) return null;
-  return eid.uids.find(uid => uid && uid.id);
-}
+function getEids(userId) {
+  const idProperties = [
+    'uid',
+    'eid',
+    'lipbid',
+    'envelope',
+    'id'
+  ];
 
-function getUserEids(bidRequest, bidderRequest) {
-  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
-  if (Array.isArray(bidderRequestEids) && bidderRequestEids.length) {
-    return bidderRequestEids;
-  }
-  const bidEids = deepAccess(bidRequest, 'userIdAsEids');
-  if (Array.isArray(bidEids) && bidEids.length) {
-    return bidEids;
-  }
-  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids');
-  if (Array.isArray(bidUserEids) && bidUserEids.length) {
-    return bidUserEids;
-  }
-  return [];
-}
+  return Object.keys(userId).reduce(function (eids, provider) {
+    const eid = userId[provider];
+    switch (typeof eid) {
+      case 'string':
+        eids[provider] = eid;
+        break;
 
-function isPubProvidedIdEid(eid) {
-  const source = (eid && eid.source) ? eid.source.toLowerCase() : '';
-  if (!source || !pubProvidedIdSources.includes(source) || !Array.isArray(eid.uids)) return false;
-  return eid.uids.some(uid => uid && uid.ext && uid.ext.stype);
-}
-
-function getEidsFromEidsArray(eids) {
-  return (Array.isArray(eids) ? eids : []).reduce((ids, eid) => {
-    const source = (eid.source || '').toLowerCase();
-    if (source === 'uidapi.com') {
-      const uid = getFirstUid(eid);
-      if (uid) {
-        ids.uid2 = uid.id;
-      }
-    } else if (source === 'liveramp.com') {
-      const uid = getFirstUid(eid);
-      if (uid) {
-        ids.idl_env = uid.id;
-      }
-    } else if (source === 'adserver.org' && Array.isArray(eid.uids)) {
-      const tdidUid = eid.uids.find(uid => uid && uid.id && uid.ext && uid.ext.rtiPartner === 'TDID');
-      if (tdidUid) {
-        ids.tdid = tdidUid.id;
-      }
+      case 'object':
+        const idProp = idProperties.filter(prop => eid.hasOwnProperty(prop));
+        idProp.length && (eids[provider] = eid[idProp[0]]);
+        break;
     }
-    return ids;
+    return eids;
   }, {});
 }
 
@@ -393,14 +372,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
+      userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
-    const userEids = getUserEids(bidRequest, bidderRequest);
-    const eids = getEidsFromEidsArray(userEids);
+    const eids = getEids(userId);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid');
-    const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
     let data = {};
     data.displaymanager = 'Prebid.js - gumgum';
@@ -423,20 +401,16 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
     }
     // Send filtered pubProvidedId's
-    if (userEids.length) {
-      const filteredData = userEids.filter(isPubProvidedIdEid);
+    if (userId && userId.pubProvidedId) {
+      const filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
       const maxLength = 1800; // replace this with your desired maximum length
       const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
-      if (filteredData.length) {
-        data.pubProvidedId = truncatedJsonString
-      }
+      data.pubProvidedId = truncatedJsonString
     }
     // ADJS-1286 Read id5 id linktype field
-    const id5Eid = userEids.find(eid => (eid.source || '').toLowerCase() === 'id5-sync.com');
-    const id5Uid = getFirstUid(id5Eid);
-    if (id5Uid && id5Uid.ext) {
-      data.id5Id = id5Uid.id || null
-      data.id5IdLinkType = id5Uid.ext.linkType || null
+    if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
+      data.id5Id = userId.id5id.uid || null
+      data.id5IdLinkType = userId.id5id.ext.linkType || null
     }
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode;
@@ -492,9 +466,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) };
-    }
-    if (paapiEligible) {
-      data.ae = paapiEligible
     }
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
@@ -679,7 +650,7 @@ function interpretResponse(serverResponse, bidRequest) {
   // added logic for in-slot multi-szie
   } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [ width, height ] = current;
+      const [width, height] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];

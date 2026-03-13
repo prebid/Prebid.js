@@ -1,8 +1,8 @@
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
+import { getBidIdParameter, logInfo, mergeDeep } from '../src/utils.js';
 import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 /**
@@ -66,7 +66,7 @@ export const spec = {
   onTimeout: function (timeoutData) {
     logInfo('Timeout: ', timeoutData);
   },
-  onBidderError: function ({error, bidderRequest}) {
+  onBidderError: function ({ error, bidderRequest }) {
     logInfo('Error: ', error, bidderRequest);
   },
 }
@@ -158,14 +158,14 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(response, request) {
-  return CONVERTER.fromORTB({request: request.data, response: response.body}).bids;
+  return CONVERTER.fromORTB({ request: request.data, response: response.body }).bids;
 }
 
 function buildVideoImp(bidRequest, imp) {
   const videoAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`, {});
   const videoBidderParams = utils.deepAccess(bidRequest, `params.${VIDEO}`, {});
 
-  const videoParams = {...videoAdUnitParams, ...videoBidderParams};
+  const videoParams = { ...videoAdUnitParams, ...videoBidderParams };
 
   const videoSizes = (videoAdUnitParams && videoAdUnitParams.playerSize) || [];
 
@@ -184,14 +184,14 @@ function buildVideoImp(bidRequest, imp) {
     imp.video.plcmt = imp.video.plcmt || 4;
   }
 
-  return {...imp};
+  return { ...imp };
 }
 
 function buildBannerImp(bidRequest, imp) {
   const bannerAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}`, {});
   const bannerBidderParams = utils.deepAccess(bidRequest, `params.${BANNER}`, {});
 
-  const bannerParams = {...bannerAdUnitParams, ...bannerBidderParams};
+  const bannerParams = { ...bannerAdUnitParams, ...bannerBidderParams };
 
   const sizes = bidRequest.mediaTypes.banner.sizes;
 
@@ -206,15 +206,15 @@ function buildBannerImp(bidRequest, imp) {
     }
   });
 
-  return {...imp};
+  return { ...imp };
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const data = CONVERTER.toORTB({bidRequests, bidderRequest, context: {mediaType}})
+  const data = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
 
   const bid = bidRequests.find((b) => b.params.placementId)
   if (!data.site) data.site = {}
-  data.site.ext = {placementId: parseInt(bid.params.placementId)}
+  data.site.ext = { placementId: parseInt(bid.params.placementId) }
 
   if (bidderRequest.gdprConsent) {
     if (!data.user) data.user = {};

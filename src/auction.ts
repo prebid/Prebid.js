@@ -10,32 +10,32 @@ import {
   parseUrl,
   timestamp
 } from './utils.js';
-import {getPriceBucketString} from './cpmBucketManager.js';
-import {isNativeResponse, setNativeResponseProperties} from './native.js';
-import {batchAndStore, storeLocally} from './videoCache.js';
-import {Renderer} from './Renderer.js';
-import {config} from './config.js';
-import {userSync} from './userSync.js';
-import {hook, ignoreCallbackArg} from './hook.js';
-import {OUTSTREAM} from './video.js';
-import {AUDIO, VIDEO} from './mediaTypes.js';
-import {auctionManager} from './auctionManager.js';
-import {bidderSettings} from './bidderSettings.js';
+import { getPriceBucketString } from './cpmBucketManager.js';
+import { isNativeResponse, setNativeResponseProperties } from './native.js';
+import { batchAndStore, storeLocally } from './videoCache.js';
+import { Renderer } from './Renderer.js';
+import { config } from './config.js';
+import { userSync } from './userSync.js';
+import { hook, ignoreCallbackArg } from './hook.js';
+import { OUTSTREAM } from './video.js';
+import { AUDIO, VIDEO } from './mediaTypes.js';
+import { auctionManager } from './auctionManager.js';
+import { bidderSettings } from './bidderSettings.js';
 import * as events from './events.js';
-import adapterManager, {activityParams, type BidderRequest, type BidRequest} from './adapterManager.js';
-import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
-import {defer, PbPromise} from './utils/promise.js';
-import {type Metrics, useMetrics} from './utils/perfMetrics.js';
-import {adjustCpm} from './utils/cpm.js';
-import {getGlobal} from './prebidGlobal.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
-import type {Bid, BidResponse} from "./bidfactory.ts";
-import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
-import type {TargetingMap} from "./targeting.ts";
-import type {AdUnit} from "./adUnits.ts";
-import type {MediaType} from "./mediaTypes.ts";
-import type {VideoContext} from "./video.ts";
+import adapterManager, { activityParams, type BidderRequest, type BidRequest } from './adapterManager.js';
+import { EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS } from './constants.js';
+import { defer, PbPromise } from './utils/promise.js';
+import { type Metrics, useMetrics } from './utils/perfMetrics.js';
+import { adjustCpm } from './utils/cpm.js';
+import { getGlobal } from './prebidGlobal.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
+import type { Bid, BidResponse } from "./bidfactory.ts";
+import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
+import type { TargetingMap } from "./targeting.ts";
+import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
+import type { MediaType } from "./mediaTypes.ts";
+import type { VideoContext } from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
@@ -101,10 +101,6 @@ declare module './events' {
      */
     [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
     /**
-     * Fired when a bid is received.
-     */
-    [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
-    /**
      * Fired when a bid is rejected.
      */
     [EVENTS.BID_REJECTED]: [Partial<Bid>];
@@ -147,6 +143,18 @@ export interface AuctionOptionsConfig {
    * to pre-10.12 rendering logic.
    */
   legacyRender?: boolean;
+
+  /**
+   * When true, reject bids without a response `mediaType` when the ad unit has an explicit mediaTypes list.
+   * Default is false to preserve legacy behavior for responses that omit mediaType.
+   */
+  rejectUnknownMediaTypes?: boolean;
+
+  /**
+   * When true, reject bids with a response `mediaType` that does not match the ad unit's explicit mediaTypes list.
+   * Default is true; set to false to keep mismatched mediaType responses.
+   */
+  rejectInvalidMediaTypes?: boolean;
 }
 
 export interface PriceBucketConfig {
@@ -168,13 +176,13 @@ declare module './config' {
     auctionOptions?: AuctionOptionsConfig;
     priceGranularity?: (typeof GRANULARITY_OPTIONS)[keyof typeof GRANULARITY_OPTIONS];
     customPriceBucket?: PriceBucketConfig;
-    mediaTypePriceGranularity?: {[K in MediaType]?: PriceBucketConfig} & {[K in VideoContext as `${typeof VIDEO}-${K}`]?: PriceBucketConfig};
+    mediaTypePriceGranularity?: { [K in MediaType]?: PriceBucketConfig } & { [K in VideoContext as `${typeof VIDEO}-${K}`]?: PriceBucketConfig };
   }
 }
 
 export const beforeInitAuction = hook('sync', (auction) => {})
 
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}: AuctionOptions) {
+export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics }: AuctionOptions) {
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
   const _labels = labels;
@@ -428,8 +436,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
   }
 
-  events.on(EVENTS.SEAT_NON_BID, (event) => {
-    if (event.auctionId === _auctionId) {
+  events.on(EVENTS.PBS_ANALYTICS, (event) => {
+    if (event.auctionId === _auctionId && event.seatnonbid != null) {
       addNonBids(event.seatnonbid)
     }
   });
@@ -507,7 +515,7 @@ export type AddBidResponse = {
   reject(adUnitCode: AdUnitCode, bid: BidResponse, reason: typeof REJECTION_REASON[keyof typeof REJECTION_REASON]) : void;
 }
 
-export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionManager.index} = {}) {
+export function auctionCallbacks(auctionDone, auctionInstance, { index = auctionManager.index } = {}) {
   let outstandingBidsAdded = 0;
   let allAdapterCalledDone = false;
   const bidderRequestsDone = new Set();
@@ -530,7 +538,6 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
       const bidResponse = getPreparedBidForAuction(bid);
-      events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
         tryAddVideoAudioBid(auctionInstance, bidResponse, done);
       } else {
@@ -617,7 +624,7 @@ export function addBidToAuction(auctionInstance, bidResponse: Bid) {
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
-function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
+function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { index = auctionManager.index } = {}) {
   let addBid = true;
 
   const videoMediaType = index.getMediaTypes({
@@ -666,6 +673,7 @@ declare module './bidfactory' {
   }
 
   interface BaseBid {
+    element?: AdUnitDefinition['element'];
     /**
      * true if this bid is for an interstitial slot.
      */
@@ -733,7 +741,7 @@ declare module './bidfactory' {
 /**
  * Add timing properties to a bid response
  */
-function addBidTimingProperties(bidResponse: Partial<Bid>, {index = auctionManager.index} = {}) {
+function addBidTimingProperties(bidResponse: Partial<Bid>, { index = auctionManager.index } = {}) {
   const bidderRequest = index.getBidderRequest(bidResponse);
   const start = (bidderRequest && bidderRequest.start) || bidResponse.requestTimestamp;
 
@@ -747,10 +755,10 @@ function addBidTimingProperties(bidResponse: Partial<Bid>, {index = auctionManag
 /**
  * Augment `bidResponse` with properties that are common across all bids - including rejected bids.
  */
-function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: string, {index = auctionManager.index} = {}) {
+function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: string, { index = auctionManager.index } = {}) {
   const adUnit = index.getAdUnit(bidResponse);
 
-  addBidTimingProperties(bidResponse, {index})
+  addBidTimingProperties(bidResponse, { index })
 
   Object.assign(bidResponse, {
     cpm: parseFloat(bidResponse.cpm) || 0,
@@ -766,7 +774,7 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
 /**
  * Add additional bid response properties that are universal for all _accepted_ bids.
  */
-function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.index} = {}): Bid {
+function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.index } = {}): Bid {
   // Let listeners know that now is the time to adjust the bid, if they want to.
   //
   // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
@@ -775,6 +783,7 @@ function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.ind
 
   const adUnit = index.getAdUnit(bid);
   bid.instl = adUnit?.ortb2Imp?.instl === 1;
+  bid.element = adUnit?.element;
 
   // a publisher-defined renderer can be used to render bids
   const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;
@@ -848,7 +857,7 @@ export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGra
  * @param {object} obj.index
  * @returns {string} granularity
  */
-export const getPriceGranularity = (bid, {index = auctionManager.index} = {}) => {
+export const getPriceGranularity = (bid, { index = auctionManager.index } = {}) => {
   // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
   const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, index.getMediaTypes(bid), config.getConfig('mediaTypePriceGranularity'));
   const granularity = (typeof bid.mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
@@ -1053,7 +1062,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
   return standardSettings;
 }
 
-export function getKeyValueTargetingPairs(bidderCode, custBidObj: Bid, {index = auctionManager.index} = {}) {
+export function getKeyValueTargetingPairs(bidderCode, custBidObj: Bid, { index = auctionManager.index } = {}) {
   if (!custBidObj) {
     return {};
   }

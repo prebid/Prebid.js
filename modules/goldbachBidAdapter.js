@@ -184,7 +184,7 @@ const converter = ortbConverter({
 /* Logging */
 const sendLog = (data, percentage = 0.0001) => {
   if (Math.random() > percentage) return;
-  const encodedData = `data=${window.btoa(JSON.stringify({...data, source: 'goldbach_pbjs', projectedAmount: (1 / percentage)}))}`;
+  const encodedData = `data=${window.btoa(JSON.stringify({ ...data, source: 'goldbach_pbjs', projectedAmount: (1 / percentage) }))}`;
   ajax(URL_LOGGING, null, encodedData, {
     withCredentials: false,
     method: METHOD,
@@ -214,7 +214,7 @@ export const spec = {
     };
   },
   interpretResponse: function (ortbResponse, request) {
-    const bids = converter.fromORTB({response: ortbResponse.body, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: ortbResponse.body, request: request.data }).bids;
     return bids
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {

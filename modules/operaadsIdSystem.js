@@ -18,7 +18,7 @@ const ID_KEY = MODULE_NAME;
 const version = '1.0';
 const SYNC_URL = 'https://t.adx.opera.com/identity/';
 const AJAX_TIMEOUT = 300;
-const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'application/json'};
+const AJAX_OPTIONS = { method: 'GET', withCredentials: true, contentType: 'application/json' };
 
 function constructUrl(pairs) {
   const queries = [];

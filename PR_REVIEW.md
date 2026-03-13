@@ -19,6 +19,7 @@ General gulp commands include separate commands for serving the codebase on a bu
 
 ### General PR review Process
 
+- Whenever possible, new modules should provide Typescript types for their public interface. Examples of public interface are bid parameters and configuration (including configuration for analytics, userId, or real time data modules).
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
 - Checkout the branch (these instructions are available on the GitHub PR page as well).
 - Verify PR is a single change type. Example, refactor OR bugfix. If more than 1 type, ask submitter to break out requests.

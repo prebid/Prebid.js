@@ -1,10 +1,10 @@
-import {getBoundingClientRect} from '../boundingClientRect/boundingClientRect.js';
-import {canAccessWindowTop, cleanObj, getWinDimensions, getWindowSelf, getWindowTop} from '../../src/utils.js';
-import {getViewability, getViewportOffset} from '../percentInView/percentInView.js';
+import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
+import { canAccessWindowTop, cleanObj, getWinDimensions, getWindowSelf, getWindowTop } from '../../src/utils.js';
+import { getViewability, getViewportOffset } from '../percentInView/percentInView.js';
+import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
 export function getPlacementPositionUtils() {
   const topWin = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
-  const selfWin = getWindowSelf();
 
   const getViewportHeight = () => {
     const dim = getWinDimensions();
@@ -27,10 +27,10 @@ export function getPlacementPositionUtils() {
   };
 
   const getViewableDistance = (element, frameOffset) => {
-    if (!element) return {distanceToView: 0, elementHeight: 0};
+    if (!element) return { distanceToView: 0, elementHeight: 0 };
 
     const elementRect = getBoundingClientRect(element);
-    if (!elementRect) return {distanceToView: 0, elementHeight: 0};
+    if (!elementRect) return { distanceToView: 0, elementHeight: 0 };
 
     const elementTop = elementRect.top + frameOffset.y;
     const elementBottom = elementRect.bottom + frameOffset.y;
@@ -45,13 +45,13 @@ export function getPlacementPositionUtils() {
       distanceToView = Math.round(elementBottom);
     }
 
-    return {distanceToView, elementHeight: elementRect.height};
+    return { distanceToView, elementHeight: elementRect.height };
   };
 
   function getPlacementInfo(bidReq) {
-    const element = selfWin.document.getElementById(bidReq.adUnitCode);
+    const element = getAdUnitElement(bidReq);
     const frameOffset = getViewportOffset();
-    const {distanceToView, elementHeight} = getViewableDistance(element, frameOffset);
+    const { distanceToView, elementHeight } = getViewableDistance(element, frameOffset);
 
     const sizes = (bidReq.sizes || []).map(size => ({
       w: Number.parseInt(size[0], 10),

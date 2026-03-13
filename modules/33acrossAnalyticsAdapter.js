@@ -337,7 +337,7 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: [ auctions[completedAuctionId] ],
+    auctions: [auctions[completedAuctionId]],
   }
   if (uspDataHandler.getConsentData()) {
     report.usPrivacy = uspDataHandler.getConsentData();
@@ -401,8 +401,7 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.BID_REJECTED:
       onBidRejected(args);
       break;
-    case EVENTS.NO_BID:
-    case EVENTS.SEAT_NON_BID:
+    case EVENTS.NO_BID: // todo: need to also consider pbsanalytics where nonbid is not null
       setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
       break;
     case EVENTS.BIDDER_ERROR:

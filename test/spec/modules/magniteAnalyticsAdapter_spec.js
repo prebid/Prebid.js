@@ -25,7 +25,6 @@ const {
   BID_WON,
   BID_TIMEOUT,
   BILLABLE_EVENT,
-  SEAT_NON_BID,
   PBS_ANALYTICS,
   BID_REJECTED
 } = EVENTS;
@@ -169,7 +168,7 @@ const MOCK = {
     getStatusCode: () => 1,
     metrics
   },
-  SEAT_NON_BID: {
+  PBS_ANALYTICS: {
     auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
     seatnonbid: [{
       seat: 'rubicon',
@@ -2359,7 +2358,7 @@ describe('magnite analytics adapter', function () {
           accountId: 1001
         }
       });
-      seatnonbid = utils.deepClone(MOCK.SEAT_NON_BID);
+      seatnonbid = utils.deepClone(MOCK.PBS_ANALYTICS);
     });
 
     it('adds seatnonbid info to bids array', () => {
@@ -2379,12 +2378,12 @@ describe('magnite analytics adapter', function () {
 
     it('adjusts the status according to the status map', () => {
       const statuses = [
-        {code: 0, status: 'no-bid'},
-        {code: 100, status: 'error', error: {code: 'request-error', description: 'general error'}},
-        {code: 101, status: 'error', error: {code: 'timeout-error', description: 'prebid server timeout'}},
-        {code: 200, status: 'rejected'},
-        {code: 202, status: 'rejected'},
-        {code: 301, status: 'rejected-ipf'}
+        { code: 0, status: 'no-bid' },
+        { code: 100, status: 'error', error: { code: 'request-error', description: 'general error' } },
+        { code: 101, status: 'error', error: { code: 'timeout-error', description: 'prebid server timeout' } },
+        { code: 200, status: 'rejected' },
+        { code: 202, status: 'rejected' },
+        { code: 301, status: 'rejected-ipf' }
       ];
       statuses.forEach((info, index) => {
         checkStatusAgainstCode(info.status, info.code, info.error, index);
