@@ -411,6 +411,44 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(true);
     });
+    it('should return true when context for video is outstream', () => {
+      expect(spec.isBidRequestValid(
+        {
+          "bidder": "adquery",
+          "params": {
+            "placementId": "d30f79cf7fef47bd7a5611719f936539bec0d2e9",
+            "test": true,
+          },
+          "mediaTypes": {
+            "video": {
+              "context": "outstream",
+              "playerSize": [
+                [640, 360]
+              ],
+              "mimes": [
+                "video/mp4",
+                "video/webm"
+              ],
+              "protocols": [2, 3, 5, 6, 7, 8],
+              "api": [2],
+              "startdelay": 0,
+              "skip": 1,
+              "plcmt": 4,
+              "w": 640,
+              "h": 360
+            }
+          },
+          "adUnitCode": "video-placement-1",
+          "transactionId": null,
+          "adUnitId": "40393f1b-b89a-4539-a44d-f62a854ced7e",
+          "sizes": [[640, 360]],
+          "bidId": "919f45d2-b2cb-4d4d-a851-0f464612d1bf",
+          "bidderRequestId": "7d740e98-136d-4eab-92ee-c61934d2f6a3",
+          "auctionId": null,
+          "src": "client",
+        }
+      )).to.equal(true);
+    });
   })
 
   describe('buildRequests', function () {
