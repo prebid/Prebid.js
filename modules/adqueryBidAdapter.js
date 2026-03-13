@@ -41,7 +41,7 @@ export const spec = {
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
     if (video) {
-      return !!(video.playerSize);// Focus on outstream
+      return !!(video.playerSize);
     }
 
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
