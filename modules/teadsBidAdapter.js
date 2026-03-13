@@ -201,7 +201,6 @@ function getSharedViewerIdParameters(validBidRequests) {
     id5Id: 'id5-sync.com', // id5IdSystem
     criteoId: 'criteo.com', // criteoIdSystem
     yahooConnectId: 'yahoo.com', // connectIdSystem
-    quantcastId: 'quantcast.com', // quantcastIdSystem
     epsilonPublisherLinkId: 'epsilon.com', // publinkIdSystem
     publisherFirstPartyViewerId: 'pubcid.org', // sharedIdSystem
     merkleId: 'merkleinc.com', // merkleIdSystem
