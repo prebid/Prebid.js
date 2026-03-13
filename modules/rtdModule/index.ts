@@ -53,8 +53,7 @@ const setEventsListeners = (function () {
         [EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
         [EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
         [EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
-        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent'],
-        [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent']
+        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent']
       }).forEach(([ev, [handler, preprocess]]) => {
         events.on(ev as any, (args) => {
           preprocess && (preprocess as any)(args);
