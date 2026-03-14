@@ -22,20 +22,20 @@ import { AUDIO, VIDEO } from './mediaTypes.js';
 import { auctionManager } from './auctionManager.js';
 import { bidderSettings } from './bidderSettings.js';
 import * as events from './events.js';
-import adapterManager, { activityParams, type BidderRequest, type BidRequest } from './adapterManager.js';
-import { EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS } from './constants.js';
-import { defer, PbPromise } from './utils/promise.js';
-import { type Metrics, useMetrics } from './utils/perfMetrics.js';
-import { adjustCpm } from './utils/cpm.js';
-import { getGlobal } from './prebidGlobal.js';
-import { ttlCollection } from './utils/ttlCollection.js';
-import { getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
-import type { Bid, BidResponse } from "./bidfactory.ts";
-import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
-import type { TargetingMap } from "./targeting.ts";
-import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
-import type { MediaType } from "./mediaTypes.ts";
-import type { VideoContext } from "./video.ts";
+import adapterManager, {activityParams, type BidderRequest, type BidRequest} from './adapterManager.js';
+import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
+import {defer, PbPromise} from './utils/promise.js';
+import {type Metrics, useMetrics} from './utils/perfMetrics.js';
+import {adjustCpm} from './utils/cpm.js';
+import {getGlobal} from './prebidGlobal.js';
+import {ttlCollection} from './utils/ttlCollection.js';
+import {getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
+import type {Bid, BidResponse} from "./bidfactory.ts";
+import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
+import type {TargetingMap} from "./targeting.ts";
+import type {AdUnit} from "./adUnits.ts";
+import type {MediaType} from "./mediaTypes.ts";
+import type {VideoContext} from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
@@ -197,7 +197,10 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   let _bidderRequests: BidderRequest<BidderCode>[] = [];
   const _bidsReceived = ttlCollection<Bid>({
     startTime: (bid) => bid.responseTimestamp,
-    ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
+    ttl: (bid) => {
+      const minTTL = getEffectiveMinBidCacheTTL(bid);
+      return minTTL == null ? null : Math.max(minTTL, bid.ttl) * 1000;
+    }
   });
   let _noBids: BidRequest<BidderCode>[] = [];
   let _winningBids: Bid[] = [];
@@ -434,6 +437,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
 
   function setBidTargeting(bid) {
     adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
+    _bidsReceived.refresh();
   }
 
   events.on(EVENTS.PBS_ANALYTICS, (event) => {
