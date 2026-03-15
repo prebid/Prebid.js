@@ -199,6 +199,10 @@ export const spec = {
         params: one.params,
         gpid: gpid
       };
+      const dealIds = deepAccess(one, 'ortb2Imp.ext.data.dealIds');
+      if (dealIds) {
+        tmp.dealIds = dealIds;
+      }
       const bidFloor = getBidFloor(one);
       if (bidFloor) {
         tmp.bidFloor = bidFloor;
@@ -217,6 +221,10 @@ export const spec = {
     if (eids1 && eids1.length) {
       eids = eids1;
     }
+
+    const siteKvs =  deepAccess(bidderRequest, 'ortb2.site.ext.data.jixie');
+    const userKvs =  deepAccess(bidderRequest, 'ortb2.user.ext.data.jixie');
+
     // we want to send this blob of info to our backend:
     const transformedParams = Object.assign({}, {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
@@ -237,6 +245,12 @@ export const spec = {
       pbjsver: PREBID_VERSION,
       cfg: jxCfg
     }, ids);
+    if (siteKvs) {
+      transformedParams.siteKvs = siteKvs;
+    }
+    if (userKvs) {
+      transformedParams.userKvs = userKvs;
+    }
     return Object.assign({}, {
       method: 'POST',
       url: REQUESTS_URL,
