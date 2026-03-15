@@ -57,9 +57,3 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-// track of changes for partners
-// bid: { params: {
-//    subDomain: "something",   // has default fallback to 'prebid'
-//    baseURL: "something"      // has default fallback to 'cootlogix.com'
-// }
