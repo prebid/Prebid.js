@@ -3,7 +3,7 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
-import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getViewability, isViewabilityMeasurable } from '../libraries/percentInView/percentInView.js';
 
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -25,14 +25,14 @@ import {
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'connatix';
 
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
-const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
-const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
+const CNX_IDS_LOCAL_STORAGE_KEY = 'cnx_user_ids';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
 const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collection_updated';
@@ -66,6 +66,7 @@ export function getBidFloor(bid) {
 
 export function validateBanner(mediaTypes) {
   if (!mediaTypes[BANNER]) {
+    // Undefined banner means no banner ads, which is a valid option
     return true;
   }
 
@@ -76,6 +77,7 @@ export function validateBanner(mediaTypes) {
 export function validateVideo(mediaTypes) {
   const video = mediaTypes[VIDEO];
   if (!video) {
+    // Undefined video means no video ads, which is a valid option
     return true;
   }
 
@@ -83,7 +85,10 @@ export function validateVideo(mediaTypes) {
 }
 
 export function _getMinSize(sizes) {
-  if (!sizes || sizes.length === 0) return undefined;
+  if (!sizes || sizes.length === 0) {
+    return;
+  }
+
   return sizes.reduce((minSize, currentSize) => {
     const minArea = minSize.w * minSize.h;
     const currentArea = currentSize.w * currentSize.h;
@@ -91,28 +96,36 @@ export function _getMinSize(sizes) {
   });
 }
 
-export function _canSelectViewabilityContainer() {
-  try {
-    window.top.document.querySelector('#viewability-container');
-    return true;
-  } catch (e) {
-    return false;
+function getDomElement(elementId) {
+  const getElementFromDoc = doc => {
+    let element;
+
+    try {
+      element = doc.querySelector(elementId);
+    } catch (e) {
+      /* noop */
+    }
+
+    if (!element) {
+      element = doc.getElementById(elementId);
+    }
+
+    return element;
+  };
+
+  let viewabilityContainer = getElementFromDoc(document);
+  if (viewabilityContainer) {
+    return viewabilityContainer;
+  }
+
+  const topDocument = window.top.document;
+  if (document !== topDocument) {
+    return getElementFromDoc(topDocument);
   }
 }
 
-export function _isViewabilityMeasurable(element) {
-  if (!element) return false;
-  return _canSelectViewabilityContainer(element);
-}
-
-export function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
-    : 0;
-}
-
 export function detectViewability(bid) {
-  const { params, adUnitCode } = bid;
+  const { params } = bid;
 
   const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
 
@@ -122,7 +135,8 @@ export function detectViewability(bid) {
 
   if (isStr(viewabilityContainerIdentifier)) {
     try {
-      element = document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+      element = getDomElement(viewabilityContainerIdentifier);
+
       if (element) {
         bidParamSizes = [element.offsetWidth, element.offsetHeight];
         minSize = _getMinSize(bidParamSizes)
@@ -138,15 +152,15 @@ export function detectViewability(bid) {
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
     minSize = _getMinSize(bidParamSizes ?? [])
-    element = document.getElementById(adUnitCode);
+    element = getAdUnitElement(bid);
   }
 
-  if (_isViewabilityMeasurable(element)) {
+  if (isViewabilityMeasurable(element)) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
     }
-    return Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj))
   }
 
   return null;
@@ -182,7 +196,7 @@ export function _getBidRequests(validBidRequests) {
  * Get ids from Prebid User ID Modules and add them to the payload
  */
 function _handleEids(payload, validBidRequests) {
-  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
@@ -197,23 +211,16 @@ export function hasQueryParams(url) {
   }
 }
 
-export function saveOnAllStorages(name, value, expirationTimeMs) {
-  const date = new Date();
-  date.setTime(date.getTime() + expirationTimeMs);
-  const expires = `expires=${date.toUTCString()}`;
-  storage.setCookie(name, JSON.stringify(value), expires);
+export function saveInLocalStorage(name, value) {
   storage.setDataInLocalStorage(name, JSON.stringify(value));
   cnxIdsValues = value;
 }
 
-export function readFromAllStorages(name) {
-  const fromCookie = storage.getCookie(name);
+export function readFromLocalStorage(name) {
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
-
-  const parsedCookie = fromCookie ? JSON.parse(fromCookie) : undefined;
   const parsedLocalStorage = fromLocalStorage ? JSON.parse(fromLocalStorage) : undefined;
 
-  return parsedCookie || parsedLocalStorage || undefined;
+  return parsedLocalStorage || undefined;
 }
 
 export const spec = {
@@ -261,7 +268,7 @@ export const spec = {
     const bidRequests = _getBidRequests(validBidRequests);
     let userIds;
     try {
-      userIds = readFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY) || cnxIdsValues;
+      userIds = readFromLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY) || cnxIdsValues;
     } catch (error) {
       userIds = cnxIdsValues;
     }
@@ -313,6 +320,7 @@ export const spec = {
       creativeId: bidResponse.CreativeId,
       ad: bidResponse.Ad,
       vastXml: bidResponse.VastXml,
+      lurl: bidResponse.Lurl,
       referrer: referrer,
     }));
   },
@@ -349,6 +357,15 @@ export const spec = {
       params['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params['gpp'] = encodeURIComponent(gppConsent.gppString);
+      params['gpp_sid'] = gppConsent.applicableSections.join(',');
+    }
+
+    if (config.getConfig('coppa') === true) {
+      params['coppa'] = 1;
+    }
+
     window.addEventListener('message', function handler(event) {
       if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;
@@ -363,7 +380,7 @@ export const spec = {
 
       if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
         if (data) {
-          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
+          saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
         }
       }
     }, true)
@@ -404,7 +421,7 @@ export const spec = {
     }
     const requestTimeout = connatixBidRequestTimeout.timeout;
     const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
-    spec.triggerEvent({type: 'Timeout', timeout, context});
+    spec.triggerEvent({ type: 'Timeout', timeout, context });
   },
 
   /**
@@ -414,9 +431,9 @@ export const spec = {
     if (bidWinData == null) {
       return;
     }
-    const {bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId} = bidWinData;
+    const { bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId } = bidWinData;
 
-    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
+    spec.triggerEvent({ type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context });
   },
 
   triggerEvent(data) {

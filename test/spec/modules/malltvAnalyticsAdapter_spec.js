@@ -3,7 +3,7 @@ import {
   ANALYTICS_VERSION, BIDDER_STATUS, DEFAULT_SERVER
 } from 'modules/malltvAnalyticsAdapter.js'
 import { expect } from 'chai'
-import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter'
+import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter.js'
 import * as events from 'src/events'
 import { EVENTS } from 'src/constants.js'
 
@@ -115,7 +115,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
     })
 
     describe('#getCachedAuction()', function() {
-      const existing = {timeoutBids: [{}]}
+      const existing = { timeoutBids: [{}] }
       malltvAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing
 
       it('should get the existing cached object if it exists', function() {

@@ -11,13 +11,13 @@ const analyticsType = 'endpoint';
 
 let _initOptions = {};
 
-let _logBidResponseData = {
+const _logBidResponseData = {
   auctionId: '',
   auctionTimeout: 0,
   responseTime: 0,
 };
 
-let _bidResponseDataLogged = [];
+const _bidResponseDataLogged = [];
 
 var kargoAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }), {

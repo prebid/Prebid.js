@@ -1,12 +1,12 @@
-import {expect} from 'chai';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { config } from 'src/config';
 import * as utils from 'src/utils';
-import {spec} from 'modules/madvertiseBidAdapter';
+import { spec } from 'modules/madvertiseBidAdapter';
 
 describe('madvertise adapater', () => {
   describe('Test validate req', () => {
     it('should accept minimum valid bid', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
         params: {
@@ -18,7 +18,7 @@ describe('madvertise adapater', () => {
       expect(isValid).to.equal(false);
     });
     it('should reject no sizes', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         params: {
           zoneId: 'test'
@@ -29,7 +29,7 @@ describe('madvertise adapater', () => {
       expect(isValid).to.equal(false);
     });
     it('should reject empty sizes', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         sizes: [],
         params: {
@@ -41,7 +41,7 @@ describe('madvertise adapater', () => {
       expect(isValid).to.equal(false);
     });
     it('should reject wrong format sizes', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         sizes: [['728x90']],
         params: {
@@ -52,7 +52,7 @@ describe('madvertise adapater', () => {
       expect(isValid).to.equal(false);
     });
     it('should reject no params', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]]
       };
@@ -61,7 +61,7 @@ describe('madvertise adapater', () => {
       expect(isValid).to.equal(false);
     });
     it('should reject missing s', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         params: {}
       };
@@ -73,7 +73,7 @@ describe('madvertise adapater', () => {
 
   describe('Test build request', () => {
     beforeEach(function () {
-      let mockConfig = {
+      const mockConfig = {
         consentManagement: {
           cmpApi: 'IAB',
           timeout: 1111,
@@ -88,7 +88,7 @@ describe('madvertise adapater', () => {
     afterEach(function () {
       config.getConfig.restore();
     });
-    let bid = [{
+    const bid = [{
       bidder: 'madvertise',
       sizes: [[728, 90], [300, 100]],
       bidId: '51ef8751f9aead',
@@ -101,7 +101,7 @@ describe('madvertise adapater', () => {
       }
     }];
     it('minimum request with gdpr consent', () => {
-      let bidderRequest = {
+      const bidderRequest = {
         gdprConsent: {
           consentString: 'CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA',
           vendorData: {},
@@ -123,7 +123,7 @@ describe('madvertise adapater', () => {
     });
 
     it('minimum request without gdpr consent', () => {
-      let bidderRequest = {};
+      const bidderRequest = {};
       const req = spec.buildRequests(bid, bidderRequest);
 
       expect(req).to.exist.and.to.be.a('array');
@@ -141,7 +141,7 @@ describe('madvertise adapater', () => {
 
   describe('Test interpret response', () => {
     it('General banner response', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
         bidId: '51ef8751f9aead',
@@ -155,19 +155,21 @@ describe('madvertise adapater', () => {
           age: 25,
         }
       };
-      let resp = spec.interpretResponse({body: {
-        requestId: 'REQUEST_ID',
-        cpm: 1,
-        ad: '<html><h3>I am an ad</h3></html>',
-        Width: 320,
-        height: 50,
-        creativeId: 'CREATIVE_ID',
-        dealId: 'DEAL_ID',
-        ttl: 180,
-        currency: 'EUR',
-        netRevenue: true,
-        adomain: ['madvertise.com']
-      }}, {bidId: bid.bidId});
+      const resp = spec.interpretResponse({
+        body: {
+          requestId: 'REQUEST_ID',
+          cpm: 1,
+          ad: '<html><h3>I am an ad</h3></html>',
+          Width: 320,
+          height: 50,
+          creativeId: 'CREATIVE_ID',
+          dealId: 'DEAL_ID',
+          ttl: 180,
+          currency: 'EUR',
+          netRevenue: true,
+          adomain: ['madvertise.com']
+        }
+      }, { bidId: bid.bidId });
 
       expect(resp).to.exist.and.to.be.a('array');
       expect(resp[0]).to.have.property('requestId', bid.bidId);
@@ -183,7 +185,7 @@ describe('madvertise adapater', () => {
       // expect(resp[0].adomain).to.deep.equal(['madvertise.com']);
     });
     it('No response', () => {
-      let bid = {
+      const bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
         bidId: '51ef8751f9aead',
@@ -197,7 +199,7 @@ describe('madvertise adapater', () => {
           age: 25,
         }
       };
-      let resp = spec.interpretResponse({body: null}, {bidId: bid.bidId});
+      const resp = spec.interpretResponse({ body: null }, { bidId: bid.bidId });
 
       expect(resp).to.exist.and.to.be.a('array').that.is.empty;
     });

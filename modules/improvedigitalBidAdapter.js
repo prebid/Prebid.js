@@ -1,11 +1,11 @@
-import {deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+import { deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { convertCurrency } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -63,11 +63,11 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param bidderRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {{ortbRequest:Object}} bidderRequest
+   * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse(serverResponse, { ortbRequest }) {
-    return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
+    return CONVERTER.fromORTB({ request: ortbRequest, response: serverResponse.body }).bids;
   },
 
   /**
@@ -139,7 +139,7 @@ export const CONVERTER = ortbConverter({
     ttl: CREATIVE_TTL,
     nativeRequest: {
       eventtrackers: [
-        {event: 1, methods: [1, 2]},
+        { event: 1, methods: [1, 2] },
       ]
     }
   },
@@ -190,7 +190,7 @@ export const CONVERTER = ortbConverter({
     if (!bid.adm || !bid.price || bid.hasOwnProperty('errorCode')) {
       return;
     }
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     context.mediaType = (() => {
       const requestMediaTypes = Object.keys(bidRequest.mediaTypes);
       if (requestMediaTypes.length === 1) return requestMediaTypes[0];
@@ -227,8 +227,8 @@ export const CONVERTER = ortbConverter({
         // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
         if (config.getConfig('improvedigital.usePrebidSizes') === false) {
-          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
-          bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
+          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], { sizes: null });
+          bidRequest = { ...bidRequest, mediaTypes: { [BANNER]: banner } }
         }
         fillImpBanner(imp, bidRequest, context);
       },
@@ -236,13 +236,13 @@ export const CONVERTER = ortbConverter({
         // override to use video params from both mediaTypes.video and bidRequest.params.video
         if (!bidRequest.mediaTypes[VIDEO]) return;
         const video = Object.assign(
-          {mimes: VIDEO_PARAMS.DEFAULT_MIMES},
+          { mimes: VIDEO_PARAMS.DEFAULT_MIMES },
           bidRequest.mediaTypes[VIDEO],
           bidRequest.params?.video
         )
         fillImpVideo(
           imp,
-          {...bidRequest, mediaTypes: {[VIDEO]: video}},
+          { ...bidRequest, mediaTypes: { [VIDEO]: video } },
           context
         );
         deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
@@ -274,18 +274,21 @@ const ID_REQUEST = {
     }
 
     function formatRequest(bidRequests, publisherId, extendMode) {
-      const ortbRequest = CONVERTER.toORTB({bidRequests, bidderRequest, context: {extendMode}});
+      const ortbRequest = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { extendMode } });
       return {
         method: 'POST',
         url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(ortbRequest),
         ortbRequest,
-        bidderRequest
+        bidderRequest,
+        options: {
+          endpointCompression: true,
+        },
       }
     }
 
     let publisherId = null;
-    bidRequests.map((bidRequest) => {
+    bidRequests.forEach((bidRequest) => {
       const bidParamsPublisherId = bidRequest.params.publisherId;
       const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
       if (singleRequestMode) {

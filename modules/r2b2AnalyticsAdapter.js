@@ -1,11 +1,11 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {EVENTS} from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {isNumber, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {config} from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { isNumber, isPlainObject, isStr, logError, logWarn } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { config } from '../src/config.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const ADAPTER_CODE = 'r2b2';
@@ -65,7 +65,7 @@ let errors = 0;
 
 let callDepth = 0;
 function flushEvents () {
-  let events = { prebid: { e: eventBuffer, c: adServerCurrency } };
+  const events = { prebid: { e: eventBuffer, c: adServerCurrency } };
   eventBuffer = [];
   callDepth++;
   try {
@@ -160,13 +160,13 @@ function reportError (message, params) {
 function reportEvents (events) {
   try {
     let data = 'events=' + JSON.stringify(events);
-    let url = r2b2Analytics.getUrl() +
+    const url = r2b2Analytics.getUrl() +
       `?v=${encodeURIComponent(ADAPTER_VERSION)}` +
       `&hbDomain=${encodeURIComponent(WEBSITE)}` +
       (CONFIG_ID ? `&conf=${encodeURIComponent(CONFIG_ID)}` : '') +
       (CONFIG_VERSION ? `&conf_ver=${encodeURIComponent(CONFIG_VERSION)}` : '') +
       `&u=${encodeURIComponent(REPORTED_URL)}`;
-    let headers = {
+    const headers = {
       contentType: 'application/x-www-form-urlencoded'
     }
     data = data.replace(/&/g, '%26');
@@ -283,7 +283,7 @@ function handleBidTimeout (args) {
   // console.log('bid timeout:', arguments);
   const auctionId = args.length ? args[0].auctionId : null;
   if (auctionId) {
-    let bidders = args.reduce((result, bid) => {
+    const bidders = args.reduce((result, bid) => {
       if (!result[bid.bidder]) {
         result[bid.bidder] = {}
       }
@@ -357,9 +357,9 @@ function handleBidderDone (args) {
 }
 function getAuctionUnitsData (auctionObject) {
   let unitsData = {};
-  const {bidsReceived, bidsRejected} = auctionObject;
-  let _unitsDataBidReducer = function(data, bid, key) {
-    const {adUnitCode, bidder} = bid;
+  const { bidsReceived, bidsRejected } = auctionObject;
+  const _unitsDataBidReducer = function(data, bid, key) {
+    const { adUnitCode, bidder } = bid;
     data[adUnitCode] = data[adUnitCode] || {};
     data[adUnitCode][key] = data[adUnitCode][key] || {};
     data[adUnitCode][key][bidder] = (data[adUnitCode][key][bidder] || 0) + 1;
@@ -375,7 +375,7 @@ function getAuctionUnitsData (auctionObject) {
   return unitsData
 }
 function handleEmptyAuction(auction) {
-  let auctionId = auction.auctionId;
+  const auctionId = auction.auctionId;
   if (!auctionsData[auctionId]) {
     createAuctionData(auction, true);
   }
@@ -472,7 +472,7 @@ function handleStaleRender (args) {
 }
 function handleRenderSuccess (args) {
   // console.log('render success:', arguments);
-  const {bid} = args;
+  const { bid } = args;
   bidsData[bid.adId].renderTime = Date.now();
   const data = {
     b: bid.bidder,
@@ -488,7 +488,7 @@ function handleRenderSuccess (args) {
 }
 function handleRenderFailed (args) {
   // console.log('render failed:', arguments);
-  const {bid, reason} = args;
+  const { bid, reason } = args;
   const data = {
     b: bid.bidder,
     u: bid.adUnitCode,
@@ -513,8 +513,8 @@ function handleBidViewable (args) {
   processEvent(event);
 }
 
-let baseAdapter = adapter({analyticsType});
-let r2b2Analytics = Object.assign({}, baseAdapter, {
+const baseAdapter = adapter({ analyticsType });
+const r2b2Analytics = Object.assign({}, baseAdapter, {
   getUrl() {
     return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_EVENT_PATH}`
   },
@@ -523,7 +523,7 @@ let r2b2Analytics = Object.assign({}, baseAdapter, {
   },
   enableAnalytics(conf = {}) {
     if (isPlainObject(conf.options)) {
-      const {domain, configId, configVer, server} = conf.options;
+      const { domain, configId, configVer, server } = conf.options;
       if (!domain || !isStr(domain)) {
         logWarn(`${MODULE_NAME}: Mandatory parameter 'domain' not configured, analytics disabled`);
         return
@@ -554,7 +554,7 @@ let r2b2Analytics = Object.assign({}, baseAdapter, {
     baseAdapter.enableAnalytics.call(this, conf);
   },
   track(event) {
-    const {eventType, args} = event;
+    const { eventType, args } = event;
     try {
       if (!adServerCurrency) {
         const currencyObj = config.getConfig('currency');

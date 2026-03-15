@@ -21,7 +21,7 @@ import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_
 
 const EVENTS_TOPIC = 'pre_lips';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout, headers) => {
     ajaxBuilder(timeout)(
@@ -88,7 +88,6 @@ function initializeLiveConnect(configParams) {
   }
 
   configParams = configParams || {};
-  const fpidConfig = configParams.fpid || {};
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
@@ -119,10 +118,6 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
-
-  liveConnectConfig.idCookie = {};
-  liveConnectConfig.idCookie.name = fpidConfig.name;
-  liveConnectConfig.idCookie.strategy = fpidConfig.strategy == 'html5' ? 'localStorage' : fpidConfig.strategy;
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {

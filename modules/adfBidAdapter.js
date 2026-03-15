@@ -1,14 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, getWinDimensions, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepClone, deepSetValue, getWinDimensions, parseSizesInput, setOnAny } from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-
-const { getConfig } = config;
 
 const BIDDER_CODE = 'adf';
 const GVLID = 50;
@@ -23,7 +20,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
+  supportedMediaTypes: [NATIVE, BANNER, VIDEO],
   isBidRequestValid: (bid) => {
     const params = bid.params || {};
     const { mid, inv, mname } = params;
@@ -33,46 +30,35 @@ export const spec = {
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
-    let user = commonFpd.user || {};
-
-    if (typeof getConfig('app') === 'object') {
-      app = getConfig('app') || {};
-      if (commonFpd.app) {
-        mergeDeep(app, commonFpd.app);
-      }
+    const user = commonFpd.user || {};
+    if (typeof commonFpd.app === 'object') {
+      app = commonFpd.app || {};
     } else {
-      site = getConfig('site') || {};
-      if (commonFpd.site) {
-        mergeDeep(site, commonFpd.site);
-      }
-
+      site = commonFpd.site || {};
       if (!site.page) {
         site.page = bidderRequest.refererInfo.page;
       }
     }
 
-    let device = getConfig('device') || {};
-    if (commonFpd.device) {
-      mergeDeep(device, commonFpd.device);
-    }
+    const device = commonFpd.device || {};
     const { innerWidth, innerHeight } = getWinDimensions();
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
-    let source = commonFpd.source || {};
+    const source = commonFpd.source || {};
     source.fd = 1;
 
-    let regs = commonFpd.regs || {};
+    const regs = commonFpd.regs || {};
 
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getCurrencyFromBidderRequest(bidderRequest);
-    const cur = currency && [ currency ];
+    const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     if (eids) {
       deepSetValue(user, 'ext.eids', eids);
@@ -94,7 +80,7 @@ export const spec = {
       const bidfloor = floorInfo?.floor;
       const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
-      const impExtData = bid.ortb2Imp?.ext?.data;
+      const impExt = bid.ortb2Imp?.ext;
 
       const imp = {
         id: id + 1,
@@ -102,7 +88,7 @@ export const spec = {
         bidfloor,
         bidfloorcur,
         ext: {
-          data: impExtData,
+          ...impExt,
           bidder: {
             inv,
             mname
@@ -111,17 +97,17 @@ export const spec = {
       };
 
       if (bid.nativeOrtbRequest && bid.nativeOrtbRequest.assets) {
-        let assets = bid.nativeOrtbRequest.assets;
-        let requestAssets = [];
+        const assets = bid.nativeOrtbRequest.assets;
+        const requestAssets = [];
         for (let i = 0; i < assets.length; i++) {
-          let asset = deepClone(assets[i]);
-          let img = asset.img;
+          const asset = deepClone(assets[i]);
+          const img = asset.img;
           if (img) {
-            let aspectratios = img.ext && img.ext.aspectratios;
+            const aspectratios = img.ext && img.ext.aspectratios;
 
             if (aspectratios) {
-              let ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
-              let ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
+              const ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
+              const ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
               img.wmin = img.wmin || 0;
               img.hmin = ratioHeight * img.wmin / ratioWidth | 0;
             }
@@ -141,7 +127,7 @@ export const spec = {
       if (bannerParams && bannerParams.sizes) {
         const sizes = parseSizesInput(bannerParams.sizes);
         const format = sizes.map(size => {
-          const [ width, height ] = size.split('x');
+          const [width, height] = size.split('x');
           const w = parseInt(width, 10);
           const h = parseInt(height, 10);
           return { w, h };
@@ -237,12 +223,13 @@ export const spec = {
         }
 
         if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
-          result.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+          result.renderer = Renderer.install({ id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode });
           result.renderer.setRender(renderer);
         }
 
         return result;
       }
+      return undefined;
     }).filter(Boolean);
   }
 };

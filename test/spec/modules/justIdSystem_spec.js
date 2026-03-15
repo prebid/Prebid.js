@@ -29,7 +29,7 @@ describe('JustIdSystem', function () {
   describe('decode', function() {
     it('decode justId', function() {
       const justId = 'aaa';
-      expect(justIdSubmodule.decode({uid: justId})).to.deep.eq({justId: justId});
+      expect(justIdSubmodule.decode({ uid: justId })).to.deep.eq({ justId: justId });
     })
   });
 
@@ -75,7 +75,7 @@ describe('JustIdSystem', function () {
 
       const atmVarName = '__fakeAtm';
 
-      justIdSubmodule.getId({params: {atmVarName: atmVarName}}).callback(callbackSpy);
+      justIdSubmodule.getId({ params: { atmVarName: atmVarName } }).callback(callbackSpy);
 
       expect(getAtmStub.lastCall.lastArg).to.equal(atmVarName);
     });
@@ -106,7 +106,7 @@ describe('JustIdSystem', function () {
     it('work with stub', function(done) {
       var calls = [];
       currentAtm = (cmd, param) => {
-        calls.push({cmd: cmd, param: param});
+        calls.push({ cmd: cmd, param: param });
       }
 
       const callbackSpy = sinon.stub();
@@ -190,7 +190,7 @@ describe('JustIdSystem', function () {
       const b = { y: 'y' }
       const c = { z: 'z' }
 
-      justIdSubmodule.getId(a, {gdpr: b}, c).callback(callbackSpy);
+      justIdSubmodule.getId(a, { gdpr: b }, c).callback(callbackSpy);
 
       scriptTagCallback();
 
@@ -209,8 +209,12 @@ function configModeCombined(url, partner) {
       mode: 'COMBINED'
     }
   }
-  url && (conf.params.url = url);
-  partner && (conf.params.partner = partner);
+  if (url) {
+    conf.params.url = url;
+  }
+  if (partner) {
+    conf.params.partner = partner;
+  }
 
   return conf;
 }

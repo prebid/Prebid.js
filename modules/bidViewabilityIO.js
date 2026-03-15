@@ -1,7 +1,9 @@
 import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -19,16 +21,16 @@ const supportedMediaTypes = [
   'banner'
 ];
 
-export let isSupportedMediaType = (bid) => {
+export const isSupportedMediaType = (bid) => {
   return supportedMediaTypes.indexOf(bid.mediaType) > -1;
 }
 
-let _logMessage = (message) => {
+const _logMessage = (message) => {
   return logMessage(`${MODULE_NAME}: ${message}`);
 }
 
 // returns options for the iO that detects if the ad is viewable
-export let getViewableOptions = (bid) => {
+export const getViewableOptions = (bid) => {
   if (bid.mediaType === 'banner') {
     return {
       root: null,
@@ -39,10 +41,10 @@ export let getViewableOptions = (bid) => {
 }
 
 // markViewed returns a function what will be executed when an ad satisifes the viewable iO
-export let markViewed = (bid, entry, observer) => {
+export const markViewed = (bid, entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-    events.emit(EVENTS.BID_VIEWABLE, bid);
+    triggerBidViewable(bid);
     _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
   }
 }
@@ -55,7 +57,7 @@ export let markViewed = (bid, entry, observer) => {
 // is cancelled, an the bid will not be marked as viewed. There's probably some kind of race-ish
 // thing going on between IO and setTimeout but this isn't going to be perfect, it's just going to
 // be pretty good.
-export let viewCallbackFactory = (bid) => {
+export const viewCallbackFactory = (bid) => {
   return (entries, observer) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -72,15 +74,15 @@ export let viewCallbackFactory = (bid) => {
   };
 };
 
-export let init = () => {
+export const init = () => {
   config.getConfig(MODULE_NAME, conf => {
     if (conf[MODULE_NAME][CONFIG_ENABLED] && CLIENT_SUPPORTS_IO) {
       // if the module is enabled and the browser supports Intersection Observer,
       // then listen to AD_RENDER_SUCCEEDED to setup IO's for supported mediaTypes
-      events.on(EVENTS.AD_RENDER_SUCCEEDED, ({doc, bid, id}) => {
+      events.on(EVENTS.AD_RENDER_SUCCEEDED, ({ doc, bid, id }) => {
         if (isSupportedMediaType(bid)) {
-          let viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-          let element = document.getElementById(bid.adUnitCode);
+          const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
+          const element = getAdUnitElement(bid);
           viewable.observe(element);
         }
       });

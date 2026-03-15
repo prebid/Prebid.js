@@ -128,7 +128,6 @@ var adUnits = [{
                     }
                 ]
             },
-            sendTargetingKeys: false,
         }
     },
     "bids": [{

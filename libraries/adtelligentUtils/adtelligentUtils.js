@@ -1,6 +1,6 @@
-import {deepAccess, isArray} from '../../src/utils.js';
+import { deepAccess, isArray } from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 
 export const supportedMediaTypes = [VIDEO, BANNER]
 
@@ -65,8 +65,8 @@ export function createTag(bidRequests, adapterRequest) {
   if (deepAccess(adapterRequest, 'uspConsent')) {
     tag.USP = deepAccess(adapterRequest, 'uspConsent');
   }
-  if (deepAccess(bidRequests[0], 'schain')) {
-    tag.Schain = deepAccess(bidRequests[0], 'schain');
+  if (deepAccess(adapterRequest, 'ortb2.source.ext.schain')) {
+    tag.Schain = deepAccess(adapterRequest, 'ortb2.source.ext.schain');
   }
   if (deepAccess(bidRequests[0], 'userId')) {
     tag.UserIds = deepAccess(bidRequests[0], 'userId');

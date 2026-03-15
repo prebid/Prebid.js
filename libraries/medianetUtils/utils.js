@@ -1,6 +1,6 @@
 import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.js';
-import {mnetGlobals} from './constants.js';
-import {getViewportSize} from '../viewport/viewport.js';
+import { mnetGlobals } from './constants.js';
+import { getViewportSize } from '../viewport/viewport.js';
 
 export function findBidObj(list = [], key, value) {
   return list.find((bid) => {
@@ -15,12 +15,12 @@ export function filterBidsListByFilters(list = [], filters) {
 }
 
 export function flattenObj(obj, parent, res = {}) {
-  for (let key in obj) {
+  for (const key in obj) {
     if (Array.isArray(obj[key])) {
       continue;
     }
     const propName = parent ? parent + '.' + key : key;
-    if (typeof obj[key] == 'object') {
+    if (typeof obj[key] === 'object') {
       flattenObj(obj[key], propName, res);
     } else {
       res[propName] = String(obj[key]);
@@ -43,8 +43,8 @@ export function formatQS(data) {
 
 export function getWindowSize() {
   const { width, height } = getViewportSize();
-  let w = width || -1;
-  let h = height || -1;
+  const w = width || -1;
+  const h = height || -1;
   return `${w}x${h}`;
 }
 

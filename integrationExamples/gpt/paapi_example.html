@@ -6,7 +6,7 @@
     gulp serve --modules=paapiForGpt,openxBidAdapter
   -->
   <script async src="../../build/dev/prebid.js"></script>
-  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script>
     var FAILSAFE_TIMEOUT = 3000;
     var PREBID_TIMEOUT = 1500;
@@ -63,11 +63,15 @@
         if (pbjs.adserverRequestSent) return;
         pbjs.adserverRequestSent = true;
         googletag.cmd.push(function() {
-          pbjs.que.push(function() {
-            pbjs.setTargetingForGPTAsync();
-            pbjs.setPAAPIConfigForGPT();
+          if (pbjs.libLoaded) {
+            pbjs.que.push(function() {
+              pbjs.setTargetingForGPTAsync();
+              pbjs.setPAAPIConfigForGPT();
+              googletag.pubads().refresh();
+            });
+          } else {
             googletag.pubads().refresh();
-          });
+          }
         });
       }
 

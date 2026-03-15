@@ -5,6 +5,12 @@ Module Name: clean.io Rtd provider
 Module Type: Rtd Provider
 Maintainer: nick@clean.io
 ```
+> **Warning!**
+>
+> The **cleanioRtdProvider** module has been renamed to [humansecurityMalvDefenseRtdProvider](humansecurityMalvDefenseRtdProvider.md) following HUMAN Security's acquisition of the Clean.io project in 2022.
+> **cleanioRtdProvider** module is maintained for backward compatibility until the next major Prebid release.
+>
+> Please use humansecurityMalvDefenseRtdProvider instead of cleanioRtdProvider in your Prebid integration.
 
 The clean.io Realtime module provides effective anti-malvertising solution for publishers, including, but not limited to,
 blocking unwanted 0- and 1-click redirects, deceptive ads or those with malicious landing pages, and various types of affiliate fraud.

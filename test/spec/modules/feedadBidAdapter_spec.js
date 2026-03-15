@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/feedadBidAdapter.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
-import {server} from 'test/mocks/xhr.js';
+import { expect } from 'chai';
+import { spec } from 'modules/feedadBidAdapter.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { server } from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';
 const EXPECTED_ADAPTER_VERSION = '1.0.6';
@@ -31,41 +31,41 @@ describe('FeedAdAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should detect missing params', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: []
       });
       expect(result).to.equal(false);
     });
     it('should detect missing client token', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {placementId: 'placement'}
+        params: { placementId: 'placement' }
       });
       expect(result).to.equal(false);
     });
     it('should detect zero length client token', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: '', placementId: 'placement'}
+        params: { clientToken: '', placementId: 'placement' }
       });
       expect(result).to.equal(false);
     });
     it('should detect missing placement id', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken'}
+        params: { clientToken: 'clientToken' }
       });
       expect(result).to.equal(false);
     });
     it('should detect zero length placement id', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken', placementId: ''}
+        params: { clientToken: 'clientToken', placementId: '' }
       });
       expect(result).to.equal(false);
     });
@@ -74,10 +74,10 @@ describe('FeedAdAdapter', function () {
       for (var i = 0; i < 300; i++) {
         placementId += 'a';
       }
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken', placementId}
+        params: { clientToken: 'clientToken', placementId }
       });
       expect(result).to.equal(false);
     });
@@ -88,19 +88,19 @@ describe('FeedAdAdapter', function () {
         'PLACEMENTID',
         'placeme:ntId'
       ].forEach(id => {
-        let result = spec.isBidRequestValid({
+        const result = spec.isBidRequestValid({
           bidder: 'feedad',
           sizes: [],
-          params: {clientToken: 'clientToken', placementId: id}
+          params: { clientToken: 'clientToken', placementId: id }
         });
         expect(result).to.equal(false);
       });
     });
     it('should accept valid parameters', function () {
-      let result = spec.isBidRequestValid({
+      const result = spec.isBidRequestValid({
         bidder: 'feedad',
         sizes: [],
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       });
       expect(result).to.equal(true);
     });
@@ -115,203 +115,203 @@ describe('FeedAdAdapter', function () {
     };
 
     it('should accept empty lists', function () {
-      let result = spec.buildRequests([], bidderRequest);
+      const result = spec.buildRequests([], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should filter native media types', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           native: {
             sizes: [[300, 250], [300, 600]],
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should filter video media types without outstream context', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           video: {
             context: 'instream'
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should pass through outstream video media', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           video: {
             context: 'outstream'
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
     });
     it('should pass through banner media', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0]).to.deep.equal(bid);
     });
     it('should pass through additional bid parameters', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id', another: 'parameter', more: 'parameters'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id', another: 'parameter', more: 'parameters' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids).to.be.lengthOf(1);
       expect(result.data.bids[0].params.another).to.equal('parameter');
       expect(result.data.bids[0].params.more).to.equal('parameters');
     });
     it('should detect empty media types', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: undefined,
           video: undefined,
           native: undefined
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result).to.be.empty;
     });
     it('should use POST', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.method).to.equal('POST');
     });
     it('should use the correct URL', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.url).to.equal('https://api.feedad.com/1/prebid/web/bids');
     });
     it('should specify the content type explicitly', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.options).to.deep.equal({
         contentType: 'application/json'
       })
     });
     it('should include the bidder request', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid, bid, bid], bidderRequest);
+      const result = spec.buildRequests([bid, bid, bid], bidderRequest);
       expect(result.data).to.deep.include(bidderRequest);
     });
     it('should detect missing bidder request parameter', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid, bid, bid]);
+      const result = spec.buildRequests([bid, bid, bid]);
       expect(result).to.be.empty;
     });
     it('should not include GDPR data if the bidder request has none available', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.gdprApplies).to.be.undefined;
       expect(result.data.consentIabTcf).to.be.undefined;
     });
     it('should include GDPR data if the bidder requests contains it', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let request = Object.assign({}, bidderRequest, {
+      const request = Object.assign({}, bidderRequest, {
         gdprConsent: {
           consentString: 'the consent string',
           gdprApplies: true
         }
       });
-      let result = spec.buildRequests([bid], request);
+      const result = spec.buildRequests([bid], request);
       expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
       expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
     });
     it('should include adapter and prebid version', function () {
-      let bid = {
+      const bid = {
         code: 'feedad',
         mediaTypes: {
           banner: {
             sizes: [[320, 250]]
           }
         },
-        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+        params: { clientToken: 'clientToken', placementId: 'placement-id' }
       };
-      let result = spec.buildRequests([bid], bidderRequest);
+      const result = spec.buildRequests([bid], bidderRequest);
       expect(result.data.bids[0].params.prebid_adapter_version).to.equal(EXPECTED_ADAPTER_VERSION);
       expect(result.data.bids[0].params.prebid_sdk_version).to.equal('$prebid.version$');
     });
@@ -322,7 +322,7 @@ describe('FeedAdAdapter', function () {
       const body = [{
         ad: 'bar',
       }];
-      let result = spec.interpretResponse({body: JSON.stringify(body)});
+      const result = spec.interpretResponse({ body: JSON.stringify(body) });
       expect(result).to.deep.equal(body);
     });
 
@@ -330,7 +330,7 @@ describe('FeedAdAdapter', function () {
       const body = [{
         ad: 'bar',
       }];
-      let result = spec.interpretResponse({body});
+      const result = spec.interpretResponse({ body });
       expect(result).to.deep.equal(body);
     });
 
@@ -347,7 +347,7 @@ describe('FeedAdAdapter', function () {
         ad: 'ad html',
       };
       const body = [bid1, bid2, bid3];
-      let result = spec.interpretResponse({body: JSON.stringify(body)});
+      const result = spec.interpretResponse({ body: JSON.stringify(body) });
       expect(result).to.deep.equal([bid1, bid3]);
     });
 
@@ -357,22 +357,22 @@ describe('FeedAdAdapter', function () {
         ad: 'ad html',
         cpm: 100
       };
-      const result = spec.interpretResponse({body: JSON.stringify([bid])});
+      const result = spec.interpretResponse({ body: JSON.stringify([bid]) });
       expect(result[0]).not.to.haveOwnProperty('ext');
     });
 
     it('should return an empty array if the response is not an array', function () {
       const bid = {};
-      const result = spec.interpretResponse({body: JSON.stringify(bid)});
+      const result = spec.interpretResponse({ body: JSON.stringify(bid) });
       expect(result).to.deep.equal([]);
     });
   });
 
   describe('getUserSyncs', function () {
-    const pixelSync1 = {type: 'image', url: 'the pixel url 1'};
-    const pixelSync2 = {type: 'image', url: 'the pixel url 2'};
-    const iFrameSync1 = {type: 'iframe', url: 'the iFrame url 1'};
-    const iFrameSync2 = {type: 'iframe', url: 'the iFrame url 2'};
+    const pixelSync1 = { type: 'image', url: 'the pixel url 1' };
+    const pixelSync2 = { type: 'image', url: 'the pixel url 2' };
+    const iFrameSync1 = { type: 'iframe', url: 'the iFrame url 1' };
+    const iFrameSync2 = { type: 'iframe', url: 'the iFrame url 2' };
     const response1 = {
       body: [{
         ext: {
@@ -395,7 +395,7 @@ describe('FeedAdAdapter', function () {
       }]
     };
     it('should pass through the syncs out of the extension fields of the server response', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [response1])
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response1])
       expect(result).to.deep.equal([
         pixelSync1,
         pixelSync2,
@@ -404,7 +404,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should concat the syncs of all responses', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [response1, response2]);
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response1, response2]);
       expect(result).to.deep.equal([
         pixelSync1,
         pixelSync2,
@@ -414,7 +414,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should concat the syncs of all bids', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [response2]);
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response2]);
       expect(result).to.deep.equal([
         pixelSync1,
         iFrameSync1,
@@ -424,7 +424,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should filter out duplicates', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [response1, response1]);
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response1, response1]);
       expect(result).to.deep.equal([
         pixelSync1,
         pixelSync2,
@@ -433,7 +433,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include iFrame syncs if the option is disabled', function () {
-      const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [response1]);
+      const result = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [response1]);
       expect(result).to.deep.equal([
         pixelSync1,
         pixelSync2,
@@ -441,36 +441,36 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include pixel syncs if the option is disabled', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [response1]);
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [response1]);
       expect(result).to.deep.equal([
         iFrameSync1,
       ]);
     });
 
     it('should not include any syncs if the sync options are disabled or missing', function () {
-      const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, [response1]);
+      const result = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [response1]);
       expect(result).to.deep.equal([]);
     });
 
     it('should handle empty responses', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [])
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])
       expect(result).to.deep.equal([]);
     });
 
     it('should not throw if the server response is weird', function () {
       const responses = [
-        {body: null},
-        {body: 'null'},
-        {body: 1234},
-        {body: {}},
-        {body: [{}, 123]},
+        { body: null },
+        { body: 'null' },
+        { body: 1234 },
+        { body: {} },
+        { body: [{}, 123] },
       ];
-      expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, responses)).to.not.throw();
+      expect(() => spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses)).to.not.throw();
     });
 
     it('should return empty array if the body extension is null', function () {
-      const response = {body: [{ext: null}]};
-      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [response]);
+      const response = { body: [{ ext: null }] };
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response]);
       expect(result).to.deep.equal([]);
     });
   });
@@ -588,7 +588,7 @@ describe('FeedAdAdapter', function () {
     ];
 
     cases.forEach(([name, data, eventKlass]) => {
-      let subject = spec[name];
+      const subject = spec[name];
       describe(name + ' handler', function () {
         it('should do nothing on empty data', function () {
           subject(undefined);
@@ -603,7 +603,7 @@ describe('FeedAdAdapter', function () {
 
         it('should send tracking params when correct metadata was set', function () {
           spec.buildRequests([bid], bidderRequest);
-          let expectedData = {
+          const expectedData = {
             app_hybrid: false,
             client_token: clientToken,
             placement_id: placementId,
@@ -617,11 +617,11 @@ describe('FeedAdAdapter', function () {
           };
           subject(data);
           expect(server.requests.length).to.equal(1);
-          let call = server.requests[0];
+          const call = server.requests[0];
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');
-          expect(call.requestHeaders).to.include({'Content-Type': 'application/json'});
+          expect(call.requestHeaders).to.include({ 'Content-Type': 'application/json' });
         })
       });
     });

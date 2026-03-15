@@ -27,7 +27,6 @@ const {
   BIDDER_DONE,
   SET_TARGETING,
   REQUEST_BIDS,
-  ADD_AD_UNITS,
   AD_RENDER_FAILED,
 } = EVENTS;
 
@@ -41,7 +40,7 @@ let invisiblyAnalyticsEnabled = false;
 
 const { width: x, height: y } = getViewportSize();
 
-let _pageView = {
+const _pageView = {
   eventType: 'pageView',
   userAgent: window.navigator.userAgent,
   timestamp: Date.now(),
@@ -53,11 +52,11 @@ let _pageView = {
 };
 
 // pass only 1% of events & fail the rest 99%
-let weightedFilter = { filter: Math.random() > 0.99 };
+const weightedFilter = { filter: Math.random() > 0.99 };
 
-let _eventQueue = [_pageView];
+const _eventQueue = [_pageView];
 
-let invisiblyAdapter = Object.assign(
+const invisiblyAdapter = Object.assign(
   adapter({ url: DEFAULT_EVENT_URL, analyticsType }),
   {
     track({ eventType, args }) {
@@ -99,18 +98,18 @@ function flush() {
 
   if (_eventQueue.length > 0) {
     while (_eventQueue.length) {
-      let eventFromQue = _eventQueue.shift();
-      let eventtype = 'PREBID_' + eventFromQue.eventType;
+      const eventFromQue = _eventQueue.shift();
+      const eventtype = 'PREBID_' + eventFromQue.eventType;
       delete eventFromQue.eventType;
 
-      let data = {
+      const data = {
         pageViewId: _pageViewId,
         ver: _VERSION,
         bundleId: initOptions.bundleId,
         ...eventFromQue,
       };
 
-      let payload = {
+      const payload = {
         event_type: eventtype,
         event_data: { ...data },
       };
@@ -184,10 +183,6 @@ function handleEvent(eventType, eventArgs) {
       break;
     }
     case REQUEST_BIDS: {
-      invisiblyEvent = eventArgs;
-      break;
-    }
-    case ADD_AD_UNITS: {
       invisiblyEvent = eventArgs;
       break;
     }

@@ -139,7 +139,6 @@ const createTargetingEngineStub = (getTargetingDataReturnValue = {}, raiseError 
   return window.$nodals.adTargetingEngine[version];
 };
 
-
 describe('NodalsAI RTD Provider', () => {
   let sandbox;
   let validConfig;
@@ -148,9 +147,10 @@ describe('NodalsAI RTD Provider', () => {
   const noPurpose1UserConsent = generateGdprConsent({ purpose1Consent: false });
   const noPurpose7UserConsent = generateGdprConsent({ purpose7Consent: false });
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
+  const leastPermissiveUserConsent = generateGdprConsent({ purpose1Consent: false, purpose7Consent: false, nodalsConsent: false });
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     validConfig = { params: { propertyId: '10312dd2' } };
 
@@ -190,6 +190,14 @@ describe('NodalsAI RTD Provider', () => {
     describe('when initialised with empty consent data', () => {
       it('should return true when initialised with valid config and empty user consent', function () {
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
+        server.respond();
+
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
+      });
+
+      it('should return true when initialised with valid config and gdpr consent is null', function () {
+        const result = nodalsAiRtdSubmodule.init(validConfig, { gdpr: null });
         server.respond();
 
         expect(result).to.be.true;
@@ -251,6 +259,15 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should return true when user is not under GDPR jurisdiction', () => {
         const result = nodalsAiRtdSubmodule.init(validConfig, outsideGdprUserConsent);
+        server.respond();
+
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
+      });
+
+      it('should return true with publisherProvidedConsent flag set and least permissive consent', function () {
+        const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
+        const result = nodalsAiRtdSubmodule.init(configWithManagedConsent, leastPermissiveUserConsent);
         server.respond();
 
         expect(result).to.be.true;
@@ -359,7 +376,7 @@ describe('NodalsAI RTD Provider', () => {
     describe('when performing requests to the publisher endpoint', () => {
       it('should construct the correct URL to the default origin', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         expect(request.method).to.equal('GET');
@@ -372,7 +389,7 @@ describe('NodalsAI RTD Provider', () => {
         const config = Object.assign({}, validConfig);
         config.params.endpoint = { origin: 'http://localhost:8000' };
         nodalsAiRtdSubmodule.init(config, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         expect(request.method).to.equal('GET');
@@ -383,7 +400,7 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should construct the correct URL with the correct path', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         const requestUrl = new URL(request.url);
@@ -395,7 +412,7 @@ describe('NodalsAI RTD Provider', () => {
           consentString: 'foobarbaz',
         };
         nodalsAiRtdSubmodule.init(validConfig, generateGdprConsent(consentData));
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         const requestUrl = new URL(request.url);
@@ -412,7 +429,7 @@ describe('NodalsAI RTD Provider', () => {
     describe('when handling responses from the publisher endpoint', () => {
       it('should store successful response data in local storage', () => {
         nodalsAiRtdSubmodule.init(validConfig, permissiveUserConsent);
-        let request = server.requests[0];
+        const request = server.requests[0];
         server.respond();
 
         const storedData = JSON.parse(
@@ -431,7 +448,7 @@ describe('NodalsAI RTD Provider', () => {
         config.params.storage = { key: overrideLocalStorageKey };
         nodalsAiRtdSubmodule.init(config, permissiveUserConsent);
         server.respond();
-        let request = server.requests[0];
+        const request = server.requests[0];
         const storedData = JSON.parse(
           nodalsAiRtdSubmodule.storage.getDataFromLocalStorage(overrideLocalStorageKey)
         );
@@ -477,7 +494,7 @@ describe('NodalsAI RTD Provider', () => {
     });
 
     it('should return an empty object when getTargetingData throws error', () => {
-      createTargetingEngineStub({adUnit1: {someKey: 'someValue'}}, true);
+      createTargetingEngineStub({ adUnit1: { someKey: 'someValue' } }, true);
       setDataInLocalStorage({
         data: successPubEndpointResponse,
         createdAt: Date.now(),
@@ -610,6 +627,24 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(result).to.deep.equal({});
     });
+
+    it('should return targeting data with publisherProvidedConsent flag set and least permissive consent', () => {
+      createTargetingEngineStub(engineGetTargetingDataReturnValue);
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
+
+      const result = nodalsAiRtdSubmodule.getTargetingData(
+        ['adUnit1'],
+        configWithManagedConsent,
+        leastPermissiveUserConsent
+      );
+      server.respond();
+
+      expect(result).to.deep.equal(engineGetTargetingDataReturnValue);
+    });
   });
 
   describe('getBidRequestData()', () => {
@@ -634,7 +669,7 @@ describe('NodalsAI RTD Provider', () => {
 
     it('should not store function arguments in a queue when no data is in localstorage and make a HTTP request for data', () => {
       const callback = sinon.spy();
-      const requestObj = {dummy: 'obj'}
+      const requestObj = { dummy: 'obj' }
       nodalsAiRtdSubmodule.getBidRequestData(
         requestObj, callback, validConfig, permissiveUserConsent
       );
@@ -651,7 +686,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const callback = sinon.spy();
-      const reqBidsConfigObj = {dummy: 'obj'}
+      const reqBidsConfigObj = { dummy: 'obj' }
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, validConfig, permissiveUserConsent
       );
@@ -661,7 +696,7 @@ describe('NodalsAI RTD Provider', () => {
       expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
       expect(window.$nodals.cmdQueue[0].cmd).to.equal('getBidRequestData');
       expect(window.$nodals.cmdQueue[0].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
-      expect(window.$nodals.cmdQueue[0].data).to.deep.include({config: validConfig, reqBidsConfigObj, callback, userConsent: permissiveUserConsent});
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include({ config: validConfig, reqBidsConfigObj, callback, userConsent: permissiveUserConsent });
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('deps').that.deep.equals(
         successPubEndpointResponse.deps);
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('facts').that.deep.includes(
@@ -678,7 +713,7 @@ describe('NodalsAI RTD Provider', () => {
       });
       const engine = createTargetingEngineStub();
       const callback = sinon.spy();
-      const reqBidsConfigObj = {dummy: 'obj'}
+      const reqBidsConfigObj = { dummy: 'obj' }
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, validConfig, permissiveUserConsent
       );
@@ -696,6 +731,33 @@ describe('NodalsAI RTD Provider', () => {
       expect(args[3].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
       expect(server.requests.length).to.equal(0);
     });
+
+    it('should proxy the correct data to engine.getBidRequestData with publisherProvidedConsent flag set and least permissive consent', () => {
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      const engine = createTargetingEngineStub();
+      const callback = sinon.spy();
+      const reqBidsConfigObj = { dummy: 'obj' }
+      const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
+      nodalsAiRtdSubmodule.getBidRequestData(
+        reqBidsConfigObj, callback, configWithManagedConsent, leastPermissiveUserConsent
+      );
+      server.respond();
+
+      expect(callback.called).to.be.false;
+      expect(engine.init.called).to.be.true;
+      expect(engine.getBidRequestData.called).to.be.true;
+      const args = engine.getBidRequestData.getCall(0).args;
+      expect(args[0]).to.deep.equal(reqBidsConfigObj);
+      expect(args[1]).to.deep.equal(callback);
+      expect(args[2]).to.deep.equal(leastPermissiveUserConsent);
+      expect(args[3].deps).to.deep.equal(successPubEndpointResponse.deps);
+      expect(args[3].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[3].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
+      expect(server.requests.length).to.equal(0);
+    });
   });
 
   describe('onBidResponseEvent()', () => {
@@ -705,7 +767,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const bidResponse = {dummy: 'obj', 'bid': 'foo'};
+      const bidResponse = { dummy: 'obj', 'bid': 'foo' };
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, vendorRestrictiveUserConsent
       );
@@ -718,7 +780,7 @@ describe('NodalsAI RTD Provider', () => {
     });
 
     it('should not store function arguments in a queue when no data is in localstorage and make a HTTP request for data', () => {
-      const bidResponse = {dummy: 'obj', 'bid': 'foo'};
+      const bidResponse = { dummy: 'obj', 'bid': 'foo' };
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, permissiveUserConsent
       );
@@ -734,7 +796,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const userConsent = generateGdprConsent();
-      const bidResponse = {dummy: 'obj', 'bid': 'foo'};
+      const bidResponse = { dummy: 'obj', 'bid': 'foo' };
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, permissiveUserConsent
       );
@@ -743,7 +805,7 @@ describe('NodalsAI RTD Provider', () => {
       expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
       expect(window.$nodals.cmdQueue[0].cmd).to.equal('onBidResponseEvent');
       expect(window.$nodals.cmdQueue[0].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
-      expect(window.$nodals.cmdQueue[0].data).to.deep.include({config: validConfig, bidResponse, userConsent: permissiveUserConsent });
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include({ config: validConfig, bidResponse, userConsent: permissiveUserConsent });
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('deps').that.deep.equals(
         successPubEndpointResponse.deps);
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('facts').that.deep.includes(
@@ -759,7 +821,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const bidResponse = {dummy: 'obj', 'bid': 'foo'};
+      const bidResponse = { dummy: 'obj', 'bid': 'foo' };
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, permissiveUserConsent
       );
@@ -775,6 +837,30 @@ describe('NodalsAI RTD Provider', () => {
       expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
       expect(server.requests.length).to.equal(0);
     });
+
+    it('should proxy the correct data to engine.onBidResponseEvent with publisherProvidedConsent flag set and least permissive consent', () => {
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      const engine = createTargetingEngineStub();
+      const bidResponse = { dummy: 'obj', 'bid': 'foo' };
+      const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
+      nodalsAiRtdSubmodule.onBidResponseEvent(
+        bidResponse, configWithManagedConsent, leastPermissiveUserConsent
+      );
+      server.respond();
+
+      expect(engine.init.called).to.be.true;
+      expect(engine.onBidResponseEvent.called).to.be.true;
+      const args = engine.onBidResponseEvent.getCall(0).args;
+      expect(args[0]).to.deep.equal(bidResponse);
+      expect(args[1]).to.deep.equal(leastPermissiveUserConsent);
+      expect(args[2].deps).to.deep.equal(successPubEndpointResponse.deps);
+      expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
+      expect(server.requests.length).to.equal(0);
+    });
   });
 
   describe('onAuctionEndEvent()', () => {
@@ -784,7 +870,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const auctionDetails = {dummy: 'obj', auction: 'foo'};
+      const auctionDetails = { dummy: 'obj', auction: 'foo' };
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, vendorRestrictiveUserConsent
       );
@@ -797,7 +883,7 @@ describe('NodalsAI RTD Provider', () => {
     });
 
     it('should not store function arguments in a queue when no data is in localstorage and make a HTTP request for data', () => {
-      const auctionDetails = {dummy: 'obj', auction: 'foo'};
+      const auctionDetails = { dummy: 'obj', auction: 'foo' };
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, permissiveUserConsent
       );
@@ -812,7 +898,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      const auctionDetails = {dummy: 'obj', auction: 'foo'};
+      const auctionDetails = { dummy: 'obj', auction: 'foo' };
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, permissiveUserConsent
       );
@@ -821,7 +907,7 @@ describe('NodalsAI RTD Provider', () => {
       expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
       expect(window.$nodals.cmdQueue[0].cmd).to.equal('onAuctionEndEvent');
       expect(window.$nodals.cmdQueue[0].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
-      expect(window.$nodals.cmdQueue[0].data).to.deep.include({config: validConfig, auctionDetails, userConsent: permissiveUserConsent });
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include({ config: validConfig, auctionDetails, userConsent: permissiveUserConsent });
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('deps').that.deep.equals(
         successPubEndpointResponse.deps);
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('facts').that.deep.includes(
@@ -838,7 +924,7 @@ describe('NodalsAI RTD Provider', () => {
       });
       const engine = createTargetingEngineStub();
       const userConsent = generateGdprConsent();
-      const auctionDetails = {dummy: 'obj', auction: 'foo'};
+      const auctionDetails = { dummy: 'obj', auction: 'foo' };
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, permissiveUserConsent
       );
@@ -853,6 +939,88 @@ describe('NodalsAI RTD Provider', () => {
       expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
       expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
       expect(server.requests.length).to.equal(0);
+    });
+
+    it('should proxy the correct data to engine.onAuctionEndEvent with publisherProvidedConsent flag set and least permissive consent', () => {
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      const engine = createTargetingEngineStub();
+      const auctionDetails = { dummy: 'obj', auction: 'foo' };
+      const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
+      nodalsAiRtdSubmodule.onAuctionEndEvent(
+        auctionDetails, configWithManagedConsent, leastPermissiveUserConsent
+      );
+      server.respond();
+
+      expect(engine.init.called).to.be.true;
+      expect(engine.onAuctionEndEvent.called).to.be.true;
+      const args = engine.onAuctionEndEvent.getCall(0).args;
+      expect(args[0]).to.deep.equal(auctionDetails);
+      expect(args[1]).to.deep.equal(leastPermissiveUserConsent);
+      expect(args[2].deps).to.deep.equal(successPubEndpointResponse.deps);
+      expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  describe('#getEngine()', () => {
+    it('should return undefined when $nodals object does not exist', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+
+      delete window.$nodals;
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+    });
+
+    it('should return undefined when adTargetingEngine object does not exist', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+
+      window.$nodals = {};
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+    });
+
+    it('should return undefined when specific engine version does not exist', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+
+      window.$nodals = {
+        adTargetingEngine: {}
+      };
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+    });
+
+    it('should return undefined when property access throws an error', () => {
+      // Setup data in storage to avoid triggering fetchData
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+
+      Object.defineProperty(window, '$nodals', {
+        get() {
+          throw new Error('Access denied');
+        },
+        configurable: true
+      });
+      const result = nodalsAiRtdSubmodule.getTargetingData([], validConfig, permissiveUserConsent);
+      expect(result).to.deep.equal({});
+      delete window.$nodals;
     });
   });
 });

@@ -1,9 +1,9 @@
-import {delayIfPrerendering} from '../../../src/utils/prerendering.js';
+import { delayIfPrerendering } from '../../../src/utils/prerendering.js';
 
 describe('delayIfPrerendering', () => {
   let sandbox, enabled, ran;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     enabled = true;
     ran = false;
   });

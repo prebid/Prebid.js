@@ -135,7 +135,7 @@
             }
 
             bidResponse.bids.forEach(bid => {
-              const videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+              const videoUrl = pbjs.adServers.gam.buildVideoUrl({
                 adUnit: videoAdUnit,
                 url: bid.vastUrl,
                 params: {

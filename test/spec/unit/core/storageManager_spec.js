@@ -1,4 +1,5 @@
 import {
+  canSetCookie,
   deviceAccessRule,
   getCoreStorageManager,
   newStorageManager,
@@ -9,17 +10,18 @@ import {
   storageCallbacks,
 } from 'src/storageManager.js';
 import adapterManager from 'src/adapterManager.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {hook} from '../../../../src/hook.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities/modules.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
+import { hook } from '../../../../src/hook.js';
+import { MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID } from '../../../../src/activities/modules.js';
+import { ACTIVITY_ACCESS_DEVICE } from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
-  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_WRITE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
-import {activityParams} from '../../../../src/activities/activityParams.js';
+import { activityParams } from '../../../../src/activities/activityParams.js';
+import { registerActivityControl } from '../../../../src/activities/rules.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -36,15 +38,15 @@ describe('storage manager', function() {
 
   it('should allow to set cookie for core modules without checking gdpr enforcements', function () {
     const coreStorage = getCoreStorageManager();
-    let date = new Date();
+    const date = new Date();
     date.setTime(date.getTime() + (24 * 60 * 60 * 1000));
-    let expires = date.toUTCString();
+    const expires = date.toUTCString();
     coreStorage.setCookie('hello', 'world', expires);
     expect(coreStorage.getCookie('hello')).to.equal('world');
   });
 
   it('should add done callbacks to storageCallbacks array', function () {
-    let noop = sinon.spy();
+    const noop = sinon.spy();
     const coreStorage = newStorageManager();
 
     coreStorage.setCookie('foo', 'bar', null, null, null, noop);
@@ -64,7 +66,7 @@ describe('storage manager', function() {
   });
 
   it('should allow bidder to access device if gdpr enforcement module is not included', function () {
-    let deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
+    const deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
     const storage = newStorageManager();
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);
@@ -75,7 +77,7 @@ describe('storage manager', function() {
     let isAllowed;
 
     function mkManager(moduleType, moduleName) {
-      return newStorageManager({moduleType, moduleName}, {isAllowed});
+      return newStorageManager({ moduleType, moduleName }, { isAllowed });
     }
 
     beforeEach(() => {
@@ -91,6 +93,47 @@ describe('storage manager', function() {
       }));
     });
 
+    it('should pass storage key as activity param', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').getCookie('foo');
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_COOKIES,
+        [ACTIVITY_PARAM_STORAGE_KEY]: 'foo',
+      }));
+    });
+
+    it('should pass write = false on reads', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').getCookie('foo');
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_STORAGE_WRITE]: false
+      }));
+    })
+
+    it('should pass write = true on writes', () => {
+      const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
+      mgr.setDataInLocalStorage('foo', 'bar')
+      try {
+        sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+          [ACTIVITY_PARAM_STORAGE_WRITE]: true
+        }));
+      } finally {
+        mgr.removeDataFromLocalStorage('foo');
+      }
+    })
+
+    it('should NOT pass storage key if advertiseKeys = false', () => {
+      newStorageManager({
+        moduleType: MODULE_TYPE_PREBID,
+        moduleName: 'mockMod',
+        advertiseKeys: false
+      }, { isAllowed }).getCookie('foo');
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.not.exist;
+    })
+
+    it('should not pass storage key when not relevant', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').cookiesAreEnabled();
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.be.undefined;
+    });
+
     ['Local', 'Session'].forEach(type => {
       describe(`${type} storage`, () => {
         it('should deny access if activity is denied', () => {
@@ -103,7 +146,7 @@ describe('storage manager', function() {
     })
 
     it('should use bidder aliases when possible', () => {
-      adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({})}, 'mockBidder');
+      adapterManager.registerBidAdapter({ callBids: sinon.stub(), getSpec: () => ({}) }, 'mockBidder');
       adapterManager.aliasBidAdapter('mockBidder', 'mockAlias');
       const mgr = mkManager(MODULE_TYPE_BIDDER, 'mockBidder');
       config.runWithBidder('mockAlias', () => mgr.cookiesAreEnabled());
@@ -132,7 +175,7 @@ describe('storage manager', function() {
       });
 
       afterEach(function () {
-        Object.defineProperty(window, storage, {get: () => originalStorage});
+        Object.defineProperty(window, storage, { get: () => originalStorage });
         errorLogSpy.restore();
       })
 
@@ -185,8 +228,8 @@ describe('storage manager', function() {
     });
 
     it('should deny access when set', () => {
-      config.setConfig({deviceAccess: false});
-      sinon.assert.match(deviceAccessRule(), {allow: false});
+      config.setConfig({ deviceAccess: false });
+      sinon.assert.match(deviceAccessRule(), { allow: false });
     })
   });
 
@@ -252,14 +295,14 @@ describe('storage manager', function() {
               cookie: true
             }
           }
-        }).forEach(([t, {configValues, shouldWork: {cookie, html5}}]) => {
+        }).forEach(([t, { configValues, shouldWork: { cookie, html5 } }]) => {
           describe(`when ${t} is allowed`, () => {
             configValues.forEach(configValue => describe(`storageAllowed = ${configValue}`, () => {
               Object.entries({
                 [STORAGE_TYPE_LOCALSTORAGE]: 'allow localStorage',
                 [STORAGE_TYPE_COOKIES]: 'allow cookies'
               }).forEach(([type, desc]) => {
-                const shouldWork = isBidderAllowed && ({html5, cookie})[type];
+                const shouldWork = isBidderAllowed && ({ html5, cookie })[type];
                 it(`${shouldWork ? '' : 'NOT'} ${desc}`, () => {
                   const res = storageAllowedRule(activityParams(MODULE_TYPE_BIDDER, bidderCode, {
                     [ACTIVITY_PARAM_STORAGE_TYPE]: type
@@ -267,7 +310,7 @@ describe('storage manager', function() {
                   if (shouldWork) {
                     expect(res).to.not.exist;
                   } else {
-                    sinon.assert.match(res, {allow: false});
+                    sinon.assert.match(res, { allow: false });
                   }
                 });
               })
@@ -278,3 +321,38 @@ describe('storage manager', function() {
     });
   });
 });
+
+describe('canSetCookie', () => {
+  let allow, unregisterACRule;
+  beforeEach(() => {
+    allow = true;
+    unregisterACRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => {
+      if (params.component === 'prebid.storage') {
+        return { allow };
+      }
+    })
+  });
+  afterEach(() => {
+    unregisterACRule();
+    canSetCookie.clear();
+  })
+
+  it('should return true when allowed', () => {
+    expect(canSetCookie()).to.be.true;
+  });
+  it('should not leave stray cookies', () => {
+    const previousCookies = document.cookie;
+    canSetCookie();
+    expect(previousCookies).to.eql(document.cookie);
+  });
+  it('should return false when not allowed', () => {
+    allow = false;
+    expect(canSetCookie()).to.be.false;
+  });
+
+  it('should cache results', () => {
+    expect(canSetCookie()).to.be.true;
+    allow = false;
+    expect(canSetCookie()).to.be.true;
+  })
+})

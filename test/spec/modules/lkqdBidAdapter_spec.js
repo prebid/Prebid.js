@@ -46,7 +46,7 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         wrong: 'missing zone id'
@@ -298,15 +298,15 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('safely handles invalid bid response', () => {
-      let invalidServerResponse = {};
+      const invalidServerResponse = {};
       invalidServerResponse.body = '';
 
-      let result = spec.interpretResponse(invalidServerResponse, bidRequest);
+      const result = spec.interpretResponse(invalidServerResponse, bidRequest);
       expect(result.length).to.equal(0);
     });
 
     it('handles nobid responses', () => {
-      let nobidResponse = {};
+      const nobidResponse = {};
       nobidResponse.body = {
         seatbid: [
           {
@@ -315,7 +315,7 @@ describe('lkqdBidAdapter', () => {
         ]
       };
 
-      let result = spec.interpretResponse(nobidResponse, bidRequest);
+      const result = spec.interpretResponse(nobidResponse, bidRequest);
       expect(result.length).to.equal(0);
     });
   });

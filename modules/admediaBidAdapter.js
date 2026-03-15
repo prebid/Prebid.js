@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -43,7 +43,7 @@ export const spec = {
 
       var tagData = [];
       for (var i = 0, j = sizes.length; i < j; i++) {
-        let tag = {};
+        const tag = {};
         tag.sizes = [];
         tag.id = bidRequest.params.placementId;
         tag.aid = bidRequest.params.aid;

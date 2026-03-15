@@ -6,7 +6,7 @@ describe('Bid Glass Adapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'bidglass',
       'params': {
         'adUnitId': '3'
@@ -23,7 +23,7 @@ describe('Bid Glass Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
@@ -55,12 +55,21 @@ describe('Bid Glass Adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let response;
+    let serverRequest, serverResponse;
     beforeEach(function () {
-      response = {
+      serverRequest = {
+        data: JSON.stringify({
+          'reqId': '30b31c1838de1e',
+          'gdprApplies': '1',
+          'gdprConsent': 'BOJObISOJObISAABAAENAA4AAAAAo',
+          'gppString': 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+          'gppSid': '7,8',
+        })
+      };
+      serverResponse = {
         body: {
           'bidResponses': [{
-            'ad': '<!-- Creative -->',
+            'ad': '<script src="https://bid.glass/hb-unit/999999.js?t=tokenstring&replaceme" async></script>',
             'cpm': '0.01',
             'creativeId': '-1',
             'width': '300',
@@ -75,7 +84,7 @@ describe('Bid Glass Adapter', function () {
     });
 
     it('should get the correct bid response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '30b31c1838de1e',
         'cpm': 0.01,
         'width': 300,
@@ -86,23 +95,23 @@ describe('Bid Glass Adapter', function () {
         'mediaType': 'banner',
         'netRevenue': true,
         'ttl': 10,
-        'ad': '<!-- Creative -->',
+        'ad': '<script src="https://bid.glass/hb-unit/999999.js?t=tokenstring&gdprApplies=1&gdprConsent=BOJObISOJObISAABAAENAA4AAAAAo&gppString=DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA&gppSid=7%2C8" async></script>',
         'meta': {
           'advertiserDomains': ['https://example.com']
         }
       }];
 
-      let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      const result = spec.interpretResponse(serverResponse, serverRequest);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {
           'bidResponses': []
         }
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response, serverRequest);
       expect(result.length).to.equal(0);
     });
   });

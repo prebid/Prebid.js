@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import { logError, logMessage } from '../src/utils.js';
 
 /**
@@ -61,7 +61,7 @@ export const oneKeyIdSubmodule = {
   /**
    * decode the stored data value for passing to bid requests
    * @function decode
-   * @param {(Object|string)} value
+   * @param {(Object|string)} data
    * @returns {(Object|undefined)}
    */
   decode(data) {
@@ -71,8 +71,6 @@ export const oneKeyIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
-   * @param {ConsentData} [consentData]
-   * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
   getId(config) {
@@ -91,7 +89,7 @@ export const oneKeyIdSubmodule = {
       atype: 1,
       getEidExt: function(data) {
         if (data && data.preferences) {
-          return {preferences: data.preferences};
+          return { preferences: data.preferences };
         }
       },
       getUidExt: function(data) {

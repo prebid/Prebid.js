@@ -3,7 +3,7 @@ import { spec } from 'modules/programmaticaBidAdapter.js';
 import { deepClone } from 'src/utils.js';
 
 describe('programmaticaBidAdapterTests', function () {
-  let bidRequestData = {
+  const bidRequestData = {
     bids: [
       {
         bidId: 'testbid',
@@ -16,7 +16,7 @@ describe('programmaticaBidAdapterTests', function () {
       }
     ]
   };
-  let request = [];
+  const request = [];
 
   it('validate_pub_params', function () {
     expect(
@@ -32,13 +32,13 @@ describe('programmaticaBidAdapterTests', function () {
 
   it('validate_generated_url', function () {
     const request = spec.buildRequests(deepClone(bidRequestData.bids), { timeout: 1234 });
-    let req_url = request[0].url;
+    const req_url = request[0].url;
 
     expect(req_url).to.equal('https://asr.programmatica.com/get');
   });
 
   it('validate_response_params', function () {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         'id': 'crid',
         'type': {
@@ -68,10 +68,10 @@ describe('programmaticaBidAdapterTests', function () {
     }
 
     const request = spec.buildRequests(bidRequest);
-    let bids = spec.interpretResponse(serverResponse, request[0]);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
+    const bid = bids[0];
     expect(bid.ad).to.equal('test ad');
     expect(bid.cpm).to.equal(10);
     expect(bid.currency).to.equal('USD');
@@ -82,7 +82,7 @@ describe('programmaticaBidAdapterTests', function () {
   });
 
   it('validate_response_params_imps', function () {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         'id': 'crid',
         'type': {
@@ -114,10 +114,10 @@ describe('programmaticaBidAdapterTests', function () {
     }
 
     const request = spec.buildRequests(bidRequest);
-    let bids = spec.interpretResponse(serverResponse, request[0]);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
+    const bid = bids[0];
     expect(bid.ad).to.equal('test ad<script src="testImp"></script>');
     expect(bid.cpm).to.equal(10);
     expect(bid.currency).to.equal('USD');
@@ -128,7 +128,7 @@ describe('programmaticaBidAdapterTests', function () {
   })
 
   it('validate_invalid_response', function () {
-    let serverResponse = {
+    const serverResponse = {
       body: {}
     };
 
@@ -138,7 +138,7 @@ describe('programmaticaBidAdapterTests', function () {
     }
 
     const request = spec.buildRequests(bidRequest);
-    let bids = spec.interpretResponse(serverResponse, request[0]);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(0);
   })
 
@@ -152,7 +152,7 @@ describe('programmaticaBidAdapterTests', function () {
 
     const request = spec.buildRequests(bidRequest, { timeout: 1234 });
     const vastXml = '<VAST></VAST>';
-    let serverResponse = {
+    const serverResponse = {
       body: {
         'id': 'cki2n3n6snkuulqutpf0',
         'type': {
@@ -177,10 +177,10 @@ describe('programmaticaBidAdapterTests', function () {
       }
     };
 
-    let bids = spec.interpretResponse(serverResponse, request[0]);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
+    const bid = bids[0];
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal(vastXml);
     expect(bid.width).to.equal(234);

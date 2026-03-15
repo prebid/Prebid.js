@@ -1,5 +1,5 @@
-import {setRequestExtPrebidAliases} from '../../../../libraries/pbsExtensions/processors/aliases.js';
-import {config} from 'src/config.js';
+import { setRequestExtPrebidAliases } from '../../../../libraries/pbsExtensions/processors/aliases.js';
+import { config } from 'src/config.js';
 
 describe('PBS - ortb ext.prebid.aliases', () => {
   let aliasRegistry, bidderRegistry;
@@ -26,7 +26,7 @@ describe('PBS - ortb ext.prebid.aliases', () => {
 
   describe('has no effect if', () => {
     it('bidder is not an alias', () => {
-      expect(setAliases({bidderCode: 'not-an-alias'})).to.eql({});
+      expect(setAliases({ bidderCode: 'not-an-alias' })).to.eql({});
     });
 
     it('bidder sets skipPbsAliasing', () => {
@@ -38,7 +38,7 @@ describe('PBS - ortb ext.prebid.aliases', () => {
           }
         }
       };
-      expect(setAliases({bidderCode: 'alias'})).to.eql({});
+      expect(setAliases({ bidderCode: 'alias' })).to.eql({});
     });
   });
 
@@ -52,7 +52,7 @@ describe('PBS - ortb ext.prebid.aliases', () => {
   }
   it('sets ext.prebid.aliases.BIDDER', () => {
     initAlias();
-    expect(setAliases({bidderCode: 'alias'})).to.eql({
+    expect(setAliases({ bidderCode: 'alias' })).to.eql({
       ext: {
         prebid: {
           aliases: {

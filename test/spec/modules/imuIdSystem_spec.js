@@ -13,9 +13,9 @@ import {
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 describe('imuId module', function () {
   // let setLocalStorageStub;
@@ -54,10 +54,12 @@ describe('imuId module', function () {
       getLocalStorageStub.withArgs(storageKey).returns('testUid');
       getLocalStorageStub.withArgs(storagePpKey).returns('testPpid');
       const id = imuIdSubmodule.getId(configParamTestCase);
-      expect(id).to.be.deep.equal({id: {
-        imuid: 'testUid',
-        imppid: 'testPpid'
-      }});
+      expect(id).to.be.deep.equal({
+        id: {
+          imuid: 'testUid',
+          imppid: 'testPpid'
+        }
+      });
     });
 
     storageTestCasesForEmpty.forEach(testCase => it('should return the callback when it not exists in local storages', function () {
@@ -82,12 +84,12 @@ describe('imuId module', function () {
   describe('getApiUrl()', function () {
     it('should return default url when cid only', function () {
       const url = getApiUrl(5126);
-      expect(url).to.be.equal(`https://sync6.im-apps.net/5126/pid`);
+      expect(url).to.be.match(/^https:\/\/sync6.im-apps.net\/5126\/pid\?page=.+&ref=$/);
     });
 
     it('should return param url when set url', function () {
       const url = getApiUrl(5126, 'testurl');
-      expect(url).to.be.equal('testurl?cid=5126');
+      expect(url).to.be.match(/^testurl\?cid=5126&page=.+&ref=$/);
     });
   });
 

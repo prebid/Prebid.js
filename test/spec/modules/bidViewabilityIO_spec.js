@@ -4,6 +4,9 @@ import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
+import * as bidViewability from '../../../modules/bidViewability.js';
+import adapterManager from '../../../src/adapterManager.js';
 
 describe('#bidViewabilityIO', function() {
   const makeElement = (id) => {
@@ -79,7 +82,7 @@ describe('#bidViewabilityIO', function() {
     };
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     })
 
     afterEach(function() {
@@ -101,11 +104,76 @@ describe('#bidViewabilityIO', function() {
     });
   })
 
+  describe('viewability pixels', function() {
+    let sandbox;
+    let triggerPixelSpy;
+    const mockObserver = { unobserve: sinon.spy() };
+    const mockEntry = { target: makeElement('pixel_target_id') };
+
+    const VIEWABILITY_PIXEL_URLS = [
+      'https://io-viewable-1.com/pixel',
+      'https://io-viewable-2.com/track'
+    ];
+
+    const bidWithEventTrackers = {
+      adUnitCode: 'banner_id',
+      mediaType: 'banner',
+      width: 728,
+      height: 90,
+      eventtrackers: VIEWABILITY_PIXEL_URLS.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url }))
+    };
+
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('fires viewability pixels when markViewed callback runs with bid that has eventTrackers (EVENT_TYPE_VIEWABLE)', function() {
+      const func = bidViewabilityIO.markViewed(bidWithEventTrackers, mockEntry, mockObserver);
+      func();
+      expect(triggerPixelSpy.callCount).to.equal(VIEWABILITY_PIXEL_URLS.length);
+      VIEWABILITY_PIXEL_URLS.forEach((url, i) => {
+        expect(triggerPixelSpy.getCall(i).args[0]).to.equal(url);
+      });
+    });
+
+    it('does not fire pixels when bid has empty eventTrackers', function() {
+      const bidWithEmptyTrackers = { ...banner_bid, eventtrackers: [] };
+      const func = bidViewabilityIO.markViewed(bidWithEmptyTrackers, mockEntry, mockObserver);
+      func();
+      expect(triggerPixelSpy.callCount).to.equal(0);
+    });
+
+    it('should call onBidViewable', () => {
+      sandbox.stub(adapterManager, 'callBidViewableBidder');
+      const bid = {
+        bidder: 'mockBidder',
+        ...banner_bid
+      }
+      bidViewabilityIO.markViewed(bid, mockEntry, mockObserver)();
+      sinon.assert.calledWith(adapterManager.callBidViewableBidder, 'mockBidder', bid);
+    });
+
+    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function() {
+      sandbox.stub(adapterManager, 'triggerBilling');
+      const bid = {
+        ...banner_bid,
+        deferBilling: true
+      }
+      bidViewabilityIO.markViewed(bid, mockEntry, mockObserver)();
+      sinon.assert.called(adapterManager.triggerBilling);
+    });
+  })
+
   describe('viewCallbackFactory tests', function() {
     let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     })
 
     afterEach(function() {

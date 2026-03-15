@@ -131,21 +131,27 @@ describe('Cpmstar Bid Adapter', function () {
 
   it('should produce a request with support for OpenRTB SupplyChain', function () {
     var reqs = deepClone(valid_bid_requests);
-    reqs[0].schain = {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [
-        {
-          'asi': 'exchange1.com',
-          'sid': '1234',
-          'hp': 1
-        },
-        {
-          'asi': 'exchange2.com',
-          'sid': 'abcd',
-          'hp': 1
+    reqs[0].ortb2 = {
+      source: {
+        ext: {
+          schain: {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'exchange1.com',
+                'sid': '1234',
+                'hp': 1
+              },
+              {
+                'asi': 'exchange2.com',
+                'sid': 'abcd',
+                'hp': 1
+              }
+            ]
+          }
         }
-      ]
+      }
     };
     var requests = spec.buildRequests(reqs, bidderRequest);
     expect(requests[0]).to.have.property('url');

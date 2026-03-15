@@ -1,14 +1,14 @@
 import advRedAnalytics from 'modules/advRedAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('AdvRed Analytics Adapter', function () {
-  let bidWonEvent = {
+  const bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
@@ -45,7 +45,7 @@ describe('AdvRed Analytics Adapter', function () {
     });
 
     it('support custom endpoint', function () {
-      let custom_endpoint = 'custom url';
+      const custom_endpoint = 'custom url';
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {
@@ -58,7 +58,7 @@ describe('AdvRed Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      let publisherId = '1234567890';
+      const publisherId = '1234567890';
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {

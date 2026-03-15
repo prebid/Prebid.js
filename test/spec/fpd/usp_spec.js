@@ -1,11 +1,11 @@
-import {enrichFPDHook} from '../../../modules/consentManagementUsp.js';
-import {uspDataHandler} from '../../../src/adapterManager.js';
+import { enrichFPDHook } from '../../../modules/consentManagementUsp.js';
+import { uspDataHandler } from '../../../src/adapterManager.js';
 
 describe('FPD enrichment USP', () => {
   let sandbox, consent;
   beforeEach(() => {
     consent = null;
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(uspDataHandler, 'getConsentData').callsFake(() => consent);
   });
 

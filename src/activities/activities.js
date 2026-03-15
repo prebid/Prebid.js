@@ -55,3 +55,13 @@ export const ACTIVITY_TRANSMIT_TID = 'transmitTid';
  * loadExternalScript: adLoader.js is allowed to load external script
  */
 export const LOAD_EXTERNAL_SCRIPT = 'loadExternalScript';
+
+/**
+ * accessRequestCredentials: setting withCredentials flag in ajax request config
+ */
+export const ACTIVITY_ACCESS_REQUEST_CREDENTIALS = 'accessRequestCredentials';
+
+/**
+ * acceptBid: a bid is about to be accepted.
+ */
+export const ACTIVITY_ADD_BID_RESPONSE = 'acceptBid';

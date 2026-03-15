@@ -32,7 +32,7 @@ var adUnits = [{
 
     <head>
         <link rel="icon" type="image/png" href="/favicon.ico">
-        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+        <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
         <script async src="https://cdn.pixfuture.com/pixfuture_prebidjs/prebid.js"></script>
         <script>
             var div_1_sizes = [

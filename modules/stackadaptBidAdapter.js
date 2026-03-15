@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, formatQS, isFn, isPlainObject } from '../src/utils.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'stackadapt';
 const ENDPOINT_URL = 'https://pjs.srv.stackadapt.com/br';
@@ -97,7 +97,7 @@ export const spec = {
 
     if (mediaTypesBanner) {
       const sizes = mediaTypesBanner.sizes;
-      if (!sizes || parseSizesInput(sizes).length == 0) {
+      if (!sizes || parseSizesInput(sizes).length === 0) {
         logWarn('StackAdapt bidder adapter - banner bid requires bid.mediaTypes.banner.sizes of valid format');
         return false;
       }
@@ -185,7 +185,7 @@ function getBidFloor(bidRequest) {
   }
 
   if (isFn(bidRequest.getFloor)) {
-    let floor = bidRequest.getFloor({
+    const floor = bidRequest.getFloor({
       currency: CURRENCY,
       mediaType: '*',
       size: '*'

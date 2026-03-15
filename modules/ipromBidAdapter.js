@@ -50,7 +50,7 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, request) {
-    let bids = serverResponse.body;
+    const bids = serverResponse.body;
 
     const bidResponses = [];
 

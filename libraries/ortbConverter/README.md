@@ -328,7 +328,7 @@ Processor overrides are similar to the override options described above, except 
 - `request` processor overrides take `(orig, ortbRequest, bidderRequest, context)`, where:
     - `orig` is the processor function being overridden, and takes `(ortbRequest, bidderRequest, context)`;
     - `ortbRequest` is the partial request to modify;
-    - `bidderRequest` and `context` are the same arguments passed to [request](#reuqest).
+    - `bidderRequest` and `context` are the same arguments passed to [request](#request).
 - `bidResponse` processor overrides take `(orig, bidResponse, bid, context)`, where:
     - `orig` is the processor function being overridden, and takes `(bidResponse, bid, context)`;
     - `bidResponse` is the partial bid response to modify;
@@ -378,7 +378,7 @@ For ease of use, the conversion logic gives special meaning to some context prop
 
 ## Prebid Server extensions
 
-If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params (with `transformBidParams`), bidder aliases, targeting keys, and others.
+If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params, bidder aliases, targeting keys, and others.
 
 ```javascript
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js'

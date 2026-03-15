@@ -1,8 +1,8 @@
 import { deepAccess, deepClone } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -27,7 +27,7 @@ export const spec = {
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    let types = bid.mediaTypes;
+    const types = bid.mediaTypes;
     return !!(bid && bid.mediaTypes && (types.banner || types.video || types.native) && bid.params && bid.params.placementId);
   },
 
@@ -55,8 +55,8 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function ({body}, {data}) {
-    let requestBids = {};
+  interpretResponse: function ({ body }, { data }) {
+    const requestBids = {};
     let response;
 
     try {
@@ -67,15 +67,17 @@ export const spec = {
 
     if (!Array.isArray(response)) response = [];
 
-    data.bids.forEach(bid => requestBids[bid.bidId] = bid);
+    data.bids.forEach(bid => {
+      requestBids[bid.bidId] = bid;
+    });
 
     return response.map(bid => {
-      let requestBid = requestBids[bid.requestId];
-      let context = deepAccess(requestBid, 'mediaTypes.video.context');
-      let validBid = deepClone(bid);
+      const requestBid = requestBids[bid.requestId];
+      const context = deepAccess(requestBid, 'mediaTypes.video.context');
+      const validBid = deepClone(bid);
 
       if (validBid.mediaType === VIDEO && context === OUTSTREAM) {
-        let renderer = Renderer.install({
+        const renderer = Renderer.install({
           id: validBid.requestId,
           url: RENDERER_SRC,
           loaded: false
@@ -96,9 +98,9 @@ export const spec = {
  * @param bid
  */
 function setOutstreamRenderer(bid) {
-  let adData = JSON.parse(bid.ad);
-  let unitSettings = deepAccess(adData, 'placement.unit_settings');
-  let extendedSettings = {
+  const adData = JSON.parse(bid.ad);
+  const unitSettings = deepAccess(adData, 'placement.unit_settings');
+  const extendedSettings = {
     width: '' + bid.width,
     height: '' + bid.height,
     container_height: '' + bid.height

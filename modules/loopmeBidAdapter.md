@@ -94,5 +94,5 @@ var adUnits = [{
 | Name          | Scope    | Description                            | Example                              |
 |:--------------| :------- |:---------------------------------------|:-------------------------------------|
 | `publisherId` | required | Manually set up publisher ID | `publisherId`|
-| `bundleId` | required | Manually set up bundle ID | `bundleId`|
+| `bundleId` | optional | Manually set up bundle ID | `bundleId`|
 | `placementId` | optional | Manually set up placement ID | `placementId`|

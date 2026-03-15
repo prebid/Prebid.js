@@ -3,7 +3,7 @@ import { spec } from 'modules/dvgroupBidAdapter.js';
 import { deepClone } from 'src/utils.js';
 
 describe('dvgroupBidAdapterTests', function () {
-  let bidRequestData = {
+  const bidRequestData = {
     bids: [
       {
         adUnitCode: 'div-banner-id',
@@ -18,22 +18,33 @@ describe('dvgroupBidAdapterTests', function () {
         },
         bidder: 'dvgroup',
         params: {
-          source: 'ssp1',
+          sspId: 'prebidssp',
         },
         requestId: 'request-123',
       }
     ]
   };
 
+  it('validate_pub_params', function () {
+    expect(
+      spec.isBidRequestValid({
+        bidder: 'dvgroup',
+        params: {
+          sspId: 'prebidssp',
+        }
+      })
+    ).to.equal(true);
+  });
+
   it('validate_generated_url', function () {
     const request = spec.buildRequests(deepClone(bidRequestData.bids), { timeout: 1234 });
-    let req_url = request[0].url;
+    const req_url = request[0].url;
 
     expect(req_url).to.equal('https://rtb.dvgroup.com/bid?sspuid=prebidssp');
   });
 
   it('validate_response_params', function () {
-    let serverResponse = {
+    const serverResponse = {
       body: {
         id: 'bid123',
         seatbid: [
@@ -75,10 +86,10 @@ describe('dvgroupBidAdapterTests', function () {
     }
 
     const request = spec.buildRequests(bidRequest);
-    let bids = spec.interpretResponse(serverResponse, request[0]);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
+    const bid = bids[0];
     expect(bid.ad).to.equal('<h1>AD</h1>');
     expect(bid.cpm).to.equal(0.9899);
     expect(bid.currency).to.equal('EUR');
@@ -89,7 +100,7 @@ describe('dvgroupBidAdapterTests', function () {
   });
 
   it('validate_invalid_response', function () {
-    let serverResponse = {
+    const serverResponse = {
       body: {}
     };
 
@@ -104,7 +115,7 @@ describe('dvgroupBidAdapterTests', function () {
     }
 
     const request = spec.buildRequests(bidRequest);
-    let bids = spec.interpretResponse(serverResponse, request[0]);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(0);
   })
 
@@ -119,7 +130,7 @@ describe('dvgroupBidAdapterTests', function () {
 
       const request = spec.buildRequests(bidRequest, { timeout: 1234 });
       const vastXml = '<VAST></VAST>';
-      let serverResponse = {
+      const serverResponse = {
         body: {
           id: 'bid123',
           seatbid: [
@@ -150,10 +161,10 @@ describe('dvgroupBidAdapterTests', function () {
         }
       };
 
-      let bids = spec.interpretResponse(serverResponse, request[0]);
+      const bids = spec.interpretResponse(serverResponse, request[0]);
       expect(bids).to.have.lengthOf(1);
 
-      let bid = bids[0];
+      const bid = bids[0];
       expect(bid.mediaType).to.equal('video');
       expect(bid.vastXml).to.equal(vastXml);
       expect(bid.width).to.equal(300);

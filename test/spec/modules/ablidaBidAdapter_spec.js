@@ -1,6 +1,6 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/ablidaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/ablidaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
@@ -8,7 +8,7 @@ const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 describe('ablidaBidAdapter', function () {
   const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       adUnitCode: 'adunit-code',
       auctionId: '69e8fef8-5105-4a99-b011-d5669f3bc7f0',
       bidRequestsCount: 1,
@@ -17,7 +17,7 @@ describe('ablidaBidAdapter', function () {
       bidderRequestsCount: 1,
       bidderWinsCount: 0,
       bidId: '1234asdf1234',
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: {
         placementId: 123
       },
@@ -32,7 +32,7 @@ describe('ablidaBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         adUnitCode: 'adunit-code',
         auctionId: '69e8fef8-5105-4a99-b011-d5669f3bc7f0',
@@ -42,7 +42,7 @@ describe('ablidaBidAdapter', function () {
         bidderRequestId: '14d2939272a26a',
         bidderRequestsCount: 1,
         bidderWinsCount: 0,
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         params: {
           placementId: 123
         },
@@ -54,7 +54,7 @@ describe('ablidaBidAdapter', function () {
       }
     ];
 
-    let bidderRequests = {
+    const bidderRequests = {
       refererInfo: {
         canonicalUrl: '',
         numIframes: 0,
@@ -71,7 +71,7 @@ describe('ablidaBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = {
+    const bidRequest = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: {
@@ -81,14 +81,14 @@ describe('ablidaBidAdapter', function () {
         device: 'desktop',
         gdprConsent: undefined,
         jaySupported: true,
-        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
         placementId: 'testPlacementId',
         width: 300,
         height: 200,
         referer: 'www.example.com'
       }
     };
-    let serverResponse = {
+    const serverResponse = {
       body: [{
         ad: '<script>console.log("ad");</script>',
         cpm: 1.00,
@@ -107,7 +107,7 @@ describe('ablidaBidAdapter', function () {
       }]
     };
     it('should get the correct bid response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         ad: '<script>console.log("ad");</script>',
         cpm: 1.00,
         creativeId: '2b8c4de0116e54',
@@ -123,7 +123,7 @@ describe('ablidaBidAdapter', function () {
         ttl: 3000,
         width: 300
       }];
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
   });

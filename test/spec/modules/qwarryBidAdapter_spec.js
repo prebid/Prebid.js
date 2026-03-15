@@ -10,14 +10,20 @@ const REQUEST = {
     zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
     pos: 7
   },
-  'schain': {
-    ver: '1.0',
-    complete: 1,
-    nodes: [{
-      asi: 'qwarry.com',
-      sid: '00001',
-      hp: 1
-    }]
+  'ortb2': {
+    'source': {
+      'ext': {
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [{
+            'asi': 'qwarry.com',
+            'sid': '00001',
+            'hp': 1
+          }]
+        }
+      }
+    }
   }
 }
 
@@ -72,7 +78,7 @@ describe('qwarryBidAdapter', function () {
     })
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, REQUEST)
+      const bid = Object.assign({}, REQUEST)
       delete bid.params.zoneToken
       expect(spec.isBidRequestValid(bid)).to.equal(false)
       delete bid.params
@@ -81,7 +87,7 @@ describe('qwarryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let bidRequests = [REQUEST]
+    const bidRequests = [REQUEST]
     const bidderRequest = spec.buildRequests(bidRequests, {
       bidderRequestId: '123',
       gdprConsent: {
@@ -97,7 +103,7 @@ describe('qwarryBidAdapter', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
-      expect(bidderRequest.data.schain).to.deep.contains({ver: '1.0', complete: 1, nodes: [{asi: 'qwarry.com', sid: '00001', hp: 1}]})
+      expect(bidderRequest.data.schain).to.deep.contains({ ver: '1.0', complete: 1, nodes: [{ asi: 'qwarry.com', sid: '00001', hp: 1 }] })
       expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, sizes: [{ width: 100, height: 200 }, { width: 300, height: 400 }] })
       expect(bidderRequest.data.gdprConsent).to.deep.contains({ consentRequired: true, consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==' })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })

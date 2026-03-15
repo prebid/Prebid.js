@@ -139,7 +139,7 @@ const BID_RESPONSE = {
         {
           id: '123456789',
           impid: BID_REQUEST.bidId,
-          price: 0.286000000000000004,
+          price: 0.286,
           adm: '<img src ="//files.prebid.org/creatives/prebid300x250.png" />',
           adomain: [
             'teal.works'
@@ -164,7 +164,7 @@ const BID_RESPONSE = {
                 ]
               }
             },
-            origbidcpm: 0.286000000000000004
+            origbidcpm: 0.286
           }
         }
       ],
@@ -205,7 +205,7 @@ const buildRequest = (params) => {
 
 describe('Teal Bid Adaper', function () {
   describe('buildRequests', () => {
-    const {data, url} = buildRequest();
+    const { data, url } = buildRequest();
     it('should give the correct URL', () => {
       expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`);
     });
@@ -222,7 +222,7 @@ describe('Teal Bid Adaper', function () {
     });
   });
   describe('buildRequests with subAccount', () => {
-    const {data} = buildRequest({ subAccount: SUB_ACCOUNT });
+    const { data } = buildRequest({ subAccount: SUB_ACCOUNT });
     it('should set the correct stored request ids', () => {
       expect(data.ext.prebid.storedrequest.id).equal(SUB_ACCOUNT);
     });

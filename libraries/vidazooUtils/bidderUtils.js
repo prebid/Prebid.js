@@ -1,19 +1,19 @@
 import {
   _each,
-  deepAccess,
   formatQS,
   isArray,
   isFn,
   parseSizesInput,
   parseUrl,
   triggerPixel,
-  uniques
+  uniques,
+  getWinDimensions
 } from '../../src/utils.js';
-import {chunk} from '../chunk/chunk.js';
-import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
-import {bidderSettings} from '../../src/bidderSettings.js';
-import {config} from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import { chunk } from '../chunk/chunk.js';
+import { CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY } from './constants.js';
+import { bidderSettings } from '../../src/bidderSettings.js';
+import { config } from '../../src/config.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());
@@ -21,7 +21,7 @@ export function createSessionId() {
 
 export function getTopWindowQueryParams() {
   try {
-    const parsedUrl = parseUrl(window.top.document.URL, {decodeSearchAsString: true});
+    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -56,7 +56,7 @@ export function tryParseJSON(value) {
 export function setStorageItem(storage, key, value, timestamp) {
   try {
     const created = timestamp || Date.now();
-    const data = JSON.stringify({value, created});
+    const data = JSON.stringify({ value, created });
     storage.setDataInLocalStorage(key, data);
   } catch (e) {
   }
@@ -168,12 +168,12 @@ export function createUserSyncGetter(options = {
 }) {
   return function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     const syncs = [];
-    const {iframeEnabled, pixelEnabled} = syncOptions;
-    const {gdprApplies, consentString = ''} = gdprConsent;
-    const {gppString, applicableSections} = gppConsent;
+    const { iframeEnabled, pixelEnabled } = syncOptions;
+    const { gdprApplies, consentString = '' } = gdprConsent;
+    const { gppString, applicableSections } = gppConsent;
     const coppa = config.getConfig('coppa') ? 1 : 0;
 
-    const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
+    const cidArr = responses.filter(resp => resp?.body?.cid).map(resp => resp.body.cid).filter(uniques);
     let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}&coppa=${encodeURIComponent((coppa))}`;
     if (gppString && applicableSections?.length) {
       params += '&gpp=' + encodeURIComponent(gppString);
@@ -214,6 +214,14 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
   });
 }
 
+function appendUserIdsAsEidsToRequestPayload(payloadRef, userIds) {
+  let key;
+  userIds.forEach((userIdObj) => {
+    key = `uid.${userIdObj.source}`;
+    payloadRef[key] = userIdObj.uids[0].id;
+  })
+}
+
 export function getVidazooSessionId(storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
@@ -222,7 +230,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const {
     params,
     bidId,
-    userId,
     adUnitCode,
     schain,
     mediaTypes,
@@ -232,22 +239,22 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestsCount,
     bidderWinsCount
   } = bid;
-  const {ext} = params;
-  let {bidFloor} = params;
+  const { ext } = params;
+  let { bidFloor } = params;
   const hashUrl = hashCode(topWindowUrl);
   const uniqueRequestData = isFn(getUniqueRequestData) ? getUniqueRequestData(hashUrl, bid) : {};
   const uniqueDealId = getUniqueDealId(storage, hashUrl);
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
-  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
-  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
-  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
-  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
-  const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
-  const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa', 0);
-  const device = deepAccess(bidderRequest, 'ortb2.device', {});
+  const gpid = bid?.ortb2Imp?.ext?.gpid || '';
+  const cat = bidderRequest?.ortb2?.site?.cat || [];
+  const pagecat = bidderRequest?.ortb2?.site?.pagecat || [];
+  const contentData = bidderRequest?.ortb2?.site?.content?.data || [];
+  const userData = bidderRequest?.ortb2?.user?.data || [];
+  const contentLang = bidderRequest?.ortb2?.site?.content?.language || document.documentElement.lang;
+  const coppa = bidderRequest?.ortb2?.regs?.coppa ?? 0;
+  const device = bidderRequest?.ortb2?.device || {};
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -261,7 +268,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  let data = {
+  const data = {
     url: encodeURIComponent(topWindowUrl),
     uqs: getTopWindowQueryParams(),
     cb: Date.now(),
@@ -274,7 +281,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     uniqueDealId: uniqueDealId,
     bidderVersion: bidderVersion,
     prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`,
+    res: getScreenResolution(),
     schain: schain,
     mediaTypes: mediaTypes,
     isStorageAllowed: isStorageAllowed,
@@ -295,9 +302,18 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     ...uniqueRequestData
   };
 
-  appendUserIdsToRequestPayload(data, userId);
+  // backward compatible userId generators
+  if (bid.userIdAsEids?.length > 0) {
+    appendUserIdsAsEidsToRequestPayload(data, bid.userIdAsEids);
+  }
+  if (bid.user?.ext?.eids?.length > 0) {
+    appendUserIdsAsEidsToRequestPayload(data, bid.user.ext.eids);
+  }
+  if (bid.userId) {
+    appendUserIdsToRequestPayload(data, bid.userId);
+  }
 
-  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+  const sua = bidderRequest?.ortb2?.device?.sua;
 
   if (sua) {
     data.sua = sua;
@@ -323,16 +339,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.paapi?.enabled) {
-    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
-    if (fledge) {
-      data.fledge = fledge;
-    }
-  }
-
-  const api = deepAccess(mediaTypes, 'video.api', []);
+  const api = mediaTypes?.video?.api || [];
   if (api.includes(7)) {
-    const sourceExt = deepAccess(bidderRequest, 'ortb2.source.ext');
+    const sourceExt = bidderRequest?.ortb2?.source?.ext;
     if (sourceExt?.omidpv) {
       data.omidpv = sourceExt.omidpv;
     }
@@ -341,16 +350,31 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
-  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+  const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
   if (dsa) {
     data.dsa = dsa;
+  }
+  if (params.placementId) {
+    data.placementId = params.placementId;
   }
 
   _each(ext, (value, key) => {
     data['ext.' + key] = value;
   });
 
+  if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2
+  if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
+
   return data;
+}
+
+function getScreenResolution() {
+  const dimensions = getWinDimensions();
+  const width = dimensions?.screen?.width;
+  const height = dimensions?.screen?.height;
+  if (width != null && height != null) {
+    return `${width}x${height}`
+  }
 }
 
 export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
@@ -360,10 +384,10 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     }
 
     const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
-    const reqBidId = deepAccess(request, 'data.bidId');
-    const {results} = serverResponse.body;
+    const reqBidId = request?.data?.bidId;
+    const { results } = serverResponse.body;
 
-    let output = [];
+    const output = [];
 
     try {
       results.forEach((result, i) => {
@@ -434,7 +458,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
 
 export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
   function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
-    const {params} = bid;
+    const { params } = bid;
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
@@ -445,7 +469,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
   }
 
   function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
-    const {params} = bidRequests[0];
+    const { params } = bidRequests[0];
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = bidRequests.map(bid => {
@@ -466,6 +490,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     });
   }
 
+  // validBidRequests - an array of bids validated via the isBidRequestValid function.
+  // bidderRequest    - an object with data common to all bid requests.
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');

@@ -28,7 +28,7 @@ describe('Ad Queue Coordinator', function () {
       coordinator.queueAd('testAdTag', testId, { param: {} });
 
       expect(mockEvents.emit.calledOnce).to.be.true;
-      let emitArgs = mockEvents.emit.firstCall.args;
+      const emitArgs = mockEvents.emit.firstCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadQueued');
       expect(mockVideoCore.setAdTagUrl.called).to.be.false;
     });
@@ -70,7 +70,7 @@ describe('Ad Queue Coordinator', function () {
       };
       const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
       coordinator.registerProvider(testId);
-      coordinator.queueAd('testAdTag', testId, {prefetchedVastXml: '<VAST></VAST>'});
+      coordinator.queueAd('testAdTag', testId, { prefetchedVastXml: '<VAST></VAST>' });
 
       setupComplete('', { divId: testId });
       expect(mockVideoCore.setAdXml.calledOnce).to.be.true;
@@ -93,7 +93,7 @@ describe('Ad Queue Coordinator', function () {
 
       coordinator.queueAd('testAdTag', testId, { param: {} });
       expect(mockEvents.emit.calledOnce).to.be.true;
-      let emitArgs = mockEvents.emit.firstCall.args;
+      const emitArgs = mockEvents.emit.firstCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
       expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
     });

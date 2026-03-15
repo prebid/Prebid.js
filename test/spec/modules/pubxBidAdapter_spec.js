@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/pubxBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pubxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('pubxAdapter', function () {
@@ -26,7 +26,7 @@ describe('pubxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
@@ -70,7 +70,7 @@ describe('pubxAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
 
     const keywordsText = 'meta1,meta2,meta3,meta4,meta5';
     const descriptionText = 'description1description2description3description4description5description';

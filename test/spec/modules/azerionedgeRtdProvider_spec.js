@@ -1,6 +1,6 @@
 import { config } from 'src/config.js';
 import * as azerionedgeRTD from 'modules/azerionedgeRtdProvider.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('Azerion Edge RTD submodule', function () {
   const STORAGE_KEY = 'ht-pa-v1-a';
@@ -13,11 +13,11 @@ describe('Azerion Edge RTD submodule', function () {
   const bidders = ['appnexus', 'improvedigital'];
   const process = { key: 'value' };
   const dataProvider = { name: 'azerionedge', waitForIt: true };
-  const userConsent = {gdpr: {gdprApplies: 'gdpr-applies', consentString: 'consent-string'}, usp: 'usp'};
+  const userConsent = { gdpr: { gdprApplies: 'gdpr-applies', consentString: 'consent-string' }, usp: 'usp' };
 
   const resetAll = () => {
     window.azerionPublisherAudiences.resetHistory();
-    loadExternalScript.resetHistory();
+    loadExternalScriptStub.resetHistory();
   }
 
   let reqBidsConfigObj;
@@ -51,12 +51,12 @@ describe('Azerion Edge RTD submodule', function () {
     });
 
     it('should load external script', function () {
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should load external script with default versioned url', function () {
       const expected = 'https://edge.hyth.io/js/v1/azerion-edge.min.js';
-      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
     });
 
     [
@@ -65,7 +65,7 @@ describe('Azerion Edge RTD submodule', function () {
       ['uspConsent', userConsent.usp],
     ].forEach(([key, value]) => {
       it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
-        expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
+        expect(window.azerionPublisherAudiences.args[0][0]).to.include({ [key]: value });
       });
     });
 
@@ -82,7 +82,7 @@ describe('Azerion Edge RTD submodule', function () {
 
       it('should load external script with publisher id url', function () {
         const expected = `https://edge.hyth.io/js/v1/${key}/azerion-edge.min.js`;
-        expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+        expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
       });
     });
 
@@ -104,7 +104,7 @@ describe('Azerion Edge RTD submodule', function () {
         ...Object.entries(process),
       ].forEach(([key, value]) => {
         it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
-          expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
+          expect(window.azerionPublisherAudiences.args[0][0]).to.include({ [key]: value });
         });
       });
     });

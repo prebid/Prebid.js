@@ -82,7 +82,7 @@ export const spec = {
     if (
       !serverResponse ||
       !serverResponse.body ||
-      typeof serverResponse.body != 'object' ||
+      typeof serverResponse.body !== 'object' ||
       Object.keys(serverResponse.body).length === 0
     ) {
       logWarn('no response or body is malformed');
@@ -137,7 +137,6 @@ export const spec = {
   onBidWon: function (bid) {
     let bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
-    if (bidder !== BIDDER_CODE) return;
 
     let params;
     if (bid.params) {

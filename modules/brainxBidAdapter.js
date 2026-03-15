@@ -55,15 +55,15 @@ export const spec = {
     }
   },
   interpretResponse(response, request) {
-    let bids = [];
+    const bids = [];
     if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
       response.body.seatbid.forEach(function (bidder) {
         if (isArray(bidder.bid)) {
-          bidder.bid.map((bid) => {
-            let serverBody = response.body;
+          bidder.bid.forEach((bid) => {
+            const serverBody = response.body;
             // bidRequest = request.originalBidRequest,
-            let mediaType = BANNER;
-            let currency = serverBody.cur || 'USD'
+            const mediaType = BANNER;
+            const currency = serverBody.cur || 'USD'
 
             const cpm = (parseFloat(bid.price) || 0).toFixed(2);
             const categories = deepAccess(bid, 'cat', []);

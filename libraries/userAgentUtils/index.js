@@ -48,11 +48,11 @@ export const getBrowser = () => {
  * @returns {number}
  */
 export const getOS = () => {
-  if (navigator.userAgent.indexOf('Android') != -1) return osTypes.ANDROID;
-  if (navigator.userAgent.indexOf('like Mac') != -1) return osTypes.IOS;
-  if (navigator.userAgent.indexOf('Win') != -1) return osTypes.WINDOWS;
-  if (navigator.userAgent.indexOf('Mac') != -1) return osTypes.MAC;
-  if (navigator.userAgent.indexOf('Linux') != -1) return osTypes.LINUX;
-  if (navigator.appVersion.indexOf('X11') != -1) return osTypes.UNIX;
+  if (navigator.userAgent.indexOf('Android') !== -1) return osTypes.ANDROID;
+  if (navigator.userAgent.indexOf('like Mac') !== -1) return osTypes.IOS;
+  if (navigator.userAgent.indexOf('Win') !== -1) return osTypes.WINDOWS;
+  if (navigator.userAgent.indexOf('Mac') !== -1) return osTypes.MAC;
+  if (navigator.userAgent.indexOf('Linux') !== -1) return osTypes.LINUX;
+  if (navigator.appVersion.indexOf('X11') !== -1) return osTypes.UNIX;
   return osTypes.OTHER;
 };

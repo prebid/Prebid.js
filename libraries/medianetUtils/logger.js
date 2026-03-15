@@ -3,8 +3,7 @@ import { formatQS, triggerPixel, isPlainObject } from '../../src/utils.js';
 import {
   ANALYTICS_VERSION, BID_SUCCESS,
   EVENT_PIXEL_URL, LOG_APPR,
-  LOG_EVT_ID,
-  LOG_TYPE_ID,
+  LOGGING_TOPICS,
   mnetGlobals, POST_ENDPOINT,
   PREBID_VERSION
 } from './constants.js';
@@ -24,12 +23,12 @@ export function shouldLogAPPR(auctionData, adUnitId) {
 
 // common error logger for medianet analytics and bid adapter
 export function errorLogger(event, data = undefined, analytics = true) {
-  const { name, cid, value, relatedData, logData, project } = isPlainObject(event) ? {...event, logData: data} : { name: event, relatedData: data };
+  const { name, cid, value, relatedData, logData, project } = isPlainObject(event) ? { ...event, logData: data } : { name: event, relatedData: data };
   const refererInfo = mnetGlobals.refererInfo || getRefererInfo();
   const errorData = Object.assign({},
     {
-      logid: LOG_TYPE_ID,
-      evtid: LOG_EVT_ID,
+      logid: 'kfk',
+      evtid: LOGGING_TOPICS.PROJECT_EVENTS,
       project: project || (analytics ? 'prebidanalytics' : 'prebid'),
       dn: refererInfo.domain || '',
       requrl: refererInfo.topmostLocation || '',
@@ -47,7 +46,7 @@ export function errorLogger(event, data = undefined, analytics = true) {
 
   function send() {
     if (!analytics) {
-      fireAjaxLog(loggingHost, payload, pick(errorData, ['cid', 'project', 'event as value']));
+      fireAjaxLog(loggingHost, payload, pick(errorData, ['cid', 'project', 'name as value']));
       return;
     }
     const pixelUrl = getUrl();
@@ -65,29 +64,31 @@ export function errorLogger(event, data = undefined, analytics = true) {
   };
 }
 
-export function getLoggingPayload(queryParams) {
-  return `logid=kfk&evtid=prebid_analytics_events_client&${queryParams}`;
+// Log generation for APPR & RA
+export function getLoggingPayload(queryParams, logType) {
+  const loggingTopic = LOGGING_TOPICS[logType];
+  return `logid=kfk&evtid=${loggingTopic}&${queryParams}`;
 }
 
-export function firePostLog(url, payload) {
+export function firePostLog(loggingHost, payload) {
   try {
-    mnetGlobals.logsQueue.push(url + '?' + payload);
-    const isSent = sendBeacon(url, payload);
+    mnetGlobals.logsQueue.push(loggingHost + '?' + payload);
+    const isSent = sendBeacon(loggingHost, payload);
     if (!isSent) {
-      fireAjaxLog(url, payload);
+      fireAjaxLog(loggingHost, payload);
       errorLogger('sb_log_failed').send();
     }
   } catch (e) {
-    fireAjaxLog(url, payload);
+    fireAjaxLog(loggingHost, payload);
     errorLogger('sb_not_supported').send();
   }
 }
 
-export function fireAjaxLog(url, payload, errorData = {}) {
-  ajax(url,
+export function fireAjaxLog(loggingHost, payload, errorData = {}) {
+  ajax(loggingHost,
     {
       success: () => undefined,
-      error: (_, {reason}) => errorLogger(Object.assign(errorData, {name: 'ajax_log_failed', relatedData: reason})).send()
+      error: (_, { reason }) => errorLogger(Object.assign(errorData, { name: 'ajax_log_failed', relatedData: reason })).send()
     },
     payload,
     {

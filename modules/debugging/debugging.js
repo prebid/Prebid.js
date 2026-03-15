@@ -1,30 +1,29 @@
-import {deepClone, delayExecution} from '../../src/utils.js';
-import {BidInterceptor} from './bidInterceptor.js';
-import {makePbsInterceptor} from './pbsInterceptor.js';
-import {addHooks, removeHooks} from './legacy.js';
+import { makebidInterceptor } from './bidInterceptor.js';
+import { makePbsInterceptor } from './pbsInterceptor.js';
+import { addHooks, removeHooks } from './legacy.js';
 
 const interceptorHooks = [];
 let bidInterceptor;
 let enabled = false;
 
-function enableDebugging(debugConfig, {fromSession = false, config, hook, logger}) {
-  config.setConfig({debug: true});
+function enableDebugging(debugConfig, { fromSession = false, config, hook, logger }) {
+  config.setConfig({ debug: true });
   bidInterceptor.updateConfig(debugConfig);
   resetHooks(true);
   // also enable "legacy" overrides
-  removeHooks({hook});
-  addHooks(debugConfig, {hook, logger});
+  removeHooks({ hook });
+  addHooks(debugConfig, { hook, logger });
   if (!enabled) {
     enabled = true;
     logger.logMessage(`Debug overrides enabled${fromSession ? ' from session' : ''}`);
   }
 }
 
-export function disableDebugging({hook, logger}) {
+export function disableDebugging({ hook, logger }) {
   bidInterceptor.updateConfig(({}));
   resetHooks(false);
   // also disable "legacy" overrides
-  removeHooks({hook});
+  removeHooks({ hook });
   if (enabled) {
     enabled = false;
     logger.logMessage('Debug overrides disabled');
@@ -32,7 +31,8 @@ export function disableDebugging({hook, logger}) {
 }
 
 // eslint-disable-next-line no-restricted-properties
-function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorage, DEBUG_KEY} = {}) {
+function saveDebuggingConfig(debugConfig, { sessionStorage = window.sessionStorage, DEBUG_KEY, utils } = {}) {
+  const { deepClone } = utils;
   if (!debugConfig.enabled) {
     try {
       sessionStorage.removeItem(DEBUG_KEY);
@@ -51,7 +51,7 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
 }
 
 // eslint-disable-next-line no-restricted-properties
-export function getConfig(debugging, {getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
+export function getConfig(debugging, { getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger, utils } = {}) {
   if (debugging == null) return;
   let sessionStorage;
   try {
@@ -60,16 +60,16 @@ export function getConfig(debugging, {getStorage = () => window.sessionStorage, 
     logger.logError(`sessionStorage is not available: debugging configuration will not persist on page reload`, e);
   }
   if (sessionStorage != null) {
-    saveDebuggingConfig(debugging, {sessionStorage, DEBUG_KEY});
+    saveDebuggingConfig(debugging, { sessionStorage, DEBUG_KEY, utils });
   }
   if (!debugging.enabled) {
-    disableDebugging({hook, logger});
+    disableDebugging({ hook, logger });
   } else {
-    enableDebugging(debugging, {config, hook, logger});
+    enableDebugging(debugging, { config, hook, logger });
   }
 }
 
-export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
+export function sessionLoader({ DEBUG_KEY, storage, config, hook, logger }) {
   let overrides;
   try {
     // eslint-disable-next-line no-restricted-properties
@@ -78,13 +78,13 @@ export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
   } catch (e) {
   }
   if (overrides) {
-    enableDebugging(overrides, {fromSession: true, config, hook, logger});
+    enableDebugging(overrides, { fromSession: true, config, hook, logger });
   }
 }
 
 function resetHooks(enable) {
   interceptorHooks.forEach(([getHookFn, interceptor]) => {
-    getHookFn().getHooks({hook: interceptor}).remove();
+    getHookFn().getHooks({ hook: interceptor }).remove();
   });
   if (enable) {
     interceptorHooks.forEach(([getHookFn, interceptor]) => {
@@ -100,28 +100,31 @@ function registerBidInterceptor(getHookFn, interceptor) {
   }]);
 }
 
-export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, cbs) {
-  const done = delayExecution(cbs.onCompletion, 2);
-  ({bids, bidRequest} = interceptBids({
-    bids,
-    bidRequest,
-    addBid: wrapCallback(cbs.onBid),
-    addPaapiConfig: wrapCallback((config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, ...config})),
-    done
-  }));
-  if (bids.length === 0) {
-    cbs.onResponse?.({}); // trigger onResponse so that the bidder may be marked as "timely" if necessary
-    done();
-  } else {
-    next(spec, bids, bidRequest, ajax, wrapCallback, {...cbs, onCompletion: done});
+export function makeBidderBidInterceptor({ utils }) {
+  const { delayExecution } = utils;
+  return function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, cbs) {
+    const done = delayExecution(cbs.onCompletion, 2);
+    ({ bids, bidRequest } = interceptBids({
+      bids,
+      bidRequest,
+      addBid: wrapCallback(cbs.onBid),
+      done
+    }));
+    if (bids.length === 0) {
+      cbs.onResponse?.({}); // trigger onResponse so that the bidder may be marked as "timely" if necessary
+      done();
+    } else {
+      next(spec, bids, bidRequest, ajax, wrapCallback, { ...cbs, onCompletion: done });
+    }
   }
 }
 
-export function install({DEBUG_KEY, config, hook, createBid, logger}) {
-  bidInterceptor = new BidInterceptor({logger});
-  const pbsBidInterceptor = makePbsInterceptor({createBid});
-  registerBidInterceptor(() => hook.get('processBidderRequests'), bidderBidInterceptor);
+export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer }) {
+  const BidInterceptor = makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer });
+  bidInterceptor = new BidInterceptor({ logger });
+  const pbsBidInterceptor = makePbsInterceptor({ createBid, utils });
+  registerBidInterceptor(() => hook.get('processBidderRequests'), makeBidderBidInterceptor({ utils }));
   registerBidInterceptor(() => hook.get('processPBSRequest'), pbsBidInterceptor);
-  sessionLoader({DEBUG_KEY, config, hook, logger});
-  config.getConfig('debugging', ({debugging}) => getConfig(debugging, {DEBUG_KEY, config, hook, logger}), {init: true});
+  sessionLoader({ DEBUG_KEY, config, hook, logger });
+  config.getConfig('debugging', ({ debugging }) => getConfig(debugging, { DEBUG_KEY, config, hook, logger, utils }), { init: true });
 }
