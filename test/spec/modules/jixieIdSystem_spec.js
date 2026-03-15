@@ -215,7 +215,7 @@ describe('JixieId  Submodule', () => {
         });
         context('when has rather stale pbjs jixie cookie', () => {
           it('should call the server and set the id; send available extra info (e.g. esha,psha, consent if available)', () => {
-            const consentData = {gdpr: {gdprApplies: 1, consentString: MOCK_CONSENT_STRING}};
+            const consentData = { gdpr: { gdprApplies: 1, consentString: MOCK_CONSENT_STRING } };
             storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE)
