@@ -18,7 +18,7 @@ It also sets `device.ext.fod.tpc` key to a binary value to indicate whether thir
 
 The module supports on-premise and cloud device detection services, with free options for both.
 
-A free resource key for use with 51Degrees cloud service can be obtained from [51Degrees cloud configuration](https://configure.51degrees.com/7bL8jDGz). This is the simplest approach to trial the module.
+A free resource key for use with 51Degrees cloud service can be obtained from [51Degrees cloud configuration](https://configure.51degrees.com/jJqVnTJR). This is the simplest approach to trial the module.
 
 An interface-compatible self-hosted service can be used with .NET, Java, Node, PHP, and Python. See [51Degrees examples](https://51degrees.com/documentation/_examples__device_detection__getting_started__web__on_premise.html).
 
@@ -40,7 +40,7 @@ gulp build --modules=rtdModule,51DegreesRtdProvider,appnexusBidAdapter,...
 
 #### Resource Key
 
-In order to use the module, please first obtain a Resource Key using the [Configurator tool](https://configure.51degrees.com/7bL8jDGz) - choose the following properties:
+In order to use the module, please first obtain a Resource Key using the [Configurator tool](https://configure.51degrees.com/jJqVnTJR) - choose the following properties:
 
 * DeviceId
 * DeviceType
@@ -113,7 +113,7 @@ pbjs.setConfig({
                 waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
                 params: {
                     resourceKey: '<YOUR_RESOURCE_KEY>',
-                    // Get your resource key from https://configure.51degrees.com/7bL8jDGz
+                    // Get your resource key from hhttps://configure.51degrees.com/jJqVnTJR
                     // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen endpoint
                     // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
                 },
