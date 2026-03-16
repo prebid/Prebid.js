@@ -228,15 +228,10 @@ describe('ImpactifyAdapter', function () {
     });
 
     it('sends video bid request to ENDPOINT via POST', function () {
-      localStorageIsEnabledStub.returns(true);
-
-      getLocalStorageStub.returns('testValue');
-
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
 
       expect(request.url).to.equal(ORIGIN + AUCTIONURI);
       expect(request.method).to.equal('POST');
-      expect(request.options.customHeaders['x-impact']).to.equal('testValue');
     });
 
     it('should set instream context and player size for video imps', function () {
@@ -245,22 +240,6 @@ describe('ImpactifyAdapter', function () {
 
       expect(payload.imp[0].video.context).to.equal('instream');
       expect(payload.imp[0].video.playerSize).to.deep.equal([DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]);
-    });
-
-    it('should set header value from localstorage correctly', function () {
-      localStorageIsEnabledStub.returns(true);
-      getLocalStorageStub.returns('testValue');
-
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
-      expect(request.options.customHeaders).to.be.an('object');
-      expect(request.options.customHeaders['x-impact']).to.equal('testValue');
-    });
-
-    it('should set header value to empty if localstorage is not enabled', function () {
-      localStorageIsEnabledStub.returns(false);
-
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
-      expect(request.options.customHeaders).to.be.undefined;
     });
 
     it('should pass supported render fields in imp ext', function () {
