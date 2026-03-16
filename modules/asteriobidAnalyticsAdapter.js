@@ -229,9 +229,6 @@ function handleEvent(eventType, eventArgs) {
     case EVENTS.REQUEST_BIDS: {
       break
     }
-    case EVENTS.ADD_AD_UNITS: {
-      break
-    }
     case EVENTS.AD_RENDER_FAILED: {
       pmEvent.bid = eventArgs.bid
       pmEvent.message = eventArgs.message

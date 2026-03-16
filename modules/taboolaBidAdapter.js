@@ -3,7 +3,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject, getWinDimensions } from '../src/utils.js';
+import {
+  deepSetValue,
+  getWinDimensions,
+  getWindowSelf,
+  isPlainObject,
+  replaceAuctionPrice,
+  safeJSONParse
+} from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -11,6 +18,7 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -140,9 +148,9 @@ export function getDeviceExtSignals(existingExt = {}) {
   };
 }
 
-export function getElementSignals(adUnitCode) {
+export function getElementSignals(bidRequest) {
   try {
-    const element = document.getElementById(adUnitCode);
+    const element = getAdUnitElement(bidRequest);
     if (!element) return null;
 
     const rect = getBoundingClientRect(element);
@@ -247,57 +255,10 @@ export const spec = {
       return [];
     }
     const bids = [];
-    const fledgeAuctionConfigs = [];
     if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
-      if (!serverResponse.body.ext || !serverResponse.body.ext.igbid || !serverResponse.body.ext.igbid.length) {
-        return [];
-      }
+      return [];
     } else {
       bids.push(...converter.fromORTB({ response: serverResponse.body, request: request.data }).bids);
-    }
-    if (isArray(serverResponse.body.ext?.igbid)) {
-      serverResponse.body.ext.igbid.forEach((igbid) => {
-        if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
-          return;
-        }
-        const buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
-        if (!buyerdata) {
-          return;
-        }
-        const perBuyerSignals = {};
-        igbid.igbuyer.forEach(buyerItem => {
-          if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
-            return;
-          }
-          const parsedData = safeJSONParse(buyerItem.buyerdata)
-          if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
-            return;
-          }
-          perBuyerSignals[buyerItem.origin] = parsedData.perBuyerSignals[buyerItem.origin];
-        });
-        const impId = igbid?.impid;
-        fledgeAuctionConfigs.push({
-          impId,
-          config: {
-            seller: buyerdata?.seller,
-            resolveToConfig: buyerdata?.resolveToConfig,
-            sellerSignals: {},
-            sellerTimeout: buyerdata?.sellerTimeout,
-            perBuyerSignals,
-            auctionSignals: {},
-            decisionLogicUrl: buyerdata?.decisionLogicUrl,
-            interestGroupBuyers: buyerdata?.interestGroupBuyers,
-            perBuyerTimeouts: buyerdata?.perBuyerTimeouts,
-          },
-        });
-      });
-    }
-
-    if (fledgeAuctionConfigs.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
     }
     return bids;
   },
@@ -501,7 +462,7 @@ function fillTaboolaImpData(bid, imp, context) {
   deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
   deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
 
-  const elementSignals = getElementSignals(bid.adUnitCode);
+  const elementSignals = getElementSignals(bid);
   if (elementSignals) {
     if (elementSignals.viewability !== undefined) {
       deepSetValue(imp, 'ext.viewability', elementSignals.viewability);

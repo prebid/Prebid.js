@@ -3622,13 +3622,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "optable",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "optidigital",
       "aliasOf": null,
       "gvlid": 915,
@@ -3961,13 +3954,6 @@
       "componentName": "qt",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "quantcast",
-      "aliasOf": null,
-      "gvlid": "11",
       "disclosureURL": null
     },
     {
@@ -5402,12 +5388,6 @@
     },
     {
       "componentType": "rtd",
-      "componentName": "intersection",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "rtd",
       "componentName": "jwplayer",
       "gvlid": null,
       "disclosureURL": null
@@ -5679,13 +5659,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "dmdId",
-      "gvlid": null,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "euid",
       "gvlid": 21,
       "disclosureURL": null,
@@ -5940,13 +5913,6 @@
       "componentType": "userId",
       "componentName": "pubmaticId",
       "gvlid": 76,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
-      "componentName": "quantcastId",
-      "gvlid": "11",
       "disclosureURL": null,
       "aliasOf": null
     },
