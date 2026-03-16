@@ -40,7 +40,7 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
-    if (video) {
+    if (video && ['instream', 'outstream'].includes(video.context)) {
       return !!(video.playerSize);
     }
 
