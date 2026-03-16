@@ -9,7 +9,7 @@ import {
   optableSubmodule,
   LOG_PREFIX,
 } from 'modules/optableRtdProvider';
-import {getStorageManager} from 'src/storageManager.js';
+import { getStorageManager } from 'src/storageManager.js';
 import * as ajax from 'src/ajax.js';
 
 describe('Optable RTD Submodule', function () {
@@ -18,7 +18,7 @@ describe('Optable RTD Submodule', function () {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    storage = getStorageManager({moduleType: 'rtd', moduleName: 'optable'});
+    storage = getStorageManager({ moduleType: 'rtd', moduleName: 'optable' });
     sandbox.stub(storage, 'getDataFromLocalStorage');
     sandbox.stub(storage, 'setDataInLocalStorage');
   });
@@ -80,24 +80,24 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('accepts config with null host/site/node (SDK mode)', function () {
-      const moduleConfig = {params: {adserverTargeting: true}};
+      const moduleConfig = { params: { adserverTargeting: true } };
       const result = parseConfig(moduleConfig);
       expect(result).to.not.be.null;
       expect(result.hasDirectApiConfig).to.be.false;
     });
 
     it('returns null if host is empty string', function () {
-      const moduleConfig = {params: {host: '', site: 'my-site', node: 'my-node'}};
+      const moduleConfig = { params: { host: '', site: 'my-site', node: 'my-node' } };
       expect(parseConfig(moduleConfig)).to.be.null;
     });
 
     it('returns null if site is empty string', function () {
-      const moduleConfig = {params: {host: 'dcn.customer.com', site: '', node: 'my-node'}};
+      const moduleConfig = { params: { host: 'dcn.customer.com', site: '', node: 'my-node' } };
       expect(parseConfig(moduleConfig)).to.be.null;
     });
 
     it('returns null if node is empty string', function () {
-      const moduleConfig = {params: {host: 'dcn.customer.com', site: 'my-site', node: ''}};
+      const moduleConfig = { params: { host: 'dcn.customer.com', site: 'my-site', node: '' } };
       expect(parseConfig(moduleConfig)).to.be.null;
     });
 
@@ -230,7 +230,7 @@ describe('Optable RTD Submodule', function () {
     let reqBidsConfigObj, mergeFn;
 
     beforeEach(() => {
-      reqBidsConfigObj = {ortb2Fragments: {global: {}}};
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
       mergeFn = sinon.spy();
     });
 
@@ -238,7 +238,7 @@ describe('Optable RTD Submodule', function () {
       const targetingData = {
         ortb2: {
           user: {
-            eids: [{source: 'optable.co', uids: [{id: 'test-id'}]}]
+            eids: [{ source: 'optable.co', uids: [{ id: 'test-id' }] }]
           }
         }
       };
@@ -304,7 +304,7 @@ describe('Optable RTD Submodule', function () {
       const cachedData = {
         ortb2: {
           user: {
-            eids: [{source: 'cached.com', uids: [{id: 'cached-id'}]}]
+            eids: [{ source: 'cached.com', uids: [{ id: 'cached-id' }] }]
           }
         }
       };
@@ -494,9 +494,9 @@ describe('Optable RTD Submodule', function () {
     let reqBidsConfigObj, callback, moduleConfig;
 
     beforeEach(() => {
-      reqBidsConfigObj = {ortb2Fragments: {global: {}}};
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
       callback = sinon.spy();
-      moduleConfig = {params: {instance: 'instance', adserverTargeting: true}};
+      moduleConfig = { params: { instance: 'instance', adserverTargeting: true } };
 
       // Mock SDK availability
       window.optable = {
@@ -514,13 +514,13 @@ describe('Optable RTD Submodule', function () {
     it('uses SDK mode when window.optable is available', async function () {
       const targetingData = {
         ortb2: {
-          user: {eids: [{source: 'optable.co', uids: [{id: 'sdk-id'}]}]}
+          user: { eids: [{ source: 'optable.co', uids: [{ id: 'sdk-id' }] }] }
         }
       };
 
       // Simulate SDK event
       setTimeout(() => {
-        const event = new CustomEvent('optable-targeting:change', {detail: targetingData});
+        const event = new CustomEvent('optable-targeting:change', { detail: targetingData });
         window.dispatchEvent(event);
       }, 10);
 
@@ -531,7 +531,7 @@ describe('Optable RTD Submodule', function () {
 
     it('uses SDK cached data if available', async function () {
       const cachedData = {
-        ortb2: {user: {eids: [{source: 'cached.com'}]}}
+        ortb2: { user: { eids: [{ source: 'cached.com' }] } }
       };
       window.optable.instance.targetingFromCache.returns(cachedData);
 
@@ -545,13 +545,13 @@ describe('Optable RTD Submodule', function () {
     let reqBidsConfigObj, callback;
 
     beforeEach(() => {
-      reqBidsConfigObj = {ortb2Fragments: {global: {}}};
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
       callback = sinon.spy();
       delete window.optable;
     });
 
     it('errors when neither SDK nor Direct API params configured', async function () {
-      const moduleConfig = {params: {}};
+      const moduleConfig = { params: {} };
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
@@ -563,7 +563,7 @@ describe('Optable RTD Submodule', function () {
   describe('getTargetingData', function () {
     it('returns empty object when SDK not available', function () {
       delete window.optable;
-      const moduleConfig = {params: {host: 'test', site: 'test', node: 'test'}};
+      const moduleConfig = { params: { host: 'test', site: 'test', node: 'test' } };
       const result = getTargetingData(['adUnit1'], moduleConfig, {}, {});
       expect(result).to.deep.equal({});
     });
@@ -577,7 +577,7 @@ describe('Optable RTD Submodule', function () {
         }
       };
 
-      const moduleConfig = {params: {adserverTargeting: true}};
+      const moduleConfig = { params: { adserverTargeting: true } };
       const result = getTargetingData(['adUnit1'], moduleConfig, {}, {});
 
       expect(result).to.have.property('adUnit1');

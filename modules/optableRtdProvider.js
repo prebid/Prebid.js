@@ -13,7 +13,7 @@ const MODULE_NAME = 'optable';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD]:`;
 const optableLog = prefixLog(LOG_PREFIX);
 const { logMessage, logWarn, logError } = optableLog;
-const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
 // localStorage key for targeting cache (direct API mode only)
 const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
@@ -334,7 +334,7 @@ const extractIdentifiers = (configIds, configHids, reqBidsConfigObj) => {
  * @returns {string} Complete URL for targeting API
  */
 const buildTargetingURL = (params) => {
-  const {host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout} = params;
+  const { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout } = params;
 
   const searchParams = new URLSearchParams();
 
@@ -382,7 +382,7 @@ const buildTargetingURL = (params) => {
 const callTargetingAPI = (params) => {
   return new Promise((resolve) => {
     const url = buildTargetingURL(params);
-    const {host, node} = params;
+    const { host, node } = params;
 
     logMessage(`Calling targeting API: ${url.split('?')[0]}`);
 
@@ -496,7 +496,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       return;
     }
 
-    const {host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig} = parsedConfig;
+    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig } = parsedConfig;
     const handleRtdFn = handleRtd || defaultHandleRtd;
 
     // Mode 1: SDK mode - If Optable Web SDK is loaded (window.optable), use its event system
@@ -533,7 +533,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     logMessage(`Session ID: ${sessionId}`);
     logMessage(`Consent: GPP=${!!consent.gpp}, GDPR=${!!consent.gdpr}`);
 
-    const {ids, hids} = extractIdentifiers(configIds, configHids, reqBidsConfigObj);
+    const { ids, hids } = extractIdentifiers(configIds, configHids, reqBidsConfigObj);
     logMessage(`Identifiers: ${ids.length} id(s), ${hids.length} hid(s)`);
 
     const passport = getPassport(host, node);
@@ -630,7 +630,7 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
     return {};
   }
 
-  const {adserverTargeting, instance} = parsedConfig;
+  const { adserverTargeting, instance } = parsedConfig;
 
   if (!isSDKAvailable(instance)) {
     logMessage('getTargetingData: Web SDK not available, ad server targeting disabled');
