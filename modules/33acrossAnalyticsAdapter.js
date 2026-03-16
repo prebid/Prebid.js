@@ -401,8 +401,7 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.BID_REJECTED:
       onBidRejected(args);
       break;
-    case EVENTS.NO_BID:
-    case EVENTS.SEAT_NON_BID:
+    case EVENTS.NO_BID: // todo: need to also consider pbsanalytics where nonbid is not null
       setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
       break;
     case EVENTS.BIDDER_ERROR:

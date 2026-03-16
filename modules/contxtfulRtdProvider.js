@@ -292,6 +292,7 @@ function getDivIdPosition(divId) {
 
       let domElement;
 
+      // TODO: this should use getAdUnitElement
       if (inIframe() === true) {
         const ws = getWindowSelf();
         const currentElement = ws.document.getElementById(divId);
@@ -335,6 +336,7 @@ function tryGetDivIdPosition(divIdMethod) {
   return undefined;
 }
 
+// TODO unified adUnit/element association in 11
 function tryMultipleDivIdPositions(adUnit) {
   const divMethods = [
     // ortb2\
