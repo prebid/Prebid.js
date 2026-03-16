@@ -772,7 +772,7 @@ export function groupBy(xs, key) {
  */
 export function isValidMediaTypes(mediaTypes) {
   const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video', 'audio'];
-  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
 
   const types = Object.keys(mediaTypes);
 
@@ -810,7 +810,9 @@ export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() ===
  * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
-  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+  const customGptSlotMatching = config.getConfig('customGptSlotMatching');
+  const match = isFn(customGptSlotMatching) && customGptSlotMatching(slot);
+  return isFn(match) ? match : (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
 
 /**
