@@ -13,12 +13,8 @@ describe('playstreamBidAdapter', function () {
       publisherId: '697871ac0ec1c6100e1f9122',
       type: 'banner',
       ip: '127.0.0.1',
-      latitude: 23.21,
-      longitude: -23.21,
       maxSlotPerPod: 3,
-      maxAdDuration: 120,
-      gdpr: 0,
-      consent: ''
+      maxAdDuration: 120
     },
     placementCode: 'placement_123',
     auctionId: '85a8971a-ba3e-5d02-97a0-2c355cc0c6e3',
@@ -129,12 +125,8 @@ describe('playstreamBidAdapter', function () {
       publisherId: '697871ac0ec1c6100e1f9122',
       type: 'banner',
       ip: '127.0.0.1',
-      latitude: 23.21,
-      longitude: -23.21,
       maxSlotPerPod: 3,
-      maxAdDuration: 120,
-      gdpr: 0,
-      consent: ''
+      maxAdDuration: 120
     },
     placementCode: 'placement_123',
     auctionId: '85a8971a-ba3e-5d02-97a0-2c355cc0c6e3',
@@ -190,12 +182,8 @@ describe('playstreamBidAdapter', function () {
       publisherId: '697871ac0ec1c6100e1f9122',
       type: 'video',
       ip: '127.0.0.1',
-      latitude: 23.21,
-      longitude: -23.21,
       maxSlotPerPod: 3,
-      maxAdDuration: 120,
-      gdpr: 0,
-      consent: ''
+      maxAdDuration: 120
     },
     placementCode: 'placement_123',
     auctionId: '85a8971a-ba3e-5d02-97a0-2c355cc0c6e3',
@@ -400,8 +388,8 @@ describe('playstreamBidAdapter', function () {
     it('Returns valid URLs', function () {
       const urls = serverRequests.map(r => r.url);
       expect(urls).to.have.members([
-        'http://exchange.ortb.net/server/adserver/hb?adUnitId=697871ac0ec1c6100e1f9121&publisherId=697871ac0ec1c6100e1f9122',
-        'http://ads.playstream.media/server/adserver/hb?adUnitId=697871ac0ec1c6100e1f9123&publisherId=697871ac0ec1c6100e1f9124'
+        'https://exchange.ortb.net/server/adserver/hb?adUnitId=697871ac0ec1c6100e1f9121&publisherId=697871ac0ec1c6100e1f9122',
+        'https://ads.playstream.media/server/adserver/hb?adUnitId=697871ac0ec1c6100e1f9123&publisherId=697871ac0ec1c6100e1f9124'
       ]);
     });
 

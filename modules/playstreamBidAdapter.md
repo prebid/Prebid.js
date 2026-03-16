@@ -26,13 +26,7 @@ var adUnits = [{
             adUnitId: '697871ac0ec1c6100e1f9121',
             publisherId: '697871ac0ec1c6100e1f9122',
             type: 'banner',
-            ip: '127.0.0.1',
-            latitude: 23.21,
-            longitude: -23.21,
-            maxSlotPerPod: 3,
-            maxAdDuration: 120,
-            gdpr: 0,
-            consent: ''
+            ip: '127.0.0.1'
         }
     }]
 }];
@@ -57,12 +51,8 @@ var videoAdUnit = [{
             publisherId: '697871ac0ec1c6100e1f9122',
             type: 'video',
             ip: '127.0.0.1',
-            latitude: 23.21,
-            longitude: -23.21,
             maxSlotPerPod: 3,
             maxAdDuration: 120,
-            gdpr: 0,
-            consent: ''
         }
     }]
 }];

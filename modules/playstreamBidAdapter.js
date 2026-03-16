@@ -17,6 +17,7 @@ const TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const NET_REVENUE = true;
 const ENDPOINT_PATH = '/server/adserver/hb';
+const PROTOCOL = 'https';
 
 const converter = ortbConverter({
   context: {
@@ -41,13 +42,6 @@ const converter = ortbConverter({
       imp.bidfloor = floor;
       imp.bidfloorcur = DEFAULT_CURRENCY;
     }
-
-    const tid =
-      deepAccess(bidRequest, 'ortb2Imp.ext.tid') ||
-      deepAccess(bidRequest, 'ortb2Imp.ext.prebid.tid') ||
-      deepAccess(bidRequest, 'ortb2Imp.ext.data.tid');
-
-    if (tid && !imp.ext.tid) imp.ext.tid = tid;
 
     mergeDeep(imp, {
       ext: {
@@ -95,45 +89,18 @@ const converter = ortbConverter({
 
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context) || {};
-    const pageCtx = context?.pageCtx || {};
-
-    const pageUrl =
-      deepAccess(bidderRequest, 'ortb2.site.page') ||
-      deepAccess(bidderRequest, 'refererInfo.page') ||
-      window?.location?.href;
-
-    const ua =
-      deepAccess(bidderRequest, 'ortb2.device.ua') ||
-      navigator?.userAgent;
 
     const pubId = getCommonParam(context?.bidRequests, 'publisherId');
 
-    const schain = getFirstSchain(context?.bidRequests);
-
-    const gdpr = resolveGdpr(bidderRequest, context?.bidRequests);
-    const consent = resolveConsent(bidderRequest, context?.bidRequests);
-
     const ip = getFirstParam(context?.bidRequests, 'ip');
-    const lat = toFiniteNumber(getFirstParam(context?.bidRequests, 'latitude'));
-    const lon = toFiniteNumber(getFirstParam(context?.bidRequests, 'longitude'));
 
     mergeDeep(request, {
       site: {
-        page: pageUrl,
         ...(pubId != null ? { publisher: { id: String(pubId) } } : {})
       },
       device: {
-        ua,
-        w: Number(pageCtx?.width) || undefined,
-        h: Number(pageCtx?.height) || undefined,
         ...(isNonEmptyString(ip) ? { ip } : {}),
-        ...(Number.isFinite(lat) || Number.isFinite(lon)
-          ? { geo: { ...(Number.isFinite(lat) ? { lat } : {}), ...(Number.isFinite(lon) ? { lon } : {}) } }
-          : {})
       },
-      regs: { ext: { gdpr } },
-      user: { ext: { ...(consent ? { consent } : {}) } },
-      source: { ext: { ...(schain ? { schain } : {}) } },
       ext: {
         format: 'web',
         referer: bidderRequest?.refererInfo || undefined,
@@ -241,8 +208,6 @@ export const spec = {
       'host'
     );
 
-    const scheme = (location.protocol === 'https:') ? 'https' : 'http';
-
     const data = Object.keys(grouped)
       .filter(h => isNonEmptyString(h))
       .map((host) => {
@@ -258,10 +223,10 @@ export const spec = {
 
         return {
           method: 'POST',
-          url: `${scheme}://${host}${ENDPOINT_PATH}?adUnitId=${adUnitId}&publisherId=${publisherId}`,
+          url: `${PROTOCOL}://${host}${ENDPOINT_PATH}?adUnitId=${adUnitId}&publisherId=${publisherId}`,
           bids,
           data: ortb,
-          options: { contentType: 'application/json' }
+          options: { contentType: 'text/plain' }
         };
       });
 
@@ -421,17 +386,6 @@ function getFloor(bidRequest, size, mediaType) {
   } catch { }
 }
 
-function getFirstSchain(bidRequests) {
-  for (const br of (bidRequests || [])) {
-    const schain =
-      deepAccess(br, 'ortb2.source.ext.schain') ||
-      deepAccess(br, 'ortb2Imp.ext.schain') ||
-      deepAccess(br, 'ortb2Imp.ext.prebid.schain');
-    if (schain) return schain;
-  }
-  return null;
-}
-
 function getCommonParam(bidRequests, key) {
   const vals = new Set();
   for (const br of (bidRequests || [])) {
@@ -447,24 +401,6 @@ function getFirstParam(bidRequests, key) {
     if (v != null && v !== '') return v;
   }
   return undefined;
-}
-
-function resolveGdpr(bidderRequest, bidRequests) {
-  const applies = bidderRequest?.gdprConsent?.gdprApplies;
-  if (typeof applies === 'boolean') return applies ? 1 : 0;
-
-  const v = getFirstParam(bidRequests, 'gdpr');
-  if (v == null) return 0;
-
-  return Number(v) ? 1 : 0;
-}
-
-function resolveConsent(bidderRequest, bidRequests) {
-  const cs = bidderRequest?.gdprConsent?.consentString;
-  if (isNonEmptyString(cs)) return cs;
-
-  const v = getFirstParam(bidRequests, 'consent');
-  return isNonEmptyString(v) ? v : undefined;
 }
 
 function looksLikeVast(adm) {
