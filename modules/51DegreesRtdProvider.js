@@ -220,6 +220,8 @@ export const convert51DegreesDataToOrtb2 = (data51) => {
  * @param {string} [device.hardwarevendor] Hardware vendor
  * @param {string} [device.hardwaremodel] Hardware model
  * @param {string[]} [device.hardwarename] Hardware name
+ * @param {string} [device.hardwarenameprefix] Hardware name prefix (e.g. "iPhone" from "iPhone 12 Pro Max")
+ * @param {string} [device.hardwarenameversion] Hardware name version (e.g. "12 Pro Max" from "iPhone 12 Pro Max")
  * @param {string} [device.platformname] Platform name
  * @param {string} [device.platformversion] Platform version
  * @param {number} [device.screenpixelsheight] Screen height in pixels
@@ -240,6 +242,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   }
 
   const deviceModel =
+    device.hardwarenameprefix ||
     device.hardwaremodel || (
       device.hardwarename && device.hardwarename.length
         ? device.hardwarename.join(',')
@@ -257,6 +260,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
   deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor);
   deepSetNotEmptyValue(ortb2Device, 'model', deviceModel);
+  deepSetNotEmptyValue(ortb2Device, 'hwv', device.hardwarenameversion);
   deepSetNotEmptyValue(ortb2Device, 'os', device.platformname);
   deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion);
   deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight);
