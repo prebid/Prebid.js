@@ -191,6 +191,8 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     // FIXME: remove for prod
     ext: {
       impactify: {
+        integration: 'pbjs',
+        storage: helpers.getImStrFromLocalStorage(),
         formatOutput: 'json'
       }
     }
@@ -316,14 +318,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
     const request = createOpenRtbRequest(validBidRequests, bidderRequest);
-    const imStr = helpers.getImStrFromLocalStorage();
     const options = {}
-
-    if (imStr) {
-      options.customHeaders = {
-        'x-impact': imStr
-      };
-    }
 
     return {
       method: 'POST',
