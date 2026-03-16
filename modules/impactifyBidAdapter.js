@@ -28,7 +28,24 @@ const COOKIE_SYNC_URI = '/static/cookie_sync.html';
 const GVL_ID = 606;
 const GET_CONFIG = config.getConfig;
 export const STORAGE = getStorageManager({ gvlid: GVL_ID, bidderCode: BIDDER_CODE });
-export const STORAGE_KEY = '_im_str'
+export const STORAGE_KEY = '_im_str';
+const VIDEO_PARAMS = [
+  'minduration',
+  'maxduration',
+  'api',
+  'mimes',
+  'placement',
+  'plcmt',
+  'protocols',
+  'playbackmethod',
+  'pos',
+  'startdelay',
+  'skip',
+  'skipmin',
+  'skipafter',
+  'minbitrate',
+  'maxbitrate'
+];
 
 /**
  * Helpers object
@@ -99,6 +116,15 @@ const helpers = {
     return ext;
   },
 
+  pickDefined(obj, keys) {
+    return keys.reduce((acc, key) => {
+      if (obj[key] !== undefined) {
+        acc[key] = obj[key];
+      }
+      return acc;
+    }, {});
+  },
+
   getViewability(bid) {
     let elementSize;
     if (bid.mediaTypes?.banner?.sizes?.[0]) {
@@ -143,17 +169,19 @@ const helpers = {
   },
 
   createOrtbImpVideoObj(bid) {
-    const videoContext = deepAccess(bid, 'mediaTypes.video.context');
-    const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes?.[0];
-    const resolvedPlayerSize = playerSize && playerSize.length === 2 ? playerSize : [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT];
-    const context = videoContext === 'instream' ? 'instream' : 'outstream';
+    const video = deepAccess(bid, 'mediaTypes.video');
+    if (!video) return;
+
+    const playerSize = video.playerSize || bid.sizes?.[0];
+    const resolvedPlayerSize = playerSize && playerSize.length === 2
+      ? playerSize
+      : [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT];
 
     return {
-      id: 'video-' + bid.bidId,
       playerSize: resolvedPlayerSize,
-      context,
-      mimes: ['video/mp4'],
-    }
+      context: video.context === 'instream' ? 'instream' : 'outstream',
+      ...helpers.pickDefined(video, VIDEO_PARAMS)
+    };
   },
 
   getFloor(bid) {
@@ -193,7 +221,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       impactify: {
         integration: 'pbjs',
         storage: helpers.getImStrFromLocalStorage(),
-        formatOutput: 'json'
+        formatOutput: 'json' // FIXME: remove for prod
       }
     }
   };
