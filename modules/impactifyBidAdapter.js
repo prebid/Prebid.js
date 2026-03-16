@@ -1,7 +1,7 @@
 'use strict';
 
 import {getDNT} from '../libraries/dnt/index.js';
-import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
+import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
@@ -248,9 +248,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
-
-  // Set buyer uid
-  deepSetValue(request, 'user.buyeruid', generateUUID());
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {
