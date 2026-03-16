@@ -1,11 +1,12 @@
 'use strict';
 
 import {getDNT} from '../libraries/dnt/index.js';
-import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -54,6 +55,9 @@ const helpers = {
       ext.impactify.size = bid.params.size;
     }
 
+    const viewability = this.getViewability(bid);
+    ext.impactify.viewability = viewability;
+
     if (isPlainObject(bid.params.render)) {
       if (typeof bid.params.render.top === 'number') {
         render.top = bid.params.render.top;
@@ -93,6 +97,28 @@ const helpers = {
     }
 
     return ext;
+  },
+
+  getViewability(bid) {
+    let elementSize;
+    if (bid.mediaTypes?.banner?.sizes?.[0]) {
+      elementSize = bid.mediaTypes?.banner?.sizes?.[0];
+    }
+    if (bid.mediaTypes?.video?.playerSize?.[0]) {
+      elementSize = bid.mediaTypes?.video?.playerSize?.[0];
+    }
+    if (!elementSize) { elementSize = [0, 0]; }
+
+    const size = {w: elementSize[0], h: elementSize[1]};
+    const element = document.getElementById(bid.adUnitCode);
+
+    if (!element) return;
+
+    const viewabilityAmount = isViewabilityMeasurable(element)
+      ? getViewability(element, getWindowTop(), size)
+      : 'na';
+
+    return isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
   },
 
   getDeviceType() {
@@ -164,7 +190,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     cur: [DEFAULT_CURRENCY],
     imp: [],
     source: { tid: bidderRequest.ortb2?.source?.tid },
-    //FIXME: remove for prod
+    // FIXME: remove for prod
     ext: {
       impactify: {
         formatOutput: 'json'
