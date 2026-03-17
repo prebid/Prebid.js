@@ -3,7 +3,7 @@ import { spec, cpmAdjustment, addViewabilityToImp, shouldAddDealTargeting } from
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
@@ -53,7 +53,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      site: { domain: 'ebay.com', page: 'https://ebay.com', publisher: { id: '5670' } },
       source: {},
       user: {
         ext: {
@@ -136,7 +136,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
+      site: { domain: 'ebay.com', page: 'https://ebay.com', publisher: { id: '5670' } },
       source: {},
       user: {
         ext: {
@@ -195,7 +195,7 @@ describe('PubMatic adapter', () => {
       },
       'dealid': 'PUBDEAL1',
       'mtype': 2,
-      'params': {'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic'}
+      'params': { 'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic' }
     }]
   };
   firstResponse = {
@@ -255,7 +255,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: { domain: 'ebay.com', page: 'https://ebay.com' },
       source: {},
       user: {
         ext: {
@@ -287,7 +287,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: { domain: 'ebay.com', page: 'https://ebay.com' },
       source: {},
       user: {
         ext: {
@@ -501,6 +501,23 @@ describe('PubMatic adapter', () => {
         expect(imp[0].ext.pbcode).to.equal(validBidRequests[0].adUnitCode);
       });
 
+      it('should not include ae or igs in imp.ext', () => {
+        const bidWithAe = utils.deepClone(validBidRequests[0]);
+        bidWithAe.ortb2Imp = bidWithAe.ortb2Imp || {};
+        bidWithAe.ortb2Imp.ext = bidWithAe.ortb2Imp.ext || {};
+        bidWithAe.ortb2Imp.ext.ae = 1;
+        bidWithAe.ortb2Imp.ext.igs = { ae: 1, biddable: 1 };
+        bidWithAe.ortb2Imp.ext.paapi = { requestedSize: { width: 300, height: 250 } };
+
+        const req = spec.buildRequests([bidWithAe], bidderRequest);
+        const { imp } = req?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('ext');
+        expect(imp[0].ext).to.not.have.property('ae');
+        expect(imp[0].ext).to.not.have.property('igs');
+        expect(imp[0].ext).to.not.have.property('paapi');
+      });
+
       it('should add bidfloor if kadfloor is present in parameters', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -698,6 +715,38 @@ describe('PubMatic adapter', () => {
             const { imp } = request?.data;
             expect(imp).to.be.an('array');
             expect(imp[0]).to.have.property('native');
+          });
+
+          it('should set privacy to 1 in native request when privacyLink is present', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native.privacyLink = { required: false };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            expect(nativeRequest).to.have.property('privacy').equal(1);
+          });
+
+          it('should not add privacyLink as an asset in the native request', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native.privacyLink = { required: true };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            const hasPrivacyLinkAsset = nativeRequest.assets.some(asset => asset.privacyLink !== undefined);
+            expect(hasPrivacyLinkAsset).to.be.false;
+          });
+
+          it('should set privacy to 1 and have no assets when privacyLink is the only native key', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native = { privacyLink: { required: false } };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            expect(nativeRequest).to.have.property('privacy').equal(1);
+            expect(nativeRequest.assets).to.deep.equal([]);
           });
         });
       }
@@ -1123,7 +1172,7 @@ describe('PubMatic adapter', () => {
           ]
         };
         beforeEach(() => {
-          bidderRequest.ortb2.regs = {ext: { dsa }};
+          bidderRequest.ortb2.regs = { ext: { dsa } };
         });
 
         it('should have DSA in regs.ext', () => {
@@ -1173,16 +1222,6 @@ describe('PubMatic adapter', () => {
           expect(request.data.imp[0].ext.data.customData).to.have.property('id').to.equal('id-1');
         });
       });
-
-      describe('FLEDGE', () => {
-        it('should not send imp.ext.ae when FLEDGE is disabled, ', () => {
-          const request = spec.buildRequests(validBidRequests, bidderRequest);
-          expect(request.data).to.have.property('imp');
-          expect(request.data.imp).to.be.an('array');
-          expect(request.data.imp[0]).to.have.property('ext');
-          expect(request.data.imp[0].ext).to.not.have.property('ae');
-        });
-      })
 
       describe('cpm adjustment', () => {
         beforeEach(() => {
@@ -1849,13 +1888,13 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should add viewability to imp.ext when measurable', () => {
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
     const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');
   });
@@ -1863,13 +1902,13 @@ describe('addViewabilityToImp', () => {
   it('should not add viewability if element is not found', () => {
     document.getElementById.restore();
     sandbox.stub(document, 'getElementById').returns(null);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.not.have.property('viewability');
   });
 
   it('should create imp.ext if not present', () => {
     imp = {};
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.exist;
     expect(imp.ext).to.have.property('viewability');
   });

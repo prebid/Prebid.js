@@ -26,28 +26,28 @@
 
         var adUnits = [
             {
-                code: '/19968336/header-bid-tag-1',
+                code: "/19968336/header-bid-tag-1",
                 mediaTypes: {
                     banner: {
                         sizes: div_1_sizes
                     }
                 },
                 bids: [{
-                    bidder: 'appnexus',
+                    bidder: "appnexus",
                     params: {
                         placementId: 13144370
                     }
                 }]
             },
             {
-                code: '/19968336/header-bid-tag-1',
+                code: "/19968336/header-bid-tag-1",
                 mediaTypes: {
                     banner: {
                         sizes: div_2_sizes
                     }
                 },
                 bids: [{
-                    bidder: 'appnexus',
+                    bidder: "appnexus",
                     params: {
                         placementId: 13144370
                     }
@@ -86,12 +86,12 @@
         // Custom Timeout logic in onSettingsUpdate()
 
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-1', div_1_sizes, 'div-1').addService(googletag.pubads());
+            googletag.defineSlot("/19968336/header-bid-tag-1", div_1_sizes, "div-1").addService(googletag.pubads());
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-1', div_2_sizes, 'div-2').addService(googletag.pubads());
+            googletag.defineSlot("/19968336/header-bid-tag-1", div_2_sizes, "div-2").addService(googletag.pubads());
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
@@ -99,46 +99,64 @@
 
         // 3. User Triggered Setup (RTD Module)
         function onSettingsUpdate() {
-            const inputNeuwoApiToken = document.getElementById('neuwo-api-token');
-            const neuwoApiToken = inputNeuwoApiToken ? inputNeuwoApiToken.value : '';
+            const inputNeuwoApiToken = document.getElementById("neuwo-api-token");
+            const neuwoApiToken = inputNeuwoApiToken ? inputNeuwoApiToken.value : "";
             if (!neuwoApiToken) {
-                alert('Please enter your token for Neuwo AI API to the field');
+                alert("Please enter your token for Neuwo AI API to the field");
                 if (inputNeuwoApiToken) inputNeuwoApiToken.focus();
                 return;
             }
 
-            const inputNeuwoApiUrl = document.getElementById('neuwo-api-url');
-            const neuwoApiUrl = inputNeuwoApiUrl ? inputNeuwoApiUrl.value : '';
+            const inputNeuwoApiUrl = document.getElementById("neuwo-api-url");
+            const neuwoApiUrl = inputNeuwoApiUrl ? inputNeuwoApiUrl.value : "";
             if (!neuwoApiUrl) {
-                alert('Please enter Neuwo AI API url to the field');
+                alert("Please enter Neuwo AI API url to the field");
                 if (inputNeuwoApiUrl) inputNeuwoApiUrl.focus();
                 return;
             }
 
-            const inputWebsiteToAnalyseUrl = document.getElementById('website-to-analyse-url');
+            const inputWebsiteToAnalyseUrl = document.getElementById("website-to-analyse-url");
             const websiteToAnalyseUrl = inputWebsiteToAnalyseUrl ? inputWebsiteToAnalyseUrl.value : undefined;
 
-            const inputIabContentTaxonomyVersion = document.getElementById('iab-content-taxonomy-version');
+            const inputIabContentTaxonomyVersion = document.getElementById("iab-content-taxonomy-version");
             const iabContentTaxonomyVersion = inputIabContentTaxonomyVersion ? inputIabContentTaxonomyVersion.value : undefined;
 
             // Cache Option
-            const inputEnableCache = document.getElementById('enable-cache');
+            const inputEnableCache = document.getElementById("enable-cache");
             const enableCache = inputEnableCache ? inputEnableCache.checked : undefined;
 
+            // OpenRTB 2.5 Category Fields Option
+            const inputEnableOrtb25Fields = document.getElementById("enable-ortb25-fields");
+            const enableOrtb25Fields = inputEnableOrtb25Fields ? inputEnableOrtb25Fields.checked : true;
+
             // URL Stripping Options
-            const inputStripAllQueryParams = document.getElementById('strip-all-query-params');
+            const inputStripAllQueryParams = document.getElementById("strip-all-query-params");
             const stripAllQueryParams = inputStripAllQueryParams ? inputStripAllQueryParams.checked : undefined;
 
-            const inputStripQueryParamsForDomains = document.getElementById('strip-query-params-for-domains');
-            const stripQueryParamsForDomainsValue = inputStripQueryParamsForDomains ? inputStripQueryParamsForDomains.value.trim() : '';
-            const stripQueryParamsForDomains = stripQueryParamsForDomainsValue ? stripQueryParamsForDomainsValue.split(',').map(d => d.trim()).filter(d => d) : undefined;
+            const inputStripQueryParamsForDomains = document.getElementById("strip-query-params-for-domains");
+            const stripQueryParamsForDomainsValue = inputStripQueryParamsForDomains ? inputStripQueryParamsForDomains.value.trim() : "";
+            const stripQueryParamsForDomains = stripQueryParamsForDomainsValue ? stripQueryParamsForDomainsValue.split(",").map(d => d.trim()).filter(d => d) : undefined;
 
-            const inputStripQueryParams = document.getElementById('strip-query-params');
-            const stripQueryParamsValue = inputStripQueryParams ? inputStripQueryParams.value.trim() : '';
-            const stripQueryParams = stripQueryParamsValue ? stripQueryParamsValue.split(',').map(p => p.trim()).filter(p => p) : undefined;
+            const inputStripQueryParams = document.getElementById("strip-query-params");
+            const stripQueryParamsValue = inputStripQueryParams ? inputStripQueryParams.value.trim() : "";
+            const stripQueryParams = stripQueryParamsValue ? stripQueryParamsValue.split(",").map(p => p.trim()).filter(p => p) : undefined;
 
-            const inputStripFragments = document.getElementById('strip-fragments');
+            const inputStripFragments = document.getElementById("strip-fragments");
             const stripFragments = inputStripFragments ? inputStripFragments.checked : undefined;
+
+            // IAB Taxonomy Filtering Option
+            const inputEnableFiltering = document.getElementById("enable-iab-filtering");
+            const enableIabFiltering = inputEnableFiltering ? inputEnableFiltering.checked : false;
+
+            // Build iabTaxonomyFilters object only if filtering is enabled
+            const iabTaxonomyFilters = enableIabFiltering ? {
+                ContentTier1: { limit: 1, threshold: 0.1 },
+                ContentTier2: { limit: 2, threshold: 0.1 },
+                ContentTier3: { limit: 3, threshold: 0.15 },
+                AudienceTier3: { limit: 3, threshold: 0.2 },
+                AudienceTier4: { limit: 5, threshold: 0.2 },
+                AudienceTier5: { limit: 7, threshold: 0.3 },
+            } : undefined;
 
             pbjs.que.push(function () {
                 pbjs.setConfig({
@@ -155,10 +173,12 @@
                                     websiteToAnalyseUrl,
                                     iabContentTaxonomyVersion,
                                     enableCache,
+                                    enableOrtb25Fields,
                                     stripAllQueryParams,
                                     stripQueryParamsForDomains,
                                     stripQueryParams,
-                                    stripFragments
+                                    stripFragments,
+                                    iabTaxonomyFilters,
                                 }
                             }
                         ]
@@ -185,7 +205,7 @@
     <h1>Basic Prebid.js Example using Neuwo Rtd Provider</h1>
 
     <div id="help" style="padding: 1em; border: 2px solid gray; background-color: #ed4f4f; white-space: pre-line;">
-        Looks like you're not following the testing environment setup, try accessing
+        Looks like you"re not following the testing environment setup, try accessing
         <a href="http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html">
             http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html
         </a>
@@ -215,12 +235,14 @@
             <input type="text" placeholder="Neuwo API Token" id="neuwo-api-token" style="width: 400px;" />
         </div>
         <div style="margin-bottom: 10px;">
-            <input type="text" placeholder="URL for website to analyse" id="website-to-analyse-url" style="width: 400px;" />
+            <input type="text" placeholder="URL for website to analyse" id="website-to-analyse-url"
+                style="width: 400px;" />
         </div>
 
         <h3>IAB Content Taxonomy Options</h3>
         <div style="margin-bottom: 10px;">
-            <input type="text" placeholder="IAB Content Taxonomy Version (default 3.0)" id="iab-content-taxonomy-version" style="width: 400px;" />
+            <input type="text" placeholder="IAB Content Taxonomy Version (default 3.0)"
+                id="iab-content-taxonomy-version" style="width: 400px;" />
         </div>
 
         <h3>Cache Options</h3>
@@ -228,6 +250,14 @@
             <label>
                 <input type="checkbox" id="enable-cache" checked />
                 Enable API response caching (default: enabled)
+            </label>
+        </div>
+
+        <h3>OpenRTB 2.5 Category Fields</h3>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="enable-ortb25-fields" checked />
+                Enable OpenRTB 2.5 category fields (default: enabled)
             </label>
         </div>
 
@@ -239,16 +269,36 @@
             </label>
         </div>
         <div style="margin-bottom: 5px;">
-            <input type="text" placeholder="Strip query params for domains (comma-separated, e.g., example.com, test.com)" id="strip-query-params-for-domains" style="width: 400px;" />
+            <input type="text"
+                placeholder="Strip query params for domains (comma-separated, e.g., example.com, test.com)"
+                id="strip-query-params-for-domains" style="width: 400px;" />
         </div>
         <div style="margin-bottom: 5px;">
-            <input type="text" placeholder="Strip specific query params (comma-separated, e.g., utm_source, fbclid)" id="strip-query-params" style="width: 400px;" />
+            <input type="text" placeholder="Strip specific query params (comma-separated, e.g., utm_source, fbclid)"
+                id="strip-query-params" style="width: 400px;" />
         </div>
         <div style="margin-bottom: 10px;">
             <label>
                 <input type="checkbox" id="strip-fragments" />
                 Strip URL fragments (hash)
             </label>
+        </div>
+
+        <h3>IAB Taxonomy Filtering Options</h3>
+        <div style="margin-bottom: 10px;">
+            <label>
+                <input type="checkbox" id="enable-iab-filtering" />
+                Enable IAB taxonomy filtering (limits categories by relevance and count per tier)
+            </label>
+            <div style="margin-left: 20px; margin-top: 5px; color: #666; font-size: 0.9em;">
+                When enabled, uses these hardcoded filters:<br/>
+                • ContentTier1: top 1 (≥10% relevance)<br/>
+                • ContentTier2: top 2 (≥10% relevance)<br/>
+                • ContentTier3: top 3 (≥15% relevance)<br/>
+                • AudienceTier3: top 3 (≥20% relevance)<br/>
+                • AudienceTier4: top 5 (≥20% relevance)<br/>
+                • AudienceTier5: top 7 (≥30% relevance)
+            </div>
         </div>
 
         <button onClick="onSettingsUpdate()">Update</button>
@@ -259,10 +309,10 @@
 
         <div>
             <h3>Div-1</h3>
-            <div id='div-1'>
-                <script type='text/javascript'>
+            <div id="div-1">
+                <script type="text/javascript">
                     googletag.cmd.push(function () {
-                        googletag.display('div-1');
+                        googletag.display("div-1");
                     });
                 </script>
                 Ad spot div-1: This content will be replaced by prebid.js and/or related components once you click
@@ -272,10 +322,10 @@
 
         <div>
             <h3>Div-2</h3>
-            <div id='div-2'>
-                <script type='text/javascript'>
+            <div id="div-2">
+                <script type="text/javascript">
                     googletag.cmd.push(function () {
-                        googletag.display('div-2');
+                        googletag.display("div-2");
                     });
                 </script>
                 Ad spot div-2: This content will be replaced by prebid.js and/or related components once you click
@@ -286,82 +336,327 @@
 
     <div>
         <h2>Neuwo Data in Bid Request</h2>
-        <p>The retrieved data from Neuwo API is injected into the bid request as OpenRTB (ORTB2)`site.content.data` and
-            `user.data`. Full bid request can be inspected in Developer Tools Console under
+        <p>The retrieved data from Neuwo API is injected into the bid request as OpenRTB (ORTB2)
+            <code>site.content.data</code> and
+            <code>user.data</code>. Full bid request can be inspected in Developer Tools Console under
             <code>INFO: NeuwoRTDModule injectIabCategories: post-injection bidsConfig</code>
         </p>
+        <h3>Neuwo Site Content Data</h3>
+        <pre id="neuwo-site-data"
+            style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data.</pre>
+        <h3>Neuwo User Data</h3>
+        <pre id="neuwo-user-data"
+            style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data.</pre>
+        <h3>Neuwo OpenRTB 2.5 Category Fields (IAB Content Taxonomy 1.0) Data</h3>
+        <pre id="neuwo-ortb25-fields"
+            style="background: #f4f4f4; padding: 10px; overflow-x: auto; max-height: 300px;">No data yet. Click "Update" to fetch data (requires enableOrtb25Fields and /v1/iab endpoint).</pre>
+    </div>
+
+    <div>
+        <h2>Accessing Neuwo Data in JavaScript</h2>
+        <p>Listen to the <code>bidRequested</code> event to access the enriched ORTB2 data:</p>
+        <pre style="background: #f4f4f4; padding: 10px; overflow-x: auto;">
+pbjs.onEvent("bidRequested", function(bidRequest) {
+    const ortb2 = bidRequest.ortb2;
+    const neuwoSiteData = ortb2?.site?.content?.data?.find(d => d.name === "www.neuwo.ai");
+    const neuwoUserData = ortb2?.user?.data?.find(d => d.name === "www.neuwo.ai");
+    console.log("Neuwo data:", { siteContent: neuwoSiteData, user: neuwoUserData });
+});
+        </pre>
+        <p>After clicking "Update", the Neuwo data is stored in the global <code>neuwoData</code> variable. Open
+            Developer Tools Console to see the logged data.</p>
+        <p><strong>Note:</strong> Event timing tests for multiple Prebid.js events (auctionInit, bidRequested,
+            beforeBidderHttp, bidResponse, auctionEnd) are available in the page source code but are commented out. To
+            enable them, uncomment the timing test section in the JavaScript code.</p>
+    </div>
+
+    <div>
+        <p>For more information about Neuwo RTD Module configuration and accessing data retrieved from Neuwo API, see <a
+                href="../../modules/neuwoRtdProvider.md">modules/neuwoRtdProvider.md</a>.</p>
     </div>
 
 </body>
 
 <script type="text/javascript">
-    const helper = document.getElementById('help');
-    if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
+    // =====================================================
+    // Accessing Neuwo analysis results outside of Prebid.js
+    // Basic example using "bidRequested" event, which occurs early in the auction lifecycle and provides easy access to enriched data
+    // =====================================================
+    let neuwoData = null; // Global variable to store Neuwo data for later use
+
+    pbjs.que.push(function () {
+        pbjs.onEvent("bidRequested", function (bidRequest) {
+            console.log("=== Neuwo Data Access: bidRequested Event ===");
+
+            // The ortb2 data is available directly on the bidRequest
+            if (bidRequest && bidRequest.ortb2) {
+                const ortb2 = bidRequest.ortb2;
+                console.log("Full ORTB2 from bidRequest:", ortb2);
+
+                // Extract Neuwo-specific data (from www.neuwo.ai provider)
+                const siteContentData = ortb2?.site?.content?.data;
+                const userData = ortb2?.user?.data;
+
+                // Filter to get only Neuwo data
+                const neuwoSiteData = siteContentData?.find(d => d.name === "www.neuwo.ai");
+                const neuwoUserData = userData?.find(d => d.name === "www.neuwo.ai");
+
+                // Extract OpenRTB 2.5 category fields
+                const ortb25Fields = {
+                    "site.cat": ortb2?.site?.cat,
+                    "site.sectioncat": ortb2?.site?.sectioncat,
+                    "site.pagecat": ortb2?.site?.pagecat,
+                    "site.content.cat": ortb2?.site?.content?.cat
+                };
+
+                // Store in global variable for later use
+                neuwoData = {
+                    siteContent: neuwoSiteData,
+                    user: neuwoUserData,
+                    ortb25Fields: ortb25Fields
+                };
+                console.log("Neuwo data stored in global \"neuwoData\" variable:", neuwoData);
+
+                updateDisplayElements(neuwoSiteData, neuwoUserData, ortb25Fields)
+            } else {
+                console.warn("No ortb2 data found in bidRequest. This may indicate the RTD module has not enriched the bid request yet.");
+            }
+        });
+    });
+
+    // Helper to update display elements
+    function updateDisplayElements(neuwoSiteData, neuwoUserData, ortb25Fields) {
+        const siteDataEl = document.getElementById("neuwo-site-data");
+        const userDataEl = document.getElementById("neuwo-user-data");
+        const ortb25El = document.getElementById("neuwo-ortb25-fields");
+
+        if (siteDataEl) {
+            siteDataEl.textContent = neuwoSiteData
+                ? JSON.stringify(neuwoSiteData, null, 2)
+                : "No Neuwo site content data found in response.";
+        }
+        if (userDataEl) {
+            userDataEl.textContent = neuwoUserData
+                ? JSON.stringify(neuwoUserData, null, 2)
+                : "No Neuwo user data found in response.";
+        }
+        if (ortb25El && ortb25Fields) {
+            const hasData = Object.values(ortb25Fields).some(val => val && val.length > 0);
+            ortb25El.textContent = hasData
+                ? JSON.stringify(ortb25Fields, null, 2)
+                : "No OpenRTB 2.5 category fields found (requires enableOrtb25Fields=true and /v1/iab endpoint).";
+        }
+    }
+
+    /*
+    // =====================================================
+    // Examples and timing test of selected Prebid.js events
+    // =====================================================
+    let startTime = null;
+    let eventOrder = 0;
+
+    // Reset timing on Update button click
+    window.addEventListener("DOMContentLoaded", function () {
+        const updateButton = document.querySelector("button[onClick=\"onSettingsUpdate()\"]");
+        if (updateButton) {
+            updateButton.addEventListener("click", function () {
+                eventOrder = 0;
+                startTime = performance.now();
+                console.log("=== Timing test reset - awaiting first event after Update click ===");
+            });
+        }
+    });
+
+    // Helper function to extract and log Neuwo data
+    function extractNeuwoData(ortb2, eventName) {
+        const siteContentData = ortb2?.site?.content?.data;
+        const userData = ortb2?.user?.data;
+        const neuwoSiteData = siteContentData?.find(d => d.name === "www.neuwo.ai");
+        const neuwoUserData = userData?.find(d => d.name === "www.neuwo.ai");
+
+        const hasData = !!(neuwoSiteData || neuwoUserData);
+        const status = hasData ? "HAS DATA" : "NO DATA";
+
+        console.log(`[${eventName}] Status: ${status}`);
+        if (hasData) {
+            console.log(`[${eventName}] Neuwo Site Data:`, neuwoSiteData);
+            console.log(`[${eventName}] Neuwo User Data:`, neuwoUserData);
+        }
+
+        return { neuwoSiteData, neuwoUserData, hasData };
+    }
+
+    pbjs.que.push(function () {
+
+        // =====================================================
+        // EVENT 1: auctionInit
+        // =====================================================
+        pbjs.onEvent("auctionInit", function (auctionData) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] auctionInit (${time}ms) ===`);
+            console.log("auctionData keys:", Object.keys(auctionData));
+            console.log("bidderRequests count:", auctionData.bidderRequests?.length || 0);
+
+            if (auctionData.bidderRequests && auctionData.bidderRequests.length > 0) {
+                const ortb2 = auctionData.bidderRequests[0].ortb2;
+                const result = extractNeuwoData(ortb2, "auctionInit");
+            } else {
+                console.log("[auctionInit] NO bidderRequests available");
+            }
+        });
+
+        // =====================================================
+        // EVENT 2: bidRequested (fires per bidder)
+        // =====================================================
+        pbjs.onEvent("bidRequested", function (bidderRequest) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] bidRequested (${time}ms) - Bidder: ${bidderRequest.bidderCode} ===`);
+
+            const ortb2 = bidderRequest.ortb2;
+            extractNeuwoData(ortb2, "bidRequested");
+        });
+
+        // =====================================================
+        // EVENT 3: beforeBidderHttp
+        // =====================================================
+        pbjs.onEvent("beforeBidderHttp", function (bidRequests) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] beforeBidderHttp (${time}ms) ===`);
+            console.log("bidRequests is array:", Array.isArray(bidRequests));
+            console.log("bidRequests count:", bidRequests?.length || 0);
+
+            if (Array.isArray(bidRequests) && bidRequests.length > 0) {
+                const ortb2 = bidRequests[0].ortb2;
+                extractNeuwoData(ortb2, "beforeBidderHttp");
+            } else if (bidRequests && !Array.isArray(bidRequests)) {
+                // Maybe it"s a single object?
+                const ortb2 = bidRequests.ortb2;
+                extractNeuwoData(ortb2, "beforeBidderHttp");
+            } else {
+                console.log("[beforeBidderHttp] NO bidRequests available");
+            }
+        });
+
+        // =====================================================
+        // EVENT 4: bidResponse
+        // =====================================================
+        pbjs.onEvent("bidResponse", function (bidResponse) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] bidResponse (${time}ms) ===`);
+            console.log("bidResponse keys:", Object.keys(bidResponse));
+
+            // Check if ortb2 is directly on bidResponse
+            if (bidResponse.ortb2) {
+                extractNeuwoData(bidResponse.ortb2, "bidResponse");
+            } else {
+                console.log("[bidResponse] No direct ortb2 on bidResponse object");
+            }
+        });
+
+        // =====================================================
+        // EVENT 5: auctionEnd
+        // =====================================================
+        pbjs.onEvent("auctionEnd", function (auctionData) {
+            eventOrder++;
+            const time = (performance.now() - startTime).toFixed(2);
+            console.log(`\n=== [${eventOrder}] auctionEnd (${time}ms) ===`);
+            console.log("bidderRequests count:", auctionData.bidderRequests?.length || 0);
+
+            if (auctionData.bidderRequests && auctionData.bidderRequests.length > 0) {
+                const ortb2 = auctionData.bidderRequests[0].ortb2;
+                extractNeuwoData(ortb2, "auctionEnd");
+            } else {
+                console.log("[auctionEnd] NO bidderRequests available");
+            }
+
+            // Print summary
+            console.log("\n========================================");
+            console.log("EVENT TESTING COMPLETE");
+            console.log("========================================");
+        });
+    });
+    */
+
+</script>
+
+<script type="text/javascript">
+    const helper = document.getElementById("help");
+    if (helper) helper.style.display = location.href !== "http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html" ? "block" : "none";
 </script>
 
 <script type="text/javascript">
     // LocalStorage persistence for form values
     function saveConfigToLocalStorage() {
         const config = {
-            neuwoApiToken: document.getElementById('neuwo-api-token')?.value || '',
-            neuwoApiUrl: document.getElementById('neuwo-api-url')?.value || '',
-            websiteToAnalyseUrl: document.getElementById('website-to-analyse-url')?.value || '',
-            iabContentTaxonomyVersion: document.getElementById('iab-content-taxonomy-version')?.value || '',
-            enableCache: document.getElementById('enable-cache')?.checked !== false,
-            stripAllQueryParams: document.getElementById('strip-all-query-params')?.checked || false,
-            stripQueryParamsForDomains: document.getElementById('strip-query-params-for-domains')?.value || '',
-            stripQueryParams: document.getElementById('strip-query-params')?.value || '',
-            stripFragments: document.getElementById('strip-fragments')?.checked || false
+            neuwoApiToken: document.getElementById("neuwo-api-token")?.value || "",
+            neuwoApiUrl: document.getElementById("neuwo-api-url")?.value || "",
+            websiteToAnalyseUrl: document.getElementById("website-to-analyse-url")?.value || "",
+            iabContentTaxonomyVersion: document.getElementById("iab-content-taxonomy-version")?.value || "",
+            enableCache: document.getElementById("enable-cache")?.checked !== false,
+            enableOrtb25Fields: document.getElementById("enable-ortb25-fields")?.checked !== false,
+            stripAllQueryParams: document.getElementById("strip-all-query-params")?.checked || false,
+            stripQueryParamsForDomains: document.getElementById("strip-query-params-for-domains")?.value || "",
+            stripQueryParams: document.getElementById("strip-query-params")?.value || "",
+            stripFragments: document.getElementById("strip-fragments")?.checked || false,
+            enableIabFiltering: document.getElementById("enable-iab-filtering")?.checked || false
         };
-        localStorage.setItem('neuwoRtdConfig', JSON.stringify(config));
+        localStorage.setItem("neuwoRtdConfig", JSON.stringify(config));
     }
 
     function loadConfigFromLocalStorage() {
-        const savedConfig = localStorage.getItem('neuwoRtdConfig');
+        const savedConfig = localStorage.getItem("neuwoRtdConfig");
         if (!savedConfig) return;
 
         try {
             const config = JSON.parse(savedConfig);
 
             // Restore text inputs
-            if (config.neuwoApiToken) document.getElementById('neuwo-api-token').value = config.neuwoApiToken;
-            if (config.neuwoApiUrl) document.getElementById('neuwo-api-url').value = config.neuwoApiUrl;
-            if (config.websiteToAnalyseUrl) document.getElementById('website-to-analyse-url').value = config.websiteToAnalyseUrl;
-            if (config.iabContentTaxonomyVersion) document.getElementById('iab-content-taxonomy-version').value = config.iabContentTaxonomyVersion;
-            if (config.stripQueryParamsForDomains) document.getElementById('strip-query-params-for-domains').value = config.stripQueryParamsForDomains;
-            if (config.stripQueryParams) document.getElementById('strip-query-params').value = config.stripQueryParams;
+            if (config.neuwoApiToken) document.getElementById("neuwo-api-token").value = config.neuwoApiToken;
+            if (config.neuwoApiUrl) document.getElementById("neuwo-api-url").value = config.neuwoApiUrl;
+            if (config.websiteToAnalyseUrl) document.getElementById("website-to-analyse-url").value = config.websiteToAnalyseUrl;
+            if (config.iabContentTaxonomyVersion) document.getElementById("iab-content-taxonomy-version").value = config.iabContentTaxonomyVersion;
+            if (config.stripQueryParamsForDomains) document.getElementById("strip-query-params-for-domains").value = config.stripQueryParamsForDomains;
+            if (config.stripQueryParams) document.getElementById("strip-query-params").value = config.stripQueryParams;
 
             // Restore checkboxes
-            document.getElementById('enable-cache').checked = config.enableCache !== false;
-            document.getElementById('strip-all-query-params').checked = config.stripAllQueryParams;
-            document.getElementById('strip-fragments').checked = config.stripFragments;
+            document.getElementById("enable-cache").checked = config.enableCache !== false;
+            document.getElementById("enable-ortb25-fields").checked = config.enableOrtb25Fields !== false;
+            document.getElementById("strip-all-query-params").checked = config.stripAllQueryParams;
+            document.getElementById("strip-fragments").checked = config.stripFragments;
+            document.getElementById("enable-iab-filtering").checked = config.enableIabFiltering;
         } catch (e) {
-            console.error('Error loading saved config:', e);
+            console.error("Error loading saved config:", e);
         }
     }
 
     // Attach event listeners to save on input change
     function attachInputListeners() {
         const inputIds = [
-            'neuwo-api-token',
-            'neuwo-api-url',
-            'website-to-analyse-url',
-            'iab-content-taxonomy-version',
-            'strip-query-params-for-domains',
-            'strip-query-params'
+            "neuwo-api-token",
+            "neuwo-api-url",
+            "website-to-analyse-url",
+            "iab-content-taxonomy-version",
+            "strip-query-params-for-domains",
+            "strip-query-params"
         ];
 
         const checkboxIds = [
-            'enable-cache',
-            'strip-all-query-params',
-            'strip-fragments'
+            "enable-cache",
+            "enable-ortb25-fields",
+            "strip-all-query-params",
+            "strip-fragments",
+            "enable-iab-filtering"
         ];
 
         // Save on text input change
         inputIds.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.addEventListener('input', saveConfigToLocalStorage);
+                element.addEventListener("input", saveConfigToLocalStorage);
             }
         });
 
@@ -369,13 +664,13 @@
         checkboxIds.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.addEventListener('change', saveConfigToLocalStorage);
+                element.addEventListener("change", saveConfigToLocalStorage);
             }
         });
     }
 
     // Load config on page load
-    window.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener("DOMContentLoaded", function () {
         loadConfigFromLocalStorage();
         attachInputListeners();
     });

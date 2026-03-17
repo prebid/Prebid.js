@@ -1,9 +1,9 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
@@ -96,6 +96,16 @@ export const spec = {
     // coppa compliance
     if (bidderRequest?.ortb2?.regs?.coppa) {
       deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
+    }
+
+    // ortb2 blocking: bcat, badv (with optional params fallback)
+    const bcat = bidderRequest?.ortb2?.bcat || deepAccess(validBidRequests, '0.params.bcat');
+    const badv = bidderRequest?.ortb2?.badv || deepAccess(validBidRequests, '0.params.badv');
+    if (isArray(bcat) && bcat.length > 0) {
+      openRtbBidRequest.bcat = bcat;
+    }
+    if (isArray(badv) && badv.length > 0) {
+      openRtbBidRequest.badv = badv;
     }
 
     injectEids(openRtbBidRequest, validBidRequests);

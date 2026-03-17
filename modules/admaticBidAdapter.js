@@ -28,6 +28,7 @@ export const spec = {
     { code: 'monetixads', gvlid: 1281 },
     { code: 'netaddiction', gvlid: 1281 },
     { code: 'adt', gvlid: 779 },
+    { code: 'adrubi', gvlid: 779 },
     { code: 'yobee', gvlid: 1281 }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -364,8 +365,11 @@ function buildRequestObject(bid) {
     reqObj.mediatype = bid.mediaTypes.native;
   }
 
+  reqObj.ext = reqObj.ext || {};
+
   if (deepAccess(bid, 'ortb2Imp.ext')) {
-    reqObj.ext = bid.ortb2Imp.ext;
+    Object.assign(reqObj.ext, bid.ortb2Imp.ext);
+    reqObj.ext.ortb2Imp = bid.ortb2Imp;
   }
 
   reqObj.id = getBidIdParameter('bidId', bid);

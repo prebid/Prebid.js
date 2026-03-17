@@ -45,6 +45,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "aceex",
+      "aliasOf": null,
+      "gvlid": 1387,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "acuityads",
       "aliasOf": null,
       "gvlid": 231,
@@ -103,6 +110,13 @@
       "componentType": "bidder",
       "componentName": "divreach",
       "aliasOf": "adbutler",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adcluster",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -514,6 +528,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "appmonsta",
+      "aliasOf": "adkernel",
+      "gvlid": 1283,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "intlscoop",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -557,6 +585,13 @@
     {
       "componentType": "bidder",
       "componentName": "adt",
+      "aliasOf": "admatic",
+      "gvlid": 779,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adrubi",
       "aliasOf": "admatic",
       "gvlid": 779,
       "disclosureURL": null
@@ -633,6 +668,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adnimation",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
       "gvlid": 1210,
@@ -684,7 +726,7 @@
       "componentType": "bidder",
       "componentName": "adocean",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 328,
       "disclosureURL": null
     },
     {
@@ -955,6 +997,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "alchemyx",
+      "aliasOf": "adverxo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adxcg",
       "aliasOf": null,
       "gvlid": null,
@@ -1014,6 +1063,13 @@
       "componentName": "alkimi",
       "aliasOf": null,
       "gvlid": 1169,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "allegro",
+      "aliasOf": null,
+      "gvlid": 1493,
       "disclosureURL": null
     },
     {
@@ -1144,6 +1200,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "apester",
+      "aliasOf": null,
+      "gvlid": 354,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "appStockSSP",
       "aliasOf": null,
       "gvlid": 1223,
@@ -1189,13 +1252,6 @@
       "componentName": "appnexusAst",
       "aliasOf": "appnexus",
       "gvlid": 32,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "emetriq",
-      "aliasOf": "appnexus",
-      "gvlid": 213,
       "disclosureURL": null
     },
     {
@@ -1287,6 +1343,13 @@
       "componentName": "appush",
       "aliasOf": null,
       "gvlid": 879,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "aps",
+      "aliasOf": null,
+      "gvlid": 793,
       "disclosureURL": null
     },
     {
@@ -1718,6 +1781,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "clydo",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "codefuel",
       "aliasOf": null,
       "gvlid": null,
@@ -1921,6 +1991,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "das",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ringieraxelspringer",
+      "aliasOf": "das",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "datablocks",
       "aliasOf": null,
       "gvlid": null,
@@ -2055,6 +2139,13 @@
     {
       "componentType": "bidder",
       "componentName": "dochase",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "dpai",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -2250,6 +2341,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "floxis",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "fluct",
       "aliasOf": null,
       "gvlid": null,
@@ -2439,6 +2537,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "harion",
+      "aliasOf": null,
+      "gvlid": 1406,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "holid",
       "aliasOf": null,
       "gvlid": 1177,
@@ -2540,6 +2645,13 @@
       "componentName": "insticator",
       "aliasOf": null,
       "gvlid": 910,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "insurads",
+      "aliasOf": null,
+      "gvlid": 596,
       "disclosureURL": null
     },
     {
@@ -2698,6 +2810,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "leagueM",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "lemmadigital",
       "aliasOf": null,
       "gvlid": null,
@@ -2736,13 +2855,6 @@
       "componentName": "iionads",
       "aliasOf": "limelightDigital",
       "gvlid": 1358,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "apester",
-      "aliasOf": "limelightDigital",
-      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2810,13 +2922,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adnimation",
-      "aliasOf": "limelightDigital",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "rtbdemand",
       "aliasOf": "limelightDigital",
       "gvlid": null,
@@ -2832,6 +2937,27 @@
     {
       "componentType": "bidder",
       "componentName": "vaayaMedia",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "performist",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "oveeo",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "embimedia",
       "aliasOf": "limelightDigital",
       "gvlid": null,
       "disclosureURL": null
@@ -2946,6 +3072,13 @@
       "componentName": "madvertise",
       "aliasOf": null,
       "gvlid": 153,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "magnite",
+      "aliasOf": null,
+      "gvlid": 52,
       "disclosureURL": null
     },
     {
@@ -3098,6 +3231,13 @@
     {
       "componentType": "bidder",
       "componentName": "microad",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "mile",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -3349,6 +3489,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "netads",
+      "aliasOf": "nexx360",
+      "gvlid": 965,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "nobid",
       "aliasOf": null,
       "gvlid": 816,
@@ -3475,13 +3622,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "optable",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "optidigital",
       "aliasOf": null,
       "gvlid": 915,
@@ -3576,6 +3716,13 @@
       "componentName": "pangle",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "panxo",
+      "aliasOf": null,
+      "gvlid": 1527,
       "disclosureURL": null
     },
     {
@@ -3734,6 +3881,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pubstack",
+      "aliasOf": null,
+      "gvlid": 1408,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubstack_server",
+      "aliasOf": "pubstack",
+      "gvlid": 1408,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "pubx",
       "aliasOf": null,
       "gvlid": null,
@@ -3793,13 +3954,6 @@
       "componentName": "qt",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "quantcast",
-      "aliasOf": null,
-      "gvlid": "11",
       "disclosureURL": null
     },
     {
@@ -3902,6 +4056,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "revantage",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
@@ -3933,13 +4094,6 @@
       "componentName": "ra",
       "aliasOf": "richaudience",
       "gvlid": 108,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ringieraxelspringer",
-      "aliasOf": null,
-      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4518,6 +4672,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "teqBlazeSalesAgent",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "theadx",
       "aliasOf": "theadx",
       "gvlid": null,
@@ -4680,6 +4841,13 @@
     {
       "componentType": "bidder",
       "componentName": "ventes",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "verben",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -4920,6 +5088,13 @@
       "componentName": "yahooAdvertising",
       "aliasOf": "yahooAds",
       "gvlid": 25,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "yaleo",
+      "aliasOf": null,
+      "gvlid": 783,
       "disclosureURL": null
     },
     {
@@ -5213,12 +5388,6 @@
     },
     {
       "componentType": "rtd",
-      "componentName": "intersection",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "rtd",
       "componentName": "jwplayer",
       "gvlid": null,
       "disclosureURL": null
@@ -5298,6 +5467,12 @@
     {
       "componentType": "rtd",
       "componentName": "oxxionRtd",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "panxo",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -5484,13 +5659,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "dmdId",
-      "gvlid": null,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "euid",
       "gvlid": 21,
       "disclosureURL": null,
@@ -5617,6 +5785,20 @@
     },
     {
       "componentType": "userId",
+      "componentName": "locId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "locid",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": "locId"
+    },
+    {
+      "componentType": "userId",
       "componentName": "lockrAIMId",
       "gvlid": null,
       "disclosureURL": null,
@@ -5731,13 +5913,6 @@
       "componentType": "userId",
       "componentName": "pubmaticId",
       "gvlid": 76,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
-      "componentName": "quantcastId",
-      "gvlid": "11",
       "disclosureURL": null,
       "aliasOf": null
     },
