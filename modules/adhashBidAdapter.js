@@ -153,7 +153,7 @@ function brandSafety(badWords, maxScore) {
 
 export const spec = {
   code: ADHASH_BIDDER_CODE,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     try {

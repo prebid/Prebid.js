@@ -1,9 +1,9 @@
-import type {AllConsentData} from "../../src/consentHandler.ts";
-import type {AdUnitCode, ByAdUnit, StorageDisclosure} from "../../src/types/common";
-import {EVENTS} from '../../src/constants.ts';
-import type {EventPayload} from "../../src/events.ts";
-import type {TargetingMap} from "../../src/targeting.ts";
-import type {StartAuctionOptions} from "../../src/prebid.ts";
+import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { AdUnitCode, ByAdUnit, StorageDisclosure } from "../../src/types/common";
+import { EVENTS } from '../../src/constants.ts';
+import type { EventPayload } from "../../src/events.ts";
+import type { TargetingMap } from "../../src/targeting.ts";
+import type { StartAuctionOptions } from "../../src/prebid.ts";
 
 export type RTDProvider = string;
 
@@ -32,8 +32,7 @@ export type RTDProviderConfig<P extends RTDProvider> = BaseConfig<P> & (
 type RTDEvent = typeof EVENTS.AUCTION_INIT |
     typeof EVENTS.AUCTION_END |
     typeof EVENTS.BID_RESPONSE |
-    typeof EVENTS.BID_REQUESTED |
-    typeof EVENTS.BID_ACCEPTED;
+    typeof EVENTS.BID_REQUESTED;
 
 type EventHandlers<P extends RTDProvider> = {
   [EV in RTDEvent]: (payload: EventPayload<EV>, config: RTDProviderConfig<P>, consent: AllConsentData) => void;

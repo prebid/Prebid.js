@@ -5,23 +5,23 @@ import {
 import { config } from './config.js';
 
 import { getCoreStorageManager } from './storageManager.js';
-import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
-import {ACTIVITY_SYNC_USER} from './activities/activities.js';
+import { isActivityAllowed, registerActivityControl } from './activities/rules.js';
+import { ACTIVITY_SYNC_USER } from './activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE,
   ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL
 } from './activities/params.js';
-import {MODULE_TYPE_BIDDER} from './activities/modules.js';
-import {activityParams} from './activities/activityParams.js';
-import type {BidderCode} from "./types/common.d.ts";
+import { MODULE_TYPE_BIDDER } from './activities/modules.js';
+import { activityParams } from './activities/activityParams.js';
+import type { BidderCode } from "./types/common.d.ts";
 
 export type SyncType = 'image' | 'iframe';
 type SyncConfig = {
   bidders: '*' | BidderCode[];
   filter: 'include' | 'exclude'
 }
-type FilterSettings = {[K in SyncType | 'all']?: SyncConfig};
+type FilterSettings = { [K in SyncType | 'all']?: SyncConfig };
 
 export interface UserSyncConfig {
   /**
@@ -122,13 +122,13 @@ export function newUserSync(deps) {
 
   deps.regRule(ACTIVITY_SYNC_USER, 'userSync config', (params) => {
     if (!usConfig.syncEnabled) {
-      return {allow: false, reason: 'syncs are disabled'}
+      return { allow: false, reason: 'syncs are disabled' }
     }
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_BIDDER) {
       const syncType = params[ACTIVITY_PARAM_SYNC_TYPE];
       const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME];
       if (!publicApi.canBidderRegisterSync(syncType, bidder)) {
-        return {allow: false, reason: `${syncType} syncs are not enabled for ${bidder}`}
+        return { allow: false, reason: `${syncType} syncs are not enabled for ${bidder}` }
       }
     }
   });

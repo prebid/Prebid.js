@@ -7,21 +7,21 @@ class EventProperty extends string {
   
   EventProperty() {
       
-      ( this = "candidate"  and weight = 76.95  and event = "icecandidate" )
+      ( this = "candidate"  and weight = 54.73  and event = "icecandidate" )
        or 
-      ( this = "accelerationIncludingGravity"  and weight = 238.43  and event = "devicemotion" )
+      ( this = "rotationRate"  and weight = 63.55  and event = "devicemotion" )
        or 
-      ( this = "beta"  and weight = 736.03  and event = "deviceorientation" )
+      ( this = "accelerationIncludingGravity"  and weight = 205.08  and event = "devicemotion" )
        or 
-      ( this = "gamma"  and weight = 279.41  and event = "deviceorientation" )
+      ( this = "acceleration"  and weight = 64.53  and event = "devicemotion" )
        or 
-      ( this = "alpha"  and weight = 737.51  and event = "deviceorientation" )
+      ( this = "alpha"  and weight = 784.67  and event = "deviceorientation" )
        or 
-      ( this = "acceleration"  and weight = 58.12  and event = "devicemotion" )
+      ( this = "beta"  and weight = 801.42  and event = "deviceorientation" )
        or 
-      ( this = "rotationRate"  and weight = 57.64  and event = "devicemotion" )
+      ( this = "gamma"  and weight = 300.01  and event = "deviceorientation" )
        or 
-      ( this = "absolute"  and weight = 344.13  and event = "deviceorientation" )
+      ( this = "absolute"  and weight = 281.45  and event = "deviceorientation" )
   }  
 
   float getWeight() {

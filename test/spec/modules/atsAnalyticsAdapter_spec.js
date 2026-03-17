@@ -1,12 +1,12 @@
-import atsAnalyticsAdapter, {parseBrowser, analyticsUrl, bidRequestedHandler} from '../../../modules/atsAnalyticsAdapter.js';
+import atsAnalyticsAdapter, { parseBrowser, analyticsUrl, bidRequestedHandler } from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
-import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
+import { getCoreStorageManager, getStorageManager } from '../../../src/storageManager.js';
 
-import {EVENTS} from 'src/constants.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { EVENTS } from 'src/constants.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const utils = require('src/utils');
 const events = require('src/events');
@@ -299,7 +299,7 @@ describe('ats analytics adapter', function () {
             'bidId': '30c77d079cdf17',
             'userIdAsEids': [{
               'source': 'liveramp.com',
-              'uids': [{'id': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'}]
+              'uids': [{ 'id': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g' }]
             }]
           }],
           'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
@@ -337,7 +337,7 @@ describe('ats analytics adapter', function () {
             'bidId': '30c77d079cdf17',
             'userIdAsEids': [{
               'source': 'id5-sync.com',
-              'uids': [{'id': 'some-other-id'}]
+              'uids': [{ 'id': 'some-other-id' }]
             }]
           }],
           'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
@@ -461,15 +461,15 @@ describe('ats analytics adapter', function () {
             'userIdAsEids': [
               {
                 'source': 'id5-sync.com',
-                'uids': [{'id': 'id5-value'}]
+                'uids': [{ 'id': 'id5-value' }]
               },
               {
                 'source': 'liveramp.com',
-                'uids': [{'id': 'liveramp-value'}]
+                'uids': [{ 'id': 'liveramp-value' }]
               },
               {
                 'source': 'criteo.com',
-                'uids': [{'id': 'criteo-value'}]
+                'uids': [{ 'id': 'criteo-value' }]
               }
             ]
           }],

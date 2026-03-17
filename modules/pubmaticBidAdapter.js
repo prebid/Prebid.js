@@ -1,6 +1,6 @@
 import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
@@ -9,6 +9,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -95,7 +96,7 @@ const converter = ortbConverter({
     if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
     if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
-    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes);
+    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, bidRequest, bidRequest?.sizes);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
@@ -142,12 +143,11 @@ const converter = ortbConverter({
     if (mediaType === VIDEO) {
       if (!bidResponse.width) bidResponse.width = playerWidth;
       if (!bidResponse.height) bidResponse.height = playerHeight;
-      const { context, maxduration } = mediaTypes[mediaType];
+      const { context } = mediaTypes[mediaType];
       if (context === 'outstream' && params.outstreamAU && adUnitCode) {
         bidResponse.rendererCode = params.outstreamAU;
         bidResponse.renderer = BB_RENDERER.newRenderer(bidResponse.rendererCode, adUnitCode);
       }
-      assignDealTier(bidResponse, context, maxduration);
     }
     if (mediaType === NATIVE && bid.adm) {
       try {
@@ -256,6 +256,11 @@ const toOrtbNativeRequest = legacyNativeAssets => {
       continue;
     }
 
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
+      continue;
+    }
+
     const asset = legacyNativeAssets[key];
     const required = asset.required && isBoolean(asset.required) ? 1 : 0;
     const ortbAsset = { id: ortb.assets.length, required };
@@ -315,7 +320,7 @@ const setFloorInImp = (imp, bid) => {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
           if (isMultiFormatRequest && mediaType !== BANNER) {
             logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', imp.bidfloorcur);
-            imp[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur};
+            imp[mediaType]['ext'] = { 'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur };
           }
           logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
           bidFloor = bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor);
@@ -323,7 +328,7 @@ const setFloorInImp = (imp, bid) => {
         }
       });
       if (isMultiFormatRequest && mediaType === BANNER) {
-        imp[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur};
+        imp[mediaType]['ext'] = { 'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur };
       }
     });
   }
@@ -524,27 +529,6 @@ const addExtenstionParams = (req, bidderRequest) => {
   }
 }
 
-/**
- * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
- * so that adpod module can set the hb_pb_cat_dur targetting key.
- * @param {*} bid
- * @param {*} context
- * @param {*} maxduration
- * @returns
- */
-const assignDealTier = (bid, context, maxduration) => {
-  if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
-  if (context !== ADPOD) return;
-
-  const duration = bid?.ext?.video?.duration || maxduration;
-  // if (!duration) return;
-  bid.video = {
-    context: ADPOD,
-    durationSeconds: duration,
-    dealTier: bid.ext.prebiddealpriority
-  };
-}
-
 const validateAllowedCategories = (acat) => {
   return [...new Set(
     acat
@@ -621,7 +605,7 @@ const BB_RENDERER = {
     }
 
     const rendererId = BB_RENDERER.getRendererId(PUBLICATION, bid.rendererCode);
-    const ele = document.getElementById(bid.adUnitCode); // NB convention
+    const ele = getAdUnitElement(bid);
 
     const renderer = window.bluebillywig.renderers.find(r => r._id === rendererId);
     if (renderer) renderer.bootstrap(config, ele);
@@ -723,10 +707,10 @@ function _getMinSize(sizes) {
 /**
  * Measures viewability for an element and adds it to the imp object at the ext level
  * @param {Object} imp - The impression object
- * @param {string} adUnitCode - The ad unit code for element identification
+ * @param {Object} bidRequest - The bid request for element identification
  * @param {Object} sizes - Sizes object with width and height properties
  */
-export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
+export const addViewabilityToImp = (imp, bidRequest, sizes) => {
   let elementSize = { w: 0, h: 0 };
 
   if (imp.video?.w > 0 && imp.video?.h > 0) {
@@ -735,7 +719,7 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   } else {
     elementSize = _getMinSize(sizes);
   }
-  const element = document.getElementById(adUnitCode);
+  const element = getAdUnitElement(bidRequest);
   if (!element) return;
 
   const viewabilityAmount = isViewabilityMeasurable(element)
@@ -756,6 +740,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  alwaysHasCapacity: true,
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
    *

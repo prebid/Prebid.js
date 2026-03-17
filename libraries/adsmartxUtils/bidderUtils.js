@@ -178,6 +178,10 @@ export function interpretResponse(serverResponse, request, config = {}) {
   bidResp.seatbid.forEach(seatbid => {
     if (!Array.isArray(seatbid.bid) || seatbid.bid.length === 0) return;
     const bid = seatbid.bid[0];
+    if (!bid.impid || bid.price == null) {
+      logWarn('Skipping bid with missing impid or price, bidId:', bid.id);
+      return;
+    }
     logInfo('Processing bid response:', bid);
     const bidResponse = {
       requestId: bid.impid,
@@ -253,7 +257,7 @@ export function createGetUserSyncs(syncUrl) {
       type: syncOptions.iframeEnabled ? 'iframe' : 'image',
       url: syncUrl + queryString,
     }];
-    logInfo('Returning user syncs:', syncs);
+    logInfo('Returning user syncs, type:', syncs[0]?.type);
     return syncs;
   };
 }
