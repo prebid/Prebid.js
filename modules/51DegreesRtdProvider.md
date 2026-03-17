@@ -113,7 +113,7 @@ pbjs.setConfig({
                 waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
                 params: {
                     resourceKey: '<YOUR_RESOURCE_KEY>',
-                    // Get your resource key from hhttps://configure.51degrees.com/jJqVnTJR
+                    // Get your resource key from https://configure.51degrees.com/jJqVnTJR
                     // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen endpoint
                     // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
                 },
