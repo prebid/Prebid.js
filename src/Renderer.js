@@ -9,6 +9,17 @@ const pbjsInstance = getGlobal();
 const moduleCode = 'outstream';
 
 /**
+ * @typedef {object} RendererInstallOptions
+ * @property {string} [url]
+ * @property {object} [config]
+ * @property {string} [id]
+ * @property {function} [callback]
+ * @property {boolean} [loaded]
+ * @property {string} [adUnitCode]
+ * @property {boolean} [renderNow]
+ */
+
+/**
  * @typedef {object} Renderer
  *
  * A Renderer stores some functions which are used to render a particular Bid.
@@ -16,6 +27,9 @@ const moduleCode = 'outstream';
  * be used to render that bid unless the Publisher overrides them.
  */
 
+/**
+ * @param {RendererInstallOptions} options
+ */
 export function Renderer(options) {
   const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
   this.url = url;
@@ -69,7 +83,7 @@ export function Renderer(options) {
 }
 
 /**
- * @param {{}} options
+ * @param {RendererInstallOptions} options
  * @return {Renderer}
  */
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {

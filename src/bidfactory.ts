@@ -167,6 +167,7 @@ export interface NativeBidProperties {
 
 export interface VideoBidProperties {
   mediaType: 'video' | 'audio';
+  videoCacheKey?: string;
 }
 
 type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;

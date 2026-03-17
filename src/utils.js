@@ -2,10 +2,14 @@ import { config } from './config.js';
 
 import { EVENTS } from './constants.js';
 import { PbPromise } from './utils/promise.js';
-import deepAccess from 'dlv/index.js';
+import _deepAccess from 'dlv/index.js';
 import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
 
-export { deepAccess };
+/**
+ * Safe deep property access (re-export from dlv). Used by declaration emit for .d.ts.
+ * @type {<T>(obj: T, path: string | Array<string>, defaultValue?: any) => any}
+ */
+export const deepAccess = _deepAccess;
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';

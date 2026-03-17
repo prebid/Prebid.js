@@ -22,6 +22,9 @@ export interface ConsentData {
   [CONSENT_COPPA]: boolean;
 }
 
+/** Resolves to ConsentData[K] when module has augmented that key, else unknown (core-only build). */
+export type ConsentDataForKey<K extends ConsentType> = K extends keyof ConsentData ? ConsentData[K] : unknown;
+
 type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -138,10 +141,17 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
   }
 }
 
+/** Minimal shape used by GdprConsentHandler.getConsentMeta (full type comes from consentManagementTcf). */
+interface GdprConsentMetaSource {
+  vendorData?: { tcString?: string };
+  gdprApplies?: boolean;
+  apiVersion?: number;
+}
+
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
   hashFields = ["gdprApplies", "consentString"];
   getConsentMeta() {
-    const consentData = this.getConsentData();
+    const consentData = this.getConsentData() as GdprConsentMetaSource | null;
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
         gdprApplies: consentData.gdprApplies as boolean,
