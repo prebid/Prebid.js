@@ -1413,6 +1413,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 // The WURFL submodule
 export const wurflSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/wurflRtdProvider.json',
   init,
   getBidRequestData,
   onAuctionEndEvent,
