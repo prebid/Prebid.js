@@ -46,7 +46,6 @@ async function makeApiCall(publicId) {
 
   try {
     const response = await fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
-      credentials: 'include',
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
