@@ -42,14 +42,6 @@ export const spec = {
       bids.push(seatbid.bid);
     })
 
-    const fledgeAuctionConfigs = deepAccess(serverResponse, 'ext.fledgeAuctionConfigs') || [];
-    if (fledgeAuctionConfigs.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
-    }
-
     return bids;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
@@ -72,14 +64,6 @@ function newBidRequest(bidRequest, bidderRequest) {
     sizes: bidRequest.sizes,
     params: bidRequest.params,
     mediaTypes: bidRequest.mediaTypes,
-  }
-
-  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
-  if (fledgeEnabled) {
-    const ae = deepAccess(bidRequest, 'ortb2Imp.ext.ae');
-    if (ae) {
-      bid.ae = ae;
-    }
   }
 
   const data = {

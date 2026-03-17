@@ -2,6 +2,8 @@ import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -42,7 +44,7 @@ export const getViewableOptions = (bid) => {
 export const markViewed = (bid, entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-    events.emit(EVENTS.BID_VIEWABLE, bid);
+    triggerBidViewable(bid);
     _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
   }
 }
@@ -80,7 +82,7 @@ export const init = () => {
       events.on(EVENTS.AD_RENDER_SUCCEEDED, ({ doc, bid, id }) => {
         if (isSupportedMediaType(bid)) {
           const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-          const element = document.getElementById(bid.adUnitCode);
+          const element = getAdUnitElement(bid);
           viewable.observe(element);
         }
       });

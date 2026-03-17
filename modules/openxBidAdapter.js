@@ -61,9 +61,7 @@ const converter = ortbConverter({
     if (bid.params.coppa) {
       utils.deepSetValue(req, 'regs.coppa', 1);
     }
-    if (bid.params.doNotTrack) {
-      utils.deepSetValue(req, 'device.dnt', 1);
-    }
+    utils.deepSetValue(req, 'device.dnt', 0);
     if (bid.params.platform) {
       utils.deepSetValue(req, 'ext.platform', bid.params.platform);
     }
@@ -98,27 +96,7 @@ const converter = ortbConverter({
         utils.deepSetValue(ortbResponse, 'ext.platform', ortbRequest.ext.platform);
       }
     }
-    const response = buildResponse(bidResponses, ortbResponse, context);
-    // TODO: we may want to standardize this and move fledge logic to ortbConverter
-    let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return {
-          bidId,
-          config: mergeDeep(Object.assign({}, cfg), {
-            auctionSignals: {
-              ortb2Imp: context.impContext[bidId]?.imp,
-            },
-          }),
-        }
-      });
-      return {
-        bids: response.bids,
-        paapi: fledgeAuctionConfigs,
-      }
-    } else {
-      return response
-    }
+    return buildResponse(bidResponses, ortbResponse, context);
   },
   overrides: {
     imp: {

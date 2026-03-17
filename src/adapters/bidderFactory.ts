@@ -279,11 +279,11 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode: string, bid: Bid) {
+      function addBidWithCode(adUnitCode: string, bid: Bid, responseMediaType = null) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
-        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
+        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid, { responseMediaType }))) {
           addBidResponse(adUnitCode, bid);
         } else {
           addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID)
@@ -319,14 +319,6 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        onPaapi: (paapiConfig: any) => {
-          const bidRequest = bidRequestMap[paapiConfig.bidId];
-          if (bidRequest) {
-            addPaapiConfig(bidRequest, paapiConfig);
-          } else {
-            logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
-          }
-        },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
           if (!error.timedOut) {
@@ -353,7 +345,10 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.deferBilling = bidRequest.deferBilling;
             bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
             const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, Object.keys(TIDS)));
-            addBidWithCode(bidRequest.adUnitCode, prebidBid);
+            const responseMediaType = Object.prototype.hasOwnProperty.call(bidResponse, 'mediaType')
+              ? bidResponse.mediaType
+              : null;
+            addBidWithCode(bidRequest.adUnitCode, prebidBid, responseMediaType);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
             addBidResponse.reject(null, bidResponse, REJECTION_REASON.INVALID_REQUEST_ID);
@@ -390,7 +385,12 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-const RESPONSE_PROPS = ['bids', 'paapi']
+const RESPONSE_PROPS = [
+  'bids',
+  // allow bid adapters to still reply with paapi (which will be ignored).
+  'paapi',
+]
+
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
@@ -407,7 +407,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
   bidderRequest: ClientBidderRequest<B>,
   ajax: Ajax,
   wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
-  { onRequest, onResponse, onPaapi, onError, onBid, onCompletion }: {
+  { onRequest, onResponse, onError, onBid, onCompletion }: {
     /**
      * invoked once for each HTTP request built by the adapter - with the raw request
      */
@@ -424,10 +424,6 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
      *  invoked once for each bid in the response - with the bid as returned by interpretResponse
      */
     onBid: (bid: BidResponse) => void;
-    /**
-     * invoked once with each member of the adapter response's 'paapi' array.
-     */
-    onPaapi: (paapi: unknown) => void;
     /**
      * invoked once when all bid requests have been processed
      */
@@ -483,15 +479,11 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       // an array of bids
       // a BidderAuctionResponse object
 
-      let bids, paapiConfigs;
+      let bids
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
-        paapiConfigs = response.paapi;
       } else {
         bids = response;
-      }
-      if (isArray(paapiConfigs)) {
-        paapiConfigs.forEach(onPaapi);
       }
       if (bids) {
         if (isArray(bids)) {
@@ -616,9 +608,6 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
   }
 }, 'registerSyncs')
 
-export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
-}, 'addPaapiConfig');
-
 declare module '../bidfactory' {
   interface BannerBidProperties {
     width?: number;
@@ -661,7 +650,7 @@ function validBidSize(adUnitCode, bid: BannerBid, { index = auctionManager.index
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.index } = {}) {
+export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.index, responseMediaType = bid.mediaType } = {}) {
   function hasValidKeys() {
     const bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
@@ -684,6 +673,21 @@ export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.i
   if (!hasValidKeys()) {
     logError(errorMessage(`Bidder ${bid.bidderCode} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`));
     return false;
+  }
+
+  const auctionOptions = config.getConfig('auctionOptions') || {};
+  const rejectUnknownMediaTypes = auctionOptions.rejectUnknownMediaTypes === true;
+  const rejectInvalidMediaTypes = auctionOptions.rejectInvalidMediaTypes !== false;
+  const mediaTypes = index.getMediaTypes(bid);
+  if (mediaTypes && Object.keys(mediaTypes).length > 0) {
+    if (responseMediaType == null && rejectUnknownMediaTypes) {
+      logError(errorMessage(`Bid mediaType is required. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+      return false;
+    }
+    if (responseMediaType != null && rejectInvalidMediaTypes && !mediaTypes.hasOwnProperty(responseMediaType)) {
+      logError(errorMessage(`Bid mediaType '${responseMediaType}' is not supported by the ad unit. Allowed: ${Object.keys(mediaTypes).join(', ')}`));
+      return false;
+    }
   }
 
   if (FEATURES.NATIVE && bid.mediaType === 'native' && !nativeBidIsValid(bid, { index })) {

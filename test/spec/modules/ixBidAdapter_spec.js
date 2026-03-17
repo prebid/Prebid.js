@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnitCode } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnit } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
@@ -884,52 +884,6 @@ describe('IndexexchangeAdapter', function () {
     }
   };
 
-  const DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY = {
-    gdprConsent: {
-      gdprApplies: true,
-      consentString: '3huaa11=qu3198ae',
-      vendorData: {}
-    },
-    refererInfo: {
-      page: 'https://www.prebid.org',
-      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
-    },
-    ortb2: {
-      site: {
-        page: 'https://www.prebid.org'
-      },
-      source: {
-        tid: 'mock-tid'
-      }
-    },
-    paapi: {
-      enabled: true
-    },
-  };
-
-  const DEFAULT_OPTION_FLEDGE_ENABLED = {
-    gdprConsent: {
-      gdprApplies: true,
-      consentString: '3huaa11=qu3198ae',
-      vendorData: {}
-    },
-    refererInfo: {
-      page: 'https://www.prebid.org',
-      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
-    },
-    ortb2: {
-      site: {
-        page: 'https://www.prebid.org'
-      },
-      source: {
-        tid: 'mock-tid'
-      }
-    },
-    paapi: {
-      enabled: true
-    }
-  };
-
   const DEFAULT_IDENTITY_RESPONSE = {
     IdentityIp: {
       responsePending: false,
@@ -1055,10 +1009,8 @@ describe('IndexexchangeAdapter', function () {
           id: `uid_id_${i}`,
         }]
       };
-
       eids.push(newEid);
     }
-
     return eids;
   }
 
@@ -3638,78 +3590,6 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('buildRequestFledge', function () {
-    it('impression should have ae=1 in ext when fledge module is enabled and ae is set in ad unit', function () {
-      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
-      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
-      const impression = extractPayload(requestBidFloor).imp[0];
-
-      expect(impression.ext.ae).to.equal(1);
-    });
-
-    it('impression should have ae=1 in ext when request has paapi.enabled = true and ext.ae = 1', function () {
-      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
-      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
-      const impression = extractPayload(requestBidFloor).imp[0];
-
-      expect(impression.ext.ae).to.equal(1);
-    });
-
-    it('impression should not have ae=1 in ext when fledge module is enabled globally through setConfig but overidden at ad unit level', function () {
-      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
-      const impression = extractPayload(requestBidFloor).imp[0];
-
-      expect(impression.ext.ae).to.be.undefined;
-    });
-
-    it('impression should not have ae=1 in ext when fledge module is disabled', function () {
-      const bidderRequest = deepClone(DEFAULT_OPTION);
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
-      const impression = extractPayload(requestBidFloor).imp[0];
-
-      expect(impression.ext.ae).to.be.undefined;
-    });
-
-    it('should contain correct IXdiag ae property for Fledge', function () {
-      const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
-      const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      const request = spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
-      const diagObj = extractPayload(request[0]).ext.ixdiag;
-      expect(diagObj.ae).to.equal(true);
-    });
-
-    it('should log warning for non integer auction environment in ad unit for fledge', () => {
-      const logWarnSpy = sinon.spy(utils, 'logWarn');
-      const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
-      bid.ortb2Imp.ext.ae = 'malformed'
-      const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
-      expect(logWarnSpy.calledWith('error setting auction environment flag - must be an integer')).to.be.true;
-      logWarnSpy.restore();
-    });
-
-    it('impression should have paapi extension when passed', function () {
-      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
-      bid.ortb2Imp.ext.ae = 1
-      bid.ortb2Imp.ext.paapi = {
-        requestedSize: {
-          width: 300,
-          height: 250
-        }
-      }
-      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
-      const impression = extractPayload(requestBidFloor).imp[0];
-      expect(impression.ext.paapi.requestedSize.width).to.equal(300);
-      expect(impression.ext.paapi.requestedSize.height).to.equal(250);
-    });
-  });
-
   describe('integration through exchangeId and externalId', function () {
     const expectedExchangeId = 123456;
     // create banner bids with externalId but no siteId as bidder param
@@ -4355,106 +4235,6 @@ describe('IndexexchangeAdapter', function () {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    describe('Auction config response', function () {
-      let bidderRequestWithFledgeEnabled;
-      let serverResponseWithoutFledgeConfigs;
-      let serverResponseWithFledgeConfigs;
-      let serverResponseWithMalformedAuctionConfig;
-      let serverResponseWithMalformedAuctionConfigs;
-
-      beforeEach(() => {
-        bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
-        bidderRequestWithFledgeEnabled.paapi = { enabled: true };
-
-        serverResponseWithoutFledgeConfigs = {
-          body: {
-            ...DEFAULT_BANNER_BID_RESPONSE
-          }
-        };
-
-        serverResponseWithFledgeConfigs = {
-          body: {
-            ...DEFAULT_BANNER_BID_RESPONSE,
-            ext: {
-              protectedAudienceAuctionConfigs: [
-                {
-                  bidId: '59f219e54dc2fc',
-                  config: {
-                    seller: 'https://seller.test.indexexchange.com',
-                    decisionLogicUrl: 'https://seller.test.indexexchange.com/decision-logic.js',
-                    interestGroupBuyers: ['https://buyer.test.indexexchange.com'],
-                    sellerSignals: {
-                      callbackURL: 'https://test.com/ig/v1/ck74j8bcvc9c73a8eg6g'
-                    },
-                    perBuyerSignals: {
-                      'https://buyer.test.indexexchange.com': {}
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        };
-
-        serverResponseWithMalformedAuctionConfig = {
-          body: {
-            ...DEFAULT_BANNER_BID_RESPONSE,
-            ext: {
-              protectedAudienceAuctionConfigs: ['malformed']
-            }
-          }
-        };
-
-        serverResponseWithMalformedAuctionConfigs = {
-          body: {
-            ...DEFAULT_BANNER_BID_RESPONSE,
-            ext: {
-              protectedAudienceAuctionConfigs: 'malformed'
-            }
-          }
-        };
-      });
-
-      it('should correctly interpret response with auction configs', () => {
-        const result = spec.interpretResponse(serverResponseWithFledgeConfigs, bidderRequestWithFledgeEnabled);
-        const expectedOutput = [
-          {
-            bidId: '59f219e54dc2fc',
-            config: {
-              ...serverResponseWithFledgeConfigs.body.ext.protectedAudienceAuctionConfigs[0].config,
-              perBuyerSignals: {
-                'https://buyer.test.indexexchange.com': {}
-              }
-            }
-          }
-        ];
-        expect(result.paapi).to.deep.equal(expectedOutput);
-      });
-
-      it('should correctly interpret response without auction configs', () => {
-        const result = spec.interpretResponse(serverResponseWithoutFledgeConfigs, bidderRequestWithFledgeEnabled);
-        expect(result.paapi).to.be.undefined;
-      });
-
-      it('should handle malformed auction configs gracefully', () => {
-        const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
-        expect(result.paapi).to.be.empty;
-      });
-
-      it('should log warning for malformed auction configs', () => {
-        const logWarnSpy = sinon.spy(utils, 'logWarn');
-        spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
-        expect(logWarnSpy.calledWith('Malformed auction config detected:', 'malformed')).to.be.true;
-        logWarnSpy.restore();
-      });
-
-      it('should return bids when protected audience auction conigs is malformed', () => {
-        const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfigs, bidderRequestWithFledgeEnabled);
-        expect(result.paapi).to.be.undefined;
-        expect(result.length).to.be.greaterThan(0);
-      });
-    });
-
     describe('interpretResponse when server response is empty', function() {
       let serverResponseWithoutBody;
       let serverResponseWithoutSeatbid;
@@ -4489,7 +4269,6 @@ describe('IndexexchangeAdapter', function () {
       });
     });
   });
-
   describe('bidrequest consent', function () {
     it('should have consent info if gdprApplies and consentString exist', function () {
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
@@ -5448,15 +5227,15 @@ describe('IndexexchangeAdapter', function () {
       const el = document.createElement('div');
       el.id = adUnitCode;
       document.body.appendChild(el);
-      expect(getDivIdFromAdUnitCode(adUnitCode)).to.equal(adUnitCode);
+      expect(getDivIdFromAdUnit(adUnitCode, { code: adUnitCode })).to.equal(adUnitCode);
       document.body.removeChild(el);
     });
 
     it('retrieves divId from GPT once and caches result', () => {
       const adUnitCode = 'div-ad2';
       const stub = sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({ divId: 'gpt-div' });
-      const first = getDivIdFromAdUnitCode(adUnitCode);
-      const second = getDivIdFromAdUnitCode(adUnitCode);
+      const first = getDivIdFromAdUnit(adUnitCode, {});
+      const second = getDivIdFromAdUnit(adUnitCode, {});
       expect(first).to.equal('gpt-div');
       expect(second).to.equal('gpt-div');
       expect(stub.calledOnce).to.be.true;
