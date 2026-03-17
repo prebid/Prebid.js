@@ -24,14 +24,14 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
 };
 
 const createOustreamRendererFunction = (
-  divId: string,
+  adUnitCode: string,
   width: number,
   height: number
 ) => (bidResponse: VideoBidResponse) => {
   bidResponse.renderer.push(() => {
     (window as any).ANOutstreamVideo.renderAd({
       sizes: [width, height],
-      targetId: divId,
+      targetId: adUnitCode,
       adResponse: bidResponse.vastXml,
       rendererOptions: {
         showBigPlayButton: false,
@@ -48,13 +48,13 @@ const createOustreamRendererFunction = (
 export type CreateRenderPayload = {
   requestId: string,
   vastXml: string,
-  divId: string,
+  adUnitCode: string,
   width: number,
   height: number
 }
 
 export const createRenderer = (
-  { requestId, vastXml, divId, width, height }: CreateRenderPayload
+  { requestId, vastXml, adUnitCode, width, height }: CreateRenderPayload
 ): Renderer | undefined => {
   if (!vastXml) {
     logInfo('No VAST in bidResponse');
@@ -64,11 +64,11 @@ export const createRenderer = (
     id: requestId,
     url: OUTSTREAM_RENDERER_URL,
     loaded: false,
-    adUnitCode: divId,
-    targetId: divId,
+    adUnitCode: adUnitCode,
+    targetId: adUnitCode,
   };
   const renderer = Renderer.install(installPayload);
-  renderer.setRender(createOustreamRendererFunction(divId, width, height));
+  renderer.setRender(createOustreamRendererFunction(adUnitCode, width, height));
   return renderer;
 };
 
@@ -107,17 +107,17 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
   if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
-  if (bid.ext.mediaType === OUTSTREAM && (bid.ext.divId || bid.ext.adUnitCode)) {
+  if (bid.ext.mediaType === OUTSTREAM && (bid.ext.adUnitCode)) {
     const renderer = createRenderer({
       requestId: response.requestId,
       vastXml: response.vastXml,
-      divId: bid.ext.divId || bid.ext.adUnitCode,
+      adUnitCode: bid.ext.adUnitCode,
       width: response.width,
       height: response.height
     });
     if (renderer) {
       response.renderer = renderer;
-      response.divId = bid.ext.divId;
+      response.adUnitCode = bid.ext.adUnitCode;
     } else {
       logInfo('Could not create renderer for outstream bid');
     }

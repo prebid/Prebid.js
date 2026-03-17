@@ -137,7 +137,6 @@ describe('Alliance Gravity bid adapter tests', () => {
               tagid: 'header-ad-1234',
               ext: {
                 adUnitCode: 'header-ad-1234',
-                divId: 'header-ad-1234',
                 prebid: {
                   storedrequest: {
                     id: "12345"
@@ -158,7 +157,6 @@ describe('Alliance Gravity bid adapter tests', () => {
               tagid: 'div-2-abcd',
               ext: {
                 adUnitCode: 'div-2-abcd',
-                divId: 'div-2-abcd',
                 prebid: {
                   storedrequest: {
                     id: "67890"
@@ -324,7 +322,7 @@ describe('Alliance Gravity bid adapter tests', () => {
                   ext: {
                     mediaType: 'instream',
                     ssp: 'appnexus',
-                    adUnitCode: 'video1',
+                    adUnitCode: 'video1'
                   },
                 },
               ],
@@ -376,8 +374,7 @@ describe('Alliance Gravity bid adapter tests', () => {
                   ext: {
                     mediaType: 'outstream',
                     ssp: 'appnexus',
-                    adUnitCode: 'div-1',
-                    divId: 'div-1',
+                    adUnitCode: 'div-1'
                   },
                 },
               ],
@@ -391,22 +388,22 @@ describe('Alliance Gravity bid adapter tests', () => {
       };
 
       const output = spec.interpretResponse(response);
-      const expectedOutut = [{
+      const expectedOutput = [{
         requestId: '4ce809b61a3928',
         cpm: 5,
         width: 1,
         height: 1,
+        adUnitCode: 'div-1',
         creativeId: '97517771',
         currency: 'USD',
         netRevenue: true,
-        divId: 'div-1',
         ttl: 120,
         mediaType: 'video',
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
         vastXml: '<VAST>vast</VAST>',
         renderer: output[0].renderer,
       }];
-      expect(output).to.eql(expectedOutut);
+      expect(output).to.eql(expectedOutput);
     });
 
     it('native responses', () => {
