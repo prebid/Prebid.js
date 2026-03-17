@@ -102,7 +102,7 @@ const converter = ortbConverter({
   },
 });
 
-function getRtdTargetingFromRequest(request: any): Record<string, string> {
+function getRtdTargetingFromRequest(request: AdapterRequest): Record<string, string> {
   const targeting: Record<string, string> = {};
   const imps = request?.data?.imp;
   if (!Array.isArray(imps)) return targeting;
