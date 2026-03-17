@@ -14,7 +14,7 @@ import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 const MODULE_NAME = 'startioId';
 const DEFAULT_ENDPOINT = 'https://cs.startappnetwork.com/get-uid-obj?p=m4b8b3y4';
 
-const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function getCachedId() {
   let cachedId;
