@@ -16,7 +16,7 @@ const GVLID = 596;
 let keyValues = {};
 let apiCallPromise = Promise.resolve();
 
-export const insurAdsRtdProvider = {
+export const insuradsRtdProvider = {
   name: MODULE_NAME,
   gvlid: GVLID,
   init: init,
@@ -114,7 +114,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
 function beforeInit() {
   // take actions to get data as soon as possible
-  submodule('realTimeData', insurAdsRtdProvider);
+  submodule('realTimeData', insuradsRtdProvider);
 }
 
 beforeInit();

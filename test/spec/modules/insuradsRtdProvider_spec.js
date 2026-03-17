@@ -1,4 +1,4 @@
-import { insurAdsRtdProvider } from 'modules/insuradsRtdProvider.js';
+import { insuradsRtdProvider } from 'modules/insuradsRtdProvider.js';
 import * as ajax from 'src/ajax.js';
 import { config } from 'src/config.js';
 
@@ -18,7 +18,7 @@ const sampleKeyValues = {
   'iat-app': ['2954']
 };
 
-describe('insurAdsRtdProvider', function () {
+describe('insuradsRtdProvider', function () {
   let fetchStub;
 
   beforeEach(function () {
@@ -30,13 +30,13 @@ describe('insurAdsRtdProvider', function () {
     fetchStub.restore();
   });
 
-  describe('insurAdsRtdProvider submodule', function () {
+  describe('insuradsRtdProvider submodule', function () {
     it('should have correct module name', function () {
-      expect(insurAdsRtdProvider.name).to.equal('insuradsRtd');
+      expect(insuradsRtdProvider.name).to.equal('insuradsRtd');
     });
 
     it('should have correct GVLID', function () {
-      expect(insurAdsRtdProvider.gvlid).to.equal(596);
+      expect(insuradsRtdProvider.gvlid).to.equal(596);
     });
   });
 
@@ -45,12 +45,12 @@ describe('insurAdsRtdProvider', function () {
       const config = {
         params: {}
       };
-      expect(insurAdsRtdProvider.init(config)).to.be.false;
+      expect(insuradsRtdProvider.init(config)).to.be.false;
     });
 
     it('should return false when params is missing', function () {
       const config = {};
-      expect(insurAdsRtdProvider.init(config)).to.be.false;
+      expect(insuradsRtdProvider.init(config)).to.be.false;
     });
 
     it('should return true when publicId is provided', function () {
@@ -59,7 +59,7 @@ describe('insurAdsRtdProvider', function () {
         json: () => Promise.resolve({ keyValues: {} })
       });
 
-      expect(insurAdsRtdProvider.init(sampleConfig)).to.be.true;
+      expect(insuradsRtdProvider.init(sampleConfig)).to.be.true;
     });
 
     it('should make API call with correct URL', function () {
@@ -68,7 +68,7 @@ describe('insurAdsRtdProvider', function () {
         json: () => Promise.resolve({ keyValues: {} })
       });
 
-      insurAdsRtdProvider.init(sampleConfig);
+      insuradsRtdProvider.init(sampleConfig);
 
       expect(fetchStub.called).to.be.true;
       const fetchUrl = fetchStub.getCall(0).args[0];
@@ -82,7 +82,7 @@ describe('insurAdsRtdProvider', function () {
         json: () => Promise.resolve({ keyValues: {} })
       });
 
-      insurAdsRtdProvider.init(sampleConfig);
+      insuradsRtdProvider.init(sampleConfig);
 
       const fetchOptions = fetchStub.getCall(0).args[1];
       expect(fetchOptions.keepalive).to.be.true;
@@ -97,7 +97,7 @@ describe('insurAdsRtdProvider', function () {
         json: () => Promise.resolve({ keyValues: sampleKeyValues })
       });
 
-      insurAdsRtdProvider.init(sampleConfig);
+      insuradsRtdProvider.init(sampleConfig);
 
       // Give the promise time to resolve and then verify bid request enrichment
       setTimeout(() => {
@@ -117,7 +117,7 @@ describe('insurAdsRtdProvider', function () {
           }]
         };
 
-        insurAdsRtdProvider.getBidRequestData(reqBidsConfigObj, () => {
+        insuradsRtdProvider.getBidRequestData(reqBidsConfigObj, () => {
           expect(reqBidsConfigObj.adUnits[0].bids[0].params.rtdData).to.deep.equal(sampleKeyValues);
           expect(reqBidsConfigObj.adUnits[0].bids[0].params.existing).to.equal('keep');
           expect(reqBidsConfigObj.adUnits[0].bids[1].params.rtdData).to.equal(undefined);
@@ -129,7 +129,7 @@ describe('insurAdsRtdProvider', function () {
     it('should handle API error gracefully', function () {
       fetchStub.rejects(new Error('Network error'));
 
-      expect(insurAdsRtdProvider.init(sampleConfig)).to.be.true;
+      expect(insuradsRtdProvider.init(sampleConfig)).to.be.true;
     });
 
     it('should handle non-ok response gracefully', function () {
@@ -138,7 +138,7 @@ describe('insurAdsRtdProvider', function () {
         status: 404
       });
 
-      expect(insurAdsRtdProvider.init(sampleConfig)).to.be.true;
+      expect(insuradsRtdProvider.init(sampleConfig)).to.be.true;
     });
   });
 });
