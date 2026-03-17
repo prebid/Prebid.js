@@ -54,10 +54,6 @@ export interface AjaxOptions {
    */
   browsingTopics?: boolean
   /**
-   * Whether chrome's PAAPI headers should be sent.
-   */
-  adAuctionHeaders?: boolean;
-  /**
    * If true, suppress warnings
    */
   suppressTopicsEnrollmentWarning?: boolean;
@@ -94,8 +90,8 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
     rqOpts.credentials = 'include';
   }
   if (isSecureContext) {
-    ['browsingTopics', 'adAuctionHeaders'].forEach(opt => {
-      // the Request constructor will throw an exception if the browser supports topics/fledge
+    ['browsingTopics'].forEach(opt => {
+      // the Request constructor will throw an exception if the browser supports topics
       // but we're not in a secure context
       if (options[opt]) {
         rqOpts[opt] = true;

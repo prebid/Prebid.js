@@ -716,6 +716,38 @@ describe('PubMatic adapter', () => {
             expect(imp).to.be.an('array');
             expect(imp[0]).to.have.property('native');
           });
+
+          it('should set privacy to 1 in native request when privacyLink is present', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native.privacyLink = { required: false };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            expect(nativeRequest).to.have.property('privacy').equal(1);
+          });
+
+          it('should not add privacyLink as an asset in the native request', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native.privacyLink = { required: true };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            const hasPrivacyLinkAsset = nativeRequest.assets.some(asset => asset.privacyLink !== undefined);
+            expect(hasPrivacyLinkAsset).to.be.false;
+          });
+
+          it('should set privacy to 1 and have no assets when privacyLink is the only native key', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native = { privacyLink: { required: false } };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            expect(nativeRequest).to.have.property('privacy').equal(1);
+            expect(nativeRequest.assets).to.deep.equal([]);
+          });
         });
       }
       describe('ShouldAddDealTargeting', () => {
@@ -1856,13 +1888,13 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should add viewability to imp.ext when measurable', () => {
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
     const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');
   });
@@ -1870,13 +1902,13 @@ describe('addViewabilityToImp', () => {
   it('should not add viewability if element is not found', () => {
     document.getElementById.restore();
     sandbox.stub(document, 'getElementById').returns(null);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.not.have.property('viewability');
   });
 
   it('should create imp.ext if not present', () => {
     imp = {};
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.exist;
     expect(imp.ext).to.have.property('viewability');
   });
