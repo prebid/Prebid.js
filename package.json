@@ -142,11 +142,11 @@
     "yargs": "^1.3.1"
   },
   "dependencies": {
-    "@types/google-publisher-tag": "^1.20250210.0",
     "@babel/core": "^7.28.4",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@babel/runtime": "^7.28.3",
+    "@types/google-publisher-tag": "^1.20250210.0",
     "core-js": "^3.45.1",
     "crypto-js": "^4.2.0",
     "dlv": "^1.1.3",
