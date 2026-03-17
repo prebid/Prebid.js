@@ -7,7 +7,7 @@ import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
 
 /**
  * Safe deep property access (re-export from dlv). Used by declaration emit for .d.ts.
- * @type {<T>(obj: T, path: string | Array<string>, defaultValue?: any) => any}
+ * @type {(obj: any, path: string | Array<string>, defaultValue?: any) => any}
  */
 export const deepAccess = _deepAccess;
 export { dset as deepSetValue } from 'dset';

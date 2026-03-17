@@ -141,17 +141,10 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
   }
 }
 
-/** Minimal shape used by GdprConsentHandler.getConsentMeta (full type comes from consentManagementTcf). */
-interface GdprConsentMetaSource {
-  vendorData?: { tcString?: string };
-  gdprApplies?: boolean;
-  apiVersion?: number;
-}
-
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
   hashFields = ["gdprApplies", "consentString"];
   getConsentMeta() {
-    const consentData = this.getConsentData() as GdprConsentMetaSource | null;
+    const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
         gdprApplies: consentData.gdprApplies as boolean,
