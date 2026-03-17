@@ -3,7 +3,8 @@ import {
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
   ACTIVITY_SYNC_USER,
-  ACTIVITY_TRANSMIT_PRECISE_GEO, ACTIVITY_TRANSMIT_UFPD
+  ACTIVITY_TRANSMIT_PRECISE_GEO,
+  ACTIVITY_TRANSMIT_UFPD
 } from '../../src/activities/activities.js';
 import { gppDataHandler } from '../../src/adapterManager.js';
 import { logInfo } from '../../src/utils.js';
