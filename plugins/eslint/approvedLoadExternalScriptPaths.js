@@ -33,8 +33,6 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/optableRtdProvider.js',
   'modules/oftmediaRtdProvider.js',
   'modules/panxoRtdProvider.js',
-  'modules/paywallsRtdProvider.js',
-  'modules/paywallsAnalyticsAdapter.js',
   // UserId Submodules
   'modules/justIdSystem.js',
   'modules/tncIdSystem.js',
