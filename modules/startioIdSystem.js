@@ -7,50 +7,12 @@
 import { logError, formatQS } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const MODULE_NAME = 'startioId';
 const DEFAULT_ENDPOINT = 'https://cs.startappnetwork.com/get-uid-obj?p=m4b8b3y4';
 
-const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
-
-function getCachedId() {
-  let cachedId;
-
-  if (storage.cookiesAreEnabled()) {
-    cachedId = storage.getCookie(MODULE_NAME);
-  }
-
-  if (!cachedId && storage.hasLocalStorage()) {
-    const expirationStr = storage.getDataFromLocalStorage(`${MODULE_NAME}_exp`);
-    if (expirationStr) {
-      const expirationDate = new Date(expirationStr);
-      if (expirationDate > new Date()) {
-        cachedId = storage.getDataFromLocalStorage(MODULE_NAME);
-      }
-    }
-  }
-
-  return cachedId || null;
-}
-
-function storeId(id, expiresInDays) {
-  expiresInDays = expiresInDays || 90;
-  const expirationDate = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toUTCString();
-
-  if (storage.cookiesAreEnabled()) {
-    storage.setCookie(MODULE_NAME, id, expirationDate, 'None');
-  }
-
-  if (storage.hasLocalStorage()) {
-    storage.setDataInLocalStorage(`${MODULE_NAME}_exp`, expirationDate);
-    storage.setDataInLocalStorage(MODULE_NAME, id);
-  }
-}
-
-function fetchIdFromServer(callback, expiresInDays, consentData) {
+function fetchIdFromServer(callback, consentData) {
   const consentParams = getUserSyncParams(
     consentData?.gdpr,
     consentData?.usp,
@@ -66,7 +28,6 @@ function fetchIdFromServer(callback, expiresInDays, consentData) {
         const responseObj = JSON.parse(response);
         if (responseObj && responseObj.uid) {
           responseId = responseObj.uid;
-          storeId(responseId, expiresInDays);
         } else {
           logError(`${MODULE_NAME}: Server response missing 'uid' field`);
         }
@@ -94,14 +55,10 @@ export const startioIdSubmodule = {
     if (storedId) {
       return { id: storedId };
     }
-
-    const cachedId = getCachedId();
-    if (cachedId) {
-      return { id: cachedId };
+    if (config.storage && config.storage.expires == null) {
+      config.storage.expires = 90;
     }
-    const storageConfig = config && config.storage;
-    const expiresInDays = storageConfig && storageConfig.expires;
-    return { callback: (cb) => fetchIdFromServer(cb, expiresInDays, consentData) };
+    return { callback: (cb) => fetchIdFromServer(cb, consentData) };
   },
 
   eids: {

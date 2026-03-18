@@ -2,11 +2,9 @@ import * as utils from '../../../src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { startioIdSubmodule } from 'modules/startioIdSystem.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
-import { getStorageManager } from '../../../src/storageManager.js';
 
 describe('StartIO ID System', function () {
   let sandbox;
-  let storage;
 
   const validConfig = {
     params: {},
@@ -18,16 +16,6 @@ describe('StartIO ID System', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'logError');
-    storage = getStorageManager({ moduleType: 'userId', moduleName: 'startioId' });
-
-    // Clear any cached storage
-    if (storage.cookiesAreEnabled()) {
-      storage.setCookie('startioId', '', new Date(0).toUTCString());
-    }
-    if (storage.hasLocalStorage()) {
-      storage.removeDataFromLocalStorage('startioId');
-      storage.removeDataFromLocalStorage('startioId_exp');
-    }
   });
 
   afterEach(function () {
@@ -206,6 +194,18 @@ describe('StartIO ID System', function () {
 
       expect(utils.logError.calledOnce).to.be.true;
       expect(utils.logError.args[0][0]).to.include('encountered an error');
+    });
+
+    it('should set default storage.expires to 90 when not provided', function () {
+      const config = { params: {}, storage: { type: 'html5', name: 'startioId' } };
+      startioIdSubmodule.getId(config);
+      expect(config.storage.expires).to.equal(90);
+    });
+
+    it('should not override storage.expires when already set', function () {
+      const config = { params: {}, storage: { type: 'html5', name: 'startioId', expires: 365 } };
+      startioIdSubmodule.getId(config);
+      expect(config.storage.expires).to.equal(365);
     });
   });
 });
