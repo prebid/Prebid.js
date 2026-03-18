@@ -1,5 +1,5 @@
 import { deepAccess, deepSetValue, logInfo } from '../../src/utils.js';
-import {Renderer} from '../../src/Renderer.js';
+import { Renderer } from '../../src/Renderer.js';
 import { INSTREAM, OUTSTREAM } from '../../src/video.js';
 import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
