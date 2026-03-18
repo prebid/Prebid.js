@@ -286,10 +286,10 @@ describe('video.js', function () {
       expect(valid).to.equal(false);
     });
 
-    it('validates vastXml-only bids when cache.allowVastOnly is enabled', function () {
+    it('validates vastXml-only bids when cache.allowVastXmlOnly is enabled', function () {
       utilsMock.expects('logWarn').once();
       utilsMock.expects('logError').never();
-      config.setConfig({ cache: { allowVastOnly: true } });
+      config.setConfig({ cache: { allowVastXmlOnly: true } });
 
       const adUnits = [{
         adUnitId: 'au',
