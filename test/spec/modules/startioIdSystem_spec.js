@@ -27,6 +27,10 @@ describe('StartIO ID System', function () {
       expect(startioIdSubmodule.name).to.equal('startioId');
     });
 
+    it('should have gvlid', function () {
+      expect(startioIdSubmodule.gvlid).to.equal(1216);
+    });
+
     it('should have eids configuration', function () {
       expect(startioIdSubmodule.eids).to.deep.equal({
         'startioId': {

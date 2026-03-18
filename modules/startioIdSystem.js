@@ -10,6 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const MODULE_NAME = 'startioId';
+const GVLID = 1216;
 const DEFAULT_ENDPOINT = 'https://cs.startappnetwork.com/get-uid-obj?p=m4b8b3y4';
 
 function fetchIdFromServer(callback, consentData) {
@@ -46,6 +47,7 @@ function fetchIdFromServer(callback, consentData) {
 
 export const startioIdSubmodule = {
   name: MODULE_NAME,
+  gvlid: GVLID,
   decode(value) {
     return value && typeof value === 'string'
       ? { 'startioId': value }
