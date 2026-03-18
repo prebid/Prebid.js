@@ -1,7 +1,7 @@
 import { deepSetValue } from '../src/utils.js';
-import {AdapterRequest, BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 import { interpretResponse, enrichImp, getUserSyncs } from '../libraries/alliance_gravityUtils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
@@ -56,7 +56,7 @@ const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const data:ORTBRequest = converter.toORTB({bidRequests, bidderRequest})
+  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest })
   const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
