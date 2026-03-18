@@ -134,7 +134,7 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
  * @param adUnitCodes
  * @param getSlots
  */
-export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], getSlots = () => window.googletag.pubads().getSlots()): ByAdUnit<googletag.Slot[]> {
+export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], getSlots = () => (window as any).googletag.pubads().getSlots()): ByAdUnit<any[]> {
   return getSlots().reduce((auToSlots, slot) => {
     Object.keys(auToSlots).filter(isAdUnitCodeMatchingSlot(slot))
       .forEach(au => auToSlots[au].push(slot));
@@ -177,7 +177,10 @@ type TargetingValueLists = TargetingMap<string[]>;
 type TargetingArray = ByAdUnit<TargetingValueLists[]>[];
 
 type AdUnitPredicate = (adUnitCode: AdUnitCode) => boolean;
-export type SlotMatchingFn = (slot: googletag.Slot) => AdUnitPredicate;
+// Use `any` to avoid requiring GPT typings in consuming projects.
+// The runtime behavior still depends on GPT being present on `window.googletag`.
+type GPTSlot = any;
+export type SlotMatchingFn = (slot: GPTSlot) => AdUnitPredicate;
 
 declare module './events' {
   interface Events {
