@@ -16,7 +16,7 @@ pbjs.setConfig({
             storage: {
                 type: 'cookie&html5',        // 'cookie', 'html5', or 'cookie&html5'
                 name: 'startioId',
-                expires: 365                 // optional, 90 days by default
+                expires: 90                 // optional, 90 days by default
             }
         }],
         filterSettings: {
