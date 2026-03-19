@@ -11,7 +11,7 @@ const GVLID = 1360;
 const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
-const STORAGE_TTL = 3600; // 1 hour in seconds
+const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -204,7 +204,11 @@ class NodalsAiRtdProvider {
   }
 
   #getEngine() {
-    return window?.$nodals?.adTargetingEngine[ENGINE_VESION];
+    try {
+      return window?.$nodals?.adTargetingEngine?.[ENGINE_VESION];
+    } catch (error) {
+      return undefined;
+    }
   }
 
   #setOverrides(params) {
@@ -320,7 +324,7 @@ class NodalsAiRtdProvider {
   #dataIsStale(dataEnvelope) {
     const currentTime = Date.now();
     const dataTime = dataEnvelope.createdAt || 0;
-    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? STORAGE_TTL;
+    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? DEFAULT_STORAGE_TTL;
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 

@@ -227,6 +227,7 @@ export const convert51DegreesDataToOrtb2 = (data51) => {
  * @param {number} [device.screenpixelsphysicalwidth] Screen physical width in pixels
  * @param {number} [device.pixelratio] Pixel ratio
  * @param {number} [device.screeninchesheight] Screen height in inches
+ * @param {string} [device.thirdpartycookiesenabled] Third-party cookies enabled
  *
  * @returns {Object} Enriched ORTB2 object
  */
@@ -261,7 +262,12 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth);
   deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio);
   deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
+  // kept for backward compatibility
   deepSetNotEmptyValue(ortb2Device, 'ext.fiftyonedegrees_deviceId', device.deviceid);
+  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid);
+  if (['True', 'False'].includes(device.thirdpartycookiesenabled)) {
+    deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
+  }
 
   return {device: ortb2Device};
 }

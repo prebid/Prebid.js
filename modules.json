@@ -34,5 +34,7 @@
   "criteoIdSystem",
   "connectadBidAdapter",
   "gptPreAuction",
-  "equativBidAdapter"
+  "equativBidAdapter",
+  "allegroBidAdapter",
+  "richaudienceBidAdapter"
 ]

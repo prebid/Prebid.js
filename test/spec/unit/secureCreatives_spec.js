@@ -1,4 +1,4 @@
-import {getReplier, receiveMessage, resizeRemoteCreative} from 'src/secureCreatives.js';
+import {getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative} from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -629,6 +629,67 @@ describe('secureCreatives', () => {
         height: 250,
       });
       sinon.assert.notCalled(document.getElementById);
+    })
+  })
+
+  describe('resizeAnchor', () => {
+    let ins, clock;
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      ins = {
+        style: {
+          width: 'auto',
+          height: 'auto'
+        }
+      }
+    });
+    afterEach(() => {
+      clock.restore();
+    })
+    function setSize(width = '300px', height = '250px') {
+      ins.style.width = width;
+      ins.style.height = height;
+    }
+    it('should not change dimensions until they have been set externally', () => {
+      const pm = resizeAnchor(ins, 100, 200);
+      clock.tick(200);
+      expect(ins.style).to.eql({width: 'auto', height: 'auto'});
+      setSize();
+      clock.tick(200);
+      return pm.then(() => {
+        expect(ins.style.width).to.eql('100px');
+        expect(ins.style.height).to.eql('200px');
+      })
+    })
+    it('should quit trying if dimensions are never set externally', () => {
+      const pm = resizeAnchor(ins, 100, 200);
+      clock.tick(5000);
+      return pm
+        .then(() => { sinon.assert.fail('should have thrown') })
+        .catch(err => {
+          expect(err.message).to.eql('Could not resize anchor')
+        })
+    });
+    it('should not choke when initial width/ height are null', () => {
+      ins.style = {};
+      const pm = resizeAnchor(ins, 100, 200);
+      clock.tick(200);
+      setSize();
+      clock.tick(200);
+      return pm.then(() => {
+        expect(ins.style.width).to.eql('100px');
+        expect(ins.style.height).to.eql('200px');
+      })
+    });
+
+    it('should not resize dimensions that are set to 100%', () => {
+      const pm = resizeAnchor(ins, 100, 200);
+      setSize('100%', '250px');
+      clock.tick(200);
+      return pm.then(() => {
+        expect(ins.style.width).to.eql('100%');
+        expect(ins.style.height).to.eql('200px');
+      });
     })
   })
 });

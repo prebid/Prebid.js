@@ -27,10 +27,10 @@ const BIDDER_SPECIFIC_REQUEST_PROPS = new Set(['bidderCode', 'bidderRequestId', 
 const getMinimumFloor = (() => {
   const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
   return function(candidates) {
-    let min;
+    let min = null;
     for (const candidate of candidates) {
       if (candidate?.bidfloorcur == null || candidate?.bidfloor == null) return null;
-      min = min == null ? candidate : getMin(min, candidate);
+      min = min === null ? candidate : getMin(min, candidate);
     }
     return min;
   }
@@ -133,7 +133,7 @@ const PBS_CONVERTER = ortbConverter({
         // also, take overrides from s2sConfig.adapterOptions
         const adapterOptions = context.s2sBidRequest.s2sConfig.adapterOptions;
         for (const req of context.actualBidRequests.values()) {
-          setImpBidParams(imp, req, context, context);
+          setImpBidParams(imp, req);
           if (adapterOptions && adapterOptions[req.bidder]) {
             Object.assign(imp.ext.prebid.bidder[req.bidder], adapterOptions[req.bidder]);
           }
@@ -236,6 +236,10 @@ const PBS_CONVERTER = ortbConverter({
       },
       extPrebidAliases(orig, ortbRequest, proxyBidderRequest, context) {
         // override alias processing to do it for each bidder in the request
+        context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
+      },
+      extPrebidPageViewIds(orig, ortbRequest, proxyBidderRequest, context) {
+        // override page view ID processing to do it for each bidder in the request
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       }
     },

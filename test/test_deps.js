@@ -39,6 +39,8 @@ sinon.useFakeXMLHttpRequest = fakeXhr.useFakeXMLHttpRequest.bind(fakeXhr);
 sinon.createFakeServer = fakeServer.create.bind(fakeServer);
 sinon.createFakeServerWithClock = fakeServerWithClock.create.bind(fakeServerWithClock);
 
+localStorage.clear();
+
 require('test/helpers/global_hooks.js');
 require('test/helpers/consentData.js');
 require('test/helpers/prebidGlobal.js');

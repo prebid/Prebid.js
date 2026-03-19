@@ -52,7 +52,7 @@ export const spec = {
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
-        cpuc: (typeof window.navigator !== 'undefined' ? window.navigator.hardwareConcurrency : null),
+        cpuc: null,
         kws: bid.params.keywords,
         schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),

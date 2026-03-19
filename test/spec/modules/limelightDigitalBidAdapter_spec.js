@@ -736,6 +736,101 @@ describe('limelightDigitalAdapter', function () {
       ]);
     });
   });
+  describe('getFloor support', function() {
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      },
+      refererInfo: {
+        page: 'testPage'
+      }
+    };
+    it('should include floorInfo when getFloor is available', function() {
+      const bidWithFloor = {
+        ...bid1,
+        getFloor: function(params) {
+          if (params.size[0] === 300 && params.size[1] === 250) {
+            return { currency: 'USD', floor: 2.0 };
+          }
+          return { currency: 'USD', floor: 0 };
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      const adUnit = serverRequests[0].data.adUnits[0];
+      expect(adUnit.sizes).to.have.lengthOf(1);
+      expect(adUnit.sizes[0].floorInfo).to.exist;
+      expect(adUnit.sizes[0].floorInfo.currency).to.equal('USD');
+      expect(adUnit.sizes[0].floorInfo.floor).to.equal(2.0);
+    });
+    it('should set floorInfo to null when getFloor is not available', function() {
+      const bidWithoutFloor = { ...bid1 };
+      delete bidWithoutFloor.getFloor;
+
+      const serverRequests = spec.buildRequests([bidWithoutFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      expect(serverRequests[0].data.adUnits[0].sizes[0].floorInfo).to.be.null;
+    });
+    it('should handle multiple sizes with different floors', function() {
+      const bidWithMultipleSizes = {
+        ...bid1,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [728, 90]]
+          }
+        },
+        getFloor: function(params) {
+          if (params.size[0] === 300 && params.size[1] === 250) {
+            return { currency: 'USD', floor: 1.5 };
+          }
+          if (params.size[0] === 728 && params.size[1] === 90) {
+            return { currency: 'USD', floor: 2.0 };
+          }
+          return { currency: 'USD', floor: 0 };
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithMultipleSizes], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      const adUnit = serverRequests[0].data.adUnits[0];
+      expect(adUnit.sizes).to.have.lengthOf(2);
+      expect(adUnit.sizes[0].floorInfo.floor).to.equal(1.5);
+      expect(adUnit.sizes[1].floorInfo.floor).to.equal(2.0);
+    });
+    it('should set floorInfo to null when getFloor returns empty object', function() {
+      const bidWithEmptyFloor = {
+        ...bid1,
+        getFloor: function() {
+          return {};
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithEmptyFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      expect(serverRequests[0].data.adUnits[0].sizes[0].floorInfo).to.deep.equal({});
+    });
+    it('should handle getFloor errors and set floorInfo to null', function() {
+      const bidWithErrorFloor = {
+        ...bid1,
+        getFloor: function() {
+          throw new Error('Floor module error');
+        }
+      };
+
+      const serverRequests = spec.buildRequests([bidWithErrorFloor], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
+      const adUnit = serverRequests[0].data.adUnits[0];
+      expect(adUnit.sizes[0].floorInfo).to.be.null;
+    });
+  });
 });
 
 function validateAdUnit(adUnit, bid) {
@@ -758,7 +853,8 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
     return {
       width: size[0],
-      height: size[1]
+      height: size[1],
+      floorInfo: null
     }
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);

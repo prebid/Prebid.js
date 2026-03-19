@@ -77,10 +77,14 @@ describe('Yahoo ConnectID Submodule', () => {
       removeLocalStorageDataStub.restore();
     });
 
-    function invokeGetIdAPI(configParams, consentData) {
-      const result = connectIdSubmodule.getId({
+    function invokeGetIdAPI(configParams, consentData, storageConfig) {
+      const config = {
         params: configParams
-      }, consentData);
+      };
+      if (storageConfig) {
+        config.storage = storageConfig;
+      }
+      const result = connectIdSubmodule.getId(config, consentData);
       if (typeof result === 'object' && result.callback) {
         result.callback(sinon.stub());
       }
@@ -799,6 +803,130 @@ describe('Yahoo ConnectID Submodule', () => {
           );
           dateNowStub.restore();
 
+          expect(setLocalStorageStub.calledOnce).to.be.true;
+          expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(expectedStoredData));
+        });
+
+        it('stores the result in localStorage only when storage type is html5', () => {
+          getAjaxFnStub.restore();
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(0);
+          const upsResponse = {connectid: 'html5only'};
+          const expectedStoredData = {
+            connectid: 'html5only',
+            puid: PUBLISHER_USER_ID,
+            lastSynced: 0,
+            lastUsed: 0
+          };
+          invokeGetIdAPI({
+            puid: PUBLISHER_USER_ID,
+            pixelId: PIXEL_ID
+          }, consentData, {type: 'html5'});
+          const request = server.requests[0];
+          request.respond(
+            200,
+            {'Content-Type': 'application/json'},
+            JSON.stringify(upsResponse)
+          );
+          dateNowStub.restore();
+
+          expect(setCookieStub.called).to.be.false;
+          expect(setLocalStorageStub.calledOnce).to.be.true;
+          expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(expectedStoredData));
+        });
+
+        it('stores the result in cookie only when storage type is cookie', () => {
+          getAjaxFnStub.restore();
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(0);
+          const upsResponse = {connectid: 'cookieonly'};
+          const expectedStoredData = {
+            connectid: 'cookieonly',
+            puid: PUBLISHER_USER_ID,
+            lastSynced: 0,
+            lastUsed: 0
+          };
+          const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
+          invokeGetIdAPI({
+            puid: PUBLISHER_USER_ID,
+            pixelId: PIXEL_ID
+          }, consentData, {type: 'cookie'});
+          const request = server.requests[0];
+          request.respond(
+            200,
+            {'Content-Type': 'application/json'},
+            JSON.stringify(upsResponse)
+          );
+          dateNowStub.restore();
+
+          expect(setCookieStub.calledOnce).to.be.true;
+          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(expectedStoredData));
+          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setLocalStorageStub.called).to.be.false;
+        });
+
+        it('does not sync localStorage to cookie when storage type is html5', () => {
+          const localStorageData = {connectId: 'foobarbaz'};
+          getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
+          invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData, {type: 'html5'});
+
+          expect(setCookieStub.called).to.be.false;
+        });
+
+        it('updates existing ID with html5 storage type without writing cookie', () => {
+          const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
+          const cookieData = {connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days};
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(20);
+          const newCookieData = Object.assign({}, cookieData, {lastUsed: 20})
+          const result = invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData, {type: 'html5'});
+          dateNowStub.restore();
+
+          expect(result).to.be.an('object').that.has.all.keys('id');
+          expect(setCookieStub.called).to.be.false;
+          expect(setLocalStorageStub.calledOnce).to.be.true;
+          expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setLocalStorageStub.firstCall.args[1]).to.equal(JSON.stringify(newCookieData));
+        });
+
+        it('stores the result in both storages when storage type is cookie&html5', () => {
+          getAjaxFnStub.restore();
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(0);
+          const upsResponse = {connectid: 'both'};
+          const expectedStoredData = {
+            connectid: 'both',
+            puid: PUBLISHER_USER_ID,
+            lastSynced: 0,
+            lastUsed: 0
+          };
+          const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
+          invokeGetIdAPI({
+            puid: PUBLISHER_USER_ID,
+            pixelId: PIXEL_ID
+          }, consentData, {type: 'cookie&html5'});
+          const request = server.requests[0];
+          request.respond(
+            200,
+            {'Content-Type': 'application/json'},
+            JSON.stringify(upsResponse)
+          );
+          dateNowStub.restore();
+
+          expect(setCookieStub.calledOnce).to.be.true;
+          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(expectedStoredData));
+          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
           expect(setLocalStorageStub.calledOnce).to.be.true;
           expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
           expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(expectedStoredData));

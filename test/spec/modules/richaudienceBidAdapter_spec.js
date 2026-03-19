@@ -430,7 +430,6 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('timeout').and.to.equal(600);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
     expect(typeof requestContent.scr_rsl === 'string')
-    expect(typeof requestContent.cpuc === 'number')
     expect(typeof requestContent.gpid === 'string')
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })

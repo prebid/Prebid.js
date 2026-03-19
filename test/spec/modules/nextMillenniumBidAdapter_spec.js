@@ -18,8 +18,8 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'imp - banner',
         data: {
+          impId: '5',
           id: '123',
-          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-banner-1',
@@ -37,7 +37,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'e36ea395f67f',
+          id: '5',
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
@@ -53,8 +53,8 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'imp - video',
         data: {
+          impId: '3',
           id: '234',
-          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {video: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1}},
             adUnitCode: 'test-video-1',
@@ -71,7 +71,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'e36ea395f67f',
+          id: '3',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {
@@ -89,8 +89,8 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'imp - mediaTypes.video is empty',
         data: {
+          impId: '4',
           id: '234',
-          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {video: {w: 640, h: 480}},
             bidId: 'e36ea395f67f',
@@ -105,7 +105,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'e36ea395f67f',
+          id: '4',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
@@ -115,8 +115,8 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'imp with gpid',
         data: {
+          impId: '2',
           id: '123',
-          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-gpid-1',
@@ -132,7 +132,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'e36ea395f67a',
+          id: '2',
           ext: {
             prebid: {storedrequest: {id: '123'}},
             gpid: 'imp-gpid-123'
@@ -144,8 +144,8 @@ describe('nextMillenniumBidAdapterTests', () => {
       {
         title: 'imp with pbadslot',
         data: {
+          impId: '1',
           id: '123',
-          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-gpid-1',
@@ -167,7 +167,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'e36ea395f67a',
+          id: '1',
           ext: {
             prebid: {storedrequest: {id: '123'}},
           },
@@ -178,8 +178,8 @@ describe('nextMillenniumBidAdapterTests', () => {
 
     for (const {title, data, expected} of dataTests) {
       it(title, () => {
-        const {bid, id, mediaTypes, postBody} = data;
-        const imp = getImp(bid, id, mediaTypes, postBody);
+        const {impId, bid, id, mediaTypes} = data;
+        const imp = getImp(impId, bid, id, mediaTypes);
         expect(imp).to.deep.equal(expected);
       });
     }
@@ -900,17 +900,17 @@ describe('nextMillenniumBidAdapterTests', () => {
   describe('Check ext.next_mil_imps', function() {
     const expectedNextMilImps = [
       {
-        impId: 'bid1234',
+        impId: '1',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'bid1235',
+        impId: '2',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'bid1236',
+        impId: '3',
         nextMillennium: {refresh_count: 1},
       },
     ];
@@ -1183,6 +1183,12 @@ describe('nextMillenniumBidAdapterTests', () => {
         expect(requestData.id).to.equal(expected.id);
         expect(requestData.tmax).to.equal(expected.tmax);
         expect(requestData?.imp?.length).to.equal(expected.impSize);
+
+        for (let i = 0; i < bidRequests.length; i++) {
+          const impId = String(i + 1);
+          expect(impId).to.equal(requestData.imp[i].id);
+          expect(bidRequests[i].bidId).to.equal(request[0].bidIds.get(impId));
+        };
       });
     };
   });
@@ -1199,7 +1205,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                 bid: [
                   {
                     id: '7457329903666272789-0',
-                    impid: '700ce0a43f72',
+                    impid: '1',
                     price: 0.5,
                     adm: 'Hello! It\'s a test ad!',
                     adid: '96846035-0',
@@ -1210,7 +1216,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
                   {
                     id: '7457329903666272789-1',
-                    impid: '700ce0a43f73',
+                    impid: '2',
                     price: 0.7,
                     adm: 'https://some_vast_host.com/vast.xml',
                     adid: '96846035-1',
@@ -1222,7 +1228,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
                   {
                     id: '7457329903666272789-2',
-                    impid: '700ce0a43f74',
+                    impid: '3',
                     price: 1.0,
                     adm: '<vast><ad></ad></vast>',
                     adid: '96846035-3',
@@ -1236,6 +1242,14 @@ describe('nextMillenniumBidAdapterTests', () => {
             ],
             cur: 'USD',
           },
+        },
+
+        bidRequest: {
+          bidIds: new Map([
+            ['1', '700ce0a43f72'],
+            ['2', '700ce0a43f73'],
+            ['3', '700ce0a43f74'],
+          ]),
         },
 
         expected: [
@@ -1308,15 +1322,19 @@ describe('nextMillenniumBidAdapterTests', () => {
     const tests = [
       {
         title: 'parameters adSlots and allowedAds are empty',
+        impId: '1',
         bid: {
           params: {},
         },
 
-        expected: {},
+        expected: {
+          impId: '1',
+        },
       },
 
       {
         title: 'parameters adSlots and allowedAds',
+        impId: '2',
         bid: {
           params: {
             adSlots: ['test1'],
@@ -1325,15 +1343,17 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
+          impId: '2',
           adSlots: ['test1'],
           allowedAds: ['test2'],
         },
       },
     ];
 
-    for (const {title, bid, expected} of tests) {
+    for (const {title, impId, bid, expected} of tests) {
       it(title, () => {
-        const extNextMilImp = getExtNextMilImp(bid);
+        const extNextMilImp = getExtNextMilImp(impId, bid);
+        expect(extNextMilImp.impId).to.deep.equal(expected.impId);
         expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
         expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });

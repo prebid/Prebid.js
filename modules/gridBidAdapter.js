@@ -47,13 +47,6 @@ const LOG_ERROR_MESS = {
 };
 
 const ALIAS_CONFIG = {
-  'trustx': {
-    endpoint: 'https://grid.bidswitch.net/hbjson?sp=trustx',
-    syncurl: 'https://x.bidswitch.net/sync?ssp=themediagrid',
-    bidResponseExternal: {
-      netRevenue: false
-    }
-  },
   'gridNM': {
     defaultParams: {
       multiRequest: true
@@ -66,7 +59,7 @@ let hasSynced = false;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['playwire', 'adlivetech', 'gridNM', { code: 'trustx', skipPbsAliasing: true }],
+  aliases: ['playwire', 'adlivetech', 'gridNM'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.

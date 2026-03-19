@@ -6,13 +6,14 @@ import {
   intentIqIdSubmodule,
   handleClientHints,
   firstPartyData as moduleFPD,
-  isCMPStringTheSame, createPixelUrl, translateMetadata
+  isCMPStringTheSame, createPixelUrl, translateMetadata,
+  initializeGlobalIIQ
 } from '../../../modules/intentIqIdSystem.js';
 import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
 import { clearAllCookies } from '../../helpers/cookies.js';
 import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
-import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, PREBID, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, PREBID, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import { decryptData } from '../../../libraries/intentIqUtils/cryptionUtils.js';
 import { isCHSupported } from '../../../libraries/intentIqUtils/chUtils.js';
 
@@ -81,34 +82,25 @@ function ensureUAData() {
 }
 
 async function waitForClientHints() {
-  if (!isCHSupported()) return;
-
   const clock = globalThis.__iiqClock;
 
   if (clock && typeof clock.runAllAsync === 'function') {
     await clock.runAllAsync();
-    return;
-  }
-  if (clock && typeof clock.runAll === 'function') {
+  } else if (clock && typeof clock.runAll === 'function') {
     clock.runAll();
     await Promise.resolve();
     await Promise.resolve();
-    return;
-  }
-  if (clock && typeof clock.runToLast === 'function') {
+  } else if (clock && typeof clock.runToLast === 'function') {
     clock.runToLast();
     await Promise.resolve();
-    return;
-  }
-  if (clock && typeof clock.tick === 'function') {
+  } else if (clock && typeof clock.tick === 'function') {
     clock.tick(0);
     await Promise.resolve();
-    return;
+  } else {
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise(r => setTimeout(r, 0));
   }
-
-  await Promise.resolve();
-  await Promise.resolve();
-  await new Promise(r => setTimeout(r, 0));
 }
 
 const testAPILink = 'https://new-test-api.intentiq.com'
@@ -132,6 +124,7 @@ const mockGAM = () => {
 };
 
 describe('IntentIQ tests', function () {
+  this.timeout(10000);
   let sandbox;
   let logErrorStub;
   let clock;
@@ -177,6 +170,23 @@ describe('IntentIQ tests', function () {
     clearAllCookies();
     localStorage.clear();
   });
+
+  it('should create global IIQ identity object', async () => {
+    const globalName = `iiq_identity_${partner}`
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = intentIqIdSubmodule.getId({ params: { partner }}).callback;
+    submoduleCallback(callBackSpy);
+    await waitForClientHints()
+    expect(window[globalName]).to.be.not.undefined
+    expect(window[globalName].partnerData).to.be.not.undefined
+    expect(window[globalName].firstPartyData).to.be.not.undefined
+  })
+
+  it('should not create a global IIQ identity object in case it was already created', () => {
+    intentIqIdSubmodule.getId({ params: { partner }})
+    const secondTimeCalling = initializeGlobalIIQ(partner)
+    expect(secondTimeCalling).to.be.false
+  })
 
   it('should log an error if no configParams were passed when getId', function () {
     const submodule = intentIqIdSubmodule.getId({ params: {} });
@@ -330,10 +340,11 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should set GAM targeting to U initially and update to A after server response', async function () {
+  it('should set GAM targeting to B initially and update to A after server response', async function () {
     const callBackSpy = sinon.spy();
     const mockGamObject = mockGAM();
     const expectedGamParameterName = 'intent_iq_group';
+    defaultConfigParams.params.abPercentage = 0; // "B" provided percentage by user
 
     const originalPubads = mockGamObject.pubads;
     const setTargetingSpy = sinon.spy();
@@ -350,31 +361,67 @@ describe('IntentIQ tests', function () {
     defaultConfigParams.params.gamObjectReference = mockGamObject;
 
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-
     submoduleCallback(callBackSpy);
     await waitForClientHints();
     const request = server.requests[0];
 
     mockGamObject.cmd.forEach(cb => cb());
-    mockGamObject.cmd = []
+    mockGamObject.cmd = [];
 
     const groupBeforeResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
 
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({ group: 'A', tc: 20 })
-    );
+    request.respond(200, responseHeader, JSON.stringify({ tc: 20 }));
 
-    mockGamObject.cmd.forEach(item => item());
+    mockGamObject.cmd.forEach(cb => cb());
+    mockGamObject.cmd = [];
 
     const groupAfterResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
 
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39');
-    expect(groupBeforeResponse).to.deep.equal([NOT_YET_DEFINED]);
+    expect(groupBeforeResponse).to.deep.equal([WITHOUT_IIQ]);
     expect(groupAfterResponse).to.deep.equal([WITH_IIQ]);
-
     expect(setTargetingSpy.calledTwice).to.be.true;
+  });
+
+  it('should set GAM targeting to B when server tc=41', async () => {
+    window.localStorage.clear();
+    const mockGam = mockGAM();
+    defaultConfigParams.params.gamObjectReference = mockGam;
+    defaultConfigParams.params.abPercentage = 100;
+
+    const cb = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    cb(() => {});
+    await waitForClientHints();
+
+    const req = server.requests[0];
+    mockGam.cmd.forEach(fn => fn());
+    const before = mockGam.pubads().getTargeting('intent_iq_group');
+
+    req.respond(200, responseHeader, JSON.stringify({ tc: 41 }));
+    mockGam.cmd.forEach(fn => fn());
+    const after = mockGam.pubads().getTargeting('intent_iq_group');
+
+    expect(before).to.deep.equal([WITH_IIQ]);
+    expect(after).to.deep.equal([WITHOUT_IIQ]);
+  });
+
+  it('should read tc from LS and set relevant GAM group', async () => {
+    window.localStorage.clear();
+    const storageKey = `${FIRST_PARTY_KEY}_${defaultConfigParams.params.partner}`;
+    localStorage.setItem(storageKey, JSON.stringify({ terminationCause: 41 }));
+
+    const mockGam = mockGAM();
+    defaultConfigParams.params.gamObjectReference = mockGam;
+    defaultConfigParams.params.abPercentage = 100;
+
+    const cb = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    cb(() => {});
+    await waitForClientHints();
+
+    mockGam.cmd.forEach(fn => fn());
+    const group = mockGam.pubads().getTargeting('intent_iq_group');
+
+    expect(group).to.deep.equal([WITHOUT_IIQ]);
   });
 
   it('should use the provided gamParameterName from configParams', function () {
@@ -409,7 +456,6 @@ describe('IntentIQ tests', function () {
     localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({
       pcid: 'pcid-1',
       pcidDate: Date.now(),
-      group: 'A',
       isOptedOut: false,
       date: Date.now(),
       sCal: Date.now()
@@ -698,7 +744,6 @@ describe('IntentIQ tests', function () {
       const FPD = {
         pcid: 'c869aa1f-fe40-47cb-810f-4381fec28fc9',
         pcidDate: 1747720820757,
-        group: 'A',
         sCal: Date.now(),
         gdprString: null,
         gppString: null,
@@ -713,13 +758,13 @@ describe('IntentIQ tests', function () {
       const request = server.requests[0];
       expect(request.url).contain("ProfilesEngineServlet?at=39") // server was called
     })
+
     it("Should NOT call the server if FPD has been updated user Opted Out, and 24 hours have not yet passed.", async () => {
       const allowedStorage = ['html5']
       const newPartnerId = 12345
       const FPD = {
         pcid: 'c869aa1f-fe40-47cb-810f-4381fec28fc9',
         pcidDate: 1747720820757,
-        group: 'A',
         isOptedOut: true,
         sCal: Date.now(),
         gdprString: null,
@@ -1546,5 +1591,36 @@ describe('IntentIQ tests', function () {
 
     expect(callBackSpy.calledOnce).to.be.true;
     expect(groupChangedSpy.calledWith(WITH_IIQ)).to.be.true;
+  });
+
+  it('should use group provided by partner', async function () {
+    const groupChangedSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
+    const usedGroup = 'B'
+    const ABTestingConfigurationSource = 'group'
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        ABTestingConfigurationSource,
+        group: usedGroup,
+        groupChanged: groupChangedSpy
+      }
+    };
+
+    const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
+    submoduleCallback(callBackSpy);
+    await waitForClientHints()
+    const request = server.requests[0];
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+
+    expect(request.url).to.contain(`abtg=${usedGroup}`);
+    expect(request.url).to.contain(`ABTestingConfigurationSource=${ABTestingConfigurationSource}`);
+    expect(request.url).to.contain(`testGroup=${usedGroup}`);
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(groupChangedSpy.calledWith(usedGroup)).to.be.true;
   });
 });

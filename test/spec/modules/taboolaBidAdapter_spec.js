@@ -116,6 +116,89 @@ describe('Taboola Adapter', function () {
       spec.onBidWon(bid);
       expect(server.requests[0].url).to.equals('http://win.example.com/3.4')
     });
+
+    it('should not fire nurl when deferBilling is true', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        deferBilling: true
+      }
+      spec.onBidWon(bid);
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  describe('onBidBillable', function () {
+    it('onBidBillable exist as a function', () => {
+      expect(spec.onBidBillable).to.exist.and.to.be.a('function');
+    });
+
+    it('should fire burl when available', function () {
+      const burl = 'http://billing.example.com/${AUCTION_PRICE}';
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl,
+        burl: burl
+      }
+      spec.onBidBillable(bid);
+      expect(server.requests[0].url).to.equals('http://billing.example.com/3.4');
+    });
+
+    it('should fall back to nurl when burl is not available', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl
+      }
+      spec.onBidBillable(bid);
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4');
+    });
+
+    it('should not fire anything when neither burl nor nurl is available', function () {
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250
+      }
+      spec.onBidBillable(bid);
+      expect(server.requests.length).to.equal(0);
+    });
   });
 
   describe('onTimeout', function () {

@@ -114,6 +114,9 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
+    if (bid.burl) {
+      bidResponse.burl = bid.burl;
+    }
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
@@ -212,9 +215,20 @@ export const spec = {
     return bids;
   },
   onBidWon: (bid) => {
-    if (bid.nurl) {
+    if (bid.nurl && !bid.deferBilling) {
       const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
       ajax(resolvedNurl);
+      bid.taboolaBillingFired = true;
+    }
+  },
+  onBidBillable: (bid) => {
+    if (bid.taboolaBillingFired) {
+      return;
+    }
+    const billingUrl = bid.burl || bid.nurl;
+    if (billingUrl) {
+      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
+      ajax(resolvedBillingUrl);
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {

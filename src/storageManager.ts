@@ -1,4 +1,4 @@
-import {checkCookieSupport, hasDeviceAccess, logError} from './utils.js';
+import {checkCookieSupport, hasDeviceAccess, logError, memoize, timestamp} from './utils.js';
 import {bidderSettings} from './bidderSettings.js';
 import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType} from './activities/modules.js';
 import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
@@ -143,7 +143,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
   const cookiesAreEnabled = function (done) {
     let cb = function (result) {
       if (result && result.valid) {
-        return checkCookieSupport();
+        return checkCookieSupport() && canSetCookie();
       }
       return false;
     }
@@ -288,6 +288,38 @@ export function getStorageManager({moduleType, moduleName, bidderCode}: {
 export function getCoreStorageManager(moduleName) {
   return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_PREBID});
 }
+
+export const canSetCookie = (() => {
+  const testStorageMgr = getCoreStorageManager('storage');
+
+  return memoize(function (domain?, storageMgr = testStorageMgr) {
+    const expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
+    const cookieName = `_rdc${Date.now()}`;
+    const cookieValue = 'writeable';
+
+    storageMgr.setCookie(
+      cookieName,
+      cookieValue,
+      expirationDate,
+      'Lax',
+      domain,
+    );
+    const value = storageMgr.getCookie(cookieName);
+
+    if (value === cookieValue) {
+      storageMgr.setCookie(
+        cookieName,
+        '',
+        'Thu, 01 Jan 1970 00:00:01 GMT',
+        undefined,
+        domain,
+      );
+      return true;
+    } else {
+      return false;
+    }
+  });
+})()
 
 /**
  * Block all access to storage when deviceAccess = false

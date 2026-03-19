@@ -1,4 +1,4 @@
-import { isArray, logError, logWarn, pick } from '../src/utils.js';
+import { isArray, logError, logWarn, pick, isFn } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { BID_STATUS, STATUS, REJECTION_REASON } from '../src/constants.js';
@@ -233,6 +233,7 @@ function getFeatureLevelDetails(auctionCache) {
 
 function getListOfIdentityPartners() {
   const namespace = getGlobal();
+  if (!isFn(namespace.getUserIds)) return;
   const publisherProvidedEids = namespace.getConfig("ortb2.user.eids") || [];
   const availableUserIds = namespace.getUserIds() || {};
   const identityModules = namespace.getConfig('userSync')?.userIds || [];

@@ -1,5 +1,5 @@
+import 'src/prebid.js'
 import browsiAnalytics, { setStaticData, getStaticData } from '../../../modules/browsiAnalyticsAdapter.js';
-
 import adapterManager from '../../../src/adapterManager.js';
 import { expect } from 'chai';
 import { EVENTS } from '../../../src/constants.js';

@@ -172,6 +172,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   const page = {}
   if (validPageId) {
+    // TODO: consider using the Prebid-generated page view ID instead of generating a custom one
     page.id = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID);
   }
   if (validPageTimestamp) {

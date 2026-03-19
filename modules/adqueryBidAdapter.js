@@ -1,6 +1,13 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {buildUrl, logInfo, logMessage, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {
+  buildUrl,
+  logInfo,
+  logMessage,
+  parseSizesInput,
+  triggerPixel,
+  deepSetValue
+} from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -25,13 +32,18 @@ const ADQUERY_TTL = 360;
 export const spec = {
   code: ADQUERY_BIDDER_CODE,
   gvlid: ADQUERY_GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * @param {object} bid
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
+    const video = bid.mediaTypes && bid.mediaTypes.video;
+    if (video) {
+      return !!(video.playerSize && video.context === 'outstream');// Focus on outstream
+    }
+
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
   },
 
@@ -47,19 +59,33 @@ export const spec = {
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/bid',
-      // search: params
     });
 
     for (let i = 0, len = bidRequests.length; i < len; i++) {
+      const bid = bidRequests[i];
+      const isVideo = bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream';
+
+      let requestUrl = adqueryRequestUrl;
+
+      if (isVideo) {
+        requestUrl = buildUrl({
+          protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
+          hostname: ADQUERY_BIDDER_DOMAIN,
+          pathname: '/openrtb2/auction2',
+        });
+      }
+
       const request = {
         method: 'POST',
-        url: adqueryRequestUrl, // ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
-        data: buildRequest(bidRequests[i], bidderRequest),
+        url: requestUrl,
+        data: buildRequest(bid, bidderRequest, isVideo),
         options: {
           withCredentials: false,
           crossOrigin: true
-        }
+        },
+        bidId: bid.bidId
       };
+
       requests.push(request);
     }
     return requests;
@@ -71,14 +97,47 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    logMessage(request);
-    logMessage(response);
-
-    const res = response && response.body && response.body.data;
     const bidResponses = [];
 
+    if (response?.body?.seatbid) {
+      response.body.seatbid.forEach(seat => {
+        seat.bid.forEach(bid => {
+          logMessage('bidObj', bid);
+
+          const bidResponse = {
+            requestId: bid.impid,
+            mediaType: 'video',
+            cpm: bid.price,
+            currency: response.body.cur || 'USD',
+            ttl: 3600, // video żyje dłużej
+            creativeId: bid.crid || bid.id,
+            netRevenue: true,
+            dealId: bid.dealid || undefined,
+            nurl: bid.nurl || undefined,
+
+            // VAST – priority: inline XML > admurl > nurl as a wrapper
+            vastXml: bid.adm || null,
+            vastUrl: bid.admurl || null,
+
+            width: bid.w || 640,
+            height: bid.h || 360,
+
+            meta: {
+              advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : [],
+              networkName: seat.seat || undefined,
+              mediaType: 'video'
+            }
+          };
+
+          bidResponses.push(bidResponse);
+        });
+      });
+    }
+
+    const res = response && response.body && response.body.data;
+
     if (!res) {
-      return [];
+      return bidResponses;
     }
 
     const bidResponse = {
@@ -134,6 +193,12 @@ export const spec = {
    */
   onBidWon: (bid) => {
     logInfo('onBidWon', bid);
+
+    if (bid.nurl) {
+      triggerPixel(bid.nurl)
+      return
+    }
+
     const copyOfBid = { ...bid }
     delete copyOfBid.ad
     const shortBidString = JSON.stringify(copyOfBid);
@@ -222,10 +287,7 @@ export const spec = {
   }
 };
 
-function buildRequest(validBidRequests, bidderRequest) {
-  const bid = validBidRequests;
-  logInfo('buildRequest: ', bid);
-
+function buildRequest(bid, bidderRequest, isVideo = false) {
   let userId = null;
   if (window.qid) {
     userId = window.qid;
@@ -233,6 +295,10 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (bid.userId && bid.userId.qid) {
     userId = bid.userId.qid
+  }
+
+  if (!userId) {
+    userId = bid.ortb2?.user.ext.eids.find(eid => eid.source === "adquery.io")?.uids[0]?.id;
   }
 
   if (!userId) {
@@ -246,6 +312,41 @@ function buildRequest(validBidRequests, bidderRequest) {
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.page || '';
+  }
+
+  if (isVideo) {
+    let baseRequest = bid.ortb2
+    let videoRequest = {
+      ...baseRequest,
+      imp: [{
+        id: bid.bidId,
+        video: bid.ortb2Imp?.video || {},
+      }]
+    }
+
+    deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
+    videoRequest.id = bid.bidId
+
+    let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
+    videoRequest.cur = [ currency ]
+
+    let floorInfo;
+    if (typeof bid.getFloor === 'function') {
+      floorInfo = bid.getFloor({
+        currency: currency,
+        mediaType: "video",
+        size: "*"
+      });
+    }
+    const bidfloor = floorInfo?.floor;
+    const bidfloorcur = floorInfo?.currency;
+
+    if (bidfloor && bidfloorcur) {
+      videoRequest.imp[0].video.bidfloor = bidfloor
+      videoRequest.imp[0].video.bidfloorcur = bidfloorcur
+    }
+
+    return videoRequest
   }
 
   return {

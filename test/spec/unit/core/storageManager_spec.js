@@ -1,4 +1,5 @@
 import {
+  canSetCookie,
   deviceAccessRule,
   getCoreStorageManager,
   newStorageManager,
@@ -20,6 +21,7 @@ import {
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
 import {activityParams} from '../../../../src/activities/activityParams.js';
+import {registerActivityControl} from '../../../../src/activities/rules.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -319,3 +321,38 @@ describe('storage manager', function() {
     });
   });
 });
+
+describe('canSetCookie', () => {
+  let allow, unregisterACRule;
+  beforeEach(() => {
+    allow = true;
+    unregisterACRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'test', (params) => {
+      if (params.component === 'prebid.storage') {
+        return {allow};
+      }
+    })
+  });
+  afterEach(() => {
+    unregisterACRule();
+    canSetCookie.clear();
+  })
+
+  it('should return true when allowed', () => {
+    expect(canSetCookie()).to.be.true;
+  });
+  it('should not leave stray cookies', () => {
+    const previousCookies = document.cookie;
+    canSetCookie();
+    expect(previousCookies).to.eql(document.cookie);
+  });
+  it('should return false when not allowed', () => {
+    allow = false;
+    expect(canSetCookie()).to.be.false;
+  });
+
+  it('should cache results', () => {
+    expect(canSetCookie()).to.be.true;
+    allow = false;
+    expect(canSetCookie()).to.be.true;
+  })
+})

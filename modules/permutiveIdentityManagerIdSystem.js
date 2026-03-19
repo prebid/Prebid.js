@@ -1,7 +1,9 @@
 import {MODULE_TYPE_UID} from '../src/activities/modules.js'
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js'
-import {prefixLog, safeJSONParse} from '../src/utils.js'
+import {deepAccess, prefixLog, safeJSONParse} from '../src/utils.js'
+import {hasPurposeConsent} from '../libraries/permutiveUtils/index.js'
+import {VENDORLESS_GVLID} from "../src/consentHandler.js";
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -15,8 +17,9 @@ const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
 const ID5_DOMAIN = 'id5-sync.com'
 const LIVERAMP_DOMAIN = 'liveramp.com'
 const UID_DOMAIN = 'uidapi.com'
+const GOOGLE_DOMAIN = 'google.com'
 
-const PRIMARY_IDS = ['id5id', 'idl_env', 'uid2']
+const PRIMARY_IDS = ['id5id', 'idl_env', 'uid2', 'pairId']
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME})
 
@@ -80,6 +83,9 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: VENDORLESS_GVLID,
+
+  disclosureURL: "https://assets.permutive.app/tcf/tcf.json",
 
   /**
    * decode the stored id value for passing to bid requests
@@ -89,7 +95,19 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    return value
+    const storedPairId = value['pairId']
+    let pairId
+    try {
+      if (storedPairId !== undefined) {
+        const decoded = safeJSONParse(atob(storedPairId))
+        if (Array.isArray(decoded)) {
+          pairId = decoded
+        }
+      }
+    } catch (e) {
+      logger.logInfo('Error parsing pairId')
+    }
+    return pairId === undefined ? value : {...value, pairId}
   },
 
   /**
@@ -101,6 +119,12 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
+    const enforceVendorConsent = deepAccess(submoduleConfig, 'params.enforceVendorConsent')
+    if (!hasPurposeConsent(consentData, [1], enforceVendorConsent)) {
+      logger.logInfo('GDPR purpose 1 consent not satisfied for Permutive Identity Manager')
+      return
+    }
+
     const id = readFromSdkLocalStorage()
     if (Object.entries(id).length > 0) {
       logger.logInfo('found id in sdk storage')
@@ -144,6 +168,10 @@ export const permutiveIdentityManagerIdSubmodule = {
           return data.ext
         }
       }
+    },
+    'pairId': {
+      source: GOOGLE_DOMAIN,
+      atype: 571187
     }
   }
 }

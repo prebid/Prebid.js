@@ -342,11 +342,22 @@ export const spec = {
    */
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params.zoneId) return false;
-    const currencyType = config.getConfig('currency.adServerCurrency');
-    if (typeof currencyType === 'string' && ALLOWED_CURRENCIES.indexOf(currencyType) === -1) {
-      utils.logError('Invalid currency type, we support only JPY and USD!');
-      return false;
+
+    if (bidRequest.params.hasOwnProperty('currency')) {
+      const bidCurrency = bidRequest.params.currency;
+
+      if (!ALLOWED_CURRENCIES.includes(bidCurrency)) {
+        utils.logError(`[${BIDDER_CODE}] Currency "${bidCurrency}" in bid params is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        return false;
+      }
+    } else {
+      const adServerCurrency = config.getConfig('currency.adServerCurrency');
+      if (typeof adServerCurrency === 'string' && !ALLOWED_CURRENCIES.includes(adServerCurrency)) {
+        utils.logError(`[${BIDDER_CODE}] adServerCurrency "${adServerCurrency}" is not supported. Supported are: ${ALLOWED_CURRENCIES.join(', ')}.`);
+        return false;
+      }
     }
+
     return true;
   },
   /**

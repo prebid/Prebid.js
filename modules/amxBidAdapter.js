@@ -251,7 +251,7 @@ function getSyncSettings() {
   const all = isSyncEnabled(syncConfig.filterSettings, 'all');
 
   if (all) {
-    settings.t = SYNC_IMAGE & SYNC_IFRAME;
+    settings.t = SYNC_IMAGE | SYNC_IFRAME;
     return settings;
   }
 

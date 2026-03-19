@@ -1,4 +1,4 @@
-import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
+import {dep, enrichFPD, getJsonLdKeywords, getMetaTagKeywords} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
@@ -34,7 +34,8 @@ describe('FPD enrichment', () => {
         language: ''
       },
       document: {
-        querySelector: sinon.stub()
+        querySelector: sinon.stub(),
+        querySelectorAll: sinon.stub().callsFake((sel) => Array.from(document.querySelectorAll(sel))),
       },
       screen: {
         width: 1,
@@ -60,7 +61,10 @@ describe('FPD enrichment', () => {
 
   CLIENT_SECTIONS.forEach(section => {
     describe(`${section}, when set`, () => {
-      const ORTB2 = {[section]: {ext: {}}}
+      let ortb2;
+      beforeEach(() => {
+        ortb2 = {[section]: {ext: {}}}
+      })
 
       it('sets domain and publisher.domain', () => {
         const refererInfo = {
@@ -68,7 +72,7 @@ describe('FPD enrichment', () => {
         };
         sandbox.stub(dep, 'getRefererInfo').callsFake(() => refererInfo);
         sandbox.stub(dep, 'findRootDomain').callsFake((dom) => `publisher.${dom}`);
-        return fpd(ORTB2).then(ortb2 => {
+        return fpd(ortb2).then(ortb2 => {
           sinon.assert.match(ortb2[section], {
             domain: 'example.com',
             publisher: {
@@ -77,31 +81,96 @@ describe('FPD enrichment', () => {
           });
         });
       })
-
       describe('keywords', () => {
-        let metaTag;
+        let tagsToRemove;
         beforeEach(() => {
-          metaTag = document.createElement('meta');
-          metaTag.name = 'keywords';
-          metaTag.content = 'kw1, kw2';
-          document.head.appendChild(metaTag);
+          tagsToRemove = [];
+          getMetaTagKeywords.clear();
+          getJsonLdKeywords.clear();
         });
+
         afterEach(() => {
-          document.head.removeChild(metaTag);
-        });
+          tagsToRemove.forEach(tag => document.head.removeChild(tag));
+        })
+
+        function addMetaKeywords(keywords = ['kw1', 'kw2']) {
+          const metaTag = document.createElement('meta');
+          metaTag.name = 'keywords';
+          metaTag.content = keywords.join(',')
+          document.head.appendChild(metaTag);
+          tagsToRemove.push(metaTag);
+        }
+
+        function addJsonKeywords(keywords) {
+          // add a JSON-LD script that contains keywords
+          const scriptTag = document.createElement('script');
+          scriptTag.type = 'application/ld+json';
+          scriptTag.textContent = JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            keywords: keywords.join(',')
+          });
+          document.head.appendChild(scriptTag);
+          tagsToRemove.push(scriptTag);
+        }
 
         testWindows(() => window, () => {
-          it(`sets kewwords from meta tag`, () => {
-            return fpd(ORTB2).then(ortb2 => {
+          it('should not set keywords if meta and json tags are not present', () => {
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+            });
+          });
+
+          it(`sets keywords from meta tag`, () => {
+            addMetaKeywords(['kw1', 'kw2']);
+            return fpd(ortb2).then(ortb2 => {
               expect(ortb2[section].keywords).to.eql('kw1,kw2');
             });
           });
-        });
-      });
 
-      it('should not set keywords if meta tag is not present', () => {
-        return fpd(ORTB2).then(ortb2 => {
-          expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+          it('should not use meta tag if firstPartyData.keywords.meta is false', () => {
+            config.setConfig({
+              firstPartyData: {
+                keywords: {
+                  meta: false
+                }
+              }
+            })
+            addMetaKeywords(['kw1', 'kw2']);
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.not.exist;
+            });
+          });
+
+          it('uses JSON-LD keywords when present', () => {
+            addJsonKeywords(['json1', 'json2']);
+            return fpd(ortb2).then(ortb2 => {
+              // JSON-LD should be preferred; returned format is a comma-joined string (no spaces)
+              expect(ortb2[section].keywords).to.eql('json1,json2');
+            });
+          });
+
+          it('should not pick up JSON keywords if firstPartyData.keywords.json is false', () => {
+            config.setConfig({
+              firstPartyData: {
+                keywords: {
+                  json: false
+                }
+              }
+            });
+            addJsonKeywords(['json1', 'json2']);
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.not.exist;
+            })
+          });
+
+          it('should avoid duplicates', () => {
+            addMetaKeywords(['kw1', ' kw2']);
+            addJsonKeywords(['kw2 ', 'kw3']);
+            return fpd(ortb2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.eql('kw1,kw2,kw3');
+            })
+          })
         });
       });
     })

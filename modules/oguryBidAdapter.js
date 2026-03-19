@@ -2,6 +2,7 @@
 
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
@@ -13,7 +14,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.4';
+const ADAPTER_VERSION = '2.0.5';
 
 export const ortbConverterProps = {
   context: {
@@ -25,7 +26,7 @@ export const ortbConverterProps = {
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
-    deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
+    deepSetValue(req, 'device.pxratio', getDevicePixelRatio(getWindowContext()));
     deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
@@ -99,15 +100,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync?source=prebid&gdpr_consent=${consent}&gpp=${gpp}&gpp_sid=${gppSid}`
       }
     ];
   }
