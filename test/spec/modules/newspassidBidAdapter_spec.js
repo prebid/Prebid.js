@@ -161,13 +161,13 @@ describe('newspassidBidAdapter', function () {
 
   describe('interpretResponse', function() {
     it('should return empty array if no valid bids', function() {
-      const invalidResponse = {body: {}};
+      const invalidResponse = { body: {} };
       const bids = spec.interpretResponse(invalidResponse);
       expect(bids).to.be.empty;
     });
 
     it('should return empty array if no seatbid', function() {
-      const noSeatbidResponse = {body: {cur: 'USD'}};
+      const noSeatbidResponse = { body: { cur: 'USD' } };
       const bids = spec.interpretResponse(noSeatbidResponse);
       expect(bids).to.be.empty;
     });
@@ -198,24 +198,24 @@ describe('newspassidBidAdapter', function () {
     });
 
     it('should expect correct host', function() {
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], {}, '', {});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], {}, '', {});
       const url = new URL(syncs[0].url);
       expect(url.host).to.equal('npid.amspbs.com');
     });
 
     it('should expect correct pathname', function() {
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], {}, '', {});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], {}, '', {});
       const url = new URL(syncs[0].url);
       expect(url.pathname).to.equal('/v0/user/sync');
     });
 
     it('should return empty array when iframe sync option is disabled', function() {
-      const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
       expect(syncs).to.be.empty;
     });
 
     it('should use iframe sync when iframe enabled', function() {
-      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.equal('https://npid.amspbs.com/v0/user/sync?gdpr=0&gdpr_consent=&gpp=&gpp_sid=&us_privacy=');
@@ -234,7 +234,7 @@ describe('newspassidBidAdapter', function () {
           }
         }
       };
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
       const url = new URL(syncs[0].url);
       expect(url.searchParams.get('gdpr')).to.equal('1');
       expect(url.searchParams.get('gdpr_consent')).to.equal(encodeURIComponent(consentString));
@@ -253,13 +253,13 @@ describe('newspassidBidAdapter', function () {
           }
         }
       };
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
       expect(syncs).to.be.empty;
     });
 
     it('should include correct us_privacy param', function() {
       const uspConsent = '1YNN';
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], {}, uspConsent, {});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], {}, uspConsent, {});
       const url = new URL(syncs[0].url);
       expect(url.searchParams.get('gdpr')).to.equal('0');
       expect(url.searchParams.get('gdpr_consent')).to.equal('');
@@ -276,7 +276,7 @@ describe('newspassidBidAdapter', function () {
         gppString: gppConsentString,
         applicableSections: gppSections
       };
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], {}, '', gppConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], {}, '', gppConsent);
       const url = new URL(syncs[0].url);
       expect(url.searchParams.get('gdpr')).to.equal('0');
       expect(url.searchParams.get('gdpr_consent')).to.equal('');
@@ -291,7 +291,7 @@ describe('newspassidBidAdapter', function () {
           publisherId: TEST_PUBLISHER_ID
         }
       });
-      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
       const url = new URL(syncs[0].url);
       expect(url.searchParams.get('gdpr')).to.equal('0');
       expect(url.searchParams.get('gdpr_consent')).to.equal('');
@@ -302,8 +302,8 @@ describe('newspassidBidAdapter', function () {
     });
 
     it('should have zero user syncs if coppa is true', function() {
-      config.setConfig({coppa: true});
-      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      config.setConfig({ coppa: true });
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
       expect(syncs).to.be.empty;
     });
 
@@ -333,7 +333,7 @@ describe('newspassidBidAdapter', function () {
           publisherId: TEST_PUBLISHER_ID
         }
       });
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent, uspConsent, gppConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent);
       const url = new URL(syncs[0].url);
       expect(url.searchParams.get('gdpr')).to.equal('1');
       expect(url.searchParams.get('gdpr_consent')).to.equal(encodeURIComponent(consentString));

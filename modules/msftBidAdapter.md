@@ -10,7 +10,7 @@ Maintainer: prebid@microsoft.com
 
 The Microsoft Bid Adapter connects to Microsoft's advertising exchange for bids. This adapter supports banner, video (instream and outstream), and native ad formats using OpenRTB 2.5 standards.
 
-The Microsoft adapter requires setup and approval from the Microsoft Advertising team. Please reach out to your account team for more information.
+If you are transitioning from the AppNexus bid adapter and you have any questions or concerns, please reach out to your account team for assistance.
 
 # Migration from AppNexus Bid Adapter
 

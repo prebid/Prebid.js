@@ -1020,4 +1020,56 @@ describe("IntentIQ tests all", function () {
     // Verify that the group from options is used in the payload
     expect(decodedPayload).to.have.property("abGroup", providedGroup);
   });
+
+  it("should include partnerAuctionId in query params and payload if provided by partner (GET)", function () {
+    const partnerAuctionId = "TEST-PAUCID-123";
+    enableAnalyticWithSpecialOptions({
+      manualWinReportEnabled: true,
+      reportMethod: "GET"
+    });
+
+    window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({
+      cpm: 1,
+      currency: "USD",
+      adType: "banner",
+      partnerAuctionId
+    });
+
+    const request = server.requests[0];
+    const url = new URL(request.url);
+    const paucidParam = url.searchParams.get("paucid");
+    const payloadEncoded = url.searchParams.get("payload");
+    const payloadDecoded = JSON.parse(
+      atob(JSON.parse(payloadEncoded)[0])
+    );
+
+    expect(payloadEncoded).to.be.a('string');
+    expect(JSON.parse(paucidParam)).to.deep.equal([partnerAuctionId]);
+    expect(payloadDecoded.partnerAuctionId).to.equal(partnerAuctionId);
+  });
+
+  it("should include partnerAuctionId in query params and payload if provided by partner (POST)", function () {
+    const partnerAuctionId = "TEST-PAUCID-123";
+    enableAnalyticWithSpecialOptions({
+      manualWinReportEnabled: true,
+      reportMethod: "POST"
+    });
+
+    window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({
+      cpm: 1,
+      currency: "USD",
+      adType: "banner",
+      partnerAuctionId
+    });
+
+    const request = server.requests[0];
+    const url = new URL(request.url);
+    const paucidParam = url.searchParams.get("paucid");
+    const bodyArray = JSON.parse(request.requestBody);
+    const payloadDecoded = JSON.parse(atob(bodyArray[0]));
+
+    expect(request.requestBody).to.be.a('string');
+    expect(JSON.parse(paucidParam)).to.deep.equal([partnerAuctionId]);
+    expect(payloadDecoded.partnerAuctionId).to.equal(partnerAuctionId);
+  });
 });

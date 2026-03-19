@@ -59,25 +59,48 @@ export const CONTEXT_KEYS = [
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
+export const MAX_CACHE_SIZE = 10;
+
 // eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };
 
-function makeMemoizedFetch() {
-  let cachedResponse = null;
-  return async function () {
-    if (cachedResponse) {
-      return Promise.resolve(cachedResponse);
+function getNormalizedPageUrl() {
+  try {
+    const { origin, pathname } = window.location;
+    return origin + pathname;
+  } catch (e) {
+    // Fallback to href if origin/pathname are not available, but keep normalization consistent
+    const href = window.location && window.location.href;
+    if (typeof href === 'string') {
+      // Strip query string and hash to match origin + pathname behavior
+      return href.split(/[?#]/)[0];
     }
-    try {
-      const response = await fetchContextData();
-      cachedResponse = makeDataFromResponse(response);
-      return cachedResponse;
-    } catch (error) {
-      logMessage('error', error);
-      return Promise.resolve({});
+    return '';
+  }
+}
+
+export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
+  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
+  const cache = new Map();
+  return function () {
+    const pageUrl = getNormalizedPageUrl();
+    if (cache.has(pageUrl)) {
+      return cache.get(pageUrl);
     }
+    if (cache.size >= sanitizedMaxSize) {
+      cache.delete(cache.keys().next().value);
+    }
+    const pending = fetchContextData()
+      .then((response) => makeDataFromResponse(response))
+      .catch((error) => {
+        logMessage('error', error);
+        cache.delete(pageUrl);
+        return {};
+      });
+    cache.set(pageUrl, pending);
+    return pending;
   }
 }
 

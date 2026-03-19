@@ -1,6 +1,6 @@
 import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.js';
-import {mnetGlobals} from './constants.js';
-import {getViewportSize} from '../viewport/viewport.js';
+import { mnetGlobals } from './constants.js';
+import { getViewportSize } from '../viewport/viewport.js';
 
 export function findBidObj(list = [], key, value) {
   return list.find((bid) => {

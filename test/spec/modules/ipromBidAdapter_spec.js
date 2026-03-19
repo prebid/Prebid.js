@@ -518,7 +518,8 @@ describe('iPROM Adapter', function () {
           ad: '<html><head><title>Iprom Header bidding example</title></head><body><img src="https://iprom.si/files/2015/08/iprom-logo.svg"></body></html>',
           aDomains: ['https://example.com'],
         }
-        ]};
+        ]
+      };
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       const bids = spec.interpretResponse(serverResponse, requests[0]);
