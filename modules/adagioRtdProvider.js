@@ -495,6 +495,7 @@ function getElementFromTopWindow(element, currentWindow) {
 };
 
 function getSlotPosition(divId) {
+  // TODO: this should use getAdUnitElement
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }

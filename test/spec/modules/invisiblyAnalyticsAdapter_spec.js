@@ -161,7 +161,6 @@ describe('Invisibly Analytics Adapter test suite', function () {
     REQUEST_BIDS: {
       call: 'request',
     },
-    ADD_AD_UNITS: { call: 'addAdUnits' },
     AD_RENDER_FAILED: { call: 'adRenderFailed' },
     INVALID_EVENT: {
       mockKey: 'this event should not emit',
@@ -447,28 +446,6 @@ describe('Invisibly Analytics Adapter test suite', function () {
         sinon.assert.callCount(invisiblyAdapter.track, 1);
       });
 
-      // spec for add ad units event
-      it('add ad units event', function () {
-        invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(EVENTS.ADD_AD_UNITS, MOCK.ADD_AD_UNITS);
-        invisiblyAdapter.flush();
-
-        const invisiblyEvents = JSON.parse(
-          requests[0].requestBody.substring(0)
-        );
-        expect(requests.length).to.equal(1);
-        expect(requests[0].url).to.equal(
-          'https://api.pymx5.com/v1/sites/events'
-        );
-        expect(invisiblyEvents.event_data.pageViewId).to.exist;
-        expect(invisiblyEvents.event_data.ver).to.equal(1);
-        expect(invisiblyEvents.event_type).to.equal('PREBID_addAdUnits');
-        expect(invisiblyEvents.event_data.call).to.equal(
-          MOCK.ADD_AD_UNITS.call
-        );
-        sinon.assert.callCount(invisiblyAdapter.track, 1);
-      });
-
       // spec for ad render failed event
       it('ad render failed event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
@@ -540,7 +517,6 @@ describe('Invisibly Analytics Adapter test suite', function () {
           EVENTS.BIDDER_DONE,
           EVENTS.SET_TARGETING,
           EVENTS.REQUEST_BIDS,
-          EVENTS.ADD_AD_UNITS,
           EVENTS.AD_RENDER_FAILED
         ]).to.beTrackedBy(invisiblyAdapter.track);
       });

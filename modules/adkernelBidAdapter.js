@@ -1,4 +1,3 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import {
   _each,
   contains,
@@ -416,9 +415,6 @@ function makeDevice(fpd) {
     'js': 1,
     'language': getLanguage()
   }, fpd.device || {});
-  if (getDNT()) {
-    device.dnt = 1;
-  }
   return { device: device };
 }
 

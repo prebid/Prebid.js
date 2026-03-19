@@ -117,22 +117,7 @@ export const CONVERTER = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-
-    let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
-          bidId,
-          auctionSignals: {}
-        }, cfg);
-      });
-      return {
-        bids: response.bids,
-        paapi: fledgeAuctionConfigs,
-      }
-    } else {
-      return response.bids
-    }
+    return response.bids
   }
 });
 
