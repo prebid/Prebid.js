@@ -1,4 +1,4 @@
-import {isFn} from '../../src/utils.js';
+import { isFn } from '../../src/utils.js';
 
 /**
  * Try to convert a value to a type.

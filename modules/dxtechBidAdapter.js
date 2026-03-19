@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {logMessage} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { logMessage } from '../src/utils.js';
 import {
   createDxConverter,
   MediaTypeUtils,
@@ -53,7 +53,7 @@ export const spec = {
     const data = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
-      context: {contextMediaType}
+      context: { contextMediaType }
     });
 
     let publisherId = validBidRequests[0].params.publisherId;

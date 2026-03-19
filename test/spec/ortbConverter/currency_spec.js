@@ -1,5 +1,5 @@
-import {config} from 'src/config.js';
-import {setOrtbCurrency} from '../../../modules/currency.js';
+import { config } from 'src/config.js';
+import { setOrtbCurrency } from '../../../modules/currency.js';
 
 describe('pbjs -> ortb currency', () => {
   before(() => {
@@ -34,7 +34,7 @@ describe('pbjs -> ortb currency', () => {
       }
     });
     const req = {};
-    setOrtbCurrency(req, {}, {currency: 'JPY'});
+    setOrtbCurrency(req, {}, { currency: 'JPY' });
     expect(req.cur).to.eql(['JPY']);
   })
 });

@@ -26,6 +26,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'locid.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'adserver.org',
         uids: [{
             id: 'some-random-id-value',

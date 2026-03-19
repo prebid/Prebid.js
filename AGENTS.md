@@ -21,6 +21,7 @@ This file contains instructions for the Codex agent and its friends when working
 
 ## General guidance
 - Node.js `>=20` is required; dependencies are managed with `npm`.
+- Whenever possible, new modules should provide Typescript types for their public interface.
 - Added or modified code must have at least 80% unit test coverage.
 - Link any required documentation PRs in the PR description.
 - Avoid modifying files in `node_modules` or generated build artifacts under `build`.
@@ -45,3 +46,15 @@ This file contains instructions for the Codex agent and its friends when working
 - Avoid running Babel over the entire project for incremental test runs.
 - Use `gulp serve-and-test --file <spec_file.js>` or `gulp test --file` so Babel processes only the specified files.
 - Do not invoke commands that rebuild all modules when only a subset are changed.
+
+## Additional context
+- for additional context on repo history, consult https://github.com/prebid/github-activity-db/blob/main/CLAUDE.md on how to download and access repo history in a database you can search locally.
+
+## Common adapter types
+- When bid adapter changes need shared type references, look in the core source modules first:
+- `src/adapters/bidderFactory.js` for bidder registration/build and bidder-spec wiring concepts.
+- `src/userSync.js` for user sync interfaces, sync option handling, and sync registration behavior.
+- `src/adapterManager.js` for adapter manager orchestration and type usage patterns around bidder lifecycle.
+- Prefer importing or mirroring conventions from these modules instead of redefining local ad-hoc shapes.
+- Use imported types for id, analytics, and rtd modules as well whenever possible.
+- Always define types for public interface to an adapter, eg each bidder parameter.

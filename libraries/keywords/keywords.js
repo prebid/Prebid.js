@@ -1,5 +1,5 @@
-import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
-import {deepAccess} from '../../src/utils.js';
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
+import { deepAccess } from '../../src/utils.js';
 
 const ORTB_KEYWORDS_PATHS = ['user.keywords'].concat(
   CLIENT_SECTIONS.flatMap((prefix) => ['keywords', 'content.keywords'].map(suffix => `${prefix}.${suffix}`))
