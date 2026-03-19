@@ -8,7 +8,7 @@ const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
-const DEFAULT_VIDEO_HEIGHT = 480;
+const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
@@ -284,6 +284,46 @@ describe('ImpactifyAdapter', function () {
         onAdEventName: 'on-ad-event'
       });
     });
+
+    it('should include schain, eids, gdpr and usp in ortb request', function () {
+      const bid = {
+        bidId: '1',
+        adUnitCode: 'adunit-code',
+        params: {
+          appId: 'example.com',
+          style: 'inline',
+          accountId: 'pub-1'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        ortb2: {
+          source: {
+            ext: {
+              schain: { ver: '1.0', complete: 1, nodes: [] }
+            }
+          }
+        },
+        userIdAsEids: [{ source: 'test.com', uids: [{ id: 'abc', atype: 1 }] }]
+      };
+
+      const bidderRequest = {
+        bidderRequestId: 'req-1',
+        refererInfo: { page: 'https://publisher.com/page' },
+        gdprConsent: { gdprApplies: true, consentString: 'consent123' },
+        uspConsent: '1YNN'
+      };
+
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+
+      expect(request.source.ext.schain).to.deep.equal(bid.ortb2.source.ext.schain);
+      expect(request.user.ext.eids).to.deep.equal(bid.userIdAsEids);
+      expect(request.user.ext.consent).to.equal('consent123');
+      expect(request.regs.ext.gdpr).to.equal(1);
+      expect(request.regs.ext.us_privacy).to.equal('1YNN');
+    });
   });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
@@ -388,6 +428,46 @@ describe('ImpactifyAdapter', function () {
       ];
       const result = spec.interpretResponse({ body: response }, bidderRequest);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+
+    it('should map player responses to video bids', function () {
+      const bidRequest = {
+        data: JSON.stringify({
+          imp: [{
+            id: 'imp-1',
+            ext: {
+              impactify: {
+                format: 'player'
+              }
+            }
+          }]
+        })
+      };
+
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'bid-1',
+              impid: 'imp-1',
+              price: 2.5,
+              vastUrl: 'https://example.com/vast.xml',
+              adm: '<VAST>fallback</VAST>',
+              crid: 'creative-1',
+              adomain: ['advertiser.com']
+            }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('video');
+      expect(result[0].vastUrl).to.equal('https://example.com/vast.xml');
+      expect(result[0].vastXml).to.equal('<VAST>fallback</VAST>');
+      expect(result[0]).to.not.have.property('ad');
     });
   });
   describe('getUserSyncs', function () {
