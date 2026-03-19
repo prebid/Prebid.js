@@ -218,8 +218,8 @@ export const spec = {
       eids = eids1;
     }
 
-    const siteKvs =  deepAccess(bidderRequest, 'ortb2.site.ext.data.jixie');
-    const userKvs =  deepAccess(bidderRequest, 'ortb2.user.ext.data.jixie');
+    const siteKvs = deepAccess(bidderRequest, 'ortb2.site.ext.data.jixie');
+    const userKvs = deepAccess(bidderRequest, 'ortb2.user.ext.data.jixie');
 
     // we want to send this blob of info to our backend:
     const transformedParams = Object.assign({}, {

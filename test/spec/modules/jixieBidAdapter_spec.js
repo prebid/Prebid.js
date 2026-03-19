@@ -89,7 +89,7 @@ describe('jixie Adapter', function () {
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
-      refererInfo: {referer: pageurl_},
+      refererInfo: { referer: pageurl_ },
       auctionId: auctionId_,
       timeout: timeout_,
       ortb2: {
