@@ -264,7 +264,7 @@ export const spec = {
 
   interpretResponse: function (serverResponse, request) {
     if (request?.ortb) {
-      return converter.fromORTB({response: serverResponse?.body, request: request.data}).bids ?? [];
+      return converter.fromORTB({ response: serverResponse?.body, request: request.data }).bids ?? [];
     }
 
     const bids = Array.isArray(serverResponse?.body) ? serverResponse.body : [];

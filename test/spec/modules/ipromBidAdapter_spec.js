@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {spec} from 'modules/ipromBidAdapter.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { spec } from 'modules/ipromBidAdapter.js';
 
 describe('iPROM Adapter', function () {
   let bidRequests;
@@ -476,7 +476,7 @@ describe('iPROM Adapter', function () {
         user: {
           data: [{
             name: 'taxonomy',
-            segment: [{id: 'segment-id'}]
+            segment: [{ id: 'segment-id' }]
           }]
         }
       };
@@ -491,7 +491,7 @@ describe('iPROM Adapter', function () {
         user: {
           data: [{
             name: 'taxonomy',
-            segment: [{id: 'segment-id'}]
+            segment: [{ id: 'segment-id' }]
           }]
         }
       });
