@@ -12,7 +12,12 @@ To enable iframe-based user syncing for Start.io, include the `filterSettings` c
 pbjs.setConfig({
     userSync: {
         userIds: [{
-            name: 'startioId'
+            name: 'startioId',
+            storage: {
+                type: 'cookie&html5',        // 'cookie', 'html5', or 'cookie&html5'
+                name: 'startioId',
+                expires: 90                 // optional, 90 days by default
+            }
         }],
         filterSettings: {
             iframe: {
@@ -33,3 +38,7 @@ The below parameters apply only to the Start.io User ID integration.
 | Param under userSync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
 | name | Required | String | The name of this module. | `"startioId"` |
+| storage | Required | Object | Storage configuration for the user ID. | |
+| storage.type | Required | String | Type of storage: `"cookie"`, `"html5"`, or `"cookie&html5"`. | `"cookie&html5"` |
+| storage.name | Required | String | The name used to store the user ID. | `"startioId"` |
+| storage.expires | Optional | Number | Number of days before the stored ID expires. Defaults to `90`. | `365` |

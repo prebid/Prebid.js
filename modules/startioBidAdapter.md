@@ -102,7 +102,11 @@ To enable iframe-based user syncing for Start.io, include the `filterSettings` c
 pbjs.setConfig({
     userSync: {
         userIds: [{
-            name: 'startioId'
+            name: 'startioId',
+            storage: {
+                type: 'cookie&html5',
+                name: 'startioId'
+            }
         }],
         filterSettings: {
             iframe: {
