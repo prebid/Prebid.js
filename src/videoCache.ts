@@ -79,6 +79,10 @@ export interface CacheConfig {
    */
   useLocal?: boolean;
   /**
+   * When true, allows VAST XML-only bids to pass even without cache.url or cache.useLocal.
+   */
+  allowVastXmlOnly?: boolean;
+  /**
    * Timeout (in milliseconds) for network requests to the cache
    */
   timeout?: number;

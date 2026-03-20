@@ -3,6 +3,7 @@ import { hook } from '../../src/hook.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
 import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
+import { config } from 'src/config.js';
 
 describe('video.js', function () {
   let sandbox;
@@ -19,6 +20,7 @@ describe('video.js', function () {
 
   afterEach(() => {
     utilsMock.restore();
+    config.resetConfig();
     sandbox.restore();
   });
 
@@ -282,6 +284,21 @@ describe('video.js', function () {
       const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
 
       expect(valid).to.equal(false);
+    });
+
+    it('validates vastXml-only bids when cache.allowVastXmlOnly is enabled', function () {
+      utilsMock.expects('logWarn').once();
+      utilsMock.expects('logError').never();
+      config.setConfig({ cache: { allowVastXmlOnly: true } });
+
+      const adUnits = [{
+        adUnitId: 'au',
+        bidder: 'vastOnlyVideoBidder',
+        mediaTypes: { video: {} },
+      }];
+
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
     });
 
     it('validates valid outstream bids', function () {

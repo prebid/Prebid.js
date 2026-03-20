@@ -131,8 +131,12 @@ declare module './hook' {
 export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
-    const { url, useLocal } = config.getConfig('cache') || {};
+    const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
+      if (allowVastXmlOnly === true) {
+        logWarn(`This bid contains only vastXml, and caching is disabled. Proceeding because cache.allowVastXmlOnly is enabled.`);
+        return true;
+      }
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
         Try enabling either prebid cache with ${getGlobalVarName()}.setConfig({ cache: {url: "..."} });
