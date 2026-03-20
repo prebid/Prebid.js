@@ -105,7 +105,7 @@ function getEntries(key) {
     ver: entry['ver'],
     vector: entry['vector'],
     model: entry['model'],
-    mdimension: entry['mdimension'],
+    dimension: entry['dimension'],
     type: entry['type']
   }));
 }

@@ -60,14 +60,16 @@ pbjs.setConfig({
 
 The module reads agentic audience data from browser storage (localStorage or cookie). It first reads from the default key `_agentic_audience_`, then from each provider's `storageKey` defined under `params.providers`.
 
-Data must be base64-encoded JSON with an `entries` array. Each entry must include:
+**Encoding:** Data stored in cookie or localStorage **must be base64-encoded**. The module decodes the stored value and parses it as JSON. The decoded JSON (unencoded data) is what gets injected into the bid request and sent over the wire to bidders—not the base64 string.
+
+**Format:** The decoded JSON must contain an `entries` array. Each entry must include:
 
 | Field | Type | Description |
 |:------|:-----|:------------|
 | ver | string | Specification version |
 | vector | number[] | Vector embedding (float array) |
 | model | string | Model identifier (e.g. `sbert-mini-ctx-001`) |
-| mdimension | number | Vector dimension |
+| dimension | number | Vector dimension |
 | type | number[] | Embedding type(s): identity, contextual, reinforcement |
 
 These fields align with the [Agentic Audiences OpenRTB Segment extension](https://github.com/IABTechLab/agentic-audiences).
