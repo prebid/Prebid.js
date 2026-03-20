@@ -1,0 +1,78 @@
+# Agentic Audience Adapter
+
+## Overview
+
+| | |
+|:---|:---|
+| Module Name | Agentic Audience Adapter |
+| Module Type | RTD Provider |
+| Module Code | agenticAudienceAdapter |
+
+## Description
+
+This RTD module injects Agentic Audiences (vector-based) signals into the OpenRTB bid request. Agentic Audiences is an open standard by [IABTechLab](https://github.com/IABTechLab/agentic-audiences) for exchanging semantic embeddings—identity, contextual, and reinforcement signals—in a privacy-preserving, interoperable format.
+
+The module reads agentic audience data from browser storage (localStorage or cookie) and adds it to `user.data` as segment extensions for downstream bidders.
+
+## Usage
+
+### Build
+
+```
+gulp build --modules="rtdModule,agenticAudienceAdapter,..."
+```
+
+> Note that the global RTD module, `rtdModule`, is a prerequisite.
+
+### Configuration
+
+Configure the module as part of `realTimeData.dataProviders`:
+
+```javascript
+pbjs.setConfig({
+  realTimeData: {
+    auctionDelay: 300,
+    dataProviders: [{
+      name: 'agenticAudience',
+      waitForIt: true,
+      params: {
+        providers: {
+          liveRamp: {
+            storageKey: '_lr_agentic_audience_'
+          }
+        }
+      }
+    }]
+  }
+});
+```
+
+### Parameters
+
+| Name | Type | Description |
+|:-----|:-----|:------------|
+| name | String | RTD submodule name. Always `'agenticAudience'` |
+| waitForIt | Boolean | Set to true to delay auction until module responds |
+| params.providers | Object | Provider-specific config. Each key (e.g. `liveRamp`) defines a provider with its own storage. |
+| params.providers.{provider}.storageKey | String | Storage key for that provider (e.g. `_lr_agentic_audience_` for LiveRamp). |
+
+## Storage
+
+The module reads agentic audience data from browser storage (localStorage or cookie). It first reads from the default key `_agentic_audience_`, then from each provider's `storageKey` defined under `params.providers`.
+
+Data must be base64-encoded JSON with an `entries` array. Each entry must include:
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| ver | string | Specification version |
+| vector | number[] | Vector embedding (float array) |
+| model | string | Model identifier (e.g. `sbert-mini-ctx-001`) |
+| mdimension | number | Vector dimension |
+| type | number[] | Embedding type(s): identity, contextual, reinforcement |
+
+These fields align with the [Agentic Audiences OpenRTB Segment extension](https://github.com/IABTechLab/agentic-audiences).
+
+## References
+
+- [IABTechLab Agentic Audiences](https://github.com/IABTechLab/agentic-audiences)
+- [Agentic Audiences in OpenRTB](https://github.com/IABTechLab/agentic-audiences) (Segment extension proposal)
