@@ -68,10 +68,12 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
   const updated = {
     user: {
-      data: {
-        name: 'agentic-audiences.org',
-        segment: entries
-      }
+      data: [
+        {
+          name: 'agentic-audiences.org',
+          segment: entries
+        }
+      ]
     }
   };
 
