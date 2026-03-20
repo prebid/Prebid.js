@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.6.0';
+const MODULE_VERSION = '2.7.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -104,6 +104,9 @@ let tier;
 
 // overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
 let overQuota;
+
+// cachedSUA holds the ORTB 2.6 SUA from Prebid's enrichment pipeline
+let cachedSUA = null;
 
 /**
  * Safely gets an object from localStorage with JSON parsing
@@ -285,22 +288,10 @@ function loadWurflJsAsync(config, bidders) {
     }
   };
 
-  // Collect Client Hints if available, then load script
-  if (navigator?.userAgentData?.getHighEntropyValues) {
-    const hints = ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList'];
-    navigator.userAgentData.getHighEntropyValues(hints)
-      .then(ch => {
-        if (ch !== null) {
-          url.searchParams.set('uach', JSON.stringify(ch));
-        }
-      })
-      .finally(() => {
-        loadWurflJs(url.toString());
-      });
-  } else {
-    // Load script immediately when Client Hints not available
-    loadWurflJs(url.toString());
+  if (cachedSUA) {
+    url.searchParams.set('sua', JSON.stringify(cachedSUA));
   }
+  loadWurflJs(url.toString());
 }
 
 /**
@@ -1116,6 +1107,7 @@ const init = (config, userConsent) => {
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
+  cachedSUA = null;
 
   logger.logMessage('initialized', { version: MODULE_VERSION });
 
@@ -1144,6 +1136,9 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
       bidderEnrichment.set(bid.bidder, ENRICHMENT_TYPE.UNKNOWN);
     });
   });
+
+  // Read SUA from Prebid's enrichment pipeline (already resolved, publisher-controlled hints)
+  cachedSUA = reqBidsConfigObj.ortb2Fragments?.global?.device?.sua || null;
 
   // Determine enrichment type based on cache availability
   WurflDebugger.cacheReadStart();
@@ -1380,7 +1375,8 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     tier: tier,
     over_quota: overQuota,
     consent_class: consentClass,
-    ad_units: adUnits
+    ad_units: adUnits,
+    sua: cachedSUA
   };
 
   // Add A/B test fields if enabled
@@ -1421,6 +1417,11 @@ export const wurflSubmodule = {
   getBidRequestData,
   onAuctionEndEvent,
 }
+
+// Exported for testing only
+export const __testing__ = {
+  setCachedSUA: (value) => { cachedSUA = value; },
+};
 
 // Register the WURFL submodule as submodule of realTimeData
 submodule(REAL_TIME_MODULE, wurflSubmodule);

@@ -172,8 +172,9 @@ analyticsAdapter.enableAnalytics = function(config) {
 analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics;
 analyticsAdapter.disableAnalytics = function() {
   analyticsAdapter.context = null;
-
-  analyticsAdapter.originDisableAnalytics();
+  if (this.enabled) {
+    analyticsAdapter.originDisableAnalytics();
+  }
 }
 
 analyticsAdapter.url = function(url, args, bid) {

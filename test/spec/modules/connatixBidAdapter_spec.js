@@ -3,22 +3,21 @@ import sinon from 'sinon';
 import { config } from 'src/config.js';
 import {
   _getBidRequests,
-  _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
   detectViewability as connatixDetectViewability,
   getBidFloor as connatixGetBidFloor,
   _getMinSize as connatixGetMinSize,
-  _getViewability as connatixGetViewability,
   hasQueryParams as connatixHasQueryParams,
-  _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
   readFromLocalStorage as connatixReadFromLocalStorage,
   saveInLocalStorage as connatixSaveInLocalStorage,
   spec,
   storage
 } from '../../../modules/connatixBidAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
+import * as utils from '../../../src/utils.js';
 import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as winDimensions from '../../../src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const BIDDER_CODE = 'connatix';
 
@@ -85,142 +84,12 @@ describe('connatixBidAdapter', function () {
     });
   });
 
-  describe('_isIframe', () => {
-    let querySelectorStub;
-
-    beforeEach(() => {
-      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
-    });
-
-    afterEach(() => {
-      querySelectorStub.restore();
-    });
-
-    it('should return true when window.top.document.querySelector does not throw an error', () => {
-      querySelectorStub.returns({});
-      expect(connatixCanSelectViewabilityContainer()).to.be.true;
-    });
-
-    it('should return false when window.top.document.querySelector throws an error', () => {
-      querySelectorStub.throws(new Error('test error'));
-      expect(connatixCanSelectViewabilityContainer()).to.be.false;
-    });
-  });
-
-  describe('_isViewabilityMeasurable', () => {
-    let querySelectorStub;
-
-    beforeEach(() => {
-      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
-    });
-
-    afterEach(() => {
-      querySelectorStub.restore();
-    });
-
-    it('should return false if the element is null or undefined', () => {
-      expect(connatixIsViewabilityMeasurable(null)).to.be.false;
-      expect(connatixIsViewabilityMeasurable(undefined)).to.be.false;
-    });
-
-    it('should return false if _isIframe returns true', () => {
-      querySelectorStub.throws(new Error('test error'));
-
-      const element = document.createElement('div');
-      expect(connatixIsViewabilityMeasurable(element)).to.be.false;
-    });
-
-    it('should return true if _isIframe returns false', () => {
-      querySelectorStub.returns(document.createElement('div'))
-
-      const element = document.createElement('div');
-      expect(connatixIsViewabilityMeasurable(element)).to.be.true;
-    });
-  });
-
-  describe('_getViewability', () => {
-    let element;
-    let getBoundingClientRectStub;
-    let topWinMock;
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      element = document.createElement('div');
-      getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
-
-      topWinMock = {
-        document: {
-          visibilityState: 'visible'
-        },
-        innerWidth: 800,
-        innerHeight: 600
-      };
-      sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => ({
-        document: {
-          documentElement: {
-            clientWidth: topWinMock.innerWidth,
-            clientHeight: topWinMock.innerHeight
-          }
-        }
-      }));
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('should return 0 if the document is not visible', () => {
-      topWinMock.document.visibilityState = 'hidden';
-
-      const viewability = connatixGetViewability(element, topWinMock);
-
-      expect(viewability).to.equal(0);
-    });
-
-    it('should return 100% if the element is fully in view', () => {
-      const boundingBox = { left: 100, top: 100, right: 300, bottom: 300, width: 200, height: 200 };
-      getBoundingClientRectStub.returns(boundingBox);
-
-      const viewability = connatixGetViewability(element, topWinMock);
-
-      expect(viewability).to.equal(100);
-    });
-
-    it('should return the correct percentage if the element is partially in view', () => {
-      const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
-      getBoundingClientRectStub.returns(boundingBox);
-      const viewability = connatixGetViewability(element, topWinMock);
-
-      expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
-    });
-
-    it('should return 0% if the element is not in view', () => {
-      const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
-      getBoundingClientRectStub.returns(boundingBox);
-
-      const viewability = connatixGetViewability(element, topWinMock);
-
-      expect(viewability).to.equal(0);
-    });
-
-    it('should use provided width and height if element dimensions are zero', () => {
-      const boundingBox = { left: 100, top: 100, right: 100, bottom: 100, width: 0, height: 0 };
-      getBoundingClientRectStub.returns(boundingBox);
-
-      const dimensions = { w: 200, h: 200 };
-      const viewability = connatixGetViewability(element, topWinMock, dimensions);
-
-      expect(viewability).to.equal(100); // Element fully in view with provided dimensions
-    });
-  });
-
   describe('detectViewability', () => {
     let element;
     let getBoundingClientRectStub;
     let topWinMock;
     let querySelectorStub;
-    let getElementByIdStub;
+    let getElementStub;
     let sandbox;
 
     beforeEach(() => {
@@ -237,7 +106,7 @@ describe('connatixBidAdapter', function () {
       };
 
       querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
-      getElementByIdStub = sandbox.stub(document, 'getElementById');
+      getElementStub = sandbox.stub(adUnits, 'getAdUnitElement');
       sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
         {
           document: {
@@ -255,6 +124,9 @@ describe('connatixBidAdapter', function () {
     });
 
     it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {
+      sandbox.stub(utils, 'inIframe').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
+
       const bid = {
         params: { viewabilityContainerIdentifier: '#validElement' },
         adUnitCode: 'adUnitCode123',
@@ -272,7 +144,7 @@ describe('connatixBidAdapter', function () {
       });
 
       querySelectorStub.withArgs('#validElement').returns(element);
-      getElementByIdStub.returns(null);
+      getElementStub.returns(null);
 
       const result = connatixDetectViewability(bid);
 
@@ -280,7 +152,40 @@ describe('connatixBidAdapter', function () {
       expect(result).to.equal(100);
     });
 
+    it('should use getElementById and return 100% viewability when viewabilityContainerIdentifier is an ID without # prefix', () => {
+      sandbox.stub(utils, 'inIframe').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
+
+      const bid = {
+        params: { viewabilityContainerIdentifier: 'validElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      const getElementByIdStub = sandbox.stub(document, 'getElementById');
+      getElementByIdStub.withArgs('validElement').returns(element);
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(100);
+      expect(getElementByIdStub.calledWith('validElement')).to.be.true;
+      expect(querySelectorStub.calledWith('validElement')).to.be.false;
+    });
+
     it('should fall back to using bid sizes and adUnitCode when the viewabilityContainerIdentifier is invalid or was not provided', () => {
+      sandbox.stub(utils, 'inIframe').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
+
       const bid = {
         params: { viewabilityContainerIdentifier: '#invalidElement' },
         adUnitCode: 'adUnitCode123',
@@ -298,7 +203,7 @@ describe('connatixBidAdapter', function () {
       });
 
       querySelectorStub.withArgs('#invalidElement').returns(null);
-      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+      getElementStub.returns(element);
 
       const result = connatixDetectViewability(bid);
 
@@ -306,6 +211,9 @@ describe('connatixBidAdapter', function () {
     });
 
     it('should use the adUnitCode as a fallback when querying an element fails due to a browser error, and return 100% viewability because adUnitCode container is fully in view', () => {
+      sandbox.stub(utils, 'inIframe').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
+
       const bid = {
         params: { viewabilityContainerIdentifier: '#invalidElement' },
         adUnitCode: 'adUnitCode123',
@@ -325,7 +233,7 @@ describe('connatixBidAdapter', function () {
       });
 
       // The fallback should use the adUnitCode to find the element
-      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+      getElementStub.returns(element);
 
       const result = connatixDetectViewability(bid);
 

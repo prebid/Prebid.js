@@ -1,9 +1,16 @@
 'use strict';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject, getWinDimensions } from '../src/utils.js';
+import {
+  deepSetValue,
+  getWinDimensions,
+  getWindowSelf,
+  isPlainObject,
+  replaceAuctionPrice,
+  safeJSONParse
+} from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -11,11 +18,13 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const BANNER_ENDPOINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const NATIVE_ENDPOINT_URL = 'https://native.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 const USER_ID = 'user-id';
@@ -139,9 +148,9 @@ export function getDeviceExtSignals(existingExt = {}) {
   };
 }
 
-export function getElementSignals(adUnitCode) {
+export function getElementSignals(bidRequest) {
   try {
-    const element = document.getElementById(adUnitCode);
+    const element = getAdUnitElement(bidRequest);
     if (!element) return null;
 
     const rect = getBoundingClientRect(element);
@@ -169,12 +178,11 @@ export function getElementSignals(adUnitCode) {
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    mediaType: BANNER,
     ttl: 300
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    fillTaboolaImpData(bidRequest, imp);
+    fillTaboolaImpData(bidRequest, imp, context);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -183,12 +191,21 @@ const converter = ortbConverter({
     return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
+    if (context.mediaType === NATIVE) {
+      const admObj = safeJSONParse(bid.adm);
+      if (admObj?.native) {
+        bid.adm = JSON.stringify(admObj.native);
+      }
+    }
+
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
     if (bid.burl) {
       bidResponse.burl = bid.burl;
     }
-    bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+    if (bidResponse.mediaType !== NATIVE) {
+      bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+    }
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
     }
@@ -197,35 +214,37 @@ const converter = ortbConverter({
 });
 
 export const spec = {
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE],
   gvlid: GVLID,
   code: BIDDER_CODE,
   isBidRequestValid: (bidRequest) => {
-    return !!(bidRequest.sizes &&
-              bidRequest.params &&
+    const hasPublisherAndTag = !!(bidRequest.params &&
               bidRequest.params.publisherId &&
               bidRequest.params.tagId);
+    if (!hasPublisherAndTag) {
+      return false;
+    }
+    const { hasBanner, hasNative } = getMediaType(bidRequest);
+    return hasBanner || hasNative;
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const [bidRequest] = validBidRequests;
-    const auctionId = bidderRequest.auctionId || validBidRequests[0]?.auctionId;
-    const data = converter.toORTB({
-      bidderRequest: bidderRequest,
-      bidRequests: validBidRequests,
-      context: { auctionId }
-    });
-    const { publisherId } = bidRequest.params;
-    const url = END_POINT_URL + '?publisher=' + publisherId;
+    const bannerBids = [];
+    const nativeBids = [];
 
-    return {
-      url,
-      method: 'POST',
-      data: data,
-      bids: validBidRequests,
-      options: {
-        withCredentials: false
-      },
-    };
+    validBidRequests.forEach(bid => {
+      const { hasBanner, hasNative } = getMediaType(bid);
+      if (hasBanner) bannerBids.push(bid);
+      if (hasNative) nativeBids.push(bid);
+    });
+
+    const requests = [];
+    if (bannerBids.length) {
+      requests.push(createTaboolaRequest(bannerBids, bidderRequest, BANNER_ENDPOINT_URL, BANNER));
+    }
+    if (nativeBids.length) {
+      requests.push(createTaboolaRequest(nativeBids, bidderRequest, NATIVE_ENDPOINT_URL, NATIVE));
+    }
+    return requests;
   },
   interpretResponse: (serverResponse, request) => {
     if (!request || !request.bids || !request.data) {
@@ -236,57 +255,10 @@ export const spec = {
       return [];
     }
     const bids = [];
-    const fledgeAuctionConfigs = [];
     if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
-      if (!serverResponse.body.ext || !serverResponse.body.ext.igbid || !serverResponse.body.ext.igbid.length) {
-        return [];
-      }
+      return [];
     } else {
       bids.push(...converter.fromORTB({ response: serverResponse.body, request: request.data }).bids);
-    }
-    if (isArray(serverResponse.body.ext?.igbid)) {
-      serverResponse.body.ext.igbid.forEach((igbid) => {
-        if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
-          return;
-        }
-        const buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
-        if (!buyerdata) {
-          return;
-        }
-        const perBuyerSignals = {};
-        igbid.igbuyer.forEach(buyerItem => {
-          if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
-            return;
-          }
-          const parsedData = safeJSONParse(buyerItem.buyerdata)
-          if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
-            return;
-          }
-          perBuyerSignals[buyerItem.origin] = parsedData.perBuyerSignals[buyerItem.origin];
-        });
-        const impId = igbid?.impid;
-        fledgeAuctionConfigs.push({
-          impId,
-          config: {
-            seller: buyerdata?.seller,
-            resolveToConfig: buyerdata?.resolveToConfig,
-            sellerSignals: {},
-            sellerTimeout: buyerdata?.sellerTimeout,
-            perBuyerSignals,
-            auctionSignals: {},
-            decisionLogicUrl: buyerdata?.decisionLogicUrl,
-            interestGroupBuyers: buyerdata?.interestGroupBuyers,
-            perBuyerTimeouts: buyerdata?.perBuyerTimeouts,
-          },
-        });
-      });
-    }
-
-    if (fledgeAuctionConfigs.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
     }
     return bids;
   },
@@ -345,6 +317,28 @@ export const spec = {
     ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({ error, bidderRequest }), { method: 'POST' });
   },
 };
+
+function createTaboolaRequest(bidRequests, bidderRequest, endpointUrl, mediaType) {
+  const [bidRequest] = bidRequests;
+  const auctionId = bidderRequest.auctionId || bidRequests[0]?.auctionId;
+  const data = converter.toORTB({
+    bidderRequest: bidderRequest,
+    bidRequests: bidRequests,
+    context: { auctionId, mediaType }
+  });
+  const { publisherId } = bidRequest.params;
+  const url = endpointUrl + '?publisher=' + publisherId;
+
+  return {
+    url,
+    method: 'POST',
+    data: data,
+    bids: bidRequests,
+    options: {
+      withCredentials: false
+    },
+  };
+}
 
 function getSiteProperties({ publisherId }, refererInfo, ortb2) {
   const { getPageUrl, getReferrer } = internal;
@@ -431,14 +425,16 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
   }
 }
 
-function fillTaboolaImpData(bid, imp) {
+function fillTaboolaImpData(bid, imp, context) {
   const { tagId, position } = bid.params;
-  imp.banner = getBanners(bid, position);
+  if (imp.banner && position) {
+    imp.banner.pos = position;
+  }
   imp.tagid = tagId;
-
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: CURRENCY,
+      mediaType: context.mediaType,
       size: '*'
     });
     if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
@@ -466,7 +462,7 @@ function fillTaboolaImpData(bid, imp) {
   deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
   deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
 
-  const elementSignals = getElementSignals(bid.adUnitCode);
+  const elementSignals = getElementSignals(bid);
   if (elementSignals) {
     if (elementSignals.viewability !== undefined) {
       deepSetValue(imp, 'ext.viewability', elementSignals.viewability);
@@ -476,22 +472,14 @@ function fillTaboolaImpData(bid, imp) {
   }
 }
 
-function getBanners(bid, pos) {
+function getMediaType(bidRequest) {
+  const hasBanner = !!bidRequest?.mediaTypes?.banner?.sizes;
+  const hasNative = !!bidRequest?.mediaTypes?.native;
   return {
-    ...getSizes(bid.sizes),
-    pos: pos
-  }
-}
-
-function getSizes(sizes) {
-  return {
-    format: sizes.map(size => {
-      return {
-        w: size[0],
-        h: size[1]
-      }
-    })
-  }
+    hasBanner,
+    hasNative,
+    mediaType: hasNative && !hasBanner ? NATIVE : BANNER
+  };
 }
 
 registerBidder(spec);
