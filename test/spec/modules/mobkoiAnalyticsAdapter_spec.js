@@ -71,7 +71,7 @@ const getBidderResponse = () => ({
 const getMockEvents = () => {
   const sizes = [800, 300];
   const timestamp = Date.now();
-  const auctionOrBidError = {timestamp, error: 'error', bidderRequest: { bidderRequestId: requestId }}
+  const auctionOrBidError = { timestamp, error: 'error', bidderRequest: { bidderRequestId: requestId } }
 
   return {
     AUCTION_TIMEOUT: auctionOrBidError,
@@ -452,7 +452,7 @@ describe('mobkoiAnalyticsAdapter', function () {
 
       it('should throw an error if the object type could not be determined', function () {
         expect(() => {
-          utils.determineObjType({dumbAttribute: 'bid'})
+          utils.determineObjType({ dumbAttribute: 'bid' })
         }).to.throw();
       });
 
@@ -482,7 +482,7 @@ describe('mobkoiAnalyticsAdapter', function () {
       })
 
       it('should throw an error if custom fields are provided and one of them is not a string', () => {
-        const customFields = {impid: 'bid-123', bidId: 123}
+        const customFields = { impid: 'bid-123', bidId: 123 }
         expect(() => {
           utils.mergePayloadAndCustomFields({}, customFields)
         }).to.throw();

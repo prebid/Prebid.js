@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/startioBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
-import {deepClone} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 const DEFAULT_REQUEST_DATA = {
   adUnitCode: 'test-div',
@@ -250,11 +250,11 @@ describe('Prebid Adapter: Startio', function () {
 
     it('should provide coppa', () => {
       let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
-      bidderRequest.ortb2 = {regs: {coppa: 0}};
+      bidderRequest.ortb2 = { regs: { coppa: 0 } };
       let request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
       expect(request.regs.coppa).to.equal(0);
 
-      bidderRequest.ortb2 = {regs: {coppa: 1}};
+      bidderRequest.ortb2 = { regs: { coppa: 1 } };
       request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
       expect(request.regs.coppa).to.equal(1);
     });

@@ -1,8 +1,8 @@
-import {getBidIdParameter} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {interpretResponse} from '../libraries/uniquestUtils/uniquestUtils.js';
+import { getBidIdParameter } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { interpretResponse } from '../libraries/uniquestUtils/uniquestUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid

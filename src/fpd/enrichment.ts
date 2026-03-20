@@ -1,6 +1,6 @@
-import {hook} from '../hook.js';
-import {getRefererInfo, parseDomain} from '../refererDetection.js';
-import {findRootDomain} from './rootDomain.js';
+import { hook } from '../hook.js';
+import { getRefererInfo, parseDomain } from '../refererDetection.js';
+import { findRootDomain } from './rootDomain.js';
 import {
   deepSetValue,
   deepAccess,
@@ -12,15 +12,14 @@ import {
   mergeDeep,
   memoize
 } from '../utils.js';
-import { getDNT } from '../../libraries/dnt/index.js';
-import {config} from '../config.js';
-import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
-import {PbPromise} from '../utils/promise.js';
-import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
-import {isActivityAllowed} from '../activities/rules.js';
-import {activityParams} from '../activities/activityParams.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
-import {MODULE_TYPE_PREBID} from '../activities/modules.js';
+import { config } from '../config.js';
+import { getHighEntropySUA, getLowEntropySUA } from './sua.js';
+import { PbPromise } from '../utils/promise.js';
+import { CLIENT_SECTIONS, clientSectionChecker, hasSection } from './oneClient.js';
+import { isActivityAllowed } from '../activities/rules.js';
+import { activityParams } from '../activities/activityParams.js';
+import { ACTIVITY_ACCESS_DEVICE } from '../activities/activities.js';
+import { MODULE_TYPE_PREBID } from '../activities/modules.js';
 import { getViewportSize } from '../../libraries/viewport/viewport.js';
 
 export const dep = {
@@ -153,12 +152,11 @@ const ENRICHMENTS = {
       const h = getWinDimensions().screen.height;
 
       // vpw and vph are the viewport dimensions of the browser window
-      const {width: vpw, height: vph} = getViewportSize();
+      const { width: vpw, height: vph } = getViewportSize();
 
       const device = {
         w,
         h,
-        dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
         ext: {
@@ -220,7 +218,7 @@ export const getMetaTagKeywords = memoize(() => {
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
 // section is appropriate
 function clientEnrichment(ortb2, ri) {
-  const domain = parseDomain(ri.page, {noLeadingWww: true});
+  const domain = parseDomain(ri.page, { noLeadingWww: true });
   const keywords = new Set();
   if (config.getConfig('firstPartyData.keywords.meta') ?? true) {
     (getMetaTagKeywords() ?? []).forEach(key => keywords.add(key));

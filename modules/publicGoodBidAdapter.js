@@ -1,7 +1,7 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'publicgood';
 const PUBLIC_GOOD_ENDPOINT = 'https://advice.pgs.io';
@@ -67,7 +67,7 @@ export const spec = {
       bidResponse.currency = 'USD';
       bidResponse.netRevenue = true;
       bidResponse.ttl = 360;
-      bidResponse.meta = {advertiserDomains: []};
+      bidResponse.meta = { advertiserDomains: [] };
       bidResponses.push(bidResponse);
     }
 

@@ -1,9 +1,10 @@
 import { timestamp, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -23,15 +24,15 @@ const cache = {
   auctions: {}
 };
 
-const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
-  track({eventType, args}) {
+const livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICSTYPE }), {
+  track({ eventType, args }) {
     const time = timestamp();
     logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
+        cache.auctions[args.auctionId] = { bids: {}, bidAdUnits: {} };
         break;
       case EVENTS.BID_REQUESTED:
         logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
@@ -41,7 +42,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
-          const container = document.getElementById(bidRequest.adUnitCode);
+          const container = getAdUnitElement(bidRequest);
           let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
           adUnitId = adUnitId != null ? adUnitId : undefined;
 
@@ -189,7 +190,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     return;
   }
 
-  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
 
   setTimeout(() => {
     sentRequests.auctionIds.forEach(id => {
@@ -233,7 +234,7 @@ function getSentRequests() {
     });
   });
 
-  return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
+  return { gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests };
 }
 
 function getResponses(gdpr, auctionIds) {
@@ -309,7 +310,7 @@ function getGdprPos(gdpr, auction) {
   }
 
   if (gdprPos === gdpr.length) {
-    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+    gdpr[gdprPos] = { gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent };
   }
 
   return gdprPos;

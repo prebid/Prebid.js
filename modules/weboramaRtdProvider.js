@@ -188,6 +188,7 @@ class WeboramaRtdProvider {
   constructor(components) {
     this.#components = components;
   }
+
   /**
    * Initialize module
    * @function

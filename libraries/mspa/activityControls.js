@@ -1,12 +1,13 @@
-import {registerActivityControl} from '../../src/activities/rules.js';
+import { registerActivityControl } from '../../src/activities/rules.js';
 import {
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
   ACTIVITY_SYNC_USER,
-  ACTIVITY_TRANSMIT_PRECISE_GEO
+  ACTIVITY_TRANSMIT_PRECISE_GEO,
+  ACTIVITY_TRANSMIT_UFPD
 } from '../../src/activities/activities.js';
-import {gppDataHandler} from '../../src/adapterManager.js';
-import {logInfo} from '../../src/utils.js';
+import { gppDataHandler } from '../../src/adapterManager.js';
+import { logInfo } from '../../src/utils.js';
 
 // default interpretation for MSPA consent(s):
 // https://docs.prebid.org/features/mspa-usnat.html
@@ -79,7 +80,7 @@ export const isTransmitUfpdConsentDenied = (() => {
   })()
 
   return function (cd) {
-    const {cannotBeInScope, mustHaveConsent, allExceptGeo} = sensitiveFlags[cd.Version];
+    const { cannotBeInScope, mustHaveConsent, allExceptGeo } = sensitiveFlags[cd.Version];
     return isConsentDenied(cd) ||
       // no notice about sensitive data was given
       sensitiveNoticeIs(cd, 2) ||
@@ -105,7 +106,8 @@ export function isTransmitGeoConsentDenied(cd) {
 const CONSENT_RULES = {
   [ACTIVITY_SYNC_USER]: isConsentDenied,
   [ACTIVITY_ENRICH_EIDS]: isConsentDenied,
-  [ACTIVITY_ENRICH_UFPD]: isTransmitUfpdConsentDenied,
+  [ACTIVITY_ENRICH_UFPD]: isConsentDenied,
+  [ACTIVITY_TRANSMIT_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
 };
 
@@ -114,13 +116,13 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
     if (applicableSids().some(sid => sids.includes(sid))) {
       const consent = getConsent();
       if (consent == null) {
-        return {allow: false, reason: 'consent data not available'};
+        return { allow: false, reason: 'consent data not available' };
       }
       if (![1, 2].includes(consent.Version)) {
-        return {allow: false, reason: `unsupported consent specification version "${consent.Version}"`}
+        return { allow: false, reason: `unsupported consent specification version "${consent.Version}"` }
       }
       if (denies(consent)) {
-        return {allow: false};
+        return { allow: false };
       }
     }
   };

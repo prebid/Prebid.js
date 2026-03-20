@@ -227,7 +227,7 @@ describe('screencore bid adapter', function () {
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.exist;
       expect(requests.method).to.equal('POST');
-      expect(requests.url).to.include('screencore.io/prebid');
+      expect(requests.url).to.include('screencore.io/pbjs');
       expect(requests.data).to.exist;
       expect(requests.data.placements).to.be.an('array');
       expect(requests.data.placements[0].bidId).to.equal(BID.bidId);
@@ -391,6 +391,39 @@ describe('screencore bid adapter', function () {
 
       const domain = createDomain();
       expect(domain).to.equal('https://taqapac.screencore.io');
+
+      stub.restore();
+    });
+
+    it('should return correct domain for US/ prefixed timezone', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'US/Eastern' })
+      });
+
+      const domain = createDomain();
+      expect(domain).to.equal('https://taqus.screencore.io');
+
+      stub.restore();
+    });
+
+    it('should return correct domain for Canada/ prefixed timezone', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'Canada/Eastern' })
+      });
+
+      const domain = createDomain();
+      expect(domain).to.equal('https://taqus.screencore.io');
+
+      stub.restore();
+    });
+
+    it('should return EU domain as default for unknown timezone', function () {
+      const stub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone: 'UTC' })
+      });
+
+      const domain = createDomain();
+      expect(domain).to.equal('https://taqeu.screencore.io');
 
       stub.restore();
     });

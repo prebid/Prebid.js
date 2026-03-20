@@ -1,4 +1,4 @@
-import {compose} from '../../../libraries/ortbConverter/lib/composer.js';
+import { compose } from '../../../libraries/ortbConverter/lib/composer.js';
 
 describe('compose', () => {
   it('runs each component in order of priority', () => {
