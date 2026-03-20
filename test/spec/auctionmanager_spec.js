@@ -105,6 +105,10 @@ function mockBidRequest(bid, opts) {
   const defaultMediaType = {
     banner: {
       sizes: [[300, 250], [300, 600]]
+    },
+    video: {
+      context: 'outstream',
+      renderer: {}
     }
   }
   const mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
@@ -836,7 +840,7 @@ describe('auctionmanager.js', function () {
       }
       const auction = auctionManager.createAuction({ adUnits, ortb2Fragments });
       expect(auction.getNonBids()[0]).to.equal(undefined);
-      events.emit(EVENTS.SEAT_NON_BID, {
+      events.emit(EVENTS.PBS_ANALYTICS, {
         auctionId: auction.getAuctionId(),
         seatnonbid: ['test']
       });
@@ -1159,7 +1163,7 @@ describe('auctionmanager.js', function () {
           bids[0],
           {
             bidderCode: BIDDER_CODE,
-            mediaType: 'video-outstream',
+            mediaType: 'video',
           }
         );
         spec.interpretResponse.returns(bids1);
@@ -1276,6 +1280,12 @@ describe('auctionmanager.js', function () {
         adUnits[0].ttlBuffer = 0;
         auction.callBids();
         expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
+      });
+
+      it('sets bidResponse.element from adUnit.element', () => {
+        adUnits[0].element = 'test';
+        auction.callBids();
+        expect(auction.getBidsReceived()[0].element).to.equal('test');
       });
 
       [

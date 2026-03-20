@@ -8,7 +8,6 @@ import { BID_STATUS, MESSAGES } from './constants.js';
 import { isApnGetTagDefined, isGptPubadsDefined, logError, logWarn } from './utils.js';
 import {
   deferRendering,
-  getBidToRender,
   handleCreativeEvent,
   handleNativeMessage,
   handleRender,
@@ -16,6 +15,8 @@ import {
 } from './adRendering.js';
 import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
 import { PbPromise } from './utils/promise.js';
+import { getAdUnitElement } from './utils/adUnits.js';
+import { auctionManager } from './auctionManager.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -70,10 +71,8 @@ export function receiveMessage(ev, cb) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST, (adObject) => {
-      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
-      cb && cb();
-    });
+    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
+    cb && cb();
   }
 }
 
@@ -167,7 +166,7 @@ export function resizeAnchor(ins, width, height) {
   })
 }
 
-export function resizeRemoteCreative({ instl, adId, adUnitCode, width, height }) {
+export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, height }) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
@@ -190,7 +189,7 @@ export function resizeRemoteCreative({ instl, adId, adUnitCode, width, height })
 
   function getElementByAdUnit(elmType) {
     const id = getElementIdBasedOnAdServer(adId, adUnitCode);
-    const parentDivEle = document.getElementById(id);
+    const parentDivEle = id == null ? getAdUnitElement({ element, adUnitCode }) : document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
@@ -207,7 +206,6 @@ export function resizeRemoteCreative({ instl, adId, adUnitCode, width, height })
         return apnId;
       }
     }
-    return adUnitCode;
   }
 
   function getDfpElementId(adId) {

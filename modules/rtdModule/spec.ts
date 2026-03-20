@@ -32,8 +32,7 @@ export type RTDProviderConfig<P extends RTDProvider> = BaseConfig<P> & (
 type RTDEvent = typeof EVENTS.AUCTION_INIT |
     typeof EVENTS.AUCTION_END |
     typeof EVENTS.BID_RESPONSE |
-    typeof EVENTS.BID_REQUESTED |
-    typeof EVENTS.BID_ACCEPTED;
+    typeof EVENTS.BID_REQUESTED;
 
 type EventHandlers<P extends RTDProvider> = {
   [EV in RTDEvent]: (payload: EventPayload<EV>, config: RTDProviderConfig<P>, consent: AllConsentData) => void;
