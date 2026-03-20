@@ -74,6 +74,76 @@ The module reads agentic audience data from browser storage (localStorage or coo
 
 These fields align with the [Agentic Audiences OpenRTB Segment extension](https://github.com/IABTechLab/agentic-audiences).
 
+## Example OpenRTB user object
+
+The module injects agentic audience entries into `user.data`. Entries from the default storage key and all configured providers (e.g. LiveRamp, Optable) are merged into a single `segment` array under one Data object.
+
+### Single provider (LiveRamp only)
+
+```json
+{
+  "user": {
+    "data": [
+      {
+        "name": "agentic-audiences.org",
+        "segment": [
+          {
+            "ver": "1.0",
+            "vector": [0.1, -0.2, 0.3],
+            "model": "sbert-mini-ctx-001",
+            "dimension": 3,
+            "type": [1, 2]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Multiple providers (LiveRamp and Optable)
+
+When configured with both LiveRamp and Optable, entries from both storage keys are combined into one `segment` array:
+
+```json
+{
+  "user": {
+    "data": [
+      {
+        "name": "agentic-audiences.org",
+        "segment": [
+          {
+            "ver": "1.0",
+            "vector": [0.1, -0.2, 0.3],
+            "model": "sbert-mini-ctx-001",
+            "dimension": 3,
+            "type": [1]
+          },
+          {
+            "ver": "1.0",
+            "vector": [0.5, 0.6, -0.1],
+            "model": "optable-embed-v1",
+            "dimension": 3,
+            "type": [2]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Configuration for the multi-provider example:
+
+```javascript
+params: {
+  providers: {
+    liveRamp: { storageKey: '_lr_agentic_audience_' },
+    optable: { storageKey: '_optable_agentic_audience_' }
+  }
+}
+```
+
 ## References
 
 - [IABTechLab Agentic Audiences](https://github.com/IABTechLab/agentic-audiences)
