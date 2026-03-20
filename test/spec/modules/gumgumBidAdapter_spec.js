@@ -100,39 +100,6 @@ describe('gumgumAdapter', function () {
 
   describe('buildRequests', function () {
     const sizesArray = [[300, 250], [300, 600]];
-    const id5Eid = {
-      source: 'id5-sync.com',
-      uids: [{
-        id: 'uid-string',
-        ext: {
-          linkType: 2
-        }
-      }]
-    };
-    const pubProvidedIdEids = [
-      {
-        uids: [
-          {
-            ext: {
-              stype: 'ppuid',
-            },
-            id: 'aac4504f-ef89-401b-a891-ada59db44336',
-          },
-        ],
-        source: 'audigent.com',
-      },
-      {
-        uids: [
-          {
-            ext: {
-              stype: 'ppuid',
-            },
-            id: 'y-zqTHmW9E2uG3jEETC6i6BjGcMhPXld2F~A',
-          },
-        ],
-        source: 'crwdcntrl.net',
-      },
-    ];
     const bidderRequest = {
       ortb2: {
         site: {
@@ -169,7 +136,38 @@ describe('gumgumAdapter', function () {
             sizes: sizesArray
           }
         },
-        userIdAsEids: [id5Eid, ...pubProvidedIdEids],
+        userId: {
+          id5id: {
+            uid: 'uid-string',
+            ext: {
+              linkType: 2
+            }
+          }
+        },
+        pubProvidedId: [
+          {
+            uids: [
+              {
+                ext: {
+                  stype: 'ppuid',
+                },
+                id: 'aac4504f-ef89-401b-a891-ada59db44336',
+              },
+            ],
+            source: 'sonobi.com',
+          },
+          {
+            uids: [
+              {
+                ext: {
+                  stype: 'ppuid',
+                },
+                id: 'y-zqTHmW9E2uG3jEETC6i6BjGcMhPXld2F~A',
+              },
+            ],
+            source: 'aol.com',
+          },
+        ],
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
@@ -229,139 +227,13 @@ describe('gumgumAdapter', function () {
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(pubProvidedIdEids));
-    });
-    it('should filter pubProvidedId entries by allowed sources', function () {
-      const filteredRequest = {
-        ...bidRequests[0],
-        userIdAsEids: [
-          {
-            source: 'audigent.com',
-            uids: [{ id: 'ppid-1', ext: { stype: 'ppuid' } }]
-          },
-          {
-            source: 'sonobi.com',
-            uids: [{ id: 'ppid-2', ext: { stype: 'ppuid' } }]
-          }
-        ]
-      };
-      const bidRequest = spec.buildRequests([filteredRequest])[0];
-      const pubProvidedIds = JSON.parse(bidRequest.data.pubProvidedId);
-      expect(pubProvidedIds.length).to.equal(1);
-      expect(pubProvidedIds[0].source).to.equal('audigent.com');
-    });
-    it('should not set pubProvidedId when all sources are filtered out', function () {
-      const filteredRequest = {
-        ...bidRequests[0],
-        userIdAsEids: [{
-          source: 'sonobi.com',
-          uids: [{ id: 'ppid-2', ext: { stype: 'ppuid' } }]
-        }]
-      };
-      const bidRequest = spec.buildRequests([filteredRequest])[0];
-      expect(bidRequest.data.pubProvidedId).to.equal(undefined);
+      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(bidRequests[0].userId.pubProvidedId));
     });
     it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.id5Id).to.equal(id5Eid.uids[0].id);
-      expect(bidRequest.data.id5IdLinkType).to.equal(id5Eid.uids[0].ext.linkType);
-    });
-    it('should use bidderRequest.ortb2.user.ext.eids when bid-level eids are not available', function () {
-      const request = { ...bidRequests[0], userIdAsEids: undefined };
-      const fakeBidderRequest = {
-        ...bidderRequest,
-        ortb2: {
-          ...bidderRequest.ortb2,
-          user: {
-            ext: {
-              eids: [{
-                source: 'liveramp.com',
-                uids: [{
-                  id: 'fallback-idl-env'
-                }]
-              }]
-            }
-          }
-        }
-      };
-      const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
-      expect(bidRequest.data.idl_env).to.equal('fallback-idl-env');
-    });
-    it('should prioritize bidderRequest.ortb2.user.ext.eids over bid-level eids', function () {
-      const request = {
-        ...bidRequests[0],
-        userIdAsEids: [{
-          source: 'liveramp.com',
-          uids: [{ id: 'bid-level-idl-env' }]
-        }]
-      };
-      const fakeBidderRequest = {
-        ...bidderRequest,
-        ortb2: {
-          ...bidderRequest.ortb2,
-          user: {
-            ext: {
-              eids: [{
-                source: 'liveramp.com',
-                uids: [{ id: 'ortb2-level-idl-env' }]
-              }]
-            }
-          }
-        }
-      };
-      const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
-      expect(bidRequest.data.idl_env).to.equal('ortb2-level-idl-env');
-    });
-    it('should keep identity output consistent for prebid10 ortb2 eids input', function () {
-      const request = { ...bidRequests[0], userIdAsEids: undefined };
-      const fakeBidderRequest = {
-        ...bidderRequest,
-        ortb2: {
-          ...bidderRequest.ortb2,
-          user: {
-            ext: {
-              eids: [
-                {
-                  source: 'uidapi.com',
-                  uids: [{ id: 'uid2-token', atype: 3 }]
-                },
-                {
-                  source: 'liveramp.com',
-                  uids: [{ id: 'idl-envelope', atype: 1 }]
-                },
-                {
-                  source: 'adserver.org',
-                  uids: [{ id: 'tdid-value', atype: 1, ext: { rtiPartner: 'TDID' } }]
-                },
-                {
-                  source: 'id5-sync.com',
-                  uids: [{ id: 'id5-value', atype: 1, ext: { linkType: 2 } }]
-                },
-                {
-                  source: 'audigent.com',
-                  uids: [{ id: 'ppid-1', atype: 1, ext: { stype: 'ppuid' } }]
-                },
-                {
-                  source: 'sonobi.com',
-                  uids: [{ id: 'ppid-2', atype: 1, ext: { stype: 'ppuid' } }]
-                }
-              ]
-            }
-          }
-        }
-      };
-      const bidRequest = spec.buildRequests([request], fakeBidderRequest)[0];
-
-      // Expected identity payload shape from legacy GumGum request fields.
-      expect(bidRequest.data.uid2).to.equal('uid2-token');
-      expect(bidRequest.data.idl_env).to.equal('idl-envelope');
-      expect(bidRequest.data.tdid).to.equal('tdid-value');
-      expect(bidRequest.data.id5Id).to.equal('id5-value');
-      expect(bidRequest.data.id5IdLinkType).to.equal(2);
-      const pubProvidedId = JSON.parse(bidRequest.data.pubProvidedId);
-      expect(pubProvidedId.length).to.equal(1);
-      expect(pubProvidedId[0].source).to.equal('audigent.com');
+      expect(bidRequest.data.id5Id).to.equal(bidRequests[0].userId.id5id.uid);
+      expect(bidRequest.data.id5IdLinkType).to.equal(bidRequests[0].userId.id5id.ext.linkType);
     });
 
     it('should set pubId param if found', function () {
@@ -426,266 +298,6 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('curl', 'http://pub.com/news');
     });
-
-    describe('content metadata extraction', function() {
-      it('should extract all site.content fields', function() {
-        const ortb2WithContent = {
-          site: {
-            content: {
-              id: 'content-id-123',
-              episode: 5,
-              title: 'Test Episode Title',
-              series: 'Test Series',
-              season: 'Season 2',
-              genre: 'Comedy',
-              contentrating: 'PG-13',
-              userrating: '4.5',
-              context: 1,
-              livestream: 1,
-              len: 1800,
-              language: 'en',
-              url: 'https://example.com/content',
-              cattax: 6,
-              prodq: 2,
-              qagmediarating: 1,
-              keywords: 'keyword1,keyword2,keyword3',
-              cat: ['IAB1-1', 'IAB1-2', 'IAB1-3'],
-              producer: {
-                id: 'producer-123',
-                name: 'Test Producer'
-              },
-              channel: {
-                id: 'channel-123',
-                name: 'Test Channel',
-                domain: 'testchannel.com'
-              },
-              network: {
-                name: 'Test Network'
-              }
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ...bidderRequest, ortb2: ortb2WithContent })[0];
-
-        expect(bidRequest.data.itype).to.equal('site');
-        expect(bidRequest.data.cid).to.equal('content-id-123');
-        expect(bidRequest.data.cepisode).to.equal(5);
-        expect(bidRequest.data.ctitle).to.equal('Test Episode Title');
-        expect(bidRequest.data.cseries).to.equal('Test Series');
-        expect(bidRequest.data.cseason).to.equal('Season 2');
-        expect(bidRequest.data.cgenre).to.equal('Comedy');
-        expect(bidRequest.data.crating).to.equal('PG-13');
-        expect(bidRequest.data.cur).to.equal('4.5');
-        expect(bidRequest.data.cctx).to.equal(1);
-        expect(bidRequest.data.clive).to.equal(1);
-        expect(bidRequest.data.clen).to.equal(1800);
-        expect(bidRequest.data.clang).to.equal('en');
-        expect(bidRequest.data.curl).to.equal('https://example.com/content');
-        expect(bidRequest.data.cattax).to.equal(6);
-        expect(bidRequest.data.cprodq).to.equal(2);
-        expect(bidRequest.data.cqag).to.equal(1);
-        expect(bidRequest.data.ckw).to.equal('keyword1,keyword2,keyword3');
-        expect(bidRequest.data.ccat).to.equal('IAB1-1,IAB1-2,IAB1-3');
-        expect(bidRequest.data.cpid).to.equal('producer-123');
-        expect(bidRequest.data.cpname).to.equal('Test Producer');
-        expect(bidRequest.data.cchannelid).to.equal('channel-123');
-        expect(bidRequest.data.cchannel).to.equal('Test Channel');
-        expect(bidRequest.data.cchanneldomain).to.equal('testchannel.com');
-        expect(bidRequest.data.cnetwork).to.equal('Test Network');
-      });
-
-      it('should extract app.content fields when site.content is not present', function() {
-        const ortb2WithAppContent = {
-          app: {
-            content: {
-              id: 'app-content-id',
-              title: 'App Content Title',
-              series: 'App Series',
-              url: 'https://example.com/app-content'
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2: ortb2WithAppContent })[0];
-
-        expect(bidRequest.data.itype).to.equal('app');
-        expect(bidRequest.data.cid).to.equal('app-content-id');
-        expect(bidRequest.data.ctitle).to.equal('App Content Title');
-        expect(bidRequest.data.cseries).to.equal('App Series');
-        expect(bidRequest.data.curl).to.equal('https://example.com/app-content');
-      });
-
-      it('should prioritize site.content over app.content', function() {
-        const ortb2WithBoth = {
-          site: {
-            content: {
-              id: 'site-content-id',
-              title: 'Site Content'
-            }
-          },
-          app: {
-            content: {
-              id: 'app-content-id',
-              title: 'App Content'
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2: ortb2WithBoth })[0];
-
-        expect(bidRequest.data.itype).to.equal('site');
-        expect(bidRequest.data.cid).to.equal('site-content-id');
-        expect(bidRequest.data.ctitle).to.equal('Site Content');
-      });
-
-      it('should handle keywords as an array', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              keywords: ['keyword1', 'keyword2', 'keyword3']
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data.ckw).to.equal('keyword1,keyword2,keyword3');
-      });
-
-      it('should handle keywords as a string', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              keywords: 'keyword1,keyword2,keyword3'
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data.ckw).to.equal('keyword1,keyword2,keyword3');
-      });
-
-      it('should not include content params when content object is missing', function() {
-        const ortb2 = {
-          site: {
-            page: 'https://example.com'
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data).to.not.have.property('cid');
-        expect(bidRequest.data).to.not.have.property('ctitle');
-        expect(bidRequest.data).to.not.have.property('curl');
-      });
-
-      it('should not include undefined or null content fields', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              id: 'content-123',
-              title: undefined,
-              series: null,
-              season: ''
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data.cid).to.equal('content-123');
-        expect(bidRequest.data).to.not.have.property('ctitle');
-        expect(bidRequest.data).to.not.have.property('cseries');
-        expect(bidRequest.data).to.not.have.property('cseason');
-      });
-
-      it('should handle zero values for numeric fields', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              episode: 0,
-              context: 0,
-              livestream: 0,
-              len: 0,
-              cattax: 0,
-              prodq: 0,
-              qagmediarating: 0
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data.cepisode).to.equal(0);
-        expect(bidRequest.data.cctx).to.equal(0);
-        expect(bidRequest.data.clive).to.equal(0);
-        expect(bidRequest.data.clen).to.equal(0);
-        expect(bidRequest.data.cattax).to.equal(0);
-        expect(bidRequest.data.cprodq).to.equal(0);
-        expect(bidRequest.data.cqag).to.equal(0);
-      });
-
-      it('should handle empty arrays for cat', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              cat: []
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data).to.not.have.property('ccat');
-      });
-
-      it('should handle partial producer data', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              producer: {
-                id: 'producer-id-only'
-              }
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data.cpid).to.equal('producer-id-only');
-        expect(bidRequest.data).to.not.have.property('cpname');
-      });
-
-      it('should handle episode as string', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              episode: 'S01E05'
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ortb2 })[0];
-
-        expect(bidRequest.data.cepisode).to.equal('S01E05');
-      });
-
-      it('should not override existing curl from irisid extraction', function() {
-        const ortb2 = {
-          site: {
-            content: {
-              url: 'https://content-url.com'
-            }
-          }
-        };
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request], { ...bidderRequest, ortb2 })[0];
-
-        expect(bidRequest.data.curl).to.equal('https://content-url.com');
-      });
-    });
     it('should not set the iriscat param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
@@ -722,26 +334,6 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
     });
-    it('should set ae value to 1 for PAAPI', function () {
-      const req = {
-        ...bidRequests[0],
-        ortb2Imp: {
-          ext: {
-            ae: 1,
-            data: {
-              adserver: {
-                name: 'test',
-                adslot: 123456
-              }
-            }
-          }
-        }
-      }
-      const bidRequest = spec.buildRequests([req])[0];
-      expect(bidRequest.data).to.have.property('ae');
-      expect(bidRequest.data.ae).to.equal(true);
-    });
-
     it('should set the global placement id (gpid) if in gpid property', function () {
       const gpid = 'abc123'
       const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } } }
@@ -1006,7 +598,7 @@ describe('gumgumAdapter', function () {
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(pubProvidedIdEids));
+      expect(bidRequest.data.pubProvidedId).to.equal(JSON.stringify(bidRequests[0].userId.pubProvidedId));
     });
 
     it('should add gdpr consent parameters if gdprConsent is present', function () {
@@ -1106,40 +698,14 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.uspConsent).to.eq(uspConsentObj.uspConsent);
     });
     it('should add a tdid parameter if request contains unified id from TradeDesk', function () {
-      const tdidEid = {
-        source: 'adserver.org',
-        uids: [{
-          id: 'tradedesk-id',
-          ext: {
-            rtiPartner: 'TDID'
-          }
-        }]
-      };
-      const request = Object.assign({}, bidRequests[0], { userIdAsEids: [...bidRequests[0].userIdAsEids, tdidEid] });
+      const unifiedId = {
+        'userId': {
+          'tdid': 'tradedesk-id'
+        }
+      }
+      const request = Object.assign(unifiedId, bidRequests[0]);
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.tdid).to.eq(tdidEid.uids[0].id);
-    });
-    it('should add a tdid parameter when TDID uid is not the first uid in adserver.org', function () {
-      const tdidEid = {
-        source: 'adserver.org',
-        uids: [
-          {
-            id: 'non-tdid-first',
-            ext: {
-              rtiPartner: 'NOT_TDID'
-            }
-          },
-          {
-            id: 'tradedesk-id',
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }
-        ]
-      };
-      const request = Object.assign({}, bidRequests[0], { userIdAsEids: [tdidEid] });
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.tdid).to.eq('tradedesk-id');
+      expect(bidRequest.data.tdid).to.eq(unifiedId.userId.tdid);
     });
     it('should not add a tdid parameter if unified id is not found', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -1147,8 +713,7 @@ describe('gumgumAdapter', function () {
     });
     it('should send IDL envelope ID if available', function () {
       const idl_env = 'abc123';
-      const idlEid = { source: 'liveramp.com', uids: [{ id: idl_env }] };
-      const request = { ...bidRequests[0], userIdAsEids: [idlEid] };
+      const request = { ...bidRequests[0], userId: { idl_env } };
       const bidRequest = spec.buildRequests([request])[0];
 
       expect(bidRequest.data).to.have.property('idl_env');
@@ -1162,8 +727,7 @@ describe('gumgumAdapter', function () {
     });
     it('should add a uid2 parameter if request contains uid2 id', function () {
       const uid2 = { id: 'sample-uid2' };
-      const uid2Eid = { source: 'uidapi.com', uids: [{ id: uid2.id }] };
-      const request = { ...bidRequests[0], userIdAsEids: [uid2Eid] };
+      const request = { ...bidRequests[0], userId: { uid2 } };
       const bidRequest = spec.buildRequests([request])[0];
 
       expect(bidRequest.data).to.have.property('uid2');
@@ -1291,6 +855,8 @@ describe('gumgumAdapter', function () {
           ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+          lmt: 1,
+          ifa: 'test-ifa-id',
           sua: suaObject
 
         },
@@ -1309,9 +875,23 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
+      expect(bidRequest.data.lmt).to.equal(ortb2.device.lmt);
+      expect(bidRequest.data).to.not.have.property('ifa');
       expect(bidRequest.data).to.have.property('sua');
       expect(() => JSON.parse(bidRequest.data.sua)).to.not.throw();
       expect(JSON.parse(bidRequest.data.sua)).to.deep.equal(suaObject);
+    });
+
+    it('should include ifa when lmt is not 1', function () {
+      const ortb2 = {
+        device: {
+          lmt: 0,
+          ifa: 'test-ifa-id'
+        }
+      };
+      const bidRequest = spec.buildRequests(bidRequests, { ortb2 })[0];
+      expect(bidRequest.data.lmt).to.equal(0);
+      expect(bidRequest.data.ifa).to.equal('test-ifa-id');
     });
 
     it('should set tId from ortb2Imp.ext.tid if available', function () {

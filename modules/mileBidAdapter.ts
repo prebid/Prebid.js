@@ -1,8 +1,8 @@
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, generateUUID, logInfo, logError } from '../src/utils.js';
-import { getDNT } from '../libraries/dnt/index.js';
 import { ajax } from '../src/ajax.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * Mile Bid Adapter

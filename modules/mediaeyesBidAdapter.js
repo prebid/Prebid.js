@@ -1,5 +1,6 @@
 import {
-  BANNER
+  BANNER,
+  VIDEO
 } from '../src/mediaTypes.js';
 import {
   registerBidder
@@ -10,7 +11,7 @@ const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
 
 export const spec = {
   code: 'mediaeyes',
-  supportedMediaTypes: BANNER,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     return !!(bid.params.itemId);
@@ -57,10 +58,24 @@ export const spec = {
         netRevenue: true
       };
 
-      prBid.mediaType = BANNER;
+      let mediaType = rtbBid.ext?.mediaType;
+      if (!mediaType) {
+        if (rtbBid.adm && rtbBid.adm.includes('<VAST')) {
+          mediaType = VIDEO;
+        } else {
+          mediaType = BANNER;
+        }
+      }
+
+      if (mediaType === VIDEO) {
+        prBid.mediaType = VIDEO;
+        prBid.vastXml = rtbBid.adm;
+      } else {
+        prBid.mediaType = BANNER;
+        prBid.ad = rtbBid.adm;
+      }
       prBid.width = rtbBid.w;
       prBid.height = rtbBid.h;
-      prBid.ad = rtbBid.adm;
       if (isArray(rtbBid.adomain)) {
         deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
       }
@@ -96,7 +111,13 @@ function cookingImp(bidReq) {
 
     imp.id = bidReq.bidId;
     imp.bidfloor = bidfloor;
-    imp.banner = cookImpBanner(bidReq);
+    if (bidReq.mediaTypes?.banner) {
+      imp.banner = cookImpBanner(bidReq);
+    }
+
+    if (bidReq.mediaTypes?.video) {
+      imp.video = cookImpVideo(bidReq);
+    }
   }
   return imp;
 }
@@ -110,6 +131,33 @@ const cookImpBanner = ({ mediaTypes, params }) => {
     h: sizes[0][1]
   }
 };
+
+function cookImpVideo({ mediaTypes }) {
+  const video = mediaTypes.video;
+
+  const size = Array.isArray(video.playerSize[0])
+    ? video.playerSize[0]
+    : video.playerSize;
+
+  const [w, h] = size;
+
+  let placement = video.placement;
+  if (!placement && video.context) {
+    if (video.context === 'outstream') {
+      placement = 4;
+    } else if (video.context === 'instream') {
+      placement = 1;
+    }
+  }
+
+  return {
+    w,
+    h,
+    mimes: video.mimes || ['video/mp4'],
+    protocols: video.protocols || [2, 3, 5, 6],
+    placement: video.placement || 1
+  };
+}
 
 function getBidFloor(bidRequest) {
   let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
