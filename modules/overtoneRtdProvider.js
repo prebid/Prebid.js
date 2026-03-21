@@ -2,7 +2,7 @@ import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 
-export const OVERTONE_URL = 'https://prebid-1.overtone.ai/contextual';
+export const OVERTONE_URL = 'https://prebid-1.overtone.ai/VendorService';
 
 const logMessage = (...args) => {
   _logMessage('Overtone', ...args);
@@ -10,7 +10,7 @@ const logMessage = (...args) => {
 
 export async function fetchContextData(url = window.location.href) {
   const pageUrl = encodeURIComponent(url);
-  const requestUrl = `${OVERTONE_URL}?URL=${pageUrl}&InApp=False`;
+  const requestUrl = `${OVERTONE_URL}?pageUrl=${pageUrl}`;
   const request = window.ajaxBuilder || ajaxBuilder();
 
   return new Promise((resolve, reject) => {
@@ -20,22 +20,16 @@ export async function fetchContextData(url = window.location.href) {
         const data = safeJSONParse(response);
         logMessage('Fetched data:', data);
 
-        if (!data || typeof data.status !== 'number') {
+        if (!data || !data.vendor) {
           reject(new Error('Invalid response format'));
           return;
         }
 
-        switch (data.status) {
-          case 1: // Success
-            resolve({ categories: data.categories || [] });
-            break;
-          case 3: // Fail
-          case 4: // Ignore
-            resolve({ categories: [] });
-            break;
-          default:
-            reject(new Error(`Unexpected response status: ${data.status}`));
-        }
+        const segments = (data.sources && data.sources[0] && data.sources[0].segments)
+          ? data.sources[0].segments.map(s => s.id)
+          : [];
+
+        resolve({ categories: segments });
       },
       error: (err) => {
         logMessage('Error during request:', err);
@@ -57,11 +51,11 @@ export const overtoneRtdProvider = {
     fetchContextData()
       .then((contextData) => {
         if (contextData) {
-          if (!bidReqConfig.ortb2Fragments.global.site.ext) {
-            bidReqConfig.ortb2Fragments.global.site.ext = {};
-          }
-
-          bidReqConfig.ortb2Fragments.global.site.ext.data = contextData;
+          logMessage('Fetched context data', contextData);
+          bidReqConfig.ortb2Fragments.global.site.ext = {
+            ...bidReqConfig.ortb2Fragments.global.site.ext,
+            data: contextData,
+          };
         }
         callback();
       })
