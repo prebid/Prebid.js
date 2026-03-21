@@ -1,5 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
+import { mergeDeep } from '../src/utils.js';
 import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 
 export const OVERTONE_URL = 'https://prebid-1.overtone.ai/VendorService';
@@ -52,10 +53,9 @@ export const overtoneRtdProvider = {
       .then((contextData) => {
         if (contextData) {
           logMessage('Fetched context data', contextData);
-          bidReqConfig.ortb2Fragments.global.site.ext = {
-            ...bidReqConfig.ortb2Fragments.global.site.ext,
-            data: contextData,
-          };
+          mergeDeep(bidReqConfig.ortb2Fragments.global, {
+            site: { ext: { data: { overtone: contextData } } }
+          });
         }
         callback();
       })

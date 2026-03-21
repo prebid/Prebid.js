@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { overtoneModule } from '../../../modules/overtoneRtdProvider.js';
+import { overtoneModule, overtoneRtdProvider } from '../../../modules/overtoneRtdProvider.js';
 import { logMessage } from '../../../src/utils.js';
 
 const TEST_URLS = {
@@ -54,6 +54,49 @@ describe('Overtone RTD Submodule with Test URLs', function () {
     const data = await overtoneModule.fetchContextData(TEST_URLS.empty);
     expect(data).to.deep.equal({
       categories: [],
+    });
+  });
+
+  it('should merge into site.ext.data without overwriting existing data', function (done) {
+    const bidReqConfig = {
+      ortb2Fragments: {
+        global: {
+          site: {
+            ext: {
+              data: {
+                existingProvider: { segments: ['seg_123'] }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    overtoneRtdProvider.getBidRequestData(bidReqConfig, () => {
+      const data = bidReqConfig.ortb2Fragments.global.site.ext.data;
+      // Existing FPD must be preserved
+      expect(data.existingProvider).to.deep.equal({ segments: ['seg_123'] });
+      // Overtone data must be namespaced under 'overtone'
+      expect(data.overtone).to.exist;
+      expect(data.overtone.categories).to.be.an('array');
+      done();
+    });
+  });
+
+  it('should namespace under overtone when no prior site.ext.data exists', function (done) {
+    const bidReqConfig = {
+      ortb2Fragments: {
+        global: {
+          site: {}
+        }
+      }
+    };
+
+    overtoneRtdProvider.getBidRequestData(bidReqConfig, () => {
+      const data = bidReqConfig.ortb2Fragments.global.site.ext.data;
+      expect(data.overtone).to.exist;
+      expect(data.overtone.categories).to.be.an('array');
+      done();
     });
   });
 });
