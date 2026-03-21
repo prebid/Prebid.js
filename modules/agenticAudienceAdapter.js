@@ -7,7 +7,6 @@
  * @requires module:modules/realTimeData
  */
 
-import snakeCase from 'lodash/snakeCase';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -29,6 +28,11 @@ export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
 });
+
+function toSnakeCase(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`).replace(/^_/, '');
+}
 
 function dataFromLocalStorage(key) {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
@@ -82,7 +86,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
     if (providerEntries && providerEntries.length > 0) {
       data.push({
-        name: snakeCase(provider),
+        name: toSnakeCase(provider),
         segment: providerEntries
       });
     }
@@ -114,7 +118,7 @@ function tryParse(data) {
 
 function getEntries(key) {
   const storedData = dataFromLocalStorage(key) || dataFromCookie(key);
-  
+
   if (!storedData || typeof storedData !== 'string') {
     return [];
   }
