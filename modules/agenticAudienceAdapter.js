@@ -7,6 +7,7 @@
  * @requires module:modules/realTimeData
  */
 
+import snakeCase from 'lodash/snakeCase';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -42,12 +43,17 @@ function dataFromCookie(key) {
  * @param {Object} userConsent
  * @returns {boolean}
  */
+function getProviders(config) {
+  const configuredProviders = config?.params?.providers;
+  return {
+    ...DEFAULT_PROVIDERS,
+    ...(configuredProviders && typeof configuredProviders === 'object' ? configuredProviders : {})
+  };
+}
+
 function init(config, userConsent) {
-  const providers = config?.params?.providers ?? DEFAULT_PROVIDERS;
-  if (!providers || typeof providers !== 'object' || Object.keys(providers).length === 0) {
-    return false;
-  }
-  return true;
+  const providers = getProviders(config);
+  return Object.keys(providers).length > 0;
 }
 
 /**
@@ -57,9 +63,8 @@ function init(config, userConsent) {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const configParams = config?.params || {};
-  const providers = configParams.providers ?? DEFAULT_PROVIDERS;
-  if (!providers || typeof providers !== 'object') {
+  const providers = getProviders(config);
+  if (!providers || Object.keys(providers).length === 0) {
     callback();
     return;
   }
@@ -77,7 +82,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
     if (providerEntries && providerEntries.length > 0) {
       data.push({
-        name: provider,
+        name: snakeCase(provider),
         segment: providerEntries
       });
     }

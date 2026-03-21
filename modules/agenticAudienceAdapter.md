@@ -53,7 +53,7 @@ pbjs.setConfig({
 |:-----|:-----|:------------|
 | name | String | RTD submodule name. Always `'agenticAudience'` |
 | waitForIt | Boolean | Set to true to delay auction until module responds |
-| params.providers | Object | Provider-specific config. Each key (e.g. `liveRamp`) defines a provider with its own storage. Optional; when omitted, `DEFAULT_PROVIDERS` (LiveRamp and Optable with default storage keys) is used. |
+| params.providers | Object | Provider-specific config. Optional; when omitted, `DEFAULT_PROVIDERS` (LiveRamp and Optable) is used. When provided, it is **merged** with defaults so you can override individual providers (e.g. change LiveRamp's storageKey) or add new ones. |
 | params.providers.{provider}.storageKey | String | Storage key for that provider. Defaults: LiveRamp `_lr_agentic_audience_`, Optable `_optable_agentic_audience_`. |
 
 ## Default providers
@@ -85,7 +85,7 @@ These fields align with the [Agentic Audiences OpenRTB Segment extension](https:
 
 ## Example OpenRTB user object
 
-The module injects agentic audience entries into `user.data`. Each configured provider gets its own Data object with `name` set to the provider key and `segment` containing that provider's entries.
+The module injects agentic audience entries into `user.data`. Each configured provider gets its own Data object with `name` set to the provider key in snake_case (e.g. `liveRamp` → `live_ramp`) and `segment` containing that provider's entries.
 
 ### Single provider (LiveRamp only)
 
@@ -94,7 +94,7 @@ The module injects agentic audience entries into `user.data`. Each configured pr
   "user": {
     "data": [
       {
-        "name": "liveRamp",
+        "name": "live_ramp",
         "segment": [
           {
             "ver": "1.0",
@@ -119,7 +119,7 @@ When configured with both LiveRamp and Optable, each provider gets its own Data 
   "user": {
     "data": [
       {
-        "name": "liveRamp",
+        "name": "live_ramp",
         "segment": [
           {
             "ver": "1.0",
