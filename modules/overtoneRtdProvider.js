@@ -1,13 +1,12 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { mergeDeep } from '../src/utils.js';
-import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
+import { mergeDeep, safeJSONParse, logMessage } from '../src/utils.js';
 
 export const OVERTONE_URL = 'https://prebid-1.overtone.ai/VendorService';
 
-const logMessage = (...args) => {
-  _logMessage('Overtone', ...args);
-};
+function log(...args) {
+  logMessage('Overtone', ...args);
+}
 
 export async function fetchContextData(url = window.location.href) {
   const pageUrl = encodeURIComponent(url);
@@ -15,11 +14,11 @@ export async function fetchContextData(url = window.location.href) {
   const request = window.ajaxBuilder || ajaxBuilder();
 
   return new Promise((resolve, reject) => {
-    logMessage('Sending request to:', requestUrl);
+    log('Sending request to:', requestUrl);
     request(requestUrl, {
       success: (response) => {
         const data = safeJSONParse(response);
-        logMessage('Fetched data:', data);
+        log('Fetched data:', data);
 
         if (!data || !data.vendor) {
           reject(new Error('Invalid response format'));
@@ -33,7 +32,7 @@ export async function fetchContextData(url = window.location.href) {
         resolve({ categories: segments });
       },
       error: (err) => {
-        logMessage('Error during request:', err);
+        log('Error during request:', err);
         reject(err);
       },
     });
@@ -41,7 +40,7 @@ export async function fetchContextData(url = window.location.href) {
 }
 
 function init(config) {
-  logMessage('init', config);
+  log('init', config);
   return true;
 }
 
@@ -52,7 +51,7 @@ export const overtoneRtdProvider = {
     fetchContextData()
       .then((contextData) => {
         if (contextData) {
-          logMessage('Fetched context data', contextData);
+          log('Fetched context data', contextData);
           mergeDeep(bidReqConfig.ortb2Fragments.global, {
             site: { ext: { data: { overtone: contextData } } }
           });
@@ -60,7 +59,7 @@ export const overtoneRtdProvider = {
         callback();
       })
       .catch((error) => {
-        logMessage('Error fetching context data', error);
+        log('Error fetching context data', error);
         callback();
       });
   },
