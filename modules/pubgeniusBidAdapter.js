@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
@@ -21,7 +21,7 @@ const BASE_URL = 'https://auction.adpearl.io';
 export const spec = {
   code: 'pubgenius',
 
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid(bid) {
     const adUnitId = bid.params.adUnitId;
@@ -71,7 +71,7 @@ export const spec = {
       deepSetValue(data, 'regs.ext.us_privacy', usp);
     }
 
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
       deepSetValue(data, 'source.ext.schain', schain);
     }
@@ -117,7 +117,7 @@ export const spec = {
     const syncs = []
 
     if (syncOptions.iframeEnabled) {
-      let params = {};
+      const params = {};
 
       if (gdprConsent) {
         params.gdpr = numericBoolean(gdprConsent.gdprApplies);

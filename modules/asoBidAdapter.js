@@ -1,8 +1,8 @@
-import {deepAccess, deepSetValue} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
@@ -16,9 +16,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   aliases: [
-    {code: 'bcmint'},
-    {code: 'bidgency'},
-    {code: 'kuantyx'}
+    { code: 'bcmint' },
+    { code: 'bidgency' },
+    { code: 'kuantyx' },
+    { code: 'cordless' },
+    { code: 'adklip' }
   ],
 
   isBidRequestValid: bid => {
@@ -26,10 +28,10 @@ export const spec = {
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
-    let requests = [];
+    const requests = [];
 
     bidRequests.forEach(bid => {
-      const data = converter.toORTB({bidRequests: [bid], bidderRequest});
+      const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
       requests.push({
         method: 'POST',
         url: getEndpoint(bid),
@@ -46,7 +48,7 @@ export const spec = {
 
   interpretResponse: (response, request) => {
     if (response.body) {
-      return converter.fromORTB({response: response.body, request: request.data}).bids;
+      return converter.fromORTB({ response: response.body, request: request.data }).bids;
     }
     return [];
   },
@@ -149,7 +151,7 @@ function getEndpoint(bidRequest) {
 
 function getConsentsIds(gdprConsent) {
   const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
-  let consentsIds = [];
+  const consentsIds = [];
 
   Object.keys(consents).forEach(key => {
     if (consents[key] === true) {

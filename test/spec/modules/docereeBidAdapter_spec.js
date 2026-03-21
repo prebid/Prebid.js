@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/docereeBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/docereeBidAdapter.js';
 import { config } from '../../../src/config.js';
 import * as utils from 'src/utils.js';
 
@@ -27,7 +27,7 @@ describe('BidlabBidAdapter', function () {
       }
     }
   });
-  let bid = {
+  const bid = {
     bidId: 'testing',
     bidder: 'doceree',
     params: {
@@ -85,9 +85,9 @@ describe('BidlabBidAdapter', function () {
           advertiserDomain: 'doceree.com',
         }
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl',
         'netRevenue', 'currency', 'mediaType', 'creativeId', 'meta');
       expect(dataItem.requestId).to.equal('G125fzC5NKl3FHeOT8yvL98ILfQS9TVUgk6Q');

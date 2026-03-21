@@ -1,4 +1,3 @@
-/* eslint-disable no-tabs */
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -24,7 +23,7 @@ const COMMON_PARAMS = [
 
 export const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 export const ADAPTER_VERSION = '2.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -66,11 +65,11 @@ function isValidVideoRequest(bid) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  let requests = [];
+  const requests = [];
   try {
     if (validBidRequests.length === 0 || !bidderRequest) return [];
-    let bannerBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.banner'));
-    let videoBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.video'));
+    const bannerBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.banner'));
+    const videoBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.video'));
 
     bannerBids.forEach(bid => {
       requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -129,7 +128,7 @@ const CONVERTER = ortbConverter({
     currency: DEFAULT_CURRENCY
   },
   imp(buildImp, bidRequest, context) {
-    let imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context);
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
     }
@@ -143,7 +142,7 @@ const CONVERTER = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.mediaType === BANNER) {
       bidResponse.ad = bid.adm;
@@ -161,7 +160,7 @@ const CONVERTER = ortbConverter({
         let videoParams = bidRequest.mediaTypes[VIDEO];
         if (videoParams) {
           videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+          bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
         }
         orig(imp, bidRequest, context);
       },

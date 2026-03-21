@@ -8,8 +8,9 @@
 import { timestamp, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js'
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -18,7 +19,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'imuid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export const storageKey = '__im_uid';
 export const storagePpKey = '__im_ppid';
@@ -57,10 +58,11 @@ export function getLocalData() {
 }
 
 export function getApiUrl(cid, url) {
-  if (url) {
-    return `${url}?cid=${cid}`;
-  }
-  return `https://${apiDomain}/${cid}/pid`;
+  const baseUrl = url ? `${url}?cid=${cid}&` : `https://${apiDomain}/${cid}/pid?`;
+  const refererInfo = getRefererInfo();
+  return baseUrl +
+    `page=${encodeURIComponent(refererInfo.page || '')}` +
+    `&ref=${encodeURIComponent(refererInfo.ref || '')}`;
 }
 
 export function apiSuccessProcess(jsonResponse) {
@@ -110,7 +112,7 @@ export function getApiCallback(callback) {
 
 export function callImuidApi(apiUrl) {
   return function (callback) {
-    ajax(apiUrl, getApiCallback(callback), undefined, {method: 'GET', withCredentials: true});
+    ajax(apiUrl, getApiCallback(callback), undefined, { method: 'GET', withCredentials: true });
   };
 }
 
@@ -154,7 +156,7 @@ export const imuIdSubmodule = {
     }
 
     if (!localData.id) {
-      return {callback: callImuidApi(apiUrl)};
+      return { callback: callImuidApi(apiUrl) };
     }
     if (localData.expired) {
       callImuidApi(apiUrl)();

@@ -31,18 +31,23 @@ const adUnits = [{
         {
             bidder: 'adtrgtme',
             params: {
-                sid: 1220291391, // Site/App ID provided from SSP
+                sid: '1220291391', // Site/App ID provided from SSP
             }
         }
     ]
 }];
 ```
 
-# Optional: Price floors module & bidfloor
-The adtargerme adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency.
+# Optional 
+## Price floors module & bidfloor
+The adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency.
 By default the adapter will always check the existance of Module price floor.
-If a module price floor does not exist you can set a custom bid floor for your impression using "params.bidOverride.imp.bidfloor".
+If a module price floor does not exist you can set a custom bid floor for your impression using "params.bidOverride.imp.bidfloor" and "params.bidOverride.imp.bidfloorcur".
+## Strict placement identification
+It's possible to use params.zid for strict identification for placement id provided from SSP like tagid. 
 
+
+## Example:
 ```javascript
 const adUnits = [{
     code: 'your-placement',
@@ -56,10 +61,12 @@ const adUnits = [{
     bids: [{
         bidder: 'adtrgtme',
         params: {
-            sid: 1220291391,
+            sid: '1220291391',
+            zid: '1836455615',
             bidOverride :{
                 imp: {
-                    bidfloor: 5.00 // bidOverride bidfloor
+                    bidfloor: 5.00, // bidOverride bidfloor
+                    bidfloorcur: 'USD' // bidOverride currency
                 }
             }
             }

@@ -1,9 +1,11 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {logWarn} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { logWarn } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
@@ -21,12 +23,12 @@ export const spec = {
   },
   buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bid => {
-      let url = '//' + bid.params.adsSrvDomain + '/srv?method=getPlacement&app=' +
+      const url = '//' + bid.params.adsSrvDomain + '/srv?method=getPlacement&app=' +
         bid.params.siteId + '&placement=' + bid.params.placementId;
       const data = getPayload(bid, bidderRequest);
       return {
         method: 'POST',
-        headers: {'Content-Type': 'application/json;charset=utf-8'},
+        headers: { 'Content-Type': 'application/json;charset=utf-8' },
         url,
         data
       };
@@ -69,14 +71,14 @@ export const spec = {
 };
 
 function getPayload (bid, bidderRequest) {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  const storage = getStorageManager({bidderCode: BIDDER_CODE});
+  const connection = getConnectionInfo();
+  const storage = getStorageManager({ bidderCode: BIDDER_CODE });
   const userSession = (() => {
     let us = storage.getDataFromLocalStorage(US_KEY);
     if (!us) {
       us = 'us_web_xxxxxxxxxxxx'.replace(/[x]/g, c => {
-        let r = Math.random() * 16 | 0;
-        let v = c === 'x' ? r : (r & 0x3 | 0x8);
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
       storage.setDataInLocalStorage(US_KEY, us);
@@ -86,7 +88,7 @@ function getPayload (bid, bidderRequest) {
   const { params, adUnitCode, bidId } = bid;
   const { siteId, placementId, renderURL, pageCategory, keywords } = params;
   const { refererInfo, uspConsent, gdprConsent } = bidderRequest;
-  const mediation = {gdprConsent: '', gdpr: '-1'};
+  const mediation = { gdprConsent: '', gdpr: '-1' };
   if (gdprConsent && 'gdprApplies' in gdprConsent) {
     if (gdprConsent.consentString !== undefined) {
       mediation.gdprConsent = gdprConsent.consentString;
@@ -118,7 +120,7 @@ function getPayload (bid, bidderRequest) {
       complianceData: {
         child: '-1',
         us_privacy: uspConsent,
-        dnt: window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false,
+        dnt: getDNT(),
         iabConsent: {},
         mediation: {
           gdprConsent: mediation.gdprConsent,
@@ -132,7 +134,7 @@ function getPayload (bid, bidderRequest) {
       device: {
         w: window.screen.width,
         h: window.screen.height,
-        connection_type: connection ? connection.effectiveType : '',
+        connection_type: connection?.effectiveType || '',
       }
     }
   }

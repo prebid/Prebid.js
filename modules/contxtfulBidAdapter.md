@@ -9,11 +9,11 @@ Maintainer: contact@contxtful.com
 # Description
 
 The Contxtful Bidder Adapter supports all mediatypes and connects to demand sources for bids.
- 
+
 # Configuration
 ## Global Configuration
 Contxtful uses the global configuration to store params once instead of duplicating for each ad unit.
-Also, enabling user syncing greatly increases match rates and monetization. 
+Also, enabling user syncing greatly increases match rates and monetization.
 Be sure to call `pbjs.setConfig()` only once.
 
 ```javascript

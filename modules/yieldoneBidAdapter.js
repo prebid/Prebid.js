@@ -1,9 +1,10 @@
-import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
-import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
+import { deepAccess, isEmpty, isStr, logWarn, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
+import { browserTypes, osTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
+import { BOL_LIKE_USER_AGENTS } from '../libraries/userAgentUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -23,9 +24,9 @@ const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/d
 const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
-const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
+const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 
-/** @type BidderSpec */
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
@@ -113,6 +114,24 @@ export const spec = {
         payload.id5Id = id5id;
       }
 
+      // UID2.0
+      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
+      if (isStr(uid2) && !isEmpty(uid2)) {
+        payload.uid2id = uid2;
+      }
+
+      // GPID
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+      if (isStr(gpid) && !isEmpty(gpid)) {
+        payload.gpid = gpid;
+      }
+
+      // instl
+      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      if (instl === 1 || instl === '1') {
+        payload.instl = 1;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
@@ -123,7 +142,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    * @param {ServerResponse} serverResponse - A successful response from the server.
-   * @param {BidRequest} bidRequests
+   * @param {BidRequest} bidRequest
    * @returns {Bid[]} - An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
@@ -157,7 +176,7 @@ export const spec = {
 
       if (response.adTag && renderId === 'ViewableRendering') {
         bidResponse.mediaType = BANNER;
-        let viewableScript = `
+        const viewableScript = `
         <script src="${VIEWABLE_PERCENTAGE_URL}"></script>
         <script>
         let width =${bidResponse.width};
@@ -308,7 +327,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
     }
 
     const splited = size.split('x');
-    const sizeObj = {w: parseInt(splited[0], 10), h: parseInt(splited[1], 10)};
+    const sizeObj = { w: parseInt(splited[0], 10), h: parseInt(splited[1], 10) };
     const _isValidPlayerSize = !(isEmpty(sizeObj)) && (isFinite(sizeObj.w) && isFinite(sizeObj.h));
     if (!_isValidPlayerSize) {
       return result;
@@ -337,7 +356,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
 
 /**
  * Create render for outstream video.
- * @param {Object} serverResponse.body -
+ * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
 function newRenderer(response) {
@@ -368,7 +387,7 @@ function outstreamRender(bid) {
 
 /**
  * Create render for cmer outstream video.
- * @param {Object} serverResponse.body -
+ * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
 function newCmerRenderer(response) {
@@ -398,12 +417,12 @@ function cmerRender(bid) {
 }
 
 /**
- * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies.
+ * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies OR it's bot-like traffic.
  * Data extracted from navigator's userAgent
  * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
  */
 function skipSync(gdprConsent) {
-  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent);
+  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent) || isBotLikeTraffic();
 }
 
 /**
@@ -411,6 +430,15 @@ function skipSync(gdprConsent) {
  */
 function gdprApplies(gdprConsent) {
   return gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies;
+}
+
+/**
+ * Check if the user agent is bot-like
+ * @returns {boolean}
+ */
+function isBotLikeTraffic() {
+  const botPattern = new RegExp(BOL_LIKE_USER_AGENTS.join('|'), 'i');
+  return botPattern.test(navigator.userAgent);
 }
 
 registerBidder(spec);

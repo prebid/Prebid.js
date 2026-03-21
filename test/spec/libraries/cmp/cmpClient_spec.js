@@ -1,17 +1,21 @@
-import {cmpClient, MODE_CALLBACK, MODE_RETURN} from '../../../../libraries/cmp/cmpClient.js';
+import { cmpClient, MODE_CALLBACK, MODE_RETURN } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
   function mockWindow(props = {}) {
     let listeners = [];
     const win = {
       addEventListener: sinon.stub().callsFake((evt, listener) => {
-        evt === 'message' && listeners.push(listener)
+        if (evt === 'message') {
+          listeners.push(listener);
+        }
       }),
       removeEventListener: sinon.stub().callsFake((evt, listener) => {
-        evt === 'message' && (listeners = listeners.filter((l) => l !== listener));
+        if (evt === 'message') {
+          listeners = listeners.filter((l) => l !== listener);
+        }
       }),
       postMessage: sinon.stub().callsFake((msg) => {
-        listeners.forEach(ln => ln({data: msg}))
+        listeners.forEach(ln => ln({ data: msg }))
       }),
       ...props,
     };
@@ -20,13 +24,13 @@ describe('cmpClient', () => {
   }
 
   it('should return undefined when there is no CMP', () => {
-    expect(cmpClient({apiName: 'missing'}, mockWindow())).to.not.exist;
+    expect(cmpClient({ apiName: 'missing' }, mockWindow())).to.not.exist;
   });
 
   it('should return undefined when parent is inaccessible', () => {
     const win = mockWindow();
     win.top = mockWindow();
-    expect(cmpClient({apiName: 'missing'}, win)).to.not.exist;
+    expect(cmpClient({ apiName: 'missing' }, win)).to.not.exist;
   })
 
   describe('direct access', () => {
@@ -35,14 +39,14 @@ describe('cmpClient', () => {
       mockApiFn = sinon.stub();
     })
     Object.entries({
-      'on same frame': () => mockWindow({mockApiFn}),
-      'on parent frame': () => mockWindow({parent: mockWindow({parent: mockWindow({parent: mockWindow(), mockApiFn})})}),
+      'on same frame': () => mockWindow({ mockApiFn }),
+      'on parent frame': () => mockWindow({ parent: mockWindow({ parent: mockWindow({ parent: mockWindow(), mockApiFn }) }) }),
     }).forEach(([t, mkWindow]) => {
       describe(t, () => {
         let win, mkClient;
         beforeEach(() => {
           win = mkWindow();
-          mkClient = (opts) => cmpClient(Object.assign({apiName: 'mockApiFn'}, opts), win)
+          mkClient = (opts) => cmpClient(Object.assign({ apiName: 'mockApiFn' }, opts), win)
         });
 
         it('should mark client function as direct', () => {
@@ -50,7 +54,7 @@ describe('cmpClient', () => {
         });
 
         it('should find and call the CMP api function', () => {
-          mkClient()({command: 'mockCmd'});
+          mkClient()({ command: 'mockCmd' });
           sinon.assert.calledWith(mockApiFn, 'mockCmd');
         });
 
@@ -81,14 +85,14 @@ describe('cmpClient', () => {
               }).forEach(([t, success]) => {
                 it(`resolves to ${tResult} (${t})`, (done) => {
                   cbResult = ['cbVal', success];
-                  mkClient({mode})({callback}).then((val) => {
+                  mkClient({ mode })({ callback }).then((val) => {
                     expect(val).to.equal(expectedResult);
                     done();
                   })
                 });
 
                 it('should pass either a function or undefined as callback', () => {
-                  mkClient({mode})({callback});
+                  mkClient({ mode })({ callback });
                   sinon.assert.calledWith(mockApiFn, sinon.match.any, sinon.match(arg => typeof arg === 'undefined' || typeof arg === 'function'))
                 })
               });
@@ -97,7 +101,7 @@ describe('cmpClient', () => {
 
           it('rejects to undefined when callback is provided and success = false', (done) => {
             cbResult = ['cbVal', false];
-            mkClient()({callback: sinon.stub()}).catch(val => {
+            mkClient()({ callback: sinon.stub() }).catch(val => {
               expect(val).to.not.exist;
               done();
             })
@@ -105,14 +109,15 @@ describe('cmpClient', () => {
 
           it('rejects to callback arg when callback is NOT provided, success = false, mode = MODE_CALLBACK', (done) => {
             cbResult = ['cbVal', false];
-            mkClient({mode: MODE_CALLBACK})().catch(val => {
+            mkClient({ mode: MODE_CALLBACK })().catch(val => {
               expect(val).to.eql('cbVal');
               done();
             })
           })
 
           it('rejects when CMP api throws', (done) => {
-            mockApiFn.reset();
+            mockApiFn.resetBehavior();
+            mockApiFn.resetHistory();
             const e = new Error();
             mockApiFn.throws(e);
             mkClient()({}).catch(val => {
@@ -123,7 +128,7 @@ describe('cmpClient', () => {
         })
 
         it('should use apiArgs to choose and order the arguments to pass to the API fn', () => {
-          mkClient({apiArgs: ['parameter', 'command']})({
+          mkClient({ apiArgs: ['parameter', 'command'] })({
             command: 'mockCmd',
             parameter: 'mockParam',
             callback() {}
@@ -144,22 +149,22 @@ describe('cmpClient', () => {
       response = {};
       messenger = sinon.stub().callsFake((msg) => {
         if (msg.mockApiCall) {
-          win.postMessage({mockApiReturn: {callId: msg.mockApiCall.callId, ...response}});
+          win.postMessage({ mockApiReturn: { callId: msg.mockApiCall.callId, ...response } });
         }
       });
     });
 
     function mkClient(options) {
-      return cmpClient(Object.assign({apiName: 'mockApi'}, options), win);
+      return cmpClient(Object.assign({ apiName: 'mockApi' }, options), win);
     }
 
     Object.entries({
       'on same frame': () => {
-        win = mockWindow({frames: {mockApiLocator: true}});
+        win = mockWindow({ frames: { mockApiLocator: true } });
         win.addEventListener('message', (evt) => messenger(evt.data));
       },
       'on parent frame': () => {
-        win = mockWindow({parent: mockWindow({frames: {mockApiLocator: true}})})
+        win = mockWindow({ parent: mockWindow({ frames: { mockApiLocator: true } }) })
         win.parent.addEventListener('message', evt => messenger(evt.data))
       }
     }).forEach(([t, setup]) => {
@@ -171,7 +176,7 @@ describe('cmpClient', () => {
         });
 
         it('should find and message the CMP frame', () => {
-          mkClient()({command: 'mockCmd', parameter: 'param'});
+          mkClient()({ command: 'mockCmd', parameter: 'param' });
           sinon.assert.calledWithMatch(messenger, {
             mockApiCall: {
               command: 'mockCmd',
@@ -181,7 +186,7 @@ describe('cmpClient', () => {
         });
 
         it('should use apiArgs to choose what to include in the message payload', () => {
-          mkClient({apiArgs: ['command']})({
+          mkClient({ apiArgs: ['command'] })({
             command: 'cmd',
             parameter: 'param'
           });
@@ -193,7 +198,7 @@ describe('cmpClient', () => {
 
         it('should not include callback in the payload, but still run it on response', () => {
           const cb = sinon.stub();
-          mkClient({apiArgs: ['command', 'callback']})({
+          mkClient({ apiArgs: ['command', 'callback'] })({
             command: 'cmd',
             callback: cb
           });
@@ -203,14 +208,14 @@ describe('cmpClient', () => {
 
         it('should use callbackArgs to decide what to pass to callback', () => {
           const cb = sinon.stub();
-          response = {a: 'one', b: 'two'};
-          mkClient({callbackArgs: ['a', 'b']})({callback: cb});
+          response = { a: 'one', b: 'two' };
+          mkClient({ callbackArgs: ['a', 'b'] })({ callback: cb });
           sinon.assert.calledWith(cb, 'one', 'two');
         })
 
         describe('should return a promise that', () => {
           beforeEach(() => {
-            response = {returnValue: 'val'}
+            response = { returnValue: 'val' }
           })
           Object.entries({
             'callback': [sinon.stub(), 'undefined', undefined],
@@ -223,11 +228,11 @@ describe('cmpClient', () => {
             describe(`when ${t} is provided`, () => {
               Object.entries({
                 'no success flag': {},
-                'with success flag': {success: true}
+                'with success flag': { success: true }
               }).forEach(([t, resp]) => {
                 it(`resolves to ${tResult} (${t})`, () => {
                   Object.assign(response, resp);
-                  mkClient({mode})({callback}).then((val) => {
+                  mkClient({ mode })({ callback }).then((val) => {
                     expect(val).to.equal(expectedResult);
                   })
                 })
@@ -236,7 +241,7 @@ describe('cmpClient', () => {
               if (mode !== MODE_RETURN) { // in return mode, the promise never rejects
                 it(`rejects to ${tResult} when success = false`, (done) => {
                   response.success = false;
-                  mkClient()({mode, callback}).catch((err) => {
+                  mkClient()({ mode, callback }).catch((err) => {
                     expect(err).to.equal(expectedResult);
                     done();
                   });
@@ -250,12 +255,13 @@ describe('cmpClient', () => {
           let callback, callId;
 
           function runCallback(returnValue) {
-            win.postMessage({mockApiReturn: {callId, returnValue}});
+            win.postMessage({ mockApiReturn: { callId, returnValue } });
           }
 
           beforeEach(() => {
             callId = null;
-            messenger.reset();
+            messenger.resetHistory();
+            messenger.resetBehavior();
             messenger.callsFake((msg) => {
               if (msg.mockApiCall) callId = msg.mockApiCall.callId;
             });
@@ -263,7 +269,7 @@ describe('cmpClient', () => {
           });
 
           it('should re-use callback for messages with same callId', () => {
-            mkClient()({callback});
+            mkClient()({ callback });
             expect(callId).to.exist;
             runCallback('a');
             runCallback('b');
@@ -272,7 +278,7 @@ describe('cmpClient', () => {
           });
 
           it('should NOT re-use callback if once = true', () => {
-            mkClient()({callback}, true);
+            mkClient()({ callback }, true);
             expect(callId).to.exist;
             runCallback('a');
             runCallback('b');
@@ -282,7 +288,7 @@ describe('cmpClient', () => {
 
           it('should NOT fire again after .close()', () => {
             const client = mkClient();
-            client({callback});
+            client({ callback });
             runCallback('a');
             client.close();
             runCallback('b');

@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { setupTest, testPageURL, switchFrame } = require('../../../helpers/testing-utils');
+const { setupTest, testPageURL, switchFrame } = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('outstream.html');
 const CREATIVE_IFRAME_CSS_SELECTOR = 'div[id="video_ad_unit_1"] > div:nth-child(2) > iframe:nth-child(1)';

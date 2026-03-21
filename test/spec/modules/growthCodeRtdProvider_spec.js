@@ -1,5 +1,5 @@
-import {config} from 'src/config.js';
-import {growthCodeRtdProvider} from '../../../modules/growthCodeRtdProvider';
+import { config } from 'src/config.js';
+import { growthCodeRtdProvider } from '../../../modules/growthCodeRtdProvider.js';
 import sinon from 'sinon';
 import * as ajaxLib from 'src/ajax.js';
 
@@ -26,7 +26,7 @@ describe('growthCodeRtdProvider', function() {
           cbObj.success('{"status":"ok","version":"1.0.0","results":1,"items":[{"bidder":"client_a","attachment_point":"data","parameters":"{\\"client_a\\":{\\"user\\":{\\"ext\\":{\\"data\\":{\\"eids\\":[{\\"source\\":\\"\\",\\"uids\\":[{\\"id\\":\\"4254074976bb6a6d970f5f693bd8a75c\\",\\"atype\\":3,\\"ext\\":{\\"stype\\":\\"hemmd5\\"}},{\\"id\\":\\"d0ee291572ffcfba0bf7edb2b1c90ca7c32d255e5040b8b50907f5963abb1898\\",\\"atype\\":3,\\"ext\\":{\\"stype\\":\\"hemsha256\\"}}]}]}}}}}"}],"expires_at":1685029931}')
         }
       });
-		  expect(growthCodeRtdProvider.init(null, null)).to.equal(false);
+      expect(growthCodeRtdProvider.init(null, null)).to.equal(false);
       ajaxStub.restore()
     });
     it('successfully instantiates', function () {
@@ -85,26 +85,29 @@ describe('growthCodeRtdProvider', function() {
           'client_a':
             {
               'user':
-                {'ext':
-                    {'data':
-                        {'eids': [
-                          {'source': 'test.com',
-                            'uids': [
-                              {
-                                'id': '4254074976bb6a6d970f5f693bd8a75c',
-                                'atype': 3,
-                                'ext': {
-                                  'stype': 'hemmd5'}
-                              }, {
-                                'id': 'd0ee291572ffcfba0bf7edb2b1c90ca7c32d255e5040b8b50907f5963abb1898',
-                                'atype': 3,
-                                'ext': {
-                                  'stype': 'hemsha256'
+                {
+                  'ext':
+                    {
+                      'data':
+                        {
+                          'eids': [
+                            {
+                              'source': 'test.com',
+                              'uids': [
+                                {
+                                  'id': '4254074976bb6a6d970f5f693bd8a75c',
+                                  'atype': 3,
+                                  'ext': { 'stype': 'hemmd5' }
+                                }, {
+                                  'id': 'd0ee291572ffcfba0bf7edb2b1c90ca7c32d255e5040b8b50907f5963abb1898',
+                                  'atype': 3,
+                                  'ext': {
+                                    'stype': 'hemsha256'
+                                  }
                                 }
-                              }
-                            ]
-                          }
-                        ]
+                              ]
+                            }
+                          ]
                         }
                     }
                 }
@@ -118,7 +121,7 @@ describe('growthCodeRtdProvider', function() {
           'parameters': JSON.stringify(gcData)
         }]
 
-      const bidConfig = {ortb2Fragments: {bidder: {}}};
+      const bidConfig = { ortb2Fragments: { bidder: {} } };
       growthCodeRtdProvider.addData(bidConfig, payload)
 
       expect(bidConfig.ortb2Fragments.bidder).to.deep.equal(gcData)

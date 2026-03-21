@@ -7,13 +7,11 @@
 
 import { logInfo, logWarn } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-// RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
-// eslint-disable-next-line prebid/validate-imports
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
-import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -43,7 +41,7 @@ function createLogger(logger, prefix) {
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
 const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /** @type {Submodule} */
 export const uid2IdSubmodule = {
@@ -73,7 +71,7 @@ export const uid2IdSubmodule = {
    * @returns {uid2Id}
    */
   getId(config, consentData) {
-    if (consentData?.gdprApplies === true) {
+    if (consentData?.gdpr?.gdprApplies === true) {
       _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.');
       return;
     }

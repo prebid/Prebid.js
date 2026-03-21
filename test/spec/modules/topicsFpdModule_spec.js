@@ -8,14 +8,24 @@ import {
   reset,
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
-import {config} from 'src/config.js';
-import {deepClone, safeJSONParse} from '../../../src/utils.js';
-import {getCoreStorageManager} from 'src/storageManager.js';
+import { config } from 'src/config.js';
+import { deepClone, safeJSONParse } from '../../../src/utils.js';
+import { getCoreStorageManager } from 'src/storageManager.js';
 import * as activities from '../../../src/activities/rules.js';
-import {ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 
 describe('topics', () => {
+  let unregister, enrichUfpdRule;
+  before(() => {
+    unregister = registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => enrichUfpdRule(params), 0)
+  });
+  after(() => {
+    unregister()
+  });
+
   beforeEach(() => {
+    enrichUfpdRule = () => ({ allow: true });
     reset();
   });
 
@@ -51,7 +61,7 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'}
+              { id: '123' }
             ]
           }
         ]
@@ -66,8 +76,8 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'},
-              {id: '321'}
+              { id: '123' },
+              { id: '321' }
             ]
           }
         ]
@@ -82,8 +92,8 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '1'},
-              {id: '2'}
+              { id: '1' },
+              { id: '2' }
             ]
           },
           {
@@ -92,7 +102,7 @@ describe('topics', () => {
               segclass: 'm2'
             },
             segment: [
-              {id: '3'}
+              { id: '3' }
             ]
           }
         ]
@@ -107,7 +117,7 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'}
+              { id: '123' }
             ]
           }
         ]
@@ -130,7 +140,7 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'}
+              { id: '123' }
             ]
           },
           {
@@ -139,7 +149,7 @@ describe('topics', () => {
               segclass: 'm1',
             },
             segment: [
-              {id: '321'}
+              { id: '321' }
             ]
           },
           {
@@ -148,12 +158,12 @@ describe('topics', () => {
               segclass: 'm2'
             },
             segment: [
-              {id: '213'}
+              { id: '213' }
             ]
           }
         ]
       }
-    ].forEach(({t, topics, expected, taxonomies}) => {
+    ].forEach(({ t, topics, expected, taxonomies }) => {
       describe(`on ${t}`, () => {
         it('should convert topics to user.data segments correctly', () => {
           const actual = getTopicsData('mockName', topics, taxonomies);
@@ -221,17 +231,17 @@ describe('topics', () => {
     const mockData = [
       {
         name: 'domain',
-        segment: [{id: 123}]
+        segment: [{ id: 123 }]
       },
       {
         name: 'domain',
-        segment: [{id: 321}]
+        segment: [{ id: 321 }]
       }
     ];
 
     it('should add topics data', () => {
-      return processFpd({}, {global: {}}, {data: Promise.resolve(mockData)})
-        .then(({global}) => {
+      return processFpd({}, { global: {} }, { data: Promise.resolve(mockData) })
+        .then(({ global }) => {
           expect(global.user.data).to.eql(mockData);
         });
     });
@@ -240,18 +250,18 @@ describe('topics', () => {
       const global = {
         user: {
           data: [
-            {name: 'preexisting'},
+            { name: 'preexisting' },
           ]
         }
       };
-      return processFpd({}, {global: deepClone(global)}, {data: Promise.resolve(mockData)})
+      return processFpd({}, { global: deepClone(global) }, { data: Promise.resolve(mockData) })
         .then((data) => {
           expect(data.global.user.data).to.eql(global.user.data.concat(mockData));
         });
     });
 
     it('should not modify fpd when there is no data', () => {
-      return processFpd({}, {global: {}}, {data: Promise.resolve([])})
+      return processFpd({}, { global: {} }, { data: Promise.resolve([]) })
         .then((data) => {
           expect(data.global).to.eql({});
         });
@@ -292,6 +302,24 @@ describe('topics', () => {
         sinon.assert.notCalled(doc.createElement);
       });
     });
+
+    it('does not load frames when accessDevice is not allowed', () => {
+      enrichUfpdRule = ({ component }) => {
+        if (component === 'bidder.mockBidder') {
+          return { allow: false }
+        }
+      }
+      const doc = {
+        createElement: sinon.stub(),
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature: () => true
+        }
+      }
+      doc.createElement = sinon.stub();
+      loadTopicsForBidders(doc);
+      sinon.assert.notCalled(doc.createElement);
+    })
   });
 
   describe('getCachedTopics()', () => {
@@ -321,7 +349,7 @@ describe('topics', () => {
     describe('caching', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       })
 
       afterEach(() => {
@@ -330,7 +358,7 @@ describe('topics', () => {
       });
 
       it('should return no segments when not configured', () => {
-        config.setConfig({userSync: {}});
+        config.setConfig({ userSync: {} });
         expect(getCachedTopics()).to.eql([]);
       })
 
@@ -339,8 +367,8 @@ describe('topics', () => {
           const storedSegments = JSON.stringify(
             [['pubmatic', {
               '2206021246': {
-                'ext': {'segtax': 600, 'segclass': '2206021246'},
-                'segment': [{'id': '243'}, {'id': '265'}],
+                'ext': { 'segtax': 600, 'segclass': '2206021246' },
+                'segment': [{ 'id': '243' }, { 'id': '265' }],
                 'name': 'ads.pubmatic.com'
               },
               'lastUpdated': new Date().getTime()
@@ -365,16 +393,14 @@ describe('topics', () => {
         });
 
         it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
-          sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
-            return !(activity === ACTIVITY_ENRICH_UFPD && params.component === 'bidder.pubmatic');
-          });
+          enrichUfpdRule = (params) => ({ allow: params.component !== 'bidder.pubmatic' })
           expect(getCachedTopics()).to.eql([]);
         });
       });
     });
 
     it('should return empty segments for bidder if there is cached segments stored which is expired', () => {
-      let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
+      const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
       storage.setDataInLocalStorage(topicStorageName, storedSegments);
       assert.deepEqual(getCachedTopics(), []);
     });
@@ -403,7 +429,7 @@ describe('topics', () => {
           featurePolicy: {
             allowsFeature() { return true }
           },
-          createElement: sinon.stub().callsFake(() => ({style: {}})),
+          createElement: sinon.stub().callsFake(() => ({ style: {} })),
           documentElement: {
             appendChild() {}
           }
@@ -416,121 +442,120 @@ describe('topics', () => {
 
       it('should store segments if receiveMessage event is triggered with segment data', () => {
         receiveMessage(evt);
-        let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
         expect(segments.has('pubmatic')).to.equal(true);
       });
 
       it('should update stored segments if receiveMessage event is triggerred with segment data', () => {
-        let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
+        const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
         storage.setDataInLocalStorage(topicStorageName, storedSegments);
         receiveMessage(evt);
-        let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
         expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1);
       });
     });
   });
-});
+  describe('handles fetch request for topics api headers', () => {
+    let stubbedFetch;
+    const storage = getCoreStorageManager('topicsFpd');
 
-describe('handles fetch request for topics api headers', () => {
-  let stubbedFetch;
-  const storage = getCoreStorageManager('topicsFpd');
-
-  beforeEach(() => {
-    stubbedFetch = sinon.stub(window, 'fetch');
-    reset();
-  });
-
-  afterEach(() => {
-    stubbedFetch.restore();
-    storage.removeDataFromLocalStorage(topicStorageName);
-    config.resetConfig();
-  });
-
-  it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
-    config.setConfig({
-      userSync: {
-        topics: {
-          maxTopicCaller: 3,
-          bidders: [
-            {
-              bidder: 'pubmatic',
-              fetchUrl: 'http://localhost:3000/topics-server.js'
-            }
-          ],
-        },
-      }
+    beforeEach(() => {
+      stubbedFetch = sinon.stub(window, 'fetch');
+      reset();
     });
 
-    stubbedFetch.returns(Promise.resolve(true));
-
-    loadTopicsForBidders({
-      browsingTopics: true,
-      featurePolicy: {
-        allowsFeature() { return true }
-      }
-    });
-    sinon.assert.calledOnce(stubbedFetch);
-    stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
-  });
-
-  it('should not make a fetch call when a fetchUrl is not present for a selected bidder', () => {
-    config.setConfig({
-      userSync: {
-        topics: {
-          maxTopicCaller: 3,
-          bidders: [
-            {
-              bidder: 'pubmatic'
-            }
-          ],
-        },
-      }
+    afterEach(() => {
+      stubbedFetch.restore();
+      storage.removeDataFromLocalStorage(topicStorageName);
+      config.resetConfig();
     });
 
-    loadTopicsForBidders({
-      browsingTopics: true,
-      featurePolicy: {
-        allowsFeature() { return true }
-      }
-    });
-    sinon.assert.notCalled(stubbedFetch);
-  });
+    it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
+      config.setConfig({
+        userSync: {
+          topics: {
+            maxTopicCaller: 3,
+            bidders: [
+              {
+                bidder: 'pubmatic',
+                fetchUrl: 'http://localhost:3000/topics-server.js'
+              }
+            ],
+          },
+        }
+      });
 
-  it('a fetch request should not be made if the configured fetch rate duration has not yet passed', () => {
-    const storedSegments = JSON.stringify(
-      [['pubmatic', {
-        '2206021246': {
-          'ext': {'segtax': 600, 'segclass': '2206021246'},
-          'segment': [{'id': '243'}, {'id': '265'}],
-          'name': 'ads.pubmatic.com'
-        },
-        'lastUpdated': new Date().getTime()
-      }]]
-    );
+      stubbedFetch.returns(Promise.resolve(true));
 
-    storage.setDataInLocalStorage(topicStorageName, storedSegments);
-
-    config.setConfig({
-      userSync: {
-        topics: {
-          maxTopicCaller: 3,
-          bidders: [
-            {
-              bidder: 'pubmatic',
-              fetchUrl: 'http://localhost:3000/topics-server.js',
-              fetchRate: 1 // in days.  1 fetch per day
-            }
-          ],
-        },
-      }
+      loadTopicsForBidders({
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature() { return true }
+        }
+      });
+      sinon.assert.calledOnce(stubbedFetch);
+      stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
     });
 
-    loadTopicsForBidders({
-      browsingTopics: true,
-      featurePolicy: {
-        allowsFeature() { return true }
-      }
+    it('should not make a fetch call when a fetchUrl is not present for a selected bidder', () => {
+      config.setConfig({
+        userSync: {
+          topics: {
+            maxTopicCaller: 3,
+            bidders: [
+              {
+                bidder: 'pubmatic'
+              }
+            ],
+          },
+        }
+      });
+
+      loadTopicsForBidders({
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature() { return true }
+        }
+      });
+      sinon.assert.notCalled(stubbedFetch);
     });
-    sinon.assert.notCalled(stubbedFetch);
+
+    it('a fetch request should not be made if the configured fetch rate duration has not yet passed', () => {
+      const storedSegments = JSON.stringify(
+        [['pubmatic', {
+          '2206021246': {
+            'ext': { 'segtax': 600, 'segclass': '2206021246' },
+            'segment': [{ 'id': '243' }, { 'id': '265' }],
+            'name': 'ads.pubmatic.com'
+          },
+          'lastUpdated': new Date().getTime()
+        }]]
+      );
+
+      storage.setDataInLocalStorage(topicStorageName, storedSegments);
+
+      config.setConfig({
+        userSync: {
+          topics: {
+            maxTopicCaller: 3,
+            bidders: [
+              {
+                bidder: 'pubmatic',
+                fetchUrl: 'http://localhost:3000/topics-server.js',
+                fetchRate: 1 // in days.  1 fetch per day
+              }
+            ],
+          },
+        }
+      });
+
+      loadTopicsForBidders({
+        browsingTopics: true,
+        featurePolicy: {
+          allowsFeature() { return true }
+        }
+      });
+      sinon.assert.notCalled(stubbedFetch);
+    });
   });
 });

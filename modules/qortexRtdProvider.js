@@ -5,6 +5,8 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
+const QX_VERSION = { v: '1.0' }
+
 const qortexSessionInfo = {};
 const QX_IN_MESSAGE = {
   BID_ENRICH_INITIALIZED: 'CX-BID-ENRICH-INITIALIZED',
@@ -79,9 +81,9 @@ export function addContextToRequests (reqBidsConfig) {
     requestContextData();
   } else {
     if (checkPercentageOutcome(qortexSessionInfo.groupConfig?.prebidBidEnrichmentPercentage)) {
-      const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
+      const fragment = qortexSessionInfo.currentSiteContext
       if (qortexSessionInfo.bidderArray?.length > 0) {
-        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}));
+        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, { [bidder]: fragment }));
       } else if (!qortexSessionInfo.bidderArray) {
         mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
       } else {
@@ -99,7 +101,7 @@ export function loadScriptTag(config) {
   const code = 'qortex';
   const groupId = config.params.groupId;
   const src = 'https://tags.qortex.ai/bootstrapper'
-  const attr = {'data-group-id': groupId}
+  const attr = { 'data-group-id': groupId }
   const tc = config.params.tagConfig
 
   Object.keys(tc).forEach(p => {
@@ -115,7 +117,7 @@ export function loadScriptTag(config) {
     }
     switch (e?.detail?.type) {
       case 'qx-impression':
-        const {uid} = e.detail;
+        const { uid } = e.detail;
         if (!uid || qortexSessionInfo.impressionIds.has(uid)) {
           logWarn(`Received invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
           return;
@@ -160,7 +162,7 @@ export function requestContextData() {
  * @param {Object} config module config obtained during init
  */
 export function initializeModuleData(config) {
-  const {groupId, bidders, enableBidEnrichment} = config.params;
+  const { groupId, bidders, enableBidEnrichment } = config.params;
   qortexSessionInfo.bidEnrichmentDisabled = enableBidEnrichment !== null ? !enableBidEnrichment : true;
   qortexSessionInfo.bidderArray = bidders;
   qortexSessionInfo.impressionIds = new Set();
@@ -220,7 +222,7 @@ function shouldAllowBidEnrichment() {
  * @param {string} msg message string to be passed to CX-BID-ENRICH target on current page
  * @param {Object} data optional parameter object with additional data to send with post
  */
-function postBidEnrichmentMessage(msg, data = null) {
+function postBidEnrichmentMessage(msg, data) {
   window.postMessage({
     target: 'CX-BID-ENRICH',
     message: msg,
@@ -241,7 +243,7 @@ export function windowPostMessageReceived(evt) {
         if (Boolean(data.params) && Boolean(data.params?.groupConfig)) {
           setGroupConfigData(data.params.groupConfig);
         }
-        postBidEnrichmentMessage(QX_OUT_MESSAGE.RTD_INITIALIZED);
+        postBidEnrichmentMessage(QX_OUT_MESSAGE.RTD_INITIALIZED, QX_VERSION);
         if (qortexSessionInfo?.auctionsEnded?.length > 0) {
           qortexSessionInfo.auctionsEnded.forEach(data => postBidEnrichmentMessage(QX_OUT_MESSAGE.AUCTION_END, data));
         }

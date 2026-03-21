@@ -1,12 +1,13 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {spec} from 'modules/anyclipBidAdapter.js';
-import {deepClone} from 'src/utils';
-import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { spec } from 'modules/anyclipBidAdapter.js';
+import { deepClone } from 'src/utils';
+import { getBidFloor } from '../../../libraries/xeUtils/bidderUtils.js';
 
 const ENDPOINT = 'https://prebid.anyclip.com';
 
 const defaultRequest = {
+  tmax: 0,
   adUnitCode: 'test',
   bidId: '1',
   requestId: 'qwerty',
@@ -48,12 +49,12 @@ defaultRequestVideo.mediaTypes = {
 
 const videoBidderRequest = {
   bidderCode: 'anyclip',
-  bids: [{mediaTypes: {video: {}}, bidId: 'qwerty'}]
+  bids: [{ mediaTypes: { video: {} }, bidId: 'qwerty' }]
 };
 
 const displayBidderRequest = {
   bidderCode: 'anyclip',
-  bids: [{bidId: 'qwerty'}]
+  bids: [{ bidId: 'qwerty' }]
 };
 
 describe('anyclipBidAdapter', () => {
@@ -102,14 +103,14 @@ describe('anyclipBidAdapter', () => {
 
     it('should build basic request structure', function () {
       const request = JSON.parse(spec.buildRequests([defaultRequest], {}).data)[0];
+      expect(request).to.have.property('tmax').and.to.equal(defaultRequest.tmax);
       expect(request).to.have.property('bidId').and.to.equal(defaultRequest.bidId);
       expect(request).to.have.property('auctionId').and.to.equal(defaultRequest.ortb2.source.tid);
       expect(request).to.have.property('transactionId').and.to.equal(defaultRequest.ortb2Imp.ext.tid);
       expect(request).to.have.property('tz').and.to.equal(new Date().getTimezoneOffset());
       expect(request).to.have.property('bc').and.to.equal(1);
-      expect(request).to.have.property('banner').and.to.deep.equal({sizes: [[300, 250], [300, 200]]});
-      expect(request).to.have.property('gdprApplies').and.to.equal(0);
-      expect(request).to.have.property('consentString').and.to.equal('');
+      expect(request).to.have.property('banner').and.to.deep.equal({ sizes: [[300, 250], [300, 200]] });
+      expect(request).to.have.property('gdprConsent').and.to.deep.equal({});
       expect(request).to.have.property('userEids').and.to.deep.equal([]);
       expect(request).to.have.property('usPrivacy').and.to.equal('');
       expect(request).to.have.property('sizes').and.to.deep.equal(['300x250', '300x200']);
@@ -127,18 +128,20 @@ describe('anyclipBidAdapter', () => {
 
     it('should build request with schain', function () {
       const schainRequest = deepClone(defaultRequest);
-      schainRequest.schain = {
-        validation: 'strict',
-        config: {
-          ver: '1.0'
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0'
+              }
+            }
+          }
         }
       };
-      const request = JSON.parse(spec.buildRequests([schainRequest], {}).data)[0];
+      const request = JSON.parse(spec.buildRequests([schainRequest], bidderRequest).data)[0];
       expect(request).to.have.property('schain').and.to.deep.equal({
-        validation: 'strict',
-        config: {
-          ver: '1.0'
-        }
+        ver: '1.0'
       });
     });
 
@@ -200,21 +203,9 @@ describe('anyclipBidAdapter', () => {
 
     it('should build request with valid bidfloor', function () {
       const bfRequest = deepClone(defaultRequest);
-      bfRequest.getFloor = () => ({floor: 5, currency: 'USD'});
+      bfRequest.getFloor = () => ({ floor: 5, currency: 'USD' });
       const request = JSON.parse(spec.buildRequests([bfRequest], {}).data)[0].env;
       expect(request).to.have.property('floor').and.to.equal(5);
-    });
-
-    it('should build request with gdpr consent data if applies', function () {
-      const bidderRequest = {
-        gdprConsent: {
-          gdprApplies: true,
-          consentString: 'qwerty'
-        }
-      };
-      const request = JSON.parse(spec.buildRequests([defaultRequest], bidderRequest).data)[0];
-      expect(request).to.have.property('gdprApplies').and.equals(1);
-      expect(request).to.have.property('consentString').and.equals('qwerty');
     });
 
     it('should build request with usp consent data if applies', function () {
@@ -228,8 +219,8 @@ describe('anyclipBidAdapter', () => {
     it('should build request with extended ids', function () {
       const idRequest = deepClone(defaultRequest);
       idRequest.userIdAsEids = [
-        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'pubcid.org', uids: [{id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1}]}
+        { source: 'adserver.org', uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+        { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] }
       ];
       const request = JSON.parse(spec.buildRequests([idRequest], {}).data)[0];
       expect(request).to.have.property('userEids').and.deep.equal(idRequest.userIdAsEids);
@@ -281,7 +272,7 @@ describe('anyclipBidAdapter', () => {
         }
       };
 
-      const validResponse = spec.interpretResponse(serverResponse, {bidderRequest: displayBidderRequest});
+      const validResponse = spec.interpretResponse(serverResponse, { bidderRequest: displayBidderRequest });
       const bid = validResponse[0];
       expect(validResponse).to.be.an('array').that.is.not.empty;
       expect(bid.requestId).to.equal('qwerty');
@@ -290,7 +281,7 @@ describe('anyclipBidAdapter', () => {
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
       expect(bid.ttl).to.equal(600);
-      expect(bid.meta).to.deep.equal({advertiserDomains: ['anyclip']});
+      expect(bid.meta).to.deep.equal({ advertiserDomains: ['anyclip'] });
     });
 
     it('should interpret valid banner response', function () {
@@ -311,7 +302,7 @@ describe('anyclipBidAdapter', () => {
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: displayBidderRequest});
+      const validResponseBanner = spec.interpretResponse(serverResponse, { bidderRequest: displayBidderRequest });
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('banner');
@@ -337,7 +328,7 @@ describe('anyclipBidAdapter', () => {
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: videoBidderRequest});
+      const validResponseBanner = spec.interpretResponse(serverResponse, { bidderRequest: videoBidderRequest });
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('video');
@@ -353,12 +344,12 @@ describe('anyclipBidAdapter', () => {
     });
 
     it('should return empty if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('should allow iframe sync', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [{
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [{
         body: {
           data: [{
             requestId: 'qwerty',
@@ -377,7 +368,7 @@ describe('anyclipBidAdapter', () => {
     });
 
     it('should allow pixel sync', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{
         body: {
           data: [{
             requestId: 'qwerty',
@@ -396,7 +387,7 @@ describe('anyclipBidAdapter', () => {
     });
 
     it('should allow pixel sync and parse consent params', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{
         body: {
           data: [{
             requestId: 'qwerty',
@@ -420,20 +411,20 @@ describe('anyclipBidAdapter', () => {
 
   describe('getBidFloor', function () {
     it('should return null when getFloor is not a function', () => {
-      const bid = {getFloor: 2};
+      const bid = { getFloor: 2 };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
     });
 
     it('should return null when getFloor doesnt return an object', () => {
-      const bid = {getFloor: () => 2};
+      const bid = { getFloor: () => 2 };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
     });
 
     it('should return null when floor is not a number', () => {
       const bid = {
-        getFloor: () => ({floor: 'string', currency: 'USD'})
+        getFloor: () => ({ floor: 'string', currency: 'USD' })
       };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
@@ -441,7 +432,7 @@ describe('anyclipBidAdapter', () => {
 
     it('should return null when currency is not USD', () => {
       const bid = {
-        getFloor: () => ({floor: 5, currency: 'EUR'})
+        getFloor: () => ({ floor: 5, currency: 'EUR' })
       };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
@@ -449,10 +440,10 @@ describe('anyclipBidAdapter', () => {
 
     it('should return floor value when everything is correct', () => {
       const bid = {
-        getFloor: () => ({floor: 5, currency: 'USD'})
+        getFloor: () => ({ floor: 5, currency: 'USD' })
       };
       const result = getBidFloor(bid);
       expect(result).to.equal(5);
     });
   });
-})
+});

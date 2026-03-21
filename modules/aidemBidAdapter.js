@@ -1,18 +1,17 @@
-import {deepAccess, deepClone, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { deepAccess, deepClone, deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
 const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
-const GVLID = 1218
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
-const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols', 'context'];
 
 export const ERROR_CODES = {
   BID_SIZE_INVALID_FORMAT: 1,
@@ -72,7 +71,7 @@ const converter = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     const bidResponse = buildBidResponse(bid, context);
     logInfo('Building bidResponse');
     logInfo('bid', bid);
@@ -108,7 +107,7 @@ function recur(obj) {
 }
 
 function getRegs(bidderRequest) {
-  let regs = {};
+  const regs = {};
   const euConsentManagement = bidderRequest.gdprConsent;
   const usConsentManagement = bidderRequest.uspConsent;
   const coppa = config.getConfig('coppa');
@@ -144,8 +143,8 @@ function setPrebidRequestEnvironment(payload) {
   deepSetValue(payload, 'environment.inp.jp', window.JSON.parse.name === 'parse' && typeof window.JSON.parse.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.ofe', window.Object.fromEntries.name === 'fromEntries' && typeof window.Object.fromEntries.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.oa', window.Object.assign.name === 'assign' && typeof window.Object.assign.prototype === 'undefined');
-  deepSetValue(payload, 'environment.wpar.innerWidth', window.innerWidth);
-  deepSetValue(payload, 'environment.wpar.innerHeight', window.innerHeight);
+  deepSetValue(payload, 'environment.wpar.innerWidth', getWinDimensions().innerWidth);
+  deepSetValue(payload, 'environment.wpar.innerHeight', getWinDimensions().innerHeight);
 }
 
 function hasValidMediaType(bidRequest) {
@@ -186,7 +185,7 @@ function hasValidVideoParameters(bidRequest) {
   let valid = true;
   const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
   const bidderParameter = deepAccess(bidRequest, 'params.video');
-  for (let property of REQUIRED_VIDEO_PARAMS) {
+  for (const property of REQUIRED_VIDEO_PARAMS) {
     const hasAdUnitParameter = adUnitsParameters.hasOwnProperty(property);
     const hasBidderParameter = bidderParameter && bidderParameter.hasOwnProperty(property);
     if (!hasAdUnitParameter && !hasBidderParameter) {
@@ -233,7 +232,6 @@ function hasValidParameters(bidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function(bidRequest) {
     logInfo('bid: ', bidRequest);
@@ -264,7 +262,7 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     logInfo('bidRequests: ', bidRequests);
     logInfo('bidderRequest: ', bidderRequest);
-    const data = converter.toORTB({bidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests, bidderRequest });
     logInfo('request payload', data);
     return {
       method: 'POST',
@@ -279,7 +277,7 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     logInfo('serverResponse body: ', serverResponse.body);
     logInfo('request data: ', request.data);
-    const ortbBids = converter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+    const ortbBids = converter.fromORTB({ response: serverResponse.body, request: request.data }).bids;
     logInfo('ortbBids: ', ortbBids);
     return ortbBids;
   },

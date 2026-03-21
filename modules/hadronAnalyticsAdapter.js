@@ -3,9 +3,10 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * hadronAnalyticsAdapter.js - Audigent Hadron Analytics Adapter
@@ -17,19 +18,14 @@ const DEFAULT_PARTNER_ID = 0;
 const AU_GVLID = 561;
 const MODULE_CODE = 'hadronAnalytics';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 var viewId = utils.generateUUID();
 
 var partnerId = DEFAULT_PARTNER_ID;
 var eventsToTrack = [];
 
-var w = window;
-var d = document;
-var e = d.documentElement;
-var g = d.getElementsByTagName('body')[0];
-var x = w.innerWidth || e.clientWidth || g.clientWidth;
-var y = w.innerHeight || e.clientHeight || g.clientHeight;
+const { width: x, height: y } = getViewportSize();
 
 var pageView = {
   eventType: 'pageView',
@@ -49,10 +45,10 @@ var eventQueue = [
 
 var startAuction = 0;
 var bidRequestTimeout = 0;
-let analyticsType = 'endpoint';
+const analyticsType = 'endpoint';
 
-let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
-  track({eventType, args}) {
+const hadronAnalyticsAdapter = Object.assign(adapter({ url: HADRON_ANALYTICS_URL, analyticsType }), {
+  track({ eventType, args }) {
     args = args ? utils.deepClone(args) : {};
     var data = {};
     if (!eventsToTrack.includes(eventType)) return;
@@ -111,11 +107,6 @@ let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, a
       }
 
       case EVENTS.REQUEST_BIDS: {
-        data = args;
-        break;
-      }
-
-      case EVENTS.ADD_AD_UNITS: {
         data = args;
         break;
       }

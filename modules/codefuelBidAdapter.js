@@ -1,6 +1,6 @@
-import {isArray, setOnAny} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { isArray, setOnAny } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +16,7 @@ const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
   aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -46,7 +46,9 @@ export const spec = {
     const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
     const timeout = bidderRequest.timeout;
 
-    validBidRequests.forEach(bid => bid.netRevenue = 'net');
+    validBidRequests.forEach(bid => {
+      bid.netRevenue = 'net';
+    });
 
     const imps = validBidRequests.map((bid, idx) => {
       const imp = {
@@ -121,6 +123,7 @@ export const spec = {
         };
         return bidObject;
       }
+      return undefined;
     }).filter(Boolean);
   },
 

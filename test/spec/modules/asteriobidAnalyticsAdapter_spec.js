@@ -1,14 +1,14 @@
-import asteriobidAnalytics, {storage} from 'modules/asteriobidAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import asteriobidAnalytics, { storage } from 'modules/asteriobidAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('AsterioBid Analytics Adapter', function () {
-  let bidWonEvent = {
+  const bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
@@ -45,7 +45,7 @@ describe('AsterioBid Analytics Adapter', function () {
     });
 
     it('support custom endpoint', function () {
-      let custom_url = 'custom url';
+      const custom_url = 'custom url';
       asteriobidAnalytics.enableAnalytics({
         provider: 'asteriobid',
         options: {
@@ -58,7 +58,7 @@ describe('AsterioBid Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      const bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       asteriobidAnalytics.enableAnalytics({
         provider: 'asteriobid',
         options: {

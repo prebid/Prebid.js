@@ -14,15 +14,17 @@ import {
   isNumber,
   isBoolean,
   extractDomainFromHost,
-  isInteger, deepSetValue, getBidIdParameter, setOnAny
+  isInteger, deepSetValue, getBidIdParameter, setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -33,7 +35,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -80,8 +82,8 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
     required: true,
   }
 ];
-let _NATIVE_ASSET_ID_TO_KEY_MAP = {};
-let _NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+const _NATIVE_ASSET_ID_TO_KEY_MAP = {};
+const _NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // loading _NATIVE_ASSET_ID_TO_KEY_MAP
 _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
@@ -110,8 +112,8 @@ export const spec = {
       const nativeParams = deepAccess(bid, 'nativeParams');
       let assetsCount = 0;
       if (isPlainObject(nativeParams)) {
-        for (let k in nativeParams) {
-          let v = nativeParams[k];
+        for (const k in nativeParams) {
+          const v = nativeParams[k];
           const supportProp = spec.NATIVE_ASSET_KEY_TO_ASSET_MAP.hasOwnProperty(k);
           if (supportProp) {
             assetsCount++;
@@ -132,8 +134,8 @@ export const spec = {
         bannerOk = sizes[f].length === 2;
       }
     }
-    let acc = Number(bid.params.accountId);
-    let plcmt = Number(bid.params.placementId);
+    const acc = Number(bid.params.accountId);
+    const plcmt = Number(bid.params.placementId);
     return (bannerOk || nativeOk) && isPlainObject(bid.params) && !!bid.adUnitCode && isStr(bid.adUnitCode) && (plcmt > 0 ? bid.params.placementId.toString().search(spec.reId) === 0 : true) &&
       !!acc && acc > 0 && bid.params.accountId.toString().search(spec.reId) === 0;
   },
@@ -161,11 +163,11 @@ export const spec = {
     }
     const cur = setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CUR;
     const secure = window.location.protocol === 'https:' ? 1 : 0;
-    let imp = [];
+    const imp = [];
     validBidRequests.forEach(bid => {
       let tagid = deepAccess(bid, 'params.placementId') || 0;
       tagid = !tagid ? bid.adUnitCode : tagid + '/' + bid.adUnitCode;
-      let impObj = {
+      const impObj = {
         id: bid.bidId,
         tagid,
         secure,
@@ -179,7 +181,7 @@ export const spec = {
       if (floorData.cur) {
         impObj.bidfloorcur = floorData.cur;
       }
-      for (let mediaTypes in bid.mediaTypes) {
+      for (const mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {
           case BANNER:
             impObj.banner = createBannerRequest(bid);
@@ -204,11 +206,11 @@ export const spec = {
 
     const ortb2Data = bidderRequest?.ortb2 || {};
 
-    let request = {
+    const request = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: ortb2Data?.site || {},
       cur: [cur],
-      geo: {utcoffset: info.timeOffset},
+      geo: { utcoffset: info.timeOffset },
       device: ortb2Data?.device || {},
       ext: {
         mgid_ver: spec.VERSION,
@@ -251,7 +253,7 @@ export const spec = {
     }
     request.device.js = 1;
     if (!isInteger(deepAccess(request.device, 'dnt'))) {
-      request.device.dnt = (navigator?.doNotTrack === 'yes' || navigator?.doNotTrack === '1' || navigator?.msDoNotTrack === '1') ? 1 : 0;
+      request.device.dnt = getDNT() ? 1 : 0;
     }
     if (!isInteger(deepAccess(request.device, 'h'))) {
       request.device.h = screen.height;
@@ -303,7 +305,7 @@ export const spec = {
         deepSetValue(request, 'regs.coppa', 1);
       }
     }
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
     if (schain) {
       deepSetValue(request, 'source.ext.schain', schain);
     }
@@ -449,15 +451,15 @@ function setLocalStorageSafely(key, val) {
 
 function createBannerRequest(bid) {
   const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-  let format = [];
+  const format = [];
   if (sizes.length > 1) {
     for (let f = 0; f < sizes.length; f++) {
       if (sizes[f].length === 2) {
-        format.push({w: sizes[f][0], h: sizes[f][1]});
+        format.push({ w: sizes[f][0], h: sizes[f][1] });
       }
     }
   }
-  let r = {
+  const r = {
     w: sizes && sizes[0][0],
     h: sizes && sizes[0][1],
   };
@@ -472,11 +474,11 @@ function createBannerRequest(bid) {
 }
 
 function createNativeRequest(params) {
-  let nativeRequestObject = {
+  const nativeRequestObject = {
     plcmtcnt: 1,
     assets: []
   };
-  for (let key in params) {
+  for (const key in params) {
     let assetObj = {};
     if (params.hasOwnProperty(key)) {
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
@@ -559,10 +561,10 @@ function createNativeRequest(params) {
 
   // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
   // if any of these are missing from the request then request will not be sent
-  let requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
+  const requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
   let presentrequiredAssetCount = 0;
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    let lengthOfExistingAssets = nativeRequestObject.assets.length;
+    const lengthOfExistingAssets = nativeRequestObject.assets.length;
     for (let i = 0; i < lengthOfExistingAssets; i++) {
       if (ele.id === nativeRequestObject.assets[i].id) {
         presentrequiredAssetCount++;
@@ -653,8 +655,8 @@ function pageInfo() {
     location: l,
     referrer: r || '',
     masked: m,
-    wWidth: w.innerWidth,
-    wHeight: w.innerHeight,
+    wWidth: getWinDimensions().innerWidth,
+    wHeight: getWinDimensions().innerHeight,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };
@@ -690,7 +692,7 @@ function getBidFloor(bid, cur) {
   if (reqCur === cur) {
     cur = ''
   }
-  return {floor: bidFloor, cur: cur}
+  return { floor: bidFloor, cur: cur }
 }
 
 function copyFromAdmAsset(asset) {

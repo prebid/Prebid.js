@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency'
-import { addFPDToBidderRequest } from '../../helpers/fpd'
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
+import { addFPDToBidderRequest } from '../../helpers/fpd.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -34,15 +34,15 @@ describe('VOX Adapter', function() {
   }
   const validBidRequests = [
     getSlotConfigs({ banner: {} }, bannerMandatoryParams),
-    getSlotConfigs({ video: {playerSize: [[640, 480]], context: 'outstream'} }, videoMandatoryParams),
-    getSlotConfigs({ banner: {sizes: [0, 0]} }, inImageMandatoryParams)
+    getSlotConfigs({ video: { playerSize: [[640, 480]], context: 'outstream' } }, videoMandatoryParams),
+    getSlotConfigs({ banner: { sizes: [0, 0] } }, inImageMandatoryParams)
   ]
   describe('isBidRequestValid method', function() {
     describe('returns true', function() {
       describe('when banner slot config has all mandatory params', () => {
         describe('and banner placement has the correct value', function() {
           const slotConfig = getSlotConfigs(
-            {banner: {}},
+            { banner: {} },
             {
               placementId: PLACE_ID,
               placement: 'banner'
@@ -212,10 +212,16 @@ describe('VOX Adapter', function() {
     it('should set schain if not specified', function () {
       const requests = validBidRequests.map(bid => ({
         ...bid,
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       }))
@@ -237,7 +243,7 @@ describe('VOX Adapter', function() {
       })
 
       it('should add correct floor values', function () {
-        const expectedFloors = [ 2, 2.7, 1.4 ]
+        const expectedFloors = [2, 2.7, 1.4]
         const validBidRequests = expectedFloors.map(getBidWithFloor)
         const request = spec.buildRequests(validBidRequests, bidderRequest)
         const data = JSON.parse(request.data)
@@ -251,7 +257,7 @@ describe('VOX Adapter', function() {
         const configCurrency = 'DKK';
         setCurrencyConfig({ adServerCurrency: configCurrency });
         return addFPDToBidderRequest(bidderRequest).then(res => {
-          const request = spec.buildRequests([ getBidWithFloor() ], res)
+          const request = spec.buildRequests([getBidWithFloor()], res)
           const data = JSON.parse(request.data)
           data.bidRequests.forEach(bid => {
             expect(bid.floorInfo.currency).to.equal(configCurrency)

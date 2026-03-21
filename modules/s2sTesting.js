@@ -1,8 +1,7 @@
-import {PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet} from '../src/adapterManager.js';
-import {find} from '../src/polyfill.js';
-import {getBidderCodes, logWarn} from '../src/utils.js';
+import { PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet } from '../src/adapterManager.js';
+import { getBidderCodes, logWarn } from '../src/utils.js';
 
-const {CLIENT, SERVER} = PARTITIONS;
+const { CLIENT, SERVER } = PARTITIONS;
 export const s2sTesting = {
   ...PARTITIONS,
   clientTestBidders: new Set()
@@ -12,7 +11,7 @@ s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bid
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
 s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
-  var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
+  var sourceBidders = { [SERVER]: {}, [CLIENT]: {} };
 
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them
@@ -72,7 +71,7 @@ s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT
   // choose a source randomly based on weights
   var rndWeight = s2sTesting.globalRand * totWeight;
   for (var i = 0; i < bidSources.length; i++) {
-    let source = bidSources[i];
+    const source = bidSources[i];
     // choose the first source with an incremental weight > random weight
     if (rndWeight < srcIncWeight[source]) return source;
   }
@@ -87,7 +86,7 @@ function isTestingServerOnly(s2sConfig) {
 }
 
 const adUnitsContainServerRequests = (adUnits, s2sConfig) => Boolean(
-  find(adUnits, adUnit => find(adUnit.bids, bid => (
+  ((adUnits) || []).find(adUnit => ((adUnit.bids) || []).find(bid => (
     bid.bidSource ||
     (s2sConfig.bidderControl && s2sConfig.bidderControl[bid.bidder])
   ) && bid.finalSource === SERVER))
@@ -118,17 +117,16 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
       memo[CLIENT].push(bidder);
     }
     return memo;
-  }, {[CLIENT]: [], [SERVER]: []}));
+  }, { [CLIENT]: [], [SERVER]: [] }));
 });
 
 filterBidsForAdUnit.before(function(next, bids, s2sConfig) {
   if (s2sConfig == null) {
-    next.bail(bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER));
+    bids = bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER);
   } else {
-    const serverBidders = getS2SBidderSet(s2sConfig);
-    next.bail(bids.filter((bid) => serverBidders.has(bid.bidder) &&
-      (!doingS2STesting(s2sConfig) || bid.finalSource !== CLIENT)));
+    bids = bids.filter((bid) => !doingS2STesting(s2sConfig) || bid.finalSource !== CLIENT);
   }
+  next.call(this, bids, s2sConfig);
 });
 
 export default s2sTesting;

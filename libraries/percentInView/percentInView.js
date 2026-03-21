@@ -1,6 +1,34 @@
+import { getWinDimensions, inIframe } from '../../src/utils.js';
+import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
+import { defer, PbPromise, delay } from '../../src/utils/promise.js';
+import { startAuction } from '../../src/prebid.js';
+import { getAdUnitElement } from '../../src/utils/adUnits.js';
 
-function getBoundingBox(element, {w, h} = {}) {
-  let {width, height, left, top, right, bottom} = element.getBoundingClientRect();
+/**
+ * return the offset between the given window's viewport and the top window's.
+ */
+export function getViewportOffset(win = window) {
+  let x = 0;
+  let y = 0;
+  try {
+    while (win?.frameElement != null) {
+      const rect = getBoundingClientRect(win.frameElement);
+      x += rect.left;
+      y += rect.top;
+      win = win.parent;
+    }
+  } catch (e) {
+    // offset cannot be calculated as some parents are cross-frame
+    // fallback to 0,0
+    x = 0;
+    y = 0;
+  }
+
+  return { x, y };
+}
+
+function applySize(bbox, { w, h }) {
+  let { width, height, left, top, right, bottom, x, y } = bbox;
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -9,7 +37,11 @@ function getBoundingBox(element, {w, h} = {}) {
     bottom = top + h;
   }
 
-  return {width, height, left, top, right, bottom};
+  return { width, height, left, top, right, bottom, x, y };
+}
+
+export function getBoundingBox(element, { w, h } = {}) {
+  return applySize(getBoundingClientRect(element), { w, h });
 }
 
 function getIntersectionOfRects(rects) {
@@ -39,12 +71,27 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-export const percentInView = (element, topWin, {w, h} = {}) => {
-  const elementBoundingBox = getBoundingBox(element, {w, h});
+const percentInViewStatic = (element, { w, h } = {}) => {
+  const elementBoundingBox = getBoundingBox(element, { w, h });
+
+  // when in an iframe, the bounding box is relative to the iframe's viewport
+  // since we are intersecting it with the top window's viewport, attempt to
+  // compensate for the offset between them
+
+  const offset = getViewportOffset(element?.ownerDocument?.defaultView);
+  elementBoundingBox.left += offset.x;
+  elementBoundingBox.right += offset.x;
+  elementBoundingBox.top += offset.y;
+  elementBoundingBox.bottom += offset.y;
+
+  const dims = getWinDimensions();
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = getIntersectionOfRects([{
-    left: 0, top: 0, right: topWin.innerWidth, bottom: topWin.innerHeight
+    left: 0,
+    top: 0,
+    right: dims.document.documentElement.clientWidth,
+    bottom: dims.document.documentElement.clientHeight
   }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;
@@ -60,4 +107,123 @@ export const percentInView = (element, topWin, {w, h} = {}) => {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
+}
+
+/**
+ * A wrapper around an IntersectionObserver that keeps track of the latest IntersectionEntry that was observed
+ * for each observed element.
+ *
+ * @param mkObserver
+ */
+export function intersections(mkObserver) {
+  const intersections = new WeakMap();
+  let next = defer();
+  function observerCallback(entries) {
+    entries.forEach(entry => {
+      if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
+        intersections.set(entry.target, entry)
+        next.resolve();
+        next = defer();
+      }
+    })
+  }
+
+  let obs = null;
+  try {
+    obs = mkObserver(observerCallback);
+  } catch (e) {
+    // IntersectionObserver not supported
+  }
+
+  async function waitFor(element) {
+    const intersection = getIntersection(element);
+    if (intersection != null) {
+      return intersection;
+    } else {
+      return next.promise.then(() => waitFor(element));
+    }
+  }
+  /**
+   * Observe the given element; returns a promise to the first available intersection observed for it.
+   */
+  async function observe(element) {
+    if (obs != null && !intersections.has(element)) {
+      obs.observe(element);
+      intersections.set(element, null);
+      return waitFor(element);
+    } else {
+      return PbPromise.resolve(getIntersection(element));
+    }
+  }
+
+  /**
+   * Return the latest intersection that was observed for the given element.
+   */
+  function getIntersection(element) {
+    return intersections.get(element);
+  }
+
+  return {
+    observe,
+    getIntersection,
+  }
+}
+
+export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback, {
+  // update percentInView when visibility varies by 1%
+  threshold: Array.from({ length: 101 }, (e, i) => i / 100)
+}));
+
+export function mkIntersectionHook(intersections = viewportIntersections) {
+  return function (next, request) {
+    PbPromise.race([
+      PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
+        intersections.observe(getAdUnitElement(adUnit))
+      )),
+      // according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
+      // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+      // However, browsers appear to run it even when the element is outside the DOM
+      // just to be sure, cap the amount of time we wait for intersections
+      delay(20)
+    ]).then(() => next.call(this, request));
+  }
+}
+
+startAuction.before(mkIntersectionHook());
+
+export function percentInView(element, { w, h } = {}) {
+  const intersection = viewportIntersections.getIntersection(element);
+  if (intersection == null) {
+    viewportIntersections.observe(element);
+    return percentInViewStatic(element, { w, h });
+  } else {
+    const adjusted = applySize(intersection.boundingClientRect, { w, h });
+    if (adjusted.width !== intersection.boundingClientRect.width || adjusted.height !== intersection.boundingClientRect.height) {
+      // use w/h override
+      return percentInViewStatic(element, { w, h });
+    }
+    return intersection.isIntersecting ? intersection.intersectionRatio * 100 : 0;
+  }
+}
+
+/**
+ * Checks if viewability can be measured for an element
+ * @param {HTMLElement} element - DOM element to check
+ * @returns {boolean} True if viewability is measurable
+ */
+export function isViewabilityMeasurable(element) {
+  return !inIframe() && element !== null;
+}
+
+/**
+ * Gets the viewability percentage of an element
+ * @param {HTMLElement} element - DOM element to measure
+ * @param {Window} topWin - Top window object
+ * @param {Object} size - Size object with width and height
+ * @returns {number|string} Viewability percentage or 0 if not visible
+ */
+export function getViewability(element, topWin, size) {
+  return topWin.document.visibilityState === 'visible'
+    ? percentInView(element, size)
+    : 0;
 }

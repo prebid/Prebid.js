@@ -3,10 +3,10 @@ import { config } from 'src/config.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import 'modules/currency.js';
 import 'modules/priceFloors.js';
-import { replaceAuctionPrice } from '../../../src/utils';
+import { replaceAuctionPrice } from '../../../src/utils.js';
 
 const ortbBlockParams = {
-  battr: [ 13 ],
+  battr: [13],
   bcat: ['IAB1-1']
 };
 const getBidderRequest = (isMulti = false) => {
@@ -22,7 +22,7 @@ const getBidderRequest = (isMulti = false) => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 320, 100 ],
+              [320, 100],
             ]
           },
           ...(isMulti && {
@@ -32,7 +32,8 @@ const getBidderRequest = (isMulti = false) => {
             native: {
               title: {
                 required: true,
-              }}
+              }
+            }
           })
         },
         ...(isMulti && {
@@ -240,7 +241,7 @@ describe('a1MediaBidAdapter', function() {
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
 
         const expectedResPrice = 9;
-        const expectedAd = replaceAuctionPrice(macroAdm, expectedResPrice) + replaceAuctionPrice(interpretedNurl, expectedResPrice);
+        const expectedAd = replaceAuctionPrice(interpretedNurl, expectedResPrice) + replaceAuctionPrice(macroAdm, expectedResPrice);
 
         expect(interpretedRes[0].ad).equal(expectedAd);
       });

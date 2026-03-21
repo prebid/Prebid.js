@@ -1,6 +1,6 @@
 import { arcspanSubmodule } from 'modules/arcspanRtdProvider.js';
 import { expect } from 'chai';
-import { loadExternalScript } from 'src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('arcspanRtdProvider', function () {
   describe('init', function () {
@@ -11,22 +11,22 @@ describe('arcspanRtdProvider', function () {
 
     it('successfully initializes with a valid silo ID', function () {
       expect(arcspanSubmodule.init(getGoodConfig())).to.equal(true);
-      expect(loadExternalScript.called).to.be.ok;
-      expect(loadExternalScript.args[0][0]).to.deep.equal('https://silo13.p7cloud.net/as.js');
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.be.ok;
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://silo13.p7cloud.net/as.js');
+      loadExternalScriptStub.resetHistory();
     });
 
     it('fails to initialize with a missing silo ID', function () {
       expect(arcspanSubmodule.init(getBadConfig())).to.equal(false);
-      expect(loadExternalScript.called).to.be.not.ok;
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.be.not.ok;
+      loadExternalScriptStub.resetHistory();
     });
 
     it('drops localhost script for test silo', function () {
       expect(arcspanSubmodule.init(getTestConfig())).to.equal(true);
-      expect(loadExternalScript.called).to.be.ok;
-      expect(loadExternalScript.args[0][0]).to.deep.equal('https://localhost:8080/as.js');
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.be.ok;
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://localhost:8080/as.js');
+      loadExternalScriptStub.resetHistory();
     });
   });
 
@@ -166,14 +166,14 @@ function getTestConfig() {
 function setIAB(vjson) {
   window.arcobj2 = {};
   window.arcobj2.cat = 0;
-  if (typeof vjson.codes != 'undefined') {
+  if (typeof vjson.codes !== 'undefined') {
     window.arcobj2.cat = 1;
-    if (typeof vjson.codes.images != 'undefined') {
+    if (typeof vjson.codes.images !== 'undefined') {
       vjson.codes.images.forEach(function f(e, i) {
         vjson.codes.images[i] = e.replace('-', '_');
       });
     }
-    if (typeof vjson.codes.text != 'undefined') {
+    if (typeof vjson.codes.text !== 'undefined') {
       vjson.codes.text.forEach(function f(e, i) {
         vjson.codes.text[i] = e.replace('-', '_');
       });

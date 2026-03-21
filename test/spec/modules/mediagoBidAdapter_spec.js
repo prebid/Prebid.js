@@ -11,7 +11,7 @@ import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLin
 import * as utils from 'src/utils.js';
 
 describe('mediago:BidAdapterTests', function () {
-  let bidRequestData = {
+  const bidRequestData = {
     bidderCode: 'mediago',
     auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
     bidderRequestId: '4fec04e87ad785',
@@ -51,12 +51,14 @@ describe('mediago:BidAdapterTests', function () {
         },
         ortb2: {
           site: {
-        	cat: ['IAB2'],
+            cat: ['IAB2'],
             keywords: 'power tools, drills, tools=industrial',
             content: {
               keywords: 'video, source=streaming'
             },
-
+            publisher: {
+              domain: 'mediago.io'
+            },
           },
           user: {
             ext: {
@@ -87,38 +89,6 @@ describe('mediago:BidAdapterTests', function () {
           }
         }
       }
-    },
-    userId: {
-      tdid: 'sample-userid',
-      uid2: { id: 'sample-uid2-value' },
-      criteoId: 'sample-criteo-userid',
-      netId: 'sample-netId-userid',
-      idl_env: 'sample-idl-userid',
-      pubProvidedId: [
-        {
-          source: 'puburl.com',
-          uids: [
-            {
-              id: 'pubid2',
-              atype: 1,
-              ext: {
-                stype: 'ppuid'
-              }
-            }
-          ]
-        },
-        {
-          source: 'puburl2.com',
-          uids: [
-            {
-              id: 'pubid2'
-            },
-            {
-              id: 'pubid2-123'
-            }
-          ]
-        }
-      ]
     },
     userIdAsEids: [
       {
@@ -158,7 +128,8 @@ describe('mediago:BidAdapterTests', function () {
       spec.isBidRequestValid({
         bidder: 'mediago',
         params: {
-          token: ['85a6b01e41ac36d49744fad726e3655d']
+          token: ['85a6b01e41ac36d49744fad726e3655d'],
+          publisher: ['test_publisher']
         }
       })
     ).to.equal(true);
@@ -166,8 +137,21 @@ describe('mediago:BidAdapterTests', function () {
 
   it('mediago:validate_generated_params', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
-    let req_data = JSON.parse(request.data);
+    const req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
+  });
+
+  it('mediago:validate_transactionId_in_request', function () {
+    request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const req_data = JSON.parse(request.data);
+    expect(req_data.imp[0].ext.transactionId).to.equal('7b26fdae-96e6-4c35-a18b-218dda11397d');
+  });
+
+  it('mediago:validate_pbjs_source_and_version_in_request', function () {
+    request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const req_data = JSON.parse(request.data);
+    expect(req_data.ext.pbjsversion).to.be.a('string');
+    expect(req_data.ext.pbjsversion.length).to.be.above(0);
   });
 
   describe('mediago: buildRequests', function() {
@@ -175,7 +159,7 @@ describe('mediago:BidAdapterTests', function () {
       let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(storage, 'getCookie');
         sandbox.stub(storage, 'setCookie');
         sandbox.stub(utils, 'generateUUID').returns('new-uuid');
@@ -221,7 +205,7 @@ describe('mediago:BidAdapterTests', function () {
     temp += '%3B%3C%2Fscri';
     temp += 'pt%3E';
     adm += decodeURIComponent(temp);
-    let serverResponse = {
+    const serverResponse = {
       body: {
         id: 'mgprebidjs_0b6572fc-ceba-418f-b6fd-33b41ad0ac8a',
         seatbid: [
@@ -229,7 +213,7 @@ describe('mediago:BidAdapterTests', function () {
             bid: [
               {
                 id: '6e28cfaf115a354ea1ad8e1304d6d7b8',
-                impid: '1',
+                impid: '54d73f19c9d47a',
                 price: 0.087581,
                 adm: adm,
                 cid: '1339145',
@@ -244,13 +228,13 @@ describe('mediago:BidAdapterTests', function () {
       }
     };
 
-    let bids = spec.interpretResponse(serverResponse);
+    const bids = spec.interpretResponse(serverResponse);
     // console.log({
     //   bids
     // });
     expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
+    const bid = bids[0];
 
     expect(bid.creativeId).to.equal('ff32b6f9b3bbc45c00b78b6674a2952e');
     expect(bid.width).to.equal(300);

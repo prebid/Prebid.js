@@ -18,8 +18,8 @@ describe('RetailSpot Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
-    ortb2: {site: {page: pageUrl, ref: referrerUrl}}
+    refererInfo: { location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL' },
+    ortb2: { site: { page: pageUrl, ref: referrerUrl } }
   };
 
   const bidRequestWithSinglePlacement = [
@@ -83,9 +83,9 @@ describe('RetailSpot Adapter', function () {
       },
       'sizes': '300x250',
       'mediaTypes':
-        { 'banner':
-          {'sizes': ['300x250']
-          }
+        {
+          'banner':
+          { 'sizes': ['300x250'] }
         },
       'transactionId': 'bid_id_0_transaction_id'
     }
@@ -101,9 +101,9 @@ describe('RetailSpot Adapter', function () {
       },
       'sizes': '300x250',
       'mediaTypes':
-        { 'banner':
-          {'sizes': ['300x250']
-          }
+        {
+          'banner':
+          { 'sizes': ['300x250'] }
         },
       'transactionId': 'bid_id_0_transaction_id'
     },
@@ -116,9 +116,9 @@ describe('RetailSpot Adapter', function () {
       },
       'sizes': [[300, 600]],
       'mediaTypes':
-        { 'banner':
-          {'sizes': ['300x600']
-          }
+        {
+          'banner':
+          { 'sizes': ['300x600'] }
         },
       'transactionId': 'bid_id_1_transaction_id'
     },
@@ -255,7 +255,7 @@ describe('RetailSpot Adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidId': 'bid_id_1',
       'bidder': 'retailspot',
       'placementCode': 'adunit/hb-1',
@@ -266,7 +266,7 @@ describe('RetailSpot Adapter', function () {
       'transactionId': 'bid_id_1_transaction_id'
     };
 
-    let bidWSize = {
+    const bidWSize = {
       'bidId': 'bid_id_1',
       'bidder': 'retailspot',
       'placementCode': 'adunit/hb-1',
@@ -286,14 +286,14 @@ describe('RetailSpot Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.sizes;
 
       expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placement': 0
@@ -304,9 +304,9 @@ describe('RetailSpot Adapter', function () {
 
   describe('buildRequests', function () {
     it('should add gdpr/usp consent information to the request', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let uspConsentData = '1YCC';
-      let bidderRequest = {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const uspConsentData = '1YCC';
+      const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -377,18 +377,18 @@ describe('RetailSpot Adapter', function () {
     });
 
     it('handles nobid responses', function () {
-      let response = [{
+      const response = [{
         requestId: '123dfsdf',
         placement: '12df1'
       }];
       serverResponse.body = response;
-      let result = spec.interpretResponse(serverResponse, []);
+      const result = spec.interpretResponse(serverResponse, []);
       expect(result).deep.equal([]);
     });
 
     it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, {data: '{"bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
+      const result = spec.interpretResponse(serverResponse, { data: '{"bids":' + JSON.stringify(requestDataOnePlacement) + '}' });
 
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0.5);
@@ -400,7 +400,7 @@ describe('RetailSpot Adapter', function () {
 
     it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
-      let result = spec.interpretResponse(serverResponse, {data: '{"bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
+      const result = spec.interpretResponse(serverResponse, { data: '{"bids":' + JSON.stringify(requestDataMultiPlacement) + '}' });
 
       expect(result.length).to.equal(2);
 
@@ -417,7 +417,7 @@ describe('RetailSpot Adapter', function () {
 
     it('receive Vast reponse with Video ad', function () {
       serverResponse.body = responseWithSingleVideo;
-      let result = spec.interpretResponse(serverResponse, {data: '{"bids":' + JSON.stringify(sentBidVideo) + '}'});
+      const result = spec.interpretResponse(serverResponse, { data: '{"bids":' + JSON.stringify(sentBidVideo) + '}' });
 
       expect(result.length).to.equal(1);
       expect(result).to.deep.equal(videoResult);

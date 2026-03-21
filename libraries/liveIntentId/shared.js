@@ -1,7 +1,7 @@
-import {UID1_EIDS} from '../uid1Eids/uid1Eids.js';
-import {UID2_EIDS} from '../uid2Eids/uid2Eids.js';
+import { UID1_EIDS } from '../uid1Eids/uid1Eids.js';
+import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
-import { coppaDataHandler } from '../../src/adapterManager.js';
+import { isNumber } from '../../src/utils.js'
 
 export const PRIMARY_IDS = ['libp'];
 export const GVLID = 148;
@@ -10,20 +10,14 @@ export const DEFAULT_DELAY = 500;
 export const MODULE_NAME = 'liveIntentId';
 export const LI_PROVIDER_DOMAIN = 'liveintent.com';
 export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true };
+export const DEFAULT_TREATMENT_RATE = 0.95;
 
 export function parseRequestedAttributes(overrides) {
-  function renameAttribute(attribute) {
-    if (attribute === 'fpid') {
-      return 'idCookie';
-    } else {
-      return attribute;
-    };
-  }
   function createParameterArray(config) {
-    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [renameAttribute(k)] : []);
+    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
   if (typeof overrides === 'object') {
-    return createParameterArray({...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides});
+    return createParameterArray({ ...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides });
   } else {
     return createParameterArray(DEFAULT_REQUESTED_ATTRIBUTES);
   }
@@ -54,16 +48,25 @@ export function makeSourceEventToSend(configParams) {
   }
 }
 
-export function composeIdObject(value) {
+export function composeResult(value, config) {
+  if (config.activatePartialTreatment) {
+    if (window.liModuleEnabled) {
+      return composeIdObject(value);
+    } else {
+      return {};
+    }
+  } else {
+    return composeIdObject(value);
+  }
+}
+
+function composeIdObject(value) {
   const result = {};
 
   // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
   const lipbid = value.nonId || value.unifiedId
-  if (lipbid) {
-    const lipb = { ...value, lipbid };
-    delete lipb.unifiedId;
-    result.lipb = lipb;
-  }
+  result.lipb = lipbid ? { ...value, lipbid } : value
+  delete result.lipb?.unifiedId
 
   // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
   // As adapters are applied in lexicographical order, we will always
@@ -74,6 +77,14 @@ export function composeIdObject(value) {
 
   if (value.bidswitch) {
     result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.triplelift) {
+    result.triplelift = { 'id': value.triplelift, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.zetassp) {
+    result.zetassp = { 'id': value.zetassp, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
   if (value.medianet) {
@@ -100,16 +111,8 @@ export function composeIdObject(value) {
     result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
-  if (value.idCookie) {
-    if (!coppaDataHandler.getCoppa()) {
-      result.lipb = { ...result.lipb, fpid: value.idCookie };
-      result.fpid = { 'id': value.idCookie };
-    }
-    delete result.lipb.idCookie;
-  }
-
   if (value.thetradedesk) {
-    result.lipb = {...result.lipb, tdid: value.thetradedesk}
+    result.lipb = { ...result.lipb, tdid: value.thetradedesk }
     result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
     delete result.lipb.thetradedesk
   }
@@ -126,11 +129,29 @@ export function composeIdObject(value) {
     result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
+  if (value.nexxen) {
+    result.nexxen = { 'id': value.nexxen, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
   return result
+}
+
+export function setUpTreatment(config) {
+  // If the treatment decision has not been made yet
+  // and Prebid is configured to make this decision.
+  if (window.liModuleEnabled === undefined && config.activatePartialTreatment) {
+    const treatmentRate = isNumber(window.liTreatmentRate) ? window.liTreatmentRate : DEFAULT_TREATMENT_RATE;
+    window.liModuleEnabled = Math.random() < treatmentRate;
+    window.liTreatmentRate = treatmentRate;
+  };
 }
 
 export const eids = {
   ...UID1_EIDS,
+  tdid: {
+    ...UID1_EIDS.tdid,
+    matcher: LI_PROVIDER_DOMAIN
+  },
   ...UID2_EIDS,
   'lipb': {
     getValue: function(data) {
@@ -261,8 +282,44 @@ export const eids = {
       }
     }
   },
+  'triplelift': {
+    source: 'liveintent.triplelift.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'zetassp': {
+    source: 'zeta-ssp.liveintent.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
   'vidazoo': {
     source: 'liveintent.vidazoo.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'nexxen': {
+    source: 'liveintent.unrulymedia.com',
     atype: 3,
     getValue: function(data) {
       return data.id;

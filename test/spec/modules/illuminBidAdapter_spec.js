@@ -1,14 +1,14 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   createDomain,
   storage
 } from 'modules/illuminBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -19,6 +19,7 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -49,7 +50,7 @@ const BID = {
   'ortb2Imp': {
     'ext': {
       'gpid': '0123456789',
-      'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
+      'tid': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf'
     }
   }
 };
@@ -94,6 +95,36 @@ const VIDEO_BID = {
   }
 }
 
+const ORTB2_DEVICE = {
+  sua: {
+    'source': 2,
+    'platform': {
+      'brand': 'Android',
+      'version': ['8', '0', '0']
+    },
+    'browsers': [
+      { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+      { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+      { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
+    ],
+    'mobile': 1,
+    'model': 'SM-G955U',
+    'bitness': '64',
+    'architecture': ''
+  },
+  w: 980,
+  h: 1720,
+  dnt: 0,
+  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+  language: 'en',
+  devicetype: 1,
+  make: 'Apple',
+  model: 'iPhone 12 Pro Max',
+  os: 'iOS',
+  osv: '17.4',
+  ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
+};
+
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string',
@@ -117,24 +148,7 @@ const BIDDER_REQUEST = {
       'gpp_sid': [7],
       'coppa': 0
     },
-    'device': {
-      'sua': {
-        'source': 2,
-        'platform': {
-          'brand': 'Android',
-          'version': ['8', '0', '0']
-        },
-        'browsers': [
-          {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-          {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-          {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
-        ],
-        'mobile': 1,
-        'model': 'SM-G955U',
-        'bitness': '64',
-        'architecture': ''
-      }
-    }
+    'device': ORTB2_DEVICE,
   }
 };
 
@@ -177,6 +191,12 @@ const VIDEO_SERVER_RESPONSE = {
   }
 };
 
+const ORTB2_OBJ = {
+  "device": ORTB2_DEVICE,
+  "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
+  "site": { "content": { "language": "en" } }
+};
+
 const REQUEST = {
   data: {
     width: 300,
@@ -187,7 +207,7 @@ const REQUEST = {
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -195,6 +215,9 @@ function getTopWindowQueryParams() {
 }
 
 describe('IlluminBidAdapter', function () {
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
+
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -255,12 +278,12 @@ describe('IlluminBidAdapter', function () {
   describe('build requests', function () {
     let sandbox;
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         illumin: {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
@@ -306,15 +329,16 @@ describe('IlluminBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
             'bitness': '64',
             'architecture': ''
           },
+          device: ORTB2_DEVICE,
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           mediaTypes: {
@@ -340,6 +364,8 @@ describe('IlluminBidAdapter', function () {
           contentLang: 'en',
           isStorageAllowed: true,
           pagecat: [],
+          ortb2: ORTB2_OBJ,
+          ortb2Imp: VIDEO_BID.ortb2Imp,
           userData: [],
           coppa: 0
         }
@@ -368,7 +394,7 @@ describe('IlluminBidAdapter', function () {
           bidderWinsCount: 1,
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
-          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+          transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
           sizes: ['300x250', '300x600'],
           sua: {
             'source': 2,
@@ -377,15 +403,16 @@ describe('IlluminBidAdapter', function () {
               'version': ['8', '0', '0']
             },
             'browsers': [
-              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+              { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+              { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+              { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
             ],
             'mobile': 1,
             'model': 'SM-G955U',
             'bitness': '64',
             'architecture': ''
           },
+          device: ORTB2_DEVICE,
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,
@@ -408,6 +435,8 @@ describe('IlluminBidAdapter', function () {
           contentLang: 'en',
           isStorageAllowed: true,
           pagecat: [],
+          ortb2: ORTB2_OBJ,
+          ortb2Imp: BID.ortb2Imp,
           userData: [],
           coppa: 0
         }
@@ -415,36 +444,47 @@ describe('IlluminBidAdapter', function () {
     });
 
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
       sandbox.restore();
     });
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.illumin.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.illumin.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
       }]);
     })
+
+    it('should have valid user sync with coppa on response', function () {
+      config.setConfig({
+        coppa: 1
+      });
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
+      }]);
+    });
   });
 
   describe('interpret response', function () {
@@ -454,12 +494,12 @@ describe('IlluminBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -532,9 +572,9 @@ describe('IlluminBidAdapter', function () {
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return {lipbid: id};
+            return { lipbid: id };
           case 'id5id':
-            return {uid: id};
+            return { uid: id };
           default:
             return id;
         }
@@ -549,22 +589,86 @@ describe('IlluminBidAdapter', function () {
         expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
       });
     });
+    // testing bid.userIdAsEids handling
+    it("should include user ids from bid.userIdAsEids (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{ "id": "fakeidi6j6dlc6e" }]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+    })
+    it("should include user ids from bid.userIdAsEids (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.userIdAsEids = [
+        {
+          "source": "audigent.com",
+          "uids": [{ "id": "fakeidi6j6dlc6e" }]
+        },
+        {
+          "source": "rwdcntrl.net",
+          "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
+        }
+      ]
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
+    })
+    // testing user.ext.eid handling
+    it("should include user ids from user.ext.eid (length=1)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{ "id": "fakeid8888dlc6e" }]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+    })
+    it("should include user ids from user.ext.eid (length=2)", function() {
+      const bid = utils.deepClone(BID);
+      bid.user = {
+        ext: {
+          eids: [
+            {
+              "source": "pubcid.org",
+              "uids": [{ "id": "fakeid8888dlc6e" }]
+            },
+            {
+              "source": "adserver.org",
+              "uids": [{ "id": "fakeid495ff1" }]
+            }
+          ]
+        }
+      }
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
+    })
   });
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cId': '1'});
-      const pid = extractPID({'pId': '2'});
-      const subDomain = extractSubDomain({'subDomain': 'prebid'});
+      const cid = extractCID({ 'cId': '1' });
+      const pid = extractPID({ 'pId': '2' });
+      const subDomain = extractSubDomain({ 'subDomain': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -573,14 +677,14 @@ describe('IlluminBidAdapter', function () {
 
   describe('unique deal id', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         illumin: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     const key = 'myKey';
     let uniqueDealId;
@@ -608,14 +712,14 @@ describe('IlluminBidAdapter', function () {
 
   describe('storage utils', function () {
     before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         illumin: {
           storageAllowed: true
         }
       };
     });
     after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
+      getGlobal().bidderSettings = {};
     });
     it('should get value from storage with create param', function () {
       const now = Date.now();
@@ -624,7 +728,7 @@ describe('IlluminBidAdapter', function () {
         now
       });
       setStorageItem(storage, 'myKey', 2020);
-      const {value, created} = getStorageItem(storage, 'myKey');
+      const { value, created } = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -640,8 +744,8 @@ describe('IlluminBidAdapter', function () {
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 

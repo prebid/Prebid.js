@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://s2s.yieldlove-ad-serving.net/openrtb2/auction';
 
@@ -45,8 +45,8 @@ export const spec = {
     const s2sRequest = {
       device: {
         ua: window.navigator.userAgent,
-        w: window.innerWidth,
-        h: window.innerHeight,
+        w: utils.getWinDimensions().innerWidth,
+        h: utils.getWinDimensions().innerHeight,
       },
       site: {
         ver: '1.9.0',

@@ -1,6 +1,6 @@
 # Overview
-Module Name: Opt Out Advertising Bidder Adapter Module 
-Type: Bidder Adapter 
+Module Name: Opt Out Advertising Bidder Adapter Module
+Type: Bidder Adapter
 Maintainer: rob@optoutadvertising.com
 
 # Description

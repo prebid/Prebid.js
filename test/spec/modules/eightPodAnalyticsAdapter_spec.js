@@ -1,8 +1,8 @@
 import analyticsAdapter, { storage, queue, trackEvent } from 'modules/eightPodAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import eightPodAnalytics from 'modules/eightPodAnalyticsAdapter.js';
 import { EVENTS } from '../../../src/constants.js';
+const eightPodAnalytics = analyticsAdapter;
 
 const {
   BID_WON
@@ -12,7 +12,7 @@ describe('eightPodAnalyticAdapter', function() {
   let sandbox;
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     adapterManager.enableAnalytics({
       provider: 'eightPod'
     });
@@ -132,7 +132,7 @@ describe('eightPodAnalyticAdapter', function() {
     });
 
     it('should add event to the queue', function() {
-      getContextStub.returns({adUnitCode: {}});
+      getContextStub.returns({ adUnitCode: {} });
 
       const event1 = {
         detail: {

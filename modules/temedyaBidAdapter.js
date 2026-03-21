@@ -31,8 +31,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
@@ -71,7 +72,7 @@ export const spec = {
     try {
       const bidResponse = serverResponse.body;
       const bidResponses = [];
-      if (bidResponse && bidRequest.options.mediaType == NATIVE) {
+      if (bidResponse && bidRequest.options.mediaType === NATIVE) {
         bidResponse.ads.forEach(function(ad) {
           bidResponses.push({
             requestId: bidRequest.options.requestId,
@@ -105,10 +106,10 @@ export const spec = {
             },
           });
         });
-      } else if (bidResponse && bidRequest.options.mediaType == 'display') {
+      } else if (bidResponse && bidRequest.options.mediaType === 'display') {
         bidResponse.ads.forEach(function(ad) {
-          let w = ad.assets.width || 300;
-          let h = ad.assets.height || 250;
+          const w = ad.assets.width || 300;
+          const h = ad.assets.height || 250;
           let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
           htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
           htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>';

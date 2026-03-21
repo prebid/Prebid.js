@@ -1,10 +1,10 @@
-import {addBidResponse} from '../../src/auction.js';
-import {VIDEO} from '../../src/mediaTypes.js';
-import {logError} from '../../src/utils.js';
-import {isActivityAllowed} from '../../src/activities/rules.js';
-import {ACTIVITY_REPORT_ANALYTICS} from '../../src/activities/activities.js';
-import {activityParams} from '../../src/activities/activityParams.js';
-import {auctionManager} from '../../src/auctionManager.js';
+import { callPrebidCache } from '../../src/auction.js';
+import { VIDEO } from '../../src/mediaTypes.js';
+import { logError } from '../../src/utils.js';
+import { isActivityAllowed } from '../../src/activities/rules.js';
+import { ACTIVITY_REPORT_ANALYTICS } from '../../src/activities/activities.js';
+import { activityParams } from '../../src/activities/activityParams.js';
+import { auctionManager } from '../../src/auctionManager.js';
 
 const vastTrackers = [];
 let enabled = false;
@@ -15,22 +15,22 @@ export function reset() {
 
 export function enable() {
   if (!enabled) {
-    addBidResponse.before(addTrackersToResponse);
+    callPrebidCache.before(addTrackersToResponse);
     enabled = true;
   }
 }
 
 export function disable() {
   if (enabled) {
-    addBidResponse.getHooks({hook: addTrackersToResponse}).remove();
+    callPrebidCache.getHooks({ hook: addTrackersToResponse }).remove();
     enabled = false;
   }
 }
 
-export function responseHook({index = auctionManager.index} = {}) {
-  return function addTrackersToResponse(next, adUnitcode, bidResponse, reject) {
+export function cacheVideoBidHook({ index = auctionManager.index } = {}) {
+  return function addTrackersToResponse(next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
-      const vastTrackers = getVastTrackers(bidResponse, {index});
+      const vastTrackers = getVastTrackers(bidResponse, { index });
       if (vastTrackers) {
         bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml);
         const impTrackers = vastTrackers.get('impressions');
@@ -39,16 +39,16 @@ export function responseHook({index = auctionManager.index} = {}) {
         }
       }
     }
-    next(adUnitcode, bidResponse, reject);
+    next(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
   }
 }
 
-const addTrackersToResponse = responseHook();
+const addTrackersToResponse = cacheVideoBidHook();
 enable();
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
   if (typeof trackerFn === 'function') {
-    vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn});
+    vastTrackers.push({ 'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn });
   }
 }
 
@@ -74,18 +74,18 @@ export function insertVastTrackers(trackers, vastXml) {
   return vastXml;
 }
 
-export function getVastTrackers(bid, {index = auctionManager.index}) {
-  let trackers = [];
+export function getVastTrackers(bid, { index = auctionManager.index }) {
+  const trackers = [];
   vastTrackers.filter(
     ({
       moduleType,
       moduleName,
       trackerFn
     }) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
-  ).forEach(({trackerFn}) => {
+  ).forEach(({ trackerFn }) => {
     const auction = index.getAuction(bid).getProperties();
     const bidRequest = index.getBidRequest(bid);
-    let trackersToAdd = trackerFn(bid, {auction, bidRequest});
+    const trackersToAdd = trackerFn(bid, { auction, bidRequest });
     trackersToAdd.forEach(trackerToAdd => {
       if (isValidVastTracker(trackers, trackerToAdd)) {
         trackers.push(trackerToAdd);
@@ -101,7 +101,7 @@ function isValidVastTracker(trackers, trackerToAdd) {
 }
 
 function trackersToMap(trackers) {
-  return trackers.reduce((map, {url, event}) => {
+  return trackers.reduce((map, { url, event }) => {
     !map.has(event) && map.set(event, new Set());
     map.get(event).add(url);
     return map;

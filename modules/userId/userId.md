@@ -27,16 +27,6 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: 'dmdId',
-            storage: {
-                name: 'dmd-dgid',
-                type: 'cookie',
-                expires: 30
-            },
-            params: {
-                api_key: '3fdbe297-3690-4f5c-9e11-ee9186a6d77c', // provided by DMD
-            }
-        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -92,6 +82,16 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
+            name: 'locId',
+            params: {
+                endpoint: 'https://id.example.com/locid'
+            },
+            storage: {
+                type: 'html5',
+                name: '_locid',
+                expires: 7
+            }
+        }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'cookie',
@@ -137,7 +137,9 @@ pbjs.setConfig({
                   name: '__adm__admixer',
                   expires: 30
               }
-        },{
+        }, {
+            name: "gemiusId"
+        }, {
              name: "kpuid",
              params:{
                     accountid: 124 // example of account id
@@ -155,6 +157,9 @@ pbjs.setConfig({
         },
         {
             name: "mygaruId"
+        },
+        {
+            name: "startioId"
         }
         ],
         syncDelay: 5000,
@@ -220,9 +225,7 @@ pbjs.setConfig({
             }
         }, {
             name: 'sharedId',
-            params: {
-                  syncTime: 60 // in seconds, default is 24 hours
-               },
+            params: {},
              storage: {
                 type: 'html5',
                 name: 'sharedid',

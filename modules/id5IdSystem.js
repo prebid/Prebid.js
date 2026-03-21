@@ -7,6 +7,8 @@
 
 import {
   deepAccess,
+  deepClone,
+  deepEqual,
   deepSetValue,
   isEmpty,
   isEmptyStr,
@@ -15,20 +17,19 @@ import {
   logInfo,
   logWarn
 } from '../src/utils.js';
-import {fetch} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {GreedyPromise} from '../src/utils/promise.js';
-import {loadExternalScript} from '../src/adloader.js';
+import { fetch } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { PbPromise } from '../src/utils/promise.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 /**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.ts').IdProviderSpec} Submodule
+ * @typedef {import('../modules/userId/spec.ts').UserIdConfig} SubmoduleConfig
+ * @typedef {import('../src/consentHandler').AllConsentData} ConsentData
+ * @typedef {import('../modules/userId/spec.ts').ProviderResponse} ProviderResponse
  */
 
 const MODULE_NAME = 'id5Id';
@@ -39,13 +40,27 @@ const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 const ID5_DOMAIN = 'id5-sync.com';
 const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
- * @typedef {Object} IdResponse
+ * @typedef {Object} Id5Response
  * @property {string} [universal_uid] - The encrypted ID5 ID to pass to bidders
  * @property {Object} [ext] - The extensions object to pass to bidders
  * @property {Object} [ab_testing] - A/B testing configuration
+ * @property {Object} [ids]
+ * @property {string} signature
+ * @property {number} [nbPage]
+ * @property {string} [publisherTrueLinkId] - The publisher's TrueLink ID
+ */
+
+/**
+ * @typedef {Object.<string, Id5Response>} PartnerId5Responses
+ */
+
+/**
+ * @typedef {Id5Response} Id5PrebidResponse
+ * @property {PartnerId5Responses} pbjs
+ *
  */
 
 /**
@@ -103,7 +118,57 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {Diagnostics} [diagnostics] - Diagnostics options. Supported only in multiplexing
  * @property {Array<Segment>} [segments] - A list of segments to push to partners. Supported only in multiplexing.
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
+ * @property {string} [gamTargetingPrefix] - When set, the GAM targeting tags will be set and use the specified prefix, for example 'id5'.
+ * @property {boolean} [exposeTargeting] - When set, the ID5 targeting consumer mechanism will be enabled.
  */
+
+/**
+ * @typedef {SubmoduleConfig} Id5SubmoduleConfig
+ * @property {Id5PrebidConfig} params
+ */
+
+const DEFAULT_EIDS = {
+  'id5id': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    source: ID5_DOMAIN,
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'euid': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return data.source;
+    },
+    atype: 3,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'trueLinkId': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function () {
+      return TRUE_LINK_SOURCE;
+    },
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  }
+};
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -122,11 +187,44 @@ export const id5IdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function decode
-   * @param {(Object|string)} value
-   * @param {SubmoduleConfig|undefined} config
+   * @param {Id5PrebidResponse|Id5Response} value
+   * @param {Id5SubmoduleConfig} config
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
+    const partnerResponse = getPartnerResponse(value, config.params)
+    // get generic/legacy response in case no partner specific
+    // it may happen in case old cached value found
+    // or overwritten by other integration (older version)
+    return this._decodeResponse(partnerResponse || value, config);
+  },
+
+  /**
+   *
+   * @param {Id5Response} value
+   * @param {Id5SubmoduleConfig} config
+   * @private
+   */
+  _decodeResponse(value, config) {
+    if (value && value.ids !== undefined) {
+      const responseObj = {};
+      const eids = {};
+      Object.entries(value.ids).forEach(([key, value]) => {
+        const eid = value.eid;
+        const uid = eid?.uids?.[0]
+        responseObj[key] = {
+          uid: uid?.id,
+          ext: uid?.ext
+        };
+        eids[key] = function () {
+          return eid;
+        }; // register function to get eid for each id (key) decoded
+      });
+      this.eids = eids; // overwrite global eids
+      updateTargeting(value, config);
+      return responseObj;
+    }
+
     let universalUid, publisherTrueLinkId;
     let ext = {};
 
@@ -137,8 +235,8 @@ export const id5IdSubmodule = {
     } else {
       return undefined;
     }
-
-    let responseObj = {
+    this.eids = DEFAULT_EIDS;
+    const responseObj = {
       id5id: {
         uid: universalUid,
         ext: ext
@@ -149,13 +247,13 @@ export const id5IdSubmodule = {
       responseObj.euid = {
         uid: ext.euid.uids[0].id,
         source: ext.euid.source,
-        ext: {provider: ID5_DOMAIN}
+        ext: { provider: ID5_DOMAIN }
       };
     }
 
     if (publisherTrueLinkId) {
       responseObj.trueLinkId = {
-        uid: publisherTrueLinkId,
+        uid: publisherTrueLinkId
       };
     }
 
@@ -178,6 +276,7 @@ export const id5IdSubmodule = {
     }
 
     logInfo(LOG_PREFIX + 'Decoded ID', responseObj);
+    updateTargeting(value, config);
 
     return responseObj;
   },
@@ -185,33 +284,33 @@ export const id5IdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
-   * @param {SubmoduleConfig} submoduleConfig
+   * @param {Id5SubmoduleConfig} submoduleConfig
    * @param {ConsentData} consentData
    * @param {(Object|undefined)} cacheIdObj
-   * @returns {IdResponse|undefined}
+   * @returns {ProviderResponse}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
     if (!validateConfig(submoduleConfig)) {
       return undefined;
     }
 
-    if (!hasWriteConsentToLocalStorage(consentData)) {
+    if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.');
       return undefined;
     }
 
     const resp = function (cbFunction) {
-      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData(), gppDataHandler.getConsentData());
+      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData?.gdpr, cacheIdObj, consentData?.usp, consentData?.gpp);
       fetchFlow.execute()
         .then(response => {
-          cbFunction(response);
+          cbFunction(createResponse(response, submoduleConfig.params, cacheIdObj));
         })
         .catch(error => {
           logError(LOG_PREFIX + 'getId fetch encountered an error', error);
           cbFunction();
         });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
 
   /**
@@ -220,66 +319,31 @@ export const id5IdSubmodule = {
    *  If IdResponse#callback is defined, then it'll called at the end of auction.
    *  It's permissible to return neither, one, or both fields.
    * @function extendId
-   * @param {SubmoduleConfig} config
-   * @param {ConsentData|undefined} consentData
-   * @param {Object} cacheIdObj - existing id, if any
-   * @return {IdResponse} A response object that contains id.
+   * @param {Id5SubmoduleConfig} config
+   * @param {ConsentData} consentData
+   * @param {Id5PrebidResponse} cacheIdObj - existing id, if any
+   * @return {ProviderResponse} A response object that contains id.
    */
   extendId(config, consentData, cacheIdObj) {
-    if (!hasWriteConsentToLocalStorage(consentData)) {
+    if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
-      return cacheIdObj;
+      return { id: cacheIdObj };
     }
-
-    logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
-    if (cacheIdObj) {
-      cacheIdObj.nbPage = incrementNb(cacheIdObj)
+    if (getPartnerResponse(cacheIdObj, config.params)) { // response for partner is present
+      logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
+      const updatedObject = deepClone(cacheIdObj);
+      const responseToUpdate = getPartnerResponse(updatedObject, config.params);
+      responseToUpdate.nbPage = incrementNb(responseToUpdate);
+      return { id: updatedObject };
+    } else {
+      logInfo(LOG_PREFIX + ' refreshing ID.  Cached object does not have ID for partner', cacheIdObj);
+      return this.getId(config, consentData, cacheIdObj);
     }
-    return cacheIdObj;
   },
   primaryIds: ['id5id', 'trueLinkId'],
-  eids: {
-    'id5id': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      source: ID5_DOMAIN,
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'euid': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return data.source;
-      },
-      atype: 3,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'trueLinkId': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return TRUE_LINK_SOURCE;
-      },
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    }
-
+  eids: DEFAULT_EIDS,
+  _reset() {
+    this.eids = DEFAULT_EIDS;
   }
 };
 
@@ -287,14 +351,14 @@ export class IdFetchFlow {
   constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData, gppData) {
     this.submoduleConfig = submoduleConfig;
     this.gdprConsentData = gdprConsentData;
-    this.cacheIdObj = cacheIdObj;
+    this.cacheIdObj = isPlainObject(cacheIdObj?.pbjs) ? cacheIdObj.pbjs[submoduleConfig.params.partner] : cacheIdObj;
     this.usPrivacyData = usPrivacyData;
     this.gppData = gppData;
   }
 
   /**
    * Calls the ID5 Servers to fetch an ID5 ID
-   * @returns {Promise<IdResponse>} The result of calling the server side
+   * @returns {Promise<Id5Response>} The result of calling the server side
    */
   async execute() {
     const configCallPromise = this.#callForConfig();
@@ -314,7 +378,6 @@ export class IdFetchFlow {
     return typeof this.submoduleConfig.params.externalModuleUrl === 'string';
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #externalModuleFlow(configCallPromise) {
     await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
@@ -322,12 +385,10 @@ export class IdFetchFlow {
     return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData, this.gppData);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   #getExternalIntegration() {
     return window.id5Prebid && window.id5Prebid.integration;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #regularFlow(configCallPromise) {
     const fetchFlowConfig = await configCallPromise;
     const extensionsData = await this.#callForExtensions(fetchFlowConfig.extensionsCall);
@@ -335,9 +396,8 @@ export class IdFetchFlow {
     return this.#processFetchCallResponse(fetchCallResponse);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #callForConfig() {
-    let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
+    const url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
       method: 'POST',
       body: JSON.stringify({
@@ -354,7 +414,6 @@ export class IdFetchFlow {
     return dynamicConfig;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #callForExtensions(extensionsCallConfig) {
     if (extensionsCallConfig === undefined) {
       return undefined;
@@ -362,7 +421,7 @@ export class IdFetchFlow {
     const extensionsUrl = extensionsCallConfig.url;
     const method = extensionsCallConfig.method || 'GET';
     const body = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {});
-    const response = await fetch(extensionsUrl, {method, body});
+    const response = await fetch(extensionsUrl, { method, body });
     if (!response.ok) {
       throw new Error('Error while calling extensions endpoint: ', response);
     }
@@ -371,7 +430,6 @@ export class IdFetchFlow {
     return extensions;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #callId5Fetch(fetchCallConfig, extensionsData) {
     const fetchUrl = fetchCallConfig.url;
     const additionalData = fetchCallConfig.overrides || {};
@@ -380,7 +438,7 @@ export class IdFetchFlow {
       ...additionalData,
       extensions: extensionsData
     });
-    const response = await fetch(fetchUrl, {method: 'POST', body, credentials: 'include'});
+    const response = await fetch(fetchUrl, { method: 'POST', body, credentials: 'include' });
     if (!response.ok) {
       throw new Error('Error while calling fetch endpoint: ', response);
     }
@@ -389,14 +447,13 @@ export class IdFetchFlow {
     return fetchResponse;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   #createFetchRequestData() {
     const params = this.submoduleConfig.params;
     const hasGdpr = (this.gdprConsentData && typeof this.gdprConsentData.gdprApplies === 'boolean' && this.gdprConsentData.gdprApplies) ? 1 : 0;
     const referer = getRefererInfo();
     const signature = this.cacheIdObj ? this.cacheIdObj.signature : undefined;
     const nbPage = incrementNb(this.cacheIdObj);
-    const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : {booted: false};
+    const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : { booted: false };
 
     const data = {
       'partner': params.partner,
@@ -435,7 +492,7 @@ export class IdFetchFlow {
     if (params.provider !== undefined && !isEmptyStr(params.provider)) {
       data.provider = params.provider;
     }
-    const abTestingConfig = params.abTesting || {enabled: false};
+    const abTestingConfig = params.abTesting || { enabled: false };
 
     if (abTestingConfig.enabled) {
       data.ab_testing = {
@@ -445,7 +502,6 @@ export class IdFetchFlow {
     return data;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   #processFetchCallResponse(fetchCallResponse) {
     try {
       if (fetchCallResponse.privacy) {
@@ -461,7 +517,7 @@ export class IdFetchFlow {
 }
 
 async function loadExternalModule(url) {
-  return new GreedyPromise((resolve, reject) => {
+  return new PbPromise((resolve, reject) => {
     if (window.id5Prebid) {
       // Already loaded
       resolve();
@@ -483,7 +539,7 @@ function validateConfig(config) {
 
   const partner = config.params.partner;
   if (typeof partner === 'string' || partner instanceof String) {
-    let parsedPartnerId = parseInt(partner);
+    const parsedPartnerId = parseInt(partner);
     if (isNaN(parsedPartnerId) || parsedPartnerId < 0) {
       logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
       return false;
@@ -514,6 +570,34 @@ function incrementNb(cachedObj) {
   }
 }
 
+function updateTargeting(fetchResponse, config) {
+  const tags = fetchResponse.tags;
+  if (tags) {
+    if (config.params.gamTargetingPrefix) {
+      window.googletag = window.googletag || { cmd: [] };
+      window.googletag.cmd = window.googletag.cmd || [];
+      window.googletag.cmd.push(() => {
+        for (const tag in tags) {
+          window.googletag.setConfig({ targeting: { [config.params.gamTargetingPrefix + '_' + tag]: tags[tag] } });
+        }
+      });
+    }
+
+    if (config.params.exposeTargeting && !deepEqual(window.id5tags?.tags, tags)) {
+      window.id5tags = window.id5tags || { cmd: [] };
+      window.id5tags.cmd = window.id5tags.cmd || [];
+      window.id5tags.cmd.forEach(tagsCallback => {
+        setTimeout(() => tagsCallback(tags), 0);
+      });
+      window.id5tags.cmd.push = function (tagsCallback) {
+        tagsCallback(tags)
+        Array.prototype.push.call(window.id5tags.cmd, tagsCallback);
+      };
+      window.id5tags.tags = tags
+    }
+  }
+}
+
 /**
  * Check to see if we can write to local storage based on purpose consent 1, and that we have vendor consent (ID5=131)
  * @param {ConsentData} consentData
@@ -523,10 +607,40 @@ function hasWriteConsentToLocalStorage(consentData) {
   const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
   const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`);
   const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`);
-  if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
-    return false;
+  return !(hasGdpr && (!localstorageConsent || !id5VendorConsent));
+}
+
+/**
+ *
+ * @param response {Id5Response|Id5PrebidResponse}
+ * @param config {Id5PrebidConfig}
+ */
+function getPartnerResponse(response, config) {
+  if (response?.pbjs && isPlainObject(response.pbjs)) {
+    return response.pbjs[config.partner];
   }
-  return true;
+  return undefined;
+}
+
+/**
+ *
+ *  @param {Id5Response} response
+ *  @param {Id5PrebidConfig} config
+ *  @param {Id5PrebidResponse} cacheIdObj
+ *  @returns {Id5PrebidResponse}
+ */
+function createResponse(response, config, cacheIdObj) {
+  let responseObj = {}
+  if (isPlainObject(cacheIdObj) && (cacheIdObj.universal_uid !== undefined || isPlainObject(cacheIdObj.pbjs))) {
+    Object.assign(responseObj, deepClone(cacheIdObj));
+  }
+  Object.assign(responseObj, deepClone(response)); // assign the whole response for old versions
+  responseObj.signature = response.signature; // update signature in case it was erased in response
+  if (!isPlainObject(responseObj.pbjs)) {
+    responseObj.pbjs = {};
+  }
+  responseObj.pbjs[config.partner] = deepClone(response);
+  return responseObj;
 }
 
 submodule('userId', id5IdSubmodule);

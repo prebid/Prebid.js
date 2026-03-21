@@ -1,9 +1,9 @@
 import { amxIdSubmodule, storage } from 'modules/amxIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 const TEST_ID = '51b561e3-0d82-4aea-8487-093fffca4a3a';
 const ERROR_CODES = [404, 501, 500, 403];
@@ -86,10 +86,10 @@ describe('AMX ID', () => {
   });
 
   describe('getId', () => {
-    const spy = sinon.spy();
+    let spy;
 
     beforeEach(() => {
-      spy.resetHistory();
+      spy = sinon.spy();
     });
 
     it('should call the sync endpoint and accept a valid response', () => {
@@ -120,7 +120,7 @@ describe('AMX ID', () => {
       expect(spy.lastCall.lastArg).to.equal(TEST_ID);
     });
 
-    it('should return undefined if the server has an error status code', () => {
+    it('should return null if the server has an error status code', () => {
       const { callback } = amxIdSubmodule.getId(config, null, null);
       callback(spy);
 
@@ -130,10 +130,10 @@ describe('AMX ID', () => {
       request.respond(responseCode, {}, '');
 
       expect(spy.calledOnce).to.be.true;
-      expect(spy.lastCall.lastArg).to.equal(undefined);
+      expect(spy.lastCall.lastArg).to.equal(null);
     });
 
-    it('should return undefined if the response has invalid keys', () => {
+    it('should return null if the response has invalid keys', () => {
       const { callback } = amxIdSubmodule.getId(config, null, null);
       callback(spy);
 
@@ -147,10 +147,10 @@ describe('AMX ID', () => {
       );
 
       expect(spy.calledOnce).to.be.true;
-      expect(spy.lastCall.lastArg).to.equal(undefined);
+      expect(spy.lastCall.lastArg).to.equal(null);
     });
 
-    it('should returned undefined if the server JSON is invalid', () => {
+    it('should return null if the server JSON is invalid', () => {
       const { callback } = amxIdSubmodule.getId(config, null, null);
       callback(spy);
 
@@ -158,7 +158,7 @@ describe('AMX ID', () => {
       request.respond(200, {}, '{,,}');
 
       expect(spy.calledOnce).to.be.true;
-      expect(spy.lastCall.lastArg).to.equal(undefined);
+      expect(spy.lastCall.lastArg).to.equal(null);
     });
 
     it('should use the intermediate value for the sync server', () => {

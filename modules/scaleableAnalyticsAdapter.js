@@ -10,7 +10,7 @@ import { logMessage } from '../src/utils.js';
 const entries = Object.entries || function(obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
-  let resArray = new Array(i); // preallocate the Array
+  const resArray = new Array(i); // preallocate the Array
   while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
 
   return resArray;
@@ -26,7 +26,7 @@ const ANALYTICS_TYPE = 'endpoint';
 
 let auctionData = {};
 
-let scaleableAnalytics = Object.assign({},
+const scaleableAnalytics = Object.assign({},
   adapter({
     URL,
     ANALYTICS_TYPE
@@ -74,10 +74,10 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 
 // Track auction initiated
 const onAuctionInit = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
-  let adunitObj = {};
-  let adunits = [];
+  const adunitObj = {};
+  const adunits = [];
 
   // Loop through adunit codes first
   args.adUnitCodes.forEach((code) => {
@@ -114,10 +114,10 @@ const onAuctionInit = args => {
 
 // Handle all events besides requests and wins
 const onAuctionEnd = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
-  let adunitObj = {};
-  let adunits = [];
+  const adunitObj = {};
+  const adunits = [];
 
   // Add Bids Received
   args.bidsReceived.forEach((bidObj) => {
@@ -167,7 +167,7 @@ const onAuctionEnd = args => {
 
 // Bid Win Events occur after auction end
 const onBidWon = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   const data = {
     event: 'win',

@@ -1,19 +1,11 @@
-import {deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {convertCurrency} from '../libraries/currencyUtils/currency.js';
-/**
- * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
- * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
- * Also see https://github.com/prebid/Prebid.js/issues/11656
- */
-// eslint-disable-next-line no-restricted-imports
-import {loadExternalScript} from '../src/adloader.js';
-import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
+import { deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { convertCurrency } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -71,11 +63,11 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param bidderRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {{ortbRequest:Object}} bidderRequest
+   * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse(serverResponse, { ortbRequest }) {
-    return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
+    return CONVERTER.fromORTB({ request: ortbRequest, response: serverResponse.body }).bids;
   },
 
   /**
@@ -147,7 +139,7 @@ export const CONVERTER = ortbConverter({
     ttl: CREATIVE_TTL,
     nativeRequest: {
       eventtrackers: [
-        {event: 1, methods: [1, 2]},
+        { event: 1, methods: [1, 2] },
       ]
     }
   },
@@ -171,6 +163,8 @@ export const CONVERTER = ortbConverter({
       deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
+
+    context.bidderRequest.bidLimit && deepSetValue(imp, 'ext.max_bids', context.bidderRequest.bidLimit);
 
     return imp;
   },
@@ -196,7 +190,7 @@ export const CONVERTER = ortbConverter({
     if (!bid.adm || !bid.price || bid.hasOwnProperty('errorCode')) {
       return;
     }
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     context.mediaType = (() => {
       const requestMediaTypes = Object.keys(bidRequest.mediaTypes);
       if (requestMediaTypes.length === 1) return requestMediaTypes[0];
@@ -225,7 +219,6 @@ export const CONVERTER = ortbConverter({
         renderer: ID_OUTSTREAM.createRenderer(bidRequest)
       })
     }
-    ID_RAZR.forwardBid({bidRequest, bid: bidResponse});
     return bidResponse;
   },
   overrides: {
@@ -234,8 +227,8 @@ export const CONVERTER = ortbConverter({
         // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
         if (config.getConfig('improvedigital.usePrebidSizes') === false) {
-          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
-          bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
+          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], { sizes: null });
+          bidRequest = { ...bidRequest, mediaTypes: { [BANNER]: banner } }
         }
         fillImpBanner(imp, bidRequest, context);
       },
@@ -243,13 +236,13 @@ export const CONVERTER = ortbConverter({
         // override to use video params from both mediaTypes.video and bidRequest.params.video
         if (!bidRequest.mediaTypes[VIDEO]) return;
         const video = Object.assign(
-          {mimes: VIDEO_PARAMS.DEFAULT_MIMES},
+          { mimes: VIDEO_PARAMS.DEFAULT_MIMES },
           bidRequest.mediaTypes[VIDEO],
           bidRequest.params?.video
         )
         fillImpVideo(
           imp,
-          {...bidRequest, mediaTypes: {[VIDEO]: video}},
+          { ...bidRequest, mediaTypes: { [VIDEO]: video } },
           context
         );
         deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
@@ -281,18 +274,21 @@ const ID_REQUEST = {
     }
 
     function formatRequest(bidRequests, publisherId, extendMode) {
-      const ortbRequest = CONVERTER.toORTB({bidRequests, bidderRequest, context: {extendMode}});
+      const ortbRequest = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { extendMode } });
       return {
         method: 'POST',
         url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(ortbRequest),
         ortbRequest,
-        bidderRequest
+        bidderRequest,
+        options: {
+          endpointCompression: true,
+        },
       }
     }
 
     let publisherId = null;
-    bidRequests.map((bidRequest) => {
+    bidRequests.forEach((bidRequest) => {
       const bidParamsPublisherId = bidRequest.params.publisherId;
       const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
       if (singleRequestMode) {
@@ -366,62 +362,4 @@ const ID_OUTSTREAM = {
   handleRendererEvents(bid, id, eventName) {
     bid.renderer.handleVideoEvent({ id, eventName });
   },
-};
-
-const ID_RAZR = {
-  RENDERER_URL: 'https://cdn.360yield.com/razr/tag.js',
-
-  forwardBid({bidRequest, bid}) {
-    if (bid.mediaType !== BANNER) {
-      return;
-    }
-
-    const cfg = {
-      prebid: {
-        bidRequest,
-        bid
-      }
-    };
-
-    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/ig, '\\x3C/script>');
-    const s = `<script>window.__razr_config = ${cfgStr};</script>`;
-    // prepend RAZR config to ad markup:
-    bid.ad = s + bid.ad;
-
-    this.installListener();
-  },
-
-  installListener() {
-    if (this._listenerInstalled) {
-      return;
-    }
-
-    window.addEventListener('message', function(e) {
-      const data = e.data?.razr?.load;
-      if (!data) {
-        return;
-      }
-
-      if (e.source) {
-        data.source = e.source;
-        if (data.id) {
-          e.source.postMessage({
-            razr: {
-              id: data.id
-            }
-          }, '*');
-        }
-      }
-
-      const ns = window.razr = window.razr || {};
-      ns.q = ns.q || [];
-      ns.q.push(data);
-
-      if (!ns.loaded) {
-        loadExternalScript(ID_RAZR.RENDERER_URL, MODULE_TYPE_BIDDER, BIDDER_CODE);
-      }
-    });
-
-    this._listenerInstalled = true;
-  }
 };

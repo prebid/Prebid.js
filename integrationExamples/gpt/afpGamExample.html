@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Prebid.js Banner Example</title>
-  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script src="../../../build/dev/prebid.js"></script>
   <script>
     var adUnits = [{
@@ -73,16 +73,22 @@
       pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
     });
 
-    function sendAdServerRequest() {
-      googletag.cmd.push(() => {
-        pbjs.que.push(() => {
-          pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-0');
-          pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-1');
-          pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-2');
-          googletag.pubads().refresh();
-        });
+function sendAdServerRequest() {
+  if (pbjs.adserverRequestSent) return;
+  pbjs.adserverRequestSent = true;
+  googletag.cmd.push(function() {
+    if (pbjs.libLoaded) { // Check if Prebid.js is loaded
+      pbjs.que.push(function() {
+        pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-0');
+        pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-1');
+        pbjs.setTargetingForGPTAsync('div-gpt-ad-1574864639578-2');
+        googletag.pubads().refresh();
       });
+    } else {
+      googletag.pubads().refresh();
     }
+  });
+}
 
     googletag.cmd.push(() => {
       googletag

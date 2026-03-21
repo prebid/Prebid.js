@@ -3,7 +3,7 @@
 <head>
     <meta http-equiv="delegate-ch" content="sec-ch-ua https://prebid.wurflcloud.com; sec-ch-ua-bitness https://prebid.wurflcloud.com; sec-ch-ua-arch https://prebid.wurflcloud.com; sec-ch-ua-model https://prebid.wurflcloud.com; sec-ch-ua-platform https://prebid.wurflcloud.com; sec-ch-ua-platform-version https://prebid.wurflcloud.com; sec-ch-ua-full-version https://prebid.wurflcloud.com; sec-ch-ua-full-version-list https://prebid.wurflcloud.com; sec-ch-ua-mobile https://prebid.wurflcloud.com">
     <script async src="../../build/dev/prebid.js"></script>
-    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 2000;
@@ -70,10 +70,14 @@
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
             googletag.cmd.push(function () {
-                pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function () {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                } else {
                     googletag.pubads().refresh();
-                });
+                }
             });
         }
 

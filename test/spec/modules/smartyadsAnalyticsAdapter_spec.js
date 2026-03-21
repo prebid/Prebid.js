@@ -1,10 +1,10 @@
 import smartyadsAnalytics from 'modules/smartyadsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { EVENTS } from '../../../src/constants';
+import { EVENTS } from '../../../src/constants.js';
 
-let adapterManager = require('src/adapterManager').default;
-let events = require('src/events');
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
 
 describe('SmartyAds Analytics', function () {
   const auctionEnd = {
@@ -190,7 +190,7 @@ describe('SmartyAds Analytics', function () {
     'timeout': 1000
   };
 
-  let bidWon = {
+  const bidWon = {
     'bidderCode': 'smartyads',
     'width': 970,
     'height': 250,
@@ -245,7 +245,7 @@ describe('SmartyAds Analytics', function () {
     ]
   };
 
-  let renderData = {
+  const renderData = {
     'doc': {
       'location': {
         'ancestorOrigins': {
@@ -391,7 +391,7 @@ describe('SmartyAds Analytics', function () {
 
       events.emit(EVENTS.AUCTION_END, auctionEnd);
       expect(server.requests.length).to.equal(1);
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionData');
       expect(message).to.have.property('eventType').and.to.equal(EVENTS.AUCTION_END);
       expect(message.auctionData).to.have.property('auctionId');
@@ -410,7 +410,7 @@ describe('SmartyAds Analytics', function () {
 
       events.emit(EVENTS.BID_WON, bidWon);
       expect(server.requests.length).to.equal(1);
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('eventType').and.to.equal(EVENTS.BID_WON);
       expect(message).to.have.property('bid');
       expect(message.bid).to.have.property('bidder').and.to.equal('smartyads');
@@ -429,7 +429,7 @@ describe('SmartyAds Analytics', function () {
 
       events.emit(EVENTS.AD_RENDER_SUCCEEDED, renderData);
       expect(server.requests.length).to.equal(1);
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('eventType').and.to.equal(EVENTS.AD_RENDER_SUCCEEDED);
       expect(message).to.have.property('renderData');
       expect(message.renderData).to.have.property('doc');

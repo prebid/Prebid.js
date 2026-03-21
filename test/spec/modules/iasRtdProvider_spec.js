@@ -1,4 +1,4 @@
-import { iasSubModule, iasTargeting } from 'modules/iasRtdProvider.js';
+import { iasSubModule, iasTargeting, injectImpressionData, injectBrandSafetyData } from 'modules/iasRtdProvider.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 
@@ -63,7 +63,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
           keyMappings: {
             'id': 'ias_id'
           },
-          adUnitPath: {'one-div-id': '/012345/ad/unit/path'}
+          adUnitPath: { 'one-div-id': '/012345/ad/unit/path' }
         }
       };
       const value = iasSubModule.init(config);
@@ -179,7 +179,135 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targeting['one-div-id']['fr']).to.be.eq('false');
         expect(targeting['one-div-id']['ias_id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
       });
-    })
+      it('it merges response data', function () {
+        const callback = sinon.spy();
+
+        iasSubModule.getBidRequestData({
+          adUnits: [
+            { code: 'adunit-1' },
+            { code: 'adunit-2' },
+          ],
+        }, callback, config);
+
+        let request = server.requests[0];
+        request.respond(200, responseHeader, JSON.stringify(mergeRespData1));
+
+        const targeting1 = iasSubModule.getTargetingData(['adunit-1', 'adunit-2'], config);
+
+        expect(targeting1['adunit-1']['adt']).to.be.eq('veryLow');
+        expect(targeting1['adunit-1']['fr']).to.be.eq('false');
+        expect(targeting1['adunit-1']['ias_id']).to.be.eq('id1');
+
+        expect(targeting1['adunit-2']['adt']).to.be.eq('veryLow');
+        expect(targeting1['adunit-2']['fr']).to.be.eq('false');
+        expect(targeting1['adunit-2']['ias_id']).to.be.eq('id2');
+
+        iasSubModule.getBidRequestData({
+          adUnits: [
+            { code: 'adunit-2' },
+            { code: 'adunit-3' },
+          ],
+        }, callback, config);
+
+        request = server.requests[1];
+        request.respond(200, responseHeader, JSON.stringify(mergeRespData2));
+
+        const targeting2 = iasSubModule.getTargetingData(['adunit-3', 'adunit-1', 'adunit-2'], config);
+
+        expect(targeting2['adunit-1']['adt']).to.be.eq('high');
+        expect(targeting2['adunit-1']['fr']).to.be.eq('true');
+        expect(targeting2['adunit-1']['ias_id']).to.be.eq('id1');
+
+        expect(targeting2['adunit-2']['adt']).to.be.eq('high');
+        expect(targeting2['adunit-2']['fr']).to.be.eq('true');
+        expect(targeting2['adunit-2']['ias_id']).to.be.eq('id2');
+
+        expect(targeting2['adunit-3']['adt']).to.be.eq('high');
+        expect(targeting2['adunit-3']['fr']).to.be.eq('true');
+        expect(targeting2['adunit-3']['ias_id']).to.be.eq('id3');
+      });
+    });
+  })
+  describe('injectImpressionData', function () {
+    it('should inject impression data into adUnits ortb2Imp object', function () {
+      const adUnits = [
+        { code: 'leaderboard-flex-hp', ortb2Imp: { ext: { data: {} } } }
+      ];
+      const impressionData = {
+        'leaderboard-flex-hp': {
+          id: '03690e2f-4ae8-11f0-bdbb-c2443b7c428c',
+          vw: ['40', '50', '60', '70'],
+          grm: ['40', '50', '60'],
+          pub: ['40', '50', '60']
+        }
+      };
+      const fraudData = "false";
+      injectImpressionData(impressionData, fraudData, adUnits);
+      expect(adUnits[0].ortb2Imp.ext.data.ias_id).to.equal('03690e2f-4ae8-11f0-bdbb-c2443b7c428c');
+      expect(adUnits[0].ortb2Imp.ext.data.vw).to.deep.equal(['40', '50', '60', '70']);
+      expect(adUnits[0].ortb2Imp.ext.data.grm).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.pub).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.fr).to.equal('false');
+    });
+    it('should inject impression data with fraud true', function () {
+      const adUnits = [
+        { code: 'leaderboard-flex-hp', ortb2Imp: { ext: { data: {} } } }
+      ];
+      const impressionData = {
+        'leaderboard-flex-hp': {
+          id: '03690e2f-4ae8-11f0-bdbb-c2443b7c428c',
+          vw: ['40', '50', '60', '70'],
+          grm: ['40', '50', '60'],
+          pub: ['40', '50', '60']
+        }
+      };
+      const fraudData = "true";
+      injectImpressionData(impressionData, fraudData, adUnits);
+      expect(adUnits[0].ortb2Imp.ext.data.ias_id).to.equal('03690e2f-4ae8-11f0-bdbb-c2443b7c428c');
+      expect(adUnits[0].ortb2Imp.ext.data.vw).to.deep.equal(['40', '50', '60', '70']);
+      expect(adUnits[0].ortb2Imp.ext.data.grm).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.pub).to.deep.equal(['40', '50', '60']);
+      expect(adUnits[0].ortb2Imp.ext.data.fr).to.equal('true');
+    });
+    it('should not modify adUnits if impressionData is missing', function () {
+      const adUnits = [
+        { code: 'adunit-1', ortb2Imp: { ext: { data: {} } } }
+      ];
+      injectImpressionData(null, true, adUnits);
+      expect(adUnits[0].ortb2Imp.ext.data).to.deep.equal({});
+    });
+  });
+
+  describe('injectBrandSafetyData', function () {
+    it('should inject brandSafety data', function () {
+      const ortb2Fragments = { global: { site: {} } };
+      const adUnits = [
+        { bids: [{ bidder: 'pubmatic', params: {} }] }
+      ];
+      const brandSafetyData = {
+        adt: 'veryLow',
+        alc: 'veryLow',
+        dlm: 'veryLow',
+        drg: 'veryLow',
+        hat: 'high',
+        off: 'veryLow',
+        vio: 'veryLow'
+      };
+      injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits);
+      expect(ortb2Fragments.global.site.ext.data['ias-brand-safety']).to.deep.equal({
+        adt: 'veryLow',
+        alc: 'veryLow',
+        dlm: 'veryLow',
+        drg: 'veryLow',
+        hat: 'high',
+        off: 'veryLow',
+        vio: 'veryLow'
+      });
+      // Also assert that each key/value is present at the top level of ext.data
+      Object.entries(brandSafetyData).forEach(([key, value]) => {
+        expect(ortb2Fragments.global.site.ext.data[key]).to.equal(value);
+      });
+    });
   });
 });
 
@@ -235,4 +363,18 @@ const data = {
   custom: { 'ias-kw': ['IAS_5995_KW', 'IAS_7066_KW', 'IAS_7232_KW', 'IAS_7364_KW', 'IAS_3894_KW', 'IAS_6535_KW', 'IAS_6153_KW', 'IAS_5238_KW', 'IAS_7393_KW', 'IAS_1499_KW', 'IAS_7376_KW', 'IAS_1035_KW', 'IAS_6566_KW', 'IAS_1058_KW', 'IAS_11338_724_KW', 'IAS_7301_KW', 'IAS_15969_725_KW', 'IAS_6358_KW', 'IAS_710_KW', 'IAS_5445_KW', 'IAS_3822_KW', 'IAS_4901_KW', 'IAS_5806_KW', 'IAS_460_KW', 'IAS_11461_702_KW', 'IAS_5681_KW', 'IAS_17609_1240_KW', 'IAS_6634_KW', 'IAS_5597_KW'] },
   fr: 'false',
   slots: { 'one-div-id': { id: '4813f7a2-1f22-11ec-9bfd-0a1107f94461' } }
+};
+
+const mergeRespData1 = {
+  brandSafety: { adt: 'veryLow' },
+  custom: { 'ias-kw': ['IAS_5995_KW'] },
+  fr: 'false',
+  slots: { 'adunit-1': { id: 'id1' }, 'adunit-2': { id: 'id2' } }
+};
+
+const mergeRespData2 = {
+  brandSafety: { adt: 'high' },
+  custom: { 'ias-kw': ['IAS_5995_KW'] },
+  fr: 'true',
+  slots: { 'adunit-2': { id: 'id2' }, 'adunit-3': { id: 'id3' } }
 };

@@ -1,5 +1,5 @@
-import {getAdMarkup, getReplacements, getReplacer} from '../../../creative/renderers/native/renderer.js';
-import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE} from '../../../creative/renderers/native/constants.js';
+import { getAdMarkup, getReplacements, getReplacer } from '../../../creative/renderers/native/renderer.js';
+import { ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE } from '../../../creative/renderers/native/constants.js';
 
 describe('Native creative renderer', () => {
   let win;
@@ -34,18 +34,24 @@ describe('Native creative renderer', () => {
       });
     });
     describe('otherwise, calls replacer', () => {
-      let replacer;
+      let replacer, frame;
       beforeEach(() => {
         replacer = sinon.stub().returns('markup');
+        frame = document.createElement('iframe');
+        document.body.appendChild(frame);
+        win.document = frame.contentDocument;
       });
+      afterEach(() => {
+        document.body.removeChild(frame);
+      })
       it('with adTemplate, if present', () => {
-        return getAdMarkup('123', {adTemplate: 'tpl'}, replacer, win).then((result) => {
+        return getAdMarkup('123', { adTemplate: 'tpl' }, replacer, win).then((result) => {
           expect(result).to.eql('markup');
           sinon.assert.calledWith(replacer, 'tpl');
         });
       });
       it('with document body otherwise', () => {
-        win.document = {body: {innerHTML: 'body'}};
+        win.document.body.innerHTML = 'body'
         return getAdMarkup('123', {}, replacer, win).then((result) => {
           expect(result).to.eql('markup');
           sinon.assert.calledWith(replacer, 'body');
@@ -77,8 +83,8 @@ describe('Native creative renderer', () => {
         ortb: {
           assets: [{
             id: 1,
-            link: {url: 'l1'},
-            data: {value: 'v1'}
+            link: { url: 'l1' },
+            data: { value: 'v1' }
           }]
         }
       });
@@ -93,7 +99,7 @@ describe('Native creative renderer', () => {
     it('replaces placeholders for for legacy assets', () => {
       const repl = getReplacer('123', {
         assets: [
-          {key: 'k1', value: 'v1'}, {key: 'k2', value: 'v2'}
+          { key: 'k1', value: 'v1' }, { key: 'k2', value: 'v2' }
         ],
         nativeKeys: {
           k1: 'hb_native_k1',
@@ -129,8 +135,8 @@ describe('Native creative renderer', () => {
         const repl = getReplacer('123', {
           ortb,
           assets: [
-            {key: 'clickUrl', value: 'overridden'},
-            {key: 'privacyLink', value: 'overridden'}
+            { key: 'clickUrl', value: 'overridden' },
+            { key: 'privacyLink', value: 'overridden' }
           ],
           nativeKeys: {
             clickUrl: 'hb_native_linkurl',
@@ -151,10 +157,10 @@ describe('Native creative renderer', () => {
     });
 
     Object.entries({
-      title: {text: 'val'},
-      data: {value: 'val'},
-      img: {url: 'val'},
-      video: {vasttag: 'val'}
+      title: { text: 'val' },
+      data: { value: 'val' },
+      img: { url: 'val' },
+      video: { vasttag: 'val' }
     }).forEach(([type, contents]) => {
       describe(`for ortb ${type} asset`, () => {
         let ortb;
@@ -169,14 +175,14 @@ describe('Native creative renderer', () => {
           };
         });
         it('replaces placeholder', () => {
-          const repl = getReplacer('', {ortb});
+          const repl = getReplacer('', { ortb });
           expectReplacements(repl, {
             '##hb_native_asset_id_123##': 'val'
           })
         });
         it('replaces link placeholders', () => {
-          ortb.assets[0].link = {url: 'link'};
-          const repl = getReplacer('', {ortb});
+          ortb.assets[0].link = { url: 'link' };
+          const repl = getReplacer('', { ortb });
           expectReplacements(repl, {
             '##hb_native_asset_link_id_123##': 'link'
           })
@@ -186,29 +192,32 @@ describe('Native creative renderer', () => {
   });
 
   describe('render', () => {
-    let getMarkup, sendMessage, adId, nativeData, exc;
+    let getMarkup, sendMessage, adId, nativeData, exc, frame;
     beforeEach(() => {
       adId = '123';
       nativeData = {}
       getMarkup = sinon.stub();
       sendMessage = sinon.stub()
       exc = sinon.stub();
-      win.document = {
-        querySelectorAll() { return [] },
-        body: {}
-      }
+      frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+      win.document = frame.contentDocument;
     });
 
+    afterEach(() => {
+      document.body.removeChild(frame);
+    })
+
     function runRender() {
-      return render({adId, native: nativeData}, {sendMessage, exc}, win, getMarkup)
+      return render({ adId, native: nativeData }, { sendMessage, exc }, win, getMarkup)
     }
 
     it('replaces placeholders in head, if present', () => {
       getMarkup.returns(Promise.resolve(''))
-      win.document.head = {innerHTML: '##hb_native_asset_id_1##'};
+      win.document.head.innerHTML = '##hb_native_asset_id_1##';
       nativeData.ortb = {
         assets: [
-          {id: 1, data: {value: 'repl'}}
+          { id: 1, data: { value: 'repl' } }
         ]
       };
       return runRender().then(() => {
@@ -216,11 +225,19 @@ describe('Native creative renderer', () => {
       })
     });
 
+    it('does not replace iframes with srcdoc that contain "renderer"', () => {
+      win.document.head.innerHTML = win.document.body.innerHTML = '<iframe srcdoc="renderer"></iframe>';
+      getMarkup.returns(Promise.resolve(''))
+      return runRender().then(() => {
+        expect(Array.from(win.document.querySelectorAll('iframe[srcdoc="renderer"]')).length).to.eql(2);
+      })
+    })
+
     it('drops markup on body, and fires imp trackers', () => {
       getMarkup.returns(Promise.resolve('markup'));
       return runRender().then(() => {
         expect(win.document.body.innerHTML).to.eql('markup');
-        sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, {action: ACTION_IMP});
+        sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_IMP });
       })
     });
 
@@ -246,23 +263,50 @@ describe('Native creative renderer', () => {
 
     describe('requests resize', () => {
       beforeEach(() => {
+        const mkNode = () => {
+          const node = {
+            innerHTML: '',
+            childNodes: [],
+            insertAdjacentHTML: () => {},
+            style: {},
+            querySelectorAll: () => [],
+            cloneNode: () => node
+          };
+          return node;
+        }
+        win.document = {
+          head: mkNode(),
+          body: Object.assign(mkNode(), {
+            offsetHeight: 123,
+            offsetWidth: 321
+          }),
+          querySelectorAll: () => [],
+          style: {}
+        };
         getMarkup.returns(Promise.resolve('markup'));
-        win.document.body.offsetHeight = 123;
-        win.document.body.offsetWidth = 321;
       });
 
       it('immediately, if document is loaded', () => {
         win.document.readyState = 'complete';
         return runRender().then(() => {
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, {action: ACTION_RESIZE, height: 123, width: 321})
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_RESIZE, height: 123, width: 321 })
         })
       });
 
       it('on document load otherwise', () => {
         return runRender().then(() => {
-          sinon.assert.neverCalledWith(sendMessage, MESSAGE_NATIVE, sinon.match({action: ACTION_RESIZE}));
+          sinon.assert.neverCalledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_RESIZE }));
           win.onload();
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, {action: ACTION_RESIZE, height: 123, width: 321});
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_RESIZE, height: 123, width: 321 });
+        })
+      });
+
+      it('uses scrollHeight if offsetHeight is 0', () => {
+        win.document.body.offsetHeight = 0;
+        win.document.documentElement = { scrollHeight: 200 };
+        return runRender().then(() => {
+          win.onload();
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_RESIZE, height: 200 }))
         })
       })
     })
@@ -282,7 +326,7 @@ describe('Native creative renderer', () => {
         getMarkup.returns(Promise.resolve('<div class="pb-click"><div id="target"></div></div>'));
         return runRender().then(() => {
           win.document.querySelector('#target').click();
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({action: ACTION_CLICK}));
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_CLICK }));
         })
       });
 
@@ -290,7 +334,7 @@ describe('Native creative renderer', () => {
         getMarkup.returns(Promise.resolve('<div class="pb-click" hb_native_asset_id="123" id="target"></div>'));
         return runRender().then(() => {
           win.document.querySelector('#target').click();
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, {action: ACTION_CLICK, assetId: '123'})
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_CLICK, assetId: '123' })
         });
       });
     });

@@ -1,13 +1,11 @@
-import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {NATIVE_IMAGE_TYPES} from '../src/constants.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
-import {fill} from '../libraries/appnexusUtils/anUtils.js';
-import {chunk} from '../libraries/chunk/chunk.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { deepAccess, deepSetValue, isEmpty, isNumber, logError, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { NATIVE_IMAGE_TYPES } from '../src/constants.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,11 +17,12 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.2'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.3'
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
-const SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
+const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
+const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -47,30 +46,14 @@ export const spec = {
       return false;
     }
 
-    if (deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
-      logInfo('[SMAATO] Verifying adpod bid request');
+    if (typeof bid.params.adspaceId !== 'string') {
+      logError('[SMAATO] Missing mandatory adspaceId param');
+      return false;
+    }
 
-      if (typeof bid.params.adbreakId !== 'string') {
-        logError('[SMAATO] Missing for adpod request mandatory adbreakId param');
-        return false;
-      }
-
-      if (bid.params.adspaceId) {
-        logError('[SMAATO] The adspaceId param is not allowed in an adpod bid request');
-        return false;
-      }
-    } else {
-      logInfo('[SMAATO] Verifying a non adpod bid request');
-
-      if (typeof bid.params.adspaceId !== 'string') {
-        logError('[SMAATO] Missing mandatory adspaceId param');
-        return false;
-      }
-
-      if (bid.params.adbreakId) {
-        logError('[SMAATO] The adbreakId param is only allowed in an adpod bid request');
-        return false;
-      }
+    if (bid.params.adbreakId) {
+      logError('[SMAATO] The adbreakId param is not supported');
+      return false;
     }
 
     logInfo('[SMAATO] Verification done, all good');
@@ -80,19 +63,19 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
 
-    let requests = [];
+    const requests = [];
     bidRequests.forEach(bid => {
       // separate requests per mediaType
       SUPPORTED_MEDIA_TYPES.forEach(mediaType => {
         if ((bid.mediaTypes && bid.mediaTypes[mediaType]) || (mediaType === NATIVE && bid.nativeOrtbRequest)) {
-          const data = converter.toORTB({bidderRequest, bidRequests: [bid], context: {mediaType}});
+          const data = converter.toORTB({ bidderRequest, bidRequests: [bid], context: { mediaType } });
           requests.push({
             method: 'POST',
             url: bid.params.endpoint || SMAATO_ENDPOINT,
             data: JSON.stringify(data),
             options: {
               withCredentials: true,
-              crossOrigin: true,
+              crossOrigin: true
             },
             bidderRequest
           })
@@ -129,7 +112,7 @@ export const spec = {
     const bids = [];
     response.seatbid.forEach(seatbid => {
       seatbid.bid.forEach(bid => {
-        let resultingBid = {
+        const resultingBid = {
           requestId: bid.impid,
           cpm: bid.price || 0,
           width: bid.w,
@@ -143,43 +126,29 @@ export const spec = {
             advertiserDomains: bid.adomain,
             networkName: bid.bidderName,
             agencyId: seatbid.seat,
-            ...(bid.ext?.dsa && {dsa: bid.ext.dsa})
+            ...(bid.ext?.dsa && { dsa: bid.ext.dsa })
           }
         };
 
-        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context');
-        if (videoContext === ADPOD) {
-          resultingBid.vastXml = bid.adm;
-          resultingBid.mediaType = VIDEO;
-          if (config.getConfig('adpod.brandCategoryExclusion')) {
-            resultingBid.meta.primaryCatId = bid.cat[0];
-          }
-          resultingBid.video = {
-            context: ADPOD,
-            durationSeconds: bid.ext.duration
-          };
-          bids.push(resultingBid);
-        } else {
-          switch (smtAdType) {
-            case 'Img':
-            case 'Richmedia':
-              resultingBid.ad = createBannerAd(bid);
-              resultingBid.mediaType = BANNER;
-              bids.push(resultingBid);
-              break;
-            case 'Video':
-              resultingBid.vastXml = bid.adm;
-              resultingBid.mediaType = VIDEO;
-              bids.push(resultingBid);
-              break;
-            case 'Native':
-              resultingBid.native = createNativeAd(bid.adm);
-              resultingBid.mediaType = NATIVE;
-              bids.push(resultingBid);
-              break;
-            default:
-              logInfo('[SMAATO] Invalid ad type:', smtAdType);
-          }
+        switch (smtAdType) {
+          case 'Img':
+          case 'Richmedia':
+            resultingBid.ad = createBannerAd(bid);
+            resultingBid.mediaType = BANNER;
+            bids.push(resultingBid);
+            break;
+          case 'Video':
+            resultingBid.vastXml = bid.adm;
+            resultingBid.mediaType = VIDEO;
+            bids.push(resultingBid);
+            break;
+          case 'Native':
+            resultingBid.native = createNativeAd(bid.adm);
+            resultingBid.mediaType = NATIVE;
+            bids.push(resultingBid);
+            break;
+          default:
+            logInfo('[SMAATO] Invalid ad type:', smtAdType);
         }
         resultingBid.meta.mediaType = resultingBid.mediaType;
       });
@@ -197,7 +166,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    if (syncOptions && syncOptions.pixelEnabled) {
+    if (syncOptions) {
       let gdprParams = '';
       if (gdprConsent && gdprConsent.consentString) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -207,10 +176,22 @@ export const spec = {
         }
       }
 
-      return [{
-        type: 'image',
-        url: SYNC_URL + gdprParams
-      }];
+      if (syncOptions.iframeEnabled) {
+        let maxUrlsParam = '';
+        if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
+          maxUrlsParam = `&maxUrls=${config.getConfig('userSync').syncsPerBidder}`;
+        }
+
+        return [{
+          type: 'iframe',
+          url: IFRAME_SYNC_URL + gdprParams + maxUrlsParam
+        }];
+      } else if (syncOptions.pixelEnabled) {
+        return [{
+          type: 'image',
+          url: IMAGE_SYNC_URL + gdprParams
+        }];
+      }
     }
 
     return [];
@@ -235,15 +216,6 @@ const converter = ortbConverter({
 
     const request = buildRequest(imps, bidderRequest, context);
     const bidRequest = context.bidRequests[0];
-    let content;
-    const mediaType = context.mediaType;
-    if (mediaType === VIDEO) {
-      const videoParams = bidRequest.mediaTypes[VIDEO];
-      if (videoParams.context === ADPOD) {
-        request.imp = createAdPodImp(request.imp[0], videoParams);
-        content = addOptionalAdpodParameters(videoParams);
-      }
-    }
 
     request.at = 1;
 
@@ -263,15 +235,9 @@ const converter = ortbConverter({
 
     if (request.site) {
       request.site.id = window.location.hostname
-      if (content) {
-        request.site.content = content;
-      }
       setPublisherId(request.site);
     } else if (request.dooh) {
       request.dooh.id = window.location.hostname
-      if (content) {
-        request.dooh.content = content;
-      }
       setPublisherId(request.dooh);
     } else {
       request.site = {
@@ -279,7 +245,7 @@ const converter = ortbConverter({
         domain: bidderRequest.refererInfo.domain || window.location.hostname,
         page: bidderRequest.refererInfo.page || window.location.href,
         ref: bidderRequest.refererInfo.ref,
-        content: content || null
+        content: null
       }
       setPublisherId(request.site);
     }
@@ -327,7 +293,7 @@ const converter = ortbConverter({
 
     request.source = {
       ext: {
-        schain: bidRequest.schain
+        schain: bidRequest?.ortb2?.source?.ext?.schain
       }
     };
     request.ext = {
@@ -350,7 +316,6 @@ const converter = ortbConverter({
     imp: {
       banner(orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
-
         if (mediaType === BANNER) {
           imp.bidfloor = getBidFloor(bidRequest, BANNER, getAdUnitSizes(bidRequest));
         }
@@ -363,11 +328,9 @@ const converter = ortbConverter({
         if (mediaType === VIDEO) {
           const videoParams = bidRequest.mediaTypes[VIDEO];
           imp.bidfloor = getBidFloor(bidRequest, VIDEO, videoParams.playerSize);
-          if (videoParams.context !== ADPOD) {
-            deepSetValue(imp, 'video.ext', {
-              rewarded: videoParams.ext && videoParams.ext.rewarded ? videoParams.ext.rewarded : 0
-            })
-          }
+          deepSetValue(imp, 'video.ext', {
+            rewarded: videoParams.ext && videoParams.ext.rewarded ? videoParams.ext.rewarded : 0
+          })
         }
 
         orig(imp, bidRequest, context);
@@ -375,7 +338,6 @@ const converter = ortbConverter({
 
       native(orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
-
         if (mediaType === NATIVE) {
           imp.bidfloor = getBidFloor(bidRequest, NATIVE, getNativeMainImageSize(bidRequest.nativeOrtbRequest));
         }
@@ -407,7 +369,7 @@ const createNativeAd = (adm) => {
 };
 
 function getNativeMainImageSize(nativeRequest) {
-  const mainImage = find(nativeRequest.assets, asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  const mainImage = ((nativeRequest.assets) || []).find(asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
   if (mainImage) {
     if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
       return [[mainImage.img.w, mainImage.img.h]]
@@ -419,85 +381,10 @@ function getNativeMainImageSize(nativeRequest) {
   return []
 }
 
-function createAdPodImp(imp, videoMediaType) {
-  const bce = config.getConfig('adpod.brandCategoryExclusion')
-  imp.video.ext = {
-    context: ADPOD,
-    brandcategoryexclusion: bce !== undefined && bce
-  };
-
-  const numberOfPlacements = getAdPodNumberOfPlacements(videoMediaType)
-  let imps = fill(imp, numberOfPlacements)
-
-  const durationRangeSec = videoMediaType.durationRangeSec
-  if (videoMediaType.requireExactDuration) {
-    // equal distribution of numberOfPlacement over all available durations
-    const divider = Math.ceil(numberOfPlacements / durationRangeSec.length)
-    const chunked = chunk(imps, divider)
-
-    // each configured duration is set as min/maxduration for a subset of requests
-    durationRangeSec.forEach((duration, index) => {
-      chunked[index].map(imp => {
-        const sequence = index + 1;
-        imp.video.minduration = duration
-        imp.video.maxduration = duration
-        imp.video.sequence = sequence
-      });
-    });
-  } else {
-    // all maxdurations should be the same
-    const maxDuration = Math.max(...durationRangeSec);
-    imps.map((imp, index) => {
-      const sequence = index + 1;
-      imp.video.maxduration = maxDuration
-      imp.video.sequence = sequence
-    });
-  }
-
-  return imps
-}
-
-function getAdPodNumberOfPlacements(videoMediaType) {
-  const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = Math.min(...durationRangeSec)
-  const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
-
-  return requireExactDuration
-    ? Math.max(numberOfPlacements, durationRangeSec.length)
-    : numberOfPlacements
-}
-
-const addOptionalAdpodParameters = (videoMediaType) => {
-  const content = {}
-
-  if (videoMediaType.tvSeriesName) {
-    content.series = videoMediaType.tvSeriesName
-  }
-  if (videoMediaType.tvEpisodeName) {
-    content.title = videoMediaType.tvEpisodeName
-  }
-  if (typeof videoMediaType.tvSeasonNumber === 'number') {
-    content.season = videoMediaType.tvSeasonNumber.toString() // conversion to string as in OpenRTB season is a string
-  }
-  if (typeof videoMediaType.tvEpisodeNumber === 'number') {
-    content.episode = videoMediaType.tvEpisodeNumber
-  }
-  if (typeof videoMediaType.contentLengthSec === 'number') {
-    content.len = videoMediaType.contentLengthSec
-  }
-  if (videoMediaType.contentMode && ['live', 'on-demand'].indexOf(videoMediaType.contentMode) >= 0) {
-    content.livestream = videoMediaType.contentMode === 'live' ? 1 : 0
-  }
-
-  if (!isEmpty(content)) {
-    return content
-  }
-}
-
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor === 'function') {
     const size = sizes.length === 1 ? sizes[0] : '*';
-    const floor = bidRequest.getFloor({currency: CURRENCY, mediaType: mediaType, size: size});
+    const floor = bidRequest.getFloor({ currency: CURRENCY, mediaType: mediaType, size: size });
     if (floor && !isNaN(floor.floor) && (floor.currency === CURRENCY)) {
       return floor.floor;
     }

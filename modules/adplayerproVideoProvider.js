@@ -26,14 +26,14 @@ import {
   SETUP_FAILED,
   VOLUME
 } from '../libraries/video/constants/events.js';
-import {AD_PLAYER_PRO_VENDOR} from '../libraries/video/constants/vendorCodes.js';
-import {getEventHandler} from '../libraries/video/shared/eventHandler.js';
-import {submodule} from '../src/hook.js';
+import { AD_PLAYER_PRO_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { submodule } from '../src/hook.js';
 
 const setupFailMessage = 'Failed to instantiate the player';
 
 /**
- * @constructor
+ * @class
  * @param {Object} config - videoProviderConfig
  * @param {function} adPlayerPro_
  * @param {CallbackStorage} callbackStorage_
@@ -43,10 +43,10 @@ const setupFailMessage = 'Failed to instantiate the player';
 export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, utils) {
   const adPlayerPro = adPlayerPro_;
   let player = null;
-  let playerVersion = null;
+  const playerVersion = null;
   const playerConfig = config.playerConfig;
   const divId = config.divId;
-  let callbackStorage = callbackStorage_;
+  const callbackStorage = callbackStorage_;
   let supportedMediaTypes = null;
   let setupCompleteCallbacks = [];
   let setupFailedCallbacks = [];
@@ -123,6 +123,10 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     setupPlayer(playerConfig, adTagUrl || options.adXml)
   }
 
+  function setAdXml(vastXml) {
+    setupPlayer(playerConfig, vastXml);
+  }
+
   function onEvent(externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
@@ -160,7 +164,6 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         return;
     }
 
-    // eslint-disable-next-line no-unreachable
     const playerEventName = utils.getPlayerEvent(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
     player && player.on(playerEventName, eventHandler);
@@ -192,6 +195,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy
@@ -209,7 +213,9 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
 
     player = adPlayerPro(divId);
     callbackStorage.addAllCallbacks(player.on);
-    player.on('AdStopped', () => player = null);
+    player.on('AdStopped', () => {
+      player = null;
+    });
     player.setup(playerConfig);
   }
 
@@ -344,14 +350,14 @@ export const utils = {
     }
   },
 
-  getPlaybackMethod: function ({autoplay, mute}) {
+  getPlaybackMethod: function ({ autoplay, mute }) {
     if (autoplay) {
       return mute ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     return PLAYBACK_METHODS.CLICK_TO_PLAY;
   },
 
-  getPlcmt: function ({type, autoplay, muted, file}) {
+  getPlcmt: function ({ type, autoplay, muted, file }) {
     type = type || 'inStream';
     if (!file) {
       // INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.
@@ -390,7 +396,7 @@ export function callbackStorageFactory() {
   }
 
   function getCallback(eventType, callback) {
-    let eventHandlers = storage[eventType];
+    const eventHandlers = storage[eventType];
     if (eventHandlers) {
       return eventHandlers[callback];
     }
@@ -402,7 +408,7 @@ export function callbackStorageFactory() {
       delete storageHandlers[eventType];
       return;
     }
-    let eventHandlers = storage[eventType];
+    const eventHandlers = storage[eventType];
     if (eventHandlers) {
       const eventHandler = eventHandlers[callback];
       if (eventHandler) {
@@ -436,7 +442,7 @@ export function callbackStorageFactory() {
   }
 
   function addAllCallbacks(functionOnPlayer) {
-    for (let eventType in storageHandlers) {
+    for (const eventType in storageHandlers) {
       storageHandlers[eventType].forEach(handler => functionOnPlayer(eventType, handler));
     }
   }

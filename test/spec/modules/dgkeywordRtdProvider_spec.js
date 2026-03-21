@@ -248,9 +248,9 @@ describe('Digital Garage Keyword Module', function () {
       },
     ];
     it('should get profiles error(404).', function (done) {
-      let pbjs = cloneDeep(config);
+      const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
-      let moduleConfig = cloneDeep(DEF_CONFIG);
+      const moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
         pbjs,
         () => {
@@ -280,9 +280,10 @@ describe('Digital Garage Keyword Module', function () {
       request.respond(404);
     });
     it('should get profiles timeout.', function (done) {
-      let pbjs = cloneDeep(config);
+      const clock = sinon.useFakeTimers();
+      const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
-      let moduleConfig = cloneDeep(DEF_CONFIG);
+      const moduleConfig = cloneDeep(DEF_CONFIG);
       moduleConfig.params.timeout = 10;
       dgRtd.getDgKeywordsAndSet(
         pbjs,
@@ -310,7 +311,8 @@ describe('Digital Garage Keyword Module', function () {
         null
       );
       const request = server.requests[0];
-      setTimeout(() => {
+      if (request) {
+        clock.tick(50);
         if (request) {
           request.respond(
             200,
@@ -318,15 +320,16 @@ describe('Digital Garage Keyword Module', function () {
             JSON.stringify(DUMMY_RESPONSE)
           );
         }
-      }, 50);
+      }
+      clock.restore();
     });
     it('should get profiles ok(200).', function (done) {
-      let pbjs = cloneDeep(config);
+      const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       if (IGNORE_SET_ORTB2) {
         pbjs._ignoreSetOrtb2 = true;
       }
-      let moduleConfig = cloneDeep(DEF_CONFIG);
+      const moduleConfig = cloneDeep(DEF_CONFIG);
       dgRtd.getDgKeywordsAndSet(
         pbjs,
         () => {
@@ -365,12 +368,12 @@ describe('Digital Garage Keyword Module', function () {
     });
     it('change url.', function (done) {
       const dummyUrl = 'https://www.test.com/test'
-      let pbjs = cloneDeep(config);
+      const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       if (IGNORE_SET_ORTB2) {
         pbjs._ignoreSetOrtb2 = true;
       }
-      let moduleConfig = cloneDeep(DEF_CONFIG);
+      const moduleConfig = cloneDeep(DEF_CONFIG);
       moduleConfig.params.url = dummyUrl;
       dgRtd.getDgKeywordsAndSet(
         pbjs,
@@ -392,12 +395,12 @@ describe('Digital Garage Keyword Module', function () {
     });
     it('add fpid stored in local strage.', function (done) {
       const uuid = 'uuid_abcdefghijklmnopqrstuvwxyz';
-      let pbjs = cloneDeep(config);
+      const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       if (IGNORE_SET_ORTB2) {
         pbjs._ignoreSetOrtb2 = true;
       }
-      let moduleConfig = cloneDeep(DEF_CONFIG);
+      const moduleConfig = cloneDeep(DEF_CONFIG);
       window.localStorage.setItem('ope_fpid', uuid);
       moduleConfig.params.enableReadFpid = true;
       dgRtd.getDgKeywordsAndSet(
@@ -420,12 +423,12 @@ describe('Digital Garage Keyword Module', function () {
     });
     it('disable fpid stored in local strage.', function (done) {
       const uuid = 'uuid_abcdefghijklmnopqrstuvwxyz';
-      let pbjs = cloneDeep(config);
+      const pbjs = cloneDeep(config);
       pbjs.adUnits = cloneDeep(AD_UNITS);
       if (IGNORE_SET_ORTB2) {
         pbjs._ignoreSetOrtb2 = true;
       }
-      let moduleConfig = cloneDeep(DEF_CONFIG);
+      const moduleConfig = cloneDeep(DEF_CONFIG);
       window.localStorage.setItem('ope_fpid', uuid);
       dgRtd.getDgKeywordsAndSet(
         pbjs,

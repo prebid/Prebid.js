@@ -3,7 +3,7 @@ import { spec, getPageKeywords, parseUserAgent } from 'modules/eightPodBidAdapte
 import 'modules/priceFloors.js'
 import { config } from 'src/config.js'
 import { newBidder } from 'src/adapters/bidderFactory'
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 import sinon from 'sinon';
 
 describe('eightPodBidAdapter', function () {
@@ -81,7 +81,8 @@ describe('eightPodBidAdapter', function () {
             dnt: 1,
             js: 1,
           }
-        } }
+        }
+      }
     })
 
     it('should return an empty array when no bid requests', function () {

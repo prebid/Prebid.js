@@ -1,10 +1,8 @@
-import {arrayFrom, find} from '../src/polyfill.js';
 import {
   cleanObj,
   deepAccess,
   deepClone,
   deepSetValue,
-  getDNT,
   inIframe,
   isArray,
   isEmpty,
@@ -18,10 +16,11 @@ import {
   mergeDeep,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -73,7 +72,7 @@ const ORTB_VIDEO_PARAMS = {
   skipmin: value => isInteger(value),
   skipafter: value => isInteger(value),
   sequence: value => isInteger(value),
-  battr: value => Array.isArray(value) && value.every(v => arrayFrom({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  battr: value => Array.isArray(value) && value.every(v => Array.from({ length: 17 }, (_, i) => i + 1).includes(v)),
   maxextended: value => isInteger(value),
   minbitrate: value => isInteger(value),
   maxbitrate: value => isInteger(value),
@@ -82,7 +81,7 @@ const ORTB_VIDEO_PARAMS = {
   playbackend: value => [1, 2, 3].indexOf(value) !== -1,
   delivery: value => [1, 2, 3].indexOf(value) !== -1,
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
+  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)
 };
 
 /**
@@ -107,12 +106,12 @@ function getDeviceType() {
  * @returns {number}
  */
 function getOS() {
-  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
-  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
-  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
-  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
-  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
-  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
+  if (navigator.userAgent.indexOf('Android') !== -1) return 'Android';
+  if (navigator.userAgent.indexOf('like Mac') !== -1) return 'iOS';
+  if (navigator.userAgent.indexOf('Win') !== -1) return 'Windows';
+  if (navigator.userAgent.indexOf('Mac') !== -1) return 'Macintosh';
+  if (navigator.userAgent.indexOf('Linux') !== -1) return 'Linux';
+  if (navigator.appVersion.indexOf('X11') !== -1) return 'Unix';
   return 'Others';
 }
 
@@ -153,7 +152,7 @@ function getFloor(bid, mediaType, size = '*') {
 function getHighestFloor(bid) {
   const floors = [];
 
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     const floor = getFloor(bid, mediaType);
 
     if (isNumber(floor)) {
@@ -214,7 +213,7 @@ function createOrtbTemplate() {
  * @returns {object}
  */
 function createBannerImp(bid) {
-  let sizes = bid.mediaTypes.banner.sizes;
+  const sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 
   if (!isArray(sizes) || !sizes.length) {
@@ -228,7 +227,7 @@ function createBannerImp(bid) {
     const format = [];
     sizes.forEach(function (size) {
       if (size.length && size.length > 1) {
-        format.push({w: size[0], h: size[1]});
+        format.push({ w: size[0], h: size[1] });
       }
     });
     banner.format = format;
@@ -303,9 +302,9 @@ function createNativeImp(bid) {
     nativeParams.title.len = 90;
   }
 
-  for (let key in nativeParams) {
+  for (const key in nativeParams) {
     if (nativeParams.hasOwnProperty(key)) {
-      const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.name === key);
+      const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.name === key);
       if (!internalNativeAsset) {
         logWarn(`${BIDDER_CODE}: the asset "${key}" has not been found in Prebid assets map. Skipped for request.`);
         continue;
@@ -446,7 +445,7 @@ function createImp(bid) {
   }
 
   // Only supports proper mediaTypes definition…
-  for (let mediaType in bid.mediaTypes) {
+  for (const mediaType in bid.mediaTypes) {
     switch (mediaType) {
       case BANNER:
         const banner = createBannerImp(bid);
@@ -540,7 +539,7 @@ function nativeBidResponseHandler(bid) {
     }
 
     if (asset.data) {
-      const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.id === asset.id);
+      const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.id === asset.id);
       if (internalNativeAsset) {
         native[internalNativeAsset.name] = asset.data.value;
       }
@@ -573,7 +572,7 @@ function nativeBidResponseHandler(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          const script = `<script async src=\"${tracker.url}\"></script>`;
+          const script = `<script async src="${tracker.url}"></script>`;
           if (!native.javascriptTrackers) {
             native.javascriptTrackers = script;
           } else {
@@ -612,7 +611,7 @@ export const spec = {
     deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
-      let bid = deepClone(validBid);
+      const bid = deepClone(validBid);
 
       // No additional params atm.
       const imp = createImp(bid);
@@ -620,8 +619,9 @@ export const spec = {
       payload.imp.push(imp);
     });
 
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

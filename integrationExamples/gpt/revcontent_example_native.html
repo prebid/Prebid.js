@@ -3,7 +3,7 @@
         <title>Prebid.js Native Example</title>
 
         <script async src="../../build/dev/prebid.js"></script>
-        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+        <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
         <script>
             /*
             Supported sizes:
@@ -73,8 +73,12 @@
                 if (pbjs.initAdserverSet) return;
                 pbjs.initAdserverSet = true;
                 googletag.cmd.push(function() {
-                    pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
+                    if (pbjs.libLoaded) {
+                        pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    } else {
+                        googletag.pubads().refresh();
+                    }
                 });
             }
             

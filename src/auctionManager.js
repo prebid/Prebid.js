@@ -9,24 +9,29 @@
  *
  * @property {function(): Array} getBidsRequested - returns consolidated bid requests
  * @property {function(): Array} getBidsReceived - returns consolidated bid received
- * @property {function(): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
+ * @property {function(string): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
+ * @property {function(): Array} getAllWinningBids - returns all winning bids
  * @property {function(): Array} getAdUnits - returns consolidated adUnits
  * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
- * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
- * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
+ * @property {function(): Array} getNoBids - returns consolidated adUnitCodes
+ * @property {function(string, string): void} setStatusForBids - set status for bids
+ * @property {function(): string} getLastAuctionId - returns last auctionId
+ * @property {function(Object): Object} createAuction - creates auction instance and stores it for future reference
+ * @property {function(string): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
  * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
+ * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
  */
 
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import {AuctionIndex} from './auctionIndex.js';
+import { AuctionIndex } from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
-import {useMetrics} from './utils/perfMetrics.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
+import { useMetrics } from './utils/perfMetrics.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -84,7 +89,7 @@ export function newAuctionManager() {
     getAdUnitCodes: {
       post: uniques,
     }
-  }).forEach(([mgrMethod, {name = mgrMethod, pre, post}]) => {
+  }).forEach(([mgrMethod, { name = mgrMethod, pre, post }]) => {
     const mapper = pre == null
       ? (auction) => auction[name]()
       : (auction) => pre(auction) ? auction[name]() : [];
@@ -121,7 +126,7 @@ export function newAuctionManager() {
   };
 
   auctionManager.setStatusForBids = function(adId, status) {
-    let bid = auctionManager.findBidByAdId(adId);
+    const bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
 
     if (bid && status === BID_STATUS.BID_TARGETING_SET) {

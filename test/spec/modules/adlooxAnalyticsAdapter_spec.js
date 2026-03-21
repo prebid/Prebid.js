@@ -40,11 +40,12 @@ describe('Adloox Analytics Adapter', function () {
     }
   };
 
-  adapterManager.registerAnalyticsAdapter({
-    code: analyticsAdapterName,
-    adapter: analyticsAdapter
-  });
   describe('enableAnalytics', function () {
+    afterEach(function () {
+      analyticsAdapter.disableAnalytics();
+      expect(analyticsAdapter.context).is.null;
+    });
+
     describe('invalid options', function () {
       it('should require options', function (done) {
         adapterManager.enableAnalytics({
@@ -68,6 +69,32 @@ describe('Adloox Analytics Adapter', function () {
         done();
       });
 
+      it('should accept subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://test.adlooxtracking.com/test.js';
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.not.null;
+
+        done();
+      });
+
+      it('should reject non-subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://example.com/test.js';
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.null;
+
+        done();
+      });
+
       it('should reject non-function options.toselector', function (done) {
         const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
         analyticsOptionsLocal.toselector = esplode;
@@ -81,7 +108,7 @@ describe('Adloox Analytics Adapter', function () {
         done();
       });
 
-      [ 'client', 'clientid', 'platformid', 'tagid' ].forEach(function (o) {
+      ['client', 'clientid', 'platformid', 'tagid'].forEach(function (o) {
         it('should require options.' + o, function (done) {
           const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
           delete analyticsOptionsLocal[o];
@@ -113,7 +140,7 @@ describe('Adloox Analytics Adapter', function () {
 
   describe('process', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
 
       sandbox.stub(events, 'getEvents').returns([]);
 
@@ -139,7 +166,7 @@ describe('Adloox Analytics Adapter', function () {
 
         const uri = utils.parseUrl(analyticsAdapter.url(analyticsOptions.js));
         const isLinkPreloadAsScript = function(arg) {
-          const href_uri = utils.parseUrl(arg.href);	// IE11 requires normalisation (hostname always includes port)
+          const href_uri = utils.parseUrl(arg.href);  // IE11 requires normalisation (hostname always includes port)
           return arg.tagName === 'LINK' && arg.getAttribute('rel') === 'preload' && arg.getAttribute('as') === 'script' && href_uri.href === uri.href;
         };
 
@@ -222,7 +249,7 @@ describe('Adloox Analytics Adapter', function () {
         const data = {
           url: 'https://example.com?',
           args: [
-            [ 'client', '%%client%%' ]
+            ['client', '%%client%%']
           ],
           bid: bid,
           ids: true

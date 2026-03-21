@@ -57,4 +57,5 @@ The following settings are available in the `params` property in `userSync.userI
 
 ### HEM Collection
 
-33Across ID System supports user's hashed email, if available in storage.
+33Across ID System supports user's hashed emails (HEMs). HEMs could be collected from 3 different sources in following
+priority order: `hem` configuration parameter, global `_33across.hem.sha256` field or from storage (cookie or local storage).

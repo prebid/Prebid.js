@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec, SYNC_URL} from 'modules/dxkultureBidAdapter.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec, SYNC_URL } from 'modules/dxkultureBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 const getBannerRequest = () => {
   return {
@@ -20,7 +20,7 @@ const getBannerRequest = () => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 300, 250 ],
+              [300, 250],
             ]
           }
         },
@@ -152,7 +152,7 @@ const getBidderResponse = () => {
                 bidder: {
                   appnexus: {
                     brand_id: 334553,
-                    auction_id: 514667951122925701,
+                    auction_id: '514667951122925701',
                     bidder_id: 2,
                     bid_ad_type: 0
                   }
@@ -421,7 +421,7 @@ describe('dxkultureBidAdapter', function() {
     beforeEach(function() {
       bidderBannerRequest = getBannerRequest();
 
-      mockBidderRequest = {refererInfo: {}};
+      mockBidderRequest = { refererInfo: {} };
 
       bidRequestsWithMediaTypes = [{
         bidder: 'dxkulture',
@@ -465,7 +465,7 @@ describe('dxkultureBidAdapter', function() {
 
     context('when mediaType is banner', function () {
       it('creates request data', function () {
-        let request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
+        const request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
 
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;
@@ -479,7 +479,7 @@ describe('dxkultureBidAdapter', function() {
             gdprApplies: true,
           }
         });
-        let request = spec.buildRequests(bidderBannerRequest.bids, req);
+        const request = spec.buildRequests(bidderBannerRequest.bids, req);
 
         const payload = request.data;
         expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
@@ -539,14 +539,14 @@ describe('dxkultureBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
       });
 
       it('have bids', function () {
-        let bids = spec.interpretResponse(bidderResponse, bidRequest);
+        const bids = spec.interpretResponse(bidderResponse, bidRequest);
         expect(bids).to.be.an('array').that.is.not.empty;
         validateBidOnIndex(0);
 
@@ -574,32 +574,36 @@ describe('dxkultureBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
       });
 
       it('should return no bids if the response "nurl" and "adm" are missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              price: 6.01
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                price: 6.01
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
 
       it('should return no bids if the response "price" is missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              adm: '<VAST></VAST>'
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                adm: '<VAST></VAST>'
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
@@ -615,17 +619,17 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('handles no parameters', function () {
-      let opts = spec.getUserSyncs({});
+      const opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -633,7 +637,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('pixel sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -641,7 +645,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('all sync enabled should prioritize iframe', function () {
-      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
     });

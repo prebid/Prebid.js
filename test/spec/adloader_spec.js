@@ -1,16 +1,20 @@
 import * as utils from 'src/utils.js';
 import * as adLoader from 'test/mocks/adloaderStub.js';
-import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities';
-import { registerActivityControl } from '../../src/activities/rules';
-import { MODULE_TYPE_PREBID } from '../../src/activities/modules';
+import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities.js';
+import { registerActivityControl } from '../../src/activities/rules.js';
+import { MODULE_TYPE_PREBID } from '../../src/activities/modules.js';
 
 describe('adLoader', function () {
+  let sandbox;
   let utilsinsertElementStub;
   let utilsLogErrorStub;
+  let scriptEl;
 
   beforeEach(function () {
-    utilsinsertElementStub = sinon.stub(utils, 'insertElement');
-    utilsLogErrorStub = sinon.stub(utils, 'logError');
+    sandbox = sinon.createSandbox();
+    scriptEl = null;
+    utilsinsertElementStub = sandbox.stub(utils, 'insertElement').callsFake((el) => { scriptEl = el });
+    utilsLogErrorStub = sandbox.stub(utils, 'logError');
   });
 
   afterEach(function () {
@@ -37,9 +41,37 @@ describe('adLoader', function () {
     });
 
     it('callback function can be passed to the function', function() {
-      let callback = function() {};
+      const callback = function() {};
       adLoader.loadExternalScript('someURL1', MODULE_TYPE_PREBID, 'debugging', callback);
       expect(utilsinsertElementStub.called).to.be.true;
+    });
+
+    it('should run callback when script loads', () => {
+      const callback = sinon.stub();
+      adLoader.loadExternalScript('test-1', MODULE_TYPE_PREBID, 'debugging', callback);
+      scriptEl.onload();
+      sinon.assert.called(callback);
+    });
+
+    it('should run callback as an object', () => {
+      const callback = {
+        success: sinon.stub()
+      }
+      adLoader.loadExternalScript('test-2', MODULE_TYPE_PREBID, 'debugging', callback);
+      scriptEl.onload();
+      sinon.assert.called(callback.success);
+    });
+
+    it('should run error callback once', () => {
+      const callback = {
+        error: sinon.stub()
+      }
+      adLoader.loadExternalScript('test-3', MODULE_TYPE_PREBID, 'debugging', callback);
+      const ev = new Event('error');
+      scriptEl.dispatchEvent(ev);
+      scriptEl.dispatchEvent(ev);
+      sinon.assert.calledWith(callback.error, ev);
+      sinon.assert.calledOnce(callback.error);
     });
 
     it('requires a url to be included once per document', function () {
@@ -47,15 +79,13 @@ describe('adLoader', function () {
         return {
           createElement: function() {
             return {
-
+              addEventListener() {}
             }
           },
           getElementsByTagName: function() {
             return {
               firstChild: {
-                insertBefore: function() {
-
-                }
+                insertBefore: function() {}
               }
             }
           }
@@ -75,23 +105,24 @@ describe('adLoader', function () {
 
   it('attaches passed attributes to a script', function () {
     const doc = {
-        createElement: function () {
-          return {
-            setAttribute: function (key, value) {
-              this[key] = value;
-            }
-          }
-        },
-        getElementsByTagName: function() {
-          return {
-            firstChild: {
-              insertBefore: function() {}
-            }
-          }
+      createElement: function () {
+        return {
+          setAttribute: function (key, value) {
+            this[key] = value;
+          },
+          addEventListener() {}
         }
       },
-      attrs = {'z': 'A', 'y': 2};
-    let script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
+      getElementsByTagName: function() {
+        return {
+          firstChild: {
+            insertBefore: function() {}
+          }
+        }
+      }
+    };
+    const attrs = { 'z': 'A', 'y': 2 };
+    const script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
   });
@@ -99,7 +130,7 @@ describe('adLoader', function () {
   it('should disable loading external script for activity rule set', function () {
     let unregisterRule;
     try {
-      unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({allow: false}));
+      unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({ allow: false }));
       adLoader.loadExternalScript(null, 'debugging');
       expect(utilsLogErrorStub.called).to.be.false;
     } finally {
