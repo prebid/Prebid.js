@@ -53,12 +53,21 @@ pbjs.setConfig({
 |:-----|:-----|:------------|
 | name | String | RTD submodule name. Always `'agenticAudience'` |
 | waitForIt | Boolean | Set to true to delay auction until module responds |
-| params.providers | Object | Provider-specific config. Each key (e.g. `liveRamp`) defines a provider with its own storage. |
-| params.providers.{provider}.storageKey | String | Storage key for that provider (e.g. `_lr_agentic_audience_` for LiveRamp). |
+| params.providers | Object | Provider-specific config. Each key (e.g. `liveRamp`) defines a provider with its own storage. Optional; when omitted, `DEFAULT_PROVIDERS` (LiveRamp and Optable with default storage keys) is used. |
+| params.providers.{provider}.storageKey | String | Storage key for that provider. Defaults: LiveRamp `_lr_agentic_audience_`, Optable `_optable_agentic_audience_`. |
+
+## Default providers
+
+When `params.providers` is not configured, the module uses `DEFAULT_PROVIDERS`:
+
+| Provider | Default storage key |
+|:---------|:-------------------|
+| liveRamp | `_lr_agentic_audience_` |
+| optable | `_optable_agentic_audience_` |
 
 ## Storage
 
-The module reads agentic audience data from browser storage (localStorage or cookie). It first reads from the default key `_agentic_audience_`, then from each provider's `storageKey` defined under `params.providers`.
+The module reads agentic audience data from browser storage (localStorage or cookie) using each provider's `storageKey` from `params.providers` or `DEFAULT_PROVIDERS`.
 
 **Encoding:** Data stored in cookie or localStorage **must be base64-encoded**. The module decodes the stored value and parses it as JSON. The decoded JSON (unencoded data) is what gets injected into the bid request and sent over the wire to bidders—not the base64 string.
 
@@ -76,7 +85,7 @@ These fields align with the [Agentic Audiences OpenRTB Segment extension](https:
 
 ## Example OpenRTB user object
 
-The module injects agentic audience entries into `user.data`. Entries from the default storage key and all configured providers (e.g. LiveRamp, Optable) are merged into a single `segment` array under one Data object.
+The module injects agentic audience entries into `user.data`. Each configured provider gets its own Data object with `name` set to the provider key and `segment` containing that provider's entries.
 
 ### Single provider (LiveRamp only)
 
@@ -85,7 +94,7 @@ The module injects agentic audience entries into `user.data`. Entries from the d
   "user": {
     "data": [
       {
-        "name": "agentic-audiences.org",
+        "name": "liveRamp",
         "segment": [
           {
             "ver": "1.0",
@@ -103,14 +112,14 @@ The module injects agentic audience entries into `user.data`. Entries from the d
 
 ### Multiple providers (LiveRamp and Optable)
 
-When configured with both LiveRamp and Optable, entries from both storage keys are combined into one `segment` array:
+When configured with both LiveRamp and Optable, each provider gets its own Data object:
 
 ```json
 {
   "user": {
     "data": [
       {
-        "name": "agentic-audiences.org",
+        "name": "liveRamp",
         "segment": [
           {
             "ver": "1.0",
@@ -118,7 +127,12 @@ When configured with both LiveRamp and Optable, entries from both storage keys a
             "model": "sbert-mini-ctx-001",
             "dimension": 3,
             "type": [1]
-          },
+          }
+        ]
+      }, 
+      {
+        "name": "optable",
+        "segment": [
           {
             "ver": "1.0",
             "vector": [0.5, 0.6, -0.1],
@@ -133,7 +147,7 @@ When configured with both LiveRamp and Optable, entries from both storage keys a
 }
 ```
 
-Configuration for the multi-provider example:
+Configuration for the multi-provider example (or omit `params` to use `DEFAULT_PROVIDERS`):
 
 ```javascript
 params: {

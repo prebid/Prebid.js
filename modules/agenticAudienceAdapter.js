@@ -7,11 +7,10 @@
  * @requires module:modules/realTimeData
  */
 
-import { identity } from 'lodash';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { logInfo, logError } from '../src/utils.js';
+import { logInfo, mergeDeep } from '../src/utils.js';
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -19,7 +18,11 @@ import { logInfo, logError } from '../src/utils.js';
 
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'agenticAudience';
-export const DEFAULT_STORAGE_KEY = '_agentic_audience_';
+
+export const DEFAULT_PROVIDERS = {
+  liveRamp: { storageKey: '_lr_agentic_audience_' },
+  optable: { storageKey: '_optable_agentic_audience_' }
+};
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -40,6 +43,10 @@ function dataFromCookie(key) {
  * @returns {boolean}
  */
 function init(config, userConsent) {
+  const providers = config?.params?.providers ?? DEFAULT_PROVIDERS;
+  if (!providers || typeof providers !== 'object' || Object.keys(providers).length === 0) {
+    return false;
+  }
   return true;
 }
 
@@ -50,30 +57,40 @@ function init(config, userConsent) {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const entries = [];
-
-  if (defaultEntries = getEntries(DEFAULT_STORAGE_KEY)) {
-    defaultEntries.forEach(entry => { entries.push(entry); });
+  const configParams = config?.params || {};
+  const providers = configParams.providers ?? DEFAULT_PROVIDERS;
+  if (!providers || typeof providers !== 'object') {
+    callback();
+    return;
   }
 
-  const configParams = (config && config.params) ? config.params : {};
-  const providers = Object.keys(configParams['providers']);
+  const data = [];
+  const providerKeys = Object.keys(providers);
 
-  for (let i = 0; i < providers.length; i++) {
-    const provider = providers[i];
-    const providerParams = configParams['providers'][provider];
-    const providerEntries = getEntries(providerParams['storageKey']);
-    providerEntries.forEach(entry => { entries.push(entry); });
+  for (let i = 0; i < providerKeys.length; i++) {
+    const provider = providerKeys[i];
+    const providerParams = providers[provider];
+    const storageKey = providerParams && providerParams.storageKey;
+    if (!storageKey) continue;
+
+    const providerEntries = getEntries(storageKey);
+
+    if (providerEntries && providerEntries.length > 0) {
+      data.push({
+        name: provider,
+        segment: providerEntries
+      });
+    }
+  }
+
+  if (data.length === 0) {
+    callback();
+    return;
   }
 
   const updated = {
     user: {
-      data: [
-        {
-          name: 'agentic-audiences.org',
-          segment: entries
-        }
-      ]
+      data
     }
   };
 
@@ -93,17 +110,17 @@ function tryParse(data) {
 function getEntries(key) {
   const storedData = dataFromLocalStorage(key) || dataFromCookie(key);
   
-  if (!storedData || typeof storedData != 'string') {
+  if (!storedData || typeof storedData !== 'string') {
     return [];
   }
 
   const parsed = tryParse(storedData);
-  
-  if (!parsed || typeof parsed != 'object') {
+
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.entries)) {
     return [];
   }
 
-  return parsed['entries'].map(entry => ({
+  return parsed.entries.map(entry => ({
     ver: entry['ver'],
     vector: entry['vector'],
     model: entry['model'],
