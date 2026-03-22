@@ -1,10 +1,10 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWinDimensions } from '../src/utils.js';
 
-export const storage = getStorageManager({bidderCode: 'mantis'});
+export const storage = getStorageManager({ bidderCode: 'mantis' });
 
 function inIframe() {
   try {
@@ -220,7 +220,7 @@ export const spec = {
           bidId: bid.bidId,
           config: bid.params,
           sizes: bid.sizes.map(function (size) {
-            return {width: size[0], height: size[1]};
+            return { width: size[0], height: size[1] };
           })
         };
       }),
@@ -261,13 +261,13 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: buildMantisUrl('/prebid/iframe', {gdpr: gdprConsent, uspConsent: uspConsent})
+        url: buildMantisUrl('/prebid/iframe', { gdpr: gdprConsent, uspConsent: uspConsent })
       }];
     }
     if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: buildMantisUrl('/prebid/pixel', {gdpr: gdprConsent, uspConsent: uspConsent})
+        url: buildMantisUrl('/prebid/pixel', { gdpr: gdprConsent, uspConsent: uspConsent })
       }];
     }
   }

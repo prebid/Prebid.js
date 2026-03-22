@@ -1,13 +1,15 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { logError, isFn, isPlainObject } from '../src/utils.js';
+import { logError, isFn, isPlainObject, formatQS } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'startio';
 const METHOD = 'POST';
 const GVLID = 1216;
 const ENDPOINT_URL = `https://pbc-rtb.startappnetwork.com/1.3/2.5/getbid?account=pbc`;
+const IFRAME_URL = 'https://cs.startappnetwork.com/sync?p=m4b8b3y4';
 
 const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
@@ -112,7 +114,7 @@ export const spec = {
       const data = converter.toORTB({
         bidRequests: [bidRequest],
         bidderRequest,
-        context: {mediaType, bidParams: bidRequest.params}
+        context: { mediaType, bidParams: bidRequest.params }
       });
 
       return {
@@ -151,6 +153,23 @@ export const spec = {
   },
 
   onSetTargeting: (bid) => { },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    const syncs = [];
+
+    if (syncOptions.iframeEnabled) {
+      const consentParams = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+      const queryString = formatQS(consentParams);
+      const queryParam = queryString ? `&${queryString}` : '';
+
+      syncs.push({
+        type: 'iframe',
+        url: `${IFRAME_URL}${queryParam}`
+      });
+    }
+
+    return syncs;
+  }
 };
 
 registerBidder(spec);

@@ -57,7 +57,7 @@ describe('deltaprojectsBidAdapter', function() {
       auctionId: '1d1a030790a475',
     }
     const bidRequests = [BIDREQ];
-    const bannerRequest = spec.buildRequests(bidRequests, {refererInfo: { page: BID_REQ_REFER, domain: BID_REQ_DOMAIN }})[0];
+    const bannerRequest = spec.buildRequests(bidRequests, { refererInfo: { page: BID_REQ_REFER, domain: BID_REQ_DOMAIN } })[0];
     const bannerRequestBody = bannerRequest.data;
 
     it('send bid request with test tag if it is set in the param', function () {
@@ -143,12 +143,12 @@ describe('deltaprojectsBidAdapter', function() {
 
     it('should handle gdpr applies  being undefined', function() {
       const gdprRequestBody = getGdprRequestBody(undefined, consentString);
-      expect(gdprRequestBody.regs).to.deep.equal({ext: {}});
+      expect(gdprRequestBody.regs).to.deep.equal({ ext: {} });
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
     })
 
     it('should handle gdpr consent being undefined', function() {
-      const gdprRequest = spec.buildRequests(gdprBidRequests, {refererInfo: { referer: GDPR_REQ_REFERER }})[0];
+      const gdprRequest = spec.buildRequests(gdprBidRequests, { refererInfo: { referer: GDPR_REQ_REFERER } })[0];
       const gdprRequestBody = gdprRequest.data;
       expect(gdprRequestBody.regs).to.deep.equal({ ext: {} });
       expect(gdprRequestBody.user).to.deep.equal({ ext: {} });
@@ -172,7 +172,7 @@ describe('deltaprojectsBidAdapter', function() {
         auctionId: '1d1a030790a475',
       },
     ];
-    const request = spec.buildRequests(bidRequests, {refererInfo: { referer: BID_REQ_REFER }})[0];
+    const request = spec.buildRequests(bidRequests, { refererInfo: { referer: BID_REQ_REFER } })[0];
     function makeResponse() {
       return {
         body: {
@@ -243,7 +243,7 @@ describe('deltaprojectsBidAdapter', function() {
       const noCridResponse = makeResponse();
       delete noCridResponse.body.seatbid[0].bid[0].crid;
       const fallbackCrid = noCridResponse.body.seatbid[0].bid[0].id;
-      const noCridResult = Object.assign({}, expectedBid, {'creativeId': fallbackCrid});
+      const noCridResult = Object.assign({}, expectedBid, { 'creativeId': fallbackCrid });
       const result = spec.interpretResponse(noCridResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(noCridResult);
@@ -271,8 +271,8 @@ describe('deltaprojectsBidAdapter', function() {
     });
 
     it('should keep custom properties', () => {
-      const customProperties = {test: 'a test message', param: {testParam: 1}};
-      const expectedResult = Object.assign({}, expectedBid, {[spec.code]: customProperties});
+      const customProperties = { test: 'a test message', param: { testParam: 1 } };
+      const expectedResult = Object.assign({}, expectedBid, { [spec.code]: customProperties });
       const response = makeResponse();
       response.body.seatbid[0].bid[0].ext = customProperties;
       const result = spec.interpretResponse(response, request);

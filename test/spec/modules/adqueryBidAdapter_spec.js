@@ -45,7 +45,7 @@ describe('adqueryBidAdapter', function () {
           'adDomains': ['https://example.com'],
           'tag': '<ad-adquery data-type="banner300x250"  data-placement="6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897"> </ad-adquery>',
           'adqLib': 'https://example.com/js/example.js',
-          'mediaType': {'width': 300, 'height': 250, 'name': 'banner', 'type': 'banner300x250'},
+          'mediaType': { 'width': 300, 'height': 250, 'name': 'banner', 'type': 'banner300x250' },
           'cpm': 2.5,
           'meta': {
             'advertiserDomains': ['example.com'],
@@ -431,7 +431,7 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    const req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    const req = spec.buildRequests([bidRequest], { refererInfo: { } })[0]
 
     it('should return request object', function () {
       expect(req).to.not.be.null
@@ -665,7 +665,7 @@ describe('adqueryBidAdapter', function () {
           }
         }
       }
-    ], {refererInfo: {}})[0]
+    ], { refererInfo: {} })[0]
 
     it('should include video', function () {
       expect(req_video.data.bidPageUrl).not.be.null
@@ -734,7 +734,7 @@ describe('adqueryBidAdapter', function () {
     const req_video_for_floor = spec.buildRequests([
       {
         "getFloor": function () {
-          return {currency: "USD", floor: 1.13};
+          return { currency: "USD", floor: 1.13 };
         },
         "bidder": "adquery",
         "params": {
@@ -921,7 +921,7 @@ describe('adqueryBidAdapter', function () {
           }
         }
       }
-    ], {refererInfo: {}})[0]
+    ], { refererInfo: {} })[0]
 
     it('data with floor must have video bidfloor property', function () {
       expect(req_video_for_floor.data.imp[0].video.bidfloor).eq(1.13);
@@ -1078,7 +1078,7 @@ describe('adqueryBidAdapter', function () {
       expect(utils.triggerPixel.called).to.equal(true);
     });
     it('should use nurl if exists', function () {
-      var response = spec.onBidWon({nurl: "https://example.com/test-nurl"});
+      var response = spec.onBidWon({ nurl: "https://example.com/test-nurl" });
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.calledWith("https://example.com/test-nurl")).to.equal(true);
     });

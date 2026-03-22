@@ -106,13 +106,13 @@ export const spec = {
       return {
         url: endpoint,
         method: 'POST',
-        data: converter.toORTB({bidRequests: [bid], bidderRequest}),
+        data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
         bidRequest: bid,
       };
     })
   },
   interpretResponse(response, request) {
-    return converter.fromORTB({response: response.body, request: request.data}).bids;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
   onBidWon: function(bid) {
     if (bid.burl) {

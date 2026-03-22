@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH, getAliasUserId, storage} from 'modules/smartytechBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH, getAliasUserId, storage } from 'modules/smartytechBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 
@@ -135,13 +135,13 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
 });
 
 function mockRandomSizeArray(len) {
-  return Array.apply(null, {length: len}).map(i => {
+  return Array.apply(null, { length: len }).map(i => {
     return [Math.floor(Math.random() * 800), Math.floor(Math.random() * 800)]
   });
 }
 
 function mockBidRequestListData(mediaType, size, customSizes) {
-  return Array.apply(null, {length: size}).map((i, index) => {
+  return Array.apply(null, { length: size }).map((i, index) => {
     const id = Math.floor(Math.random() * 800) * (index + 1);
     let mediaTypes;
     const params = {
@@ -436,7 +436,7 @@ describe('SmartyTechDSPAdapter: buildRequests with user IDs', () => {
 
   it('should not include userIds when userIdAsEids is undefined', () => {
     const bidRequestWithUndefinedUserIds = mockBidRequestListData('banner', 2, []).map(req => {
-      const {userIdAsEids, ...requestWithoutUserIds} = req;
+      const { userIdAsEids, ...requestWithoutUserIds } = req;
       return requestWithoutUserIds;
     });
     const request = spec.buildRequests(bidRequestWithUndefinedUserIds, mockReferer);

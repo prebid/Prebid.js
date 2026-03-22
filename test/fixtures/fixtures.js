@@ -1,6 +1,6 @@
 // jscs:disable
 import { TARGETING_KEYS } from 'src/constants.js';
-import {createBid} from '../../src/bidfactory.js';
+import { createBid } from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {
@@ -1289,7 +1289,7 @@ export function getCurrencyRates() {
   };
 }
 
-export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType}) {
+export function createBidReceived({ bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType }) {
   const bid = {
     'bidderCode': bidder,
     'width': '300',

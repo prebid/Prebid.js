@@ -6,7 +6,7 @@ describe('utiqMtpIdSystem', () => {
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
-      idGraph = {id: 501, domain: ''};
+      idGraph = { id: 501, domain: '' };
     }
     return {
       'connectId': {
@@ -104,7 +104,7 @@ describe('utiqMtpIdSystem', () => {
         'mtid': 'mtidValue',
       };
 
-      const response = utiqMtpIdSubmodule.getId({params: {maxDelayTime: 200}});
+      const response = utiqMtpIdSubmodule.getId({ params: { maxDelayTime: 200 } });
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -138,12 +138,12 @@ describe('utiqMtpIdSystem', () => {
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the utiqMtp for a payload with {utiqMtp: value}', () => {
         expect(utiqMtpIdSubmodule.decode(responseData.payload)).to.deep.equal(
-          {utiqMtp: responseData.expected}
+          { utiqMtp: responseData.expected }
         );
       });
     });
 
-    [{}, '', {foo: 'bar'}].forEach((response) => {
+    [{}, '', { foo: 'bar' }].forEach((response) => {
       it(`should return null for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(utiqMtpIdSubmodule.decode(response)).to.be.null;
       });

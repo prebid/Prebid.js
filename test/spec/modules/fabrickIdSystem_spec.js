@@ -1,7 +1,7 @@
 import * as utils from '../../../src/utils.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
-import {fabrickIdSubmodule, appendUrl} from 'modules/fabrickIdSystem.js';
+import { fabrickIdSubmodule, appendUrl } from 'modules/fabrickIdSystem.js';
 
 const defaultConfigParams = {
   apiKey: '123',
@@ -9,7 +9,7 @@ const defaultConfigParams = {
   p: ['def', 'hij'],
   url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
-const responseHeader = {'Content-Type': 'application/json'}
+const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('Fabrick ID System', function() {
   let logErrorStub;
