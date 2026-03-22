@@ -19,20 +19,10 @@ import { logInfo, mergeDeep } from '../src/utils.js';
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'agenticAudience';
 
-export const DEFAULT_PROVIDERS = {
-  liveRamp: { storageKey: '_lr_agentic_audience_' },
-  optable: { storageKey: '_optable_agentic_audience_' }
-};
-
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
 });
-
-function toSnakeCase(str) {
-  if (typeof str !== 'string') return str;
-  return str.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`).replace(/^_/, '');
-}
 
 function dataFromLocalStorage(key) {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
@@ -42,22 +32,12 @@ function dataFromCookie(key) {
   return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
 }
 
-/**
- * @param {Object} config
- * @param {Object} userConsent
- * @returns {boolean}
- */
-function getProviders(config) {
-  const configuredProviders = config?.params?.providers;
-  return {
-    ...DEFAULT_PROVIDERS,
-    ...(configuredProviders && typeof configuredProviders === 'object' ? configuredProviders : {})
-  };
-}
-
 function init(config, userConsent) {
-  const providers = getProviders(config);
-  return Object.keys(providers).length > 0;
+  const providers = config?.params?.providers;
+  if (!providers || typeof providers !== 'object' || Object.keys(providers).length === 0) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -67,8 +47,8 @@ function init(config, userConsent) {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const providers = getProviders(config);
-  if (!providers || Object.keys(providers).length === 0) {
+  const providers = config?.params?.providers;
+  if (!providers || typeof providers !== 'object' || Object.keys(providers).length === 0) {
     callback();
     return;
   }
@@ -86,7 +66,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
     if (providerEntries && providerEntries.length > 0) {
       data.push({
-        name: toSnakeCase(provider),
+        name: provider,
         segment: providerEntries
       });
     }
