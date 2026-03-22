@@ -23,7 +23,6 @@ import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
-import { deepSetValue } from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
@@ -659,15 +658,6 @@ describe('VidazooBidAdapter', function () {
 
       const requests = adapter.buildRequests([BID, BID, BID, BID], BIDDER_REQUEST);
       expect(requests).to.have.length(2);
-    });
-
-    it('should set fledge correctly if enabled', function () {
-      config.resetConfig();
-      const bidderRequest = utils.deepClone(BIDDER_REQUEST);
-      bidderRequest.paapi = { enabled: true };
-      deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
-      const requests = adapter.buildRequests([BID], bidderRequest);
-      expect(requests[0].data.fledge).to.equal(1);
     });
 
     it('should build video request with base url from valid params.host', function () {

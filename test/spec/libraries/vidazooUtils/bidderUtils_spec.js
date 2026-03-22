@@ -1,15 +1,14 @@
 import * as utilities from 'libraries/vidazooUtils/bidderUtils.js'
-import {expect} from "chai";
+import { expect } from "chai";
 import sinon from "sinon";
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import {
   IFRAME_SYNC_DEFAULT_URL,
   IMAGE_SYNC_DEFAULT_URL,
   SESSION_ID_KEY
 } from "../../../../libraries/vidazooUtils/constants.js";
-import {getStorageItem} from "libraries/vidazooUtils/bidderUtils.js";
-import {bidderSettings} from 'src/bidderSettings.js';
+import { bidderSettings } from 'src/bidderSettings.js';
 
 describe('Vidazoo Bidder Utils Tests', function () {
   describe('createSessionId', function () {
@@ -21,109 +20,109 @@ describe('Vidazoo Bidder Utils Tests', function () {
 
   describe('extractCID', function () {
     it('should return undefined when param not supported', function () {
-      const cid = utilities.extractCID({'c_id': '1'});
+      const cid = utilities.extractCID({ 'c_id': '1' });
       expect(cid).to.be.undefined;
     });
     it('should return value when param supported: cID', function () {
-      const cid = utilities.extractCID({'cID': '1'});
+      const cid = utilities.extractCID({ 'cID': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: cId', function () {
-      const cid = utilities.extractCID({'cId': '1'});
+      const cid = utilities.extractCID({ 'cId': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: CID', function () {
-      const cid = utilities.extractCID({'CID': '1'});
+      const cid = utilities.extractCID({ 'CID': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: CId', function () {
-      const cid = utilities.extractCID({'CId': '1'});
+      const cid = utilities.extractCID({ 'CId': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: cid', function () {
-      const cid = utilities.extractCID({'cid': '1'});
+      const cid = utilities.extractCID({ 'cid': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: Cid', function () {
-      const cid = utilities.extractCID({'Cid': '1'});
+      const cid = utilities.extractCID({ 'Cid': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: CiD', function () {
-      const cid = utilities.extractCID({'CiD': '1'});
+      const cid = utilities.extractCID({ 'CiD': '1' });
       expect(cid).to.be.equal('1');
     });
     it('should return value when param supported: ciD', function () {
-      const cid = utilities.extractCID({'ciD': '1'});
+      const cid = utilities.extractCID({ 'ciD': '1' });
       expect(cid).to.be.equal('1');
     });
   });
 
   describe('extractPID', function () {
     it('should return undefined when param not supported', function () {
-      const pid = utilities.extractPID({'p_id': '1'});
+      const pid = utilities.extractPID({ 'p_id': '1' });
       expect(pid).to.be.undefined;
     });
     it('should return value when param supported: pId', function () {
-      const pid = utilities.extractPID({'pId': '2'});
+      const pid = utilities.extractPID({ 'pId': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: PID', function () {
-      const pid = utilities.extractPID({'PID': '2'});
+      const pid = utilities.extractPID({ 'PID': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: pID', function () {
-      const pid = utilities.extractPID({'pID': '2'});
+      const pid = utilities.extractPID({ 'pID': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: PId', function () {
-      const pid = utilities.extractPID({'PId': '2'});
+      const pid = utilities.extractPID({ 'PId': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: pid', function () {
-      const pid = utilities.extractPID({'pid': '2'});
+      const pid = utilities.extractPID({ 'pid': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: piD', function () {
-      const pid = utilities.extractPID({'piD': '2'});
+      const pid = utilities.extractPID({ 'piD': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: Pid', function () {
-      const pid = utilities.extractPID({'Pid': '2'});
+      const pid = utilities.extractPID({ 'Pid': '2' });
       expect(pid).to.be.equal('2');
     });
     it('should return value when param supported: PiD', function () {
-      const pid = utilities.extractPID({'PiD': '2'});
+      const pid = utilities.extractPID({ 'PiD': '2' });
       expect(pid).to.be.equal('2');
     });
   });
 
   describe('extractSubDomain', function () {
     it('should return undefined when param not supported', function () {
-      const subDomain = utilities.extractSubDomain({'sub_domain': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'sub_domain': 'prebid' });
       expect(subDomain).to.be.undefined;
     });
     it('should return value when param supported: subDomain', function () {
-      const subDomain = utilities.extractSubDomain({'subDomain': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'subDomain': 'prebid' });
       expect(subDomain).to.be.equal('prebid');
     });
     it('should return value when param supported: SubDomain', function () {
-      const subDomain = utilities.extractSubDomain({'SubDomain': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'SubDomain': 'prebid' });
       expect(subDomain).to.be.equal('prebid');
     });
     it('should return value when param supported: Subdomain', function () {
-      const subDomain = utilities.extractSubDomain({'Subdomain': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'Subdomain': 'prebid' });
       expect(subDomain).to.be.equal('prebid');
     });
     it('should return value when param supported: subdomain', function () {
-      const subDomain = utilities.extractSubDomain({'subdomain': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'subdomain': 'prebid' });
       expect(subDomain).to.be.equal('prebid');
     });
     it('should return value when param supported: SUBDOMAIN', function () {
-      const subDomain = utilities.extractSubDomain({'SUBDOMAIN': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'SUBDOMAIN': 'prebid' });
       expect(subDomain).to.be.equal('prebid');
     });
     it('should return value when param supported: subDOMAIN', function () {
-      const subDomain = utilities.extractSubDomain({'subDOMAIN': 'prebid'});
+      const subDomain = utilities.extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(subDomain).to.be.equal('prebid');
     });
   });
@@ -159,8 +158,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
   });
   describe('tryParseJSON', function () {
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = utilities.tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = utilities.tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 
@@ -180,12 +179,12 @@ describe('Vidazoo Bidder Utils Tests', function () {
         getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
       };
       const key = 'newKey';
-      const value = {'a': 1};
+      const value = { 'a': 1 };
       const timestamp = Date.now();
       // test the set
       utilities.setStorageItem(storageMock, key, value, timestamp);
       expect(storageMock.setDataInLocalStorage.calledOnce).to.be.true;
-      expect(storageMock.setDataInLocalStorage.calledWith(key, JSON.stringify({value, created: timestamp}))).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledWith(key, JSON.stringify({ value, created: timestamp }))).to.be.true;
       // now test the get
       const result = utilities.getStorageItem(storageMock, key);
       expect(result.created).to.be.equal(timestamp);
@@ -205,7 +204,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       // test the set
       utilities.setStorageItem(storageMock, key, value, timestamp);
       expect(storageMock.setDataInLocalStorage.calledOnce).to.be.true;
-      expect(storageMock.setDataInLocalStorage.calledWith(key, JSON.stringify({value, created: timestamp}))).to.be.true;
+      expect(storageMock.setDataInLocalStorage.calledWith(key, JSON.stringify({ value, created: timestamp }))).to.be.true;
       // now test the get
       const result = utilities.getStorageItem(storageMock, key);
       expect(storageMock.getDataFromLocalStorage.calledOnce).to.be.true;
@@ -241,7 +240,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
     it('should get value that was previously set', function () {
       const value = "something"
-      const localStore = {newKey: value};
+      const localStore = { newKey: value };
       const storageMock = {
         setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
         getDataFromLocalStorage: sinon.stub().callsFake((k) => localStore[k] || null)
@@ -463,8 +462,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
     let sandbox;
     const iframeSyncUrl = 'https://sync.example.com/api/sync/iframe';
     const imageSyncUrl = 'https://sync.example.com/api/sync/image';
-    const responses = [{body: {cid: 'testcid'}, headers: {'x-us-base-url': 'other-example.com'}}];
-    const gdprConsent = {gdprApplies: true, consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA'};
+    const responses = [{ body: { cid: 'testcid' }, headers: { 'x-us-base-url': 'other-example.com' } }];
+    const gdprConsent = { gdprApplies: true, consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA' };
     const uspConsent = '1YNN';
 
     beforeEach(function () {
@@ -477,8 +476,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
 
     it('should return iframe sync when iframeEnabled is true and iframeSyncUrl is provided', function () {
-      const getUserSyncs = utilities.createUserSyncGetter({iframeSyncUrl, imageSyncUrl});
-      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responses, gdprConsent, uspConsent);
+      const getUserSyncs = utilities.createUserSyncGetter({ iframeSyncUrl, imageSyncUrl });
+      const syncs = getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, responses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('iframe');
       expect(syncs[0].url).to.include(iframeSyncUrl);
@@ -488,7 +487,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
     it('should return iframe sync from header when iframeEnabled is false but iframeHeader exists', function () {
       const getUserSyncs = utilities.createUserSyncGetter({});
-      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responses, gdprConsent, uspConsent);
+      const syncs = getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, responses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('iframe');
       expect(syncs[0].url).to.include('https://sync.other-example.com/api/sync/iframe/');
@@ -496,16 +495,16 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
     it('should return iframe sync from header when iframeEnabled is false and iframeHeader unpresent', function () {
       const getUserSyncs = utilities.createUserSyncGetter({});
-      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
-      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: false}, responsesNoHeaders, gdprConsent, uspConsent);
+      const responsesNoHeaders = [{ body: { cid: 'testcid' }, headers: {} }];
+      const syncs = getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, responsesNoHeaders, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('iframe');
       expect(syncs[0].url).to.include(IFRAME_SYNC_DEFAULT_URL);
       expect(syncs[0].url).to.include('cid=testcid');
     });
     it('should return image sync when pixelEnabled is true and imageSyncUrl is provided', function () {
-      const getUserSyncs = utilities.createUserSyncGetter({iframeSyncUrl, imageSyncUrl});
-      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responses, gdprConsent, uspConsent);
+      const getUserSyncs = utilities.createUserSyncGetter({ iframeSyncUrl, imageSyncUrl });
+      const syncs = getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, responses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('image');
       expect(syncs[0].url).to.include(imageSyncUrl);
@@ -515,7 +514,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
     it('should return image sync from header when pixelEnabled is false but imageHeader exists', function () {
       const getUserSyncs = utilities.createUserSyncGetter({});
-      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responses, gdprConsent, uspConsent);
+      const syncs = getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, responses, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('image');
       expect(syncs[0].url).to.include('https://sync.other-example.com/api/sync/image/');
@@ -523,8 +522,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
     it('should return image sync from header when pixelEnabled is false and imageHeader unpresent', function () {
       const getUserSyncs = utilities.createUserSyncGetter({});
-      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
-      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: true}, responsesNoHeaders, gdprConsent, uspConsent);
+      const responsesNoHeaders = [{ body: { cid: 'testcid' }, headers: {} }];
+      const syncs = getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, responsesNoHeaders, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.be.equal('image');
       expect(syncs[0].url).to.include(IMAGE_SYNC_DEFAULT_URL);
@@ -532,14 +531,14 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
     it('should return empty syncs when iframeEnabled, pixelEnabled are false and no headers', function () {
       const getUserSyncs = utilities.createUserSyncGetter({});
-      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
-      const syncs = getUserSyncs({iframeEnabled: false, pixelEnabled: false}, responsesNoHeaders, gdprConsent, uspConsent);
+      const responsesNoHeaders = [{ body: { cid: 'testcid' }, headers: {} }];
+      const syncs = getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, responsesNoHeaders, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(0);
     });
     it('should return empty syncs when iframeEnabled, pixelEnabled are true and no headers', function () {
       const getUserSyncs = utilities.createUserSyncGetter({});
-      const responsesNoHeaders = [{body: {cid: 'testcid'}, headers: {}}];
-      const syncs = getUserSyncs({iframeEnabled: true, pixelEnabled: true}, responsesNoHeaders, gdprConsent, uspConsent);
+      const responsesNoHeaders = [{ body: { cid: 'testcid' }, headers: {} }];
+      const syncs = getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responsesNoHeaders, gdprConsent, uspConsent);
       expect(syncs).to.have.lengthOf(2);
     });
   });
@@ -548,7 +547,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should extract lipbid from lipb provider', function () {
       const payload = {};
       const userIds = {
-        lipb: {lipbid: 'lipb-id-123'}
+        lipb: { lipbid: 'lipb-id-123' }
       };
       utilities.appendUserIdsToRequestPayload(payload, userIds);
       expect(payload['uid.lipb']).to.be.equal('lipb-id-123');
@@ -557,7 +556,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should extract uid from id5id provider', function () {
       const payload = {};
       const userIds = {
-        id5id: {uid: 'id5-uid-456'}
+        id5id: { uid: 'id5-uid-456' }
       };
       utilities.appendUserIdsToRequestPayload(payload, userIds);
       expect(payload['uid.id5id']).to.be.equal('id5-uid-456');
@@ -577,8 +576,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should handle all provider types together', function () {
       const payload = {};
       const userIds = {
-        lipb: {lipbid: 'lipb-id'},
-        id5id: {uid: 'id5-uid'},
+        lipb: { lipbid: 'lipb-id' },
+        id5id: { uid: 'id5-uid' },
         tdid: 'tdid-value'
       };
       utilities.appendUserIdsToRequestPayload(payload, userIds);
@@ -588,7 +587,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
 
     it('should not modify payload when userIds is empty', function () {
-      const payload = {existing: 'value'};
+      const payload = { existing: 'value' };
       utilities.appendUserIdsToRequestPayload(payload, {});
       expect(Object.keys(payload)).to.have.lengthOf(1);
       expect(payload.existing).to.be.equal('value');
@@ -614,13 +613,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
 
     it('should return parsed value when storage has a session', function () {
-      const sessionData = JSON.stringify({value: 'stored-session-id', created: Date.now()});
+      const sessionData = JSON.stringify({ value: 'stored-session-id', created: Date.now() });
       const storageMock = {
         getDataFromLocalStorage: sinon.stub().returns(sessionData)
       };
       const result = utilities.getVidazooSessionId(storageMock);
       expect(storageMock.getDataFromLocalStorage.calledWith(SESSION_ID_KEY, null)).to.be.true;
-      expect(result).to.be.deep.equal({value: 'stored-session-id', created: JSON.parse(sessionData).created});
+      expect(result).to.be.deep.equal({ value: 'stored-session-id', created: JSON.parse(sessionData).created });
     });
   });
 
@@ -630,12 +629,12 @@ describe('Vidazoo Bidder Utils Tests', function () {
     let clock;
 
     const baseBid = {
-      params: {pId: 'test-pid', cId: 'test-cid', bidFloor: 0.5},
+      params: { pId: 'test-pid', cId: 'test-cid', bidFloor: 0.5 },
       bidId: 'bid-123',
       adUnitCode: 'div-gpt-ad-1',
-      schain: {ver: '1.0', nodes: [{asi: 'exchange.com', sid: '1234'}]},
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
-      ortb2Imp: {ext: {tid: 'txn-abc', gpid: '/1234/homepage'}},
+      schain: { ver: '1.0', nodes: [{ asi: 'exchange.com', sid: '1234' }] },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      ortb2Imp: { ext: { tid: 'txn-abc', gpid: '/1234/homepage' } },
       bidderRequestId: 'br-456',
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
@@ -643,16 +642,16 @@ describe('Vidazoo Bidder Utils Tests', function () {
     };
 
     const baseBidderRequest = {
-      refererInfo: {ref: 'https://referrer.com'},
+      refererInfo: { ref: 'https://referrer.com' },
       ortb2: {
         site: {
           cat: ['IAB1'],
           pagecat: ['IAB1-1'],
-          content: {data: [{name: 'test'}], language: 'en'}
+          content: { data: [{ name: 'test' }], language: 'en' }
         },
-        user: {data: [{name: 'userData'}]},
-        device: {ua: 'test-ua'},
-        regs: {coppa: 1}
+        user: { data: [{ name: 'userData' }] },
+        device: { ua: 'test-ua' },
+        regs: { coppa: 1 }
       }
     };
 
@@ -663,7 +662,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         setDataInLocalStorage: sinon.stub(),
         getDataFromLocalStorage: sinon.stub().returns(null)
       };
-      clock = sinon.useFakeTimers({now: Date.now(), shouldAdvanceTime: true});
+      clock = sinon.useFakeTimers({ now: Date.now(), shouldAdvanceTime: true });
     });
 
     afterEach(function () {
@@ -687,8 +686,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(data.bidderRequestsCount).to.equal(1);
       expect(data.bidderWinsCount).to.equal(0);
       expect(data.bidderTimeout).to.equal(3000);
-      expect(data.mediaTypes).to.deep.equal({banner: {sizes: [[300, 250]]}});
-      expect(data.schain).to.deep.equal({ver: '1.0', nodes: [{asi: 'exchange.com', sid: '1234'}]});
+      expect(data.mediaTypes).to.deep.equal({ banner: { sizes: [[300, 250]] } });
+      expect(data.schain).to.deep.equal({ ver: '1.0', nodes: [{ asi: 'exchange.com', sid: '1234' }] });
       expect(data.url).to.equal(encodeURIComponent('https://publisher.com'));
     });
 
@@ -698,11 +697,11 @@ describe('Vidazoo Bidder Utils Tests', function () {
       );
       expect(data.cat).to.deep.equal(['IAB1']);
       expect(data.pagecat).to.deep.equal(['IAB1-1']);
-      expect(data.contentData).to.deep.equal([{name: 'test'}]);
+      expect(data.contentData).to.deep.equal([{ name: 'test' }]);
       expect(data.contentLang).to.equal('en');
       expect(data.coppa).to.equal(1);
-      expect(data.userData).to.deep.equal([{name: 'userData'}]);
-      expect(data.device).to.deep.equal({ua: 'test-ua'});
+      expect(data.userData).to.deep.equal([{ name: 'userData' }]);
+      expect(data.device).to.deep.equal({ ua: 'test-ua' });
     });
 
     it('should extract gpid and transactionId from ortb2Imp', function () {
@@ -716,7 +715,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should use bid.getFloor when available and currency is USD', function () {
       const bid = {
         ...baseBid,
-        getFloor: sinon.stub().returns({currency: 'USD', floor: 1.5})
+        getFloor: sinon.stub().returns({ currency: 'USD', floor: 1.5 })
       };
       const data = utilities.buildRequestData(
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -728,7 +727,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should not override bidFloor when getFloor returns non-USD currency', function () {
       const bid = {
         ...baseBid,
-        getFloor: sinon.stub().returns({currency: 'EUR', floor: 2.0})
+        getFloor: sinon.stub().returns({ currency: 'EUR', floor: 2.0 })
       };
       const data = utilities.buildRequestData(
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -739,7 +738,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should include GDPR consent data when present', function () {
       const bidderRequest = {
         ...baseBidderRequest,
-        gdprConsent: {consentString: 'consent-abc', gdprApplies: true}
+        gdprConsent: { consentString: 'consent-abc', gdprApplies: true }
       };
       const data = utilities.buildRequestData(
         baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -762,7 +761,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should include GPP consent from gppConsent when present', function () {
       const bidderRequest = {
         ...baseBidderRequest,
-        gppConsent: {gppString: 'gpp-string-123', applicableSections: [1, 2]}
+        gppConsent: { gppString: 'gpp-string-123', applicableSections: [1, 2] }
       };
       const data = utilities.buildRequestData(
         baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -776,7 +775,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         ...baseBidderRequest,
         ortb2: {
           ...baseBidderRequest.ortb2,
-          regs: {coppa: 0, gpp: 'ortb2-gpp', gpp_sid: [3, 4]}
+          regs: { coppa: 0, gpp: 'ortb2-gpp', gpp_sid: [3, 4] }
         }
       };
       const data = utilities.buildRequestData(
@@ -791,13 +790,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
         ...baseBidderRequest,
         ortb2: {
           ...baseBidderRequest.ortb2,
-          device: {ua: 'test-ua', sua: {platform: {brand: 'macOS'}}}
+          device: { ua: 'test-ua', sua: { platform: { brand: 'macOS' } } }
         }
       };
       const data = utilities.buildRequestData(
         baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
       );
-      expect(data.sua).to.deep.equal({platform: {brand: 'macOS'}});
+      expect(data.sua).to.deep.equal({ platform: { brand: 'macOS' } });
     });
 
     it('should include DSA when present in ortb2.regs.ext', function () {
@@ -805,19 +804,19 @@ describe('Vidazoo Bidder Utils Tests', function () {
         ...baseBidderRequest,
         ortb2: {
           ...baseBidderRequest.ortb2,
-          regs: {coppa: 0, ext: {dsa: {required: 1}}}
+          regs: { coppa: 0, ext: { dsa: { required: 1 } } }
         }
       };
       const data = utilities.buildRequestData(
         baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
       );
-      expect(data.dsa).to.deep.equal({required: 1});
+      expect(data.dsa).to.deep.equal({ required: 1 });
     });
 
     it('should include placementId when set in params', function () {
       const bid = {
         ...baseBid,
-        params: {...baseBid.params, placementId: 'placement-xyz'}
+        params: { ...baseBid.params, placementId: 'placement-xyz' }
       };
       const data = utilities.buildRequestData(
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -828,7 +827,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should spread ext params with ext. prefix', function () {
       const bid = {
         ...baseBid,
-        params: {...baseBid.params, ext: {customKey: 'customVal', anotherKey: 123}}
+        params: { ...baseBid.params, ext: { customKey: 'customVal', anotherKey: 123 } }
       };
       const data = utilities.buildRequestData(
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -838,7 +837,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
 
     it('should call getUniqueRequestData and merge result when provided', function () {
-      const uniqueDataFn = sinon.stub().returns({dealId: 42, sessionId: 'sess-1'});
+      const uniqueDataFn = sinon.stub().returns({ dealId: 42, sessionId: 'sess-1' });
       const data = utilities.buildRequestData(
         baseBid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', uniqueDataFn
       );
@@ -850,7 +849,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should append userIdAsEids to request data', function () {
       const bid = {
         ...baseBid,
-        userIdAsEids: [{source: 'adserver.org', uids: [{id: 'eid-123'}]}]
+        userIdAsEids: [{ source: 'adserver.org', uids: [{ id: 'eid-123' }] }]
       };
       const data = utilities.buildRequestData(
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
@@ -861,25 +860,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
     it('should append userId to request data', function () {
       const bid = {
         ...baseBid,
-        userId: {tdid: 'tdid-val', lipb: {lipbid: 'lipb-val'}}
+        userId: { tdid: 'tdid-val', lipb: { lipbid: 'lipb-val' } }
       };
       const data = utilities.buildRequestData(
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
       );
       expect(data['uid.tdid']).to.equal('tdid-val');
       expect(data['uid.lipb']).to.equal('lipb-val');
-    });
-
-    it('should include fledge when paapi is enabled and ae is set', function () {
-      const bidderRequest = {
-        ...baseBidderRequest,
-        paapi: {enabled: true},
-        ortb2Imp: {ext: {ae: 1}}
-      };
-      const data = utilities.buildRequestData(
-        baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
-      );
-      expect(data.fledge).to.equal(1);
     });
 
     it('should include ortb2 and ortb2Imp in data', function () {
@@ -906,7 +893,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
 
     it('should return empty array when results is not iterable', function () {
       const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
-      const result = interpretResponse({body: {results: null}}, {});
+      const result = interpretResponse({ body: { results: null } }, {});
       expect(result).to.be.an('array').that.is.empty;
     });
 
@@ -914,10 +901,10 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
       const serverResponse = {
         body: {
-          results: [{creativeId: '123', price: 1.5, width: 300, height: 250}]
+          results: [{ creativeId: '123', price: 1.5, width: 300, height: 250 }]
         }
       };
-      const result = interpretResponse(serverResponse, {data: {bidId: 'bid-1'}});
+      const result = interpretResponse(serverResponse, { data: { bidId: 'bid-1' } });
       expect(result).to.be.an('array').that.is.empty;
     });
 
@@ -925,10 +912,10 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
       const serverResponse = {
         body: {
-          results: [{creativeId: '123', ad: '<div>ad</div>', width: 300, height: 250}]
+          results: [{ creativeId: '123', ad: '<div>ad</div>', width: 300, height: 250 }]
         }
       };
-      const result = interpretResponse(serverResponse, {data: {bidId: 'bid-1'}});
+      const result = interpretResponse(serverResponse, { data: { bidId: 'bid-1' } });
       expect(result).to.be.an('array').that.is.empty;
     });
 
@@ -949,7 +936,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const request = {data: {bidId: 'bid-1'}};
+      const request = { data: { bidId: 'bid-1' } };
       const bids = interpretResponse(serverResponse, request);
       expect(bids).to.have.lengthOf(1);
       const bid = bids[0];
@@ -979,7 +966,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const request = {data: {bidId: 'bid-2'}};
+      const request = { data: { bidId: 'bid-2' } };
       const bids = interpretResponse(serverResponse, request);
       expect(bids).to.have.lengthOf(1);
       const bid = bids[0];
@@ -1001,7 +988,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-3'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-3' } });
       expect(bids[0].currency).to.equal('USD');
       expect(bids[0].ttl).to.equal(300);
     });
@@ -1020,7 +1007,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-4'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-4' } });
       expect(bids[0].nurl).to.equal('https://win.example.com/nurl');
     });
 
@@ -1037,13 +1024,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-5'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-5' } });
       expect(bids[0].nurl).to.be.undefined;
     });
 
     it('should use metaData directly when provided', function () {
       const interpretResponse = utilities.createInterpretResponseFn('vidazoo', true);
-      const metaData = {advertiserDomains: ['test.com'], networkId: 123};
+      const metaData = { advertiserDomains: ['test.com'], networkId: 123 };
       const serverResponse = {
         body: {
           results: [{
@@ -1056,7 +1043,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-6'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-6' } });
       expect(bids[0].meta).to.deep.equal(metaData);
     });
 
@@ -1073,8 +1060,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-7'}});
-      expect(bids[0].meta).to.deep.equal({advertiserDomains: []});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-7' } });
+      expect(bids[0].meta).to.deep.equal({ advertiserDomains: [] });
     });
 
     it('should handle multiple results', function () {
@@ -1082,13 +1069,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const serverResponse = {
         body: {
           results: [
-            {creativeId: 'cr-a', ad: '<div>a</div>', price: 1.0, width: 300, height: 250},
-            {creativeId: 'cr-b', ad: '<div>b</div>', price: 2.0, width: 728, height: 90},
-            {creativeId: 'cr-c', price: 3.0, width: 300, height: 600}
+            { creativeId: 'cr-a', ad: '<div>a</div>', price: 1.0, width: 300, height: 250 },
+            { creativeId: 'cr-b', ad: '<div>b</div>', price: 2.0, width: 728, height: 90 },
+            { creativeId: 'cr-c', price: 3.0, width: 300, height: 600 }
           ]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'bid-multi'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'bid-multi' } });
       expect(bids).to.have.lengthOf(2);
       expect(bids[0].creativeId).to.equal('cr-a');
       expect(bids[1].creativeId).to.equal('cr-b');
@@ -1110,7 +1097,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'request-bid-id'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'request-bid-id' } });
       expect(bids[0].requestId).to.equal('result-bid-id');
       sandbox.restore();
     });
@@ -1129,7 +1116,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
           }]
         }
       };
-      const bids = interpretResponse(serverResponse, {data: {bidId: 'request-bid-id'}});
+      const bids = interpretResponse(serverResponse, { data: { bidId: 'request-bid-id' } });
       expect(bids[0].requestId).to.equal('request-bid-id');
     });
   });
@@ -1141,13 +1128,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
     const createDomain = (subDomain) => `https://${subDomain || 'exchange'}.example.com`;
 
     const makeBid = (overrides = {}) => ({
-      params: {cId: 'test-cid', pId: 'test-pid', bidFloor: 0.1},
+      params: { cId: 'test-cid', pId: 'test-pid', bidFloor: 0.1 },
       bidId: 'bid-1',
       adUnitCode: 'ad-unit-1',
       sizes: [[300, 250]],
       schain: null,
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
-      ortb2Imp: {ext: {tid: 'txn-1'}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      ortb2Imp: { ext: { tid: 'txn-1' } },
       bidderRequestId: 'br-1',
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
@@ -1156,13 +1143,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
 
     const baseBidderRequest = {
-      refererInfo: {page: 'https://publisher.com', ref: 'https://referrer.com'},
+      refererInfo: { page: 'https://publisher.com', ref: 'https://referrer.com' },
       timeout: 3000,
       ortb2: {
-        site: {cat: [], pagecat: [], content: {data: [], language: 'en'}},
-        user: {data: []},
+        site: { cat: [], pagecat: [], content: { data: [], language: 'en' } },
+        user: { data: [] },
         device: {},
-        regs: {coppa: 0}
+        regs: { coppa: 0 }
       }
     };
 
@@ -1181,7 +1168,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
 
     it('should build one request per bid in normal (non-singleRequest) mode', function () {
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
-      const bids = [makeBid({bidId: 'bid-1'}), makeBid({bidId: 'bid-2'})];
+      const bids = [makeBid({ bidId: 'bid-1' }), makeBid({ bidId: 'bid-2' })];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(2);
       expect(requests[0].data.bidId).to.equal('bid-1');
@@ -1196,7 +1183,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
 
     it('should construct correct URL with subDomain and cId', function () {
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
-      const bid = makeBid({params: {cId: 'my-cid', pId: 'my-pid', subDomain: 'custom'}});
+      const bid = makeBid({ params: { cId: 'my-cid', pId: 'my-pid', subDomain: 'custom' } });
       const requests = buildRequests([bid], baseBidderRequest);
       expect(requests[0].url).to.equal('https://custom.example.com/prebid/multi/my-cid');
     });
@@ -1217,7 +1204,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', false);
       const bidderReq = {
         ...baseBidderRequest,
-        refererInfo: {topmostLocation: 'https://topmost.com', ref: 'https://referrer.com'}
+        refererInfo: { topmostLocation: 'https://topmost.com', ref: 'https://referrer.com' }
       };
       const requests = buildRequests([makeBid()], bidderReq);
       expect(requests[0].data.url).to.equal(encodeURIComponent('https://topmost.com'));
@@ -1230,7 +1217,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
 
     it('should pass createUniqueRequestData through to buildRequestData', function () {
-      const uniqueDataFn = sinon.stub().returns({sessionId: 'sess-xyz'});
+      const uniqueDataFn = sinon.stub().returns({ sessionId: 'sess-xyz' });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, uniqueDataFn, storageMock, 'tagoras', '1.0.0', false);
       const requests = buildRequests([makeBid()], baseBidderRequest);
       expect(uniqueDataFn.calledOnce).to.be.true;
@@ -1244,9 +1231,9 @@ describe('Vidazoo Bidder Utils Tests', function () {
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
       const bids = [
-        makeBid({bidId: 'bid-1'}),
-        makeBid({bidId: 'bid-2'}),
-        makeBid({bidId: 'bid-3'})
+        makeBid({ bidId: 'bid-1' }),
+        makeBid({ bidId: 'bid-2' }),
+        makeBid({ bidId: 'bid-3' })
       ];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(1);
@@ -1261,9 +1248,9 @@ describe('Vidazoo Bidder Utils Tests', function () {
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
       const bids = [
-        makeBid({bidId: 'banner-1', mediaTypes: {banner: {sizes: [[300, 250]]}}}),
-        makeBid({bidId: 'video-1', mediaTypes: {video: {playerSize: [[640, 480]]}}}),
-        makeBid({bidId: 'video-2', mediaTypes: {video: {playerSize: [[640, 480]]}}})
+        makeBid({ bidId: 'banner-1', mediaTypes: { banner: { sizes: [[300, 250]] } } }),
+        makeBid({ bidId: 'video-1', mediaTypes: { video: { playerSize: [[640, 480]] } } }),
+        makeBid({ bidId: 'video-2', mediaTypes: { video: { playerSize: [[640, 480]] } } })
       ];
       const requests = buildRequests(bids, baseBidderRequest);
       const bannerRequests = requests.filter(r => r.data.bids);
@@ -1279,7 +1266,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         return undefined;
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'tagoras', '1.0.0', true);
-      const bids = [makeBid({bidId: 'bid-1'}), makeBid({bidId: 'bid-2'})];
+      const bids = [makeBid({ bidId: 'bid-1' }), makeBid({ bidId: 'bid-2' })];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(2);
       requests.forEach(r => expect(r.data.bids).to.be.undefined);
@@ -1291,7 +1278,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         return undefined;
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', false);
-      const bids = [makeBid({bidId: 'bid-1'}), makeBid({bidId: 'bid-2'})];
+      const bids = [makeBid({ bidId: 'bid-1' }), makeBid({ bidId: 'bid-2' })];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(2);
       requests.forEach(r => expect(r.data.bids).to.be.undefined);
@@ -1305,11 +1292,11 @@ describe('Vidazoo Bidder Utils Tests', function () {
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
       const bids = [
-        makeBid({bidId: 'bid-1'}),
-        makeBid({bidId: 'bid-2'}),
-        makeBid({bidId: 'bid-3'}),
-        makeBid({bidId: 'bid-4'}),
-        makeBid({bidId: 'bid-5'})
+        makeBid({ bidId: 'bid-1' }),
+        makeBid({ bidId: 'bid-2' }),
+        makeBid({ bidId: 'bid-3' }),
+        makeBid({ bidId: 'bid-4' }),
+        makeBid({ bidId: 'bid-5' })
       ];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(3);
@@ -1325,7 +1312,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         return undefined;
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomain, null, storageMock, 'vidazoo', '1.0.0', true);
-      const bids = Array.from({length: 25}, (_, i) => makeBid({bidId: `bid-${i}`}));
+      const bids = Array.from({ length: 25 }, (_, i) => makeBid({ bidId: `bid-${i}` }));
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(2);
       expect(requests[0].data.bids).to.have.lengthOf(20);
