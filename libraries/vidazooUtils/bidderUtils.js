@@ -556,13 +556,19 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
 
     const chunkedData = chunk(data, chunkSize);
     return chunkedData.map(chunk => {
-      return {
-        method: 'POST',
-        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
-        data: {
-          bids: chunk
-        }
-      };
+      if (isValidParamsHost(params)) {
+        return {
+          method: 'POST',
+          url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
+          data: chunk
+        };
+      } else {
+        return {
+          method: 'POST',
+          url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+          data: chunk
+        };
+      }
     });
   }
 
