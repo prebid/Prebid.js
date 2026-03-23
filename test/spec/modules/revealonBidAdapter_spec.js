@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { spec } from 'modules/revealonBidAdapter.js';
+import { spec } from 'modules/revealonBidAdapter.ts';
 import { deepClone } from 'src/utils';
 import { getBidFloor } from '../../../libraries/xeUtils/bidderUtils.js';
 
