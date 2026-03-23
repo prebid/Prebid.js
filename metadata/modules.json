@@ -1074,6 +1074,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "alliance_gravity",
+      "aliasOf": null,
+      "gvlid": 501,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "alvads",
       "aliasOf": null,
       "gvlid": null,
@@ -2957,6 +2964,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "embimedia",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3065,6 +3079,13 @@
       "componentName": "madvertise",
       "aliasOf": null,
       "gvlid": 153,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "magnite",
+      "aliasOf": null,
+      "gvlid": 52,
       "disclosureURL": null
     },
     {
@@ -3608,13 +3629,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "optable",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "optidigital",
       "aliasOf": null,
       "gvlid": 915,
@@ -3947,13 +3961,6 @@
       "componentName": "qt",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "quantcast",
-      "aliasOf": null,
-      "gvlid": "11",
       "disclosureURL": null
     },
     {
@@ -5310,6 +5317,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "datamage",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "dgkeyword",
       "gvlid": null,
       "disclosureURL": null
@@ -5383,12 +5396,6 @@
     {
       "componentType": "rtd",
       "componentName": "im",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "rtd",
-      "componentName": "intersection",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -5665,13 +5672,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "dmdId",
-      "gvlid": null,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "euid",
       "gvlid": 21,
       "disclosureURL": null,
@@ -5931,13 +5931,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "quantcastId",
-      "gvlid": "11",
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "rewardedInterestId",
       "gvlid": null,
       "disclosureURL": null,
@@ -5956,6 +5949,13 @@
       "gvlid": null,
       "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
+    },
+    {
+      "componentType": "userId",
+      "componentName": "startioId",
+      "gvlid": 1216,
+      "disclosureURL": null,
+      "aliasOf": null
     },
     {
       "componentType": "userId",

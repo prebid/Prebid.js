@@ -23,6 +23,7 @@ import { GLOBAL_VENDOR_ID, MEDIANET } from '../libraries/medianetUtils/constants
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -133,11 +134,11 @@ function getWindowSize() {
   }
 }
 
-function getCoordinates(adUnitCode) {
-  let element = document.getElementById(adUnitCode);
-  if (!element && adUnitCode.indexOf('/') !== -1) {
+function getCoordinates(bidRequest) {
+  let element = getAdUnitElement(bidRequest);
+  if (!element && bidRequest.adUnitCode.indexOf('/') !== -1) {
     // now it means that adUnitCode is GAM AdUnitPath
-    const { divId } = getGptSlotInfoForAdUnitCode(adUnitCode);
+    const { divId } = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
     if (isStr(divId)) {
       element = document.getElementById(divId);
     }
@@ -239,7 +240,7 @@ function slotParams(bidRequest, bidderRequests) {
   if (bidFloor) {
     params.bidfloor = bidFloor;
   }
-  const coordinates = getCoordinates(bidRequest.adUnitCode);
+  const coordinates = getCoordinates(bidRequest);
   if (coordinates && params.banner && params.banner.length !== 0) {
     const normCoordinates = normalizeCoordinates(coordinates);
     params.ext.coordinates = normCoordinates;
@@ -255,9 +256,6 @@ function slotParams(bidRequest, bidderRequests) {
   const floorInfo = getBidFloorByType(bidRequest);
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
-  }
-  if (bidderRequests.paapi?.enabled) {
-    params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
   }
   return params;
 }
@@ -487,7 +485,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @returns {{bids: *[], fledgeAuctionConfigs: *[]} | *[]} An object containing bids and fledgeAuctionConfigs if present, otherwise an array of bids.
+   * @returns {*[]} An array of bids.
    */
   interpretResponse: function(serverResponse, request) {
     let validBids = [];
@@ -502,18 +500,7 @@ export const spec = {
       validBids = bids.filter(bid => isValidBid(bid));
       validBids.forEach(addRenderer);
     }
-    const fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.paApiAuctionConfigs') || [];
-    const ortbAuctionConfigs = deepAccess(serverResponse, 'body.ext.igi') || [];
-    if (fledgeAuctionConfigs.length === 0 && ortbAuctionConfigs.length === 0) {
-      return validBids;
-    }
-    if (ortbAuctionConfigs.length > 0) {
-      fledgeAuctionConfigs.push(...ortbAuctionConfigs.map(({ igs }) => igs || []).flat());
-    }
-    return {
-      bids: validBids,
-      paapi: fledgeAuctionConfigs,
-    }
+    return validBids;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const cookieSyncUrls = fetchCookieSyncUrls(serverResponses);

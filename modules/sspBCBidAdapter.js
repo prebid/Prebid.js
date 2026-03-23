@@ -6,6 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -671,8 +672,7 @@ const spec = {
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
     const { body: response = {} } = serverResponse;
-    const { seatbid: responseSeat, ext: responseExt = {} } = response;
-    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
+    const { seatbid: responseSeat } = response;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
@@ -738,6 +738,7 @@ const spec = {
               },
               netRevenue: true,
               vurls,
+              eventtrackers: vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
@@ -788,7 +789,7 @@ const spec = {
       });
     }
 
-    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
+    return bids;
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
