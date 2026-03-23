@@ -463,6 +463,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
           currency,
           bidId,
           nurl,
+          burl,
           advertiserDomains,
           metaData,
           mediaType = BANNER
@@ -484,6 +485,9 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
 
         if (nurl) {
           response.nurl = nurl;
+        }
+        if (burl) {
+          response.burl = burl;
         }
 
         if (metaData) {
