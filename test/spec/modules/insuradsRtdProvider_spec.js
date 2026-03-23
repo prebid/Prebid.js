@@ -48,6 +48,42 @@ describe('insuradsRtdProvider', function () {
       expect(insuradsRtdProvider.init(config)).to.be.false;
     });
 
+    it('should return false when publicId is not a string', function () {
+      const config = {
+        params: {
+          publicId: 123
+        }
+      };
+      expect(insuradsRtdProvider.init(config)).to.be.false;
+    });
+
+    it('should return false when publicId is an object', function () {
+      const config = {
+        params: {
+          publicId: {}
+        }
+      };
+      expect(insuradsRtdProvider.init(config)).to.be.false;
+    });
+
+    it('should return false when publicId is an empty string', function () {
+      const config = {
+        params: {
+          publicId: ''
+        }
+      };
+      expect(insuradsRtdProvider.init(config)).to.be.false;
+    });
+
+    it('should return false when publicId is only whitespace', function () {
+      const config = {
+        params: {
+          publicId: '   '
+        }
+      };
+      expect(insuradsRtdProvider.init(config)).to.be.false;
+    });
+
     it('should return false when params is missing', function () {
       const config = {};
       expect(insuradsRtdProvider.init(config)).to.be.false;
