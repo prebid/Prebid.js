@@ -215,7 +215,7 @@ export function createUserSyncGetter(options = {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
     }
-    const UsBaseHeader = responses?.[0]?.headers?.['x-us-base-url']
+    const UsBaseHeader = responses?.[0]?.headers?.get('x-us-base-url')
 
     if (iframeEnabled) {
       if (options.iframeSyncUrl) {
