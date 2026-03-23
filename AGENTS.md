@@ -58,3 +58,14 @@ This file contains instructions for the Codex agent and its friends when working
 - Prefer importing or mirroring conventions from these modules instead of redefining local ad-hoc shapes.
 - Use imported types for id, analytics, and rtd modules as well whenever possible.
 - Always define types for public interface to an adapter, eg each bidder parameter.
+
+## Review guidelines
+- Use the guidelines at PR_REVIEW.md when doing PR reviews. Make all your comments and code suggestions on the PR itself instead of in linked tasks when commenting in a PR review.
+- Use the module rules at https://docs.prebid.org/dev-docs/module-rules.html
+- Discourage application/json calls, they cause preflight options calls with induced delays over text/plain
+- Make sure people are importing from libraries and our methods whenever possible, eg on viewability or accessing navigator
+- Bidder params should always only override that information coming on the request; bidders should never make someone specify something that is generally available in an ortb2 field on the request in bidder params unless they need an override.
+- Bidders asking for storage access and setting an id in local storage redundant with the shared id is discouraged, they should document why they need to do this odious behavior
+- Submodules need to register in submodules.json
+- No one should be accessing navigator from vendor modules, if navigator needs to be accessed it should be in a common method or library
+- Low priority calls should be import ajax method and use fetch keepalive; they shouldnt use trigger pixel when it can be avoided or fail to specify keepalive.
