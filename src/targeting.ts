@@ -177,8 +177,6 @@ type TargetingValueLists = TargetingMap<string[]>;
 type TargetingArray = ByAdUnit<TargetingValueLists[]>[];
 
 type AdUnitPredicate = (adUnitCode: AdUnitCode) => boolean;
-// Use `any` to avoid requiring GPT typings in consuming projects.
-// The runtime behavior still depends on GPT being present on `window.googletag`.
 export type SlotMatchingFn = (slot: any) => AdUnitPredicate;
 
 declare module './events' {
