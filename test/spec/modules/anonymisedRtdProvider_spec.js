@@ -93,7 +93,7 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      const expected = 'https://static.anonymised.io/light/loader.js?ref=prebid';
+      const expected = `https://static.anonymised.io/light/loader.js?ref=prebid&d=${window.location.hostname}`;
       const expectedTagConfig = {
         idw_client_id: 'testId'
       };
