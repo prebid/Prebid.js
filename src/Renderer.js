@@ -16,9 +16,6 @@ const moduleCode = 'outstream';
  * be used to render that bid unless the Publisher overrides them.
  */
 
-/**
- * @param {{}} options
- */
 export function Renderer(options) {
   const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
   this.url = url;
