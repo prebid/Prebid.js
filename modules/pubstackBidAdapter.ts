@@ -28,6 +28,14 @@ declare module '../src/adUnits' {
   }
 }
 
+type OpenRtbBid = {
+  impid?: string;
+  ttl?: number;
+  exp?: number;
+  netRevenue?: boolean;
+  netrevenue?: boolean;
+};
+
 type GetUserSyncFn = (
   syncOptions: {
     iframeEnabled: boolean;
@@ -112,7 +120,7 @@ const buildRequests = (
   };
 };
 
-const mapResponseBidsByImpId = (responseBody) => new Map(
+const mapResponseBidsByImpId = (responseBody) => new Map<string, OpenRtbBid>(
   (responseBody?.seatbid ?? [])
     .flatMap(seatBid => seatBid?.bid ?? [])
     .filter(bid => bid?.impid)
