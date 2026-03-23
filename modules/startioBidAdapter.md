@@ -25,7 +25,7 @@ var adUnits = [
         bidder: 'startio',
         params: {
           // REQUIRED - Publisher Account ID
-          accountId: 'your-account-id',
+          publisherId: 'your-account-id',
 
           // OPTIONAL - Enable test ads
           testAdsEnabled: true
@@ -58,7 +58,7 @@ var videoAdUnits = [
       {
         bidder: 'startio',
         params: {
-          accountId: 'your-account-id',
+          publisherId: 'your-account-id',
           testAdsEnabled: true
         }
       }
@@ -85,7 +85,7 @@ var nativeAdUnits = [
       {
         bidder: 'startio',
         params: {
-          accountId: 'your-account-id',
+          publisherId: 'your-account-id',
           testAdsEnabled: true
         }
       }
@@ -94,8 +94,32 @@ var nativeAdUnits = [
 ];
 ```
 
+### Prebid Params Enabling User Sync
+
+To enable iframe-based user syncing for Start.io, include the `filterSettings` configuration in your `userSync` setup:
+
+```javascript
+pbjs.setConfig({
+    userSync: {
+        userIds: [{
+            name: 'startioId',
+            storage: {
+                type: 'cookie&html5',
+                name: 'startioId'
+            }
+        }],
+        filterSettings: {
+            iframe: {
+                bidders: ['startio'],
+                filter: 'include'
+            }
+        }
+    }
+});
+```
+
 # Additional Notes
 - The adapter processes requests via OpenRTB 2.5 standards.
-- Ensure that the `accountId` parameter is set correctly for your integration.
+- Ensure that the `publisherId` parameter is set correctly for your integration.
 - Test ads can be enabled using `testAdsEnabled: true` during development.
 - The adapter supports multiple ad formats, allowing publishers to serve banners, native ads and instream video ads seamlessly.

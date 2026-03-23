@@ -7,35 +7,35 @@ class RenderingContextProperty extends string {
   
   RenderingContextProperty() {
       
-      ( this = "getExtension"  and weight = 24.59  and contextType = "webgl" )
+      ( this = "getExtension"  and weight = 27.6  and contextType = "webgl" )
        or 
-      ( this = "getParameter"  and weight = 28.11  and contextType = "webgl" )
+      ( this = "getParameter"  and weight = 31.28  and contextType = "webgl" )
        or 
-      ( this = "getImageData"  and weight = 62.25  and contextType = "2d" )
+      ( this = "getImageData"  and weight = 60.84  and contextType = "2d" )
        or 
-      ( this = "measureText"  and weight = 43.06  and contextType = "2d" )
+      ( this = "measureText"  and weight = 44.27  and contextType = "2d" )
        or 
-      ( this = "getParameter"  and weight = 67.61  and contextType = "webgl2" )
+      ( this = "getParameter"  and weight = 73.63  and contextType = "webgl2" )
        or 
-      ( this = "getShaderPrecisionFormat"  and weight = 138.74  and contextType = "webgl2" )
+      ( this = "getShaderPrecisionFormat"  and weight = 127.95  and contextType = "webgl2" )
        or 
-      ( this = "getExtension"  and weight = 69.66  and contextType = "webgl2" )
+      ( this = "getExtension"  and weight = 75.92  and contextType = "webgl2" )
        or 
-      ( this = "getContextAttributes"  and weight = 201.04  and contextType = "webgl2" )
+      ( this = "getContextAttributes"  and weight = 190.36  and contextType = "webgl2" )
        or 
-      ( this = "getSupportedExtensions"  and weight = 360.36  and contextType = "webgl2" )
+      ( this = "getSupportedExtensions"  and weight = 326.27  and contextType = "webgl2" )
        or 
-      ( this = "readPixels"  and weight = 24.33  and contextType = "webgl" )
+      ( this = "readPixels"  and weight = 23.37  and contextType = "webgl" )
        or 
-      ( this = "getShaderPrecisionFormat"  and weight = 1347.35  and contextType = "webgl" )
+      ( this = "getSupportedExtensions"  and weight = 1306.3  and contextType = "webgl" )
        or 
-      ( this = "getContextAttributes"  and weight = 2411.38  and contextType = "webgl" )
+      ( this = "isPointInPath"  and weight = 4937.89  and contextType = "2d" )
        or 
-      ( this = "getSupportedExtensions"  and weight = 1484.82  and contextType = "webgl" )
+      ( this = "getShaderPrecisionFormat"  and weight = 1246.15  and contextType = "webgl" )
        or 
-      ( this = "isPointInPath"  and weight = 4255.55  and contextType = "2d" )
+      ( this = "getContextAttributes"  and weight = 2101.33  and contextType = "webgl" )
        or 
-      ( this = "readPixels"  and weight = 1004.16  and contextType = "webgl2" )
+      ( this = "readPixels"  and weight = 865.74  and contextType = "webgl2" )
   }  
 
   float getWeight() {
