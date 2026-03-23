@@ -696,6 +696,24 @@ describe('adqueryBidAdapter', function () {
       expect(req_video.url).eq('https://bidder.adquery.io/openrtb2/auction2')
     })
 
+    it('url must be auction2 for instream', function () {
+      const req_video_instream = spec.buildRequests([
+        {
+          ...req_video.data,
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [[640, 360]]
+            }
+          },
+          params: {
+            placementId: 'd30f79cf7fef47bd7a5611719f936539bec0d2e9'
+          }
+        }
+      ], { refererInfo: {} })[0]
+      expect(req_video_instream.url).eq('https://bidder.adquery.io/openrtb2/auction2')
+    })
+
     it('data must have id key', function () {
       expect(req_video.data.id).not.be.null;
     })

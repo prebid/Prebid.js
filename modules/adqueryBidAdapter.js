@@ -63,7 +63,7 @@ export const spec = {
 
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const bid = bidRequests[i];
-      const isVideo = bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream';
+      const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context);
 
       let requestUrl = adqueryRequestUrl;
 
