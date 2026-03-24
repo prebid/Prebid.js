@@ -564,13 +564,17 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
         return {
           method: 'POST',
           url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
-          data: chunk
+          data: {
+            bids: chunk
+          }
         };
       } else {
         return {
           method: 'POST',
           url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
-          data: chunk
+          data: {
+            bids: chunk
+          }
         };
       }
     });
