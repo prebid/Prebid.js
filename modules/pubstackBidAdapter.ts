@@ -33,7 +33,6 @@ type OpenRtbBid = {
   ttl?: number;
   exp?: number;
   netRevenue?: boolean;
-  netrevenue?: boolean;
 };
 
 type GetUserSyncFn = (
