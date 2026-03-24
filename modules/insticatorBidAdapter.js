@@ -1,8 +1,8 @@
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb';
@@ -50,7 +50,7 @@ const ORTB_SITE_FIRST_PARTY_DATA = {
   'keywords': v => typeof v === 'string',
 }
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 config.setDefaults({
   insticator: {
@@ -115,7 +115,7 @@ function buildVideo(bidRequest) {
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
 
   if (!h && !w && playerSize) {
-    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
+    ({ w, h } = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
@@ -214,7 +214,7 @@ function buildImpression(bidRequest) {
         } else {
           const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
           if (sizes && sizes.length > 0) {
-            const {w: width, h: height} = sizes[0];
+            const { w: width, h: height } = sizes[0];
             _size = [width, height];
           }
         }
@@ -414,7 +414,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (params) {
     req.ext = {
-      insticator: {...req.ext.insticator, ...params},
+      insticator: { ...req.ext.insticator, ...params },
     };
   }
 
@@ -511,7 +511,7 @@ function buildBid(bid, bidderRequest, seatbid) {
     mediaType: mediaType,
     ad: bid.adm,
     adUnitCode: originalBid?.adUnitCode,
-    ...(Object.keys(meta).length > 0 ? {meta} : {})
+    ...(Object.keys(meta).length > 0 ? { meta } : {})
   };
 
   // ORTB 2.6: Add deal ID
@@ -629,7 +629,7 @@ function validateVideo(bid) {
   const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
 
   if (!h && !w && playerSize) {
-    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
+    ({ w, h } = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
 
   const videoSize = [w, h];
@@ -693,7 +693,7 @@ function parsePlayerSizeToWidthHeight(playerSize, w, h) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
     return (

@@ -1,4 +1,4 @@
-import {delayIfPrerendering} from '../../../src/utils/prerendering.js';
+import { delayIfPrerendering } from '../../../src/utils/prerendering.js';
 
 describe('delayIfPrerendering', () => {
   let sandbox, enabled, ran;

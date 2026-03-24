@@ -70,12 +70,12 @@ describe('optidigitalAdapterTests', function () {
           },
           'mediaTypes': {
             'banner': {
-              'sizes': [ [ 300, 250 ], [ 300, 600 ] ]
+              'sizes': [[300, 250], [300, 600]]
             }
           },
           'adUnitCode': 'div-gpt-ad-1460505748561-0',
           'transactionId': '0cb56262-9637-474d-a572-86fa860fd8b7',
-          'sizes': [ [ 300, 250 ], [ 300, 600 ] ],
+          'sizes': [[300, 250], [300, 600]],
           'bidId': '245d89f17f289f',
           'bidderRequestId': '199d7ffafa1e91',
           'auctionId': 'b66f01cd-3441-4403-99fa-d8062e795933',
@@ -663,27 +663,27 @@ describe('optidigitalAdapterTests', function () {
     });
 
     it('should return appropriate URL with GDPR equals to 1 and GDPR consent', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo`
       }]);
     });
     it('should return appropriate URL with GDPR equals to 0 and GDPR consent', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=0&gdpr_consent=foo`
       }]);
     });
     it('should return appropriate URL with GDPR equals to 1 and no consent', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=`
       }]);
     });
     it('should return appropriate URL with GDPR equals to 1, GDPR consent and US Privacy consent', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, 'fooUsp')).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, 'fooUsp')).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp`
       }]);
     });
     it('should return appropriate URL with GDPR equals to 1, GDPR consent, US Privacy consent and GPP consent', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, 'fooUsp', {gppString: 'fooGpp', applicableSections: [7]})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, 'fooUsp', { gppString: 'fooGpp', applicableSections: [7] })).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp&gpp=fooGpp&gpp_sid=7`
       }]);
     });

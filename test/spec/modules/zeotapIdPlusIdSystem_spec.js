@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {attachIdSystem} from 'modules/userId/index.js';
-import {getStorage, storage, zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
+import { expect } from 'chai';
+import { attachIdSystem } from 'modules/userId/index.js';
+import { getStorage, storage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 import * as storageManager from 'src/storageManager.js';
-import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 import 'src/prebid.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
@@ -29,7 +29,7 @@ describe('Zeotap ID System', function() {
     it('when a stored Zeotap ID exists it is added to bids', function() {
       getStorage();
       expect(getStorageManagerSpy.calledOnce).to.be.true;
-      sinon.assert.calledWith(getStorageManagerSpy, {moduleType: MODULE_TYPE_UID, moduleName: 'zeotapIdPlus'});
+      sinon.assert.calledWith(getStorageManagerSpy, { moduleType: MODULE_TYPE_UID, moduleName: 'zeotapIdPlus' });
     });
   });
 

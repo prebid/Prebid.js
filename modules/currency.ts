@@ -1,17 +1,17 @@
-import {deepSetValue, logError, logInfo, logMessage, logWarn} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { deepSetValue, logError, logInfo, logMessage, logWarn } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getHook} from '../src/hook.js';
-import {defer} from '../src/utils/promise.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import {on as onEvent, off as offEvent} from '../src/events.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getHook } from '../src/hook.js';
+import { defer } from '../src/utils/promise.js';
+import { registerOrtbProcessor, REQUEST } from '../src/pbjsORTB.js';
+import { timedAuctionHook, timedBidResponseHook } from '../src/utils/perfMetrics.js';
+import { on as onEvent, off as offEvent } from '../src/events.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import type {Currency, BidderCode} from "../src/types/common.d.ts";
-import {addApiMethod} from "../src/prebid.ts";
+import type { Currency, BidderCode } from "../src/types/common.d.ts";
+import { addApiMethod } from "../src/prebid.ts";
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -218,10 +218,10 @@ function initCurrency() {
 
 export function resetCurrency() {
   if (currencySupportEnabled) {
-    getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
-    getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
-    enrichFPD.getHooks({hook: enrichFPDHook}).remove();
-    getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
+    getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
+    getHook('responsesReady').getHooks({ hook: responsesReadyHook }).remove();
+    enrichFPD.getHooks({ hook: enrichFPDHook }).remove();
+    getHook('requestBids').getHooks({ hook: requestBidsHook }).remove();
     offEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
     offEvent(EVENTS.AUCTION_INIT, loadRates);
     delete getGlobal().convertCurrency;
@@ -287,7 +287,7 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
   }
 });
 
-function rejectOnAuctionTimeout({auctionId}) {
+function rejectOnAuctionTimeout({ auctionId }) {
   bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
     if (bid.auctionId === auctionId) {
       reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
@@ -395,7 +395,7 @@ export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
   }
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
+registerOrtbProcessor({ type: REQUEST, name: 'currency', fn: setOrtbCurrency });
 
 function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {

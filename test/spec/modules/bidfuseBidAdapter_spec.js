@@ -287,7 +287,7 @@ describe('BidfuseBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -296,7 +296,7 @@ describe('BidfuseBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=0'
@@ -304,7 +304,7 @@ describe('BidfuseBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse]);
 
       expect(result).to.deep.equal([{
         'url': 'https://syncbf.bidfuse.com/image?pbjs=1&coppa=0',
@@ -316,7 +316,7 @@ describe('BidfuseBidAdapter', function () {
       config.setConfig({
         coppa: 1
       });
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=1'
@@ -334,7 +334,7 @@ describe('BidfuseBidAdapter', function () {
         applicableSections: [7]
       }
 
-      const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse], gdprConsent, uspConsent, gppConsent);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
         'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&ccpa_consent=usp_string&gpp=gpp_string&gpp_sid=7&coppa=1',

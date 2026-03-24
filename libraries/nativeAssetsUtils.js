@@ -87,9 +87,9 @@ export function buildNativeRequest(nativeParams) {
   if (nativeParams) {
     Object.keys(nativeParams).forEach((key) => {
       if (NATIVE_PARAMS[key]) {
-        const {name, type, id} = NATIVE_PARAMS[key];
-        const assetObj = type ? {type} : {};
-        let {len, sizes, required, aspect_ratios: aRatios} = nativeParams[key];
+        const { name, type, id } = NATIVE_PARAMS[key];
+        const assetObj = type ? { type } : {};
+        let { len, sizes, required, aspect_ratios: aRatios } = nativeParams[key];
         if (len) {
           assetObj.len = len;
         }
@@ -105,7 +105,7 @@ export function buildNativeRequest(nativeParams) {
           assetObj.w = sizes[0];
           assetObj.h = sizes[1];
         }
-        const asset = {required: required ? 1 : 0, id};
+        const asset = { required: required ? 1 : 0, id };
         asset[name] = assetObj;
         assets.push(asset);
       }
@@ -123,7 +123,7 @@ export function buildNativeRequest(nativeParams) {
 }
 
 export function parseNativeResponse(native) {
-  const {assets, link, imptrackers, jstracker} = native;
+  const { assets, link, imptrackers, jstracker } = native;
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || [],
@@ -132,7 +132,7 @@ export function parseNativeResponse(native) {
   };
 
   (assets || []).forEach((asset) => {
-    const {id, img, data, title} = asset;
+    const { id, img, data, title } = asset;
     const key = NATIVE_ID_MAP[id];
     if (key) {
       if (!isEmpty(title)) {

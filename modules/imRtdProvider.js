@@ -4,10 +4,10 @@
  * @module modules/imRtdProvider
  * @requires module:modules/realTimeData
  */
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js'
-import {getStorageManager} from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js'
+import { getStorageManager } from '../src/storageManager.js';
 import {
   deepSetValue,
   deepAccess,
@@ -17,8 +17,8 @@ import {
   logInfo,
   isFn
 } from '../src/utils.js'
-import {submodule} from '../src/hook.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -32,7 +32,7 @@ const segmentsMaxAge = 3600000; // 1 hour (30 * 60 * 1000)
 const uidMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const vidMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: submoduleName});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: submoduleName });
 
 function setImDataInCookie(value) {
   storage.setCookie(
@@ -103,7 +103,7 @@ export function getCustomBidderFunction(config, bidder) {
  */
 export function setRealTimeData(bidConfig, moduleConfig, data) {
   const adUnits = bidConfig.adUnits || getGlobal().adUnits;
-  const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
+  const utils = { deepSetValue, deepAccess, logInfo, logError, mergeDeep };
 
   if (data.im_segments) {
     const segments = getSegments(data.im_segments, moduleConfig);
@@ -112,7 +112,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     deepSetValue(ortb2, 'user.ext.data.im_uid', data.im_uid);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
-      window.googletag = window.googletag || {cmd: []};
+      window.googletag = window.googletag || { cmd: [] };
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
         window.googletag.pubads().setTargeting('im_segments', segments);
@@ -165,7 +165,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
   }
 
   if (sids !== null) {
-    setRealTimeData(reqBidsConfigObj, moduleConfig, {im_uid: uid, im_segments: parsedSids});
+    setRealTimeData(reqBidsConfigObj, moduleConfig, { im_uid: uid, im_segments: parsedSids });
     onDone();
     alreadyDone = true;
   }
@@ -175,7 +175,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
       apiUrl,
       getApiCallback(reqBidsConfigObj, alreadyDone ? undefined : onDone, moduleConfig),
       undefined,
-      {method: 'GET', withCredentials: true}
+      { method: 'GET', withCredentials: true }
     );
   }
 }
@@ -212,7 +212,7 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
         }
 
         if (parsedResponse.segments) {
-          setRealTimeData(reqBidsConfigObj, moduleConfig, {im_uid: parsedResponse.uid, im_segments: parsedResponse.segments});
+          setRealTimeData(reqBidsConfigObj, moduleConfig, { im_uid: parsedResponse.uid, im_segments: parsedResponse.segments });
           storage.setDataInLocalStorage(imRtdLocalName, parsedResponse.segments);
           storage.setDataInLocalStorage(`${imRtdLocalName}_mt`, new Date(timestamp()).toUTCString());
         }
