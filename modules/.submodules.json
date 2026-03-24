@@ -105,6 +105,7 @@
       "mediafilterRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mileRtdProvider",
       "mobianRtdProvider",
       "neuwoRtdProvider",
       "nodalsAiRtdProvider",
