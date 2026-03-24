@@ -21,7 +21,7 @@ import {
 import { DEBUG_MODE, EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
 import adapterManager, { s2sActivityParams } from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
-import { addPaapiConfig, isValid } from '../../src/adapters/bidderFactory.js';
+import { isValid } from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
@@ -459,7 +459,6 @@ export type PbsAnalytics = SeatNonBid & {
 
 declare module '../../src/events' {
   interface Events {
-    [EVENTS.SEAT_NON_BID]: [SeatNonBid];
     [EVENTS.PBS_ANALYTICS]: [PbsAnalytics];
     [EVENTS.BEFORE_PBS_HTTP]: [PbsRequestData];
   }
@@ -497,15 +496,6 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
           const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response)
-          if (seatNonBidData) {
-            events.emit(EVENTS.SEAT_NON_BID, {
-              seatnonbid: response.ext.seatnonbid,
-              auctionId: bidRequests[0].auctionId,
-              requestedBidders,
-              response,
-              adapterMetrics
-            });
-          }
           // pbs analytics event
           if (seatNonBidData || atagData) {
             const data: PbsAnalytics = {
@@ -544,11 +534,6 @@ export function PrebidServer() {
               addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
           }
-        },
-        onFledge: (params) => {
-          config.runWithBidder(params.bidder, () => {
-            addPaapiConfig({ auctionId: bidRequests[0].auctionId, ...params }, { config: params.config });
-          })
         }
       })
     }
@@ -577,7 +562,7 @@ type PbsRequestData = {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, { onResponse, onError, onBid, onFledge }) {
+export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, { onResponse, onError, onBid }) {
   const { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -606,11 +591,8 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
             let result;
             try {
               result = JSON.parse(response);
-              const { bids, paapi } = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+              const { bids } = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
               bids.forEach(onBid);
-              if (paapi) {
-                paapi.forEach(onFledge);
-              }
             } catch (error) {
               logError(error);
             }

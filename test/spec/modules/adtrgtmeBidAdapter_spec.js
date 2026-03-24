@@ -562,7 +562,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
 
       expect(data.device).to.deep.equal({
-        dnt: 0,
+        dnt: 0, // DNT deprecated by W3C; Prebid no longer supports DNT
         ua: navigator.userAgent,
         ip: undefined
       });

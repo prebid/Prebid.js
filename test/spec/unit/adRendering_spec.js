@@ -35,27 +35,6 @@ describe('adRendering', () => {
     sandbox.restore();
   })
 
-  describe('getBidToRender', () => {
-    beforeEach(() => {
-      sandbox.stub(auctionManager, 'findBidByAdId').callsFake(() => 'auction-bid')
-    });
-    it('should default to bid from auctionManager', async () => {
-      await new Promise((resolve) => {
-        getBidToRender('adId', true, (res) => {
-          expect(res).to.eql('auction-bid');
-          sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
-          resolve();
-        })
-      })
-    });
-    it('should, by default, not give up the thread', () => {
-      let ran = false;
-      getBidToRender('adId', true, () => {
-        ran = true;
-      });
-      expect(ran).to.be.true;
-    })
-  })
   describe('getRenderingData', () => {
     let bidResponse;
     beforeEach(() => {

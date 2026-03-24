@@ -28,7 +28,7 @@ import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
-import { isBidUsable, type SlotMatchingFn, targeting } from './targeting.js';
+import { isBidUsable, targeting } from './targeting.js';
 import { hook, wrapHook } from './hook.js';
 import { loadSession } from './debugging.js';
 import { storageCallbacks } from './storageManager.js';
@@ -70,7 +70,7 @@ const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = EVENTS;
+const { REQUEST_BIDS, SET_TARGETING } = EVENTS;
 
 // initialize existing debugging sessions if present
 loadSession();
@@ -610,14 +610,13 @@ addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode);
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param adUnit a single `adUnit.code` or multiple.
- * @param customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
  */
-function setTargetingForGPTAsync(adUnit?: AdUnitCode | AdUnitCode[], customSlotMatching?: SlotMatchingFn) {
+function setTargetingForGPTAsync(adUnit?: AdUnitCode | AdUnitCode[]) {
   if (!isGptPubadsDefined()) {
     logError('window.googletag is not defined on the page');
     return;
   }
-  targeting.setTargetingForGPT(adUnit, customSlotMatching);
+  targeting.setTargetingForGPT(adUnit);
 }
 addApiMethod('setTargetingForGPTAsync', setTargetingForGPTAsync);
 
@@ -954,21 +953,12 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
 // This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that tcfControl module is added or not
 requestBids.before(executeCallbacks, 49);
 
-declare module './events' {
-  interface Events {
-    /**
-     * Fired when `.addAdUniuts` is called.
-     */
-    [ADD_AD_UNITS]: [];
-  }
-}
 /**
  * Add ad unit(s)
  * @param adUnits
  */
 function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
   pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]))
-  events.emit(ADD_AD_UNITS);
 }
 
 addApiMethod('addAdUnits', addAdUnits);
