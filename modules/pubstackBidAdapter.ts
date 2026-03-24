@@ -16,6 +16,8 @@ const GVLID = 1408;
 const REQUEST_URL = 'https://node.pbstck.com/openrtb2/auction';
 const COOKIESYNC_IFRAME_URL = 'https://cdn.pbstck.com/async_usersync.html';
 const COOKIESYNC_PIXEL_URL = 'https://cdn.pbstck.com/async_usersync.png';
+const DEFAULT_TTL = 300;
+const DEFAULT_NET_REVENUE = true;
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -25,6 +27,13 @@ declare module '../src/adUnits' {
     };
   }
 }
+
+type OpenRtbBid = {
+  impid?: string;
+  ttl?: number;
+  exp?: number;
+  netRevenue?: boolean;
+};
 
 type GetUserSyncFn = (
   syncOptions: {
@@ -110,11 +119,37 @@ const buildRequests = (
   };
 };
 
+const mapResponseBidsByImpId = (responseBody) => new Map<string, OpenRtbBid>(
+  (responseBody?.seatbid ?? [])
+    .flatMap(seatBid => seatBid?.bid ?? [])
+    .filter(bid => bid?.impid)
+    .map(bid => [bid.impid, bid]),
+);
+
+const enrichBidResponse = (adapterResponse, responseBody) => {
+  const rawBidsByImpId = mapResponseBidsByImpId(responseBody);
+
+  return {
+    ...adapterResponse,
+    bids: (adapterResponse?.bids ?? []).map(bid => {
+      const rawBid = rawBidsByImpId.get(bid.requestId);
+      return {
+        ...bid,
+        ttl: bid.ttl ?? rawBid?.ttl ?? rawBid?.exp ?? DEFAULT_TTL,
+        netRevenue: bid.netRevenue ?? rawBid?.netRevenue ?? DEFAULT_NET_REVENUE,
+      };
+    }),
+  };
+};
+
 const interpretResponse = (serverResponse, bidRequest) => {
   if (!serverResponse?.body) {
     return [];
   }
-  return converter.fromORTB({ request: bidRequest.data, response: serverResponse.body });
+  return enrichBidResponse(
+    converter.fromORTB({ request: bidRequest.data, response: serverResponse.body }),
+    serverResponse.body
+  );
 };
 
 const getUserSyncs: GetUserSyncFn = (syncOptions, _serverResponses, gdprConsent, uspConsent, gppConsent) => {
