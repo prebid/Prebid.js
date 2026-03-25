@@ -107,6 +107,24 @@ describe('Rediads ID System', function () {
       expect(result).to.be.undefined;
     });
 
+    it('should not enforce gdpr gating when gdprApplies is false', function () {
+      const result = rediadsIdSubmodule.getId({}, {
+        gdpr: {
+          gdprApplies: false,
+          consentString: 'CONSENT',
+          vendorData: {
+            purpose: {
+              consents: {
+                1: false
+              }
+            }
+          }
+        }
+      });
+
+      expect(result.id.id).to.equal('ruid_11111111-2222-4333-8444-555555555555');
+    });
+
     it('should preserve the id but disable eids when usp opts out', function () {
       const result = rediadsIdSubmodule.getId({}, {
         usp: '1YYN'
@@ -162,6 +180,21 @@ describe('Rediads ID System', function () {
       }, new Map(Object.entries(rediadsIdSubmodule.eids)));
 
       expect(eids).to.eql([]);
+    });
+
+    it('should not suppress eids based on gpp applicable sections alone', function () {
+      const result = rediadsIdSubmodule.getId({}, {
+        gpp: {
+          gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+          applicableSections: [7]
+        }
+      });
+
+      const decoded = rediadsIdSubmodule.decode(result.id);
+      const eids = createEidsArray(decoded, new Map(Object.entries(rediadsIdSubmodule.eids)));
+
+      expect(eids).to.have.length(1);
+      expect(eids[0].source).to.equal('rediads.com');
     });
   });
 });

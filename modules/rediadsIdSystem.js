@@ -21,7 +21,6 @@ const DEFAULT_SOURCE = 'rediads.com';
 const DEFAULT_ATYPE = 1;
 const DEFAULT_EXPIRES_DAYS = 30;
 const DEFAULT_REFRESH_SECONDS = 3600;
-const GPP_OPT_OUT_SECTIONS = [7, 8, 9, 10, 11, 12];
 
 function normalizeStoredId(storedId) {
   if (isPlainObject(storedId)) {
@@ -58,7 +57,7 @@ function canWriteStorage(consentData = {}) {
   }
 
   const gdprConsent = consentData.gdpr;
-  if (gdprConsent?.gdprApplies || gdprConsent?.vendorData || gdprConsent?.consentString) {
+  if (gdprConsent?.gdprApplies === true) {
     return isStr(gdprConsent?.consentString) &&
       gdprConsent.consentString.length > 0 &&
       hasTcfPurpose1Consent(gdprConsent);
@@ -74,10 +73,6 @@ function canShareId(consentData = {}) {
 
   if (isStr(consentData.usp) && consentData.usp.charAt(2) === 'Y') {
     return false;
-  }
-
-  if (Array.isArray(consentData.gpp?.applicableSections)) {
-    return !consentData.gpp.applicableSections.some((section) => GPP_OPT_OUT_SECTIONS.includes(section));
   }
 
   return true;
