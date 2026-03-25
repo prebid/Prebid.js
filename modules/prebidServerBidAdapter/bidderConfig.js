@@ -138,6 +138,7 @@ function replaceEids({ global, bidder }, requestedBidders) {
     consolidated.permissions.forEach((permission) => {
       permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder));
     });
+    consolidated.permissions = consolidated.permissions.filter(p => p.bidders.length > 0);
   }
   if (consolidated.permissions.length) {
     deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);
