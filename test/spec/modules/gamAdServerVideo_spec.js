@@ -734,7 +734,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should substitue vast ad tag uri in gam wrapper with blob content in data uri format', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
+    config.setConfig({ cache: { useLocal: true, url: 'https://prebid-test-cache-server.org' } });
     const url = 'https://pubads.g.doubleclick.net/gampad/ads'
     const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>';
     const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
@@ -792,7 +792,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should return unmodified gam vast wrapper if it doesn\'nt contain locally cached uuid', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
+    config.setConfig({ cache: { useLocal: true, url: 'https://prebid-test-cache-server.org' } });
     const uuidNotPresentInCache = '4536229c-eddb-45b3-a919-89d889e925aa';
     const uuidPresentInCache = '64fcdc86-5325-4750-bc60-02f63b23175a';
     const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuidNotPresentInCache;
@@ -820,10 +820,9 @@ describe('The DFP video support module', function () {
   });
 
   it('should return unmodified gam vast wrapper if it contains more than 1 saved uuids', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
+    config.setConfig({ cache: { useLocal: true, url: 'https://prebid-test-cache-server.org' } });
     const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa';
-    const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a';
-    const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`
+    const bidCacheUrl = `https://bid-external-cache.org/cache?uuid=${uuid1}`
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -836,7 +835,6 @@ describe('The DFP video support module', function () {
     );
     const localCacheMap = new Map([
       [uuid1, 'blob:http://localhost:9999/uri'],
-      [uuid2, 'blob:http://localhost:9999/uri'],
     ]);
     server.respondWith(gamWrapper);
 
@@ -851,7 +849,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should return returned unmodified gam vast wrapper if exception has been thrown', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
+    config.setConfig({ cache: { useLocal: true, url: 'https://prebid-test-cache-server.org' } });
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -861,6 +859,28 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
+    );
+    server.respondWith(gamWrapper);
+    getVastXml({}, null) // exception thrown when passing null as localCacheMap
+      .then((finalGamWrapper) => {
+        expect(finalGamWrapper).to.deep.eql(gamWrapper);
+        done();
+      })
+      .finally(config.resetConfig);
+    server.respond();
+  });
+
+  it('should return unmodified gam vast wrapper if it contains a url that does not start with the cache url', (done) => {
+    config.setConfig({ cache: { useLocal: true, url: 'https://prebid-test-cache-server.org' } });
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[https://endpoint.com]]></VASTAdTagURI>` +
+            `</Wrapper>` +
+         `</Ad>` +
+        `</VAST>`
     );
     server.respondWith(gamWrapper);
     getVastXml({}, null) // exception thrown when passing null as localCacheMap

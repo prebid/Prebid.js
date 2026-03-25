@@ -216,6 +216,10 @@ export function getCacheUrl(id) {
 }
 
 export const storeLocally = (bid) => {
+  // When the bid is already stored in a remote cache, no need to store it locally
+  if (bid.vastUrl) {
+    return;
+  }
   const vastXml = getVastXml(bid);
   const bidVastUrl = URL.createObjectURL(new Blob([vastXml], { type: 'text/xml' }));
 
