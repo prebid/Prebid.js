@@ -198,7 +198,7 @@ const sendLog = (data, percentage = 0.0001) => {
       withCredentials: false,
       method: 'POST',
       crossOrigin: true,
-      contentType: 'application/json'
+      contentType: 'text/plain'
     })
   } catch (error) {
     // Silent catch
@@ -221,7 +221,7 @@ export const spec = {
       data: data,
       options: {
         withCredentials: false,
-        contentType: 'application/json',
+        contentType: 'text/plain',
       }
     };
   },
