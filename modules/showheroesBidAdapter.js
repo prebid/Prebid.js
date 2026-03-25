@@ -11,7 +11,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction/';
-const BIDDER_CODE = 'showheroes-bs';
+const BIDDER_CODE = 'showheroes';
 const TTL = 300;
 
 const converter = ortbConverter({
@@ -75,7 +75,7 @@ const GVLID = 111;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['showheroesBs'],
+  aliases: ['showheroesBs', 'showheroes-bs'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: (bid) => {
     return !!bid.params.unitId;
