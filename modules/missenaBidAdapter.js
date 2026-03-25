@@ -157,6 +157,7 @@ export const spec = {
     serverResponses,
     gdprConsent = {},
     uspConsent,
+    gppConsent,
   ) {
     if (!syncOptions.iframeEnabled || !this.msnaApiKey) {
       return [];
@@ -171,6 +172,13 @@ export const spec = {
     }
     if (uspConsent) {
       url.searchParams.append('us_privacy', uspConsent);
+    }
+    if (gppConsent?.gppString) {
+      url.searchParams.append('gpp', gppConsent.gppString);
+      url.searchParams.append(
+        'gpp_sid',
+        (gppConsent.applicableSections || []).join(','),
+      );
     }
 
     return [{ type: 'iframe', url: url.href }];

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/getintentBidAdapter.js'
-import {deepClone} from 'src/utils';
+import { deepClone } from 'src/utils';
 
 describe('GetIntent Adapter Tests:', function () {
   const bidRequests = [{
@@ -133,7 +133,7 @@ describe('GetIntent Adapter Tests:', function () {
     const bidRequestWithFloor = deepClone(bidRequests[0]);
     bidRequestWithFloor.params.floor = 10
     bidRequestWithFloor.params.cur = 'USD'
-    const getFloorResponse = {floor: 5, currency: 'EUR'};
+    const getFloorResponse = { floor: 5, currency: 'EUR' };
     bidRequestWithFloor.getFloor = () => getFloorResponse;
 
     const serverRequests = spec.buildRequests([bidRequestWithFloor]);

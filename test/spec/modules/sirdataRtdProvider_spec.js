@@ -13,11 +13,11 @@ import {
   setUidInStorage,
   sirdataSubmodule
 } from 'modules/sirdataRtdProvider.js';
-import {expect} from 'chai';
-import {deepSetValue} from 'src/utils.js';
-import {server} from 'test/mocks/xhr.js';
+import { expect } from 'chai';
+import { deepSetValue } from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('sirdataRtdProvider', function () {
   describe('sirdata Submodule init', function () {
@@ -62,16 +62,16 @@ describe('sirdataRtdProvider', function () {
     it('sets Id in Storage', function () {
       setUidInStorage('123456789');
       const val = getUidFromStorage();
-      expect(val).to.deep.equal([{source: 'sddan.com', uids: [{id: '123456789', atype: 1}]}]);
+      expect(val).to.deep.equal([{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }] }]);
     });
   });
 
   describe('mergeEuidsArrays', function () {
     it('merges Euids Arrays', function () {
-      const object1 = [{source: 'sddan.com', uids: [{id: '123456789', atype: 1}]}];
-      const object2 = [{source: 'sddan.com', uids: [{id: '987654321', atype: 1}]}];
+      const object1 = [{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }] }];
+      const object2 = [{ source: 'sddan.com', uids: [{ id: '987654321', atype: 1 }] }];
       const object3 = mergeEuidsArrays(object1, object2);
-      expect(object3).to.deep.equal([{source: 'sddan.com', uids: [{id: '123456789', atype: 1}, {id: '987654321', atype: 1}]}]);
+      expect(object3).to.deep.equal([{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }, { id: '987654321', atype: 1 }] }]);
     });
   });
 
@@ -156,7 +156,7 @@ describe('sirdataRtdProvider', function () {
 
       const firstData = {
         segments: [111111, 222222],
-        contextual_categories: {'333333': 100},
+        contextual_categories: { '333333': 100 },
         'segtaxid': null,
         'cattaxid': null,
         'shared_taxonomy': {
@@ -164,7 +164,7 @@ describe('sirdataRtdProvider', function () {
             'segments': [444444, 555555],
             'segtaxid': null,
             'cattaxid': null,
-            'contextual_categories': {'666666': 100}
+            'contextual_categories': { '666666': 100 }
           }
         },
         'global_taxonomy': {
@@ -172,7 +172,7 @@ describe('sirdataRtdProvider', function () {
             'segments': [123, 234],
             'segtaxid': 4,
             'cattaxid': 7,
-            'contextual_categories': {'345': 100, '456': 100}
+            'contextual_categories': { '345': 100, '456': 100 }
           },
           'sddan_id': '123456789',
           'post_content_token': '987654321'
@@ -231,20 +231,20 @@ describe('sirdataRtdProvider', function () {
             }
           }, {
             bidder: 'proxistore',
-            params: {website: 'demo.sirdata.com', language: 'fr'},
+            params: { website: 'demo.sirdata.com', language: 'fr' },
             adUnitCode: 'HALFPAGE_CENTER_LOADER',
             transactionId: '92ac333a-a569-4827-abf1-01fc9d19278a',
             sizes: [[300, 600]],
             mediaTypes: {
               banner: {
                 filteredSizeConfig: [
-                  {minViewPort: [1600, 0], sizes: [[300, 600]]},
+                  { minViewPort: [1600, 0], sizes: [[300, 600]] },
                 ],
                 sizeConfig: [
-                  {minViewPort: [0, 0], sizes: [[300, 600]]},
-                  {minViewPort: [768, 0], sizes: [[300, 600]]},
-                  {minViewPort: [1200, 0], sizes: [[300, 600]]},
-                  {minViewPort: [1600, 0], sizes: [[300, 600]]},
+                  { minViewPort: [0, 0], sizes: [[300, 600]] },
+                  { minViewPort: [768, 0], sizes: [[300, 600]] },
+                  { minViewPort: [1200, 0], sizes: [[300, 600]] },
+                  { minViewPort: [1600, 0], sizes: [[300, 600]] },
                 ],
                 sizes: [[300, 600]],
               },
@@ -280,19 +280,19 @@ describe('sirdataRtdProvider', function () {
         'segments': [111111, 222222],
         'segtaxid': null,
         'cattaxid': null,
-        'contextual_categories': {'333333': 100},
+        'contextual_categories': { '333333': 100 },
         'shared_taxonomy': {
           '27440': {
             'segments': [444444, 555555],
             'segtaxid': 552,
             'cattaxid': 553,
-            'contextual_categories': {'666666': 100}
+            'contextual_categories': { '666666': 100 }
           },
           '27446': {
             'segments': [777777, 888888],
             'segtaxid': 552,
             'cattaxid': 553,
-            'contextual_categories': {'999999': 100}
+            'contextual_categories': { '999999': 100 }
           }
         },
         'global_taxonomy': {
@@ -300,7 +300,7 @@ describe('sirdataRtdProvider', function () {
             'segments': [123, 234],
             'segtaxid': 4,
             'cattaxid': 7,
-            'contextual_categories': {'345': 100, '456': 100}
+            'contextual_categories': { '345': 100, '456': 100 }
           }
         },
         'sddan_id': '123456789',
@@ -317,8 +317,8 @@ describe('sirdataRtdProvider', function () {
         'sirdata.com'
       );
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment).to.eql([
-        {id: '345'},
-        {id: '456'}
+        { id: '345' },
+        { id: '456' }
       ]);
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].ext.segtax).to.equal(7);
 
@@ -326,8 +326,8 @@ describe('sirdataRtdProvider', function () {
         'sirdata.com'
       );
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.eql([
-        {id: '123'},
-        {id: '234'}
+        { id: '123' },
+        { id: '234' }
       ]);
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
     });

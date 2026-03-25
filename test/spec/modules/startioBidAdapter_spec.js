@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/startioBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
-import {deepClone} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 const DEFAULT_REQUEST_DATA = {
   adUnitCode: 'test-div',
@@ -250,11 +250,11 @@ describe('Prebid Adapter: Startio', function () {
 
     it('should provide coppa', () => {
       let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
-      bidderRequest.ortb2 = {regs: {coppa: 0}};
+      bidderRequest.ortb2 = { regs: { coppa: 0 } };
       let request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
       expect(request.regs.coppa).to.equal(0);
 
-      bidderRequest.ortb2 = {regs: {coppa: 1}};
+      bidderRequest.ortb2 = { regs: { coppa: 1 } };
       request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
       expect(request.regs.coppa).to.equal(1);
     });
@@ -369,5 +369,99 @@ describe('Prebid Adapter: Startio', function () {
         })
       });
     }
+  });
+
+  describe('getUserSyncs', function () {
+    it('should return an iframe sync when iframeEnabled is true', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
+
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.be.a('string');
+    });
+
+    it('should return an empty array when iframeEnabled is false', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false }, []);
+
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('should return an empty array when syncOptions is empty', function () {
+      const syncs = spec.getUserSyncs({}, []);
+
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('should append GDPR consent params to the sync URL', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+      };
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
+
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].url).to.include('gdpr=1');
+      expect(syncs[0].url).to.include('gdpr_consent=BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
+
+    it('should append gdpr=0 when gdprApplies is false', function () {
+      const gdprConsent = {
+        gdprApplies: false,
+        consentString: ''
+      };
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent);
+
+      expect(syncs[0].url).to.include('gdpr=0');
+    });
+
+    it('should append USP consent param to the sync URL', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, '1YNN');
+
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].url).to.include('us_privacy=1YNN');
+    });
+
+    it('should append GPP consent params to the sync URL', function () {
+      const gppConsent = {
+        gppString: 'DBABMA~BAAAAAAAAgA.QA',
+        applicableSections: [7, 8]
+      };
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined, gppConsent);
+
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].url).to.include('gpp=DBABMA~BAAAAAAAAgA.QA');
+      expect(syncs[0].url).to.include('gpp_sid=7,8');
+    });
+
+    it('should append all consent params together when all are provided', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'testConsent'
+      };
+      const uspConsent = '1YNN';
+      const gppConsent = {
+        gppString: 'testGpp',
+        applicableSections: [2]
+      };
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent);
+
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].url).to.include('gdpr=1');
+      expect(syncs[0].url).to.include('gdpr_consent=testConsent');
+      expect(syncs[0].url).to.include('us_privacy=1YNN');
+      expect(syncs[0].url).to.include('gpp=testGpp');
+      expect(syncs[0].url).to.include('gpp_sid=2');
+    });
+
+    it('should not append query string when no consent params are provided', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
+
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].url).to.equal('https://cs.startappnetwork.com/sync?p=m4b8b3y4');
+    });
   });
 });
