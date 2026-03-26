@@ -9,7 +9,7 @@ For integration support, contact prebid@start.io.
 To build Prebid.js with the Start.io User ID submodule and bid adapter, include the following modules:
 
 ```bash
-gulp build --modules=startioBidAdapter,userId,startioIdSystem,consentManagementTcf,consentManagementGpp,consentManagementUsp
+gulp build --modules=startioBidAdapter,userId,startioIdSystem,consentManagementTcf,consentManagementGpp,consentManagementUsp,...
 ```
 
 ### Prebid Params Enabling User Sync
