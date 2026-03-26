@@ -9,7 +9,16 @@ function stripQuery(id) {
 function normalizeId(id) {
   const clean = stripQuery(id)
   if (clean.startsWith('/@fs/')) {
-    return path.normalize(clean.slice(4))
+    const fsPrefixLength = '/@fs/'.length
+    let fsPath = clean.slice(fsPrefixLength)
+    // Normalize /@fs/ UNC and drive-letter paths on Windows.
+    if (fsPath.startsWith('//')) {
+      fsPath = fsPath.slice(1)
+    }
+    if (fsPath.startsWith('/') && /^[A-Za-z]:\//.test(fsPath.slice(1))) {
+      fsPath = fsPath.slice(1)
+    }
+    return path.normalize(fsPath)
   }
   return path.normalize(clean)
 }
