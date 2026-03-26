@@ -93,7 +93,6 @@ describe('coinzillaBidAdapter', function () {
         'cpm': 4.2,
         'creativeId': '12345asdfg',
         'currency': 'EUR',
-        'statusMessage': 'Bid available',
         'requestId': 'bidId123',
         'width': 300,
         'height': 250,

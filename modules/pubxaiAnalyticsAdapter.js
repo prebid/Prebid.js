@@ -136,7 +136,6 @@ const extractBid = (bidResponse) => {
     responseTimestamp: bidResponse.responseTimestamp,
     status: bidResponse.status,
     sizes: parseSizesInput(bidResponse.size).toString(),
-    statusMessage: bidResponse.statusMessage,
     timeToRespond: bidResponse.timeToRespond,
     transactionId: bidResponse.transactionId,
     bidId: bidResponse.bidId || bidResponse.requestId,
