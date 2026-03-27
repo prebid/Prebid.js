@@ -386,6 +386,42 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[0].data).to.not.have.property('extuid');
       });
 
+      it('should set fl_pr when bid.getFloor returns a valid floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 10 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(10);
+      });
+
+      it('should not include fl_pr when bid.getFloor is not a function', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should not include fl_pr when getFloor returns NaN floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 'invalid' }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should pass size * when bid has multiple sizes', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          sizes: [[300, 250], [728, 90]],
+          mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 5.5 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(5.5);
+      });
+
       describe('buildExtuidQuery', function() {
         it('should return tab-separated string when both id5 and imuId exist', function() {
           const result = buildExtuidQuery({ id5: 'test_id5', imuId: 'test_imu' });
