@@ -142,7 +142,10 @@ export function newAuctionManager() {
 
     if (bid && status === BID_STATUS.BID_TARGETING_SET) {
       const auction = getAuction(bid.auctionId);
-      if (auction) auction.setBidTargeting(bid);
+      if (auction) {
+        auction.setBidTargeting(bid);
+        _auctions.refresh();
+      }
     }
   }
 
