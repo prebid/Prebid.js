@@ -38,9 +38,9 @@ export function buildVideoUrl(options) {
   const iu = options.params.iu;
 
   if (isURL.test(iu)) {
-    const urlComponents = parseUrl(iu, {noDecodeWholeURL: true});
+    const urlComponents = parseUrl(iu, { noDecodeWholeURL: true });
 
-    for (const [key, value] of Object.entries({...allTargetingData, ...bid.adserverTargeting, ...defaultParameters})) {
+    for (const [key, value] of Object.entries({ ...allTargetingData, ...bid.adserverTargeting, ...defaultParameters })) {
       if (!urlComponents.search.hasOwnProperty(key)) {
         urlComponents.search[key] = value;
       }

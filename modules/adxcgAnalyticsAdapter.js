@@ -19,7 +19,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
     emptyUrl,
     analyticsType
   }), {
-  track ({eventType, args}) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         adxcgAnalyticsAdapter.context.events.auctionInit = mapAuctionInit(args);
@@ -40,7 +40,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
         adxcgAnalyticsAdapter.context.events.bidResponses.push(mapBidResponse(args, eventType));
         break;
       case EVENTS.BID_WON:
-        const outData2 = {bidWons: mapBidWon(args)};
+        const outData2 = { bidWons: mapBidWon(args) };
         send(outData2);
         break;
       case EVENTS.AUCTION_END:

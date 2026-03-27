@@ -1,7 +1,7 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
-import {execFileSync} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');

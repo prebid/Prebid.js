@@ -9,12 +9,12 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import {ajaxBuilder} from './ajax.js';
-import {config} from './config.js';
-import {auctionManager} from './auctionManager.js';
-import {generateUUID, logError, logWarn} from './utils.js';
-import {addBidToAuction} from './auction.js';
-import type {VideoBid} from "./bidfactory.ts";
+import { ajaxBuilder } from './ajax.js';
+import { config } from './config.js';
+import { auctionManager } from './auctionManager.js';
+import { generateUUID, logError, logWarn } from './utils.js';
+import { addBidToAuction } from './auction.js';
+import type { VideoBid } from "./bidfactory.ts";
 
 /**
  * Might be useful to be configurable in the future
@@ -116,7 +116,7 @@ declare module './config' {
  *
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
-function toStorageRequest(bid, {index = auctionManager.index} = {}) {
+function toStorageRequest(bid, { index = auctionManager.index } = {}) {
   const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
@@ -243,7 +243,7 @@ export function storeBatch(batch) {
       logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`)
     } else {
       cacheIds.forEach((cacheId, i) => {
-        const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
+        const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
@@ -258,7 +258,7 @@ export function storeBatch(batch) {
 
 let batchSize, batchTimeout, cleanupHandler;
 if (FEATURES.VIDEO || FEATURES.AUDIO) {
-  config.getConfig('cache', ({cache}) => {
+  config.getConfig('cache', ({ cache }) => {
     batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
       ? cache.batchSize
       : 1;
@@ -293,7 +293,7 @@ export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
       batches.push([]);
     }
 
-    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
+    batches[batches.length - 1].push({ auctionInstance, bidResponse, afterBidAdded });
 
     if (!debouncing) {
       debouncing = true;

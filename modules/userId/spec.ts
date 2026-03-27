@@ -1,8 +1,8 @@
-import type {BidderCode, StorageDisclosure} from "../../src/types/common";
-import {STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType} from "../../src/storageManager.ts";
-import type {AllConsentData} from "../../src/consentHandler.ts";
-import type {Ext} from '../../src/types/ortb/common';
-import type {ORTBRequest} from "../../src/types/ortb/request";
+import type { BidderCode, StorageDisclosure } from "../../src/types/common";
+import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
+import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { Ext } from '../../src/types/ortb/common';
+import type { ORTBRequest } from "../../src/types/ortb/request";
 
 export type UserIdProvider = string;
 

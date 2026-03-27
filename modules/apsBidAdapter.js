@@ -13,7 +13,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
  */
 
 const GVLID = 793;
-export const ADAPTER_VERSION = '2.0.0';
+export const ADAPTER_VERSION = '2.1.0';
 const BIDDER_CODE = 'aps';
 const AAX_ENDPOINT = 'https://web.ads.aps.amazon-adsystem.com/e/pb/bid';
 const DEFAULT_PREBID_CREATIVE_JS_URL =
@@ -146,6 +146,14 @@ export const converter = ortbConverter({
     };
     request.cur = request.cur ?? ['USD'];
 
+    const agerange = bidderRequest?.ortb2?.regs?.ext?.agerange;
+    if (typeof agerange === 'number') {
+      request.regs = request.regs ?? {};
+      request.regs.ext = request.regs?.ext ?? {};
+      request.regs.ext.agerange = agerange;
+    }
+
+    // Validate and process impressions - fail fast on structural issues
     if (!request.imp || !Array.isArray(request.imp)) {
       return request;
     }

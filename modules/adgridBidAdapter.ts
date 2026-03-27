@@ -80,7 +80,7 @@ const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const data:ORTBRequest = converter.toORTB({bidRequests, bidderRequest})
+  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest })
   const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,

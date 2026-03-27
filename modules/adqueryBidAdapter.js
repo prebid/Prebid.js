@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   buildUrl,
   logInfo,
@@ -328,7 +328,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     videoRequest.id = bid.bidId
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
-    videoRequest.cur = [ currency ]
+    videoRequest.cur = [currency]
 
     let floorInfo;
     if (typeof bid.getFloor === 'function') {

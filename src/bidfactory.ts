@@ -1,12 +1,12 @@
-import {getUniqueIdentifierStr} from './utils.js';
-import type {BidderCode, BidSource, ContextIdentifiers, Currency, Identifier} from "./types/common.d.ts";
-import {MediaType} from "./mediaTypes.ts";
-import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
-import type {EventTrackerResponse} from "./types/ortb/native.d.ts";
-import {Metrics} from "./utils/perfMetrics.ts";
-import {Renderer} from './Renderer.js';
-import {type BID_STATUS} from "./constants.ts";
-import type {DemandChain} from "./types/ortb/ext/dchain.d.ts";
+import { getUniqueIdentifierStr } from './utils.js';
+import type { BidderCode, BidSource, ContextIdentifiers, Currency, Identifier } from "./types/common.d.ts";
+import { MediaType } from "./mediaTypes.ts";
+import type { DSAResponse } from "./types/ortb/ext/dsa.d.ts";
+import type { EventTrackerResponse } from "./types/ortb/native.d.ts";
+import { Metrics } from "./utils/perfMetrics.ts";
+import { Renderer } from './Renderer.js';
+import { type BID_STATUS } from "./constants.ts";
+import type { DemandChain } from "./types/ortb/ext/dchain.d.ts";
 
 type BidIdentifiers = ContextIdentifiers & {
   src: BidSource;
@@ -181,7 +181,7 @@ type AnyBid = _BannerBid | _VideoBid | _NativeBid | _AudioBid;
 // the following adds `property?: undefined` declarations for each property
 // that is in some other format, to avoid requiring type casts
 // every time that property is used
-type NullProps<T> = {[K in keyof T]?: undefined};
+type NullProps<T> = { [K in keyof T]?: undefined };
 type NullBid = NullProps<_BannerBid> & NullProps<_VideoBid> & NullProps<_NativeBid>;
 type ExtendBid<B extends AnyBid> = B & Omit<NullBid, keyof B>;
 
@@ -193,7 +193,7 @@ export type AudioBid = VideoBid;
 export type Bid = BannerBid | VideoBid | NativeBid | AudioBid;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-function Bid({src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
+function Bid({ src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId }: Partial<BidIdentifiers> = {}) {
   var _bidSrc = src;
 
   Object.assign(this, {

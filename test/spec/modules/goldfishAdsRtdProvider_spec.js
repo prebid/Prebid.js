@@ -123,7 +123,7 @@ describe('goldfishAdsRtdProvider is a RTD provider that', function () {
   describe('has an updateUserData that', function () {
     it('properly transforms the response', function () {
       const userData = {
-        segment: [{id: '1'}, {id: '2'}],
+        segment: [{ id: '1' }, { id: '2' }],
         ext: {
           segtax: 4,
         }
@@ -142,7 +142,7 @@ describe('goldfishAdsRtdProvider is a RTD provider that', function () {
       storage.setDataInLocalStorage(DATA_STORAGE_KEY, JSON.stringify({
         targeting: {
           name: 'goldfishads.com',
-          segment: [{id: '1'}, {id: '2'}],
+          segment: [{ id: '1' }, { id: '2' }],
           ext: {
             segtax: 4,
           }
