@@ -491,5 +491,80 @@ describe('InsurAds bid adapter tests', () => {
       const bids = spec.interpretResponse(serverResponse);
       expect(bids).to.have.length(1);
     });
+
+    it('parses multiple bids of different media types', () => {
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: 'imp-banner',
+              price: 0.5,
+              w: 300,
+              h: 250,
+              crid: 'creative-banner',
+              adm: '<div>banner ad</div>',
+              adomain: ['banner.example.com'],
+              ext: { mediaType: 'banner', ssp: 'insurads' }
+            }, {
+              impid: 'imp-video',
+              price: 1.5,
+              w: 640,
+              h: 480,
+              crid: 'creative-video',
+              adm: '<VAST version="3.0"></VAST>',
+              adomain: ['video.example.com'],
+              ext: { mediaType: 'video', ssp: 'insurads' }
+            }, {
+              impid: 'imp-native',
+              price: 0.8,
+              crid: 'creative-native',
+              adm: '{"native":{"assets":[]}}',
+              adomain: ['native.example.com'],
+              ext: { mediaType: 'native', ssp: 'insurads' }
+            }]
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.be.an('array');
+      expect(bids).to.have.length(3);
+      const cpms = bids.map(bid => bid.cpm);
+      expect(cpms).to.include(0.5);
+      expect(cpms).to.include(1.5);
+      expect(cpms).to.include(0.8);
+    });
+
+    it('returns an empty array for an empty or malformed response body', () => {
+      const emptyResponse = { body: {} };
+      const noBodyResponse = {};
+
+      const bidsFromEmpty = spec.interpretResponse(emptyResponse);
+      const bidsFromNoBody = spec.interpretResponse(noBodyResponse);
+
+      expect(bidsFromEmpty).to.be.an('array').that.has.length(0);
+      expect(bidsFromNoBody).to.be.an('array').that.has.length(0);
+    });
+  });
+
+  describe('getUserSyncs()', () => {
+    it('returns an empty array when all user sync types are disabled', () => {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: false
+      };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array').that.has.length(0);
+    });
+
+    it('does not throw and returns an array when at least one sync type is enabled', () => {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: false
+      };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array');
+    });
   });
 });
