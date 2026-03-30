@@ -90,7 +90,6 @@ export const spec = {
     { code: 'oveeo' },
     { code: 'embimedia' },
     { code: 'pgamrtb' }
-    
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
