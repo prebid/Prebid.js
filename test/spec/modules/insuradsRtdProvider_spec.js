@@ -133,31 +133,28 @@ describe('insuradsRtdProvider', function () {
 
       insuradsRtdProvider.init(sampleConfig);
 
-      // Give the promise time to resolve and then verify bid request enrichment
-      setTimeout(() => {
-        const reqBidsConfigObj = {
-          adUnits: [{
-            code: 'ad-unit-1',
-            bids: [
-              {
-                bidder: 'insurads',
-                params: { existing: 'keep' }
-              },
-              {
-                bidder: 'someOtherBidder',
-                params: {}
-              }
-            ]
-          }]
-        };
+      const reqBidsConfigObj = {
+        adUnits: [{
+          code: 'ad-unit-1',
+          bids: [
+            {
+              bidder: 'insurads',
+              params: { existing: 'keep' }
+            },
+            {
+              bidder: 'someOtherBidder',
+              params: {}
+            }
+          ]
+        }]
+      };
 
-        insuradsRtdProvider.getBidRequestData(reqBidsConfigObj, () => {
-          expect(reqBidsConfigObj.adUnits[0].bids[0].params.rtdData).to.deep.equal(sampleKeyValues);
-          expect(reqBidsConfigObj.adUnits[0].bids[0].params.existing).to.equal('keep');
-          expect(reqBidsConfigObj.adUnits[0].bids[1].params.rtdData).to.equal(undefined);
-          done();
-        }, sampleConfig);
-      }, 50);
+      insuradsRtdProvider.getBidRequestData(reqBidsConfigObj, () => {
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.rtdData).to.deep.equal(sampleKeyValues);
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.existing).to.equal('keep');
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params.rtdData).to.equal(undefined);
+        done();
+      }, sampleConfig);
     });
 
     it('should handle API error gracefully', function () {
