@@ -55,5 +55,5 @@ The InsurAds RTD provider:
 
 1. Fetches contextual targeting data from the InsurAds API using your `publicId`
 2. Stores the returned key-values internally
-3. Applies the key-values as targeting data to all ad units in the auction
-4. Enhances ad targeting without requiring additional code changes
+3. Enriches bid requests for the `insurads` bidder by attaching the key-values onto `bid.params.rtdData`
+4. Leaves other bidders unchanged
