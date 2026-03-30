@@ -36,7 +36,7 @@ type InsurAdsBidParams = RequireAtLeastOne<{
   allBids?: boolean;
   customId?: string;
   bidders?: Record<string, unknown>;
-  rtdData?: Record<string, string>;
+  rtdData?: Record<string, unknown>;
 }, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
