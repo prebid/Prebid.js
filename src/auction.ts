@@ -39,7 +39,7 @@ import type { VideoContext } from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
-import {wrapInBids} from "./utils/wrapsInBids.ts";
+import { wrapInBids } from "./utils/wrapsInBids.ts";
 
 const { syncUsers } = userSync;
 
