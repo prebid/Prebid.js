@@ -22,7 +22,8 @@ pbjs.setConfig({
             name: 'insuradsRtd',
             waitForIt: true,
             params: {
-                publicId: 'YOUR_PUBLIC_ID'
+                publicId: 'YOUR_PUBLIC_ID',
+                timeout: 1000
             }
         }]
     }
@@ -35,9 +36,10 @@ pbjs.setConfig({
 | Name              | Type    | Description                                                               | Notes                    |
 |:------------------|:--------|:--------------------------------------------------------------------------|:-------------------------|
 | name              | String  | Real time data module name                                                | Always 'insuradsRtd'     |
-| waitForIt         | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
+| waitForIt         | Boolean | When true, delays the auction until this provider calls back (bounded by `auctionDelay` / `params.timeout`) | Optional. Defaults to false |
 | params            | Object  |                                                                           |                          |
 | params.publicId   | String  | This is the Public ID value obtained from InsurAds                        | Required                 |
+| params.timeout    | Number  | Max time (ms) to wait for the InsurAds API response before continuing the auction without enrichment | Optional. Defaults to 1000 |
 
 ## Testing
 
