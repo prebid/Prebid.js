@@ -63,7 +63,7 @@ export function createRtdProvider(moduleName) {
     const tagConfig = config.params?.tagConfig ? { ...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId } : {};
     delete tagConfig.clientId;
 
-    const tagUrl = config.params.tagUrl ? config.params.tagUrl : `${MARKETING_TAG_URL}?ref=prebid`;
+    const tagUrl = config.params.tagUrl ? config.params.tagUrl : `${MARKETING_TAG_URL}?ref=prebid&d=${window.location.hostname}`;
 
     loadExternalScript(tagUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`);
