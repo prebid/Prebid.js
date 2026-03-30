@@ -29,9 +29,9 @@ import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import { AuctionIndex } from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
-import {useMetrics} from './utils/perfMetrics.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
+import { useMetrics } from './utils/perfMetrics.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
