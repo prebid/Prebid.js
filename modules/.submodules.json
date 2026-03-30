@@ -14,7 +14,6 @@
       "czechAdIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
-      "dmdIdSystem",
       "euidIdSystem",
       "fabrickIdSystem",
       "freepassIdSystem",
@@ -32,6 +31,7 @@
       "kinessoIdSystem",
       "liveIntentIdSystem",
       "lmpIdSystem",
+      "locIdSystem",
       "lockrAIMIdSystem",
       "lotamePanoramaIdSystem",
       "merkleIdSystem",
@@ -49,7 +49,6 @@
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "pubmaticIdSystem",
-      "quantcastIdSystem",
       "rewardedInterestIdSystem",
       "sharedIdSystem",
       "taboolaIdSystem",
@@ -63,10 +62,6 @@
       "verizonMediaIdSystem",
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
-    ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "gamAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
@@ -117,6 +112,7 @@
       "optimeraRtdProvider",
       "overtoneRtdProvider",
       "oxxionRtdProvider",
+      "panxoRtdProvider",
       "permutiveRtdProvider",
       "pubmaticRtdProvider",
       "pubxaiRtdProvider",
@@ -141,10 +137,6 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
-    ],
-    "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
     ]
   }
 }

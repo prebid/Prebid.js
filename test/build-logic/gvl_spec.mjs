@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {describe, it} from 'mocha';
-import {isValidGvlId} from '../../metadata/gvl.mjs';
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+import { isValidGvlId } from '../../metadata/gvl.mjs';
 
 describe('gvl build time checks', () => {
   let gvl;

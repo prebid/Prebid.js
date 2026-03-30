@@ -1,7 +1,9 @@
-import { buildVastWrapper, getVastNode, getAdNode, getWrapperNode, getAdSystemNode,
-  getAdTagUriNode, getErrorNode, getImpressionNode } from 'libraries/video/shared/vastXmlBuilder.js';
+import {
+  buildVastWrapper, getVastNode, getAdNode, getWrapperNode, getAdSystemNode,
+  getAdTagUriNode, getErrorNode, getImpressionNode
+} from 'libraries/video/shared/vastXmlBuilder.js';
 import { expect } from 'chai';
-import {getGlobal} from '../../../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../../../src/prebidGlobal.js';
 
 describe('buildVastWrapper', function () {
   it('should include impression and error nodes when requested', function () {

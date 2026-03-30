@@ -1,4 +1,4 @@
-import oxxionAnalytics, {dereferenceWithoutRenderer} from 'modules/oxxionAnalyticsAdapter.js';
+import oxxionAnalytics, { dereferenceWithoutRenderer } from 'modules/oxxionAnalyticsAdapter.js';
 
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
@@ -324,7 +324,7 @@ describe('Oxxion Analytics', function () {
     });
 
     it('test bidWon', function() {
-      window.OXXION_MODE = {'abtest': true};
+      window.OXXION_MODE = { 'abtest': true };
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics

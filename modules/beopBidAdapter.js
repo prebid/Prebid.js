@@ -27,7 +27,7 @@ const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -192,12 +192,46 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
+function normalizeAdUnitCode(adUnitCode) {
+  if (!adUnitCode || typeof adUnitCode !== 'string') return undefined;
+
+  // Only normalize GPT auto-generated adUnitCodes (div-gpt-ad-*)
+  // For non-GPT codes, return original string unchanged to preserve case
+  if (!/^div-gpt-ad[-_]/i.test(adUnitCode)) {
+    return adUnitCode;
+  }
+
+  // GPT handling: strip prefix and random suffix
+  let slot = adUnitCode;
+  slot = slot.replace(/^div-gpt-ad[-_]?/i, '');
+
+  /**
+   * Remove only long numeric suffixes (likely auto-generated IDs).
+   * Preserve short numeric suffixes as they may be meaningful slot indices.
+   *
+   * Examples removed:
+   *   div-gpt-ad-article_top_123456 → article_top
+   *   div-gpt-ad-sidebar-1678459238475 → sidebar
+   *
+   * Examples preserved:
+   *   div-gpt-ad-topbanner-1 → topbanner-1
+   *   div-gpt-ad-topbanner-2 → topbanner-2
+   */
+  slot = slot.replace(/([_-])\d{6,}$/, '');
+
+  slot = slot.toLowerCase().trim();
+
+  if (slot.length < 3) return undefined;
+
+  return slot;
+}
+
 function beOpRequestSlotsMaker(bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
   const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
+    const floorInfo = bid.getFloor({ currency: publisherCurrency, mediaType: 'banner', size: [1, 1] });
     if (isPlainObject(floorInfo) && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
@@ -211,7 +245,11 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
     nptnid: getValue(bid.params, 'networkPartnerId'),
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
-    name: getBidIdParameter('adUnitCode', bid),
+    name: deepAccess(bid, 'ortb2Imp.ext.gpid') ||
+      deepAccess(bid, 'ortb2Imp.ext.data.adslot') ||
+      deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
+      bid.ortb2Imp?.tagid ||
+      normalizeAdUnitCode(bid.adUnitCode),
     tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),

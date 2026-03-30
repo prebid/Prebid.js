@@ -28,7 +28,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
       if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
       } else if (eventType === EVENTS.AUCTION_INIT) {
-        Object.assign(events, {bids: []});
+        Object.assign(events, { bids: [] });
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
         adUnitMap.set(args.auctionId, args.adUnits);

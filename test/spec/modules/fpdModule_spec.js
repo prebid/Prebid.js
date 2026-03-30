@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {registerSubmodules, reset, startAuctionHook} from 'modules/fpdModule/index.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { registerSubmodules, reset, startAuctionHook } from 'modules/fpdModule/index.js';
 
 describe('the first party data module', function () {
   afterEach(function () {
@@ -12,8 +12,8 @@ describe('the first party data module', function () {
 
   describe('startAuctionHook', () => {
     const mockFpd = {
-      global: {key: 'value'},
-      bidder: {A: {bkey: 'bvalue'}}
+      global: { key: 'value' },
+      bidder: { A: { bkey: 'bvalue' } }
     }
     beforeEach(() => {
       reset();
@@ -26,7 +26,7 @@ describe('the first party data module', function () {
           return mockFpd;
         }
       });
-      const req = {ortb2Fragments: {}};
+      const req = { ortb2Fragments: {} };
       return new Promise((resolve) => startAuctionHook(resolve, req))
         .then(() => {
           expect(req.ortb2Fragments).to.eql(mockFpd);
@@ -40,7 +40,7 @@ describe('the first party data module', function () {
           return Promise.resolve(mockFpd);
         }
       });
-      const req = {ortb2Fragments: {}};
+      const req = { ortb2Fragments: {} };
       return new Promise((resolve) => {
         startAuctionHook(resolve, req);
       }).then(() => {

@@ -1,5 +1,5 @@
-import {timeoutQueue} from '../../../libraries/timeoutQueue/timeoutQueue.js';
-import {expect} from 'chai/index.js';
+import { timeoutQueue } from '../../../libraries/timeoutQueue/timeoutQueue.js';
+import { expect } from 'chai/index.js';
 
 describe('timeoutQueue', () => {
   let clock;

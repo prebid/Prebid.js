@@ -112,7 +112,7 @@ export const spec = {
       const data = converter.toORTB({
         bidRequests: [bidRequest],
         bidderRequest,
-        context: {mediaType, bidParams: bidRequest.params}
+        context: { mediaType, bidParams: bidRequest.params }
       });
 
       return {

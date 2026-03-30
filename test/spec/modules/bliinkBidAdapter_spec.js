@@ -355,17 +355,19 @@ const GetUserIds = [
   {
     title: 'Should return eids if exists',
     args: {
-      fn: getUserIds([{ userIdAsEids: [
-        {
-          'source': 'criteo.com',
-          'uids': [
-            {
-              'id': 'testId',
-              'atype': 1
-            }
-          ]
-        }
-      ] }]),
+      fn: getUserIds([{
+        userIdAsEids: [
+          {
+            'source': 'criteo.com',
+            'uids': [
+              {
+                'id': 'testId',
+                'atype': 1
+              }
+            ]
+          }
+        ]
+      }]),
     },
     want: [
       {

@@ -1,9 +1,9 @@
 import * as utils from "../src/utils.js";
-import { detectWalletsPresence} from "../libraries/cryptoUtils/wallets.js";
+import { detectWalletsPresence } from "../libraries/cryptoUtils/wallets.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER, NATIVE } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
-import {getDomComplexity, getPageDescription, getPageTitle} from "../libraries/fpdUtils/pageInfo.js";
+import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
 
 const PREBID_VERSION = '$prebid.version$';
@@ -43,6 +43,39 @@ const normalizeKeywords = (input) => {
   return [];
 };
 
+function resolveDataType(asset) {
+  if (typeof asset?.data?.type === 'number') {
+    return asset.data.type;
+  }
+
+  if (typeof asset?.id === 'number') {
+    return asset.id;
+  }
+
+  return null;
+}
+
+// Helper: resolve the "image type" for an asset
+// Returns 1 (icon), 3 (image) or null if unknown
+function resolveImageType(asset) {
+  if (!asset) return null;
+
+  // 1) explicit image type in the img block (preferred)
+  if (typeof asset.img?.type === 'number') return asset.img.type;
+
+  // 2) fallback to data.type (some bidders put the type here)
+  if (typeof asset.data?.type === 'number') return asset.data.type;
+
+  // 3) last resort: map legacy asset.id values to image types
+  //    (13 -> icon, 14 -> image) — keep this mapping isolated here
+  if (typeof asset.id === 'number') {
+    if (asset.id === 13) return 1; // icon
+    if (asset.id === 14) return 3; // image
+  }
+
+  return null;
+}
+
 const parseNativeAd = function (bid) {
   try {
     const nativeAd = JSON.parse(bid.ad);
@@ -54,7 +87,8 @@ const parseNativeAd = function (bid) {
       }
       if (asset.data) {
         const value = asset.data.value;
-        switch (asset.data.type) {
+        const type = resolveDataType(asset);
+        switch (type) {
           case 1: if (value) native.sponsored = value; break;
           case 2: if (value) native.desc = value; break;
           case 3: if (value) native.rating = value; break;
@@ -71,13 +105,14 @@ const parseNativeAd = function (bid) {
         }
       }
       if (asset.img) {
-        const { url, w = 0, h = 0, type } = asset.img;
+        const { url, w = 0, h = 0 } = asset.img;
+        const imgType = resolveImageType(asset);
 
-        if (type === 1 && url) {
+        if (imgType === 1 && url) {
           native.icon = url;
           native.icon_width = w;
           native.icon_height = h;
-        } else if (type === 3 && url) {
+        } else if (imgType === 3 && url) {
           native.image = url;
           native.image_width = w;
           native.image_height = h;
@@ -242,7 +277,7 @@ export const spec = {
             referenceId: bidRequest.params.referenceId,
             tagId: bidRequest.params.zone,
             type: detectAdType(bidRequest),
-            ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
+            ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {} } })
           },
         ],
         keywords: {

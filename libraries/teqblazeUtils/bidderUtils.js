@@ -200,7 +200,7 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
   return buildRequestsBase({ adUrl, validBidRequests, bidderRequest, placementProcessingFunction });
 };
 
-export function interpretResponseBuilder({addtlBidValidation = (bid) => true} = {}) {
+export function interpretResponseBuilder({ addtlBidValidation = (bid) => true } = {}) {
   return function (serverResponse) {
     const response = [];
     for (let i = 0; i < serverResponse.body.length; i++) {
@@ -231,8 +231,8 @@ export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprCons
     }
   }
 
-  if (uspConsent && uspConsent.consentString) {
-    url += `&ccpa_consent=${uspConsent.consentString}`;
+  if (uspConsent) {
+    url += `&ccpa_consent=${uspConsent}`;
   }
 
   if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {

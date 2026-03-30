@@ -27,7 +27,7 @@ function getUserId(eids, id, source, uidExt) {
     }
     eids.push({
       source,
-      uids: [ uid ]
+      uids: [uid]
     });
   }
 }

@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adgenerationBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {NATIVE} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec } from 'modules/adgenerationBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { NATIVE } from 'src/mediaTypes.js';
 import prebid from 'package.json';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -59,7 +59,7 @@ describe('AdgenerationAdapter', function () {
       ],
       mobile: 0
     };
-    const schainSmaple = {ver: '1.0', complete: 1, nodes: [{asi: 'indirectseller.com', sid: '00001', hp: 1}]};
+    const schainSmaple = { ver: '1.0', complete: 1, nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }] };
     const bidRequests = [
       { // banner
         bidder: 'adg',
@@ -151,13 +151,13 @@ describe('AdgenerationAdapter', function () {
             uid: 'id5-id-test-1234567890'
           },
           imuid: 'i.KrAH6ZAZTJOnH5S4N2sogA',
-          uid2: {id: 'AgAAAAVacu1uAxgAxH+HJ8+nWlS2H4uVqr6i+HBDCNREHD8WKsio/x7D8xXFuq1cJycUU86yXfTH9Xe/4C8KkH+7UCiU7uQxhyD7Qxnv251pEs6K8oK+BPLYR+8BLY/sJKesa/koKwx1FHgUzIBum582tSy2Oo+7C6wYUaaV4QcLr/4LPA='},
+          uid2: { id: 'AgAAAAVacu1uAxgAxH+HJ8+nWlS2H4uVqr6i+HBDCNREHD8WKsio/x7D8xXFuq1cJycUU86yXfTH9Xe/4C8KkH+7UCiU7uQxhyD7Qxnv251pEs6K8oK+BPLYR+8BLY/sJKesa/koKwx1FHgUzIBum582tSy2Oo+7C6wYUaaV4QcLr/4LPA=' },
         },
-        ortb2Imp: {ext: {gpid: '/1111/homepage#300x250'}},
+        ortb2Imp: { ext: { gpid: '/1111/homepage#300x250' } },
         ortb2: {
           site: {
             domain: 'localhost:9999',
-            publisher: {'domain': 'localhost:9999'},
+            publisher: { 'domain': 'localhost:9999' },
             page: 'http://localhost:9999/integrationExamples/gpt/hello_world.html',
             ref: 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
           },
@@ -301,7 +301,7 @@ describe('AdgenerationAdapter', function () {
           }
         }
       }
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: criteoParams})[0];
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: criteoParams })[0];
       expect(request.data.ortb.user).to.deep.equal(criteoParams.user);
     });
 
@@ -354,7 +354,7 @@ describe('AdgenerationAdapter', function () {
           }
         },
       }
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: idparams})[3];
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: idparams })[3];
       expect(request.data.ortb.user).to.deep.equal(idparams.user);
 
       // gpid
@@ -388,7 +388,7 @@ describe('AdgenerationAdapter', function () {
     const bidRequests = {
       banner: {
         bidderRequest: {
-          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
+          ortb2: { ext: { prebid: { adServerCurrency: 'JPY' } } }
         },
         method: 'POST',
         url: 'https://api-test.scaleout.jp/adgen/prebid?id=15415&posall=SSPLOC&sdktype=0',
@@ -1004,7 +1004,7 @@ describe('AdgenerationAdapter', function () {
                   {
                     id: 1,
                     required: 1,
-                    title: {text: 'Title'}
+                    title: { text: 'Title' }
                   },
                   {
                     id: 2,
@@ -1025,17 +1025,17 @@ describe('AdgenerationAdapter', function () {
                     required: 1
                   },
                   {
-                    data: {value: 'Description'},
+                    data: { value: 'Description' },
                     id: 5,
                     required: 0
                   },
                   {
-                    data: {value: 'CTA'},
+                    data: { value: 'CTA' },
                     id: 6,
                     required: 0
                   },
                   {
-                    data: {value: 'Sponsored'},
+                    data: { value: 'Sponsored' },
                     id: 4,
                     required: 0
                   }
@@ -1180,7 +1180,7 @@ describe('AdgenerationAdapter', function () {
     };
 
     it('no bid responses', function () {
-      const result = spec.interpretResponse({body: serverResponse.noAd}, bidRequests.banner);
+      const result = spec.interpretResponse({ body: serverResponse.noAd }, bidRequests.banner);
       expect(result.length).to.equal(0);
     });
 
@@ -1192,7 +1192,7 @@ describe('AdgenerationAdapter', function () {
         }
       };
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const sr = {body: serverResponse.normal.upperBillboard};
+        const sr = { body: serverResponse.normal.upperBillboard };
         const br = { bidderRequest: res, ...bidRequests.upperBillboard };
 
         const result = spec.interpretResponse(sr, br)[0];
@@ -1210,7 +1210,7 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles banner responses for empty adomain', function () {
-      const result = spec.interpretResponse({body: serverResponse.emptyAdomain.banner}, bidRequests.banner)[0];
+      const result = spec.interpretResponse({ body: serverResponse.emptyAdomain.banner }, bidRequests.banner)[0];
       expect(result.requestId).to.equal(bidResponses.normal.banner.requestId);
       expect(result.width).to.equal(bidResponses.normal.banner.width);
       expect(result.height).to.equal(bidResponses.normal.banner.height);
@@ -1226,7 +1226,7 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles native responses for empty adomain', function () {
-      const result = spec.interpretResponse({body: serverResponse.emptyAdomain.native}, bidRequests.native)[0];
+      const result = spec.interpretResponse({ body: serverResponse.emptyAdomain.native }, bidRequests.native)[0];
       expect(result.requestId).to.equal(bidResponses.normal.native.requestId);
       expect(result.width).to.equal(bidResponses.normal.native.width);
       expect(result.height).to.equal(bidResponses.normal.native.height);
@@ -1256,7 +1256,7 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles banner responses for no adomain', function () {
-      const result = spec.interpretResponse({body: serverResponse.noAdomain.banner}, bidRequests.banner)[0];
+      const result = spec.interpretResponse({ body: serverResponse.noAdomain.banner }, bidRequests.banner)[0];
       expect(result.requestId).to.equal(bidResponses.normal.banner.requestId);
       expect(result.width).to.equal(bidResponses.normal.banner.width);
       expect(result.height).to.equal(bidResponses.normal.banner.height);
@@ -1272,7 +1272,7 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles native responses for no adomain', function () {
-      const result = spec.interpretResponse({body: serverResponse.noAdomain.native}, bidRequests.native)[0];
+      const result = spec.interpretResponse({ body: serverResponse.noAdomain.native }, bidRequests.native)[0];
       expect(result.requestId).to.equal(bidResponses.normal.native.requestId);
       expect(result.width).to.equal(bidResponses.normal.native.width);
       expect(result.height).to.equal(bidResponses.normal.native.height);

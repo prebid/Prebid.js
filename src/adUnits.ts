@@ -1,8 +1,8 @@
-import type {AdUnitCode, BidderCode, ContextIdentifiers, Size} from "./types/common.d.ts";
-import type {ORTBImp} from "./types/ortb/request.d.ts";
-import type {Bid} from "./bidfactory.ts";
-import type {MediaTypes} from "./mediaTypes.ts";
-import type {DeepPartial} from "./types/objects.d.ts";
+import type { AdUnitCode, BidderCode, ContextIdentifiers, Size } from "./types/common.d.ts";
+import type { ORTBImp } from "./types/ortb/request.d.ts";
+import type { Bid } from "./bidfactory.ts";
+import type { MediaTypes } from "./mediaTypes.ts";
+import type { DeepPartial } from "./types/objects.d.ts";
 
 export interface RendererConfig {
   /**
@@ -88,6 +88,11 @@ export interface AdUnitDefinition {
    * Used by setTargetingForGPTAsync() to match which auction is for which ad slot.
    */
   code: AdUnitCode;
+  /**
+   * A DOM element corresponding to this ad unit.
+   * By default, this is `document.getElementById(adUnit.code)`.
+   */
+  element?: HTMLElement;
   /**
    * Bid requests representing demand partners and associated parameters.
    */
