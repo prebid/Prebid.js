@@ -2,8 +2,6 @@ import { insuradsRtdProvider } from 'modules/insuradsRtdProvider.js';
 import * as ajax from 'src/ajax.js';
 import { config } from 'src/config.js';
 
-const responseHeader = { 'Content-Type': 'application/json' };
-
 const sampleConfig = {
   name: 'insuradsRtd',
   waitForIt: true,
