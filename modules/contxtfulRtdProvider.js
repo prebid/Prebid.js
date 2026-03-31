@@ -548,6 +548,7 @@ function removeListeners() {
 
 export const contxtfulSubmodule = {
   name: MODULE_NAME,
+  gvlid: 1569,
   init,
   getTargetingData,
   getBidRequestData,
