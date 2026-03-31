@@ -33,7 +33,7 @@ import { getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js'
 import type { Bid, BidResponse } from "./bidfactory.ts";
 import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
 import type { TargetingMap } from "./targeting.ts";
-import type { AdUnit } from "./adUnits.ts";
+import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
 import type { MediaType } from "./mediaTypes.ts";
 import type { VideoContext } from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
