@@ -368,6 +368,10 @@ function mkPriorityMaps() {
       const refreshing = new Set(addtlModules.map(mod => mod.submodule));
       map.submodules = map.submodules.filter((mod) => !refreshing.has(mod.submodule)).concat(addtlModules);
       update();
+    },
+    reset() {
+      map.submodules = [];
+      update();
     }
   }
   function update() {
@@ -906,7 +910,11 @@ function hasOptedOut() {
 
 function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
-    if (!submodules.length || hasOptedOut()) return []; // to simplify log messages from here on
+    if (hasOptedOut()) {
+      priorityMaps.reset();
+      return [];
+    }
+    if (!submodules.length) return []; // to simplify log messages from here on
     submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
     /**
