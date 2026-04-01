@@ -183,7 +183,7 @@ describe("mile RTD provider", function () {
   });
 
   describe("onAuctionInitEvent", function () {
-    it("skips runtime targeting when flooring is not enforced", async function () {
+    it("applies runtime targeting even when flooring is not enforced", async function () {
       const runtimeStub = sandbox
         .stub()
         .returns({ "div-gpt-ad-1": "segment_a" });
@@ -197,7 +197,7 @@ describe("mile RTD provider", function () {
       });
       await flushPromises();
 
-      expect(runtimeStub.called).to.equal(false);
+      expect(runtimeStub.called).to.equal(true);
     });
 
     it("extracts snapshot and applies targeting when flooring is enforced", async function () {
@@ -263,7 +263,7 @@ describe("mile RTD provider", function () {
       expect(runtimeStub.called).to.equal(false);
     });
 
-    it("skips runtime targeting when flooring is not enforced", async function () {
+    it("applies runtime targeting even when flooring is not enforced", async function () {
       const runtimeStub = sandbox.stub().returns({});
       window.mileRtdRuntime = { getMileTargetingByAdUnit: runtimeStub };
 
@@ -280,7 +280,7 @@ describe("mile RTD provider", function () {
       );
       await flushPromises();
 
-      expect(runtimeStub.called).to.equal(false);
+      expect(runtimeStub.called).to.equal(true);
     });
 
     it("adds adUnitCode to snapshot and calls runtime with bidResponse context", async function () {

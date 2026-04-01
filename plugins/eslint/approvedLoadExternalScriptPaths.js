@@ -33,7 +33,7 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/optableRtdProvider.js',
   'modules/oftmediaRtdProvider.js',
   'modules/panxoRtdProvider.js',
-  'modules/mileRtdProvider.js',
+  'modules/mileRtdProvider.ts',
   // UserId Submodules
   'modules/justIdSystem.js',
   'modules/tncIdSystem.js',

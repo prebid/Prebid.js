@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `mile` RTD provider computes per-slot targeting values through a runtime engine and sets GPT slot targeting used by floor logic.
+The `mile` RTD provider computes per-slot targeting values through a runtime engine and sets GPT slot targeting used by GAM unified Pricing rules.
 
 It sets a single targeting key:
 
@@ -17,9 +17,6 @@ Targeting is applied during:
 - `onAuctionInitEvent`
 - `onBidResponseEvent`
 
-The provider only applies targeting when flooring is enforced for the auction.
-
-If flooring is not enforced, no `mile_rtd` targeting is set.
 
 ## Key-value mapping
 
