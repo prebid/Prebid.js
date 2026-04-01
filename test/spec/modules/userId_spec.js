@@ -1431,37 +1431,57 @@ describe('User ID', function () {
   });
 
   describe('Opt out', function () {
-    before(function () {
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
-    });
-
     beforeEach(function () {
       sinon.stub(utils, 'logInfo');
     });
-
     afterEach(function () {
       // removed cookie
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
       requestBids.removeAll();
       utils.logInfo.restore();
     });
 
-    it('does not fetch ids if opt out cookie exists', function () {
-      init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      const cfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      cfg.userSync.auctionDelay = 1; // to let init complete without an auction
-      config.setConfig(cfg);
-      return getGlobal().getUserIdsAsync().then((uid) => {
-        expect(uid).to.eql({});
-      })
-    });
+    Object.entries({
+      'cookies': {
+        setup() {
+          coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
+        },
+        teardown() {
+          coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
+        }
+      },
+      'localStorage': {
+        setup() {
+          coreStorage.setDataInLocalStorage(PBJS_USER_ID_OPTOUT_NAME, '1');
+        },
+        teardown() {
+          coreStorage.removeDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME);
+        }
+      }
+    }).forEach(([t, { setup, teardown }]) => {
+      describe(`via ${t}`, () => {
+        beforeEach(setup);
+        afterEach(teardown);
+        it('does not fetch ids if opt out flag is set', function () {
+          init(config);
+          sandbox.spy(sharedIdSystemSubmodule, 'getId');
+          setSubmoduleRegistry([sharedIdSystemSubmodule]);
+          const cfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+          cfg.userSync.userIds[0].storage = null;
+          cfg.userSync.auctionDelay = 1; // to let init complete without an auction
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            sinon.assert.notCalled(sharedIdSystemSubmodule.getId);
+            expect(uid).to.eql({});
+          })
+        });
 
-    it('initializes if no opt out cookie exists', function () {
-      init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
+        it('initializes if opt out flag is not set', function () {
+          init(config);
+          setSubmoduleRegistry([sharedIdSystemSubmodule]);
+          config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
+          expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
+        });
+      });
     });
   });
 
