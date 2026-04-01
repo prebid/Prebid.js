@@ -291,6 +291,7 @@ function selectEndpoint(params) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 21,
+  alwaysHasCapacity: true,
   aliases: [BIDDER_CODE_LONG],
   supportedMediaTypes: [BANNER, VIDEO],
 
