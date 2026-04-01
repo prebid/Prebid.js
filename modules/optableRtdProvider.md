@@ -172,7 +172,8 @@ pbjs.setConfig({
 | params.timeout    | String   | API timeout hint (e.g., `"500ms"`)                                                                                                                                                                                                      | `null`  | No | Direct API |
 | params.ids        | Array    | Array of user identifier strings in Optable format (e.g., `"e:hash"`, `"c:ppid"`, `"__passport__"`). Use this to pass Optable-specific identifiers.                                                                                    | `[]`    | No | Direct API |
 | params.hids       | Array    | Array of hint identifier strings                                                                                                                                                                                                    | `[]`    | No | Direct API |
-| params.handleRtd  | Function | Custom function to handle/enrich RTD data. Function signature: `(reqBidsConfigObj, targetingData, mergeFn) => {}`. If not provided, the module uses a default handler that merges targeting data into ortb2Fragments.global            | `null`  | No | Both |
+| params.skipMergeIfUid2Exists | Boolean | If `true`, filters out UID2 EIDs from Optable's response when a UID2 EID already exists in `ortb2Fragments.global.user.eids`. Non-UID2 EIDs from Optable are still merged. This prevents duplicate UID2 identifiers and has been shown to improve lift by -0.5% to -1.5% in "1 x UID2 only" setups. | `false` | No | Both |
+| params.handleRtd  | Function | Custom function to handle/enrich RTD data. Function signature: `(reqBidsConfigObj, targetingData, mergeFn, config) => {}`. If not provided, the module uses a default handler that merges targeting data into ortb2Fragments.global. The `config` parameter contains `skipMergeIfUid2Exists` flag. | `null`  | No | Both |
 
 ## How It Works
 
@@ -348,6 +349,40 @@ params: {
 
 The node identifier routes the API call to the specified node and maintains separate passports per node.
 
+## UID2 Skip Merge Feature
+
+The `skipMergeIfUid2Exists` parameter allows you to filter out UID2 EIDs from Optable's response when UID2 already exists in the bid request. This is useful when you have a "1 x UID2 only" setup where UID2 is the primary identifier.
+
+**When enabled:**
+- If a UID2 EID (source: `uidapi.com`) already exists in `ortb2Fragments.global.user.eids`, Optable will filter out any UID2 EIDs from its response
+- **All other non-UID2 EIDs from Optable are still merged** (e.g., ID5, LiveRamp, etc.)
+- This prevents duplicate UID2 identifiers and has been shown to improve lift by -0.5% to -1.5% in "1 x UID2 only" configurations
+- The filtering is performed before merging, ensuring the existing UID2 EID is not overwritten
+
+**Configuration:**
+
+```javascript
+pbjs.setConfig({
+  realTimeData: {
+    auctionDelay: 200,
+    dataProviders: [
+      {
+        name: 'optable',
+        waitForIt: true,
+        params: {
+          host: 'dcn.customer.com',
+          node: 'prod-us',
+          site: 'my-site',
+          skipMergeIfUid2Exists: true  // Skip merge if UID2 already present
+        },
+      },
+    ],
+  },
+});
+```
+
+**Note:** This feature works in both SDK mode and Direct API mode. Custom `handleRtd` functions receive the config parameter with the `skipMergeIfUid2Exists` flag and can implement similar logic if needed.
+
 ## Custom RTD Handler
 
 For advanced use cases, provide a custom `handleRtd` function:
@@ -357,13 +392,24 @@ params: {
   host: 'dcn.customer.com',
   node: 'prod-us',
   site: 'my-site',
-  handleRtd: (reqBidsConfigObj, targetingData, mergeFn) => {
+  handleRtd: (reqBidsConfigObj, targetingData, mergeFn, config) => {
     console.log('Targeting data received:', targetingData);
+    console.log('Config:', config);  // Contains skipMergeIfUid2Exists flag
 
     // Custom validation
     if (!targetingData || !targetingData.ortb2) {
       console.warn('Invalid targeting data');
       return;
+    }
+
+    // Example: Custom UID2 check (if not using built-in skipMergeIfUid2Exists)
+    if (config.skipMergeIfUid2Exists) {
+      const existingEids = reqBidsConfigObj.ortb2Fragments?.global?.user?.eids;
+      const hasUid2 = existingEids?.some(eid => eid.source === 'uidapi.com');
+      if (hasUid2) {
+        console.log('UID2 already present, skipping merge');
+        return;
+      }
     }
 
     // Custom transformation

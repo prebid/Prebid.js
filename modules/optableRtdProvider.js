@@ -62,6 +62,7 @@ export const parseConfig = (moduleConfig) => {
   const ids = deepAccess(moduleConfig, 'params.ids', []);
   const hids = deepAccess(moduleConfig, 'params.hids', []);
   const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
+  const skipMergeIfUid2Exists = deepAccess(moduleConfig, 'params.skipMergeIfUid2Exists', false);
 
   if (handleRtd && typeof handleRtd !== 'function') {
     logError('handleRtd must be a function');
@@ -88,7 +89,8 @@ export const parseConfig = (moduleConfig) => {
     handleRtd,
     adserverTargeting,
     instance,
-    hasDirectApiConfig
+    hasDirectApiConfig,
+    skipMergeIfUid2Exists
   };
 }
 
@@ -249,9 +251,10 @@ const waitForOptableEvent = (eventName) => {
  * @param {Function} handleRtdFn Custom handler function or default
  * @param {Object} reqBidsConfigObj Bid request configuration
  * @param {Function} mergeFn Merge function
+ * @param {Object} config Configuration object with skipMergeIfUid2Exists flag
  * @returns {Promise<void>}
  */
-const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn) => {
+const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn, config) => {
   const targetingData = await waitForOptableEvent('optable-targeting:change');
 
   if (!targetingData || !targetingData.ortb2) {
@@ -260,9 +263,9 @@ const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn) => {
   }
 
   if (handleRtdFn.constructor.name === 'AsyncFunction') {
-    await handleRtdFn(reqBidsConfigObj, targetingData, mergeFn);
+    await handleRtdFn(reqBidsConfigObj, targetingData, mergeFn, config);
   } else {
-    handleRtdFn(reqBidsConfigObj, targetingData, mergeFn);
+    handleRtdFn(reqBidsConfigObj, targetingData, mergeFn, config);
   }
 };
 
@@ -420,13 +423,26 @@ const callTargetingAPI = (params) => {
 };
 
 /**
+ * Check if UID2 EID exists in the given EIDs array
+ * @param {Array} eids Array of EIDs to check
+ * @returns {boolean} True if UID2 EID is present
+ */
+export const hasUid2Eid = (eids) => {
+  if (!Array.isArray(eids)) {
+    return false;
+  }
+  return eids.some(eid => eid.source === 'uidapi.com');
+};
+
+/**
  * Default function to handle/enrich RTD data by merging targeting data into ortb2
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Object} targetingData Targeting data from API
  * @param {Function} mergeFn Function to merge data
+ * @param {Object} config Optional configuration object with skipMergeIfUid2Exists flag
  * @returns {void}
  */
-export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn) => {
+export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, config = {}) => {
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
     return;
@@ -434,17 +450,46 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn) => {
 
   const eidCount = targetingData.ortb2?.user?.eids?.length || 0;
   logMessage(`defaultHandleRtd: received targeting data with ${eidCount} EIDs`);
+
+  // Filter out UID2 EIDs if UID2 already exists and skipMergeIfUid2Exists is enabled
+  let filteredTargetingData = targetingData;
+  if (config.skipMergeIfUid2Exists && targetingData.ortb2.user?.eids) {
+    const existingEids = reqBidsConfigObj.ortb2Fragments?.global?.user?.eids;
+    if (hasUid2Eid(existingEids)) {
+      logMessage('UID2 EID already exists - filtering out UID2 EIDs from Optable data (skipMergeIfUid2Exists=true)');
+
+      // Filter out UID2 EIDs from Optable's response
+      const filteredEids = targetingData.ortb2.user.eids.filter(eid => eid.source !== 'uidapi.com');
+      const uid2Count = eidCount - filteredEids.length;
+
+      logMessage(`Filtered out ${uid2Count} UID2 EID(s), keeping ${filteredEids.length} non-UID2 EID(s)`);
+
+      // Create a filtered copy of targeting data
+      filteredTargetingData = {
+        ...targetingData,
+        ortb2: {
+          ...targetingData.ortb2,
+          user: {
+            ...targetingData.ortb2.user,
+            eids: filteredEids
+          }
+        }
+      };
+    }
+  }
+
   logMessage('Merging ortb2 data into global ORTB2 fragments...');
 
   mergeFn(
     reqBidsConfigObj.ortb2Fragments.global,
-    targetingData.ortb2,
+    filteredTargetingData.ortb2,
   );
 
-  logMessage(`EIDs merged into ortb2Fragments.global.user.eids (${eidCount} EIDs)`);
+  const finalEidCount = filteredTargetingData.ortb2?.user?.eids?.length || 0;
+  logMessage(`EIDs merged into ortb2Fragments.global.user.eids (${finalEidCount} EIDs)`);
 
   // Also add to user.ext.eids for additional coverage
-  if (targetingData.ortb2.user?.eids) {
+  if (filteredTargetingData.ortb2.user?.eids) {
     const targetORTB2 = reqBidsConfigObj.ortb2Fragments.global;
     targetORTB2.user = targetORTB2.user ?? {};
     targetORTB2.user.ext = targetORTB2.user.ext ?? {};
@@ -453,11 +498,11 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn) => {
     logMessage('Also merging Optable EIDs into ortb2.user.ext.eids...');
 
     // Merge EIDs into user.ext.eids
-    targetingData.ortb2.user.eids.forEach(eid => {
+    filteredTargetingData.ortb2.user.eids.forEach(eid => {
       targetORTB2.user.ext.eids.push(eid);
     });
 
-    logMessage(`EIDs also available in ortb2.user.ext.eids (${eidCount} EIDs)`);
+    logMessage(`EIDs also available in ortb2.user.ext.eids (${finalEidCount} EIDs)`);
   }
 
   // Add split_test_assignment to adUnits ortb2Imp.ext.optable if present
@@ -496,8 +541,9 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       return;
     }
 
-    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig } = parsedConfig;
+    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig, skipMergeIfUid2Exists } = parsedConfig;
     const handleRtdFn = handleRtd || defaultHandleRtd;
+    const rtdConfig = { skipMergeIfUid2Exists };
 
     // Mode 1: SDK mode - If Optable Web SDK is loaded (window.optable), use its event system
     // instead of making direct API calls. SDK handles caching, consent, and provides ad server targeting.
@@ -505,7 +551,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       logMessage('Optable Web SDK detected, using SDK mode');
       logMessage('Waiting for SDK to dispatch targeting data via event');
 
-      await handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep);
+      await handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep, rtdConfig);
       callback();
       return;
     }
@@ -543,7 +589,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     const cachedData = getCachedTargeting();
     if (cachedData) {
       logMessage('Cache found, using cached data');
-      handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep);
+      handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, rtdConfig);
       callback();
 
       // Only refresh in background if we haven't made a call this session yet
@@ -604,7 +650,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     }
 
     setCachedTargeting(targetingData);
-    handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep);
+    handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep, rtdConfig);
 
     callback();
   } catch (error) {
