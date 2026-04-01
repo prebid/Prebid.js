@@ -909,7 +909,6 @@ describe('stroeerCore bid adapter', function () {
           assert.deepEqual(sentOrtb2, ortb2);
         });
 
-
         it('should add the special format parameters', () => {
           const bidReq = buildBidderRequest();
 
