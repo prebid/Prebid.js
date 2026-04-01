@@ -121,8 +121,8 @@ export function consolidateEids({ eids, conflicts = new Set() }) {
   }
 }
 
-function replaceEids({ global, bidder }, requestedBidders) {
-  const consolidated = consolidateEids(extractEids({ global, bidder }));
+function replaceEids({global, bidder}, requestedBidders) {
+  const consolidated = consolidateEids(extractEids({global, bidder}));
   global = deepClone(global);
   bidder = deepClone(bidder);
   function removeEids(target) {
@@ -131,23 +131,24 @@ function replaceEids({ global, bidder }, requestedBidders) {
   }
   removeEids(global);
   Object.values(bidder).forEach(removeEids);
-  if (consolidated.global.length) {
-    deepSetValue(global, 'user.ext.eids', consolidated.global);
-  }
   if (requestedBidders?.length) {
-    consolidated.permissions.forEach((permission) => {
-      permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder));
-    });
+    consolidated.permissions.forEach((permission) => permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder)));
   }
-  if (consolidated.permissions.length) {
-    deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);
+  const invalidSources = new Set(consolidated.permissions.filter(p => p.bidders.length === 0).map(p => p.source));
+  const globalEids = consolidated.global.filter(eid => !invalidSources.has(eid.source));
+  if (globalEids.length) {
+    deepSetValue(global, 'user.ext.eids', globalEids);
+  }
+  const validPermissions = consolidated.permissions.filter(permission => permission.bidders.length > 0);
+  if (validPermissions.length) {
+    deepSetValue(global, 'ext.prebid.data.eidpermissions', validPermissions);
   }
   Object.entries(consolidated.bidder).forEach(([bidderCode, bidderEids]) => {
     if (bidderEids.length) {
       deepSetValue(bidder[bidderCode], 'user.ext.eids', bidderEids);
     }
   })
-  return { global, bidder }
+  return {global, bidder}
 }
 
 export function premergeFpd(ortb2Fragments, requestedBidders) {
