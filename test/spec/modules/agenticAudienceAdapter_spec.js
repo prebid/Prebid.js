@@ -1,7 +1,19 @@
 import {
   agenticAudienceAdapterSubmodule,
+  mapEntryToOpenRtbSegment,
   storage
 } from 'modules/agenticAudienceAdapter.js';
+
+/** Test fixture: OpenRTB Float32 LE base64 (module expects pre-encoded storage only). */
+function vectorBase64Fixture(arr) {
+  const buffer = new ArrayBuffer(arr.length * 4);
+  const view = new DataView(buffer);
+  arr.forEach((x, i) => view.setFloat32(i * 4, x, true));
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
 
 describe('agenticAudienceAdapter', function () {
   let sandbox;
@@ -13,7 +25,7 @@ describe('agenticAudienceAdapter', function () {
 
   const validEntry = {
     ver: '1.0',
-    vector: [0.1, -0.2, 0.3],
+    vector: vectorBase64Fixture([0.1, -0.2, 0.3]),
     model: 'sbert-mini-ctx-001',
     dimension: 3,
     type: [1, 2]
@@ -32,6 +44,58 @@ describe('agenticAudienceAdapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+  });
+
+  describe('mapEntryToOpenRtbSegment', function () {
+    it('maps stored Base64 vector to Segment unchanged', function () {
+      const seg = mapEntryToOpenRtbSegment(validEntry);
+      expect(seg.id).to.be.undefined;
+      expect(seg.name).to.be.undefined;
+      expect(seg.ext.ver).to.equal('1.0');
+      expect(seg.ext.vector).to.equal(validEntry.vector);
+      expect(seg.ext.dimension).to.equal(3);
+      expect(seg.ext.model).to.equal('sbert-mini-ctx-001');
+      expect(seg.ext.type).to.deep.equal([1, 2]);
+    });
+
+    it('passes vector through without coercion (e.g. array storage)', function () {
+      const arr = [0.1, 0.2, 0.3];
+      const seg = mapEntryToOpenRtbSegment({ ...validEntry, vector: arr });
+      expect(seg.ext.vector).to.equal(arr);
+    });
+
+    it('passes type through without normalizing number to array', function () {
+      const seg = mapEntryToOpenRtbSegment({ ...validEntry, type: 1 });
+      expect(seg.ext.type).to.equal(1);
+    });
+
+    it('uses custom id and name when provided', function () {
+      const seg = mapEntryToOpenRtbSegment({
+        ...validEntry,
+        id: 'seg-1',
+        name: 'identity-contextual'
+      });
+      expect(seg.id).to.equal('seg-1');
+      expect(seg.name).to.equal('identity-contextual');
+    });
+
+    it('returns null only for non-object entry', function () {
+      expect(mapEntryToOpenRtbSegment(null)).to.equal(null);
+      expect(mapEntryToOpenRtbSegment(undefined)).to.equal(null);
+    });
+
+    it('maps empty object to segment with id, name, and ext fields undefined', function () {
+      const seg = mapEntryToOpenRtbSegment({});
+      expect(seg.id).to.be.undefined;
+      expect(seg.name).to.be.undefined;
+      expect(seg.ext).to.deep.equal({
+        ver: undefined,
+        vector: undefined,
+        dimension: undefined,
+        model: undefined,
+        type: undefined
+      });
+    });
   });
 
   describe('init', function () {
@@ -88,7 +152,9 @@ describe('agenticAudienceAdapter', function () {
       agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].name).to.equal('customProvider');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([validEntry]);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
+        mapEntryToOpenRtbSegment(validEntry)
+      ]);
     });
 
     it('uses custom storageKey when passed in params.providers', function () {
@@ -100,7 +166,9 @@ describe('agenticAudienceAdapter', function () {
       agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].name).to.equal('liveramp');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([validEntry]);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
+        mapEntryToOpenRtbSegment(validEntry)
+      ]);
     });
 
     it('calls callback and does not inject when storage has no data', function () {
@@ -115,7 +183,7 @@ describe('agenticAudienceAdapter', function () {
       expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
     });
 
-    it('injects user.data from LiveRamp when storage has valid base64 entries', function () {
+    it('injects user.data from liveramp when storage has valid base64 entries', function () {
       const config = { params: { providers: { liveramp: { storageKey: '_lr_agentic_audience_' } } } };
       const callback = sinon.spy();
       const storedData = encodeData({ entries: [validEntry] });
@@ -127,23 +195,25 @@ describe('agenticAudienceAdapter', function () {
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.have.length(1);
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].name).to.equal('liveramp');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([validEntry]);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
+        mapEntryToOpenRtbSegment(validEntry)
+      ]);
     });
 
-    it('injects user.data from multiple providers (LiveRamp and Optable)', function () {
+    it('injects user.data from multiple providers (liveramp and raptive)', function () {
       const config = {
         params: {
           providers: {
             liveramp: { storageKey: '_lr_agentic_audience_' },
-            optable: { storageKey: '_optable_agentic_audience_' }
+            raptive: { storageKey: '_raptive_agentic_audience_' }
           }
         }
       };
       const callback = sinon.spy();
       const liverampEntry = { ...validEntry, model: 'sbert-mini-ctx-001' };
-      const optableEntry = { ...validEntry, vector: [0.5, 0.6, -0.1], model: 'optable-embed-v1', type: [2] };
+      const raptiveEntry = { ...validEntry, vector: vectorBase64Fixture([0.5, 0.6, -0.1]), model: 'raptive-embed-v1', type: [2] };
       storageGetLocalStub.withArgs('_lr_agentic_audience_').returns(encodeData({ entries: [liverampEntry] }));
-      storageGetLocalStub.withArgs('_optable_agentic_audience_').returns(encodeData({ entries: [optableEntry] }));
+      storageGetLocalStub.withArgs('_raptive_agentic_audience_').returns(encodeData({ entries: [raptiveEntry] }));
       storageGetCookieStub.returns(null);
 
       agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
@@ -152,11 +222,11 @@ describe('agenticAudienceAdapter', function () {
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.have.length(2);
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0]).to.deep.equal({
         name: 'liveramp',
-        segment: [liverampEntry]
+        segment: [mapEntryToOpenRtbSegment(liverampEntry)]
       });
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[1]).to.deep.equal({
-        name: 'optable',
-        segment: [optableEntry]
+        name: 'raptive',
+        segment: [mapEntryToOpenRtbSegment(raptiveEntry)]
       });
     });
 
@@ -199,12 +269,14 @@ describe('agenticAudienceAdapter', function () {
 
       agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([validEntry]);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
+        mapEntryToOpenRtbSegment(validEntry)
+      ]);
     });
   });
 
-  describe('generates valid OpenRTB user object', function () {
-    it('produces valid OpenRTB user object for single provider', function () {
+  describe('generates valid OpenRTB user object (Agentic Audiences extension)', function () {
+    it('produces valid structure for single provider', function () {
       const config = { params: { providers: { liveramp: { storageKey: '_lr_agentic_audience_' } } } };
       const callback = sinon.spy();
       storageGetLocalStub.withArgs('_lr_agentic_audience_').returns(encodeData({ entries: [validEntry] }));
@@ -212,66 +284,38 @@ describe('agenticAudienceAdapter', function () {
 
       agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
-      const expectedUser = {
-        user: {
-          data: [
-            {
-              name: 'liveramp',
-              segment: [
-                {
-                  ver: '1.0',
-                  vector: [0.1, -0.2, 0.3],
-                  model: 'sbert-mini-ctx-001',
-                  dimension: 3,
-                  type: [1, 2]
-                }
-              ]
-            }
-          ]
-        }
-      };
-      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.include(expectedUser);
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.be.an('array');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0]).to.have.property('name', 'liveramp');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0]).to.have.property('segment');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment[0]).to.have.keys('ver', 'vector', 'model', 'dimension', 'type');
+      const seg = reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment[0];
+      expect(seg).to.have.keys('id', 'name', 'ext');
+      expect(seg.ext).to.have.keys('ver', 'vector', 'dimension', 'model', 'type');
+      expect(seg.ext.vector).to.equal(validEntry.vector);
+      expect(seg).to.deep.equal(mapEntryToOpenRtbSegment(validEntry));
     });
 
-    it('produces valid OpenRTB user object for multiple providers', function () {
+    it('produces valid structure for multiple providers', function () {
       const config = {
         params: {
           providers: {
             liveramp: { storageKey: '_lr_agentic_audience_' },
-            optable: { storageKey: '_optable_agentic_audience_' }
+            raptive: { storageKey: '_raptive_agentic_audience_' }
           }
         }
       };
       const callback = sinon.spy();
-      const liverampEntry = { ver: '1.0', vector: [0.1, -0.2, 0.3], model: 'sbert-mini-ctx-001', dimension: 3, type: [1] };
-      const optableEntry = { ver: '1.0', vector: [0.5, 0.6, -0.1], model: 'optable-embed-v1', dimension: 3, type: [2] };
+      const liverampEntry = { ver: '1.0', vector: vectorBase64Fixture([0.1, -0.2, 0.3]), model: 'sbert-mini-ctx-001', dimension: 3, type: [1] };
+      const raptiveEntry = { ver: '1.0', vector: vectorBase64Fixture([0.5, 0.6, -0.1]), model: 'raptive-embed-v1', dimension: 3, type: [2] };
       storageGetLocalStub.withArgs('_lr_agentic_audience_').returns(encodeData({ entries: [liverampEntry] }));
-      storageGetLocalStub.withArgs('_optable_agentic_audience_').returns(encodeData({ entries: [optableEntry] }));
+      storageGetLocalStub.withArgs('_raptive_agentic_audience_').returns(encodeData({ entries: [raptiveEntry] }));
       storageGetCookieStub.returns(null);
 
       agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
-      const expectedUser = {
-        user: {
-          data: [
-            { name: 'liveramp', segment: [liverampEntry] },
-            { name: 'optable', segment: [optableEntry] }
-          ]
-        }
-      };
-      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.include(expectedUser);
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.have.length(2);
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].name).to.equal('liveramp');
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[1].name).to.equal('optable');
       reqBidsConfigObj.ortb2Fragments.global.user.data.forEach((dataObj) => {
         expect(dataObj).to.have.keys('name', 'segment');
         expect(dataObj.segment).to.be.an('array');
-        dataObj.segment.forEach((seg) => {
-          expect(seg).to.have.keys('ver', 'vector', 'model', 'dimension', 'type');
+        dataObj.segment.forEach((segment) => {
+          expect(segment).to.have.keys('id', 'name', 'ext');
+          expect(segment.ext).to.have.keys('ver', 'vector', 'dimension', 'model', 'type');
         });
       });
     });

@@ -1,6 +1,9 @@
 /**
  * Agentic Audience Adapter – injects Agentic Audiences (vector-based) signals into the OpenRTB request.
- * See: https://github.com/IABTechLab/agentic-audiences
+ * Conforms to the OpenRTB community extension:
+ * {@link https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/agentic-audiences.md Agentic Audiences in OpenRTB}
+ *
+ * Context: {@link https://github.com/IABTechLab/agentic-audiences IABTechLab Agentic Audiences}
  *
  * The {@link module:modules/realTimeData} module is required
  * @module modules/agenticAudienceAdapter
@@ -30,6 +33,28 @@ function dataFromLocalStorage(key) {
 
 function dataFromCookie(key) {
   return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
+}
+
+/**
+ * Map a stored entry to an OpenRTB Segment (Agentic Audiences): id, name, ext.{ver, vector, dimension, model, type}
+ * Assumes storage matches the intended shape; fields are copied without validation or coercion.
+ * @param {Object} entry - Raw entry from storage `entries` array
+ * @returns {Object|null}
+ */
+export function mapEntryToOpenRtbSegment(entry) {
+  if (entry == null || typeof entry !== 'object') return null;
+
+  return {
+    id: entry.id,
+    name: entry.name,
+    ext: {
+      ver: entry.ver,
+      vector: entry.vector,
+      dimension: entry.dimension,
+      model: entry.model,
+      type: entry.type
+    }
+  };
 }
 
 function init(config, userConsent) {
@@ -62,12 +87,12 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     const storageKey = providerParams && providerParams.storageKey;
     if (!storageKey) continue;
 
-    const providerEntries = getEntries(storageKey);
+    const segments = getSegmentsForStorageKey(storageKey);
 
-    if (providerEntries && providerEntries.length > 0) {
+    if (segments && segments.length > 0) {
       data.push({
         name: provider,
-        segment: providerEntries
+        segment: segments
       });
     }
   }
@@ -96,7 +121,7 @@ function tryParse(data) {
   }
 }
 
-function getEntries(key) {
+function getSegmentsForStorageKey(key) {
   const storedData = dataFromLocalStorage(key) || dataFromCookie(key);
 
   if (!storedData || typeof storedData !== 'string') {
@@ -109,13 +134,9 @@ function getEntries(key) {
     return [];
   }
 
-  return parsed.entries.map(entry => ({
-    ver: entry['ver'],
-    vector: entry['vector'],
-    model: entry['model'],
-    dimension: entry['dimension'],
-    type: entry['type']
-  }));
+  return parsed.entries
+    .map(entry => mapEntryToOpenRtbSegment(entry))
+    .filter(seg => seg != null);
 }
 
 /** @type {RtdSubmodule} */
