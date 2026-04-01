@@ -14,6 +14,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { logInfo, mergeDeep } from '../src/utils.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -142,6 +143,7 @@ function getSegmentsForStorageKey(key) {
 /** @type {RtdSubmodule} */
 export const agenticAudienceAdapterSubmodule = {
   name: MODULE_NAME,
+  gvlid: VENDORLESS_GVLID,
   init,
   getBidRequestData
 };
