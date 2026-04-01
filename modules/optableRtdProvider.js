@@ -62,6 +62,7 @@ export const parseConfig = (moduleConfig) => {
   const ids = deepAccess(moduleConfig, 'params.ids', []);
   const hids = deepAccess(moduleConfig, 'params.hids', []);
   const handleRtd = deepAccess(moduleConfig, 'params.handleRtd', null);
+  const targetingParams = deepAccess(moduleConfig, 'params.targetingParams', {});
 
   if (handleRtd && typeof handleRtd !== 'function') {
     logError('handleRtd must be a function');
@@ -76,6 +77,10 @@ export const parseConfig = (moduleConfig) => {
     logError('hids parameter must be an array');
     return null;
   }
+  if (typeof targetingParams !== 'object' || Array.isArray(targetingParams)) {
+    logError('targetingParams parameter must be an object');
+    return null;
+  }
 
   return {
     host: host ? host.trim() : null,
@@ -88,7 +93,8 @@ export const parseConfig = (moduleConfig) => {
     handleRtd,
     adserverTargeting,
     instance,
-    hasDirectApiConfig
+    hasDirectApiConfig,
+    targetingParams
   };
 }
 
@@ -334,7 +340,7 @@ const extractIdentifiers = (configIds, configHids, reqBidsConfigObj) => {
  * @returns {string} Complete URL for targeting API
  */
 const buildTargetingURL = (params) => {
-  const { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout } = params;
+  const { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout, targetingParams = {} } = params;
 
   const searchParams = new URLSearchParams();
 
@@ -369,6 +375,14 @@ const buildTargetingURL = (params) => {
   if (timeout) {
     searchParams.set('timeout', timeout);
   }
+
+  // Append custom targeting parameters
+  Object.keys(targetingParams).forEach(key => {
+    const value = targetingParams[key];
+    if (value !== null && value !== undefined) {
+      searchParams.set(key, String(value));
+    }
+  });
 
   const url = `https://${host}/v2/targeting?${searchParams.toString()}`;
   return url;
@@ -496,7 +510,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       return;
     }
 
-    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig } = parsedConfig;
+    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig, targetingParams } = parsedConfig;
     const handleRtdFn = handleRtd || defaultHandleRtd;
 
     // Mode 1: SDK mode - If Optable Web SDK is loaded (window.optable), use its event system
@@ -562,7 +576,8 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
           sessionId,
           passport,
           cookies,
-          timeout: effectiveTimeout
+          timeout: effectiveTimeout,
+          targetingParams
         }).then(data => {
           if (data) {
             logMessage('Background API call completed, cache updated');
@@ -594,7 +609,8 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
       sessionId,
       passport,
       cookies,
-      timeout: effectiveTimeout
+      timeout: effectiveTimeout,
+      targetingParams
     });
 
     if (!targetingData) {

@@ -172,6 +172,50 @@ describe('Optable RTD Submodule', function () {
       };
       expect(parseConfig(moduleConfig)).to.be.null;
     });
+
+    it('parses targetingParams correctly', function () {
+      const moduleConfig = {
+        params: {
+          host: 'dcn.customer.com',
+          site: 'my-site',
+          node: 'my-node',
+          targetingParams: {
+            ab_test_id: 'split_test_demo',
+            skip_resolvers: 'Criteo'
+          }
+        }
+      };
+      const result = parseConfig(moduleConfig);
+      expect(result).to.not.be.null;
+      expect(result.targetingParams).to.deep.equal({
+        ab_test_id: 'split_test_demo',
+        skip_resolvers: 'Criteo'
+      });
+    });
+
+    it('returns null if targetingParams is not an object', function () {
+      const moduleConfig = {
+        params: {
+          host: 'dcn.customer.com',
+          site: 'my-site',
+          node: 'my-node',
+          targetingParams: 'notAnObject'
+        }
+      };
+      expect(parseConfig(moduleConfig)).to.be.null;
+    });
+
+    it('returns null if targetingParams is an array', function () {
+      const moduleConfig = {
+        params: {
+          host: 'dcn.customer.com',
+          site: 'my-site',
+          node: 'my-node',
+          targetingParams: ['not', 'an', 'object']
+        }
+      };
+      expect(parseConfig(moduleConfig)).to.be.null;
+    });
   });
 
   describe('generateSessionID', function () {
@@ -487,6 +531,44 @@ describe('Optable RTD Submodule', function () {
 
       expect(ajaxStub.called).to.be.false;
       expect(callback.calledOnce).to.be.true;
+    });
+
+    it('includes custom targetingParams in API call', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      moduleConfig.params.targetingParams = {
+        ab_test_id: 'split_test_demo',
+        skip_resolvers: 'Criteo',
+        custom_param: 'custom_value'
+      };
+
+      ajaxStub.callsFake((url, options) => {
+        expect(url).to.include('ab_test_id=split_test_demo');
+        expect(url).to.include('skip_resolvers=Criteo');
+        expect(url).to.include('custom_param=custom_value');
+        options.success('{"ortb2":{"user":{"eids":[]}}}');
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+
+    it('handles null and undefined values in targetingParams', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      moduleConfig.params.targetingParams = {
+        valid_param: 'value',
+        null_param: null,
+        undefined_param: undefined
+      };
+
+      ajaxStub.callsFake((url, options) => {
+        expect(url).to.include('valid_param=value');
+        expect(url).to.not.include('null_param');
+        expect(url).to.not.include('undefined_param');
+        options.success('{"ortb2":{"user":{"eids":[]}}}');
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      expect(ajaxStub.calledOnce).to.be.true;
     });
   });
 
