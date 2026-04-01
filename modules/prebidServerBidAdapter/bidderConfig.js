@@ -121,8 +121,8 @@ export function consolidateEids({ eids, conflicts = new Set() }) {
   }
 }
 
-function replaceEids({global, bidder}, requestedBidders) {
-  const consolidated = consolidateEids(extractEids({global, bidder}));
+function replaceEids({ global, bidder }, requestedBidders) {
+  const consolidated = consolidateEids(extractEids({ global, bidder }));
   global = deepClone(global);
   bidder = deepClone(bidder);
   function removeEids(target) {
@@ -132,7 +132,9 @@ function replaceEids({global, bidder}, requestedBidders) {
   removeEids(global);
   Object.values(bidder).forEach(removeEids);
   if (requestedBidders?.length) {
-    consolidated.permissions.forEach((permission) => permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder)));
+    consolidated.permissions.forEach((permission) => {
+      permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder));
+    });
   }
   const invalidSources = new Set(consolidated.permissions.filter(p => p.bidders.length === 0).map(p => p.source));
   const globalEids = consolidated.global.filter(eid => !invalidSources.has(eid.source));
@@ -148,7 +150,7 @@ function replaceEids({global, bidder}, requestedBidders) {
       deepSetValue(bidder[bidderCode], 'user.ext.eids', bidderEids);
     }
   })
-  return {global, bidder}
+return { global, bidder }
 }
 
 export function premergeFpd(ortb2Fragments, requestedBidders) {
