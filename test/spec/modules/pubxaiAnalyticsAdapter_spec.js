@@ -125,11 +125,7 @@ describe('pubxai analytics adapter', () => {
               },
             ],
             ortb2: {
-              device: {
-                ext: {
-                  cdep: true,
-                },
-              },
+              device: {},
             },
             auctionStart: 1603865707180,
             timeout: 1000,
@@ -189,11 +185,7 @@ describe('pubxai analytics adapter', () => {
           },
         ],
         ortb2: {
-          device: {
-            ext: {
-              cdep: true,
-            },
-          },
+          device: {},
         },
         auctionStart: 1603865707180,
         timeout: 1000,
@@ -346,11 +338,7 @@ describe('pubxai analytics adapter', () => {
               },
             ],
             ortb2: {
-              device: {
-                ext: {
-                  cdep: true,
-                },
-              },
+              device: {},
             },
             auctionStart: 1603865707180,
             timeout: 1000,
@@ -587,7 +575,6 @@ describe('pubxai analytics adapter', () => {
         deviceType: getDeviceType(),
         deviceOS: getOS(),
         browser: getBrowser(),
-        cdep: true,
       },
       userDetail: {
         userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
@@ -681,7 +668,6 @@ describe('pubxai analytics adapter', () => {
         deviceType: getDeviceType(),
         deviceOS: getOS(),
         browser: getBrowser(),
-        cdep: true,
       },
       userDetail: {
         userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
