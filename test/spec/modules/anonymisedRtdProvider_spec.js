@@ -32,6 +32,10 @@ describe('anonymisedRtdProvider', function() {
   });
 
   describe('anonymisedRtdSubmodule', function() {
+    afterEach(function () {
+      document.querySelectorAll('script[src*="static.anonymised.io"]').forEach(s => s.parentNode.removeChild(s));
+    });
+
     it('successfully instantiates', function () {
       expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
@@ -115,7 +119,7 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScriptStub.called).to.be.false;
     });
-    it('should load external script from tagUrl when it is set', function () {
+    it('should load external script from the default URL even if the outdated tagUrl is set', function () {
       const rtdConfig = {
         params: {
           tagUrl: 'https://example.io/loader.js',
@@ -125,24 +129,9 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      const expected = 'https://example.io/loader.js';
+      const expected = `https://static.anonymised.io/light/loader.js?ref=prebid&d=${window.location.hostname}`;
 
       expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
-    });
-    it('should not load external script from tagUrl when it is already loaded', function () {
-      const rtdConfig = {
-        params: {
-          tagUrl: 'https://example.io/loader.js',
-          tagConfig: {
-            clientId: 'testId'
-          }
-        }
-      };
-      const script = document.createElement('script');
-      script.src = 'https://example.io/loader.js';
-      document.body.appendChild(script);
-      anonymisedRtdSubmodule.init(rtdConfig, {});
-      expect(loadExternalScriptStub.called).to.be.false;
     });
   });
 
