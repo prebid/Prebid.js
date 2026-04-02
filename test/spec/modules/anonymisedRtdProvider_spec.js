@@ -119,6 +119,34 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScriptStub.called).to.be.false;
     });
+    it('should not load external script when it is already loaded via http://', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = 'http://static.anonymised.io/light/loader.js';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScriptStub.called).to.be.false;
+    });
+    it('should not load external script when it is already loaded via protocol-relative URL', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = '//static.anonymised.io/light/loader.js';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScriptStub.called).to.be.false;
+    });
     it('should load external script from the default URL even if the outdated tagUrl is set', function () {
       const rtdConfig = {
         params: {

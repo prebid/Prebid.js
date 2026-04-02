@@ -55,8 +55,8 @@ export function createRtdProvider(moduleName) {
       return;
     }
     logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`);
-    // Check if the script is already loaded
-    if (document.querySelector(`script[src*="${MARKETING_TAG_URL}"]`)) {
+    // Check if the script is already loaded (match on host/path only to handle http://, https://, and protocol-relative URLs)
+    if (document.querySelector(`script[src*="${MARKETING_TAG_URL.replace(/^https?:\/\//, '')}"]`)) {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
       return;
     }
