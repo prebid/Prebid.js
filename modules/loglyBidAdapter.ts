@@ -56,6 +56,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     if (!body || body.error) {
       return [];
     }
+    if (!Array.isArray(body.bids)) {
+      return [];
+    }
     body.bids.forEach(bid => {
       bidResponses.push(bid);
     });

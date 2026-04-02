@@ -158,9 +158,10 @@ describe('loglyBidAdapter', function () {
       });
     });
 
-    it('should return an empty array if body is missing or has an error', function () {
+    it('should return an empty array if body is missing, lacks bids, or has an error', function () {
       const request = spec.buildRequests([bannerBidRequest], bidderRequest)[0];
       expect(spec.interpretResponse({}, request)).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse({ body: {} }, request)).to.be.an('array').that.is.empty;
       expect(spec.interpretResponse({ body: { error: 'no fill' } }, request)).to.be.an('array').that.is.empty;
     });
   });
