@@ -878,17 +878,17 @@ describe('auctionmanager.js', function () {
       });
 
       it('getEffectiveMinBidCacheTTL uses minTargetedBidCacheTTL for bids with targeting set', () => {
-        config.setConfig({minBidCacheTTL: 30, minTargetedBidCacheTTL: 3600});
-        const bidWithTargeting = {status: BID_STATUS.BID_TARGETING_SET};
-        const bidWithoutTargeting = {status: 'other'};
+        config.setConfig({ minBidCacheTTL: 30, minTargetedBidCacheTTL: 3600 });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        const bidWithoutTargeting = { status: 'other' };
         expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(3600);
         expect(getEffectiveMinBidCacheTTL(bidWithoutTargeting)).to.eql(30);
       });
 
       it('getEffectiveMinBidCacheTTL uses minBidCacheTTL when minTargetedBidCacheTTL not set', () => {
         config.resetConfig();
-        config.setConfig({minBidCacheTTL: 30});
-        const bidWithTargeting = {status: BID_STATUS.BID_TARGETING_SET};
+        config.setConfig({ minBidCacheTTL: 30 });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
         expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(30);
       })
     })
