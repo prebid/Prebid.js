@@ -1,6 +1,6 @@
-import {config} from './config.js';
-import {logError} from './utils.js';
-import {BID_STATUS} from './constants.js';
+import { config } from './config.js';
+import { logError } from './utils.js';
+import { BID_STATUS } from './constants.js';
 const CACHE_TTL_SETTING = 'minBidCacheTTL';
 const MIN_TARGETED_BID_CACHE_TTL_SETTING = 'minTargetedBidCacheTTL';
 let TTL_BUFFER = 1;
