@@ -179,9 +179,6 @@ const track = ({ eventType, args }) => {
           .map((i) => i?.bids.length && i.bids[0]?.floorData)
           .find((i) => i) || {}
       );
-      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
-        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
-        .find((i) => i);
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,
