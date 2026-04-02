@@ -873,7 +873,7 @@ describe('auctionmanager.js', function () {
     describe('setConfig(minTargetedBidCacheTTL)', () => {
       it('should update getMinTargetedBidCacheTTL', () => {
         expect(getMinTargetedBidCacheTTL()).to.eql(null);
-        config.setConfig({minTargetedBidCacheTTL: 3600});
+        config.setConfig({ minTargetedBidCacheTTL: 3600 });
         expect(getMinTargetedBidCacheTTL()).to.eql(3600);
       });
 
