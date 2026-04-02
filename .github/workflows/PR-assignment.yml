@@ -18,7 +18,7 @@ jobs:
           ref: master
       - name: Generate app token
         id: token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.PR_BOT_ID }}
           private-key: ${{ secrets.PR_BOT_PEM }}
