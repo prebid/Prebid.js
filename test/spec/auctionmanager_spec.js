@@ -27,9 +27,9 @@ import { setConfig as setCurrencyConfig } from '../../modules/currency.js'
 
 import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
-import {sandbox} from 'sinon';
-import {getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { sandbox } from 'sinon';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
