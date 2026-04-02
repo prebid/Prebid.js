@@ -201,7 +201,6 @@ describe('bidUtilsCommon', function () {
         'bidderCode': 'redtram',
         'width': 300,
         'height': 250,
-        'statusMessage': 'Bid available',
         'adId': '5691dd18ba6ab6',
         'requestId': '23dc19818e5293',
         'transactionId': '948c716b-bf64-4303-bcf4-395c2f6a9770',
