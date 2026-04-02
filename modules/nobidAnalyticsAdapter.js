@@ -1,10 +1,10 @@
-import {deepClone, logError, getParameterByName, logMessage} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { deepClone, logError, getParameterByName, logMessage } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const VERSION = '2.0.2';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
@@ -15,7 +15,7 @@ window.nobidAnalyticsVersion = VERSION;
 const analyticsType = 'endpoint';
 const url = 'localhost:8383/event';
 const GVLID = 816;
-const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME, moduleType: MODULE_TYPE_ANALYTICS});
+const storage = getStorageManager({ gvlid: GVLID, moduleName: MODULE_NAME, moduleType: MODULE_TYPE_ANALYTICS });
 const {
   AUCTION_INIT,
   BID_REQUESTED,
@@ -42,7 +42,7 @@ function sendEvent (event, eventType) {
     var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
     env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
     if (!env) ret = 'https://carbon-nv.servenobids.com';
-    else if (env == 'dev') ret = 'https://localhost:8383';
+    else if (env === 'dev') ret = 'https://localhost:8383';
     return ret;
   }
   if (!nobidAnalytics.initOptions || !nobidAnalytics.initOptions.siteId || !event) return;
@@ -113,7 +113,7 @@ function auctionInit (event) {
     nobidAnalytics.topLocation = event.bidderRequests[0].refererInfo.topmostLocation;
   }
 }
-let nobidAnalytics = Object.assign(adapter({url, analyticsType}), {
+let nobidAnalytics = Object.assign(adapter({ url, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:

@@ -10,11 +10,11 @@ import {
   logInfo,
   triggerPixel
 } from '../../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
-import {config} from '../../src/config.js';
-import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
-
-import {getGlobalVarName} from '../../src/buildOptions.js';
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
+import { config } from '../../src/config.js';
+import { getDNT } from '../dnt/index.js';
+import { ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES } from './constants.js';
+import { getGlobalVarName } from '../../src/buildOptions.js';
 
 export const makeBaseSpec = (baseUrl, modes) => {
   return {
@@ -349,7 +349,7 @@ export function buildBidResponse(adUnit) {
   } else if (adUnit.mediaType === BANNER) {
     bidResponse.ad = adUnit.ad;
   } else if (adUnit.mediaType === NATIVE) {
-    bidResponse.native = {ortb: adUnit.native};
+    bidResponse.native = { ortb: adUnit.native };
   }
 
   if (adUnit.adomain && adUnit.adomain.length) {
@@ -376,7 +376,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
@@ -384,7 +384,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     tmax: timeout
   };
 
-  const userIdsParam = getBidIdParameter('userId', generalObject);
+  const userIdsParam = getBidIdParameter('userIdAsEids', generalObject);
   if (userIdsParam) {
     generalParams.userIds = JSON.stringify(userIdsParam);
   }

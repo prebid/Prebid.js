@@ -74,7 +74,7 @@ Prebid.outcomes.net endpoint key: mobianContentCategories
 
 Targetable Key: mobian_categories
 
-Possible values: "adult_content", "arms", "crime", "death_injury", "debated_issue", "hate_speech", "drugs_alcohol", "obscenity", "piracy", "spam", "terrorism"
+Possible values: "adult", "arms", "crime", "death_injury", "debated_issue", "piracy", "hate_speech", "obscenity", "drugs", "spam", "terrorism" 
 
 Description: Brand Safety Categories contain categorical results for brand safety when relevant (e.g. Low Risk Adult Content). Note there can be Medium and High Risk content that is not associated to a specific brand safety category.
 
@@ -159,6 +159,36 @@ p0 = Advertisers (via Campaign IDs) should AVOID targeting these personas
 p1 = Advertisers (via Campaign IDs) should target these personas
 
 *AP Values is in the early stages of testing and is subject to change.
+
+------------------
+
+Additional Results Fields (API response)
+
+The fields below are present in the Mobian Contextual API `results` schema and are useful for downstream interpretation of content maturity and taxonomy.
+
+mobianMpaaRating:
+
+Type: integer | null
+
+Description: MPAA-style maturity rating score represented as an integer value in the API response.
+
+Behavior when unavailable: omitted when null.
+
+mobianEsrbRating:
+
+Type: integer | null
+
+Description: ESRB-style maturity rating score represented as an integer value in the API response.
+
+Behavior when unavailable: omitted when null.
+
+mobianContentTaxonomy:
+
+Type: string[]
+
+Description: IAB content taxonomy categories (broad topic buckets such as "News" or "Health").
+
+Behavior when unavailable: may be returned as an empty array.
 
 ## GAM Targeting:
 

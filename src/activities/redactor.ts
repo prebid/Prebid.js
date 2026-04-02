@@ -1,6 +1,6 @@
-import {deepAccess} from '../utils.js';
-import {config} from '../config.js';
-import {isActivityAllowed, registerActivityControl} from './rules.js';
+import { deepAccess } from '../utils.js';
+import { config } from '../config.js';
+import { isActivityAllowed, registerActivityControl } from './rules.js';
 import {
   ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
@@ -19,7 +19,7 @@ export const ORTB_UFPD_PATHS = [
   'id',
   'buyeruid',
   'customdata'
-].map(f => `user.${f}`).concat('device.ext.cdep');
+].map(f => `user.${f}`).concat('device.ext.cdep', 'device.ifa');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
 export const ORTB_IPV4_PATHS = ['device.ip']
@@ -134,7 +134,7 @@ function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
     },
     {
       name: ACTIVITY_TRANSMIT_TID,
-      paths: ['ortb2Imp.ext.tid'],
+      paths: ['ortb2Imp.ext.tid', 'ortb2Imp.ext.tidSource'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed)
     }
   ].map(redactRule)
@@ -178,7 +178,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
     },
     {
       name: ACTIVITY_TRANSMIT_TID,
-      paths: ['source.tid'],
+      paths: ['source.tid', 'source.ext.tidSource'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed),
     }
   ].map(redactRule);
@@ -214,11 +214,16 @@ declare module '../config' {
      * privacy concern. Since version 8 they are disabled by default, and can be re-enabled with this flag.
      */
     enableTIDs?: boolean;
+    /**
+     * When enabled alongside enableTIDs, bidders receive a consistent source.tid for an auction rather than
+     * bidder-specific values.
+     */
+    consistentTIDs?: boolean;
   }
 }
 // by default, TIDs are off since version 8
 registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {
   if (!config.getConfig('enableTIDs')) {
-    return {allow: false, reason: 'TIDs are disabled'}
+    return { allow: false, reason: 'TIDs are disabled' }
   }
 });

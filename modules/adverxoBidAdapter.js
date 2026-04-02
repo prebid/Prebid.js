@@ -1,10 +1,10 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {ortbConverter as OrtbConverter} from '../libraries/ortbConverter/converter.js';
-import {Renderer} from '../src/Renderer.js';
-import {deepAccess, deepSetValue} from '../src/utils.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { ortbConverter as OrtbConverter } from '../libraries/ortbConverter/converter.js';
+import { Renderer } from '../src/Renderer.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -19,14 +19,18 @@ import {config} from '../src/config.js';
 const BIDDER_CODE = 'adverxo';
 
 const ALIASES = [
-  {code: 'adport', skipPbsAliasing: true},
-  {code: 'bidsmind', skipPbsAliasing: true}
+  { code: 'adport', skipPbsAliasing: true },
+  { code: 'bidsmind', skipPbsAliasing: true },
+  { code: 'harrenmedia', skipPbsAliasing: true },
+  { code: 'alchemyx', skipPbsAliasing: true }
 ];
 
 const AUCTION_URLS = {
   adverxo: 'js.pbsadverxo.com',
   adport: 'ayuetina.com',
-  bidsmind: 'arcantila.com'
+  bidsmind: 'arcantila.com',
+  harrenmedia: 'harrenmediaprebid.com',
+  alchemyx: 'alchemyx.one'
 };
 
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
@@ -157,7 +161,7 @@ const videoUtils = {
 
       win.adxVideoRenderer.renderAd({
         targetId: bid.adUnitCode,
-        adResponse: {content: bid.vastXml}
+        adResponse: { content: bid.vastXml }
       });
     });
   }

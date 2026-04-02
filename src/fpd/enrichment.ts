@@ -1,15 +1,25 @@
-import {hook} from '../hook.js';
-import {getRefererInfo, parseDomain} from '../refererDetection.js';
-import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, deepAccess, getDefinedParams, getDNT, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
-import {config} from '../config.js';
-import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
-import {PbPromise} from '../utils/promise.js';
-import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
-import {isActivityAllowed} from '../activities/rules.js';
-import {activityParams} from '../activities/activityParams.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
-import {MODULE_TYPE_PREBID} from '../activities/modules.js';
+import { hook } from '../hook.js';
+import { getRefererInfo, parseDomain } from '../refererDetection.js';
+import { findRootDomain } from './rootDomain.js';
+import {
+  deepSetValue,
+  deepAccess,
+  getDefinedParams,
+  getWinDimensions,
+  getDocument,
+  getWindowSelf,
+  getWindowTop,
+  mergeDeep,
+  memoize
+} from '../utils.js';
+import { config } from '../config.js';
+import { getHighEntropySUA, getLowEntropySUA } from './sua.js';
+import { PbPromise } from '../utils/promise.js';
+import { CLIENT_SECTIONS, clientSectionChecker, hasSection } from './oneClient.js';
+import { isActivityAllowed } from '../activities/rules.js';
+import { activityParams } from '../activities/activityParams.js';
+import { ACTIVITY_ACCESS_DEVICE } from '../activities/activities.js';
+import { MODULE_TYPE_PREBID } from '../activities/modules.js';
 import { getViewportSize } from '../../libraries/viewport/viewport.js';
 
 export const dep = {
@@ -30,6 +40,19 @@ export interface FirstPartyDataConfig {
    * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
    */
   uaHints?: string[]
+  /**
+   * Control keyword enrichment - `site.keywords`, `dooh.keywords` and/or `app.keywords`.
+   */
+  keywords?: {
+    /**
+     * If true (the default), look for keywords in a keyword meta tag (<meta name="keywords">) and add them to first party data
+     */
+    meta?: boolean,
+    /**
+     * If true (the default), look for keywords in a JSON-LD tag (<script type="application/json+ld">) and add themm to first party data.
+     */
+    json?: boolean
+  }
 }
 
 declare module '../config' {
@@ -129,12 +152,11 @@ const ENRICHMENTS = {
       const h = getWinDimensions().screen.height;
 
       // vpw and vph are the viewport dimensions of the browser window
-      const {width: vpw, height: vph} = getViewportSize();
+      const { width: vpw, height: vph } = getViewportSize();
 
       const device = {
         w,
         h,
-        dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
         ext: {
@@ -142,10 +164,6 @@ const ENRICHMENTS = {
           vph,
         },
       };
-
-      if (win.navigator?.webdriver) {
-        deepSetValue(device, 'ext.webdriver', true);
-      }
 
       return device;
     })
@@ -163,15 +181,54 @@ const ENRICHMENTS = {
   }
 };
 
+/**
+ * Detect keywords also from json/ld if this is present
+ */
+export const getJsonLdKeywords = memoize(() => {
+  return winFallback((win) => {
+    const doc = win.document;
+    const scriptTags: any = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
+    let keywords = [];
+
+    for (const scriptTag of scriptTags) {
+      try {
+        const jsonData = JSON.parse(scriptTag.textContent);
+        const jsonObjects = Array.isArray(jsonData) ? jsonData : [jsonData];
+
+        for (const obj of jsonObjects) {
+          if (typeof obj.keywords === 'string') {
+            const parts = obj.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+            keywords.push(...parts);
+          }
+        }
+      } catch (error) {
+        // silent
+      }
+    }
+    return keywords;
+  })
+});
+
+export const getMetaTagKeywords = memoize(() => {
+  return winFallback((win) => {
+    return win.document.querySelector('meta[name="keywords"]')?.content?.split(',').map(k => k.trim());
+  })
+});
+
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
 // section is appropriate
 function clientEnrichment(ortb2, ri) {
-  const domain = parseDomain(ri.page, {noLeadingWww: true});
-  const keywords = winFallback((win) => win.document.querySelector('meta[name=\'keywords\']'))
-    ?.content?.replace?.(/\s/g, '');
+  const domain = parseDomain(ri.page, { noLeadingWww: true });
+  const keywords = new Set();
+  if (config.getConfig('firstPartyData.keywords.meta') ?? true) {
+    (getMetaTagKeywords() ?? []).forEach(key => keywords.add(key));
+  }
+  if (config.getConfig('firstPartyData.keywords.json') ?? true) {
+    (getJsonLdKeywords() ?? []).forEach(key => keywords.add(key));
+  }
   return removeUndef({
     domain,
-    keywords,
+    keywords: keywords.size > 0 ? Array.from(keywords.keys()).join(',') : undefined,
     publisher: removeUndef({
       domain: dep.findRootDomain(domain)
     })

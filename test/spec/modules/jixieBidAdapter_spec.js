@@ -89,9 +89,25 @@ describe('jixie Adapter', function () {
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
-      refererInfo: {referer: pageurl_},
+      refererInfo: { referer: pageurl_ },
       auctionId: auctionId_,
-      timeout: timeout_
+      timeout: timeout_,
+      ortb2: {
+        site: {
+          ext: {
+            data: {
+              keyA: 'abcde'
+            }
+          }
+        },
+        user: {
+          ext: {
+            data: {
+              abc: 'def'
+            }
+          }
+        }
+      }
     };
     // to serve as the object that prebid will call jixie buildRequest with: (param1)
     const bidRequests_ = [
@@ -241,7 +257,7 @@ describe('jixie Adapter', function () {
       // get the interceptors ready:
       const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'jixie') {
+        if (prop === 'jixie') {
           return testJixieCfg_;
         }
         return null;
@@ -307,6 +323,8 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('timeout', timeout_);
       expect(payload).to.have.property('currency', currency_);
       expect(payload).to.have.property('bids').that.deep.equals(refBids_);
+      expect(payload).to.have.property('siteKvs').that.deep.equals(bidderRequest_.ortb2.site.ext.data);
+      expect(payload).to.have.property('userKvs').that.deep.equals(bidderRequest_.ortb2.user.ext.data);
 
       // unwire interceptors
       getCookieStub.restore();
@@ -329,7 +347,7 @@ describe('jixie Adapter', function () {
       };
       const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'priceGranularity') {
+        if (prop === 'priceGranularity') {
           return content;
         }
         return null;
@@ -344,9 +362,9 @@ describe('jixie Adapter', function () {
 
     it('it should popular the device info when it is available', function () {
       const getConfigStub = sinon.stub(config, 'getConfig');
-      const content = {w: 500, h: 400};
+      const content = { w: 500, h: 400 };
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'device') {
+        if (prop === 'device') {
           return content;
         }
         return null;
@@ -410,7 +428,7 @@ describe('jixie Adapter', function () {
       // 2 aid is set in the jixie config
       const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'jixie') {
+        if (prop === 'jixie') {
           return { aid: '11223344556677889900' };
         }
         return null;
@@ -617,14 +635,14 @@ describe('jixie Adapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
     });
 
     it('should get correct bid response', function () {
       const setCookieSpy = sinon.spy(storage, 'setCookie');
       const setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
-      const result = spec.interpretResponse({body: responseBody_}, requestObj_)
+      const result = spec.interpretResponse({ body: responseBody_ }, requestObj_)
       expect(setLocalStorageSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setLocalStorageSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setCookieSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);

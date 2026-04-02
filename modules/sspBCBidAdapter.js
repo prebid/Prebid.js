@@ -1,10 +1,12 @@
 import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -165,7 +167,7 @@ const getNotificationPayload = bidData => {
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
-  const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
+  const { connection = {}, userAgentData = {} } = navigator;
   const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
@@ -173,8 +175,8 @@ const applyClientHints = ortbRequest => {
     'CH-Rtt': connection.rtt,
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
-    'CH-DeviceMemory': deviceMemory,
-    'CH-Dpr': W.devicePixelRatio,
+    'CH-DeviceMemory': null,
+    'CH-Dpr': getDevicePixelRatio(W),
     'CH-ViewportWidth': viewport.width,
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,
@@ -670,8 +672,7 @@ const spec = {
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
     const { body: response = {} } = serverResponse;
-    const { seatbid: responseSeat, ext: responseExt = {} } = response;
-    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
+    const { seatbid: responseSeat } = response;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
@@ -737,6 +738,7 @@ const spec = {
               },
               netRevenue: true,
               vurls,
+              eventtrackers: vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
@@ -787,12 +789,12 @@ const spec = {
       });
     }
 
-    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
+    return bids;
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {
-    const {iframeEnabled, pixelEnabled} = syncOptions;
-    const {gdprApplies, consentString = ''} = gdprConsent;
+    const { iframeEnabled, pixelEnabled } = syncOptions;
+    const { gdprApplies, consentString = '' } = gdprConsent;
     const mySyncs = [];
     if (iframeEnabled) {
       mySyncs.push({

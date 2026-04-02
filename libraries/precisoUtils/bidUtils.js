@@ -4,11 +4,12 @@ import { ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
+import { getTimeZone } from '../timezone/timezone.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
-  var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const city = getTimeZone();
   let req = {
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
@@ -28,7 +29,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
     wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang,
   };
-  if (req.device && req.device != 'undefined') {
+  if (req.device && req.device !== 'undefined') {
     req.device.geo = {
       country: req.user.geo.country,
       region: req.user.geo.region,

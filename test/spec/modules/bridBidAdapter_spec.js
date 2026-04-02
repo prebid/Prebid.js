@@ -70,7 +70,7 @@ describe('Brid Bid Adapter', function() {
     };
     const bidderRequest = null;
 
-    const bidResponse = spec.interpretResponse({ body: responseBody }, {bidderRequest});
+    const bidResponse = spec.interpretResponse({ body: responseBody }, { bidderRequest });
 
     expect(bidResponse.length).to.equal(0);
   });
@@ -99,7 +99,7 @@ describe('Brid Bid Adapter', function() {
       bids: videoRequest
     };
 
-    const bidResponse = spec.interpretResponse({ body: responseBody }, {bidderRequest});
+    const bidResponse = spec.interpretResponse({ body: responseBody }, { bidderRequest });
     expect(bidResponse).to.not.be.empty;
 
     const bid = bidResponse[0];
@@ -161,13 +161,13 @@ describe('Brid Bid Adapter', function() {
   });
 
   it('Test userSync valid sync url for iframe', function () {
-    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, { consentString: 'anyString' });
     expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=brid&gdpr=0&gdpr_consent=anyString');
     expect(userSync.type).to.be.equal('iframe');
   });
 
   it('Test userSyncs iframeEnabled=false', function () {
-    const userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    const userSyncs = spec.getUserSyncs({ iframeEnabled: false });
     expect(userSyncs).to.have.lengthOf(0);
   });
 });

@@ -4,22 +4,12 @@ import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import { BIDFLOOR_CURRENCY } from '../../../modules/seedtagBidAdapter.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
 
 const adUnitCode = '/19968336/header-bid-tag-0'
-
-// create a default adunit
-const slot = document.createElement('div');
-slot.id = adUnitCode;
-slot.style.width = '300px'
-slot.style.height = '250px'
-slot.style.position = 'absolute'
-slot.style.top = '10px'
-slot.style.left = '20px'
-
-document.body.appendChild(slot);
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -31,7 +21,7 @@ function getSlotConfigs(mediaTypes, params) {
     bidId: '30b31c1838de1e',
     bidderRequestId: '22edbae2733bf6',
     auctionId: '1d1a030790a475',
-    bidRequestsCount: 1,
+    bidderRequestsCount: 1,
     bidder: 'seedtag',
     mediaTypes: mediaTypes,
     src: 'client',
@@ -60,12 +50,25 @@ const createBannerSlotConfig = (mediatypes) => {
 };
 
 describe('Seedtag Adapter', function () {
+  let sandbox;
   beforeEach(function () {
     mockGpt.reset();
+    sandbox = sinon.createSandbox();
+    sandbox.stub(adUnits, 'getAdUnitElement').returns({
+      getBoundingClientRect() {
+        return {
+          top: 10,
+          left: 20,
+          width: 300,
+          height: 250
+        }
+      }
+    });
   });
 
   afterEach(function () {
     mockGpt.enable();
+    sandbox.restore();
   });
   describe('isBidRequestValid method', function () {
     describe('returns true', function () {
@@ -171,13 +174,13 @@ describe('Seedtag Adapter', function () {
           );
           expect(isBidRequestValid).to.equal(false);
         });
-        it('does not have the AdUnitId.', function () {
+        it('should be valid with only publisherId and no adUnitId', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               publisherId: PUBLISHER_ID,
             })
           );
-          expect(isBidRequestValid).to.equal(false);
+          expect(isBidRequestValid).to.equal(true);
         });
       });
 
@@ -328,9 +331,13 @@ describe('Seedtag Adapter', function () {
     });
 
     describe('BidRequests params', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const data = JSON.parse(request.data);
-      const bidRequests = data.bidRequests;
+      let request, data, bidRequests;
+      beforeEach(() => {
+        request = spec.buildRequests(validBidRequests, bidderRequest);
+        data = JSON.parse(request.data);
+        bidRequests = data.bidRequests;
+      });
+
       it('should request a Banner', function () {
         const bannerBid = bidRequests[0];
         expect(bannerBid.id).to.equal('30b31c1838de1e');
@@ -369,27 +376,21 @@ describe('Seedtag Adapter', function () {
         const bidRequests = data.bidRequests;
         const bannerBid = bidRequests[0];
 
-        // on some CI, the DOM is not initialized, so we need to check if the slot is available
-        const slot = document.getElementById(adUnitCode)
-        if (slot) {
-          expect(bannerBid).to.have.property('geom')
+        expect(bannerBid).to.have.property('geom')
 
-          const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
-          params.forEach(([param, value]) => {
-            expect(bannerBid.geom).to.have.property(param)
-            expect(bannerBid.geom[param]).to.be.a('number')
-            expect(bannerBid.geom[param]).to.be.equal(value)
-          })
+        const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
+        params.forEach(([param, value]) => {
+          expect(bannerBid.geom).to.have.property(param)
+          expect(bannerBid.geom[param]).to.be.a('number')
+          expect(bannerBid.geom[param]).to.be.equal(value)
+        })
 
-          expect(bannerBid.geom).to.have.property('viewport')
-          const viewportParams = ['width', 'height']
-          viewportParams.forEach(param => {
-            expect(bannerBid.geom.viewport).to.have.property(param)
-            expect(bannerBid.geom.viewport[param]).to.be.a('number')
-          })
-        } else {
-          expect(bannerBid).to.not.have.property('geom')
-        }
+        expect(bannerBid.geom).to.have.property('viewport')
+        const viewportParams = ['width', 'height']
+        viewportParams.forEach(param => {
+          expect(bannerBid.geom.viewport).to.have.property(param)
+          expect(bannerBid.geom.viewport[param]).to.be.a('number')
+        })
       })
 
       it('should have bidfloor parameter if available', function () {
@@ -711,6 +712,47 @@ describe('Seedtag Adapter', function () {
         expect(data.sua).to.be.undefined;
       });
     });
+
+    describe('integrationType param', function () {
+      it('should default to publisherToken when integrationType is not provided', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.integrationType).to.equal('publisherToken');
+      });
+
+      it('should use the provided integrationType value', function () {
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
+        bidRequests[0].params.integrationType = 'ronId';
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.integrationType).to.equal('ronId');
+      });
+    });
+
+    describe('ortb param', function () {
+      it('should add ortb param to payload when bidderRequest has ortb2', function () {
+        const ortb2 = {
+          site: { cat: ['IAB1'] },
+          user: { data: [{ name: 'test' }] },
+          bcat: ['IAB3'],
+        };
+        bidderRequest['ortb2'] = ortb2;
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.ortb).to.exist;
+        expect(data.ortb).to.deep.equal(ortb2);
+      });
+
+      it('should not add ortb param to payload when bidderRequest does not have ortb2', function () {
+        bidderRequest['ortb2'] = undefined;
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.ortb).to.be.undefined;
+      });
+    });
   })
   describe('interpret response method', function () {
     it('should return a void array, when the server response are not correct.', function () {
@@ -895,7 +937,7 @@ describe('Seedtag Adapter', function () {
       utils.triggerPixel.restore();
     });
 
-    it('should return the correct endpoint', function () {
+    it('should return the correct endpoint with adUnitId', function () {
       const params = { publisherId: '0000', adUnitId: '11111' };
       const timeout = 3000;
       const timeoutData = [{ params: [params], timeout }];
@@ -903,8 +945,21 @@ describe('Seedtag Adapter', function () {
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
         params.publisherId +
+        '&timeout=' +
+        timeout +
         '&adUnitId=' +
-        params.adUnitId +
+        params.adUnitId
+      );
+    });
+
+    it('should return the correct endpoint without adUnitId', function () {
+      const params = { publisherId: '0000' };
+      const timeout = 3000;
+      const timeoutData = [{ params: [params], timeout }];
+      const timeoutUrl = getTimeoutUrl(timeoutData);
+      expect(timeoutUrl).to.equal(
+        'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
+        params.publisherId +
         '&timeout=' +
         timeout
       );
@@ -919,10 +974,10 @@ describe('Seedtag Adapter', function () {
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
           params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
           '&timeout=' +
-          timeout
+          timeout +
+          '&adUnitId=' +
+          params.adUnitId
         )
       ).to.equal(true);
     });

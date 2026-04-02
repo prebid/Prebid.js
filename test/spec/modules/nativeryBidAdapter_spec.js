@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, converter } from 'modules/nativeryBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
+import * as ajax from 'src/ajax.js';
 
 const ENDPOINT = 'https://hb.nativery.com/openrtb2/auction';
 const MAX_IMPS_PER_REQUEST = 10;
@@ -192,4 +193,102 @@ describe('NativeryAdapter', function () {
       logErrorSpy.restore();
     });
   });
+
+  describe('onBidWon callback', () => {
+    it('should exists and be a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should NOT call ajax when invalid or empty data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      spec.onBidWon(null);
+      spec.onBidWon({});
+      spec.onBidWon(undefined);
+      expect(ajaxStub.called).to.be.false;
+    });
+    it('should call ajax with correct payload when valid data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const validData = { bidder: 'nativery', adUnitCode: 'div-1' };
+      spec.onBidWon(validData);
+      assertTrackEvent(ajaxStub, 'NAT_BID_WON', validData)
+    });
+  });
+
+  describe('onAdRenderSucceeded callback', () => {
+    it('should exists and be a function', () => {
+      expect(spec.onAdRenderSucceeded).to.exist.and.to.be.a('function');
+    });
+    it('should NOT call ajax when invalid or empty data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      spec.onAdRenderSucceeded(null);
+      spec.onAdRenderSucceeded({});
+      spec.onAdRenderSucceeded(undefined);
+      expect(ajaxStub.called).to.be.false;
+    });
+    it('should call ajax with correct payload when valid data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const validData = { bidder: 'nativery', adUnitCode: 'div-1' };
+      spec.onAdRenderSucceeded(validData);
+      assertTrackEvent(ajaxStub, 'NAT_AD_RENDERED', validData)
+    });
+  });
+
+  describe('onTimeout callback', () => {
+    it('should exists and be a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should NOT call ajax when invalid or empty data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      spec.onTimeout(null);
+      spec.onTimeout({});
+      spec.onTimeout([]);
+      spec.onTimeout(undefined);
+      expect(ajaxStub.called).to.be.false;
+    });
+    it('should call ajax with correct payload when valid data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const validData = [{ bidder: 'nativery', adUnitCode: 'div-1' }];
+      spec.onTimeout(validData);
+      assertTrackEvent(ajaxStub, 'NAT_TIMEOUT', validData)
+    });
+  });
+
+  describe('onBidderError callback', () => {
+    it('should exists and be a function', () => {
+      expect(spec.onBidderError).to.exist.and.to.be.a('function');
+    });
+    it('should NOT call ajax when invalid or empty data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      spec.onBidderError(null);
+      spec.onBidderError({});
+      spec.onBidderError(undefined);
+      expect(ajaxStub.called).to.be.false;
+    });
+    it('should call ajax with correct payload when valid data is provided', () => {
+      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const validData = {
+        error: 'error',
+        bidderRequest: {
+          bidder: 'nativery',
+        }
+      };
+      spec.onBidderError(validData);
+      assertTrackEvent(ajaxStub, 'NAT_BIDDER_ERROR', validData)
+    });
+  });
 });
+
+const assertTrackEvent = (ajaxStub, event, data) => {
+  expect(ajaxStub.calledOnce).to.be.true;
+
+  const [url, callback, body, options] = ajaxStub.firstCall.args;
+
+  expect(url).to.equal('https://hb.nativery.com/openrtb2/track-event');
+  expect(callback).to.be.undefined;
+  expect(body).to.be.a('string');
+  expect(options).to.deep.equal({ method: 'POST', withCredentials: true, keepalive: true });
+
+  const payload = JSON.parse(body);
+  expect(payload.event).to.equal(event);
+  expect(payload.prebidVersion).to.exist.and.to.be.a('string')
+  expect(payload.data).to.deep.equal(data);
+}

@@ -1,9 +1,10 @@
 import { timestamp, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -23,15 +24,15 @@ const cache = {
   auctions: {}
 };
 
-const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
-  track({eventType, args}) {
+const livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICSTYPE }), {
+  track({ eventType, args }) {
     const time = timestamp();
     logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
+        cache.auctions[args.auctionId] = { bids: {}, bidAdUnits: {} };
         break;
       case EVENTS.BID_REQUESTED:
         logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
@@ -41,7 +42,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
-          const container = document.getElementById(bidRequest.adUnitCode);
+          const container = getAdUnitElement(bidRequest);
           let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
           adUnitId = adUnitId != null ? adUnitId : undefined;
 
@@ -126,7 +127,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
         wonBid.rUp = args.rUp;
         wonBid.meta = args.meta;
         wonBid.dealId = args.dealId;
-        if (wonBid.sendStatus != 0) {
+        if (wonBid.sendStatus !== 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
         break;
@@ -136,7 +137,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTY
         adRenderFailedBid.adRenderFailed = true;
         adRenderFailedBid.reason = args.reason;
         adRenderFailedBid.message = args.message;
-        if (adRenderFailedBid.sendStatus != 0) {
+        if (adRenderFailedBid.sendStatus !== 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
         break;
@@ -181,15 +182,15 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     ext: initOptions.ext
   };
 
-  if (events.requests.length == 0 &&
-      events.responses.length == 0 &&
-      events.wins.length == 0 &&
-      events.timeouts.length == 0 &&
-      events.rf.length == 0) {
+  if (events.requests.length === 0 &&
+      events.responses.length === 0 &&
+      events.wins.length === 0 &&
+      events.timeouts.length === 0 &&
+      events.rf.length === 0) {
     return;
   }
 
-  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
 
   setTimeout(() => {
     sentRequests.auctionIds.forEach(id => {
@@ -199,7 +200,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
 };
 
 function getMediaTypeEnum(mediaType) {
-  return mediaType == 'native' ? 2 : (mediaType == 'video' ? 4 : 1);
+  return mediaType === 'native' ? 2 : (mediaType === 'video' ? 4 : 1);
 }
 
 function getSentRequests() {
@@ -233,7 +234,7 @@ function getSentRequests() {
     });
   });
 
-  return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
+  return { gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests };
 }
 
 function getResponses(gdpr, auctionIds) {
@@ -302,14 +303,14 @@ function getWins(gdpr, auctionIds) {
 function getGdprPos(gdpr, auction) {
   var gdprPos = 0;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
-    if (gdpr[gdprPos].gdprApplies == auction.gdprApplies &&
-        gdpr[gdprPos].gdprConsent == auction.gdprConsent) {
+    if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
+        gdpr[gdprPos].gdprConsent === auction.gdprConsent) {
       break;
     }
   }
 
-  if (gdprPos == gdpr.length) {
-    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+  if (gdprPos === gdpr.length) {
+    gdpr[gdprPos] = { gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent };
   }
 
   return gdprPos;
@@ -318,12 +319,12 @@ function getGdprPos(gdpr, auction) {
 function getAuctionIdPos(auctionIds, auctionId) {
   var auctionIdPos = 0;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
-    if (auctionIds[auctionIdPos] == auctionId) {
+    if (auctionIds[auctionIdPos] === auctionId) {
       break;
     }
   }
 
-  if (auctionIdPos == auctionIds.length) {
+  if (auctionIdPos === auctionIds.length) {
     auctionIds[auctionIdPos] = auctionId;
   }
 

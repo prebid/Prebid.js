@@ -1,8 +1,10 @@
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -11,7 +13,7 @@ const LS_KEYS = {
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
 };
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 let preReqTime = 0;
 
@@ -52,7 +54,7 @@ export const spec = {
         'inFrame': 1,
         'sid': bid.params.sid,
         'lcuid': LC_UID,
-        'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
+        'vol': isInHostileIframe ? '' : visibleOnLoad(getAdUnitElement(bid)),
         'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
@@ -82,10 +84,10 @@ export const spec = {
       }
 
       // Include connection info if available
-      const CONNECTION = navigator.connection || navigator.webkitConnection;
-      if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
-        data['netinfo.type'] = CONNECTION.type;
-        data['netinfo.downlinkMax'] = CONNECTION.downlinkMax;
+      const connection = getConnectionInfo();
+      if (connection?.type && connection.downlinkMax != null) {
+        data['netinfo.type'] = connection.type;
+        data['netinfo.downlinkMax'] = connection.downlinkMax;
       }
 
       // Include debug data when available
@@ -97,7 +99,7 @@ export const spec = {
 
       // GDPR Consent info
       if (data.gdprCmp) {
-        const {gdprApplies, consentString, vendorData} = bidderRequest.gdprConsent;
+        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
         const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
         data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
         data.gdprConsentData = consentString;
@@ -161,7 +163,7 @@ export const spec = {
     userSyncs = serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
         (response.body[0].syncPixels || []).forEach((url) => {
-          allSyncPixels.push({type: 'image', url});
+          allSyncPixels.push({ type: 'image', url });
         });
       }
       return allSyncPixels;

@@ -686,6 +686,47 @@ describe('pubmatic analytics adapter', function () {
       expect(trackerData.rd.ctr).to.equal('US');
     });
 
+    it('Logger: does not include identity partners when getUserIds is not a function', function () {
+      this.timeout(5000);
+
+      // Make sure getUserIds is NOT a function so that getListOfIdentityPartners returns early
+      const namespace = getGlobal();
+      const originalGetUserIds = namespace.getUserIds;
+      namespace.getUserIds = null;
+
+      sandbox.stub(getGlobal(), 'getHighestCpmBids').callsFake(() => {
+        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]];
+      });
+
+      config.setConfig({
+        testGroupId: 15
+      });
+
+      // Standard event flow to trigger the logger
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(2000 + 1000); // wait for SEND_TIMEOUT
+
+      expect(requests.length).to.equal(1); // only the logger should fire
+      const request = requests[0];
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
+
+      const data = getLoggerJsonFromRequest(request.requestBody);
+
+      // fd should exist, but bdv (identity partners) should NOT be present
+      expect(data).to.have.property('fd');
+      expect(data.fd.bdv).to.be.undefined;
+
+      // restore original getUserIds to avoid side effects on other tests
+      namespace.getUserIds = originalGetUserIds;
+    });
+
     it('Logger: log floor fields when prebids floor shows setConfig in location property', function () {
       const BID_REQUESTED_COPY = utils.deepClone(MOCK.BID_REQUESTED);
       BID_REQUESTED_COPY['bids'][1]['floorData']['location'] = 'fetch';

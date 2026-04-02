@@ -1,0 +1,23 @@
+name: NPM install
+description: Run npm install and cache dependencies
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore dependencies
+      id: restore-modules
+      uses: actions/cache/restore@v4
+      with:
+        path: "node_modules"
+        key: node_modules-${{ hashFiles('package-lock.json') }}
+    - name: Run npm ci
+      if: ${{ steps.restore-modules.outputs.cache-hit != 'true'  }}
+      shell: bash
+      run: |
+        npm ci
+    - name: Cache dependencies
+      if: ${{ steps.restore-modules.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: "node_modules"
+        key: node_modules-${{ hashFiles('package-lock.json') }}

@@ -6,7 +6,9 @@ import {
   deepSetValue,
   logError,
   logWarn,
+  safeJSONEncode,
 } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -18,6 +20,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'nativery';
 const BIDDER_ALIAS = ['nat'];
 const ENDPOINT = 'https://hb.nativery.com/openrtb2/auction';
+const EVENT_TRACKER_URL = 'https://hb.nativery.com/openrtb2/track-event';
+// Currently we log every event
+const DEFAULT_SAMPLING_RATE = 1;
+const EVENT_LOG_RANDOM_NUMBER = Math.random();
 const DEFAULT_CURRENCY = 'EUR';
 const TTL = 30;
 const MAX_IMPS_PER_REQUEST = 10;
@@ -86,7 +92,7 @@ export const spec = {
         );
         if (Array.isArray(responseErrors) && responseErrors.length > 0) {
           logWarn(
-            'Nativery: Error in bid response ' + JSON.stringify(responseErrors)
+            'Nativery: Error in bid response ' + safeJSONEncode(responseErrors)
           );
         }
         const ortb = converter.fromORTB({
@@ -96,12 +102,45 @@ export const spec = {
         return ortb.bids ?? [];
       }
     } catch (error) {
-      const errMsg = error?.message ?? JSON.stringify(error);
+      const errMsg = error?.message ?? safeJSONEncode(error);
       logError('Nativery: unhandled error in bid response ' + errMsg);
       return [];
     }
     return [];
   },
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {Bid} bid The bid that won the auction
+   */
+  onBidWon: function(bid) {
+    if (bid == null || Object.keys(bid).length === 0) return
+    reportEvent('NAT_BID_WON', bid)
+  },
+  /**
+   * Register bidder specific code, which will execute if the ad
+   * has been rendered successfully
+   * @param {Bid} bid Bid request object
+   */
+  onAdRenderSucceeded: function (bid) {
+    if (bid == null || Object.keys(bid).length === 0) return
+    reportEvent('NAT_AD_RENDERED', bid)
+  },
+  /**
+   * Register bidder specific code, which will execute if bidder timed out after an auction
+   * @param {Object} timeoutData Containing timeout specific data
+   */
+  onTimeout: function (timeoutData) {
+    if (!Array.isArray(timeoutData) || timeoutData.length === 0) return
+    reportEvent('NAT_TIMEOUT', timeoutData)
+  },
+  /**
+   * Register bidder specific code, which will execute if the bidder responded with an error
+   * @param {Object} errorData An object with the XMLHttpRequest error and the bid request object
+   */
+  onBidderError: function (errorData) {
+    if (errorData == null || Object.keys(errorData).length === 0) return
+    reportEvent('NAT_BIDDER_ERROR', errorData)
+  }
 };
 
 function formatRequest(ortbPayload) {
@@ -130,6 +169,21 @@ function formatRequest(ortbPayload) {
     };
   }
   return request;
+}
+
+function reportEvent(event, data, sampling = null) {
+  // Currently this condition is always true since DEFAULT_SAMPLING_RATE = 1,
+  // meaning we log every event. In the future, we may want to implement event
+  // sampling by lowering the sampling rate.
+  const samplingRate = sampling ?? DEFAULT_SAMPLING_RATE;
+  if (samplingRate > EVENT_LOG_RANDOM_NUMBER) {
+    const payload = {
+      prebidVersion: '$prebid.version$',
+      event,
+      data,
+    };
+    ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true });
+  }
 }
 
 registerBidder(spec);

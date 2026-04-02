@@ -30,7 +30,7 @@ export const spec = {
     const refererParams = (refererInfo && refererInfo.page) ? { xf: [base64urlEncode(refererInfo.page)] } : {};
     const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
     const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
-    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);
+    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl === false);
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
@@ -88,7 +88,7 @@ export const spec = {
           syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
           syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
         }
-        return [{type: 'iframe', url: syncurl}];
+        return [{ type: 'iframe', url: syncurl }];
       }
     }
     return [];

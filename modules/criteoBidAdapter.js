@@ -1,15 +1,15 @@
-import {deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel, deepAccess, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
-import {ajax} from '../src/ajax.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
-import {config} from '../src/config.js';
+import { deepAccess, deepSetValue, logError, logInfo, logWarn, parseUrl, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -75,10 +75,6 @@ function imp(buildImp, bidRequest, context) {
   });
 
   delete imp.rwdd // oRTB 2.6 field moved to ext
-
-  if (!context.fledgeEnabled && imp.ext.igs?.ae) {
-    delete imp.ext.igs.ae;
-  }
 
   if (hasVideoMediaType(bidRequest)) {
     const paramsVideo = bidRequest.params.video;
@@ -165,7 +161,7 @@ function bidResponse(buildBidResponse, bid, context) {
   }
 
   const bidResponse = buildBidResponse(bid, context);
-  const {bidRequest} = context;
+  const { bidRequest } = context;
 
   bidResponse.currency = bid?.ext?.cur;
 
@@ -232,7 +228,7 @@ export const spec = {
       queryParams.push(`topUrl=${refererInfo.domain}`);
       if (gdprConsent) {
         if (gdprConsent.gdprApplies) {
-          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`);
         }
         if (gdprConsent.consentString) {
           queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
@@ -263,7 +259,7 @@ export const spec = {
       };
 
       function handleGumMessage(event) {
-        if (!event.data || event.origin != 'https://gum.criteo.com') {
+        if (!event.data || event.origin !== 'https://gum.criteo.com') {
           return;
         }
 
@@ -374,7 +370,7 @@ export const spec = {
 
     const context = buildContext(bidRequests, bidderRequest);
     const url = buildCdbUrl(context);
-    const data = CONVERTER.toORTB({bidderRequest, bidRequests, context});
+    const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
 
     if (data) {
       return {
@@ -392,26 +388,15 @@ export const spec = {
   /**
    * @param {*} response
    * @param {ServerRequest} request
-   * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
+   * @return {Bid[] | {bids: Bid[]}}
    */
   interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
+    if (typeof response?.body === 'undefined') {
       return []; // no bid
     }
 
-    const interpretedResponse = CONVERTER.fromORTB({response: response.body, request: request.data});
-    const bids = interpretedResponse.bids || [];
-
-    const fledgeAuctionConfigs = response.body?.ext?.igi?.filter(igi => isArray(igi?.igs))
-      .flatMap(igi => igi.igs);
-    if (fledgeAuctionConfigs?.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
-    }
-
-    return bids;
+    const interpretedResponse = CONVERTER.fromORTB({ response: response.body, request: request.data });
+    return interpretedResponse.bids || [];
   },
 
   /**
@@ -503,7 +488,6 @@ function buildContext(bidRequests, bidderRequest) {
     url: bidderRequest?.refererInfo?.page || '',
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
-    fledgeEnabled: bidderRequest.paapi?.enabled,
     amp: bidRequests.some(bidRequest => bidRequest.params.integrationMode === 'amp'),
     networkId: bidRequests.find(bidRequest => bidRequest.params?.networkId)?.params.networkId,
     publisherId: bidRequests.find(bidRequest => bidRequest.params?.pubid)?.params.pubid,
@@ -567,7 +551,7 @@ function checkNativeSendId(bidRequest) {
 }
 
 function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
+  if (!sizes) {
     return [];
   }
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])

@@ -1,8 +1,9 @@
 import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
-import {config} from '../src/config.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { config } from '../src/config.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
@@ -12,7 +13,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER];
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 138,
-  aliases: [ BIDDER_CODE_ALIAS ],
+  aliases: [BIDDER_CODE_ALIAS],
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {
@@ -40,7 +41,7 @@ export const spec = {
       url: bidderRequest.refererInfo?.page,
       referrer: bidderRequest.refererInfo?.ref,
       screensize: getScreenSize(),
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       language: navigator.language,
       ua: navigator.userAgent,
       pversion: '$prebid.version$',
@@ -112,7 +113,7 @@ export const spec = {
     }
     data.tmax = bidderRequest.timeout;
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const placement = Object.assign({
         id: generateUUID(),
         divName: bid.bidId,
@@ -195,7 +196,7 @@ export const spec = {
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncEndpoint;
 
-    if (pixelType == 'iframe') {
+    if (pixelType === 'iframe') {
       syncEndpoint = 'https://sync.connectad.io/iFrameSyncer?';
     } else {
       syncEndpoint = 'https://sync.connectad.io/ImageSyncer?';

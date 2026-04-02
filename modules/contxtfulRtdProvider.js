@@ -292,6 +292,7 @@ function getDivIdPosition(divId) {
 
       let domElement;
 
+      // TODO: this should use getAdUnitElement
       if (inIframe() === true) {
         const ws = getWindowSelf();
         const currentElement = ws.document.getElementById(divId);
@@ -335,6 +336,7 @@ function tryGetDivIdPosition(divIdMethod) {
   return undefined;
 }
 
+// TODO unified adUnit/element association in 11
 function tryMultipleDivIdPositions(adUnit) {
   const divMethods = [
     // ortb2\
@@ -414,7 +416,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
 
   let ortb2Fragment;
   const getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
-  if (typeof (getContxtfulOrtb2Fragment) == 'function') {
+  if (typeof (getContxtfulOrtb2Fragment) === 'function') {
     ortb2Fragment = getContxtfulOrtb2Fragment(bidders, reqBidsConfigObj);
   } else {
     const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);

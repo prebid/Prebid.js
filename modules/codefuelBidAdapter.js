@@ -1,6 +1,6 @@
-import {isArray, setOnAny} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { isArray, setOnAny } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +16,7 @@ const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
   aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -123,6 +123,7 @@ export const spec = {
         };
         return bidObject;
       }
+      return undefined;
     }).filter(Boolean);
   },
 

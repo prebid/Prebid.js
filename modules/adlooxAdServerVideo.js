@@ -84,7 +84,7 @@ function VASTWrapper(options, callback) {
 
   function process(result) {
     function getAd(xml) {
-      if (!xml || xml.documentElement.tagName != 'VAST') {
+      if (!xml || xml.documentElement.tagName !== 'VAST') {
         logError(MODULE, 'not a VAST tag, using non-wrapped tracking');
         return;
       }
@@ -174,22 +174,22 @@ function VASTWrapper(options, callback) {
     if (skipd) skip = durationToSeconds(skipd.trim());
 
     const args = [
-      [ 'client', '%%client%%' ],
-      [ 'platform_id', '%%platformid%%' ],
-      [ 'scriptname', 'adl_%%clientid%%' ],
-      [ 'tag_id', '%%tagid%%' ],
-      [ 'fwtype', 4 ],
-      [ 'vast', options.url ],
-      [ 'id11', 'video' ],
-      [ 'id12', '$ADLOOX_WEBSITE' ],
-      [ 'id18', (!skip || skip >= duration) ? 'fd' : 'od' ],
-      [ 'id19', 'na' ],
-      [ 'id20', 'na' ]
+      ['client', '%%client%%'],
+      ['platform_id', '%%platformid%%'],
+      ['scriptname', 'adl_%%clientid%%'],
+      ['tag_id', '%%tagid%%'],
+      ['fwtype', 4],
+      ['vast', options.url],
+      ['id11', 'video'],
+      ['id12', '$ADLOOX_WEBSITE'],
+      ['id18', (!skip || skip >= duration) ? 'fd' : 'od'],
+      ['id19', 'na'],
+      ['id20', 'na']
     ];
-    if (version && version != 3) args.push([ 'version', version ]);
-    if (vpaid) args.push([ 'vpaid', 1 ]);
-    if (duration != 15) args.push([ 'duration', duration ]);
-    if (skip) args.push([ 'skip', skip ]);
+    if (version && version !== 3) args.push(['version', version]);
+    if (vpaid) args.push(['vpaid', 1]);
+    if (duration !== 15) args.push(['duration', duration]);
+    if (skip) args.push(['skip', skip]);
 
     logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);
 

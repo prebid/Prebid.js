@@ -93,7 +93,7 @@ export const spec = {
         device: {
           w: winTop.screen.width,
           h: winTop.screen.height,
-          language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
+          language: (navigator && navigator.language) ? navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
           page: location?.page,

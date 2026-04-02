@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import {
   deepAccess,
   getWindowSelf,
@@ -11,12 +11,13 @@ import {
   mergeDeep,
   uniques
 } from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {isIframe} from '../libraries/omsUtils/index.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -63,7 +64,7 @@ const VIDEO_ORTB_PARAMS = [
 ];
 
 const adapterState = {
-  uniqueSiteIds: []
+  uniqueZoneIds: []
 };
 
 const NON_MEASURABLE = 'nm';
@@ -81,8 +82,8 @@ function getTTXConfig() {
 }
 
 function collapseFalsy(obj) {
-  const data = Array.isArray(obj) ? [ ...obj ] : Object.assign({}, obj);
-  const falsyValuesToCollapse = [ null, undefined, '' ];
+  const data = Array.isArray(obj) ? [...obj] : Object.assign({}, obj);
+  const falsyValuesToCollapse = [null, undefined, ''];
 
   for (const key in data) {
     if (falsyValuesToCollapse.includes(data[key]) || (Array.isArray(data[key]) && data[key].length === 0)) {
@@ -102,34 +103,29 @@ function collapseFalsy(obj) {
 // **************************** VALIDATION *************************** //
 function isBidRequestValid(bid) {
   return (
-    _validateBasic(bid) &&
-    _validateBanner(bid) &&
-    _validateVideo(bid)
+    hasValidBasicProperties(bid) &&
+    hasValidBannerProperties(bid) &&
+    hasValidVideoProperties(bid)
   );
 }
 
-function _validateBasic(bid) {
+function hasValidBasicProperties(bid) {
   if (!bid.params) {
     return false;
   }
 
-  if (!_validateGUID(bid)) {
-    return false;
-  }
-
-  return true;
+  return hasValidGUID(bid);
 }
 
-function _validateGUID(bid) {
-  const siteID = deepAccess(bid, 'params.siteId', '') || '';
-  if (siteID.trim().match(GUID_PATTERN) === null) {
-    return false;
-  }
+function hasValidGUID(bid) {
+  const zoneId = deepAccess(bid, 'params.zoneId', '') ||
+    deepAccess(bid, 'params.siteId', '') ||
+    '';
 
-  return true;
+  return zoneId.trim().match(GUID_PATTERN) !== null;
 }
 
-function _validateBanner(bid) {
+function hasValidBannerProperties(bid) {
   const banner = deepAccess(bid, 'mediaTypes.banner');
 
   // If there's no banner no need to validate against banner rules
@@ -137,14 +133,10 @@ function _validateBanner(bid) {
     return true;
   }
 
-  if (!Array.isArray(banner.sizes)) {
-    return false;
-  }
-
-  return true;
+  return Array.isArray(banner.sizes);
 }
 
-function _validateVideo(bid) {
+function hasValidVideoProperties(bid) {
   const videoAdUnit = deepAccess(bid, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bid, 'params.video', {});
 
@@ -175,7 +167,7 @@ function _validateVideo(bid) {
   }
 
   // If placement if defined, it must be a number
-  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
+  if ([videoParams.placement, videoParams.plcmt].some(value => (
     typeof value !== 'undefined' &&
     typeof value !== 'number'
   ))) {
@@ -196,7 +188,7 @@ function _validateVideo(bid) {
 
 // **************************** BUILD REQUESTS *************************** //
 function buildRequests(bidRequests, bidderRequest = {}) {
-  const convertedORTB = converter.toORTB({bidRequests, bidderRequest});
+  const convertedORTB = converter.toORTB({ bidRequests, bidderRequest });
   const {
     ttxSettings,
     gdprConsent,
@@ -230,7 +222,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest.gdprConsent);
 
-  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
+  adapterState.uniqueZoneIds = bidRequests.map(req => (req.params.zoneId || req.params.siteId)).filter(uniques);
 
   return {
     ttxSettings,
@@ -261,7 +253,9 @@ function _groupBidRequests(bidRequests, keyFunc) {
 }
 
 function _getSRAKey(bidRequest) {
-  return `${bidRequest.params.siteId}:${bidRequest.params.productId}`;
+  const zoneId = bidRequest.params.zoneId || bidRequest.params.siteId;
+
+  return `${zoneId}:${bidRequest.params.productId}`;
 }
 
 function _getMRAKey(bidRequest) {
@@ -271,13 +265,9 @@ function _getMRAKey(bidRequest) {
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSettings, convertedORTB }) {
   const firstBidRequest = bidRequests[0];
-  const { siteId, test } = firstBidRequest.params;
+  const { siteId, zoneId = siteId, test } = firstBidRequest.params;
   const ttxRequest = collapseFalsy({
     imp: bidRequests.map(req => _buildImpORTB(req)),
-    site: {
-      id: siteId,
-      ref: referer
-    },
     device: {
       ext: {
         ttx: {
@@ -291,15 +281,27 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
     ext: {
       ttx: {
         prebidStartedAt: Date.now(),
-        caller: [ {
+        caller: [{
           'name': 'prebidjs',
           'version': '$prebid.version$'
-        } ]
+        }]
       }
     },
     test: test === 1 ? 1 : null
   });
 
+  if (convertedORTB.app) {
+    ttxRequest.app = {
+      ...convertedORTB.app,
+      id: zoneId
+    };
+  } else {
+    ttxRequest.site = {
+      ...convertedORTB.site,
+      id: zoneId,
+      ref: referer
+    };
+  }
   // The imp attribute built from this adapter should be used instead of the converted one;
   // The converted one is based on SRA, whereas our adapter has to check if SRA is enabled or not.
   delete convertedORTB.imp;
@@ -308,7 +310,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
   // Return the server request
   return {
     'method': 'POST',
-    'url': ttxSettings.url || `${END_POINT}?guid=${siteId}`, // Allow the ability to configure the HB endpoint for testing purposes.
+    'url': ttxSettings.url || `${END_POINT}?guid=${zoneId}`, // Allow the ability to configure the HB endpoint for testing purposes.
     'data': data,
     'options': {
       contentType: 'text/plain',
@@ -335,7 +337,7 @@ function _buildImpORTB(bidRequest) {
 // BUILD REQUESTS: SIZE INFERENCE
 function _transformSizes(sizes) {
   if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
-    return [ _getSize(sizes) ];
+    return [_getSize(sizes)];
   }
 
   return sizes.map(_getSize);
@@ -372,7 +374,7 @@ function _getProduct(bidRequest) {
 // BUILD REQUESTS: BANNER
 function _buildBannerORTB(bidRequest) {
   const bannerAdUnit = deepAccess(bidRequest, 'mediaTypes.banner', {});
-  const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
+  const element = _getAdSlotHTMLElement(bidRequest);
 
   const sizes = _transformSizes(bannerAdUnit.sizes);
 
@@ -386,7 +388,7 @@ function _buildBannerORTB(bidRequest) {
         formatExt = {
           ext: {
             ttx: {
-              bidfloors: [ bidfloors ]
+              bidfloors: [bidfloors]
             }
           }
         }
@@ -443,7 +445,7 @@ function _buildVideoORTB(bidRequest) {
       Object.assign(video, {
         ext: {
           ttx: {
-            bidfloors: [ bidfloors ]
+            bidfloors: [bidfloors]
           }
         }
       });
@@ -458,7 +460,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.w, size.h ]
+    size: [size.w, size.h]
   });
 
   if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
@@ -477,6 +479,7 @@ function _getViewability(element, topWin, { w, h } = {}) {
     : 0;
 }
 
+// TODO use utils/adUnits once that's unified in 11
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (isGptPubadsDefined()) {
     // eslint-disable-next-line no-undef
@@ -499,9 +502,9 @@ function _mapAdUnitPathToElementId(adUnitCode) {
   return null;
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
-  return document.getElementById(adUnitCode) ||
-    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
+function _getAdSlotHTMLElement(bidRequest) {
+  return getAdUnitElement(bidRequest) ||
+    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode));
 }
 
 /**
@@ -520,7 +523,7 @@ function contributeViewability(viewabilityAmount) {
 }
 
 // **************************** INTERPRET RESPONSE ******************************** //
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse(serverResponse) {
   const { seatbid, cur = CURRENCY } = serverResponse.body;
 
   if (!isArray(seatbid)) {
@@ -583,18 +586,18 @@ function _createBidResponse(bid, cur) {
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   const syncUrls = (
     (syncOptions.iframeEnabled)
-      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, gppConsent, siteId }))
+      ? adapterState.uniqueZoneIds.map((zoneId) => _createSync({ gdprConsent, uspConsent, gppConsent, zoneId }))
       : ([])
   );
 
-  // Clear adapter state of siteID's since we don't need this info anymore.
-  adapterState.uniqueSiteIds = [];
+  // Clear adapter state of zone IDs since we don't need this info anymore.
+  adapterState.uniqueZoneIds = [];
 
   return syncUrls;
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
+function _createSync({ zoneId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
   const ttxSettings = getTTXConfig();
   const syncUrl = ttxSettings.syncUrl || SYNC_ENDPOINT;
 
@@ -603,7 +606,7 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
+    url: `${syncUrl}&id=${zoneId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
   };
 
   if (typeof gdprApplies === 'boolean') {
@@ -643,7 +646,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   aliases: BIDDER_ALIASES,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   gvlid: GVLID,
   isBidRequestValid,
   buildRequests,

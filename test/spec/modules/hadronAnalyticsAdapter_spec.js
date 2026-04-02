@@ -12,7 +12,7 @@ describe('Hadron analytics adapter', () => {
       options: {
         partnerId: 12349,
         eventsToTrack: ['auctionInit', 'auctionEnd', 'bidWon',
-          'bidderDone', 'requestBids', 'addAdUnits', 'setTargeting', 'adRenderFailed',
+          'bidderDone', 'requestBids', 'setTargeting', 'adRenderFailed',
           'bidResponse', 'bidTimeout', 'bidRequested', 'bidAdjustment', 'nonExistingEvent'
         ],
       }

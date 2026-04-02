@@ -64,13 +64,6 @@ export function setTimestamp() {
   TIMESTAMP = timestamp();
 }
 
-export function initAnalytics() {
-  getGlobal().enableAnalytics({
-    provider: 'browsi',
-    options: {}
-  })
-}
-
 export function sendPageviewEvent(eventType) {
   if (eventType === 'PAGEVIEW') {
     window.addEventListener('browsi_pageview', () => {
@@ -426,7 +419,6 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
   _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
-  initAnalytics();
   setTimestamp();
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     sendModuleInitEvent();

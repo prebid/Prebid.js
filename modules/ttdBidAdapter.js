@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -20,6 +21,7 @@ const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
 const BIDDER_ENDPOINT_HTTP2 = 'https://d2.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
+const TTL = 360;
 
 const MEDIA_TYPE = {
   BANNER: 1,
@@ -92,7 +94,7 @@ function getDevice(firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   const device = {
     ua: navigator.userAgent,
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     language: language,
     connectiontype: getConnectionType()
   };
@@ -142,6 +144,8 @@ function getImpression(bidRequest) {
   };
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const exp = TTL;
+  impression.exp = exp;
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
     impression.tagid = tagid;
@@ -169,7 +173,7 @@ function getImpression(bidRequest) {
   const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
   impression.secure = isNumber(secure) ? secure : 1
 
-  const {video: _, ...ortb2ImpWithoutVideo} = bidRequest.ortb2Imp; // if enabled, video is already assigned above
+  const { video: _, ...ortb2ImpWithoutVideo } = bidRequest.ortb2Imp; // if enabled, video is already assigned above
   utils.mergeDeep(impression, ortb2ImpWithoutVideo)
 
   return impression;
@@ -476,7 +480,7 @@ export const spec = {
           dealId: bid.dealid || null,
           currency: currency || 'USD',
           netRevenue: true,
-          ttl: bid.ttl || 360,
+          ttl: bid.ttl || TTL,
           meta: {},
         };
 

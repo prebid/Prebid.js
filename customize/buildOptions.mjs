@@ -1,8 +1,12 @@
 import path from 'path'
-import validate from 'schema-utils'
+import { validate } from 'schema-utils'
 
 const boModule = path.resolve(import.meta.dirname, '../dist/src/buildOptions.mjs')
 
+/**
+ * Resolve the absolute path of the default build options module.
+ * @returns {string} Absolute path to the generated build options module.
+ */
 export function getBuildOptionsModule () {
   return boModule
 }
@@ -25,6 +29,11 @@ const schema = {
   }
 }
 
+/**
+ * Validate and load build options overrides.
+ * @param {object} [options] user supplied overrides
+ * @returns {Promise<object>} Promise resolving to merged build options.
+ */
 export function getBuildOptions (options = {}) {
   validate(schema, options, {
     name: 'Prebid build options',
