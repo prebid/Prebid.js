@@ -1,10 +1,12 @@
 'use strict';
-import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
@@ -36,7 +38,7 @@ function MarsmediaAdapter() {
       // TODO: this should probably use parseUrl
       var el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol == 'https:') ? 1 : 0;
+      isSecure = (el.protocol === 'https:') ? 1 : 0;
     }
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
@@ -164,9 +166,9 @@ function MarsmediaAdapter() {
       let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 
-      const element = document.getElementById(bid.adUnitCode);
+      const element = getAdUnitElement(bid);
       const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
         ? _getViewability(element, getWindowTop(), minSize)

@@ -59,7 +59,7 @@ export const spec = {
     if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
       response.body.seatbid.forEach(function (bidder) {
         if (isArray(bidder.bid)) {
-          bidder.bid.map((bid) => {
+          bidder.bid.forEach((bid) => {
             const serverBody = response.body;
             // bidRequest = request.originalBidRequest,
             const mediaType = BANNER;

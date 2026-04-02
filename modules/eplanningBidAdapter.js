@@ -1,14 +1,14 @@
-import {isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { serializeSupplyChain } from '../libraries/schainSerializer/schainSerializer.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'eplanning';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const rnd = Math.random();
 const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
@@ -262,13 +262,13 @@ function getSpacesStruct(bids) {
 }
 
 function getFirstSizeVast(sizes) {
-  if (sizes == undefined || !Array.isArray(sizes)) {
+  if (sizes === undefined || !Array.isArray(sizes)) {
     return undefined;
   }
 
   const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
 
-  return (Array.isArray(size) && size.length == 2) ? size : undefined;
+  return (Array.isArray(size) && size.length === 2) ? size : undefined;
 }
 
 function cleanName(name) {
@@ -291,14 +291,14 @@ function getFloorStr(bid) {
 }
 
 function getSpaces(bidRequests, ml) {
-  const impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
+  const impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context === 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
   if (impType) {
-    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
+    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context === 'instream') : (bid.mediaTypes[VIDEO].context === 'outstream')));
   }
 
   const spacesStruct = getSpacesStruct(bidRequests);
-  const es = {str: '', vs: '', map: {}, impType: impType};
+  const es = { str: '', vs: '', map: {}, impType: impType };
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 
@@ -420,6 +420,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _getAdSlotHTMLElement(adUnitCode) {
+  // TODO: this should use getAdUnitElement
   return document.getElementById(adUnitCode) ||
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }

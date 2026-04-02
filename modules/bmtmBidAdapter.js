@@ -2,6 +2,7 @@ import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'bmtm';
 const AD_URL = 'https://one.elitebidder.com/api/hb?sid=';
@@ -17,7 +18,7 @@ export const spec = {
     if (bid.bidId && bid.bidder && bid.params && bid.params.placement_id) {
       return true;
     }
-    if (bid.params.placement_id == 0 && bid.params.test === 1) {
+    if (bid.params.placement_id === 0 && bid.params.test === 1) {
       return true;
     }
     return false;
@@ -180,14 +181,13 @@ function buildDevice() {
     h: window.top.screen.height,
     js: 1,
     language: navigator.language,
-    dnt: navigator.doNotTrack === 'yes' || navigator.doNotTrack == '1' ||
-      navigator.msDoNotTrack == '1' ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
   }
 }
 
 function buildRegs(bidderRequest) {
   const regs = {
-    coppa: config.getConfig('coppa') == true ? 1 : 0,
+    coppa: config.getConfig('coppa') === true ? 1 : 0,
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {

@@ -29,7 +29,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',
+        zoneId: 'sample33xGUID123456789',
         productId: 'siab'
     }
   }]
@@ -73,7 +73,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',
+        zoneId: 'sample33xGUID123456789',
         productId: 'siab'
     }
   }]
@@ -123,7 +123,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',
+        zoneId: 'sample33xGUID123456789',
         productId: 'siab'
     }
   }]
@@ -146,7 +146,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'sample33xGUID123456789',
+        zoneId: 'sample33xGUID123456789',
         productId: 'instream'
     }
   }]

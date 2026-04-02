@@ -10,10 +10,7 @@ const {
   SUBMODULE_NAME,
   SCRIPT_URL,
   main,
-  load,
-  onImplLoaded,
-  onImplMessage,
-  onGetBidRequestData
+  load
 } = __TEST__;
 
 describe('humansecurity RTD module', function () {
@@ -23,20 +20,20 @@ describe('humansecurity RTD module', function () {
   const sonarStubId = `sonar_${stubUuid}`;
   const stubWindow = { [sonarStubId]: undefined };
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'getWindowSelf').returns(stubWindow);
     sandbox.stub(utils, 'generateUUID').returns(stubUuid);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({ domain: 'example.com' });
   });
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
   describe('Initialization step', function () {
     let sandbox2;
     let connectSpy;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.createSandbox();
       connectSpy = sandbox.spy();
       // Once the impl script is loaded, it registers the API using session ID
@@ -44,6 +41,17 @@ describe('humansecurity RTD module', function () {
     });
     afterEach(function () {
       sandbox2.restore();
+    });
+
+    it('should connect to the implementation script once it loads', function () {
+      load({});
+
+      expect(loadExternalScriptStub.calledOnce).to.be.true;
+      const callback = loadExternalScriptStub.getCall(0).args[3];
+      expect(callback).to.be.a('function');
+      const args = connectSpy.getCall(0).args;
+      expect(args[0]).to.haveOwnProperty('cmd'); // pbjs global
+      expect(args[0]).to.haveOwnProperty('que');
     });
 
     it('should accept valid configurations', function () {
@@ -62,14 +70,19 @@ describe('humansecurity RTD module', function () {
     });
 
     it('should insert implementation script', () => {
-      load({ });
+      load({});
 
       expect(loadExternalScriptStub.calledOnce).to.be.true;
 
       const args = loadExternalScriptStub.getCall(0).args;
-      expect(args[0]).to.be.equal(`${SCRIPT_URL}?r=example.com`);
+      expect(args[0]).to.include(`${SCRIPT_URL}?r=example.com`);
+      const mvMatch = args[0].match(/[?&]mv=([^&]+)/);
+      expect(mvMatch).to.not.equal(null);
+      const mvValue = Number(mvMatch[1]);
+      expect(Number.isFinite(mvValue)).to.equal(true);
+      expect(mvValue).to.be.greaterThan(0);
       expect(args[2]).to.be.equal(SUBMODULE_NAME);
-      expect(args[3]).to.be.equal(onImplLoaded);
+      expect(args[3]).to.be.a('function');
       expect(args[4]).to.be.equal(null);
       expect(args[5]).to.be.deep.equal({ 'data-sid': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' });
     });
@@ -80,90 +93,14 @@ describe('humansecurity RTD module', function () {
       expect(loadExternalScriptStub.calledOnce).to.be.true;
 
       const args = loadExternalScriptStub.getCall(0).args;
-      expect(args[0]).to.be.equal(`${SCRIPT_URL}?r=example.com&c=customer123`);
-    });
-
-    it('should connect to the implementation script once it loads', function () {
-      load({ });
-
-      expect(loadExternalScriptStub.calledOnce).to.be.true;
-      expect(connectSpy.calledOnce).to.be.true;
-
-      const args = connectSpy.getCall(0).args;
-      expect(args[0]).to.haveOwnProperty('cmd'); // pbjs global
-      expect(args[0]).to.haveOwnProperty('que');
-      expect(args[1]).to.be.equal(onImplMessage);
+      expect(args[0]).to.include(`${SCRIPT_URL}?r=example.com&c=customer123`);
     });
   });
 
-  describe('Bid enrichment step', function () {
-    const hmnsData = { 'v1': 'sometoken' };
-
-    let sandbox2;
-    let callbackSpy;
-    let reqBidsConfig;
-    beforeEach(function() {
-      sandbox2 = sinon.createSandbox();
-      callbackSpy = sandbox2.spy();
-      reqBidsConfig = { ortb2Fragments: { bidder: {}, global: {} } };
-    });
-    afterEach(function () {
-      sandbox2.restore();
-    });
-
-    it('should add empty device.ext.hmns to global ortb2 when data is yet to be received from the impl script', () => {
-      load({ });
-
-      onGetBidRequestData(reqBidsConfig, callbackSpy, { params: {} }, {});
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(reqBidsConfig.ortb2Fragments.global).to.have.own.property('device');
-      expect(reqBidsConfig.ortb2Fragments.global.device).to.have.own.property('ext');
-      expect(reqBidsConfig.ortb2Fragments.global.device.ext).to.have.own.property('hmns').which.is.an('object').that.deep.equals({});
-    });
-
-    it('should add the default device.ext.hmns to global ortb2 when no "hmns" data was yet received', () => {
-      load({ });
-
-      onImplMessage({ type: 'info', data: 'not a hmns message' });
-      onGetBidRequestData(reqBidsConfig, callbackSpy, { params: {} }, {});
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(reqBidsConfig.ortb2Fragments.global).to.have.own.property('device');
-      expect(reqBidsConfig.ortb2Fragments.global.device).to.have.own.property('ext');
-      expect(reqBidsConfig.ortb2Fragments.global.device.ext).to.have.own.property('hmns').which.is.an('object').that.deep.equals({});
-    });
-
-    it('should add device.ext.hmns with received tokens to global ortb2 when the data was received', () => {
-      load({ });
-
-      onImplMessage({ type: 'hmns', data: hmnsData });
-      onGetBidRequestData(reqBidsConfig, callbackSpy, { params: {} }, {});
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(reqBidsConfig.ortb2Fragments.global).to.have.own.property('device');
-      expect(reqBidsConfig.ortb2Fragments.global.device).to.have.own.property('ext');
-      expect(reqBidsConfig.ortb2Fragments.global.device.ext).to.have.own.property('hmns').which.is.an('object').that.deep.equals(hmnsData);
-    });
-
-    it('should update device.ext.hmns with new data', () => {
-      load({ });
-
-      onImplMessage({ type: 'hmns', data: { 'v1': 'should be overwritten' } });
-      onImplMessage({ type: 'hmns', data: hmnsData });
-      onGetBidRequestData(reqBidsConfig, callbackSpy, { params: {} }, {});
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(reqBidsConfig.ortb2Fragments.global).to.have.own.property('device');
-      expect(reqBidsConfig.ortb2Fragments.global.device).to.have.own.property('ext');
-      expect(reqBidsConfig.ortb2Fragments.global.device.ext).to.have.own.property('hmns').which.is.an('object').that.deep.equals(hmnsData);
-    });
-  });
-
-  describe('Sumbodule execution', function() {
+  describe('Submodule execution', function () {
     let sandbox2;
     let submoduleStub;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.createSandbox();
       submoduleStub = sandbox2.stub(hook, 'submodule');
     });
@@ -203,7 +140,7 @@ describe('humansecurity RTD module', function () {
 
     it('should commence initialization on default initialization', function () {
       const { init } = getModule();
-      expect(init({ })).to.equal(true);
+      expect(init({})).to.equal(true);
       expect(loadExternalScriptStub.calledOnce).to.be.true;
     });
   });

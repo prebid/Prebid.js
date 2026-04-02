@@ -1,14 +1,14 @@
-import {config} from './config.js';
+import { config } from './config.js';
 
-import {EVENTS} from './constants.js';
-import {PbPromise} from './utils/promise.js';
+import { EVENTS } from './constants.js';
+import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
-import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
+import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
-
+export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
 const consoleExists = Boolean(window.console);
 const consoleLogExists = Boolean(consoleExists && window.console.log);
 const consoleInfoExists = Boolean(consoleExists && window.console.info);
@@ -16,7 +16,6 @@ const consoleWarnExists = Boolean(consoleExists && window.console.warn);
 const consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
-let windowDimensions;
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -27,54 +26,6 @@ function emitEvent(...args) {
   if (eventEmitter != null) {
     eventEmitter(...args);
   }
-}
-
-export const getWinDimensions = (function() {
-  let lastCheckTimestamp;
-  const CHECK_INTERVAL_MS = 20;
-  return () => {
-    if (!windowDimensions || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.resetWinDimensions();
-      lastCheckTimestamp = Date.now();
-    }
-    return windowDimensions;
-  }
-})();
-
-export function resetWinDimensions() {
-  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-
-  windowDimensions = {
-    screen: {
-      width: top.screen?.width,
-      height: top.screen?.height,
-      availWidth: top.screen?.availWidth,
-      availHeight: top.screen?.availHeight,
-      colorDepth: top.screen?.colorDepth,
-    },
-    innerHeight: top.innerHeight,
-    innerWidth: top.innerWidth,
-    outerWidth: top.outerWidth,
-    outerHeight: top.outerHeight,
-    visualViewport: {
-      height: top.visualViewport?.height,
-      width: top.visualViewport?.width,
-    },
-    document: {
-      documentElement: {
-        clientWidth: top.document?.documentElement?.clientWidth,
-        clientHeight: top.document?.documentElement?.clientHeight,
-        scrollTop: top.document?.documentElement?.scrollTop,
-        scrollLeft: top.document?.documentElement?.scrollLeft,
-      },
-      body: {
-        scrollTop: document.body?.scrollTop,
-        scrollLeft: document.body?.scrollLeft,
-        clientWidth: document.body?.clientWidth,
-        clientHeight: document.body?.clientHeight,
-      },
-    }
-  };
 }
 
 // this allows stubbing of utility functions that are used internally by other utility functions
@@ -96,7 +47,6 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
-  resetWinDimensions
 };
 
 const prebidInternal = {};
@@ -214,7 +164,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 }
 
 export function sizeTupleToRtbSize(size) {
-  return {w: size[0], h: size[1]};
+  return { w: size[0], h: size[1] };
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -254,6 +204,18 @@ export function canAccessWindowTop() {
   } catch (e) {
     return false;
   }
+}
+
+/**
+ * Returns the window to use for fingerprinting reads: win if provided, otherwise top or self.
+ * @param {Window} [win]
+ * @returns {Window}
+ */
+export function getFallbackWindow(win) {
+  if (win) {
+    return win;
+  }
+  return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
 }
 
 /**
@@ -700,7 +662,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, {AUCTION_PRICE: cpm})
+  return replaceMacros(str, { AUCTION_PRICE: cpm })
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -810,7 +772,7 @@ export function groupBy(xs, key) {
  */
 export function isValidMediaTypes(mediaTypes) {
   const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video', 'audio'];
-  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
 
   const types = Object.keys(mediaTypes);
 
@@ -840,13 +802,6 @@ export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
     .map((bidderData) => bidderData.params || {});
 }
 
-/**
- * Returns Do Not Track state
- */
-export function getDNT() {
-  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
-}
-
 export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**
@@ -855,7 +810,9 @@ export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() ===
  * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
-  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+  const customGptSlotMatching = config.getConfig('customGptSlotMatching');
+  const match = isFn(customGptSlotMatching) && customGptSlotMatching(slot);
+  return isFn(match) ? match : (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
 
 /**
@@ -865,7 +822,7 @@ export function isAdUnitCodeMatchingSlot(slot) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -1182,7 +1139,7 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
  */
 export function convertObjectToArray(obj) {
   return Object.keys(obj).map(key => {
-    return {[key]: obj[key]};
+    return { [key]: obj[key] };
   });
 }
 

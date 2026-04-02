@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Heavy Ad Test</title>
+
+  <script src="../../../build/dev/prebid.js" async></script>
+  <script 
+    async 
+    src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" 
+    crossorigin="anonymous">
+  </script>
+
+  <script>
+    window.googletag = window.googletag || { cmd: [] };
+    googletag.cmd.push(function () {
+      googletag
+        .defineSlot('/41758329/heavyad', [468, 60], 'div-gpt-ad-1756369646964-0')
+        .addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+
+  <script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    const adUnitCode = 'div-gpt-ad-1756369646964-0';
+
+    const adUnits = [
+      {
+        mediaTypes: {
+          banner: {
+            sizes: [486, 60]
+          }
+        },
+        code: adUnitCode,
+        bids: [
+          {
+            bidder: 'testBidder',
+            params: {}
+          }
+        ]
+      }
+    ];
+
+    pbjs.que.push(function () {
+      pbjs.registerBidAdapter(null, 'testBidder', {
+        supportedMediaTypes: ['banner', 'video', 'native'],
+        isBidRequestValid: () => true,
+        onIntervention: (param) => {
+          console.log('Intervention detected for param:', param);
+        }
+      });
+
+      pbjs.setConfig({
+        debugging: {
+          enabled: true,
+          intercept: [
+            {
+              when: {
+                bidder: 'testBidder'
+              },
+              then: {
+                creativeId: 'testCreativeId',
+                ad: "<html><body><script" + ">setTimeout(()=>{fetch(\"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4\").then(r=>r.arrayBuffer()).then(b=>console.log(\"Pobranobytes:\",b.byteLength));},4000)</scr" + "ipt><div style=\"display: inline-block; width: 486px; height: 60px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png);\"></div></body></html>"
+              }
+            }
+          ]
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        adUnitCodes: [adUnitCode],
+        bidsBackHandler: sendAdserverRequest
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+
+      googletag.cmd.push(function () {
+        if (pbjs.libLoaded) {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync([adUnitCode]);
+            googletag.pubads().refresh();
+          });
+        } else {
+          googletag.pubads().refresh();
+        }
+      });
+    }
+  </script>
+</head>
+
+<body>
+  <h1>Heavy Ad Intervention Example</h1>
+
+  <!-- /41758329/heavyad -->
+  <div 
+    id="div-gpt-ad-1756369646964-0" 
+    style="min-width: 468px; min-height: 60px;">
+    
+    <script>
+      googletag.cmd.push(function () {
+        googletag.display('div-gpt-ad-1756369646964-0');
+      });
+    </script>
+  </div>
+</body>
+</html>

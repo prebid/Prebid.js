@@ -2,12 +2,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType } from '../libraries/userAgentUtils/index.js';
 import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid, getBidFloor, getOsInfo } from '../libraries/nexverseUtils/index.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { config } from '../src/config.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
@@ -16,7 +18,7 @@ const DEFAULT_CURRENCY = 'USD';
 const BID_TTL = 300;
 const DEFAULT_LANG = 'en';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -190,7 +192,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
   const imps = [];
 
   // Calculate viewability percentage for the ad unit
-  const adUnitElement = document.getElementById(bid.adUnitCode);
+  const adUnitElement = getAdUnitElement(bid);
   let viewabilityPercentage = 0;
   if (adUnitElement) {
     const rect = getBoundingClientRect(adUnitElement);
@@ -305,7 +307,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         lon: bid.params.geoLon || 0,
       },
       language: navigator.language || DEFAULT_LANG,
-      dnt: navigator.doNotTrack === '1' ? 1 : 0, // Do Not Track flag
+      dnt: getDNT() ? 1 : 0, // Do Not Track flag
     },
     user: {
       id: getUid(storage),

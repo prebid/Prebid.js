@@ -30,14 +30,24 @@ window.addEventListener('unhandledrejection', function (ev) {
 const sinon = require('sinon');
 globalThis.sinon = sinon;
 if (!sinon.sandbox) {
-  sinon.sandbox = {create: sinon.createSandbox.bind(sinon)};
+  sinon.sandbox = { create: sinon.createSandbox.bind(sinon) };
 }
-const {fakeServer, fakeServerWithClock, fakeXhr} = require('nise');
+const { fakeServer, fakeServerWithClock, fakeXhr } = require('nise');
 sinon.fakeServer = fakeServer;
 sinon.fakeServerWithClock = fakeServerWithClock;
 sinon.useFakeXMLHttpRequest = fakeXhr.useFakeXMLHttpRequest.bind(fakeXhr);
 sinon.createFakeServer = fakeServer.create.bind(fakeServer);
 sinon.createFakeServerWithClock = fakeServerWithClock.create.bind(fakeServerWithClock);
+
+localStorage.clear();
+
+if (window.frameElement != null) {
+  // sometimes (e.g. chrome headless) the tests run in an iframe that is offset from the top window
+  // other times (e.g. browser debug page) they run in the top window
+  // this can cause inconsistencies with the percentInView libraries; if we are in a frame,
+  // fake the same dimensions as the top window
+  window.frameElement.getBoundingClientRect = () => window.top.getBoundingClientRect();
+}
 
 require('test/helpers/global_hooks.js');
 require('test/helpers/consentData.js');
@@ -46,6 +56,5 @@ require('test/mocks/adloaderStub.js');
 require('test/mocks/xhr.js');
 require('test/mocks/analyticsStub.js');
 require('test/mocks/ortbConverter.js')
-require('modules/categoryTranslation.js');
 require('modules/rtdModule/index.js');
 require('modules/fpdModule/index.js');

@@ -6,7 +6,6 @@ import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue, getBidIdParameter,
-  getDNT,
   getWindowTop,
   isEmpty,
   logError
@@ -51,7 +50,6 @@ export const spec = {
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType(bidderRequest);
-    const dnt = getDNT() ? '1' : '0';
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -76,7 +74,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'meta_url', urlInfo.canonicalLink);
       queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = tryAppendQueryString(queryString, 'cur', cur);
-      queryString = tryAppendQueryString(queryString, 'dnt', dnt);
 
       bidRequests.push({
         method: 'GET',
@@ -167,7 +164,7 @@ function getUrlInfo(refererInfo) {
   if (!canonicalLink) {
     const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }

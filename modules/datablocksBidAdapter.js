@@ -1,95 +1,16 @@
-import {deepAccess, getWinDimensions, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { isWebdriverEnabled, isSeleniumDetected } from '../libraries/webdriver/webdriver.js';
+import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
 
-export const storage = getStorageManager({bidderCode: 'datablocks'});
-
-const NATIVE_ID_MAP = {};
-const NATIVE_PARAMS = {
-  title: {
-    id: 1,
-    name: 'title'
-  },
-  icon: {
-    id: 2,
-    type: 1,
-    name: 'img'
-  },
-  image: {
-    id: 3,
-    type: 3,
-    name: 'img'
-  },
-  body: {
-    id: 4,
-    name: 'data',
-    type: 2
-  },
-  sponsoredBy: {
-    id: 5,
-    name: 'data',
-    type: 1
-  },
-  cta: {
-    id: 6,
-    type: 12,
-    name: 'data'
-  },
-  body2: {
-    id: 7,
-    name: 'data',
-    type: 10
-  },
-  rating: {
-    id: 8,
-    name: 'data',
-    type: 3
-  },
-  likes: {
-    id: 9,
-    name: 'data',
-    type: 4
-  },
-  downloads: {
-    id: 10,
-    name: 'data',
-    type: 5
-  },
-  displayUrl: {
-    id: 11,
-    name: 'data',
-    type: 11
-  },
-  price: {
-    id: 12,
-    name: 'data',
-    type: 6
-  },
-  salePrice: {
-    id: 13,
-    name: 'data',
-    type: 7
-  },
-  address: {
-    id: 14,
-    name: 'data',
-    type: 9
-  },
-  phone: {
-    id: 15,
-    name: 'data',
-    type: 8
-  }
-};
-
-Object.keys(NATIVE_PARAMS).forEach((key) => {
-  NATIVE_ID_MAP[NATIVE_PARAMS[key].id] = key;
-});
+export const storage = getStorageManager({ bidderCode: 'datablocks' });
 
 // DEFINE THE PREBID BIDDER SPEC
 export const spec = {
@@ -97,7 +18,7 @@ export const spec = {
   code: 'datablocks',
 
   // DATABLOCKS SCOPED OBJECT
-  db_obj: {metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
+  db_obj: { metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0 },
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
   store_dbid: function(dbid) {
@@ -191,7 +112,7 @@ export const spec = {
   // POST CONSOLIDATED METRICS BACK TO SERVER
   send_metrics: function() {
     // POST TO SERVER
-    ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), {method: 'POST', withCredentials: true});
+    ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), { method: 'POST', withCredentials: true });
 
     // RESET THE QUEUE OF METRIC DATA
     this.db_obj.metrics = [];
@@ -207,15 +128,15 @@ export const spec = {
     return {
       'wiw': windowDimensions.innerWidth,
       'wih': windowDimensions.innerHeight,
-      'saw': windowDimensions.screen.availWidth,
-      'sah': windowDimensions.screen.availHeight,
-      'scd': screen ? screen.colorDepth : null,
+      'saw': null,
+      'sah': null,
+      'scd': null,
       'sw': windowDimensions.screen.width,
       'sh': windowDimensions.screen.height,
       'whl': win.history.length,
       'wxo': win.pageXOffset,
       'wyo': win.pageYOffset,
-      'wpr': win.devicePixelRatio,
+      'wpr': getDevicePixelRatio(win),
       'is_bot': botTest.doTests(),
       'is_hid': win.document.hidden,
       'vs': win.document.visibilityState
@@ -231,13 +152,13 @@ export const spec = {
       // ADD GPT EVENT LISTENERS
       const scope = this;
       if (isGptPubadsDefined()) {
-        if (typeof window['googletag'].pubads().addEventListener == 'function') {
+        if (typeof window['googletag'].pubads().addEventListener === 'function') {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
-            scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
+            scope.queue_metric({ type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
           });
           window['googletag'].pubads().addEventListener('slotRenderEnded', function(event) {
-            scope.queue_metric({type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
+            scope.queue_metric({ type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
           })
         }
       }
@@ -265,46 +186,6 @@ export const spec = {
       return [];
     }
 
-    // CONVERT PREBID NATIVE REQUEST OBJ INTO RTB OBJ
-    function createNativeRequest(bid) {
-      const assets = [];
-      if (bid.nativeParams) {
-        Object.keys(bid.nativeParams).forEach((key) => {
-          if (NATIVE_PARAMS[key]) {
-            const {name, type, id} = NATIVE_PARAMS[key];
-            const assetObj = type ? {type} : {};
-            let {len, sizes, required, aspect_ratios: aRatios} = bid.nativeParams[key];
-            if (len) {
-              assetObj.len = len;
-            }
-            if (aRatios && aRatios[0]) {
-              aRatios = aRatios[0];
-              const wmin = aRatios.min_width || 0;
-              const hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-              assetObj.wmin = wmin;
-              assetObj.hmin = hmin;
-            }
-            if (sizes && sizes.length) {
-              sizes = [].concat(...sizes);
-              assetObj.w = sizes[0];
-              assetObj.h = sizes[1];
-            }
-            const asset = {required: required ? 1 : 0, id};
-            asset[name] = assetObj;
-            assets.push(asset);
-          }
-        });
-      }
-      return {
-        ver: '1.2',
-        request: {
-          assets: assets,
-          context: 1,
-          plcmttype: 1,
-          ver: '1.2'
-        }
-      }
-    }
     const imps = [];
     // ITERATE THE VALID REQUESTS AND GENERATE IMP OBJECT
     validRequests.forEach(bidRequest => {
@@ -313,7 +194,7 @@ export const spec = {
         id: bidRequest.bidId,
         tagid: bidRequest.params.tagid || bidRequest.adUnitCode,
         placement_id: bidRequest.params.placement_id || 0,
-        secure: window.location.protocol == 'https:',
+        secure: window.location.protocol === 'https:',
         ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
       }
@@ -342,7 +223,7 @@ export const spec = {
         }
       } else if (deepAccess(bidRequest, `mediaTypes.native`)) {
         // ADD TO THE LIST OF IMP REQUESTS
-        imp.native = createNativeRequest(bidRequest);
+        imp.native = buildNativeRequest(bidRequest.nativeParams);
         imps.push(imp);
       }
     });
@@ -505,7 +386,7 @@ export const spec = {
 
   // DATABLOCKS WON THE AUCTION - REPORT SUCCESS
   onBidWon: function(bid) {
-    this.queue_metric({type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl});
+    this.queue_metric({ type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl });
   },
 
   // TARGETING HAS BEEN SET
@@ -516,51 +397,20 @@ export const spec = {
 
   // PARSE THE RTB RESPONSE AND RETURN FINAL RESULTS
   interpretResponse: function(rtbResponse, bidRequest) {
-    // CONVERT NATIVE RTB RESPONSE INTO PREBID RESPONSE
-    function parseNative(native) {
-      const {assets, link, imptrackers, jstracker} = native;
-      const result = {
-        clickUrl: link.url,
-        clickTrackers: link.clicktrackers || [],
-        impressionTrackers: imptrackers || [],
-        javascriptTrackers: jstracker ? [jstracker] : []
-      };
-
-      (assets || []).forEach((asset) => {
-        const {id, img, data, title} = asset;
-        const key = NATIVE_ID_MAP[id];
-        if (key) {
-          if (!isEmpty(title)) {
-            result.title = title.text
-          } else if (!isEmpty(img)) {
-            result[key] = {
-              url: img.url,
-              height: img.h,
-              width: img.w
-            }
-          } else if (!isEmpty(data)) {
-            result[key] = data.value;
-          }
-        }
-      });
-
-      return result;
-    }
-
     const bids = [];
     const resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
-      const resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
+      const resultItem = { requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: { advertiserDomains: bid.adomain } };
 
       const mediaType = deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
         case 'banner':
-          bids.push(Object.assign({}, resultItem, {mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm}));
+          bids.push(Object.assign({}, resultItem, { mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm }));
           break;
 
         case 'native':
           const nativeResult = JSON.parse(bid.adm);
-          bids.push(Object.assign({}, resultItem, {mediaType: NATIVE, native: parseNative(nativeResult.native)}));
+          bids.push(Object.assign({}, resultItem, { mediaType: NATIVE, native: parseNativeResponse(nativeResult.native) }));
           break;
 
         default:
@@ -577,50 +427,16 @@ export class BotClientTests {
   constructor() {
     this.tests = {
       headless_chrome: function() {
-        if (self.navigator) {
-          if (self.navigator.webdriver) {
-            return true;
-          }
-        }
-
-        return false;
+        // Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
+        return isWebdriverEnabled();
       },
 
       selenium: function () {
-        let response = false;
-
-        if (window && document) {
-          const results = [
-            'webdriver' in window,
-            '_Selenium_IDE_Recorder' in window,
-            'callSelenium' in window,
-            '_selenium' in window,
-            '__webdriver_script_fn' in document,
-            '__driver_evaluate' in document,
-            '__webdriver_evaluate' in document,
-            '__selenium_evaluate' in document,
-            '__fxdriver_evaluate' in document,
-            '__driver_unwrapped' in document,
-            '__webdriver_unwrapped' in document,
-            '__selenium_unwrapped' in document,
-            '__fxdriver_unwrapped' in document,
-            '__webdriver_script_func' in document,
-            document.documentElement.getAttribute('selenium') !== null,
-            document.documentElement.getAttribute('webdriver') !== null,
-            document.documentElement.getAttribute('driver') !== null
-          ];
-
-          results.forEach(result => {
-            if (result === true) {
-              response = true;
-            }
-          })
-        }
-
-        return response;
+        return isSeleniumDetected(window, document);
       },
     }
   }
+
   doTests() {
     let response = false;
     for (const i of Object.keys(this.tests)) {

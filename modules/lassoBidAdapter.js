@@ -9,7 +9,7 @@ const BIDDER_CODE = 'lasso';
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
 const GET_IUD_URL = 'https://secure.adnxs.com/getuid?';
 const COOKIE_NAME = 'aim-xr';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -75,7 +75,7 @@ export const spec = {
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
         version: 4,
-        coppa: config.getConfig('coppa') == true ? 1 : 0,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined,
         test,
         testDk,

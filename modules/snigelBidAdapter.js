@@ -1,9 +1,10 @@
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, isArray, isFn, isPlainObject, inIframe, generateUUID } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -14,10 +15,9 @@ const FLOOR_MATCH_ALL_SIZES = '*';
 const SESSION_ID_KEY = '_sn_session_pba';
 
 const getConfig = config.getConfig;
-const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
+const storageManager = getStorageManager({ bidderCode: BIDDER_CODE });
 const refreshes = {};
 const placementCounters = {};
-const pageViewId = generateUUID();
 const pageViewStart = new Date().getTime();
 let auctionCounter = 0;
 
@@ -42,7 +42,7 @@ export const spec = {
         site: deepAccess(bidRequests, '0.params.site'),
         sessionId: getSessionId(),
         counter: auctionCounter++,
-        pageViewId: pageViewId,
+        pageViewId: bidderRequest.pageViewId,
         pageViewStart: pageViewStart,
         gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),
@@ -109,7 +109,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncUrl = getSyncUrl(responses || []);
     if (syncUrl && syncOptions.iframeEnabled) {
-      return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent)}];
+      return [{ type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent, uspConsent, gppConsent) }];
     }
   },
 };
@@ -130,7 +130,7 @@ function getTestFlag() {
 
 function getLanguage() {
   return navigator && navigator.language
-    ? navigator.language.indexOf('-') != -1
+    ? navigator.language.indexOf('-') !== -1
       ? navigator.language.split('-')[0]
       : navigator.language
     : undefined;

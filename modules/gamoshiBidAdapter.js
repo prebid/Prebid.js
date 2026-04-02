@@ -10,12 +10,13 @@ import {
   logWarn,
   mergeDeep
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
-import {getCurrencyFromBidderRequest} from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io',
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
@@ -155,7 +156,7 @@ export const spec = {
         let type = bidRequest.mediaTypes['banner'] ? BANNER : VIDEO;
         if (!supplyPartnerId && type != null) {
           logError('Gamoshi: supplyPartnerId is required');
-          return;
+          return null;
         }
         bidRequest.mediaTypes.mediaType = type;
         const bidderCode = bidderRequest.bidderCode || 'gamoshi';
@@ -168,7 +169,7 @@ export const spec = {
         });
         if (!ortbRequest || !ortbRequest.imp || ortbRequest.imp.length === 0) {
           logWarn('Gamoshi: Failed to build valid ORTB request');
-          return;
+          return null;
         }
         return {
           method: 'POST',
@@ -178,6 +179,7 @@ export const spec = {
         };
       } catch (error) {
         logError('Gamoshi: Error building request:', error);
+        return null;
       }
     }).filter(Boolean);
   },
@@ -207,7 +209,7 @@ export const spec = {
           bidResponse.ext['utrk']
             .forEach(pixel => {
               const url = helper.replaceMacros(pixel.url, params);
-              syncs.push({type: pixel.type, url});
+              syncs.push({ type: pixel.type, url });
             });
         }
         if (Array.isArray(bidResponse.seatbid)) {
@@ -218,7 +220,7 @@ export const spec = {
                   bid.ext['utrk']
                     .forEach(pixel => {
                       const url = helper.replaceMacros(pixel.url, params);
-                      syncs.push({type: pixel.type, url});
+                      syncs.push({ type: pixel.type, url });
                     });
                 }
               });
@@ -249,7 +251,7 @@ function renderOutstream(bid) {
     window['GamoshiPlayer'].renderAd({
       id: unitId,
       debug: window.location.href.indexOf('pbjsDebug') >= 0,
-      placement: document.getElementById(bid.adUnitCode),
+      placement: getAdUnitElement(bid),
       width: bid.width,
       height: bid.height,
       events: {

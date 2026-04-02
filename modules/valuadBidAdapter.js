@@ -11,7 +11,8 @@ import {
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
 import { getBoundingBox, percentInView } from '../libraries/percentInView/percentInView.js';
-import {isIframe} from '../libraries/omsUtils/index.js';
+import { isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'valuad';
 const GVL_ID = 1478;
@@ -46,9 +47,9 @@ const converter = ortbConverter({
       coppa: coppa,
       us_privacy: uspConsent,
       ext: {
-        gdpr_conset: gdpr.consentString || '',
+        gdpr_consent: gdpr.consentString || '',
         gpp: gpp || '',
-        gppSid: gppSid || [],
+        gpp_sid: gppSid || [],
         dsa: dsa,
       }
     });
@@ -104,9 +105,9 @@ const converter = ortbConverter({
 
     if (!adSize) { adSize = [0, 0]; }
 
-    const size = {w: adSize[0], h: adSize[1]};
+    const size = { w: adSize[0], h: adSize[1] };
 
-    const element = document.getElementById(bid.adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.divId);
+    const element = getAdUnitElement(bid) || document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.divId);
     const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), size) : 0;
 
     const rect = element && getBoundingBox(element, size);
@@ -191,8 +192,13 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
 }
 
 function interpretResponse(response, request) {
+  // Handle null or missing response body
+  if (!response || !response.body) {
+    return [];
+  }
+
   // Restore original call, remove logging and safe navigation
-  const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
+  const bidResponses = converter.fromORTB({ response: response.body, request: request.data }).bids;
 
   return bidResponses;
 }

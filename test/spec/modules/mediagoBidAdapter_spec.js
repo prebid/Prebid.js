@@ -141,6 +141,19 @@ describe('mediago:BidAdapterTests', function () {
     expect(req_data.imp).to.have.lengthOf(1);
   });
 
+  it('mediago:validate_transactionId_in_request', function () {
+    request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const req_data = JSON.parse(request.data);
+    expect(req_data.imp[0].ext.transactionId).to.equal('7b26fdae-96e6-4c35-a18b-218dda11397d');
+  });
+
+  it('mediago:validate_pbjs_source_and_version_in_request', function () {
+    request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const req_data = JSON.parse(request.data);
+    expect(req_data.ext.pbjsversion).to.be.a('string');
+    expect(req_data.ext.pbjsversion.length).to.be.above(0);
+  });
+
   describe('mediago: buildRequests', function() {
     describe('getPmgUID function', function() {
       let sandbox;
@@ -200,7 +213,7 @@ describe('mediago:BidAdapterTests', function () {
             bid: [
               {
                 id: '6e28cfaf115a354ea1ad8e1304d6d7b8',
-                impid: '1',
+                impid: '54d73f19c9d47a',
                 price: 0.087581,
                 adm: adm,
                 cid: '1339145',

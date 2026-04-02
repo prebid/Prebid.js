@@ -2,10 +2,10 @@
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
-import {deepAccess, isEmpty, isNumber, logWarn} from '../../src/utils.js';
-import {ORTB_MAP} from './config.js';
-import {submodule} from '../../src/hook.js';
-import {getCoreStorageManager} from '../../src/storageManager.js';
+import { deepAccess, isEmpty, isNumber, logWarn } from '../../src/utils.js';
+import { ORTB_MAP } from './config.js';
+import { submodule } from '../../src/hook.js';
+import { getCoreStorageManager } from '../../src/storageManager.js';
 
 // TODO: do FPD modules need their own namespace?
 const STORAGE = getCoreStorageManager('FPDValidation');
@@ -85,13 +85,14 @@ function typeValidation(data, mapping) {
  */
 export function filterArrayData(arr, child, path, parent) {
   arr = arr.filter((index, i) => {
-    const check = typeValidation(index, {type: child.type, isArray: child.isArray});
+    const check = typeValidation(index, { type: child.type, isArray: child.isArray });
 
     if (check && Array.isArray(index) === Boolean(child.isArray)) {
       return true;
     }
 
     logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
+    return false;
   }).filter((index, i) => {
     let requiredCheck = true;
     const mapping = deepAccess(ORTB_MAP, path);
@@ -99,6 +100,7 @@ export function filterArrayData(arr, child, path, parent) {
     if (mapping && mapping.required) requiredCheck = getRequiredData(index, mapping.required, parent, i);
 
     if (requiredCheck) return true;
+    return false;
   }).reduce((result, value, i) => {
     let typeBool = false;
     const mapping = deepAccess(ORTB_MAP, path);
@@ -151,14 +153,16 @@ export function validateFpd(fpd, path = '', parent = '') {
     if (!mapping || !mapping.invalid) return key;
 
     logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`);
+    return false;
   }).filter(key => {
     const mapping = deepAccess(ORTB_MAP, path + key);
     // let typeBool = false;
-    const typeBool = (mapping) ? typeValidation(fpd[key], {type: mapping.type, isArray: mapping.isArray}) : true;
+    const typeBool = (mapping) ? typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray }) : true;
 
     if (typeBool || !mapping) return key;
 
     logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
+    return false;
   }).reduce((result, key) => {
     const mapping = deepAccess(ORTB_MAP, path + key);
     let modified = {};
