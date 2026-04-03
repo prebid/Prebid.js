@@ -32,8 +32,13 @@ describe('anonymisedRtdProvider', function() {
   });
 
   describe('anonymisedRtdSubmodule', function() {
+    let logWarnStub;
+    beforeEach(function () {
+      logWarnStub = sinon.stub(require('src/utils.js'), 'logWarn');
+    });
     afterEach(function () {
-      document.querySelectorAll('script[src*="static.anonymised.io"]').forEach(s => s.parentNode.removeChild(s));
+      logWarnStub.restore();
+      document.querySelectorAll('script[src*="static.anonymised.io"], script[src*="example.io"]').forEach(s => s.parentNode.removeChild(s));
     });
 
     it('successfully instantiates', function () {
@@ -147,7 +152,7 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScriptStub.called).to.be.false;
     });
-    it('should load external script from the default URL even if the outdated tagUrl is set', function () {
+    it('should load external script from tagUrl when set and log a deprecation warning', function () {
       const rtdConfig = {
         params: {
           tagUrl: 'https://example.io/loader.js',
@@ -157,9 +162,25 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      const expected = `https://static.anonymised.io/light/loader.js?ref=prebid&d=${window.location.hostname}`;
+      const expected = `https://example.io/loader.js?ref=prebid&d=${window.location.hostname}`;
 
       expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
+      expect(logWarnStub.calledWithMatch('params.tagUrl is deprecated')).to.be.true;
+    });
+    it('should not load external script from tagUrl when it is already loaded', function () {
+      const rtdConfig = {
+        params: {
+          tagUrl: 'https://example.io/loader.js',
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = 'https://example.io/loader.js';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScriptStub.called).to.be.false;
     });
   });
 
