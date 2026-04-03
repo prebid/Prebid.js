@@ -178,7 +178,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     cks: 1,
     schain: schain ? JSON.stringify(schain) : '',
     ...(gpid ? { gpid } : {}),
-    ...(floorPrice ? { fl_pr: floorPrice } : {}),
+    ...(floorPrice !== undefined && floorPrice !== null ? { fl_pr: floorPrice } : {}),
   };
 
   const pageTitle = document.title;
