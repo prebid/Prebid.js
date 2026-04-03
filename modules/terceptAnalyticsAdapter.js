@@ -1,5 +1,5 @@
 import { parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { ajax, sendBeacon } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
@@ -33,7 +33,7 @@ function flush(auctionId, useBeacon = false) {
 }
 
 // flush remaining auctions via sendBeacon on page exit
-window.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     pendingAuctions.forEach((_, auctionId) => flush(auctionId, true));
   }
@@ -47,87 +47,86 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
   track({ eventType, args }) {
     if (typeof args === 'undefined') return;
     try {
+      if (eventType === EVENTS.AUCTION_INIT) {
+        const auctionId = args.auctionId;
+        adUnitMap.set(auctionId, args.adUnits);
 
-    if (eventType === EVENTS.AUCTION_INIT) {
-      const auctionId = args.auctionId;
-      adUnitMap.set(auctionId, args.adUnits);
+        // only first bidderRequest needed — device/site data is identical across all
+        const auctionInit = Object.assign({}, args, {
+          bidderRequests: args.bidderRequests ? args.bidderRequests.slice(0, 1) : []
+        });
 
-      // only first bidderRequest needed — device/site data is identical across all
-      const auctionInit = Object.assign({}, args, {
-        bidderRequests: args.bidderRequests ? args.bidderRequests.slice(0, 1) : []
-      });
-
-      pendingAuctions.set(auctionId, {
-        auctionInit,
-        bids: [],
-        timer: null
-      });
-    } else if (eventType === EVENTS.BID_REQUESTED) {
-      mapBidRequests(args).forEach(bid => {
-        const auction = pendingAuctions.get(bid.auctionId);
-        if (auction) auction.bids.push(bid);
-      });
-    } else if (eventType === EVENTS.BID_RESPONSE) {
-      updateBid(args.auctionId, args.requestId, mapBidResponse(args, 'response'));
-    } else if (eventType === EVENTS.BID_TIMEOUT) {
-      args.forEach(item => {
-        updateBid(item.auctionId, item.bidId, mapBidResponse(item, 'timeout'));
-      });
-    } else if (eventType === EVENTS.NO_BID) {
-      updateBid(args.auctionId, args.bidId, mapBidResponse(args, 'no_bid'));
-    } else if (eventType === EVENTS.AUCTION_END) {
-      const auction = pendingAuctions.get(args.auctionId);
-      if (!auction) return;
-      // 1.5s window to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
-      auction.timer = setTimeout(() => flush(args.auctionId), 1500);
-    } else if (eventType === EVENTS.BID_WON) {
-      const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);
-      updateBid(args.auctionId, args.requestId, {
-        renderStatus: 4,
-        renderedSize: args.size,
-        host: window.location.hostname,
-        path: window.location.pathname,
-        search: window.location.search,
-        adserverAdSlot,
-        pbAdSlot
-      });
-    } else if (eventType === EVENTS.AD_RENDER_SUCCEEDED) {
-      const bid = args.bid;
-      const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid.auctionId, bid.adUnitCode);
-      updateBid(bid.auctionId, bid.requestId, {
-        renderStatus: 7,
-        renderTimestamp: Date.now(),
-        renderedSize: bid.size,
-        host: window.location.hostname,
-        path: window.location.pathname,
-        search: window.location.search,
-        adserverAdSlot,
-        pbAdSlot
-      });
-    } else if (eventType === EVENTS.AD_RENDER_FAILED) {
-      const bid = args.bid;
-      updateBid(bid.auctionId, bid.requestId, {
-        renderStatus: 8,
-        reason: args.reason,
-        message: args.message,
-        host: window.location.hostname,
-        path: window.location.pathname,
-        search: window.location.search
-      });
-    } else if (eventType === EVENTS.BIDDER_ERROR) {
-      const { bidderRequest, error } = args;
-      if (!bidderRequest || !bidderRequest.bids) return;
-      bidderRequest.bids.forEach(bid => {
-        const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid.auctionId, bid.adUnitCode);
-        updateBid(bid.auctionId, bid.bidId, {
-          renderStatus: 6,
-          status: 'bidError',
-          error: error?.message || error,
+        pendingAuctions.set(auctionId, {
+          auctionInit,
+          bids: [],
+          timer: null
+        });
+      } else if (eventType === EVENTS.BID_REQUESTED) {
+        mapBidRequests(args).forEach(bid => {
+          const auction = pendingAuctions.get(bid.auctionId);
+          if (auction) auction.bids.push(bid);
+        });
+      } else if (eventType === EVENTS.BID_RESPONSE) {
+        updateBid(args.auctionId, args.requestId, mapBidResponse(args, 'response'));
+      } else if (eventType === EVENTS.BID_TIMEOUT) {
+        args.forEach(item => {
+          updateBid(item.auctionId, item.bidId, mapBidResponse(item, 'timeout'));
+        });
+      } else if (eventType === EVENTS.NO_BID) {
+        updateBid(args.auctionId, args.bidId, mapBidResponse(args, 'no_bid'));
+      } else if (eventType === EVENTS.AUCTION_END) {
+        const auction = pendingAuctions.get(args.auctionId);
+        if (!auction) return;
+        // 1.5s window to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
+        auction.timer = setTimeout(() => flush(args.auctionId), 1500);
+      } else if (eventType === EVENTS.BID_WON) {
+        const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);
+        updateBid(args.auctionId, args.requestId, {
+          renderStatus: 4,
+          renderedSize: args.size,
+          host: window.location.hostname,
+          path: window.location.pathname,
+          search: window.location.search,
           adserverAdSlot,
           pbAdSlot
         });
-      });
-    }
+      } else if (eventType === EVENTS.AD_RENDER_SUCCEEDED) {
+        const bid = args.bid;
+        const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid.auctionId, bid.adUnitCode);
+        updateBid(bid.auctionId, bid.requestId, {
+          renderStatus: 7,
+          renderTimestamp: Date.now(),
+          renderedSize: bid.size,
+          host: window.location.hostname,
+          path: window.location.pathname,
+          search: window.location.search,
+          adserverAdSlot,
+          pbAdSlot
+        });
+      } else if (eventType === EVENTS.AD_RENDER_FAILED) {
+        const bid = args.bid;
+        updateBid(bid.auctionId, bid.requestId, {
+          renderStatus: 8,
+          reason: args.reason,
+          message: args.message,
+          host: window.location.hostname,
+          path: window.location.pathname,
+          search: window.location.search
+        });
+      } else if (eventType === EVENTS.BIDDER_ERROR) {
+        const { bidderRequest, error } = args;
+        if (!bidderRequest || !bidderRequest.bids) return;
+        bidderRequest.bids.forEach(bid => {
+          const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid.auctionId, bid.adUnitCode);
+          updateBid(bid.auctionId, bid.bidId, {
+            renderStatus: 6,
+            status: 'bidError',
+            error: error?.message || error,
+            adserverAdSlot,
+            pbAdSlot
+          });
+        });
+      }
     } catch (e) { /* do not disrupt the publisher page */ }
   }
 });
@@ -242,8 +241,8 @@ function send(data, useBeacon = false) {
   });
 
   const body = JSON.stringify(data);
-  if (useBeacon && navigator.sendBeacon) {
-    navigator.sendBeacon(terceptAnalyticsRequestUrl, new Blob([body], { type: 'text/plain' }));
+  if (useBeacon) {
+    sendBeacon(terceptAnalyticsRequestUrl, new Blob([body], { type: 'text/plain' }));
   } else {
     ajax(terceptAnalyticsRequestUrl, undefined, body, { method: 'POST', contentType: 'text/plain' });
   }

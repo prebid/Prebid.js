@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
+import * as ajax from 'src/ajax.js';
 
 const events = require('src/events');
 
@@ -507,7 +508,7 @@ describe('tercept analytics adapter', function () {
     let beaconStub;
 
     beforeEach(function () {
-      beaconStub = sinon.stub(navigator, 'sendBeacon').returns(true);
+      beaconStub = sinon.stub(ajax, 'sendBeacon').returns(true);
     });
 
     afterEach(function () {
@@ -521,7 +522,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_END, auctionEnd);
 
       Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true });
-      window.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'));
 
       expect(beaconStub.calledOnce).to.be.true;
       expect(server.requests.length).to.equal(0);
@@ -532,7 +533,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_END, auctionEnd);
 
       Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true });
-      window.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'));
 
       clock.tick(1500);
       expect(server.requests.length).to.equal(0);
