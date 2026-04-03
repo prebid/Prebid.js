@@ -41,7 +41,7 @@ import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
 import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
 import type { AddBidResponse } from "../auction.ts";
 import type { MediaType } from "../mediaTypes.ts";
-import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData } from "../consentHandler.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentDataForKey } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -153,9 +153,9 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
       pixelEnabled: boolean;
     },
     responses: ServerResponse[],
-    gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
-    uspConsent: null | ConsentData[typeof CONSENT_USP],
-    gppConsent: null | ConsentData[typeof CONSENT_GPP]
+    gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
+    uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
+    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>
   ) => ({ type: SyncType, url: string })[];
   alwaysHasCapacity?: boolean;
 }
