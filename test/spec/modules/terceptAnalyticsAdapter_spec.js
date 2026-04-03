@@ -456,11 +456,13 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: id1 });
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: id2 });
       events.emit(EVENTS.BID_REQUESTED, {
-        ...bidRequested, auctionId: id1,
+        ...bidRequested,
+        auctionId: id1,
         bids: [{ ...bidRequested.bids[0], auctionId: id1, bidId: 'bid-1' }]
       });
       events.emit(EVENTS.BID_REQUESTED, {
-        ...bidRequested, auctionId: id2,
+        ...bidRequested,
+        auctionId: id2,
         bids: [{ ...bidRequested.bids[0], auctionId: id2, bidId: 'bid-2' }]
       });
       events.emit(EVENTS.AUCTION_END, { auctionId: id1 });
@@ -483,11 +485,13 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: id1 });
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: id2 });
       events.emit(EVENTS.BID_REQUESTED, {
-        ...bidRequested, auctionId: id1,
+        ...bidRequested,
+        auctionId: id1,
         bids: [{ ...bidRequested.bids[0], auctionId: id1, bidId: 'bid-x' }]
       });
       events.emit(EVENTS.BID_REQUESTED, {
-        ...bidRequested, auctionId: id2,
+        ...bidRequested,
+        auctionId: id2,
         bids: [{ ...bidRequested.bids[0], auctionId: id2, bidId: 'bid-y' }]
       });
       events.emit(EVENTS.BID_WON, { ...bidWon, auctionId: id1, requestId: 'bid-x' });
@@ -590,7 +594,8 @@ describe('tercept analytics adapter', function () {
       };
       events.emit(EVENTS.AUCTION_INIT, initNoOrtb2);
       events.emit(EVENTS.BID_REQUESTED, {
-        ...bidRequested, auctionId: 'no-ortb2',
+        ...bidRequested,
+        auctionId: 'no-ortb2',
         bids: [{ ...bidRequested.bids[0], auctionId: 'no-ortb2' }]
       });
       events.emit(EVENTS.AUCTION_END, { auctionId: 'no-ortb2' });
