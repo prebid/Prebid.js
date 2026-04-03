@@ -21,9 +21,9 @@ const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
-const ORIGIN = 'https://sonic.impactify.media';
+const ORIGIN = 'https://sonic-us-east.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
-const AUCTION_URI = '/bidder';
+const AUCTION_URI = '/openrtb2/auction';
 const COOKIE_SYNC_URI = '/static/cookie_sync.html';
 const GVL_ID = 606;
 const GET_CONFIG = config.getConfig;
@@ -126,25 +126,29 @@ const helpers = {
   },
 
   getViewability(bid) {
-    let elementSize;
-    if (bid.mediaTypes?.banner?.sizes?.[0]) {
-      elementSize = bid.mediaTypes?.banner?.sizes?.[0];
+    try {
+      let elementSize;
+      if (bid.mediaTypes?.banner?.sizes?.[0]) {
+        elementSize = bid.mediaTypes?.banner?.sizes?.[0];
+      }
+      if (bid.mediaTypes?.video?.playerSize?.[0]) {
+        elementSize = bid.mediaTypes?.video?.playerSize?.[0];
+      }
+      if (!elementSize) { elementSize = [0, 0]; }
+
+      const size = { w: elementSize[0], h: elementSize[1] };
+      const element = document.getElementById(bid.adUnitCode);
+
+      if (!element) return;
+
+      const viewabilityAmount = isViewabilityMeasurable(element)
+        ? getViewability(element, getWindowTop(), size)
+        : 'na';
+
+      return isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+    } catch (e) {
+      return 'na';
     }
-    if (bid.mediaTypes?.video?.playerSize?.[0]) {
-      elementSize = bid.mediaTypes?.video?.playerSize?.[0];
-    }
-    if (!elementSize) { elementSize = [0, 0]; }
-
-    const size = {w: elementSize[0], h: elementSize[1]};
-    const element = document.getElementById(bid.adUnitCode);
-
-    if (!element) return;
-
-    const viewabilityAmount = isViewabilityMeasurable(element)
-      ? getViewability(element, getWindowTop(), size)
-      : 'na';
-
-    return isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
   },
 
   getDeviceType() {
@@ -216,12 +220,10 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     cur: [DEFAULT_CURRENCY],
     imp: [],
     source: { tid: bidderRequest.ortb2?.source?.tid },
-    // FIXME: remove for prod
     ext: {
       impactify: {
         integration: 'pbjs',
-        storage: helpers.getImStrFromLocalStorage(),
-        formatOutput: 'json' // FIXME: remove for prod
+        storage: helpers.getImStrFromLocalStorage()
       }
     }
   };
@@ -407,8 +409,8 @@ export const spec = {
                 ...(isPlayer
                   ? {
                       mediaType: "video",
-                      vastUrl: bid.vastUrl,
-                      vastXml: bid.vastXml || bid.adm,
+                      vastUrl: bid.ext?.vast_url,
+                      vastXml: bid.adm,
                     }
                   : {
                       ad: bid.adm,
