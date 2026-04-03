@@ -343,8 +343,6 @@ describe('ImpactifyAdapter', function () {
                 crid: '97517771',
                 w: 1,
                 h: 1,
-                hash: 'test',
-                expiry: 166192938,
                 meta: { 'advertiserDomains': ['testdomain.com'] },
                 ext: {
                   prebid: {
@@ -419,8 +417,6 @@ describe('ImpactifyAdapter', function () {
           ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
           width: 1,
           height: 1,
-          hash: 'test',
-          expiry: 166192938,
           meta: { 'advertiserDomains': ['testdomain.com'] },
           ttl: 300,
           creativeId: '97517771'
@@ -452,7 +448,9 @@ describe('ImpactifyAdapter', function () {
               id: 'bid-1',
               impid: 'imp-1',
               price: 2.5,
-              vastUrl: 'https://example.com/vast.xml',
+              ext: {
+                vast_url: 'https://example.com/vast.xml'
+              },
               adm: '<VAST>fallback</VAST>',
               crid: 'creative-1',
               adomain: ['advertiser.com']
@@ -521,8 +519,6 @@ describe('ImpactifyAdapter', function () {
               crid: '97517771',
               w: 1,
               h: 1,
-              hash: 'test',
-              expiry: 166192938,
               meta: { 'advertiserDomains': ['testdomain.com'] },
               ext: {
                 prebid: {

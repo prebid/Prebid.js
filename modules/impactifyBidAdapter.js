@@ -21,9 +21,9 @@ const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
-const ORIGIN = 'https://sonic-us-east.impactify.media';
+const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
-const AUCTION_URI = '/openrtb2/auction';
+const AUCTION_URI = '/bidder';
 const COOKIE_SYNC_URI = '/static/cookie_sync.html';
 const GVL_ID = 606;
 const GET_CONFIG = config.getConfig;
@@ -399,8 +399,6 @@ export const spec = {
                 height: bid.h || 0,
                 ttl: 300,
                 creativeId: bid.crid || 0,
-                hash: bid.hash,
-                expiry: bid.expiry,
                 meta: {
                   advertiserDomains:
                     bid.adomain && bid.adomain.length ? bid.adomain : [],
