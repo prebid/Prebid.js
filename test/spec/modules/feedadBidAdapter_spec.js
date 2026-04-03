@@ -542,7 +542,6 @@ describe('FeedAdAdapter', function () {
       'bidderCode': 'feedad',
       'width': 300,
       'height': 250,
-      'statusMessage': 'Bid available',
       'adId': '3a4529aa05114d',
       'requestId': bidId,
       'mediaType': 'banner',
