@@ -121,7 +121,7 @@ export const jixieIdSubmodule = {
    */
   name: MODULE_NAME,
 
-  disclosureURL: 'local://modules/jixieIdModuleDisclosure.json',
+  disclosureURL: 'local://modules/jixieIdSystemDisclosure.json',
 
   /**
    * decode the stored id value for passing to bid requests
