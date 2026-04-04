@@ -1,0 +1,54 @@
+{
+  "disclosures": [
+    {
+      "identifier": "_jxx",
+      "type": "cookie",
+      "maxAgeSeconds":31536000,
+      "cookieRefresh": true,
+      "domains": ["*"],
+      "purposes": [1]
+    },
+    {
+      "identifier": "_jxx",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    },
+    {
+      "identifier": "_jxxs",
+      "type": "cookie",
+      "maxAgeSeconds":1800,
+      "cookieRefresh": true,
+      "domains": ["*"],
+      "purposes": [1]
+    },
+    {
+      "identifier": "_jxxs",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    },
+    {
+      "identifier": "_jxcmpsha",
+      "type": "cookie",
+      "maxAgeSeconds":31536000,
+      "cookieRefresh": true,
+      "domains": ["*"],
+      "purposes": [1]
+    },
+    {
+      "identifier": "_jxcmesha",
+      "type": "cookie",
+      "maxAgeSeconds":31536000,
+      "cookieRefresh": true,
+      "domains": ["*"],
+      "purposes": [1]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Jixie bidder stores and reads identifiers on the first-party domain."
+    }
+  ]
+}

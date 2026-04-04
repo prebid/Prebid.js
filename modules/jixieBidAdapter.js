@@ -174,6 +174,7 @@ export const internal = {
 
 export const spec = {
   code: BIDDER_CODE,
+  disclosureURL: 'local://modules/jixieBidAdapterDisclosure.json',
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (typeof bid.params === 'undefined') {
