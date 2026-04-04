@@ -1074,6 +1074,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "alliance_gravity",
+      "aliasOf": null,
+      "gvlid": 501,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "alvads",
       "aliasOf": null,
       "gvlid": null,
@@ -2964,6 +2971,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pgamrtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3772,6 +3786,13 @@
       "componentName": "playdigo",
       "aliasOf": null,
       "gvlid": 1302,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "playstream",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5310,6 +5331,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "datamage",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "dgkeyword",
       "gvlid": null,
       "disclosureURL": null
@@ -5564,7 +5591,7 @@
       "componentType": "rtd",
       "componentName": "wurfl",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/wurflRtdProvider.json"
     },
     {
       "componentType": "userId",
@@ -5936,6 +5963,13 @@
       "gvlid": null,
       "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
+    },
+    {
+      "componentType": "userId",
+      "componentName": "startioId",
+      "gvlid": 1216,
+      "disclosureURL": null,
+      "aliasOf": null
     },
     {
       "componentType": "userId",

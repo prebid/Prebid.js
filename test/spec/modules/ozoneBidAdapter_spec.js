@@ -1153,9 +1153,6 @@ var validBidderRequestWithCookieDeprecation = {
           }
         ],
         'mobile': 0
-      },
-      'ext': {
-        'cdep': 'fake_control_2'
       }
     }
   }
@@ -3141,18 +3138,6 @@ describe('ozone Adapter', function () {
       const data = JSON.parse(request.data);
       expect(data.source.ext).to.haveOwnProperty('schain');
       expect(data.source.ext.schain).to.deep.equal(schainConfigObject);
-    });
-    it('should find ortb2 cookieDeprecation values', function () {
-      const bidderRequest = JSON.parse(JSON.stringify(validBidderRequestWithCookieDeprecation));
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.ext.ozone.cookieDeprecationLabel).to.equal('fake_control_2');
-    });
-    it('should set ortb2 cookieDeprecation to "none" if there is none', function () {
-      const bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
-      const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.ext.ozone.cookieDeprecationLabel).to.equal('none');
     });
     it('Single request: should use ortb auction ID & transaction ID values if set (this will be the case when publisher opts in with config)', function() {
       var specMock = utils.deepClone(spec);
