@@ -74,7 +74,6 @@ function getSubdomain() {
   }
 }
 
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
