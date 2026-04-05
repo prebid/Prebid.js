@@ -68,7 +68,6 @@ function setIds_(clientId, sessionId) {
  */
 const defaultGenIds_ = [
   { id: '_jxtoko' },
-  { id: '_jxifo' },
   { id: '_jxtdid' },
   { id: '_jxcomp' }
 ];
