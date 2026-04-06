@@ -144,7 +144,7 @@ export const buildExtuidQuery = ({ id5, imuId }) => {
 function getFloorPrice(bid, currency) {
   if (typeof bid.getFloor === 'function') {
     const floorSize = (bid.sizes && bid.sizes.length === 1) ? bid.sizes[0] : '*';
-    const floorInfo = bid.getFloor({currency: currency, mediaType: BANNER, size: floorSize});
+    const floorInfo = bid.getFloor({ currency: currency, mediaType: BANNER, size: floorSize });
     if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
       return parseFloat(floorInfo.floor);
     }
