@@ -74,7 +74,6 @@ describe('ats analytics adapter', function () {
       // prepare general auction - response
       const bidResponse = {
         'height': 250,
-        'statusMessage': 'Bid available',
         'adId': '2eddfdc0c791dc',
         'mediaType': 'banner',
         'source': 'client',
@@ -125,7 +124,6 @@ describe('ats analytics adapter', function () {
         'netRevenue': true,
         'ttl': 300,
         'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-        'statusMessage': 'Bid available',
         'responseTimestamp': 1633525319061,
         'requestTimestamp': 1633525319258,
         'bidder': 'appnexus',
