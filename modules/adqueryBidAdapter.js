@@ -40,8 +40,8 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
-    if (video) {
-      return !!(video.playerSize && video.context === 'outstream');// Focus on outstream
+    if (video && ['instream', 'outstream'].includes(video.context)) {
+      return !!(video.playerSize);
     }
 
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
@@ -63,7 +63,7 @@ export const spec = {
 
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const bid = bidRequests[i];
-      const isVideo = bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream';
+      const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context);
 
       let requestUrl = adqueryRequestUrl;
 
