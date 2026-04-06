@@ -1,4 +1,4 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
@@ -23,7 +23,7 @@ const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALIAS_BIDDER_CODE = ['gg'];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
@@ -418,7 +418,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    if (mediaTypes.banner) {
+    if (mediaTypes.native) {
+      sizes = [1, 1];
+    } else if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
     } else if (mediaTypes.video) {
       sizes = mediaTypes.video.playerSize;
@@ -456,6 +458,12 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.si = params.slot;
         data.pi = 3;
         data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+      } else if (mediaTypes.native) {
+        data.pi = 5;
+        if (mediaTypes.native.ortb) {
+          data.nat = JSON.stringify(mediaTypes.native.ortb);
+        }
+        if (params.native) { data.ni = params.native; }
       } else if (params.native) {
         data.ni = params.native;
         data.pi = 5;
@@ -636,7 +644,8 @@ function interpretResponse(serverResponse, bidRequest) {
   } = Object.assign(defaultResponse, serverResponseBody);
   const data = bidRequest.data || {};
   const product = data.pi;
-  const mediaType = (product === 6 || product === 7) ? VIDEO : BANNER;
+  const mediaType = (product === 6 || product === 7) ? VIDEO
+    : (product === 5) ? NATIVE : BANNER;
   const isTestUnit = (product === 3 && data.si === 9);
   const metaData = {
     advertiserDomains: advertiserDomains || [],
@@ -667,9 +676,7 @@ function interpretResponse(serverResponse, bidRequest) {
   pageViewId = pvid
 
   if (creativeId) {
-    bidResponses.push({
-      // dealId: DEAL_ID,
-      // referrer: REFERER,
+    const bid = {
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       ...(mediaType === VIDEO && { ad: markup, vastXml: markup }),
       mediaType,
@@ -682,7 +689,18 @@ function interpretResponse(serverResponse, bidRequest) {
       ttl: TIME_TO_LIVE,
       width,
       meta: metaData
-    })
+    };
+
+    if (mediaType === NATIVE && markup) {
+      try {
+        const nativeResponse = JSON.parse(markup);
+        bid.ortb = nativeResponse.native || nativeResponse;
+      } catch (e) {
+        logError('[GumGum] Error parsing native ADM:', e);
+      }
+    }
+
+    bidResponses.push(bid);
   }
   return bidResponses
 }
