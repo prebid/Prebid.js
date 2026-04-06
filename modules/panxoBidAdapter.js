@@ -1,13 +1,14 @@
 /**
- * @module panxoBidAdapter
- * @description Panxo Bid Adapter for Prebid.js - AI-referred traffic monetization
- * @requires Panxo Signal script (cdn.panxo-sys.com) loaded before Prebid
+ * @module modules/panxoBidAdapter
+ * @description Bid Adapter for Prebid.js - AI-referred traffic monetization
+ * @see https://docs.panxo.ai for Signal script installation
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, logWarn, isFn, isPlainObject } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'panxo';
 const ENDPOINT_URL = 'https://panxo-sys.com/openrtb/2.5/bid';
@@ -79,9 +80,9 @@ function buildUser(panxoUid, bidderRequest) {
 function buildRegs(bidderRequest) {
   const regs = { ext: {} };
 
-  // GDPR
+  // GDPR - only set when gdprApplies is explicitly true or false, not undefined
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
-  if (gdprConsent) {
+  if (gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
     regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
 
@@ -112,7 +113,7 @@ function buildDevice() {
     ua: navigator.userAgent,
     language: navigator.language,
     js: 1,
-    dnt: navigator.doNotTrack === '1' ? 1 : 0
+    dnt: getDNT() ? 1 : 0
   };
 
   if (typeof screen !== 'undefined') {
@@ -162,7 +163,7 @@ function buildSource(bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1527,
+  gvlid: 1527, // IAB TCF Global Vendor List ID
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid(bid) {
@@ -207,18 +208,29 @@ export const spec = {
         const sizes = deepAccess(bid, 'mediaTypes.banner.sizes') || [];
         const primarySize = sizes[0] || [300, 250];
 
-        // Include ortb2Imp if available
-        const ortb2Imp = deepAccess(bid, 'ortb2Imp.ext');
-
-        return {
+        // Build impression object
+        const imp = {
           id: bid.bidId,
           banner: banner,
           bidfloor: getFloorPrice(bid, primarySize),
           bidfloorcur: DEFAULT_CURRENCY,
           secure: 1,
-          tagid: bid.adUnitCode,
-          ext: ortb2Imp || undefined
+          tagid: bid.adUnitCode
         };
+
+        // Merge full ortb2Imp object (instl, pmp, ext, etc.)
+        const ortb2Imp = deepAccess(bid, 'ortb2Imp');
+        if (isPlainObject(ortb2Imp)) {
+          Object.keys(ortb2Imp).forEach(key => {
+            if (key === 'ext') {
+              imp.ext = { ...imp.ext, ...ortb2Imp.ext };
+            } else if (imp[key] === undefined) {
+              imp[key] = ortb2Imp[key];
+            }
+          });
+        }
+
+        return imp;
       }).filter(Boolean);
 
       if (impressions.length === 0) return;
@@ -240,7 +252,7 @@ export const spec = {
         method: 'POST',
         url: `${ENDPOINT_URL}?key=${encodeURIComponent(propertyKey)}&source=prebid`,
         data: openrtbRequest,
-        options: { contentType: 'application/json', withCredentials: false },
+        options: { contentType: 'text/plain', withCredentials: false },
         bidderRequest: bidderRequest
       });
     });
@@ -297,9 +309,11 @@ export const spec = {
     if (syncOptions.pixelEnabled) {
       let syncUrl = SYNC_URL + '?source=prebid';
 
-      // GDPR
+      // GDPR - only include when gdprApplies is explicitly true or false
       if (gdprConsent) {
-        syncUrl += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          syncUrl += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+        }
         if (gdprConsent.consentString) {
           syncUrl += `&gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`;
         }

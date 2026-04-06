@@ -102,12 +102,42 @@ var adUnits = [{
 
 # Privacy & Consent
 
+**IAB TCF Global Vendor List ID: 1527**
+
+This adapter is registered with the IAB Europe Transparency and Consent Framework. Publishers using a CMP (Consent Management Platform) should ensure Panxo (Vendor ID 1527) is included in their vendor list.
+
 This adapter supports:
 
-- **GDPR/TCF 2.0**: Consent string is passed in bid requests
+- **GDPR/TCF 2.0**: Consent string is passed in bid requests. GVL ID: 1527
 - **CCPA/US Privacy**: USP string is passed in bid requests  
 - **GPP**: Global Privacy Platform strings are supported
 - **COPPA**: Child-directed content flags are respected
+
+## CMP Configuration
+
+If you use a Consent Management Platform (Cookiebot, OneTrust, Quantcast Choice, etc.), ensure that:
+
+1. Panxo (Vendor ID: 1527) is included in your vendor list
+2. Users can grant/deny consent specifically for Panxo
+3. The CMP loads before Prebid.js to ensure consent is available
+
+Example TCF configuration with Prebid:
+
+```javascript
+pbjs.setConfig({
+    consentManagement: {
+        gdpr: {
+            cmpApi: 'iab',
+            timeout: 8000,
+            defaultGdprScope: true
+        },
+        usp: {
+            cmpApi: 'iab',
+            timeout: 1000
+        }
+    }
+});
+```
 
 # User Sync
 

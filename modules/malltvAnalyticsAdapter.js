@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js'
+import { ajax } from '../src/ajax.js'
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import { EVENTS } from '../src/constants.js'
 import adapterManager from '../src/adapterManager.js'
-import {getGlobal} from '../src/prebidGlobal.js'
-import {logInfo, logError, deepClone} from '../src/utils.js'
+import { getGlobal } from '../src/prebidGlobal.js'
+import { logInfo, logError, deepClone } from '../src/utils.js'
 
 const analyticsType = 'endpoint'
 export const ANALYTICS_VERSION = '1.0.0'
@@ -40,7 +40,7 @@ export const parseAdUnitCode = function (bidResponse) {
   return bidResponse.adUnitCode.toLowerCase()
 }
 
-export const malltvAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
+export const malltvAnalyticsAdapter = Object.assign(adapter({ DEFAULT_SERVER, analyticsType }), {
 
   cachedAuctions: {},
 
@@ -62,7 +62,7 @@ export const malltvAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
 
     return true
   },
-  track({eventType, args}) {
+  track({ eventType, args }) {
     switch (eventType) {
       case BID_TIMEOUT:
         this.handleBidTimeout(args)
@@ -86,7 +86,7 @@ export const malltvAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     )
   },
   createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
-    const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs
+    const { auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids } = auctionEndArgs
     const message = this.createCommonMessage(auctionId)
 
     message.auctionElapsed = (auctionEnd - timestamp)

@@ -10,7 +10,9 @@ Maintainer: prebid@microsoft.com
 
 The Microsoft Bid Adapter connects to Microsoft's advertising exchange for bids. This adapter supports banner, video (instream and outstream), and native ad formats using OpenRTB 2.5 standards.
 
-The Microsoft adapter requires setup and approval from the Microsoft Advertising team. Please reach out to your account team for more information.
+For reference, here is the IAB OpenRTB 2.5 [specification](https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf)
+
+If you are transitioning from the AppNexus bid adapter and you have any questions or concerns, please reach out to your account team for assistance.
 
 # Migration from AppNexus Bid Adapter
 
@@ -20,11 +22,11 @@ If you are migrating from the AppNexus bid adapter, the following table shows ho
 
 | AppNexus Parameter | Microsoft Parameter | Description |
 |-------------------|-------------------|-------------|
-| `params.placementId` | `params.placement_id` | Placement ID (**only** the underscore case is now supported) |
-| `params.member` | `params.member` | Member ID (unchanged) |
+| `params.placementId` | `params.placement_id` | Placement ID  (**only** the underscore case is now supported in the name, value **only** accepts integers) |
+| `params.member` | `params.member` | Member ID (value **only** accepts integers) |
 | `params.inv_code` | `params.inv_code` | Inventory code (unchanged) |
 | `params.publisher_id` | Use `ortb2.publisher.id` | Publisher ID (moved to ortb2 config) |
-| `params.frameworks` | `params.banner_frameworks` | Banner API frameworks array |
+| `params.frameworks` | `params.banner_frameworks` | Banner API frameworks array (small name change to clarify banner only) |
 | `params.user` | Use `ortb2.user` | User data (moved to ortb2 config) |
 | `params.allow_smaller_sizes` | `params.allow_smaller_sizes` | Allow smaller ad sizes (unchanged) |
 | `params.use_pmt_rule` | `params.use_pmt_rule` | Use payment rule (unchanged) |
@@ -39,6 +41,11 @@ If you are migrating from the AppNexus bid adapter, the following table shows ho
 | `params.pub_click` | `params.pubclick` | Publisher click URL (dropped underscore to align to endpoint) |
 | `params.ext_inv_code` | `params.ext_inv_code` | External inventory code (unchanged) |
 | `params.external_imp_id` | `params.ext_imp_id` | External impression ID (shortend to ext) |
+
+## Keywords 
+With the AppNexus adapter, keywords followed this format: keyname=keyvalue1,keyvalue2,keyvalue3
+
+In the Microsoft Bid Adapter, the new required format is: keyname=keyvalue1,keyname=keyvalue2,keyname=keyvalue3
 
 ## Migration Example
 

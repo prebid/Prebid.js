@@ -13,7 +13,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.4.0';
+const MODULE_VERSION = '2.8.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -50,6 +50,7 @@ const ORTB2_DEVICE_FIELDS = [
 const ENRICHMENT_TYPE = {
   UNKNOWN: 'unknown',
   NONE: 'none',
+  NONE_LCE: 'none_lce',
   LCE: 'lce',
   LCE_ERROR: 'lcefailed',
   WURFL_PUB: 'wurfl_pub',
@@ -76,8 +77,6 @@ const AB_TEST = {
   TREATMENT_GROUP: 'treatment',
   DEFAULT_SPLIT: 0.5,
   DEFAULT_NAME: 'unknown',
-  ENRICHMENT_TYPE_LCE: 'lce',
-  ENRICHMENT_TYPE_WURFL: 'wurfl'
 };
 
 const logger = prefixLog('[WURFL RTD Submodule]');
@@ -105,6 +104,9 @@ let tier;
 
 // overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
 let overQuota;
+
+// cachedSUA holds the ORTB 2.6 SUA from Prebid's enrichment pipeline
+let cachedSUA = null;
 
 /**
  * Safely gets an object from localStorage with JSON parsing
@@ -286,22 +288,10 @@ function loadWurflJsAsync(config, bidders) {
     }
   };
 
-  // Collect Client Hints if available, then load script
-  if (navigator?.userAgentData?.getHighEntropyValues) {
-    const hints = ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList'];
-    navigator.userAgentData.getHighEntropyValues(hints)
-      .then(ch => {
-        if (ch !== null) {
-          url.searchParams.set('uach', JSON.stringify(ch));
-        }
-      })
-      .finally(() => {
-        loadWurflJs(url.toString());
-      });
-  } else {
-    // Load script immediately when Client Hints not available
-    loadWurflJs(url.toString());
+  if (cachedSUA) {
+    url.searchParams.set('sua', JSON.stringify(cachedSUA));
   }
+  loadWurflJs(url.toString());
 }
 
 /**
@@ -1023,8 +1013,6 @@ const ABTestManager = {
   _enabled: false,
   _name: null,
   _variant: null,
-  _excludeLCE: true,
-  _enrichmentType: null,
 
   /**
    * Initializes A/B test configuration
@@ -1034,8 +1022,6 @@ const ABTestManager = {
     this._enabled = false;
     this._name = null;
     this._variant = null;
-    this._excludeLCE = true;
-    this._enrichmentType = null;
 
     const abTestEnabled = params?.abTest ?? false;
     if (!abTestEnabled) {
@@ -1044,12 +1030,11 @@ const ABTestManager = {
 
     this._enabled = true;
     this._name = params?.abName ?? AB_TEST.DEFAULT_NAME;
-    this._excludeLCE = params?.abExcludeLCE ?? true;
 
     const split = params?.abSplit ?? AB_TEST.DEFAULT_SPLIT;
     this._variant = this._computeVariant(split);
 
-    logger.logMessage(`A/B test "${this._name}": user in ${this._variant} group (exclude_lce: ${this._excludeLCE})`);
+    logger.logMessage(`A/B test "${this._name}": user in ${this._variant} group`);
   },
 
   /**
@@ -1068,23 +1053,11 @@ const ABTestManager = {
   },
 
   /**
-   * Sets the enrichment type encountered in current auction
-   * @param {string} enrichmentType 'lce' or 'wurfl'
-   */
-  setEnrichmentType(enrichmentType) {
-    this._enrichmentType = enrichmentType;
-  },
-
-  /**
    * Checks if A/B test is enabled for current auction
    * @returns {boolean} True if A/B test should be applied
    */
   isEnabled() {
-    if (!this._enabled) return false;
-    if (this._enrichmentType === AB_TEST.ENRICHMENT_TYPE_LCE && this._excludeLCE) {
-      return false;
-    }
-    return true;
+    return this._enabled;
   },
 
   /**
@@ -1134,6 +1107,7 @@ const init = (config, userConsent) => {
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
+  cachedSUA = null;
 
   logger.logMessage('initialized', { version: MODULE_VERSION });
 
@@ -1163,19 +1137,29 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     });
   });
 
+  // Read SUA from Prebid's enrichment pipeline (already resolved, publisher-controlled hints)
+  cachedSUA = reqBidsConfigObj.ortb2Fragments?.global?.device?.sua || null;
+
   // Determine enrichment type based on cache availability
   WurflDebugger.cacheReadStart();
   const cachedWurflData = getObjectFromStorage(WURFL_RTD_STORAGE_KEY);
   WurflDebugger.cacheReadStop();
 
-  const abEnrichmentType = cachedWurflData ? AB_TEST.ENRICHMENT_TYPE_WURFL : AB_TEST.ENRICHMENT_TYPE_LCE;
-  ABTestManager.setEnrichmentType(abEnrichmentType);
-
   // A/B test: Skip enrichment for control group
   if (ABTestManager.isInControlGroup()) {
     logger.logMessage('A/B test control group: skipping enrichment');
-    enrichmentType = ENRICHMENT_TYPE.NONE;
-    bidders.forEach(bidder => bidderEnrichment.set(bidder, ENRICHMENT_TYPE.NONE));
+    const controlEnrichment = cachedWurflData ? ENRICHMENT_TYPE.NONE : ENRICHMENT_TYPE.NONE_LCE;
+    enrichmentType = controlEnrichment;
+    bidders.forEach(bidder => bidderEnrichment.set(bidder, controlEnrichment));
+
+    // Read cache metadata for beacon reporting (without enriching bid request)
+    if (cachedWurflData) {
+      wurflId = cachedWurflData.WURFL?.wurfl_id || '';
+      samplingRate = cachedWurflData.wurfl_pbjs?.sampling_rate ?? DEFAULT_SAMPLING_RATE;
+      tier = cachedWurflData.wurfl_pbjs?.tier ?? '';
+      overQuota = cachedWurflData.wurfl_pbjs?.over_quota ?? DEFAULT_OVER_QUOTA;
+    }
+
     WurflDebugger.moduleExecutionStop();
     callback();
     return;
@@ -1391,7 +1375,8 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     tier: tier,
     over_quota: overQuota,
     consent_class: consentClass,
-    ad_units: adUnits
+    ad_units: adUnits,
+    sua: cachedSUA
   };
 
   // Add A/B test fields if enabled
@@ -1428,10 +1413,16 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 // The WURFL submodule
 export const wurflSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/wurflRtdProvider.json',
   init,
   getBidRequestData,
   onAuctionEndEvent,
 }
+
+// Exported for testing only
+export const __testing__ = {
+  setCachedSUA: (value) => { cachedSUA = value; },
+};
 
 // Register the WURFL submodule as submodule of realTimeData
 submodule(REAL_TIME_MODULE, wurflSubmodule);

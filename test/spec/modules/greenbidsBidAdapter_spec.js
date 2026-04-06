@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, ENDPOINT_URL } from 'modules/greenbidsBidAdapter.js';
 import { getScreenOrientation } from 'src/utils.js';
-import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getDevicePixelRatio } from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';
 
 describe('greenbidsBidAdapter', () => {

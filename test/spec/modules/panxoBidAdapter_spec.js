@@ -100,7 +100,7 @@ describe('PanxoBidAdapter', function () {
       expect(requests).to.be.an('array').that.is.empty;
     });
 
-    it('should include GDPR consent when available', function () {
+    it('should include GDPR consent when gdprApplies is true', function () {
       const gdprBidderRequest = {
         ...bidderRequest,
         gdprConsent: {
@@ -111,6 +111,20 @@ describe('PanxoBidAdapter', function () {
       const requests = spec.buildRequests(validBidRequests, gdprBidderRequest);
 
       expect(requests[0].data.regs.ext.gdpr).to.equal(1);
+      expect(requests[0].data.user.ext.consent).to.equal('CO-test-consent-string');
+    });
+
+    it('should not include gdpr flag when gdprApplies is undefined', function () {
+      const gdprBidderRequest = {
+        ...bidderRequest,
+        gdprConsent: {
+          gdprApplies: undefined,
+          consentString: 'CO-test-consent-string'
+        }
+      };
+      const requests = spec.buildRequests(validBidRequests, gdprBidderRequest);
+
+      expect(requests[0].data.regs.ext.gdpr).to.be.undefined;
       expect(requests[0].data.user.ext.consent).to.equal('CO-test-consent-string');
     });
 
@@ -152,6 +166,20 @@ describe('PanxoBidAdapter', function () {
       const requests = spec.buildRequests(bidWithFloor, bidderRequest);
 
       expect(requests[0].data.imp[0].bidfloor).to.equal(1.50);
+    });
+
+    it('should include full ortb2Imp object in impression', function () {
+      const bidWithOrtb2Imp = [{
+        ...validBidRequests[0],
+        ortb2Imp: {
+          instl: 1,
+          ext: { data: { customField: 'value' } }
+        }
+      }];
+      const requests = spec.buildRequests(bidWithOrtb2Imp, bidderRequest);
+
+      expect(requests[0].data.imp[0].instl).to.equal(1);
+      expect(requests[0].data.imp[0].ext.data.customField).to.equal('value');
     });
 
     it('should split requests by different propertyKeys', function () {
@@ -258,12 +286,21 @@ describe('PanxoBidAdapter', function () {
       expect(syncs).to.be.an('array').that.is.empty;
     });
 
-    it('should include GDPR params when available', function () {
+    it('should include GDPR params when gdprApplies is true', function () {
       const syncOptions = { pixelEnabled: true };
       const gdprConsent = { gdprApplies: true, consentString: 'test-consent' };
       const syncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
 
       expect(syncs[0].url).to.include('gdpr=1');
+      expect(syncs[0].url).to.include('gdpr_consent=test-consent');
+    });
+
+    it('should not include gdpr flag when gdprApplies is undefined', function () {
+      const syncOptions = { pixelEnabled: true };
+      const gdprConsent = { gdprApplies: undefined, consentString: 'test-consent' };
+      const syncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
+
+      expect(syncs[0].url).to.not.include('gdpr=');
       expect(syncs[0].url).to.include('gdpr_consent=test-consent');
     });
 

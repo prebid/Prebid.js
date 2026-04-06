@@ -8,14 +8,16 @@ import {
   getBidIdParameter,
   getUniqueIdentifierStr,
   formatQS,
+  deepAccess,
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
-import {percentInView} from '../libraries/percentInView/percentInView.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
-import {getMinSize} from '../libraries/sizeUtils/sizeUtils.js';
-import {getBidFloor, isIframe} from '../libraries/omsUtils/index.js';
+import { ajax } from '../src/ajax.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getBidFloor, isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -41,9 +43,9 @@ function buildRequests(bidReqs, bidderRequest) {
       let bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes || [];
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 
-      const element = document.getElementById(bid.adUnitCode);
+      const element = getAdUnitElement(bid);
       const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
       const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
@@ -51,6 +53,7 @@ function buildRequests(bidReqs, bidderRequest) {
 
       const imp = {
         id: bid.bidId,
+        displaymanagerver: '$prebid.version$',
         ext: {
           ...gpidData
         },
@@ -70,6 +73,10 @@ function buildRequests(bidReqs, bidderRequest) {
         imp.video = {
           ...bid.mediaTypes.video,
         }
+      }
+
+      if (deepAccess(bid, 'ortb2Imp.instl') === 1) {
+        imp.instl = 1;
       }
 
       const bidFloor = getBidFloor(bid);
@@ -143,7 +150,7 @@ function buildRequests(bidReqs, bidderRequest) {
       data: JSON.stringify(payload),
     };
   } catch (e) {
-    logError(e, {bidReqs, bidderRequest});
+    logError(e, { bidReqs, bidderRequest });
   }
 }
 
@@ -162,7 +169,7 @@ function interpretResponse(serverResponse) {
     return response;
   }
 
-  const {body: {id, seatbid}} = serverResponse;
+  const { body: { id, seatbid } } = serverResponse;
 
   try {
     if (id && seatbid && seatbid.length > 0 && seatbid[0].bid && seatbid[0].bid.length > 0) {
@@ -193,7 +200,7 @@ function interpretResponse(serverResponse) {
       });
     }
   } catch (e) {
-    logError(e, {id, seatbid});
+    logError(e, { id, seatbid });
   }
 
   return response;
@@ -272,8 +279,8 @@ function _isViewabilityMeasurable(element) {
   return !isIframe() && element !== null;
 }
 
-function _getViewability(element, topWin, {w, h} = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
+function _getViewability(element, topWin, { w, h } = {}) {
+  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
 }
 
 function _extractGpidData(bid) {

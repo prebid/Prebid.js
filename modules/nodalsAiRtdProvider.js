@@ -116,7 +116,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('getBidRequestData', {config, reqBidsConfigObj, callback, userConsent, storedData });
+      this.#addToCommandQueue('getBidRequestData', { config, reqBidsConfigObj, callback, userConsent, storedData });
     } else {
       try {
         engine.getBidRequestData(
@@ -143,7 +143,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', {config, bidResponse, userConsent, storedData })
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData })
       return;
     }
     try {
@@ -164,7 +164,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onAuctionEndEvent', {config, auctionDetails, userConsent, storedData });
+      this.#addToCommandQueue('onAuctionEndEvent', { config, auctionDetails, userConsent, storedData });
       return;
     }
     try {

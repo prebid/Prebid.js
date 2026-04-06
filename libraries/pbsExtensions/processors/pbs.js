@@ -1,13 +1,13 @@
-import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
-import {isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
-import {extPrebidMediaType} from './mediaType.js';
-import {setRequestExtPrebidAliases} from './aliases.js';
-import {setImpBidParams} from './params.js';
-import {setImpAdUnitCode} from './adUnitCode.js';
-import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
-import {setBidResponseVideoCache} from './video.js';
-import {addEventTrackers} from './eventTrackers.js';
-import {setRequestExtPrebidPageViewIds} from './pageViewIds.js';
+import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js';
+import { isPlainObject, isStr, mergeDeep } from '../../../src/utils.js';
+import { extPrebidMediaType } from './mediaType.js';
+import { setRequestExtPrebidAliases } from './aliases.js';
+import { setImpBidParams } from './params.js';
+import { setImpAdUnitCode } from './adUnitCode.js';
+import { setRequestExtPrebid, setRequestExtPrebidChannel } from './requestExtPrebid.js';
+import { setBidResponseVideoCache } from './video.js';
+import { addEventTrackers } from './eventTrackers.js';
+import { setRequestExtPrebidPageViewIds } from './pageViewIds.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -30,7 +30,7 @@ export const PBS_PROCESSORS = {
   },
   [IMP]: {
     params: {
-      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params, passed through transformBidParams if necessary
+      // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params
       fn: setImpBidParams
     },
     adUnitCode: {
