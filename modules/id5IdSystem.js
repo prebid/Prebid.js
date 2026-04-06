@@ -17,13 +17,13 @@ import {
   logInfo,
   logWarn
 } from '../src/utils.js';
-import {fetch} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {PbPromise} from '../src/utils/promise.js';
-import {loadExternalScript} from '../src/adloader.js';
+import { fetch } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { PbPromise } from '../src/utils/promise.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 /**
  * @typedef {import('../modules/userId/spec.ts').IdProviderSpec} Submodule
@@ -40,7 +40,7 @@ const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 const ID5_DOMAIN = 'id5-sync.com';
 const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * @typedef {Object} Id5Response
@@ -247,7 +247,7 @@ export const id5IdSubmodule = {
       responseObj.euid = {
         uid: ext.euid.uids[0].id,
         source: ext.euid.source,
-        ext: {provider: ID5_DOMAIN}
+        ext: { provider: ID5_DOMAIN }
       };
     }
 
@@ -310,7 +310,7 @@ export const id5IdSubmodule = {
           cbFunction();
         });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
 
   /**
@@ -327,14 +327,14 @@ export const id5IdSubmodule = {
   extendId(config, consentData, cacheIdObj) {
     if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
-      return {id: cacheIdObj};
+      return { id: cacheIdObj };
     }
     if (getPartnerResponse(cacheIdObj, config.params)) { // response for partner is present
       logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
       const updatedObject = deepClone(cacheIdObj);
       const responseToUpdate = getPartnerResponse(updatedObject, config.params);
       responseToUpdate.nbPage = incrementNb(responseToUpdate);
-      return {id: updatedObject};
+      return { id: updatedObject };
     } else {
       logInfo(LOG_PREFIX + ' refreshing ID.  Cached object does not have ID for partner', cacheIdObj);
       return this.getId(config, consentData, cacheIdObj);
@@ -421,7 +421,7 @@ export class IdFetchFlow {
     const extensionsUrl = extensionsCallConfig.url;
     const method = extensionsCallConfig.method || 'GET';
     const body = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {});
-    const response = await fetch(extensionsUrl, {method, body});
+    const response = await fetch(extensionsUrl, { method, body });
     if (!response.ok) {
       throw new Error('Error while calling extensions endpoint: ', response);
     }
@@ -438,7 +438,7 @@ export class IdFetchFlow {
       ...additionalData,
       extensions: extensionsData
     });
-    const response = await fetch(fetchUrl, {method: 'POST', body, credentials: 'include'});
+    const response = await fetch(fetchUrl, { method: 'POST', body, credentials: 'include' });
     if (!response.ok) {
       throw new Error('Error while calling fetch endpoint: ', response);
     }
@@ -453,7 +453,7 @@ export class IdFetchFlow {
     const referer = getRefererInfo();
     const signature = this.cacheIdObj ? this.cacheIdObj.signature : undefined;
     const nbPage = incrementNb(this.cacheIdObj);
-    const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : {booted: false};
+    const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : { booted: false };
 
     const data = {
       'partner': params.partner,
@@ -492,7 +492,7 @@ export class IdFetchFlow {
     if (params.provider !== undefined && !isEmptyStr(params.provider)) {
       data.provider = params.provider;
     }
-    const abTestingConfig = params.abTesting || {enabled: false};
+    const abTestingConfig = params.abTesting || { enabled: false };
 
     if (abTestingConfig.enabled) {
       data.ab_testing = {
@@ -574,17 +574,17 @@ function updateTargeting(fetchResponse, config) {
   const tags = fetchResponse.tags;
   if (tags) {
     if (config.params.gamTargetingPrefix) {
-      window.googletag = window.googletag || {cmd: []};
+      window.googletag = window.googletag || { cmd: [] };
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
         for (const tag in tags) {
-          window.googletag.setConfig({targeting: {[config.params.gamTargetingPrefix + '_' + tag]: tags[tag]}});
+          window.googletag.setConfig({ targeting: { [config.params.gamTargetingPrefix + '_' + tag]: tags[tag] } });
         }
       });
     }
 
     if (config.params.exposeTargeting && !deepEqual(window.id5tags?.tags, tags)) {
-      window.id5tags = window.id5tags || {cmd: []};
+      window.id5tags = window.id5tags || { cmd: [] };
       window.id5tags.cmd = window.id5tags.cmd || [];
       window.id5tags.cmd.forEach(tagsCallback => {
         setTimeout(() => tagsCallback(tags), 0);

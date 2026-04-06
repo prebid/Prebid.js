@@ -6,9 +6,9 @@ import {
   mergeParams,
   paramsToQueryString, setCurrentURL
 } from 'modules/ampliffyBidAdapter.js';
-import {expect} from 'chai';
-import {BANNER, VIDEO} from 'src/mediaTypes';
-import {newBidder} from 'src/adapters/bidderFactory';
+import { expect } from 'chai';
+import { BANNER, VIDEO } from 'src/mediaTypes';
+import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('Ampliffy bid adapter Test', function () {
   const adapter = newBidder(spec);
@@ -240,8 +240,8 @@ describe('Ampliffy bid adapter Test', function () {
           'adnetwork': 'ampliffy.com',
           'SERVER': 'bidder.ampliffy.com'
         },
-        'crumbs': {'pubcid': '29844d69-c4e5-4b00-8602-6dd09815363a'},
-        'ortb2Imp': {'ext': {'data': {'pbadslot': 'video1'}}},
+        'crumbs': { 'pubcid': '29844d69-c4e5-4b00-8602-6dd09815363a' },
+        'ortb2Imp': { 'ext': { 'data': { 'pbadslot': 'video1' } } },
         'mediaTypes': {
           'video': {
             'context': 'instream',
@@ -285,8 +285,8 @@ describe('Ampliffy bid adapter Test', function () {
           'adnetwork': 'ampliffy.com',
           'SERVER': 'bidder.ampliffy.com'
         },
-        'crumbs': {'pubcid': '29844d69-c4e5-4b00-8602-6dd09815363a'},
-        'ortb2Imp': {'ext': {'data': {'pbadslot': 'video1'}}},
+        'crumbs': { 'pubcid': '29844d69-c4e5-4b00-8602-6dd09815363a' },
+        'ortb2Imp': { 'ext': { 'data': { 'pbadslot': 'video1' } } },
         'mediaTypes': {
           'video': {
             'context': 'instream',
@@ -335,8 +335,8 @@ describe('Ampliffy bid adapter Test', function () {
             ]
           }
         },
-        ortb2Imp: {ext: {}},
-        params: {placementId: 13144370},
+        ortb2Imp: { ext: {} },
+        params: { placementId: 13144370 },
         sizes: [
           [300, 250],
           [300, 600]
@@ -344,7 +344,7 @@ describe('Ampliffy bid adapter Test', function () {
         src: 'client',
         transactionId: '103b2b58-6ed1-45e9-9486-c942d6042e3'
       },
-      data: {bidId: '2d40b8dcd02ade'},
+      data: { bidId: '2d40b8dcd02ade' },
       method: 'GET',
       url: 'https://test.com',
     };

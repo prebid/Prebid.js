@@ -55,7 +55,7 @@ describe('Scaleable Analytics Adapter', function() {
 
   const bidObj = MOCK_DATA.bidderRequests[0].bids[0];
 
-  const expectedBidRequests = [{bidder: 'scaleable_adunit_request'}].concat([
+  const expectedBidRequests = [{ bidder: 'scaleable_adunit_request' }].concat([
     {
       bidder: bidObj.bidder,
       params: bidObj.params

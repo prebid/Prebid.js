@@ -158,7 +158,7 @@ function sendRequest(qp) {
   }, {});
 
   const url = `${ENDPOINT}?${Object.keys(qp).map(key => `${key}=${enc(qp[key])}`).join('&')}`;
-  ajax(url, null, null, {method: 'GET'});
+  ajax(url, null, null, { method: 'GET' });
 };
 
 /**

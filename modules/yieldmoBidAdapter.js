@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
@@ -18,6 +17,7 @@ import {
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -76,7 +76,6 @@ export const spec = {
     const serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
-    const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
       const serverRequest = {
         pbav: '$prebid.version$',
@@ -105,10 +104,6 @@ export const spec = {
       if (gpc) {
         serverRequest.gpc = gpc;
       }
-      if (cdep) {
-        serverRequest.cdep = cdep;
-      }
-
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
         serverRequest.title = LOCAL_WINDOW.document.title || '';
@@ -436,11 +431,6 @@ function openRtbRequest(bidRequests, bidderRequest) {
 function getGPCSignal(bidderRequest) {
   const gpc = deepAccess(bidderRequest, 'ortb2.regs.ext.gpc');
   return gpc;
-}
-
-function getCdep(bidderRequest) {
-  const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
-  return cdep;
 }
 
 function getTopics(bidderRequest) {
