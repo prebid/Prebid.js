@@ -123,9 +123,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         site: {
           'domain': 'localhost:9999',
@@ -289,9 +286,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -344,9 +338,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -400,9 +391,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -469,9 +457,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'regs': {
           'ext': {
@@ -527,9 +512,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -581,9 +563,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -649,9 +628,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -737,9 +713,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -795,9 +768,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -864,9 +834,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -978,9 +945,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         }
       });
     });
@@ -1029,9 +993,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         site: {
           'domain': 'localhost:9999',
@@ -1144,9 +1105,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -1210,9 +1168,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -2049,9 +2004,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -2182,9 +2134,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
