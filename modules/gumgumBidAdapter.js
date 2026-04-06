@@ -694,7 +694,7 @@ function interpretResponse(serverResponse, bidRequest) {
     if (mediaType === NATIVE && markup) {
       try {
         const nativeResponse = JSON.parse(markup);
-        bid.ortb = nativeResponse.native || nativeResponse;
+        bid.native = { ortb: nativeResponse.native || nativeResponse };
       } catch (e) {
         logError('[GumGum] Error parsing native ADM:', e);
       }

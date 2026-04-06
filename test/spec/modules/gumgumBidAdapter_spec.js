@@ -1197,7 +1197,7 @@ describe('gumgumAdapter', function () {
       expect(nativeBidResponse.mediaType).to.equal(NATIVE);
     });
 
-    it('sets ortb property from native ADM JSON with native wrapper', function () {
+    it('sets native.ortb property from native ADM JSON with native wrapper', function () {
       const nativeAdm = {
         native: {
           ver: '1.2',
@@ -1221,13 +1221,14 @@ describe('gumgumAdapter', function () {
       const nativeBidRequest = { ...bidRequest, data: { pi: 5 } };
       const result = spec.interpretResponse({ body: nativeServerResponse }, nativeBidRequest)[0];
       expect(result.mediaType).to.equal(NATIVE);
-      expect(result.ortb).to.deep.equal(nativeAdm.native);
-      expect(result.ortb.ver).to.equal('1.2');
-      expect(result.ortb.assets).to.have.length(2);
-      expect(result.ortb.link.url).to.equal('https://advertiser.com/landing');
+      expect(result.native).to.be.an('object');
+      expect(result.native.ortb).to.deep.equal(nativeAdm.native);
+      expect(result.native.ortb.ver).to.equal('1.2');
+      expect(result.native.ortb.assets).to.have.length(2);
+      expect(result.native.ortb.link.url).to.equal('https://advertiser.com/landing');
     });
 
-    it('sets ortb property from native ADM JSON without native wrapper', function () {
+    it('sets native.ortb property from native ADM JSON without native wrapper', function () {
       const nativeAdm = {
         ver: '1.2',
         assets: [
@@ -1242,7 +1243,8 @@ describe('gumgumAdapter', function () {
       const nativeBidRequest = { ...bidRequest, data: { pi: 5 } };
       const result = spec.interpretResponse({ body: nativeServerResponse }, nativeBidRequest)[0];
       expect(result.mediaType).to.equal(NATIVE);
-      expect(result.ortb).to.deep.equal(nativeAdm);
+      expect(result.native).to.be.an('object');
+      expect(result.native.ortb).to.deep.equal(nativeAdm);
     });
 
     it('handles invalid native ADM JSON gracefully', function () {
@@ -1253,7 +1255,7 @@ describe('gumgumAdapter', function () {
       const nativeBidRequest = { ...bidRequest, data: { pi: 5 } };
       const result = spec.interpretResponse({ body: nativeServerResponse }, nativeBidRequest)[0];
       expect(result.mediaType).to.equal(NATIVE);
-      expect(result.ortb).to.be.undefined;
+      expect(result.native).to.be.undefined;
     });
   })
   describe('getUserSyncs', function () {
