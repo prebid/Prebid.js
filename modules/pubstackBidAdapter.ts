@@ -28,13 +28,6 @@ declare module '../src/adUnits' {
   }
 }
 
-type OpenRtbBid = {
-  impid?: string;
-  ttl?: number;
-  exp?: number;
-  netRevenue?: boolean;
-};
-
 type GetUserSyncFn = (
   syncOptions: {
     iframeEnabled: boolean;
@@ -81,6 +74,13 @@ const converter = ortbConverter({
     if (placementEnv?.TimeFromNavigation !== undefined) deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
     return request;
   },
+  bidResponse(buildBidResponse, bid, context) {
+    return {
+      ...buildBidResponse(bid, context),
+      ttl: (bid as any).ttl ?? bid.exp ?? DEFAULT_TTL,
+      netRevenue: (bid as any).netRevenue ?? DEFAULT_NET_REVENUE,
+    };
+  },
 });
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
@@ -108,37 +108,11 @@ const buildRequests = (
   };
 };
 
-const mapResponseBidsByImpId = (responseBody) => new Map<string, OpenRtbBid>(
-  (responseBody?.seatbid ?? [])
-    .flatMap(seatBid => seatBid?.bid ?? [])
-    .filter(bid => bid?.impid)
-    .map(bid => [bid.impid, bid]),
-);
-
-const enrichBidResponse = (adapterResponse, responseBody) => {
-  const rawBidsByImpId = mapResponseBidsByImpId(responseBody);
-
-  return {
-    ...adapterResponse,
-    bids: (adapterResponse?.bids ?? []).map(bid => {
-      const rawBid = rawBidsByImpId.get(bid.requestId);
-      return {
-        ...bid,
-        ttl: bid.ttl ?? rawBid?.ttl ?? rawBid?.exp ?? DEFAULT_TTL,
-        netRevenue: bid.netRevenue ?? rawBid?.netRevenue ?? DEFAULT_NET_REVENUE,
-      };
-    }),
-  };
-};
-
 const interpretResponse = (serverResponse, bidRequest) => {
   if (!serverResponse?.body) {
     return [];
   }
-  return enrichBidResponse(
-    converter.fromORTB({ request: bidRequest.data, response: serverResponse.body }),
-    serverResponse.body
-  );
+  return converter.fromORTB({ request: bidRequest.data, response: serverResponse.body });
 };
 
 const getUserSyncs: GetUserSyncFn = (syncOptions, _serverResponses, gdprConsent, uspConsent, gppConsent) => {
