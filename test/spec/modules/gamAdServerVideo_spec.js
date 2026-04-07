@@ -14,7 +14,7 @@ import * as adServer from 'src/adserver.js';
 import { hook } from '../../../src/hook.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
-import { getVastXml } from '../../../modules/gamAdServerVideo.js';
+import { getVastXml, getVastXmlByCacheId } from '../../../modules/gamAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
 import { generateUUID } from '../../../src/utils.js';
 import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
@@ -731,6 +731,28 @@ describe('The DFP video support module', function () {
       });
 
     server.respond();
+  });
+
+  it('should return vast xml for a locally cached cache id', (done) => {
+    const cacheId = generateUUID();
+    const blobContent = '<VAST version="3.0">EXAMPLE VAST BLOB</VAST>';
+    const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
+    const localMap = new Map([[cacheId, blobUrl]]);
+
+    server.respondWith(/^blob:http:*/, blobContent);
+
+    getVastXmlByCacheId(cacheId, localMap)
+      .then((vastXml) => {
+        expect(vastXml).to.equal(blobContent);
+        done();
+      });
+
+    server.respond();
+  });
+
+  it('should return undefined for an unknown locally cached cache id', async () => {
+    const vastXml = await getVastXmlByCacheId(generateUUID(), new Map());
+    expect(vastXml).to.be.undefined;
   });
 
   it('should substitue vast ad tag uri in gam wrapper with blob content in data uri format', (done) => {

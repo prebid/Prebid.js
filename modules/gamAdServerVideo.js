@@ -373,6 +373,19 @@ function retrieveUspInfoFromGpp(gpp) {
   return undefined
 }
 
+export async function getVastXmlByCacheId(cacheId, localCacheMap = vastLocalCache) {
+  const blobUrl = localCacheMap?.get(cacheId);
+  if (!blobUrl) return;
+
+  const response = await fetch(blobUrl);
+  if (!response.ok) {
+    logError('Unable to fetch blob');
+    return;
+  }
+
+  return response.text();
+}
+
 export async function getBase64BlobContent(blobUrl) {
   const response = await fetch(blobUrl);
   if (!response.ok) {
@@ -391,5 +404,6 @@ export { buildGamVideoUrl as buildDfpVideoUrl };
 
 registerVideoSupport('gam', {
   buildVideoUrl: buildGamVideoUrl,
-  getVastXml
+  getVastXml,
+  getVastXmlByCacheId
 });
