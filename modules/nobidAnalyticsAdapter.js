@@ -82,7 +82,7 @@ function cleanupObjectAttributes (obj, attributes) {
 }
 function sendBidWonEvent (event, eventType) {
   const data = deepClone(event);
-  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
+  cleanupObjectAttributes(data, ['bidderCode', 'size', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
   if (nobidAnalytics.topLocation) data.topLocation = nobidAnalytics.topLocation;
   sendEvent(data, eventType);
 }
@@ -94,7 +94,7 @@ function sendAuctionEndEvent (event, eventType) {
 
   cleanupObjectAttributes(data, ['timestamp', 'timeout', 'auctionId', 'bidderRequests', 'bidsReceived']);
   if (data) cleanupObjectAttributes(data.bidderRequests, ['bidderCode', 'bidderRequestId', 'bids', 'refererInfo']);
-  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
+  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
   if (data) cleanupObjectAttributes(data.noBids, ['bidder', 'sizes', 'bidId']);
   if (data.bidderRequests) {
     data.bidderRequests.forEach(bidderRequest => {

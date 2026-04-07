@@ -63,7 +63,6 @@ function mockBidResponse(adUnit, requestId) {
     'bidderCode': adUnit.bids[0].bidder,
     'width': adUnit.sizes[0][0],
     'height': adUnit.sizes[0][1],
-    'statusMessage': 'Bid available',
     'adId': 'id',
     'requestId': requestId,
     'source': 'client',

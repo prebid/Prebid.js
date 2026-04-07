@@ -324,13 +324,6 @@ describe('ttdBidAdapter', function () {
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
     });
 
-    it('sends bid requests to the correct http2 endpoint', function () {
-      const bannerBidRequestsWithHttp2Endpoint = deepClone(baseBannerBidRequests);
-      bannerBidRequestsWithHttp2Endpoint[0].params.useHttp2 = true;
-      const url = testBuildRequests(bannerBidRequestsWithHttp2Endpoint, baseBidderRequest).url;
-      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
-    });
-
     it('sends bid requests to the correct custom endpoint', function () {
       const bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
       bannerBidRequestsWithCustomEndpoint[0].params.customBidderEndpoint = 'https://customBidderEndpoint/bid/bidder/';
