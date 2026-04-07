@@ -164,12 +164,20 @@ const helpers = {
 
   createOrtbImpBannerObj(bid, bannerObj) {
     const format = [];
-    bannerObj.sizes.forEach(size => format.push({ w: size[0], h: size[1] }));
+    const sizes = bannerObj?.sizes;
+
+    if (Array.isArray(sizes)) {
+      sizes.forEach((size) => {
+        if (Array.isArray(size) && size.length >= 2) {
+          format.push({ w: size[0], h: size[1] });
+        }
+      });
+    }
 
     return {
-      id: 'banner-' + bid.bidId,
+      id: 'banner-' + (bid?.bidId || ''),
       format
-    }
+    };
   },
 
   createOrtbImpVideoObj(bid) {
@@ -189,14 +197,16 @@ const helpers = {
   },
 
   getFloor(bid) {
-    const floorInfo = bid.getFloor({
-      currency: DEFAULT_CURRENCY,
-      mediaType: '*',
-      size: '*'
-    });
-    if (isPlainObject(floorInfo) && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
-      return parseFloat(floorInfo.floor);
-    }
+    try {
+      const floorInfo = bid.getFloor({
+        currency: DEFAULT_CURRENCY,
+        mediaType: '*',
+        size: '*'
+      });
+      if (isPlainObject(floorInfo) && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+        return parseFloat(floorInfo.floor);
+      }
+    } catch (e) {}
     return null;
   },
 
@@ -215,11 +225,11 @@ const helpers = {
 function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create request and set imp bids inside
   const request = {
-    id: bidderRequest.bidderRequestId,
+    id: bidderRequest?.bidderRequestId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
-    source: { tid: bidderRequest.ortb2?.source?.tid },
+    source: { tid: bidderRequest?.ortb2?.source?.tid },
     ext: {
       impactify: {
         integration: 'pbjs',
@@ -229,7 +239,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   };
 
   // Get the url parameters
-  const queryString = window.location.search;
+  const queryString = window?.location?.search;
   const urlParams = new URLSearchParams(queryString);
   const checkPrebid = urlParams.get('_checkPrebid');
 
@@ -255,19 +265,19 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     w: getWinDimensions().innerWidth,
     h: getWinDimensions().innerHeight,
     devicetype: helpers.getDeviceType(),
-    ua: navigator.userAgent,
+    ua: navigator?.userAgent,
     js: 1,
     dnt: getDNT() ? 1 : 0,
-    language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
+    language: ((navigator?.language || navigator?.userLanguage || '').split('-'))[0] || 'en',
   };
   const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
-  const accountId = deepAccess(validBidRequests[0], 'params.accountId');
+  const accountId = deepAccess(validBidRequests?.[0], 'params.accountId');
   deepSetValue(request, 'site.page', pageUrl);
   deepSetValue(request, 'site.publisher.id', accountId);
 
   // Handle privacy settings for GDPR/CCPA/COPPA
   let gdprApplies = 0;
-  if (bidderRequest.gdprConsent) {
+  if (bidderRequest?.gdprConsent) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
     deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
@@ -275,7 +285,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
 
   if (GET_CONFIG('coppa') === true) deepSetValue(request, 'regs.coppa', 1);
 
-  if (bidderRequest.uspConsent) {
+  if (bidderRequest?.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
@@ -376,14 +386,18 @@ export const spec = {
       return [];
     }
 
-    const ortbRequest = JSON.parse(bidRequest.data || '{}');
+    let ortbRequest = {};
+    try {
+      ortbRequest = JSON.parse(bidRequest?.data || '{}');
+    } catch (e) { }
+
     const impMap = {};
     (ortbRequest.imp || []).forEach((imp) => {
       impMap[imp.id] = imp;
     });
 
     serverBody.seatbid.forEach((seatbid) => {
-      if (seatbid.bid.length) {
+      if (seatbid?.bid?.length) {
         bidResponses.push(
           ...seatbid.bid
             .filter((bid) => bid.price > 0)
@@ -393,7 +407,7 @@ export const spec = {
                 id: bid.id,
                 requestId: bid.impid,
                 cpm: bid.price,
-                currency: serverBody.cur,
+                currency: serverBody.cur || DEFAULT_CURRENCY,
                 netRevenue: true,
                 width: bid.w || 0,
                 height: bid.h || 0,
@@ -456,7 +470,7 @@ export const spec = {
       params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
     }
 
-    if (document.location.search.match(/pbs_debug=true/)) params += `&pbs_debug=true`;
+    if (document?.location?.search?.match(/pbs_debug=true/)) params += `&pbs_debug=true`;
 
     return [{
       type: 'iframe',
