@@ -373,7 +373,7 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(true);
     });
-    it('should return false when context for video is NOT correct', () => {
+    it('should return true when context for video is instream', () => {
       expect(spec.isBidRequestValid(
         {
           "bidder": "adquery",
@@ -385,26 +385,14 @@ describe('adqueryBidAdapter', function () {
             "video": {
               "context": "instream",
               "playerSize": [
-                [
-                  640,
-                  360
-                ]
+                [640, 360]
               ],
               "mimes": [
                 "video/mp4",
                 "video/webm"
               ],
-              "protocols": [
-                2,
-                3,
-                5,
-                6,
-                7,
-                8
-              ],
-              "api": [
-                2
-              ],
+              "protocols": [2, 3, 5, 6, 7, 8],
+              "api": [2],
               "startdelay": 0,
               "skip": 1,
               "plcmt": 4,
@@ -415,18 +403,51 @@ describe('adqueryBidAdapter', function () {
           "adUnitCode": "video-placement-1",
           "transactionId": null,
           "adUnitId": "40393f1b-b89a-4539-a44d-f62a854ced7e",
-          "sizes": [
-            [
-              640,
-              360
-            ]
-          ],
+          "sizes": [[640, 360]],
           "bidId": "919f45d2-b2cb-4d4d-a851-0f464612d1bf",
           "bidderRequestId": "7d740e98-136d-4eab-92ee-c61934d2f6a3",
           "auctionId": null,
           "src": "client",
         }
-      )).to.equal(false);
+      )).to.equal(true);
+    });
+    it('should return true when context for video is outstream', () => {
+      expect(spec.isBidRequestValid(
+        {
+          "bidder": "adquery",
+          "params": {
+            "placementId": "d30f79cf7fef47bd7a5611719f936539bec0d2e9",
+            "test": true,
+          },
+          "mediaTypes": {
+            "video": {
+              "context": "outstream",
+              "playerSize": [
+                [640, 360]
+              ],
+              "mimes": [
+                "video/mp4",
+                "video/webm"
+              ],
+              "protocols": [2, 3, 5, 6, 7, 8],
+              "api": [2],
+              "startdelay": 0,
+              "skip": 1,
+              "plcmt": 4,
+              "w": 640,
+              "h": 360
+            }
+          },
+          "adUnitCode": "video-placement-1",
+          "transactionId": null,
+          "adUnitId": "40393f1b-b89a-4539-a44d-f62a854ced7e",
+          "sizes": [[640, 360]],
+          "bidId": "919f45d2-b2cb-4d4d-a851-0f464612d1bf",
+          "bidderRequestId": "7d740e98-136d-4eab-92ee-c61934d2f6a3",
+          "auctionId": null,
+          "src": "client",
+        }
+      )).to.equal(true);
     });
   })
 
@@ -673,6 +694,24 @@ describe('adqueryBidAdapter', function () {
 
     it('url must be auction2', function () {
       expect(req_video.url).eq('https://bidder.adquery.io/openrtb2/auction2')
+    })
+
+    it('url must be auction2 for instream', function () {
+      const req_video_instream = spec.buildRequests([
+        {
+          ...req_video.data,
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [[640, 360]]
+            }
+          },
+          params: {
+            placementId: 'd30f79cf7fef47bd7a5611719f936539bec0d2e9'
+          }
+        }
+      ], { refererInfo: {} })[0]
+      expect(req_video_instream.url).eq('https://bidder.adquery.io/openrtb2/auction2')
     })
 
     it('data must have id key', function () {

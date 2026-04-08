@@ -339,8 +339,6 @@ export const spec = {
     if (config.getConfig('coppa') === true) {
       deepSetValue(ozoneRequest, 'regs.coppa', 1);
     }
-    extObj[bidderKey].cookieDeprecationLabel = deepAccess(bidderRequest, 'ortb2.device.ext.cdep', 'none');
-    logInfo(`cookieDeprecationLabel ortb2.device.ext.cdep = ${extObj[bidderKey].cookieDeprecationLabel}`);
     const batchRequestsVal = this.getBatchRequests();
     if (typeof batchRequestsVal === 'number') {
       logInfo(`Batching = ${batchRequestsVal}`);

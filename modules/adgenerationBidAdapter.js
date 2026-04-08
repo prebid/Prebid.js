@@ -16,7 +16,7 @@ const adgLogger = prefixLog('Adgeneration: ');
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
-const ADGENE_PREBID_VERSION = '1.6.5';
+const ADGENE_PREBID_VERSION = '1.6.6';
 const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
 const URL = 'https://d.socdm.com/adgen/prebid';
 
@@ -154,6 +154,7 @@ export const spec = {
     } else {
       // banner
       bidResponse.ad = createAd(adResult, body?.location_params, targetImp.ext.params, requestId);
+      bidResponse.mediaType = BANNER;
     }
     return [bidResponse];
   },

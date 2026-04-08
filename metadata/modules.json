@@ -2971,6 +2971,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pgamrtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3779,6 +3786,13 @@
       "componentName": "playdigo",
       "aliasOf": null,
       "gvlid": 1302,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "playstream",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5577,7 +5591,7 @@
       "componentType": "rtd",
       "componentName": "wurfl",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/wurflRtdProvider.json"
     },
     {
       "componentType": "userId",

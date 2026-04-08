@@ -341,7 +341,6 @@ describe('Process auction end data', function() {
             'bidderCode': 'appnexus',
             'width': 728,
             'height': 90,
-            'statusMessage': 'Bid available',
             'adId': '3222e6ead116f3',
             'requestId': '20f0b347b07f94',
             'transactionId': 'df8586ac-6476-4fbf-a727-eda99996dc39',
