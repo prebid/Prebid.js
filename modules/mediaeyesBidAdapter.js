@@ -7,7 +7,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import { deepAccess, deepSetValue, generateUUID, isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils.js';
 
-const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
+const ENDPOINT_URL = 'https://rtb.upremium.asia/ortb/open/auction';
 
 export const spec = {
   code: 'mediaeyes',
@@ -127,8 +127,10 @@ const cookImpBanner = ({ mediaTypes, params }) => {
 
   const { sizes } = mediaTypes.banner;
   return {
-    w: sizes[0][0],
-    h: sizes[0][1]
+    format: sizes.map(([w, h]) => ({
+      w,
+      h
+    }))
   }
 };
 
