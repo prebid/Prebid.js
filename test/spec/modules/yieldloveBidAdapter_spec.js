@@ -12,7 +12,7 @@ describe('Yieldlove Bid Adaper', function () {
     {
       'bidder': 'yieldlove',
       'adUnitCode': 'adunit-code',
-      'sizes': [ [300, 250] ],
+      'sizes': [[300, 250]],
       'params': {
         pid,
         rid

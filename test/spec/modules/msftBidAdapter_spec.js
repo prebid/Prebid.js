@@ -210,7 +210,6 @@ describe('msftBidAdapter', function () {
       const bidderRequest = Object.assign({}, testBidderRequest, {
         bids: bidRequests
       });
-      debugger;// eslint-disable-line no-debugger
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('POST');
       const data = request.data;

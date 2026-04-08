@@ -1,7 +1,7 @@
-import {getWindowTop} from '../../src/utils.js';
-import {percentInView} from '../percentInView/percentInView.js';
-import {getMinSize} from '../sizeUtils/sizeUtils.js';
-import {isIframe} from './index.js';
+import { getWindowTop } from '../../src/utils.js';
+import { percentInView } from '../percentInView/percentInView.js';
+import { getMinSize } from '../sizeUtils/sizeUtils.js';
+import { isIframe } from './index.js';
 
 export function getRoundedViewability(adUnitCode, processedSizes) {
   const element = document.getElementById(adUnitCode);
@@ -14,6 +14,6 @@ function isViewabilityMeasurable(element) {
   return !isIframe() && element !== null;
 }
 
-function getViewability(element, {w, h} = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
+function getViewability(element, { w, h } = {}) {
+  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
 }

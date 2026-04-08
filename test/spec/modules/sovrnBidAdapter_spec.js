@@ -1,6 +1,6 @@
-import {expect} from 'chai'
-import {spec} from 'modules/sovrnBidAdapter.js'
-import {config} from 'src/config.js'
+import { expect } from 'chai'
+import { spec } from 'modules/sovrnBidAdapter.js'
+import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`
@@ -113,7 +113,7 @@ describe('sovrnBidAdapter', function() {
         const payload = JSON.parse(request.data)
         const impression = payload.imp[0]
 
-        expect(impression.banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+        expect(impression.banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }])
         expect(impression.banner.w).to.equal(1)
         expect(impression.banner.h).to.equal(1)
       })
@@ -265,7 +265,7 @@ describe('sovrnBidAdapter', function() {
       const payload = JSON.parse(request.data)
       const impression = payload.imp[0]
 
-      expect(impression.banner.format).to.deep.equal([{w: 300, h: 250}])
+      expect(impression.banner.format).to.deep.equal([{ w: 300, h: 250 }])
       expect(impression.banner.w).to.equal(1)
       expect(impression.banner.h).to.equal(1)
     })
@@ -331,7 +331,7 @@ describe('sovrnBidAdapter', function() {
           gdprApplies: true
         },
       }
-      const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      const { regs } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
       expect(regs.coppa).to.be.undefined
     })
 
@@ -349,7 +349,7 @@ describe('sovrnBidAdapter', function() {
         timeout: 3000,
         bids: [baseBidRequest]
       }
-      const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      const { regs } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
       expect(regs.coppa).to.equal(1)
     })
 
@@ -366,7 +366,7 @@ describe('sovrnBidAdapter', function() {
           gdprApplies: true
         },
       }
-      const {bcat} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      const { bcat } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
       expect(bcat).to.be.undefined
     })
 
@@ -382,7 +382,7 @@ describe('sovrnBidAdapter', function() {
         timeout: 3000,
         bids: [baseBidRequest]
       }
-      const {bcat} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      const { bcat } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
       expect(bcat).to.exist.and.to.be.a('array')
       expect(bcat).to.deep.equal(['IAB1-1', 'IAB1-2'])
     })
@@ -570,7 +570,7 @@ describe('sovrnBidAdapter', function() {
     it('should use the floor provided from the floor module if present', function() {
       const floorBid = {
         ...baseBidRequest,
-        getFloor: () => ({currency: 'USD', floor: 1.10}),
+        getFloor: () => ({ currency: 'USD', floor: 1.10 }),
         params: {
           tagid: 1234,
           bidfloor: 2.00
@@ -610,7 +610,7 @@ describe('sovrnBidAdapter', function() {
     it('floor should be undefined if there is incorrect floor value from the floor module', function() {
       const floorBid = {
         ...baseBidRequest,
-        getFloor: () => ({currency: 'USD', floor: 'incorrect_value'}),
+        getFloor: () => ({ currency: 'USD', floor: 'incorrect_value' }),
         params: {
           tagid: 1234
         }
@@ -645,7 +645,7 @@ describe('sovrnBidAdapter', function() {
           }
         };
 
-        const request = spec.buildRequests([baseBidRequest], {...baseBidderRequest, ortb2})
+        const request = spec.buildRequests([baseBidRequest], { ...baseBidderRequest, ortb2 })
         const { user, site } = JSON.parse(request.data)
 
         expect(user.data).to.equal('some user data')
@@ -1199,7 +1199,7 @@ describe('sovrnBidAdapter', function() {
     const payload = JSON.parse(request.data)
 
     it('gets sizes from mediaTypes.banner', function() {
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
     })

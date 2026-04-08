@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   buildUrl,
   logInfo,
@@ -40,8 +40,8 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
-    if (video) {
-      return !!(video.playerSize && video.context === 'outstream');// Focus on outstream
+    if (video && ['instream', 'outstream'].includes(video.context)) {
+      return !!(video.playerSize);
     }
 
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
@@ -63,7 +63,7 @@ export const spec = {
 
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const bid = bidRequests[i];
-      const isVideo = bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream';
+      const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context);
 
       let requestUrl = adqueryRequestUrl;
 
@@ -328,7 +328,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     videoRequest.id = bid.bidId
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
-    videoRequest.cur = [ currency ]
+    videoRequest.cur = [currency]
 
     let floorInfo;
     if (typeof bid.getFloor === 'function') {

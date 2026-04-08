@@ -427,15 +427,15 @@ describe('Rules Module', function() {
       const auctionId = 'test-auction-id';
       const otherAuctionId = 'other-auction-id';
       const mathRandomStub = sandbox.stub(Math, 'random').returns(0.42);
-      const auction1 = {auctionId: auctionId};
-      const auction2 = {auctionId: otherAuctionId};
+      const auction1 = { auctionId: auctionId };
+      const auction2 = { auctionId: otherAuctionId };
       const auctions = {
         [auctionId]: auction1,
         [otherAuctionId]: auction2
       }
 
       const index = {
-        getAuction: ({auctionId}) => auctions[auctionId]
+        getAuction: ({ auctionId }) => auctions[auctionId]
       }
 
       const result1 = rulesModule.dep.getGlobalRandom(auctionId, index);
