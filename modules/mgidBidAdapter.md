@@ -24,12 +24,10 @@ var adUnits = [{
       sizes: [[300, 600]]
     }
   },
-  // Replace this object to test a new Adapter!
   bids: [{
     bidder: 'mgid',
     params : {
-      accountId : "219", //test accountId, please replace after test
-      placementId : "331749" // 300x600 test placementId, please replace after test
+      accountId : "#{accountId}", // replace with your accountId
     }
   }]
 }];
@@ -44,41 +42,46 @@ var adUnits = [{
       sizes: [[300, 250]]
     }
   },
-  // Replace this object to test a new Adapter!
   bids: [{
     bidder: 'mgid',
     params : {
-      accountId : "219", //test accountId, please replace after test
-      placementId : "331748" // 300x250 test placementId, please replace after test
+      accountId : "#{accountId}", // replace with your accountId
     }
   }]
 }];
 ```
 
 # Bid Parameters
-## Banner
 
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
-| `accountId` | required | String | The account ID from Mgid  | "123"
-| `placementId` | required | String | The placement ID from Mgid  | "123456"
+| `accountId` | required | String | The account ID from Mgid  | `123`
 
+## Supported Media Types
+
+- Banner
+- Native
 
 # Ad Unit and page Setup:
 
 ```html
- <!-- Prebid Config section -->
- <script>
-     var PREBID_TIMEOUT = 2000;
-     var adUnits = [{
-         code: 'placement_div_id',
-         sizes: [[300, 250]],
-         bids: [{
-            bidder: 'mgid'
-            accountId : "PUT_YOUR_mgid_accountId",
-            placementId : "PUT_YOUR_mgid_placementId",
-         }]
-     }]; 
+<!-- Prebid Config section -->
+<script>
+    var PREBID_TIMEOUT = 2000;
+    var adUnits = [{
+        code: 'placement_div_id',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250]]
+            }
+        },
+        bids: [{
+            bidder: 'mgid',
+            params: {
+                accountId: "#{accountId}"
+            }
+        }]
+    }];
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 </script>
