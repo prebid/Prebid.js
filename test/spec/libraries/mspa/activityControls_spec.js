@@ -1,5 +1,5 @@
-import {mspaRule, setupRules, isTransmitUfpdConsentDenied, isTransmitGeoConsentDenied, isBasicConsentDenied, sensitiveNoticeIs, isConsentDenied} from '../../../../libraries/mspa/activityControls.js';
-import {ruleRegistry} from '../../../../src/activities/rules.js';
+import { mspaRule, setupRules, isTransmitUfpdConsentDenied, isTransmitGeoConsentDenied, isBasicConsentDenied, sensitiveNoticeIs, isConsentDenied } from '../../../../libraries/mspa/activityControls.js';
+import { ruleRegistry } from '../../../../src/activities/rules.js';
 
 describe('Consent interpretation', () => {
   function mkConsent(flags) {
@@ -124,7 +124,7 @@ describe('Consent interpretation', () => {
         versions: [2]
       }
 
-    }).forEach(([t, {flagNo, consents, versions}]) => {
+    }).forEach(([t, { flagNo, consents, versions }]) => {
       describe(t, () => {
         Object.entries(consents).forEach(([flagValue, shouldBeDenied]) => {
           const flagDescription = ({
@@ -236,7 +236,7 @@ describe('mspaRule', () => {
     });
 
     it('should deny when consent is using version other than 1/2', () => {
-      consent = {Version: 3};
+      consent = { Version: 3 };
       expect(mkRule()().allow).to.equal(false);
     })
 
@@ -246,7 +246,7 @@ describe('mspaRule', () => {
     }).forEach(([t, denied]) => {
       it(`should check if deny fn ${t}`, () => {
         denies.returns(denied);
-        consent = {mock: 'value', Version: 1};
+        consent = { mock: 'value', Version: 1 };
         const result = mkRule()();
         sinon.assert.calledWith(denies, consent);
         if (denied) {
@@ -290,7 +290,7 @@ describe('setupRules', () => {
   });
 
   it('should accept already flattened section data', () => {
-    consent.parsedSections.mockApi = {flat: 'consent', Version: 1};
+    consent.parsedSections.mockApi = { flat: 'consent', Version: 1 };
     runSetup('mockApi', [1]);
     isAllowed('mockActivity', {});
     sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi)
@@ -308,11 +308,11 @@ describe('setupRules', () => {
   });
 
   it('should pass flattened consent through normalizeConsent', () => {
-    const normalize = sinon.stub().returns({normalized: 'consent', Version: 1})
+    const normalize = sinon.stub().returns({ normalized: 'consent', Version: 1 })
     runSetup('mockApi', [1], normalize);
     expect(isAllowed('mockActivity', {})).to.equal(false);
-    sinon.assert.calledWith(normalize, {mock: 'consent', Version: 1});
-    sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent', Version: 1});
+    sinon.assert.calledWith(normalize, { mock: 'consent', Version: 1 });
+    sinon.assert.calledWith(rules.mockActivity, { normalized: 'consent', Version: 1 });
   });
 
   it('should return a function that unregisters activity controls', () => {

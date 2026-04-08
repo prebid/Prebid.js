@@ -7,7 +7,7 @@ function getSlotDivid(adUnitCode) {
   return slot?.getSlotElementId();
 }
 
-export default function ({Renderer, BANNER, NATIVE, VIDEO}) {
+export default function ({ Renderer, BANNER, NATIVE, VIDEO }) {
   return {
     [BANNER]: (bid, bidResponse) => {
       if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {

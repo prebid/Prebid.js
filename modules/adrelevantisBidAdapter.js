@@ -1,4 +1,4 @@
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 import {
   createTrackPixelHtml,
   deepAccess,
@@ -12,15 +12,16 @@ import {
   logMessage,
   logWarn
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {chunk} from '../libraries/chunk/chunk.js';
-import {transformSizes} from '../libraries/sizeUtils/tranformSize.js';
-import {hasUserInfo, hasAppDeviceInfo, hasAppId} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { chunk } from '../libraries/chunk/chunk.js';
+import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
+import { hasUserInfo, hasAppDeviceInfo, hasAppId } from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -83,7 +84,7 @@ export const spec = {
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj;
     if (config.getConfig('coppa') === true) {
-      userObj = {'coppa': true};
+      userObj = { 'coppa': true };
     }
     if (userObjBid) {
       userObj = {};
@@ -166,7 +167,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
     if (!serverResponse || serverResponse.error) {
@@ -250,10 +251,9 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
 
 /**
  * This function hides google div container for outstream bids to remove unwanted space on page. Appnexus renderer creates a new iframe outside of google iframe to render the outstream creative.
- * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
-  var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+function hidedfpContainer(bid) {
+  var el = getAdUnitElement(bid).querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }
@@ -261,7 +261,7 @@ function hidedfpContainer(elementId) {
 
 function outstreamRender(bid) {
   // push to render queue because ANOutstreamVideo may not be loaded yet
-  hidedfpContainer(bid.adUnitCode);
+  hidedfpContainer(bid);
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
@@ -375,7 +375,8 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       bid['native'].image = {
         url: nativeAd.main_img.url,
         height: nativeAd.main_img.height,
-        width: nativeAd.main_img.width};
+        width: nativeAd.main_img.width
+      };
     }
     if (nativeAd.icon) {
       bid['native'].icon = {
@@ -419,7 +420,7 @@ function bidToTag(bid) {
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.position) {
-    tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+    tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   } else {
     const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
     // only support unknown, atf, and btf values for position at this time
@@ -459,7 +460,7 @@ function bidToTag(bid) {
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
-      tag[NATIVE] = {layouts: [nativeRequest]};
+      tag[NATIVE] = { layouts: [nativeRequest] };
     }
   }
 
@@ -487,7 +488,7 @@ function bidToTag(bid) {
   }
 
   if (bid.renderer) {
-    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
+    tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
   }
 
   if (

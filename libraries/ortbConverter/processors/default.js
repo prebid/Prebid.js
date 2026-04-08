@@ -1,10 +1,10 @@
-import {generateUUID, mergeDeep} from '../../../src/utils.js';
-import {bannerResponseProcessor, fillBannerImp} from './banner.js';
-import {fillVideoImp, fillVideoResponse} from './video.js';
-import {setResponseMediaType} from './mediaType.js';
-import {fillNativeImp, fillNativeResponse} from './native.js';
-import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
-import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
+import { generateUUID, mergeDeep } from '../../../src/utils.js';
+import { bannerResponseProcessor, fillBannerImp } from './banner.js';
+import { fillVideoImp, fillVideoResponse } from './video.js';
+import { setResponseMediaType } from './mediaType.js';
+import { fillNativeImp, fillNativeResponse } from './native.js';
+import { BID_RESPONSE, IMP, REQUEST } from '../../../src/pbjsORTB.js';
+import { clientSectionChecker } from '../../../src/fpd/oneClient.js';
 import { fillAudioImp, fillAudioResponse } from './audio.js';
 
 export const DEFAULT_PROCESSORS = {

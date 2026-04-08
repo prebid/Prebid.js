@@ -4,7 +4,7 @@ import {
 } from 'libraries/video/constants/events.js';
 import { getWinDimensions } from '../../../../../src/utils.js';
 
-const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modules/videojsVideoProvider');
+const { VideojsProvider, utils, adStateFactory, timeStateFactory } = require('modules/videojsVideoProvider');
 
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION
@@ -42,7 +42,7 @@ describe('videojsProvider', function () {
     });
 
     it('should trigger failure when videojs version is under min supported version', function () {
-      const provider = VideojsProvider(config, {...videojs, VERSION: '0.0.0'}, adState, timeState, callbackStorage, utils);
+      const provider = VideojsProvider(config, { ...videojs, VERSION: '0.0.0' }, adState, timeState, callbackStorage, utils);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});
       provider.init();
@@ -63,7 +63,7 @@ describe('videojsProvider', function () {
     });
 
     it('should instantiate the player when uninstantied', function () {
-      config.playerConfig = {testAttr: true};
+      config.playerConfig = { testAttr: true };
       config.divId = 'test-div'
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
@@ -116,7 +116,7 @@ describe('videojsProvider', function () {
 
   describe('getOrtbParams', function () {
     beforeEach(() => {
-      config = {divId: 'test'};
+      config = { divId: 'test' };
       // initialize videojs element
       document.body.innerHTML = `
       <video preload id='test' width="${200}" height="${100}">
@@ -304,7 +304,7 @@ describe('utils', function() {
 
   describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
-      const {innerWidth, innerHeight} = getWinDimensions();
+      const { innerWidth, innerHeight } = getWinDimensions();
       const code = utils.getPositionCode({
         left: innerWidth / 10,
         top: 0,
@@ -315,7 +315,7 @@ describe('utils', function() {
     });
 
     it('should return the correct position when video is below the fold', function () {
-      const {innerWidth, innerHeight} = getWinDimensions();
+      const { innerWidth, innerHeight } = getWinDimensions();
       const code = utils.getPositionCode({
         left: innerWidth / 10,
         top: innerHeight,
@@ -326,7 +326,7 @@ describe('utils', function() {
     });
 
     it('should return the unkown position when the video is out of bounds', function () {
-      const {innerWidth, innerHeight} = getWinDimensions();
+      const { innerWidth, innerHeight } = getWinDimensions();
       const code = utils.getPositionCode({
         left: innerWidth / 10,
         top: innerHeight,
@@ -410,7 +410,7 @@ describe('utils', function() {
       document.body.appendChild(div);
 
       const stubPlayer = {
-        ima: {changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: {settings: {}}},
+        ima: { changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: { settings: {} } },
         ready: (cb) => cb(),
         on: () => {},
         off: () => {},
@@ -425,7 +425,7 @@ describe('utils', function() {
       const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
       stubVjs.VERSION = '7.20.0';
       stubVjs.players = {};
-      const provider = VideojsProvider({divId: 'test-ad'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
+      const provider = VideojsProvider({ divId: 'test-ad' }, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
       provider.init();
       provider.setAdTagUrl('tag');
       expect(stubPlayer.ima.changeAdTag.calledWith('tag')).to.be.true;
@@ -438,7 +438,7 @@ describe('utils', function() {
       document.body.appendChild(div);
 
       const stubPlayer = {
-        ima: {changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: {settings: {}}},
+        ima: { changeAdTag: sinon.spy(), requestAds: sinon.spy(), controller: { settings: {} } },
         ready: (cb) => cb(),
         on: () => {},
         off: () => {},
@@ -453,7 +453,7 @@ describe('utils', function() {
       const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
       stubVjs.VERSION = '7.20.0';
       stubVjs.players = {};
-      const provider = VideojsProvider({divId: 'test-xml'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
+      const provider = VideojsProvider({ divId: 'test-xml' }, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
       provider.init();
       provider.setAdXml('<VAST/>');
       expect(stubPlayer.ima.controller.settings.adsResponse).to.equal('<VAST/>');
@@ -464,11 +464,11 @@ describe('utils', function() {
   describe('State Factories', function () {
     it('should set playback mode based on duration', function () {
       const ts = timeStateFactory();
-      ts.updateForTimeEvent({currentTime: 1, duration: 10});
+      ts.updateForTimeEvent({ currentTime: 1, duration: 10 });
       expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.VOD);
-      ts.updateForTimeEvent({currentTime: 1, duration: 0});
+      ts.updateForTimeEvent({ currentTime: 1, duration: 0 });
       expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.LIVE);
-      ts.updateForTimeEvent({currentTime: 1, duration: -1});
+      ts.updateForTimeEvent({ currentTime: 1, duration: -1 });
       expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.DVR);
     });
 
@@ -490,7 +490,7 @@ describe('utils', function() {
         adWrapperIds: ['w1'],
         skippable: true,
         skipTimeOffset: 5,
-        adPodInfo: {podIndex: 0, totalAds: 2, adPosition: 1, timeOffset: 0}
+        adPodInfo: { podIndex: 0, totalAds: 2, adPosition: 1, timeOffset: 0 }
       });
       const state = as.getState();
       expect(state.adId).to.equal('1');

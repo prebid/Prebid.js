@@ -8,7 +8,7 @@ import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBRequest } from '../src/prebid.public.js';
 import { config } from '../src/config.js';
 import { SyncType } from '../src/userSync.js';
-import { ConsentData, CONSENT_GDPR, CONSENT_USP, CONSENT_GPP } from '../src/consentHandler.js';
+import { ConsentDataForKey, CONSENT_GDPR, CONSENT_USP, CONSENT_GPP } from '../src/consentHandler.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'pubstack';
@@ -32,9 +32,9 @@ type GetUserSyncFn = (
     pixelEnabled: boolean;
   },
   responses: ServerResponse[],
-  gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
-  uspConsent: null | ConsentData[typeof CONSENT_USP],
-  gppConsent: null | ConsentData[typeof CONSENT_GPP]) => ({ type: SyncType, url: string })[]
+  gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
+  uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
+  gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>) => ({ type: SyncType, url: string })[]
 
 const siteIds: Set<string> = new Set();
 let cntRequest = 0;
@@ -143,7 +143,7 @@ const getUserSyncs: GetUserSyncFn = (syncOptions, _serverResponses, gdprConsent,
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  aliases: [{code: `${BIDDER_CODE}_server`, gvlid: GVLID}],
+  aliases: [{ code: `${BIDDER_CODE}_server`, gvlid: GVLID }],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,

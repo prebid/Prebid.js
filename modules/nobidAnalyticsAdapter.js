@@ -1,10 +1,10 @@
-import {deepClone, logError, getParameterByName, logMessage} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { deepClone, logError, getParameterByName, logMessage } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const VERSION = '2.0.2';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
@@ -15,7 +15,7 @@ window.nobidAnalyticsVersion = VERSION;
 const analyticsType = 'endpoint';
 const url = 'localhost:8383/event';
 const GVLID = 816;
-const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME, moduleType: MODULE_TYPE_ANALYTICS});
+const storage = getStorageManager({ gvlid: GVLID, moduleName: MODULE_NAME, moduleType: MODULE_TYPE_ANALYTICS });
 const {
   AUCTION_INIT,
   BID_REQUESTED,
@@ -82,7 +82,7 @@ function cleanupObjectAttributes (obj, attributes) {
 }
 function sendBidWonEvent (event, eventType) {
   const data = deepClone(event);
-  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
+  cleanupObjectAttributes(data, ['bidderCode', 'size', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
   if (nobidAnalytics.topLocation) data.topLocation = nobidAnalytics.topLocation;
   sendEvent(data, eventType);
 }
@@ -94,7 +94,7 @@ function sendAuctionEndEvent (event, eventType) {
 
   cleanupObjectAttributes(data, ['timestamp', 'timeout', 'auctionId', 'bidderRequests', 'bidsReceived']);
   if (data) cleanupObjectAttributes(data.bidderRequests, ['bidderCode', 'bidderRequestId', 'bids', 'refererInfo']);
-  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
+  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
   if (data) cleanupObjectAttributes(data.noBids, ['bidder', 'sizes', 'bidId']);
   if (data.bidderRequests) {
     data.bidderRequests.forEach(bidderRequest => {
@@ -113,7 +113,7 @@ function auctionInit (event) {
     nobidAnalytics.topLocation = event.bidderRequests[0].refererInfo.topmostLocation;
   }
 }
-let nobidAnalytics = Object.assign(adapter({url, analyticsType}), {
+let nobidAnalytics = Object.assign(adapter({ url, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
