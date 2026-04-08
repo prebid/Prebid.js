@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepSetValue} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepSetValue } from '../src/utils.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
@@ -99,7 +99,7 @@ function buildRequests(bidRequests, bidderRequest) {
  */
 function interpretResponse(response, request) {
   if (response.body) {
-    return converter.fromORTB({response: response.body, request: request.data}).bids;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   }
   return [];
 }

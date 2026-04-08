@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {buildVideoUrl} from 'modules/targetVideoAdServerVideo.js';
-import {targeting} from 'src/targeting.js';
+import { expect } from 'chai';
+import { buildVideoUrl } from 'modules/targetVideoAdServerVideo.js';
+import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
-import {hook} from '../../../src/hook.js';
+import { hook } from '../../../src/hook.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 
 describe('TargetVideo Ad Server Video', function() {

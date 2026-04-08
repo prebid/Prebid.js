@@ -88,7 +88,7 @@ export const spec = {
           syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
           syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
         }
-        return [{type: 'iframe', url: syncurl}];
+        return [{ type: 'iframe', url: syncurl }];
       }
     }
     return [];

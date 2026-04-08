@@ -91,6 +91,7 @@ function createRenderer(rendererConfig) {
 }
 
 function outstreamRender(bid) {
+  // TODO this should use getAdUnitElement
   if (!document.getElementById(bid.adUnitCode)) {
     logError(`Sparteo Bid Adapter: Video renderer did not started. bidResponse.adUnitCode is probably not a DOM element : ${bid.adUnitCode}`);
     return;
@@ -226,7 +227,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    const payload = converter.toORTB({bidRequests, bidderRequest})
+    const payload = converter.toORTB({ bidRequests, bidderRequest })
 
     const endpoint = bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL;
     const url = replaceMacros(payload, endpoint);
@@ -239,7 +240,7 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, requests) {
-    const bids = converter.fromORTB({response: serverResponse.body, request: requests.data}).bids;
+    const bids = converter.fromORTB({ response: serverResponse.body, request: requests.data }).bids;
 
     return bids;
   },

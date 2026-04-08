@@ -13,7 +13,7 @@ import {
 } from 'modules/hypelabBidAdapter.js';
 
 import { BANNER } from 'src/mediaTypes.js';
-import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
+import { getDevicePixelRatio } from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const mockValidBidRequest = {
   bidder: 'hypelab',
