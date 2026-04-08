@@ -1,7 +1,7 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
-import { deepAccess, deepSetValue, getWinDimensions, isPlainObject } from '../src/utils.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
