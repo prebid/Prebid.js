@@ -4,15 +4,15 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
-import {config} from '../src/config.js';
-import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
-import {timedAuctionHook} from '../src/utils/perfMetrics.js';
-import {getHook} from '../src/hook.js';
-import {enrichFPD} from '../src/fpd/enrichment.js';
-import {cmpClient} from '../libraries/cmp/cmpClient.js';
-import type {IABCMConfig, StaticCMConfig} from "../libraries/consentManagement/cmUtils.ts";
-import type {CONSENT_USP} from "../src/consentHandler.ts";
+import { deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../src/utils.js';
+import { config } from '../src/config.js';
+import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
+import { timedAuctionHook } from '../src/utils/perfMetrics.js';
+import { getHook } from '../src/hook.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
+import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
+import type { CONSENT_USP } from "../src/consentHandler.ts";
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -59,8 +59,8 @@ const uspCallMap = {
 /**
  * This function reads the consent string from the config to obtain the consent information of the user.
  */
-function lookupStaticConsentData({onSuccess, onError}) {
-  processUspData(staticConsentData, {onSuccess, onError});
+function lookupStaticConsentData({ onSuccess, onError }) {
+  processUspData(staticConsentData, { onSuccess, onError });
 }
 
 /**
@@ -68,13 +68,13 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * Given the async nature of the USP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
  */
-function lookupUspConsent({onSuccess, onError}) {
+function lookupUspConsent({ onSuccess, onError }) {
   function handleUspApiResponseCallbacks() {
     const uspResponse = {} as any;
 
     function afterEach() {
       if (uspResponse.usPrivacy) {
-        processUspData(uspResponse, {onSuccess, onError})
+        processUspData(uspResponse, { onSuccess, onError })
       } else {
         onError('Unable to get USP consent string.');
       }
@@ -197,7 +197,7 @@ export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(
  * @param {function(string): void} callbacks.onSuccess - Callback accepting the resolved USP consent string.
  * @param {function(string, ...Object?): void} callbacks.onError - Callback accepting an error message and any extra error arguments (used purely for logging).
  */
-function processUspData(consentObject, {onSuccess, onError}) {
+function processUspData(consentObject, { onSuccess, onError }) {
   const valid = !!(consentObject && consentObject.usPrivacy);
   if (!valid) {
     onError(`USPAPI returned unexpected value during lookup process.`, consentObject);

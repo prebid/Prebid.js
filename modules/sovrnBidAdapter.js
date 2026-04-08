@@ -103,7 +103,7 @@ export const spec = {
           let bidSizes = deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes
           bidSizes = (isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]
           bidSizes = bidSizes.filter(size => isArray(size))
-          const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
+          const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }))
 
           imp.banner = {
             format: processedSizes,
@@ -196,7 +196,7 @@ export const spec = {
         method: 'POST',
         url: url,
         data: JSON.stringify(sovrnBidReq),
-        options: {contentType: 'text/plain'}
+        options: { contentType: 'text/plain' }
       }
     } catch (e) {
       logError('Could not build bidrequest, error deatils:', e);
@@ -208,7 +208,7 @@ export const spec = {
    * @param {*} param0 A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
    */
-  interpretResponse: function({ body: {id, seatbid} }) {
+  interpretResponse: function({ body: { id, seatbid } }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 
     try {

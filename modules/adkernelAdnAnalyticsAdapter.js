@@ -1,18 +1,18 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {EVENTS} from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError, parseUrl, _each } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {config} from '../src/config.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_CODE = 'adkernelAdn';
 const GVLID = 14;
 const ANALYTICS_VERSION = '1.0.2';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
-const storageObj = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storageObj = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -24,7 +24,7 @@ const ADK_HB_EVENTS = {
 };
 
 function buildRequestTemplate(pubId) {
-  const {loc, ref} = getNavigationInfo();
+  const { loc, ref } = getNavigationInfo();
 
   return {
     ver: ANALYTICS_VERSION,
@@ -43,9 +43,9 @@ function buildRequestTemplate(pubId) {
   }
 }
 
-const analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
+const analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }),
   {
-    track({eventType, args}) {
+    track({ eventType, args }) {
       if (!analyticsAdapter.context) {
         return;
       }
@@ -115,7 +115,7 @@ export default analyticsAdapter;
 function sendAll() {
   const events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
-    const req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
+    const req = Object.assign({}, analyticsAdapter.context.requestTemplate, { hb_ev: events });
     analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
@@ -158,7 +158,7 @@ function trackBidTimeout(args) {
 }
 
 function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
-  const ev = {event: event};
+  const ev = { event: event };
   if (adapter) {
     ev.adapter = adapter
   }

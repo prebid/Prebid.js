@@ -28,7 +28,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
       if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
       } else if (eventType === EVENTS.AUCTION_INIT) {
-        Object.assign(events, {bids: []});
+        Object.assign(events, { bids: [] });
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
         adUnitMap.set(args.auctionId, args.adUnits);
@@ -139,7 +139,6 @@ function mapBidResponse(bidResponse, status) {
       width: bid.width,
       height: bid.height,
       mediaType: bid.mediaType,
-      statusMessage: bid.statusMessage,
       status: bid.status,
       renderStatus: getRenderStatus(),
       timeToRespond: bid.timeToRespond,
@@ -185,7 +184,6 @@ function mapBidResponse(bidResponse, status) {
       width: bidResponse.width,
       height: bidResponse.height,
       mediaType: bidResponse.mediaType,
-      statusMessage: bidResponse.statusMessage,
       status: bidResponse.status,
       renderStatus: 4,
       timeToRespond: bidResponse.timeToRespond,

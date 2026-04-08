@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adverxoBidAdapter.js';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { spec } from 'modules/adverxoBidAdapter.js';
+import { config } from 'src/config';
 
 describe('Adverxo Bid Adapter', () => {
   function makeBidRequestWithParams(params) {
@@ -8,7 +8,7 @@ describe('Adverxo Bid Adapter', () => {
       bidId: '2e9f38ea93bb9e',
       bidder: 'adverxo',
       adUnitCode: 'adunit-code',
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: params,
       bidderRequestId: 'test-bidder-request-id'
     };
@@ -26,7 +26,7 @@ describe('Adverxo Bid Adapter', () => {
           'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
         }]
       }],
-      mediaTypes: {banner: {sizes: [[300, 250]]}},
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
       params: {
         host: 'bid.example.com',
         adUnitId: 1,
@@ -48,17 +48,17 @@ describe('Adverxo Bid Adapter', () => {
       {
         id: 1,
         required: 1,
-        img: {type: 3, w: 150, h: 50}
+        img: { type: 3, w: 150, h: 50 }
       },
       {
         id: 2,
         required: 1,
-        title: {len: 80}
+        title: { len: 80 }
       },
       {
         id: 3,
         required: 0,
-        data: {type: 1}
+        data: { type: 1 }
       }
     ]
   };
@@ -246,7 +246,7 @@ describe('Adverxo Bid Adapter', () => {
       const bidRequests = [
         {
           bidder: 'bidsmind',
-          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
           params: {
             adUnitId: 1,
             auth: 'authExample',
@@ -269,7 +269,7 @@ describe('Adverxo Bid Adapter', () => {
       const bidRequests = [
         {
           bidder: 'adverxo',
-          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
           params: {
             adUnitId: 1,
             auth: 'authExample',
@@ -311,19 +311,19 @@ describe('Adverxo Bid Adapter', () => {
         expect(nativeRequest.assets[0]).to.deep.equal({
           id: 1,
           required: 1,
-          img: {w: 150, h: 50, type: 3}
+          img: { w: 150, h: 50, type: 3 }
         });
 
         expect(nativeRequest.assets[1]).to.deep.equal({
           id: 2,
           required: 1,
-          title: {len: 80}
+          title: { len: 80 }
         });
 
         expect(nativeRequest.assets[2]).to.deep.equal({
           id: 3,
           required: 0,
-          data: {type: 1}
+          data: { type: 1 }
         });
       });
     }
@@ -359,7 +359,7 @@ describe('Adverxo Bid Adapter', () => {
     it('should add bid floor to request', function () {
       const bannerBidRequestWithFloor = {
         ...bannerBidRequests[0],
-        getFloor: () => ({currency: 'USD', floor: 3})
+        getFloor: () => ({ currency: 'USD', floor: 3 })
       };
 
       const request = spec.buildRequests([bannerBidRequestWithFloor], {})[0].data;
@@ -505,11 +505,11 @@ describe('Adverxo Bid Adapter', () => {
             native: {
               ortb: {
                 assets: [
-                  {id: 2, title: {text: 'Title'}},
-                  {id: 3, data: {value: 'Description'}},
-                  {id: 1, img: {url: 'http://example.com?img', w: 150, h: 50}}
+                  { id: 2, title: { text: 'Title' } },
+                  { id: 3, data: { value: 'Description' } },
+                  { id: 1, img: { url: 'http://example.com?img', w: 150, h: 50 } }
                 ],
-                link: {url: 'http://example.com?link'}
+                link: { url: 'http://example.com?link' }
               }
             }
           }
@@ -646,14 +646,14 @@ describe('Adverxo Bid Adapter', () => {
 
   describe('getUserSyncs', () => {
     const exampleUrl = 'https://example.com/usync?id=5';
-    const iframeConfig = {iframeEnabled: true};
+    const iframeConfig = { iframeEnabled: true };
 
     const responses = [{
-      body: {ext: {avx_usync: [exampleUrl]}}
+      body: { ext: { avx_usync: [exampleUrl] } }
     }];
 
     const responseWithoutQueryString = [{
-      body: {ext: {avx_usync: ['https://example.com/usync/sf/5']}}
+      body: { ext: { avx_usync: ['https://example.com/usync/sf/5'] } }
     }];
 
     it('should not return empty list if not allowed', function () {
@@ -685,17 +685,17 @@ describe('Adverxo Bid Adapter', () => {
     });
 
     it('should add GDPR parameters if provided', function () {
-      expect(spec.getUserSyncs(iframeConfig, responses, {gdprApplies: true}, undefined, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs(iframeConfig, responses, { gdprApplies: true }, undefined, undefined)).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe&gdpr=1&gdpr_consent=`
       }]);
 
       expect(spec.getUserSyncs(iframeConfig, responses,
-        {gdprApplies: true, consentString: 'foo?'}, undefined, undefined)).to.deep.equal([{
+        { gdprApplies: true, consentString: 'foo?' }, undefined, undefined)).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe&gdpr=1&gdpr_consent=foo%3F`
       }]);
 
       expect(spec.getUserSyncs(iframeConfig, responses,
-        {gdprApplies: false, consentString: 'bar'}, undefined, undefined)).to.deep.equal([{
+        { gdprApplies: false, consentString: 'bar' }, undefined, undefined)).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe&gdpr=0&gdpr_consent=bar`
       }]);
     });
@@ -707,7 +707,7 @@ describe('Adverxo Bid Adapter', () => {
     });
 
     it('should not apply if not gppConsent.gppString', function () {
-      const gppConsent = {gppString: '', applicableSections: [123]};
+      const gppConsent = { gppString: '', applicableSections: [123] };
       const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe`
@@ -715,7 +715,7 @@ describe('Adverxo Bid Adapter', () => {
     });
 
     it('should not apply if not gppConsent.applicableSections', function () {
-      const gppConsent = {gppString: '', applicableSections: undefined};
+      const gppConsent = { gppString: '', applicableSections: undefined };
       const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe`
@@ -723,7 +723,7 @@ describe('Adverxo Bid Adapter', () => {
     });
 
     it('should not apply if empty gppConsent.applicableSections', function () {
-      const gppConsent = {gppString: '', applicableSections: []};
+      const gppConsent = { gppString: '', applicableSections: [] };
       const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe`
@@ -731,7 +731,7 @@ describe('Adverxo Bid Adapter', () => {
     });
 
     it('should apply if all above are available', function () {
-      const gppConsent = {gppString: 'foo?', applicableSections: [123]};
+      const gppConsent = { gppString: 'foo?', applicableSections: [123] };
       const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe&gpp=foo%3F&gpp_sid=123`
@@ -739,7 +739,7 @@ describe('Adverxo Bid Adapter', () => {
     });
 
     it('should support multiple sections', function () {
-      const gppConsent = {gppString: 'foo', applicableSections: [123, 456]};
+      const gppConsent = { gppString: 'foo', applicableSections: [123, 456] };
       const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe', url: `${exampleUrl}&type=iframe&gpp=foo&gpp_sid=123%2C456`

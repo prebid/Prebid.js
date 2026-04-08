@@ -40,7 +40,7 @@ function buildOptions(options) {
   const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
   const features = featureMap(options.disableFeatures);
   const skipCalls = skipCallSet(features); // expression calls to skip entirely
-  const distUrlBase = options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/chunks/`;
+  const distUrlBase = options.distUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/chunks/`;
 
   return {
     pbGlobal,

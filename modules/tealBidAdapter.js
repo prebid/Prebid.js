@@ -1,8 +1,8 @@
-import {deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
+import { deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
 const BIDDER_CODE = 'teal';
 const GVLID = 1378;
 const DEFAULT_ENDPOINT = 'https://a.bids.ws/openrtb2/auction';
@@ -52,7 +52,7 @@ export const spec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     const { bidder } = bidRequests[0];
-    const data = converter.toORTB({bidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests, bidderRequest });
     const account = deepAccess(bidRequests[0], 'params.account', null);
     const subAccount = deepAccess(bidRequests[0], 'params.subAccount', null);
     deepSetValue(data, 'site.publisher.id', account);
@@ -79,10 +79,10 @@ export const spec = {
     Object.entries(modifiers).forEach(([field, combineFn]) => {
       const obj = resp.ext?.[field];
       if (!isEmpty(obj)) {
-        resp.ext[field] = {[bidder]: combineFn(Object.values(obj))};
+        resp.ext[field] = { [bidder]: combineFn(Object.values(obj)) };
       }
     });
-    const bids = converter.fromORTB({response: resp, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: resp, request: request.data }).bids;
     return bids;
   },
 

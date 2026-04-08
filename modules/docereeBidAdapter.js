@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'doceree';
 const GVLID = 1063;
 const END_POINT = 'https://bidder.doceree.com'
@@ -12,7 +12,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   url: '',
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (bid) => {
     const { placementId } = bid.params;
