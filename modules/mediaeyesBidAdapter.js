@@ -126,11 +126,15 @@ const cookImpBanner = ({ mediaTypes, params }) => {
   if (!mediaTypes?.banner) return {};
 
   const { sizes } = mediaTypes.banner;
+
+  const format = sizes
+    .filter(s => Array.isArray(s) && typeof s[0] === 'number' && typeof s[1] === 'number')
+    .map(([w, h]) => ({ w, h }));
+
+  if (!format.length) return {};
+
   return {
-    format: sizes.map(([w, h]) => ({
-      w,
-      h
-    }))
+    format
   }
 };
 
