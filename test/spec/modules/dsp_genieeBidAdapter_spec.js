@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/dsp_genieeBidAdapter.js';
 import { config } from 'src/config';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('Geniee adapter tests', () => {
   const validBidderRequest = {

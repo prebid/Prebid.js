@@ -1,18 +1,16 @@
 import { expect } from "chai";
-import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig } from "../../../modules/enrichmentLiftMeasurement";
-import {server} from 'test/mocks/xhr.js';
-import { config } from "../../../src/config"
-import { isInteger } from "../../../src/utils";
-import { ACTIVITY_ENRICH_EIDS } from "../../../src/activities/activities";
-import { isActivityAllowed } from "../../../src/activities/rules";
-import { activityParams } from "../../../src/activities/activityParams";
-import { MODULE_TYPE_UID } from "../../../src/activities/modules";
-import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/analyticsStub";
-import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter";
-import { EVENTS } from "../../../src/constants";
-import { getCoreStorageManager } from "../../../src/storageManager";
-import { compareConfigs } from "../../../modules/enrichmentLiftMeasurement";
-import { STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement";
+import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig, compareConfigs, STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement/index.js";
+import { server } from 'test/mocks/xhr.js';
+import { config } from "../../../src/config.js"
+import { isInteger } from "../../../src/utils.js";
+import { ACTIVITY_ENRICH_EIDS } from "../../../src/activities/activities.js";
+import { isActivityAllowed } from "../../../src/activities/rules.js";
+import { activityParams } from "../../../src/activities/activityParams.js";
+import { MODULE_TYPE_UID } from "../../../src/activities/modules.js";
+import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/analyticsStub.js";
+import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter.js";
+import { EVENTS } from "../../../src/constants.js";
+import { getCoreStorageManager } from "../../../src/storageManager.js";
 
 describe('enrichmentLiftMeasurement', () => {
   beforeEach(() => {
@@ -37,21 +35,23 @@ describe('enrichmentLiftMeasurement', () => {
     const mathRandomStub = sinon.stub(Math, 'random').callsFake(() => {
       return fixedRandoms[callIndex++];
     });
-    config.setConfig({ enrichmentLiftMeasurement: {
+    config.setConfig({
+      enrichmentLiftMeasurement: {
         modules: modulesConfig
-    }});
+      }
+    });
 
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
-        results.push(getCalculatedSubmodules(modulesConfig));
+      results.push(getCalculatedSubmodules(modulesConfig));
     }
     modulesConfig.forEach((idSystem) => {
-        const passedIdSystemsCount = results.filter((execution) => {
-            const item = execution.find(({name}) => idSystem.name === name)
-            return item?.enabled
-        }).length
-        const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
-        expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
+      const passedIdSystemsCount = results.filter((execution) => {
+        const item = execution.find(({ name }) => idSystem.name === name)
+        return item?.enabled
+      }).length
+      const marginOfError = Number(Math.abs(passedIdSystemsCount / TEST_SAMPLE_SIZE - idSystem.percentage).toFixed(2));
+      expect(marginOfError).to.be.at.most(isInteger(idSystem.percentage) ? 0 : MARGIN_OF_ERROR);
     });
 
     mathRandomStub.restore();
@@ -63,14 +63,16 @@ describe('enrichmentLiftMeasurement', () => {
       [suppressionMethod.SUBMODULES]: true
     }).forEach(([method, value]) => {
       it(method, () => {
-        config.setConfig({ enrichmentLiftMeasurement: {
-          suppression: method,
-          modules: [
-            { name: 'idSystem', percentage: 0 }
-          ]
-        }});
+        config.setConfig({
+          enrichmentLiftMeasurement: {
+            suppression: method,
+            modules: [
+              { name: 'idSystem', percentage: 0 }
+            ]
+          }
+        });
         init();
-        expect(isActivityAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, 'idSystem', {init: false}))).to.eql(value);
+        expect(isActivityAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, 'idSystem', { init: false }))).to.eql(value);
       });
     });
   });
@@ -86,13 +88,15 @@ describe('enrichmentLiftMeasurement', () => {
 
     beforeEach(() => {
       getCalculatedSubmodulesStub = sinon.stub(internals, 'getCalculatedSubmodules');
-      config.setConfig({ enrichmentLiftMeasurement: {
-        testRun: TEST_RUN_ID,
-        storeSplits: storeSplitsMethod.SESSION_STORAGE,
-        modules: [
-          { name: 'idSystem', percentage: 1 }
-        ]
-      }});
+      config.setConfig({
+        enrichmentLiftMeasurement: {
+          testRun: TEST_RUN_ID,
+          storeSplits: storeSplitsMethod.SESSION_STORAGE,
+          modules: [
+            { name: 'idSystem', percentage: 1 }
+          ]
+        }
+      });
     });
 
     afterEach(() => {
@@ -117,7 +121,7 @@ describe('enrichmentLiftMeasurement', () => {
     });
 
     it('should store config if not present', () => {
-      const stubCalculation = mockConfig.map(module => ({...module, percentage: 0.1}));
+      const stubCalculation = mockConfig.map(module => ({ ...module, percentage: 0.1 }));
       getCalculatedSubmodulesStub.returns(stubCalculation);
       const fakeStorageManager = {
         sessionStorageIsEnabled: () => true,
@@ -127,12 +131,12 @@ describe('enrichmentLiftMeasurement', () => {
       init(fakeStorageManager);
       sinon.assert.calledOnce(fakeStorageManager.setDataInSessionStorage);
       sinon.assert.calledOnce(getCalculatedSubmodulesStub);
-      const expectedArg = {testRun: TEST_RUN_ID, modules: stubCalculation};
+      const expectedArg = { testRun: TEST_RUN_ID, modules: stubCalculation };
       expect(fakeStorageManager.setDataInSessionStorage.getCall(0).args[1]).to.deep.eql(JSON.stringify(expectedArg));
     });
 
     it('should update config if present is different', () => {
-      const stubCalculation = mockConfig.map(module => ({...module, percentage: 0.1}));
+      const stubCalculation = mockConfig.map(module => ({ ...module, percentage: 0.1 }));
       getCalculatedSubmodulesStub.returns(stubCalculation);
       const previousTestConfig = {
         modules: mockConfig,
@@ -143,11 +147,13 @@ describe('enrichmentLiftMeasurement', () => {
         getDataFromSessionStorage: sinon.stub().returns(JSON.stringify(previousTestConfig)),
         setDataInSessionStorage: sinon.stub()
       };
-      config.setConfig({ enrichmentLiftMeasurement: {
-        testRun: TEST_RUN_ID,
-        storeSplits: storeSplitsMethod.SESSION_STORAGE,
-        modules: mockConfig.map(module => ({...module, percentage: 0.1}))
-      }});
+      config.setConfig({
+        enrichmentLiftMeasurement: {
+          testRun: TEST_RUN_ID,
+          storeSplits: storeSplitsMethod.SESSION_STORAGE,
+          modules: mockConfig.map(module => ({ ...module, percentage: 0.1 }))
+        }
+      });
 
       init(fakeStorageManager);
 
@@ -163,20 +169,22 @@ describe('enrichmentLiftMeasurement', () => {
         url: 'https://localhost:9999/endpoint',
         analyticsType: 'endpoint'
       });
-      config.setConfig({ enrichmentLiftMeasurement: {
-        modules: mockConfig,
-        testRun: TEST_RUN_ID,
-        storeSplits: storeSplitsMethod.PAGE
-      }});
+      config.setConfig({
+        enrichmentLiftMeasurement: {
+          modules: mockConfig,
+          testRun: TEST_RUN_ID,
+          storeSplits: storeSplitsMethod.PAGE
+        }
+      });
 
       init();
 
       const eventType = EVENTS.BID_WON;
-      adapter.track({eventType});
+      adapter.track({ eventType });
 
       const result = JSON.parse(server.requests[0].requestBody);
 
-      sinon.assert.match(result, {labels: {[TEST_RUN_ID]: mockConfig}, eventType});
+      sinon.assert.match(result, { labels: { [TEST_RUN_ID]: mockConfig }, eventType });
       disableAjaxForAnalytics();
     });
 
@@ -229,15 +237,15 @@ describe('enrichmentLiftMeasurement', () => {
       const oldConfig = {
         testRun: 'AB1',
         modules: [
-          {name: 'idSystem1', percentage: 1.0, enabled: true},
-          {name: 'idSystem2', percentage: 0.3, enabled: false},
+          { name: 'idSystem1', percentage: 1.0, enabled: true },
+          { name: 'idSystem2', percentage: 0.3, enabled: false },
         ]
       }
       const newConfig = {
         testRun: 'AB1',
         modules: [
-          {name: 'idSystem2', percentage: 0.3},
-          {name: 'idSystem1', percentage: 1.0},
+          { name: 'idSystem2', percentage: 0.3 },
+          { name: 'idSystem1', percentage: 1.0 },
         ]
       }
       expect(compareConfigs(newConfig, oldConfig)).to.eql(true);
@@ -247,15 +255,15 @@ describe('enrichmentLiftMeasurement', () => {
       const oldConfig = {
         testRun: 'AB1',
         modules: [
-          {name: 'idSystem1', percentage: 1.0, enabled: true},
-          {name: 'idSystem2', percentage: 0.3, enabled: false},
+          { name: 'idSystem1', percentage: 1.0, enabled: true },
+          { name: 'idSystem2', percentage: 0.3, enabled: false },
         ]
       }
       const newConfig = {
         testRun: 'AB2',
         modules: [
-          {name: 'idSystem2', percentage: 0.3},
-          {name: 'idSystem1', percentage: 1.0},
+          { name: 'idSystem2', percentage: 0.3 },
+          { name: 'idSystem1', percentage: 1.0 },
         ]
       }
       expect(compareConfigs(newConfig, oldConfig)).to.eql(false);

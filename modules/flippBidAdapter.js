@@ -1,7 +1,7 @@
-import {isEmpty, parseUrl} from '../src/utils.js';
+import { isEmpty, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,7 +18,7 @@ const AD_TYPES = [4309, 641];
 const DTX_TYPES = [5061];
 const TARGET_NAME = 'inline';
 const BIDDER_CODE = 'flipp';
-const ENDPOINT = 'https://gateflipp.flippback.com/flyer-locator-service/client_bidding';
+const ENDPOINT = 'https://ads-flipp.com/flyer-locator-service/client_bidding';
 const DEFAULT_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_CREATIVE_TYPE = 'NativeX';
@@ -28,7 +28,7 @@ const COMPACT_DEFAULT_HEIGHT = 600;
 const STANDARD_DEFAULT_HEIGHT = 1800;
 
 let userKey = null;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function getUserKey(options = {}) {
   if (userKey) {
@@ -127,9 +127,9 @@ export const spec = {
         siteId: bid.params.siteId,
         adTypes: getAdTypes(bid.params.creativeType),
         count: 1,
-        ...(!isEmpty(bid.params.zoneIds) && {zoneIds: bid.params.zoneIds}),
+        ...(!isEmpty(bid.params.zoneIds) && { zoneIds: bid.params.zoneIds }),
         properties: {
-          ...(!isEmpty(contentCode) && {contentCode: contentCode.slice(0, 32)}),
+          ...(!isEmpty(contentCode) && { contentCode: contentCode.slice(0, 32) }),
         },
         options,
         prebid: {

@@ -40,13 +40,13 @@ export function renderer(win) {
   } catch (e) {
   }
 
-  return function ({adId, pubUrl, clickUrl}) {
+  return function ({ adId, pubUrl, clickUrl }) {
     const pubDomain = new URL(pubUrl, window.location).origin;
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();
       channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
+      target.postMessage(JSON.stringify(Object.assign({ message: type, adId }, payload)), pubDomain, [channel.port2]);
     }
 
     function onError(e) {
@@ -82,24 +82,26 @@ export function renderer(win) {
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
-          style: 'display: none',
-          srcdoc: `<script>${data.renderer}</script>`
+          style: 'display: none'
         });
         renderer.onload = guard(function () {
           const W = renderer.contentWindow;
           // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
           // does not appear to work if P comes from another frame
-          W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
-            () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
+          W.Promise.resolve(W.render(data, { sendMessage, mkFrame }, win)).then(
+            () => sendMessage(MESSAGE_EVENT, { event: EVENT_AD_RENDER_SUCCEEDED }),
             onError
           );
         });
+        // Attach 'srcdoc' after 'onload', otherwise the latter seems to randomly run prematurely in tests
+        // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
+        renderer.srcdoc = `<script>${data.renderer}</script>`;
         win.document.body.appendChild(renderer);
       }
     }
 
     sendMessage(MESSAGE_REQUEST, {
-      options: {clickUrl}
+      options: { clickUrl }
     }, onMessage);
   };
 }

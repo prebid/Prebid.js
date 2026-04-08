@@ -1,5 +1,5 @@
-import {UID1_EIDS} from '../uid1Eids/uid1Eids.js';
-import {UID2_EIDS} from '../uid2Eids/uid2Eids.js';
+import { UID1_EIDS } from '../uid1Eids/uid1Eids.js';
+import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { isNumber } from '../../src/utils.js'
 
@@ -17,7 +17,7 @@ export function parseRequestedAttributes(overrides) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
   if (typeof overrides === 'object') {
-    return createParameterArray({...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides});
+    return createParameterArray({ ...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides });
   } else {
     return createParameterArray(DEFAULT_REQUESTED_ATTRIBUTES);
   }
@@ -112,7 +112,7 @@ function composeIdObject(value) {
   }
 
   if (value.thetradedesk) {
-    result.lipb = {...result.lipb, tdid: value.thetradedesk}
+    result.lipb = { ...result.lipb, tdid: value.thetradedesk }
     result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
     delete result.lipb.thetradedesk
   }
@@ -127,6 +127,10 @@ function composeIdObject(value) {
 
   if (value.vidazoo) {
     result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.nexxen) {
+    result.nexxen = { 'id': value.nexxen, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
   return result
@@ -304,6 +308,18 @@ export const eids = {
   },
   'vidazoo': {
     source: 'liveintent.vidazoo.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'nexxen': {
+    source: 'liveintent.unrulymedia.com',
     atype: 3,
     getValue: function(data) {
       return data.id;

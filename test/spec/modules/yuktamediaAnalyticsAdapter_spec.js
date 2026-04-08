@@ -2,9 +2,9 @@ import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
-let prebidAuction = {
+const prebidAuction = {
   'auctionInit': {
     'auctionId': 'ca421611-0bc0-4164-a69c-fe4158c68954',
     'timestamp': 1595850680304,
@@ -65,7 +65,6 @@ let prebidAuction = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
-    'statusMessage': 'Bid available',
     'getStatusCode': function () { return 1; },
     'adId': '3ade442375213f',
     'requestId': '2bccebeda7fbe4',
@@ -124,7 +123,7 @@ let prebidAuction = {
   }
 };
 
-let prebidNativeAuction = {
+const prebidNativeAuction = {
   'auctionInit': {
     'auctionId': '86e005fa-1900-4782-b6df-528500f09128',
     'timestamp': 1595589742100,
@@ -283,7 +282,6 @@ let prebidNativeAuction = {
   ],
   'bidResponse': {
     'bidderCode': 'appnexus',
-    'statusMessage': 'Bid available',
     'source': 's2s',
     'getStatusCode': function () { return 1; },
     'cpm': 10,
@@ -634,7 +632,7 @@ describe('yuktamedia analytics adapter', function () {
     });
 
     it('should build utm data from local storage', function () {
-      let utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
+      const utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
         pubId: '1',
         pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
         enableUTMCollection: true,
@@ -649,7 +647,7 @@ describe('yuktamedia analytics adapter', function () {
     });
 
     it('should return empty object for disabled utm setting', function () {
-      let utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
+      const utmTagData = yuktamediaAnalyticsAdapter.buildUtmTagData({
         pubId: '1',
         pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
         enableUTMCollection: false,

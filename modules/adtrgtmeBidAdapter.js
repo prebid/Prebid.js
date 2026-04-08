@@ -11,6 +11,7 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'adtrgtme';
 const BIDDER_VERSION = '1.0.7';
@@ -61,7 +62,7 @@ function createORTB(bR, bid) {
   const consentString = gdpr ? bR.gdprConsent?.consentString : '';
   const usPrivacy = bR.uspConsent || '';
 
-  let oR = {
+  const oR = {
     id: generateUUID(),
     cur: [currency],
     imp: [],
@@ -71,7 +72,7 @@ function createORTB(bR, bid) {
       ...site,
     },
     device: {
-      dnt: bid?.params?.dnt ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       ua: bid?.params?.ua || navigator.userAgent,
       ip,
     },
@@ -86,6 +87,7 @@ function createORTB(bR, bid) {
         prebidjsver: PREBIDJS_VERSION,
       },
       fd: 1,
+      ...(bid?.ortb2?.source?.ext?.schain && { schain: bid?.ortb2?.source?.ext?.schain }),
     },
     user: {
       ...user,
@@ -96,8 +98,7 @@ function createORTB(bR, bid) {
     },
   };
 
-  if (bid?.schain) {
-    oR.source.schain = bid.schain;
+  if (bid?.ortb2?.source?.ext?.schain) {
     oR.source.schain.nodes[0].rid = oR.id;
   }
 
@@ -119,8 +120,8 @@ function appendImp(bid, oRtb) {
       dfp_ad_unit_code: bid.adUnitCode,
       ...(bid?.ortb2Imp?.ext?.data &&
         isPlainObject(bid.ortb2Imp.ext.data) && {
-          data: bid.ortb2Imp.ext.data,
-        }),
+        data: bid.ortb2Imp.ext.data,
+      }),
     },
     ...(bid?.params?.zid && { tagid: String(bid.params.zid) }),
     ...(bid?.ortb2Imp?.instl === 1 && { instl: 1 }),
@@ -217,7 +218,7 @@ export const spec = {
 
     sR.body.seatbid.forEach((sb) => {
       try {
-        let b = sb.bid[0];
+        const b = sb.bid[0];
 
         res.push({
           adId: b?.adId ? b.adId : b.impid || b.crid,

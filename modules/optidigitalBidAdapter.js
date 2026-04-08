@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isPlainObject, parseSizesInput} from '../src/utils.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -63,7 +63,8 @@ export const spec = {
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
       badv: ortb2.badv || deepAccess(validBidRequests[0], 'params.badv') || [],
       bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
-      bapp: deepAccess(validBidRequests[0], 'params.bapp') || []
+      bapp: deepAccess(validBidRequests[0], 'params.bapp') || [],
+      device: ortb2.device || {}
     }
 
     if (validBidRequests[0].auctionId) {
@@ -74,17 +75,22 @@ export const spec = {
       payload.pageTemplate = validBidRequests[0].params.pageTemplate;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
     if (bidderRequest && gdpr) {
       const isConsentString = typeof gdpr.consentString === 'string';
+      const isGdprApplies = typeof gdpr.gdprApplies === 'boolean';
       payload.gdpr = {
         consent: isConsentString ? gdpr.consentString : '',
-        required: true
+        required: isGdprApplies ? gdpr.gdprApplies : false
       };
+      if (gdpr?.addtlConsent) {
+        payload.gdpr.addtlConsent = gdpr.addtlConsent;
+      }
     }
     if (bidderRequest && !gdpr) {
       payload.gdpr = {
@@ -119,10 +125,16 @@ export const spec = {
       }
     }
 
+    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');
+    if (ortb2SiteKeywords) {
+      payload.site = payload.site || {};
+      payload.site.keywords = ortb2SiteKeywords;
+    }
+
     const payloadObject = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: `${ENDPOINT_URL}/${payload.publisherId}`,
       data: payloadObject
     };
   },
@@ -219,14 +231,19 @@ function buildImp(bidRequest, ortb2) {
     CUR = bidRequest.params.currency;
   }
 
-  let bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
 
-  let battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
+  const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
   if (battr && Array.isArray(battr) && battr.length) {
     imp.battr = battr;
+  }
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  if (gpid) {
+    imp.gpid = gpid;
   }
 
   return imp;
@@ -240,7 +257,7 @@ function getAdContainer(container) {
 
 function _getFloor (bid, sizes, currency) {
   let floor = null;
-  let size = sizes.length === 1 ? sizes[0] : '*';
+  const size = sizes.length === 1 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
     try {
       const floorInfo = bid.getFloor({

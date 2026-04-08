@@ -8,6 +8,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -81,14 +83,14 @@ export function isValid(type, bid) {
   return false;
 }
 
-const isValidEventTracker = function(et) {
+const isValidEventTracker = function (et) {
   if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
     return false;
   }
   return true;
 }
 
-const isValidAsset = function(asset) {
+const isValidAsset = function (asset) {
   if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
   const hasValidContent = asset.title || asset.img || asset.data || asset.video;
   if (!hasValidContent) return false;
@@ -132,18 +134,19 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
-    payload.schain = validBidRequests[0].schain;
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain;
+  if (validBidRequests && validBidRequests.length !== 0 && schain && isSchainValid(schain)) {
+    payload.schain = schain;
   }
   try {
     if (storage.hasLocalStorage()) {
       payload.onetagSid = storage.getDataFromLocalStorage('onetag_sid');
     }
   } catch (e) { }
-  const connection = navigator.connection || navigator.webkitConnection;
-  payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
-  payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
-  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
+  const connection = getConnectionInfo();
+  payload.networkConnectionType = connection?.type || null;
+  payload.networkEffectiveConnectionType = connection?.effectiveType || null;
+  payload.fledgeEnabled = false;
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -158,7 +161,7 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
+  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
     return bids;
   }
   Array.isArray(body.bids) && body.bids.forEach(bid => {
@@ -204,14 +207,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     bids.push(responseBid);
   });
 
-  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
-    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
-    return {
-      bids,
-      paapi: fledgeAuctionConfigs}
-  } else {
-    return bids;
-  }
+  return bids;
 }
 
 function createRenderer(bid, rendererOptions = {}) {
@@ -283,16 +279,10 @@ function getPageInfo(bidderRequest) {
     referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
     stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
-    wWidth: getWinDimensions().innerWidth,
-    wHeight: getWinDimensions().innerHeight,
-    oWidth: winDimensions.outerWidth,
-    oHeight: winDimensions.outerHeight,
+    wWidth: winDimensions.innerWidth,
+    wHeight: winDimensions.innerHeight,
     sWidth: winDimensions.screen.width,
     sHeight: winDimensions.screen.height,
-    aWidth: winDimensions.screen.availWidth,
-    aHeight: winDimensions.screen.availHeight,
-    sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
-    sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
     xOffset: topmostFrame.pageXOffset,
     yOffset: topmostFrame.pageYOffset,
     docHidden: getDocumentVisibility(topmostFrame),
@@ -301,7 +291,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.3'
+      adapter: '1.1.6'
     }
   };
 }
@@ -359,7 +349,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
@@ -369,14 +359,14 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
-  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  const coords = getSpaceCoords(bidRequest);
   if (coords) {
     this['coords'] = coords;
   }
 }
 
-function getSpaceCoords(id) {
-  const space = document.getElementById(id);
+function getSpaceCoords(bidRequest) {
+  const space = getAdUnitElement(bidRequest);
   try {
     const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;
@@ -420,7 +410,7 @@ function parseVideoSize(bid) {
 }
 
 function parseSizes(bid) {
-  let ret = [];
+  const ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
     return getSizes(bid.mediaTypes.banner.sizes)
   }
@@ -441,7 +431,7 @@ function getSizes(sizes) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  let syncs = [];
+  const syncs = [];
   let params = '';
   if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -480,19 +470,19 @@ function getBidFloor(bidRequest, mediaType, sizes) {
     const floorData = bidRequest.getFloor({
       currency: 'EUR',
       mediaType: mediaType || '*',
-      size: size || '*'
+      size: size || null
     }) || {};
 
     return {
       ...floorData,
-      size: size ? deepClone(size) : undefined,
+      size: size && size.length === 2 ? { width: size[0], height: size[1] } : null,
       floor: floorData.floor != null ? floorData.floor : null
     };
   };
+
   if (Array.isArray(sizes) && sizes.length > 0) {
     return sizes.map(size => getFloorObject([size.width, size.height]));
-  }
-  return [getFloorObject('*')];
+  } return [getFloorObject(null)];
 }
 
 export function isSchainValid(schain) {

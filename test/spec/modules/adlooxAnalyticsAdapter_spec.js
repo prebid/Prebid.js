@@ -40,10 +40,6 @@ describe('Adloox Analytics Adapter', function () {
     }
   };
 
-  adapterManager.registerAnalyticsAdapter({
-    code: analyticsAdapterName,
-    adapter: analyticsAdapter
-  });
   describe('enableAnalytics', function () {
     afterEach(function () {
       analyticsAdapter.disableAnalytics();
@@ -112,7 +108,7 @@ describe('Adloox Analytics Adapter', function () {
         done();
       });
 
-      [ 'client', 'clientid', 'platformid', 'tagid' ].forEach(function (o) {
+      ['client', 'clientid', 'platformid', 'tagid'].forEach(function (o) {
         it('should require options.' + o, function (done) {
           const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
           delete analyticsOptionsLocal[o];
@@ -170,7 +166,7 @@ describe('Adloox Analytics Adapter', function () {
 
         const uri = utils.parseUrl(analyticsAdapter.url(analyticsOptions.js));
         const isLinkPreloadAsScript = function(arg) {
-          const href_uri = utils.parseUrl(arg.href);	// IE11 requires normalisation (hostname always includes port)
+          const href_uri = utils.parseUrl(arg.href);  // IE11 requires normalisation (hostname always includes port)
           return arg.tagName === 'LINK' && arg.getAttribute('rel') === 'preload' && arg.getAttribute('as') === 'script' && href_uri.href === uri.href;
         };
 
@@ -253,7 +249,7 @@ describe('Adloox Analytics Adapter', function () {
         const data = {
           url: 'https://example.com?',
           args: [
-            [ 'client', '%%client%%' ]
+            ['client', '%%client%%']
           ],
           bid: bid,
           ids: true

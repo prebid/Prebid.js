@@ -20,19 +20,19 @@ const aliasEP = {
   'stellormedia': 'https://ghb.ads.stellormedia.com/v2/auction/',
 };
 
-const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
+const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent', ortb2: { source: { ext: { schain: { ver: 1 } } } } };
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
     'aid': 12345
   },
-  'schain': { ver: 1 },
   'userId': { criteo: 2 },
   'mediaTypes': { 'banner': { 'sizes': [300, 250] } },
   'bidderRequestId': '7101db09af0db2',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
+  'ortb2Imp': { 'ext': { 'gpid': '12345/adunit-code' } },
 };
 
 const VIDEO_REQUEST = {
@@ -48,25 +48,8 @@ const VIDEO_REQUEST = {
   'bidderRequestId': '7101db09af0db2',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
-  'bidId': '84ab500420319d'
-};
-
-const ADPOD_REQUEST = {
-  'bidder': 'adtelligent',
-  'mediaTypes': {
-    'video': {
-      'context': 'adpod',
-      'playerSize': [[640, 480]],
-      'anyField': 10
-    }
-  },
-  'params': {
-    'aid': 12345
-  },
-  'bidderRequestId': '7101db09af0db2',
-  'auctionId': '2e41f65424c87c',
-  'adUnitCode': 'adunit-code',
-  'bidId': '2e41f65424c87c'
+  'bidId': '84ab500420319d',
+  'ortb2Imp': { 'ext': { 'gpid': '12345/adunit-code' } },
 };
 
 const SERVER_VIDEO_RESPONSE = {
@@ -268,16 +251,16 @@ describe('adtelligentBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, VIDEO_REQUEST);
+      const bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', () => {
-    let videoBidRequests = [VIDEO_REQUEST];
-    let displayBidRequests = [DISPLAY_REQUEST];
-    let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
+    const videoBidRequests = [VIDEO_REQUEST];
+    const displayBidRequests = [DISPLAY_REQUEST];
+    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
     const displayRequest = spec.buildRequests(displayBidRequests, DEFAULT_ADATPER_REQ);
     const videoRequest = spec.buildRequests(videoBidRequests, DEFAULT_ADATPER_REQ);
     const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, DEFAULT_ADATPER_REQ);
@@ -309,13 +292,6 @@ describe('adtelligentBidAdapter', () => {
       expect(displayRequest.every(comparator)).to.be.true;
       expect(videoAndDisplayRequests.every(comparator)).to.be.true;
     });
-    it('forms correct ADPOD request', () => {
-      const pbBidReqData = spec.buildRequests([ADPOD_REQUEST], DEFAULT_ADATPER_REQ)[0].data;
-      const impRequest = pbBidReqData.BidRequests[0]
-      expect(impRequest.AdType).to.be.equal('video');
-      expect(impRequest.Adpod).to.be.a('object');
-      expect(impRequest.Adpod.anyField).to.be.equal(10);
-    })
     it('sends correct video bid parameters', () => {
       const data = videoRequest[0].data;
 
@@ -324,7 +300,11 @@ describe('adtelligentBidAdapter', () => {
         AdType: 'video',
         Aid: 12345,
         Sizes: '480x360,640x480',
-        PlacementId: 'adunit-code'
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       };
       expect(data.BidRequests[0]).to.deep.equal(eq);
     });
@@ -337,7 +317,11 @@ describe('adtelligentBidAdapter', () => {
         AdType: 'display',
         Aid: 12345,
         Sizes: '300x250',
-        PlacementId: 'adunit-code'
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       };
 
       expect(data.BidRequests[0]).to.deep.equal(eq);
@@ -350,13 +334,21 @@ describe('adtelligentBidAdapter', () => {
         AdType: 'display',
         Aid: 12345,
         Sizes: '300x250',
-        PlacementId: 'adunit-code'
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       }, {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
         Sizes: '480x360,640x480',
-        PlacementId: 'adunit-code'
+        PlacementId: 'adunit-code',
+        GPID: '12345/adunit-code',
+        DistanceToView: 0,
+        ElementHeight: 1,
+        PlacementPercentView: 0,
       }]
 
       expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
@@ -449,12 +441,6 @@ describe('adtelligentBidAdapter', () => {
 
       nobidServerResponseCheck();
     });
-
-    it('forms correct ADPOD response', () => {
-      const videoBids = spec.interpretResponse({ body: SERVER_VIDEO_RESPONSE }, { adapterRequest: { bids: [ADPOD_REQUEST] } });
-      expect(videoBids[0].video.durationSeconds).to.be.equal(30);
-      expect(videoBids[0].video.context).to.be.equal('adpod');
-    })
     describe('outstream setup', () => {
       const videoBids = spec.interpretResponse({ body: SERVER_OUSTREAM_VIDEO_RESPONSE }, { adapterRequest: outstreamVideoBidderRequest });
       it('should return renderer with expected outstream params config', () => {

@@ -1,8 +1,8 @@
-import {_map, isArray} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { _map, isArray } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
+import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -27,7 +27,7 @@ function buildBidRequests(validBidRequests, bidderRequest) {
     const params = bid.params;
     const bidRequest = {
       floorInfo,
-      schain: bid.schain,
+      schain: bid?.ortb2?.source?.ext?.schain,
       userId: bid.userId,
       bidId: bid.bidId,
       // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
@@ -54,8 +54,7 @@ function buildBid(bidData) {
     mediaType: BANNER,
     ttl: TTL,
     content: bidData.content,
-    meta: {
-      advertiserDomains: bidData.advertiserDomains || []}
+    meta: { advertiserDomains: bidData.advertiserDomains || [] }
   };
 
   if (bidData.placement === 'video') {
@@ -196,12 +195,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    let bidRequests = JSON.parse(bidRequest.data).bidRequests;
+    const bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
-        let rawBid = ((bidRequests) || []).find(function (item) {
+        const rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;

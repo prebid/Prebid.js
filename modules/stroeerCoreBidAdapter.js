@@ -1,8 +1,8 @@
-import {buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -56,7 +56,7 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
-      schain: anyBid.schain,
+      schain: anyBid?.ortb2?.source?.ext?.schain,
       ver: {
         pb: getGlobal().version,
       },
@@ -79,13 +79,8 @@ export const spec = {
       };
     }
 
-    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep', 'site.ext'];
-    ORTB2_KEYS.forEach(key => {
-      const value = deepAccess(bidderRequest.ortb2, key);
-      if (value !== undefined) {
-        deepSetValue(basePayload, `ortb2.${key}`, value);
-      }
-    });
+    const ORTB2_PATHS = ['regs.ext.dsa', 'site.ext', 'source.tid'];
+    copyDeepPaths(basePayload, bidderRequest.ortb2, ORTB2_PATHS, 'ortb2');
 
     const bannerBids = validBidRequests
       .filter(hasBanner)
@@ -98,7 +93,7 @@ export const spec = {
     return {
       method: 'POST',
       url: buildEndpointUrl(anyBid.params),
-      data: {...basePayload, bids: [...bannerBids, ...videoBids]}
+      data: { ...basePayload, bids: [...bannerBids, ...videoBids] }
     };
   },
 
@@ -118,7 +113,7 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
-          meta: {...bidResponse.meta},
+          meta: { ...bidResponse.meta },
           mediaType,
         };
 
@@ -156,6 +151,7 @@ const isMainPageAccessible = () => {
 }
 
 const elementInView = (elementId) => {
+  // TODO this should use getAdUnitElement
   const resolveElement = (elId) => {
     const win = getWindowSelf();
 
@@ -181,12 +177,12 @@ const elementInView = (elementId) => {
   return undefined;
 }
 
-const buildEndpointUrl = ({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) => {
+const buildEndpointUrl = ({ host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH }) => {
   if (securePort) {
     port = securePort;
   }
 
-  return buildUrl({protocol: 'https', hostname, port, pathname});
+  return buildUrl({ protocol: 'https', hostname, port, pathname });
 }
 
 const getGdprParams = gdprConsent => {
@@ -213,12 +209,17 @@ const hasVideo = bidReq => {
     ['instream', 'outstream'].indexOf(mediaTypes.video.context) > -1;
 };
 
-const mapToPayloadBaseBid = (bidRequest) => ({
-  bid: bidRequest.bidId,
-  sid: bidRequest.params.sid,
-  viz: elementInView(bidRequest.adUnitCode),
-  sfp: bidRequest.params.sfp,
-});
+const mapToPayloadBaseBid = (bidRequest) => {
+  const bid = {
+    bid: bidRequest.bidId,
+    sid: bidRequest.params.sid,
+    viz: elementInView(bidRequest.adUnitCode),
+    sfp: bidRequest.params.sfp,
+    tid: bidRequest.transactionId,
+  }
+  copyDeepPaths(bid, bidRequest.ortb2Imp, ['ext.gpid'], 'ortb2Imp');
+  return bid;
+};
 
 const mapToPayloadBannerBid = (bidRequest) => {
   const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
@@ -261,7 +262,7 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
       mediaType: mediaType,
       size: [size[0], size[1]]
     }) || {};
-    return {...floor, size};
+    return { ...floor, size };
   });
 
   const floorWithCurrency = (([defaultFloor].concat(sizeFloors)) || []).find(floor => floor.currency);
@@ -285,6 +286,19 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
         p: sizeFloor.floor
       }))
   };
+}
+
+const copyDeepPaths = (target, source, paths, targetPrefix = '') => {
+  paths.forEach(path => {
+    const value = deepAccess(source, path);
+    if (value !== undefined) {
+      const targetPath = targetPrefix
+        ? `${targetPrefix}.${path}`
+        : path;
+
+      deepSetValue(target, targetPath, value);
+    }
+  });
 }
 
 registerBidder(spec);

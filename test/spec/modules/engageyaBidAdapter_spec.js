@@ -149,7 +149,7 @@ describe('Engageya adapter', function () {
 
   describe('isBidRequestValid', function () {
     it('Valid bid case', function () {
-      let validBid = {
+      const validBid = {
         bidder: 'engageya',
         params: {
           widgetId: 85610,
@@ -158,21 +158,21 @@ describe('Engageya adapter', function () {
         },
         sizes: [[300, 250]]
       }
-      let isValid = spec.isBidRequestValid(validBid);
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.be.true;
     });
 
     it('Invalid bid case: widgetId and websiteId is not passed', function () {
-      let validBid = {
+      const validBid = {
         bidder: 'engageya',
         params: {}
       }
-      let isValid = spec.isBidRequestValid(validBid);
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.be.false;
     })
 
     it('Invalid bid case: widget id must be number', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'engageya',
         params: {
           widgetId: '157746a',
@@ -181,12 +181,12 @@ describe('Engageya adapter', function () {
         },
         sizes: [[300, 250]]
       }
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
     })
 
     it('Invalid bid case: unsupported sizes', function () {
-      let invalidBid = {
+      const invalidBid = {
         bidder: 'engageya',
         params: {
           widgetId: '157746a',
@@ -195,7 +195,7 @@ describe('Engageya adapter', function () {
         },
         sizes: [[250, 250]]
       }
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
     })
   })
@@ -208,19 +208,19 @@ describe('Engageya adapter', function () {
     });
 
     it('buildRequests function should not modify original bidRequests object', function () {
-      let originalBidRequests = utils.deepClone(bidRequests);
-      let request = spec.buildRequests(bidRequests);
+      const originalBidRequests = utils.deepClone(bidRequests);
+      const request = spec.buildRequests(bidRequests);
       expect(bidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('buildRequests function should not modify original nativeBidRequests object', function () {
-      let originalBidRequests = utils.deepClone(nativeBidRequests);
-      let request = spec.buildRequests(nativeBidRequests);
+      const originalBidRequests = utils.deepClone(nativeBidRequests);
+      const request = spec.buildRequests(nativeBidRequests);
       expect(nativeBidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('Request params check', function () {
-      let request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests)[0];
       const urlParams = new URL(request.url).searchParams;
       expect(parseInt(urlParams.get('wid'))).to.exist.and.to.equal(bidRequests[0].params.widgetId);
       expect(parseInt(urlParams.get('webid'))).to.exist.and.to.equal(bidRequests[0].params.websiteId);
@@ -284,7 +284,7 @@ describe('Engageya adapter', function () {
     });
 
     it('should return empty array if no valid bids', function () {
-      let response = {
+      const response = {
         recs: [],
         imageWidth: 300,
         imageHeight: 250,
@@ -292,13 +292,13 @@ describe('Engageya adapter', function () {
         pbtypeId: 2,
         viewPxl: '//view.pixel',
       };
-      let request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests)[0];
       const result = spec.interpretResponse({ body: response }, request)
       expect(result).to.be.an('array').that.is.empty
     });
 
     it('should interpret native response', function () {
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0520,
@@ -328,14 +328,14 @@ describe('Engageya adapter', function () {
           },
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: nativeResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: nativeResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret native response - without pecpm', function () {
       delete nativeResponse.recs[0].pecpm;
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0920,
@@ -365,14 +365,14 @@ describe('Engageya adapter', function () {
           },
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: nativeResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: nativeResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret native response - without trackers', function () {
       delete nativeResponse.recs[0].trackers;
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0520,
@@ -402,13 +402,13 @@ describe('Engageya adapter', function () {
           },
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: nativeResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: nativeResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response', function () {
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0520,
@@ -424,14 +424,14 @@ describe('Engageya adapter', function () {
           ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response - without pecpm', function () {
       delete bannerResponse.recs[0].pecpm;
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0920,
@@ -447,14 +447,14 @@ describe('Engageya adapter', function () {
           ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response - without title', function () {
       bannerResponse.recs[0].title = ' ';
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0520,
@@ -470,14 +470,14 @@ describe('Engageya adapter', function () {
           ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt=" "/></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response - without widget additional data', function () {
       bannerResponse.widget.additionalData = null;
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0520,
@@ -493,14 +493,14 @@ describe('Engageya adapter', function () {
           ad: `<html><body><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//impression.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.test"></div><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
 
     it('should interpret display response - without trackers', function () {
       bannerResponse.recs[0].trackers = null;
-      let expectedResult = [
+      const expectedResult = [
         {
           requestId: '1d236f7890b',
           cpm: 0.0520,
@@ -516,8 +516,8 @@ describe('Engageya adapter', function () {
           ad: `<html><body><style>.eng_tag_ttl{display:block!important}</style><div id="ENG_TAG"><a href="//click.test" target=_blank><img class="eng_tag_img" src="https://engageya.live/wp-content/uploads/2019/05/images.png" style="width:300px;height:250px;" alt="Test title"/><div class="eng_tag_brnd" style="display: none">Test displayName</div><div class="eng_tag_ttl" style="display: none">Test title</div></a><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="//view.pixel"></div></div></body></html>`,
         }
       ];
-      let request = spec.buildRequests(bidRequests)[0];
-      let result = spec.interpretResponse({ body: bannerResponse }, request);
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
   })

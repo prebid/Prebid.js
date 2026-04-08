@@ -1,5 +1,5 @@
 import { mygaruIdSubmodule } from 'modules/mygaruIdSystem.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 
 describe('MygaruID module', function () {
   it('should respond with async callback and get valid id', async () => {
@@ -21,7 +21,7 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaruId: '123'})).to.be.true;
+    expect(callBackSpy.calledWith({ mygaruId: '123' })).to.be.true;
   });
   it('should not fail on error', async () => {
     const callBackSpy = sinon.spy();
@@ -42,7 +42,7 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaruId: undefined})).to.be.true;
+    expect(callBackSpy.calledWith({ mygaruId: undefined })).to.be.true;
   });
 
   it('should not modify while decoding', () => {

@@ -2,7 +2,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { triggerPixel, deepSetValue } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 
 export const SSMAS_CODE = 'ssmas';
 const SSMAS_SERVER = 'ads.ssmas.com';
@@ -97,7 +97,7 @@ export const spec = {
   ) => {
     const syncs = [];
 
-    let params = ['pbjs=1'];
+    const params = ['pbjs=1'];
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

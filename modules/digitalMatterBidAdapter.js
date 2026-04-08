@@ -1,8 +1,9 @@
-import {deepAccess, deepSetValue, getDNT, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import { deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'digitalMatter';
 const GVLID = 1345;
@@ -29,20 +30,20 @@ export const spec = {
     const common = bidderRequest.ortb2 || {};
     const site = common.site;
     const tid = common?.source?.tid;
-    const {user} = common || {};
+    const { user } = common || {};
 
     if (!site.page) {
       site.page = bidderRequest.refererInfo.page;
     }
 
     const device = getDevice(common.device);
-    const schain = getByKey(validBidRequests, 'schain');
+    const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
     const eids = getByKey(validBidRequests, 'userIdAsEids');
     const currency = config.getConfig('currency')
     const cur = currency && [currency];
 
     const imp = validBidRequests.map((bid, id) => {
-      const {accountId, siteId} = bid.params;
+      const { accountId, siteId } = bid.params;
       const bannerParams = deepAccess(bid, 'mediaTypes.banner');
       const position = deepAccess(bid, 'mediaTypes.banner.pos') ?? 0;
 
@@ -109,7 +110,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponse) {
     const body = serverResponse.body || serverResponse;
-    const {cur} = body;
+    const { cur } = body;
     const bids = [];
 
     if (body && body.bids && Array.isArray(body.bids)) {
@@ -156,14 +157,14 @@ export const spec = {
             const userSync = response.body.ext.usersync;
 
             userSync.forEach((element) => {
-              let url = element.url;
-              let type = element.type;
+              const url = element.url;
+              const type = element.type;
 
               if (url) {
                 if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-                  userSyncs.push({type: 'image', url: url});
+                  userSyncs.push({ type: 'image', url: url });
                 } else if (type === 'iframe' && syncOptions.iframeEnabled) {
-                  userSyncs.push({type: 'iframe', url: url});
+                  userSyncs.push({ type: 'iframe', url: url });
                 }
               }
             })
@@ -178,7 +179,7 @@ export const spec = {
   }
 }
 
-let usersSynced = false;
+const usersSynced = false;
 
 function hasBannerMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');

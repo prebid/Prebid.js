@@ -1,4 +1,4 @@
-import {oxxionSubmodule} from 'modules/oxxionRtdProvider.js';
+import { oxxionSubmodule } from 'modules/oxxionRtdProvider.js';
 import 'src/prebid.js';
 
 const utils = require('src/utils.js');
@@ -13,7 +13,7 @@ const moduleConfig = {
   }
 };
 
-let request = {
+const request = {
   'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
   'timestamp': 1647424261187,
   'auctionEnd': 1647424261714,
@@ -22,15 +22,15 @@ let request = {
     {
       'code': 'msq_tag_200124_banner',
       'mediaTypes': { 'banner': { 'sizes': [[300, 600]] } },
-      'bids': [{'bidder': 'appnexus', 'params': {'placementId': 123456}}],
+      'bids': [{ 'bidder': 'appnexus', 'params': { 'placementId': 123456 } }],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b40'
     },
     {
       'code': 'msq_tag_200125_video',
       'mediaTypes': { 'video': { 'context': 'instream' }, playerSize: [640, 480], mimes: ['video/mp4'] },
       'bids': [
-        {'bidder': 'mediasquare', 'params': {'code': 'publishername_atf_desktop_rg_video', 'owner': 'test'}},
-        {'bidder': 'appnexusAst', 'params': {'placementId': 345678}},
+        { 'bidder': 'mediasquare', 'params': { 'code': 'publishername_atf_desktop_rg_video', 'owner': 'test' } },
+        { 'bidder': 'appnexusAst', 'params': { 'placementId': 345678 } },
       ],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
     },
@@ -38,18 +38,17 @@ let request = {
       'code': 'msq_tag_200125_banner',
       'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
       'bids': [
-        {'bidder': 'appnexusAst', 'params': {'placementId': 345678}},
+        { 'bidder': 'appnexusAst', 'params': { 'placementId': 345678 } },
       ],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
     }
   ]
 };
 
-let bids = [{
+const bids = [{
   'bidderCode': 'mediasquare',
   'width': 640,
   'height': 480,
-  'statusMessage': 'Bid available',
   'adId': '3647626fdbe68a',
   'requestId': '2d891705d2125b',
   'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41',
@@ -86,7 +85,6 @@ let bids = [{
   'bidderCode': 'appnexusAst',
   'width': 640,
   'height': 480,
-  'statusMessage': 'Bid available',
   'adId': '4b2e1581c0ca1a',
   'requestId': '2d891705d2125b',
   'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41',
@@ -113,11 +111,11 @@ let bids = [{
 },
 ];
 
-let bidInterests = [
-  {'id': 0, 'rate': 50.0, 'suggestion': true},
-  {'id': 1, 'rate': 12.0, 'suggestion': false},
-  {'id': 2, 'rate': 0.0, 'suggestion': true},
-  {'id': 3, 'rate': 0.0, 'suggestion': false},
+const bidInterests = [
+  { 'id': 0, 'rate': 50.0, 'suggestion': true },
+  { 'id': 1, 'rate': 12.0, 'suggestion': false },
+  { 'id': 2, 'rate': 0.0, 'suggestion': true },
+  { 'id': 3, 'rate': 0.0, 'suggestion': false },
 ];
 
 const userConsent = {
@@ -137,13 +135,13 @@ describe('oxxionRtdProvider', () => {
   });
 
   describe('Oxxion RTD sub module', () => {
-    let auctionEnd = request;
+    const auctionEnd = request;
     auctionEnd.bidsReceived = bids;
     it('call everything', function() {
       oxxionSubmodule.getBidRequestData(request, null, moduleConfig);
     });
     it('check bid filtering', function() {
-      let requestsList = oxxionSubmodule.getRequestsList(request);
+      const requestsList = oxxionSubmodule.getRequestsList(request);
       expect(requestsList.length).to.equal(4);
       expect(requestsList[0]).to.have.property('id');
       expect(request.adUnits[0].bids[0]).to.have.property('_id');

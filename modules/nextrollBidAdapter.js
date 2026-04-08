@@ -6,9 +6,10 @@ import {
   isPlainObject,
   isStr,
   parseUrl,
-  replaceAuctionPrice} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+  replaceAuctionPrice
+} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 
@@ -19,11 +20,13 @@ import { getOsVersion } from '../libraries/advangUtils/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 const BIDDER_CODE = 'nextroll';
+const GVLID = 130;
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 5;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
 
   /**
@@ -47,7 +50,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     // TODO: is 'page' the right value here?
-    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
+    const topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -92,23 +95,23 @@ export const spec = {
     if (!serverResponse.body) {
       return [];
     } else {
-      let response = serverResponse.body
-      let bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
+      const response = serverResponse.body
+      const bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
       return bids.map((bid) => _buildResponse(response, bid));
     }
   }
 }
 
 function _getBanner(bidRequest) {
-  let sizes = _getSizes(bidRequest);
+  const sizes = _getSizes(bidRequest);
   if (sizes === undefined) return undefined;
-  return {format: sizes};
+  return { format: sizes };
 }
 
 function _getNative(mediaTypeNative) {
   if (mediaTypeNative === undefined) return undefined;
-  let assets = _getNativeAssets(mediaTypeNative);
-  if (assets === undefined || assets.length == 0) return undefined;
+  const assets = _getNativeAssets(mediaTypeNative);
+  if (assets === undefined || assets.length === 0) return undefined;
   return {
     request: {
       native: {
@@ -126,12 +129,12 @@ function _getNative(mediaTypeNative) {
   required: Overrides the asset required field configured, only overrides when is true.
 */
 const NATIVE_ASSET_MAP = [
-  {id: 1, kind: 'title', key: 'title', required: true},
-  {id: 2, kind: 'img', key: 'image', type: 3, required: true},
-  {id: 3, kind: 'img', key: 'icon', type: 1},
-  {id: 4, kind: 'img', key: 'logo', type: 2},
-  {id: 5, kind: 'data', key: 'sponsoredBy', type: 1},
-  {id: 6, kind: 'data', key: 'body', type: 2}
+  { id: 1, kind: 'title', key: 'title', required: true },
+  { id: 2, kind: 'img', key: 'image', type: 3, required: true },
+  { id: 3, kind: 'img', key: 'icon', type: 1 },
+  { id: 4, kind: 'img', key: 'logo', type: 2 },
+  { id: 5, kind: 'data', key: 'sponsoredBy', type: 1 },
+  { id: 6, kind: 'data', key: 'body', type: 2 }
 ];
 
 const ASSET_KIND_MAP = {
@@ -152,7 +155,7 @@ function _getAsset(mediaTypeNative, assetMap) {
 }
 
 function _getTitleAsset(title, _assetMap) {
-  return {len: title.len || 0};
+  return { len: title.len || 0 };
 }
 
 function _getMinAspectRatio(aspectRatio, property) {
@@ -198,7 +201,7 @@ function _getFloor(bidRequest) {
     return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
   }
 
-  let floor = bidRequest.getFloor({
+  const floor = bidRequest.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
@@ -211,7 +214,7 @@ function _getFloor(bidRequest) {
 }
 
 function _buildResponse(bidResponse, bid) {
-  let response = {
+  const response = {
     requestId: bidResponse.id,
     cpm: bid.price,
     width: bid.w,
@@ -239,7 +242,7 @@ const privacyLink = 'https://app.adroll.com/optout/personalized';
 const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
-  let baseResponse = {
+  const baseResponse = {
     clickTrackers: (adm.link && adm.link.clicktrackers) || [],
     jstracker: adm.jstracker || [],
     clickUrl: replaceAuctionPrice(adm.link.url, price),
@@ -335,11 +338,7 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return ((Object.keys(osTable)) || []).find(os => {
-    if (userAgent.match(osTable[os])) {
-      return os;
-    }
-  }) || 'etc';
+  return ((Object.keys(osTable)) || []).find(os => userAgent.match(osTable[os])) || 'etc';
 }
 
 registerBidder(spec);

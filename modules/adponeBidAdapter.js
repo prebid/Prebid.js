@@ -1,14 +1,16 @@
-import {BANNER} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {triggerPixel} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { triggerPixel } from '../src/utils.js';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
 const ADPONE_REQUEST_METHOD = 'POST';
 const ADPONE_CURRENCY = 'EUR';
 
+const GVLID = 799;
 export const spec = {
   code: ADPONE_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: bid => {

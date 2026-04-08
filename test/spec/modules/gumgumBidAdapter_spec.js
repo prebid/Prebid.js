@@ -18,7 +18,7 @@ describe('gumgumAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'gumgum',
       'params': {
         'inScreen': '10433394',
@@ -44,7 +44,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'inSlot': '789'
@@ -54,7 +54,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return true when inslot sends sizes and trackingid', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'inSlot': '789',
@@ -65,7 +65,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return false when no unit type is specified', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'placementId': 0
@@ -74,7 +74,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return false when bidfloor is not a number', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'inSlot': '789',
@@ -99,7 +99,7 @@ describe('gumgumAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let sizesArray = [[300, 250], [300, 600]];
+    const sizesArray = [[300, 250], [300, 600]];
     const bidderRequest = {
       ortb2: {
         site: {
@@ -123,7 +123,7 @@ describe('gumgumAdapter', function () {
       }
     };
 
-    let bidRequests = [
+    const bidRequests = [
       {
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
         gppSid: [7],
@@ -171,27 +171,33 @@ describe('gumgumAdapter', function () {
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'exchange1.com',
-              sid: '1234',
-              hp: 1,
-              rid: 'bid-request-1',
-              name: 'publisher',
-              domain: 'publisher.com'
-            },
-            {
-              asi: 'exchange2.com',
-              sid: 'abcd',
-              hp: 1,
-              rid: 'bid-request-2',
-              name: 'intermediary',
-              domain: 'intermediary.com'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'exchange1.com',
+                    sid: '1234',
+                    hp: 1,
+                    rid: 'bid-request-1',
+                    name: 'publisher',
+                    domain: 'publisher.com'
+                  },
+                  {
+                    asi: 'exchange2.com',
+                    sid: 'abcd',
+                    hp: 1,
+                    rid: 'bid-request-2',
+                    name: 'intermediary',
+                    domain: 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];
@@ -310,7 +316,8 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the global placement id (gpid) if in adserver property', function () {
-      const req = { ...bidRequests[0],
+      const req = {
+        ...bidRequests[0],
         ortb2Imp: {
           ext: {
             gpid: '/17037559/jeusol/jeusol_D_1',
@@ -321,43 +328,26 @@ describe('gumgumAdapter', function () {
               }
             }
           }
-        } }
+        }
+      }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
     });
-    it('should set ae value to 1 for PAAPI', function () {
-      const req = { ...bidRequests[0],
-        ortb2Imp: {
-          ext: {
-            ae: 1,
-            data: {
-              adserver: {
-                name: 'test',
-                adslot: 123456
-              }
-            }
-          }
-        } }
-      const bidRequest = spec.buildRequests([req])[0];
-      expect(bidRequest.data).to.have.property('ae');
-      expect(bidRequest.data.ae).to.equal(true);
-    });
-
-    it('should set the global placement id (gpid) if in pbadslot property', function () {
-      const pbadslot = 'abc123'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } } }
+    it('should set the global placement id (gpid) if in gpid property', function () {
+      const gpid = 'abc123'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(pbadslot);
+      expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the global placement id (gpid) if media type is video', function () {
-      const pbadslot = 'cde456'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } }, params: zoneParam, mediaTypes: vidMediaTypes }
+      const gpid = 'cde456'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } }, params: zoneParam, mediaTypes: vidMediaTypes }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(pbadslot);
+      expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
@@ -862,9 +852,11 @@ describe('gumgumAdapter', function () {
           model: 'iPhone 12 Pro Max',
           os: 'iOS',
           osv: '17.4',
-          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+          lmt: 1,
+          ifa: 'test-ifa-id',
           sua: suaObject
 
         },
@@ -883,9 +875,23 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
+      expect(bidRequest.data.lmt).to.equal(ortb2.device.lmt);
+      expect(bidRequest.data).to.not.have.property('ifa');
       expect(bidRequest.data).to.have.property('sua');
       expect(() => JSON.parse(bidRequest.data.sua)).to.not.throw();
       expect(JSON.parse(bidRequest.data.sua)).to.deep.equal(suaObject);
+    });
+
+    it('should include ifa when lmt is not 1', function () {
+      const ortb2 = {
+        device: {
+          lmt: 0,
+          ifa: 'test-ifa-id'
+        }
+      };
+      const bidRequest = spec.buildRequests(bidRequests, { ortb2 })[0];
+      expect(bidRequest.data.lmt).to.equal(0);
+      expect(bidRequest.data.ifa).to.equal('test-ifa-id');
     });
 
     it('should set tId from ortb2Imp.ext.tid if available', function () {
@@ -992,7 +998,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('handles nobid responses', function () {
-      let response = {
+      const response = {
         'ad': {},
         'pag': {
           't': 'ggumtest',
@@ -1002,13 +1008,13 @@ describe('gumgumAdapter', function () {
         },
         'thms': 10000
       }
-      let result = spec.interpretResponse({ body: response }, bidRequest);
+      const result = spec.interpretResponse({ body: response }, bidRequest);
       expect(result.length).to.equal(0);
     });
 
     it('handles empty response', function () {
       let body;
-      let result = spec.interpretResponse({ body }, bidRequest);
+      const result = spec.interpretResponse({ body }, bidRequest);
       expect(result.length).to.equal(0);
     });
 
@@ -1021,7 +1027,7 @@ describe('gumgumAdapter', function () {
       });
 
       it('returns 1x1 when eligible product and size are available', function () {
-        let bidRequest = {
+        const bidRequest = {
           id: 12346,
           sizes: [[300, 250], [1, 1]],
           url: ENDPOINT,
@@ -1031,7 +1037,7 @@ describe('gumgumAdapter', function () {
             t: 'ggumtest'
           }
         }
-        let serverResponse = {
+        const serverResponse = {
           'ad': {
             'id': 2065333,
             'height': 90,
@@ -1050,7 +1056,7 @@ describe('gumgumAdapter', function () {
           },
           'thms': 10000
         }
-        let result = spec.interpretResponse({ body: serverResponse }, bidRequest);
+        const result = spec.interpretResponse({ body: serverResponse }, bidRequest);
         expect(result[0].width).to.equal('1');
         expect(result[0].height).to.equal('1');
       });
@@ -1077,7 +1083,7 @@ describe('gumgumAdapter', function () {
       it('request size that  matches response size for in-slot', function () {
         const request = { ...bidRequest };
         const body = { ...serverResponse };
-        const expectedSize = [[ 320, 50 ], [300, 600], [300, 250]];
+        const expectedSize = [[320, 50], [300, 600], [300, 250]];
         let result;
         request.pi = 3;
         body.ad.width = 300;
@@ -1140,7 +1146,7 @@ describe('gumgumAdapter', function () {
         ]
       }
     }
-    let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+    const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
     expect(result[0].type).to.equal('image')
     expect(result[1].type).to.equal('iframe')
   })

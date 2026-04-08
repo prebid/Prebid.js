@@ -1,0 +1,21 @@
+{
+  "disclosures": [
+    {
+      "identifier": "chromeAi_detected_data",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        2,
+        3,
+        4,
+        7
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "First party data determined through chrome AI is cached in localStorage"
+    }
+  ]
+}

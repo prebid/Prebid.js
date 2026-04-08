@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {spec} from '../../../modules/silvermobBidAdapter.js';
+import { spec } from '../../../modules/silvermobBidAdapter.js';
 import 'modules/priceFloors.js';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
@@ -10,10 +10,9 @@ import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
-import 'modules/priceFloors.js';
+
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 
 const SIMPLE_BID_REQUEST = {
   bidder: 'silvermob',
@@ -182,7 +181,7 @@ describe('silvermobAdapter', function () {
     });
 
     it('should send the CCPA data in the request', async function () {
-      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], await addFPDToBidderRequest({...bidderRequest, ...{uspConsent: '1YYY'}}));
+      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], await addFPDToBidderRequest({ ...bidderRequest, ...{ uspConsent: '1YYY' } }));
       expect(serverRequest.data.regs.ext.us_privacy).to.equal('1YYY');
     });
   });
@@ -193,7 +192,7 @@ describe('silvermobAdapter', function () {
     });
 
     it('should return false when zoneid is missing', function () {
-      let localbid = Object.assign({}, BANNER_BID_REQUEST);
+      const localbid = Object.assign({}, BANNER_BID_REQUEST);
       delete localbid.params.zoneid;
       expect(spec.isBidRequestValid(BANNER_BID_REQUEST)).to.equal(false);
     });
@@ -265,7 +264,7 @@ describe('silvermobAdapter', function () {
 
     it('Empty response must return empty array', function () {
       const emptyResponse = null;
-      let response = spec.interpretResponse(emptyResponse, BANNER_BID_REQUEST);
+      const response = spec.interpretResponse(emptyResponse, BANNER_BID_REQUEST);
 
       expect(response).to.be.an('array').that.is.empty;
     })

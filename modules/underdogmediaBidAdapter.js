@@ -1,7 +1,6 @@
 import {
   deepAccess,
   flatten,
-  getWindowSelf,
   getWindowTop,
   isGptPubadsDefined,
   logInfo,
@@ -9,10 +8,12 @@ import {
   logWarn,
   parseSizesInput
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -36,6 +37,7 @@ export function resetUserSync() {
 export const spec = {
   NON_MEASURABLE,
   code: BIDDER_CODE,
+  gvlid: UDM_VENDOR_ID,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
@@ -86,7 +88,7 @@ export const spec = {
       }
     })
 
-    let data = {
+    const data = {
       dt: 10,
       gdpr: {},
       pbTimeout: +config.getConfig('bidderTimeout') || 3001, // KP: convert to number and if NaN we default to 3001. Particular value to let us know that there was a problem in converting pbTimeout
@@ -103,13 +105,13 @@ export const spec = {
     }
 
     validBidRequests.forEach(bidParam => {
-      let placementObject = {}
-      let bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
+      const placementObject = {}
+      const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
       sizes = flatten(sizes, parseSizesInput(bidParamSizes));
       siteId = +bidParam.params.siteId;
-      let adUnitCode = bidParam.adUnitCode
-      let element = _getAdSlotHTMLElement(adUnitCode)
-      let minSize = _getMinSize(bidParamSizes)
+      const adUnitCode = bidParam.adUnitCode
+      const element = _getAdSlotHTMLElement(bidParam)
+      const minSize = _getMinSize(bidParamSizes)
 
       placementObject.sizes = parseSizesInput(bidParamSizes)
       placementObject.adUnitCode = adUnitCode
@@ -130,7 +132,7 @@ export const spec = {
           w: minSize[0],
           h: minSize[1]
         }
-        let viewPercentage = Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+        const viewPercentage = Math.round(_getViewability(element, getWindowTop(), minSizeObj))
         placementObject.viewability = viewPercentage
       } else {
         placementObject.viewability = NON_MEASURABLE
@@ -173,15 +175,14 @@ export const spec = {
       USER_SYNCED = true;
       const userSyncs = serverResponses[0].body.userSyncs;
       const syncs = userSyncs.filter(sync => {
-        const {
-          type
-        } = sync;
+        const { type } = sync;
         if (syncOptions.iframeEnabled && type === 'iframe') {
           return true
         }
         if (syncOptions.pixelEnabled && type === 'image') {
           return true
         }
+        return false;
       })
       return syncs;
     }
@@ -192,9 +193,7 @@ export const spec = {
     const mids = serverResponse.body.mids
     mids.forEach(mid => {
       const bidParam = bidRequest.bidParams.find((bidParam) => {
-        if (mid.ad_unit_code === bidParam.adUnitCode) {
-          return true
-        }
+        return mid.ad_unit_code === bidParam.adUnitCode;
       })
 
       if (!bidParam) {
@@ -236,9 +235,9 @@ function _getMinSize(bidParamSizes) {
   return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
-  return document.getElementById(adUnitCode) ||
-    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
+function _getAdSlotHTMLElement(bidRequest) {
+  return getAdUnitElement(bidRequest) ||
+    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode));
 }
 
 function _mapAdUnitPathToElementId(adUnitCode) {
@@ -264,15 +263,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
+  return !isIframe() && element !== null
 }
 
 function _getViewability(element, topWin, {

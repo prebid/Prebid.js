@@ -154,8 +154,8 @@ describe('lifestreetBidAdapter', function() {
       });
 
       it('should add GDPR consent information to the request', function () {
-        let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-        let bidderRequest = {
+        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const bidderRequest = {
           bidderCode: 'lifestreet',
           auctionId: '1d1a030790a875',
           bidderRequestId: '22edbae2744bf6',
@@ -173,8 +173,8 @@ describe('lifestreetBidAdapter', function() {
       });
 
       it('should add US privacy string to request', function() {
-        let consentString = '1YA-';
-        let bidderRequest = {
+        const consentString = '1YA-';
+        const bidderRequest = {
           bidderCode: 'lifestreet',
           auctionId: '1d1a030790a875',
           bidderRequestId: '22edbae2744bf6',

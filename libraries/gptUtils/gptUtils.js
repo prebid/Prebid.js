@@ -1,5 +1,11 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../../src/utils.js';
+import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+
+const slotInfoCache = new Map();
+
+export function clearSlotInfoCache() {
+  slotInfoCache.clear();
+}
 
 /**
  * Returns filter function to match adUnitCode in slot
@@ -7,7 +13,10 @@ import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../..
  * @return {function} filter function
  */
 export function isSlotMatchingAdUnitCode(adUnitCode) {
-  return (slot) => compareCodeAndSlot(slot, adUnitCode);
+  return (slot) => {
+    const match = isAdUnitCodeMatchingSlot(slot);
+    return match(adUnitCode);
+  }
 }
 
 /**
@@ -15,7 +24,7 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
  */
 export function setKeyValue(key, value) {
   if (!key || typeof key !== 'string') return false;
-  window.googletag = window.googletag || {cmd: []};
+  window.googletag = window.googletag || { cmd: [] };
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
     window.googletag.pubads().setTargeting(key, value);
@@ -29,7 +38,10 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
-    matchingSlot = window.googletag.pubads().getSlots().find(isSlotMatchingAdUnitCode(adUnitCode));
+    matchingSlot = window.googletag.pubads().getSlots().find(slot => {
+      const match = isAdUnitCodeMatchingSlot(slot);
+      return match(adUnitCode);
+    });
   }
   return matchingSlot;
 }
@@ -38,14 +50,19 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
  * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
  */
 export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  if (slotInfoCache.has(adUnitCode)) {
+    return slotInfoCache.get(adUnitCode);
+  }
   const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
+  let info = {};
   if (matchingSlot) {
-    return {
+    info = {
       gptSlot: matchingSlot.getAdUnitPath(),
       divId: matchingSlot.getSlotElementId()
     };
   }
-  return {};
+  !isEmpty(info) && slotInfoCache.set(adUnitCode, info);
+  return info;
 }
 
 export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
@@ -54,7 +71,7 @@ export function getSignals(fpd) {
   const signals = Object.entries({
     [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
     [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
-  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
+  }).map(([taxonomy, values]) => values.length ? { taxonomy, values } : null)
     .filter(ob => ob);
 
   return signals;

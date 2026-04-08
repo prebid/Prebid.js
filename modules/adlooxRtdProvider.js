@@ -11,12 +11,12 @@
 
 /* eslint prebid/validate-imports: "off" */
 
-import {auctionManager} from '../src/auctionManager.js';
-import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';
-import {submodule} from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import {
   _each,
   _map,
@@ -35,7 +35,9 @@ import {
   parseUrl,
   safeJSONParse
 } from '../src/utils.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { viewportIntersections } from '../libraries/percentInView/percentInView.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -83,7 +85,7 @@ function init(config, userConsent) {
     return false;
   }
 
-  config.params.thresholds = config.params.thresholds || [ 50, 60, 70, 80, 90 ];
+  config.params.thresholds = config.params.thresholds || [50, 60, 70, 80, 90];
 
   function analyticsConfigCallback(data) {
     config = mergeDeep(config.params, data);
@@ -101,29 +103,30 @@ function init(config, userConsent) {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits0 = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   // adUnits must be ordered according to adUnitCodes for stable 's' param usage and handling the response below
-  const adUnits = reqBidsConfigObj.adUnitCodes.map(code => adUnits0.find(unit => unit.code == code));
+  const adUnits = reqBidsConfigObj.adUnitCodes.map(code => adUnits0.find(unit => unit.code === code));
 
   // buildUrl creates PHP style multi-parameters and includes undefined... (╯°□°)╯ ┻━┻
-  const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), { search: {
-    'v': 'pbjs-v' + '$prebid.version$',
-    'c': config.params.clientid,
-    'p': config.params.platformid,
-    't': config.params.tagid,
-    'imp': config.params.imps,
-    'fc_ip': config.params.freqcap_ip,
-    'fc_ipua': config.params.freqcap_ipua,
-    'pn': (getRefererInfo().page || '').substr(0, 300).split(/[?#]/)[0],
-    's': _map(adUnits, function(unit) {
+  const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), {
+    search: {
+      'v': 'pbjs-v' + '$prebid.version$',
+      'c': config.params.clientid,
+      'p': config.params.platformid,
+      't': config.params.tagid,
+      'imp': config.params.imps,
+      'fc_ip': config.params.freqcap_ip,
+      'fc_ipua': config.params.freqcap_ipua,
+      'pn': (getRefererInfo().page || '').substr(0, 300).split(/[?#]/)[0],
+      's': _map(adUnits, function(unit) {
       // gptPreAuction runs *after* RTD so pbadslot may not be populated... (╯°□°)╯ ┻━┻
-      const gpid = deepAccess(unit, 'ortb2Imp.ext.gpid') ||
-                   deepAccess(unit, 'ortb2Imp.ext.data.pbadslot') ||
+        const gpid = deepAccess(unit, 'ortb2Imp.ext.gpid') ||
                    getGptSlotInfoForAdUnitCode(unit.code).gptSlot ||
                    unit.code;
-      const ref = [ gpid ];
-      if (!config.params.slotinpath) ref.push(unit.code);
-      return ref.join('\t');
-    })
-  } })).replace(/\[\]|[^?&]+=undefined/g, '').replace(/([?&])&+/g, '$1');
+        const ref = [gpid];
+        if (!config.params.slotinpath) ref.push(unit.code);
+        return ref.join('\t');
+      })
+    }
+  })).replace(/\[\]|[^?&]+=undefined/g, '').replace(/([?&])&+/g, '$1');
 
   ajax(url,
     function(responseText, q) {
@@ -140,10 +143,10 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
       const { site: ortb2site, user: ortb2user } = reqBidsConfigObj.ortb2Fragments.global;
       _each(response, function(v0, k0) {
-        if (k0 == '_') return;
+        if (k0 === '_') return;
         const k = SEGMENT_HISTORIC[k0] || k0;
         const v = val(v0, k0);
-        deepSetValue(k == k0 ? ortb2user : ortb2site, `ext.data.${MODULE_NAME}_rtd.${k}`, v);
+        deepSetValue(k === k0 ? ortb2user : ortb2site, `ext.data.${MODULE_NAME}_rtd.${k}`, v);
       });
 
       _each(response._, function(segments, i) {
@@ -163,7 +166,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
 function getTargetingData(adUnitArray, config, userConsent, auction) {
   function val(v) {
-    if (isArray(v) && v.length == 0) return undefined;
+    if (isArray(v) && v.length === 0) return undefined;
     if (isBoolean(v)) v = ~~v;
     if (!v) return undefined; // empty string and zero
     return v;
@@ -187,10 +190,9 @@ function getTargetingData(adUnitArray, config, userConsent, auction) {
       if (v) targeting[unit.code][`${ADSERVER_TARGETING_PREFIX}_${k}`] = v;
     });
 
-    // ATF results shamelessly exfiltrated from intersectionRtdProvider
-    const bid = unit.bids.find(bid => !!bid.intersection);
-    if (bid) {
-      const v = val(config.params.thresholds.filter(t => t <= (bid.intersection.intersectionRatio * 100)));
+    const intersection = viewportIntersections.getIntersection(getAdUnitElement(unit));
+    if (intersection) {
+      const v = val(config.params.thresholds.filter(t => t <= (intersection.intersectionRatio * 100)));
       if (v) targeting[unit.code][`${ADSERVER_TARGETING_PREFIX}_atf`] = v;
     }
   });

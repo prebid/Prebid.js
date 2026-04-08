@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {resolveStatus, setSizeConfig, sizeSupported} from 'modules/sizeMapping.js';
+import { expect } from 'chai';
+import { resolveStatus, setSizeConfig, sizeSupported } from 'modules/sizeMapping.js';
 
-let utils = require('src/utils.js');
-let deepClone = utils.deepClone;
+const utils = require('src/utils.js');
+const deepClone = utils.deepClone;
 
 describe('sizeMapping', function () {
   var sizeConfig = [{
@@ -51,7 +51,7 @@ describe('sizeMapping', function () {
 
     sandbox = sinon.createSandbox();
 
-    matchMediaOverride = {matches: false};
+    matchMediaOverride = { matches: false };
 
     sandbox.stub(utils.getWindowTop(), 'matchMedia').callsFake((...args) => {
       if (typeof matchMediaOverride === 'function') {
@@ -69,14 +69,14 @@ describe('sizeMapping', function () {
 
   describe('sizeConfig', () => {
     it('should allow us to validate a single size', function () {
-      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? { matches: true } : { matches: false };
 
       expect(sizeSupported([300, 250])).to.equal(true);
       expect(sizeSupported([80, 80])).to.equal(false);
     });
 
     it('should log a warning when mediaQuery property missing from sizeConfig', function () {
-      let errorConfig = deepClone(sizeConfig);
+      const errorConfig = deepClone(sizeConfig);
 
       delete errorConfig[0].mediaQuery;
 
@@ -122,13 +122,13 @@ describe('sizeMapping', function () {
       }
     }
   }
-  Object.entries(suites).forEach(([mediaType, {mediaTypes, getSizes}]) => {
+  Object.entries(suites).forEach(([mediaType, { mediaTypes, getSizes }]) => {
     describe(`for ${mediaType}`, () => {
       describe('when handling sizes', function () {
         it('when one mediaQuery block matches, it should filter the adUnit.sizes passed in', function () {
-          matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+          matchMediaOverride = (str) => str === '(min-width: 1200px)' ? { matches: true } : { matches: false };
 
-          let status = resolveStatus(undefined, mediaTypes, sizeConfig);
+          const status = resolveStatus(undefined, mediaTypes, sizeConfig);
 
           expect(status.active).to.equal(true);
           expect(getSizes(status.mediaTypes)).to.deep.equal(
@@ -140,9 +140,9 @@ describe('sizeMapping', function () {
           matchMediaOverride = (str) => [
             '(min-width: 1200px)',
             '(min-width: 768px) and (max-width: 1199px)'
-          ].includes(str) ? {matches: true} : {matches: false};
+          ].includes(str) ? { matches: true } : { matches: false };
 
-          let status = resolveStatus(undefined, mediaTypes, sizeConfig);
+          const status = resolveStatus(undefined, mediaTypes, sizeConfig);
           expect(status.active).to.equal(true);
           expect(getSizes(status.mediaTypes)).to.deep.equal(
             [[970, 90], [728, 90], [300, 250], [300, 100]]
@@ -150,24 +150,24 @@ describe('sizeMapping', function () {
         });
 
         it('if no mediaQueries match, it should allow all sizes specified', function () {
-          matchMediaOverride = () => ({matches: false});
+          matchMediaOverride = () => ({ matches: false });
 
-          let status = resolveStatus(undefined, mediaTypes, sizeConfig);
+          const status = resolveStatus(undefined, mediaTypes, sizeConfig);
           expect(status.active).to.equal(true);
           expect(status.mediaTypes).to.deep.equal(mediaTypes);
         });
 
         it('if a mediaQuery matches and has sizesSupported: [], it should filter all sizes', function () {
-          matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? {matches: true} : {matches: false};
+          matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? { matches: true } : { matches: false };
 
-          let status = resolveStatus(undefined, mediaTypes, sizeConfig);
+          const status = resolveStatus(undefined, mediaTypes, sizeConfig);
           expect(status.active).to.equal(false);
           expect(getSizes(status.mediaTypes)).to.deep.equal([]);
         });
 
         it('should filter all banner sizes and should disable the adUnit even if other mediaTypes are present', function () {
-          matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? {matches: true} : {matches: false};
-          let status = resolveStatus(undefined, Object.assign({}, mediaTypes, {
+          matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? { matches: true } : { matches: false };
+          const status = resolveStatus(undefined, Object.assign({}, mediaTypes, {
             native: {
               type: 'image'
             }
@@ -180,9 +180,9 @@ describe('sizeMapping', function () {
         });
 
         it('if a mediaQuery matches and no sizesSupported specified, it should not affect adUnit.sizes', function () {
-          matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+          matchMediaOverride = (str) => str === '(min-width: 1200px)' ? { matches: true } : { matches: false };
 
-          let status = resolveStatus(undefined, mediaTypes, sizeConfigWithLabels);
+          const status = resolveStatus(undefined, mediaTypes, sizeConfigWithLabels);
           expect(status.active).to.equal(true);
           expect(status.mediaTypes).to.deep.equal(mediaTypes);
         });
@@ -190,7 +190,7 @@ describe('sizeMapping', function () {
 
       describe('when handling labels', function () {
         it('should activate/deactivate adUnits/bidders based on sizeConfig.labels', function () {
-          matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+          matchMediaOverride = (str) => str === '(min-width: 1200px)' ? { matches: true } : { matches: false };
 
           let status = resolveStatus({
             labels: ['desktop']
@@ -210,7 +210,7 @@ describe('sizeMapping', function () {
         });
 
         it('should active/deactivate adUnits/bidders based on requestBids labels', function () {
-          let activeLabels = ['us-visitor', 'desktop', 'smart'];
+          const activeLabels = ['us-visitor', 'desktop', 'smart'];
 
           let status = resolveStatus({
             labels: ['uk-visitor'], // from adunit
@@ -252,9 +252,9 @@ describe('sizeMapping', function () {
 
   if (FEATURES.VIDEO) {
     it('should activate/decactivate adUnits/bidders based on labels with multiformat ads', function () {
-      matchMediaOverride = (str) => str === '(min-width: 768px) and (max-width: 1199px)' ? {matches: true} : {matches: false};
+      matchMediaOverride = (str) => str === '(min-width: 768px) and (max-width: 1199px)' ? { matches: true } : { matches: false };
 
-      let multiFormatSizes = {
+      const multiFormatSizes = {
         banner: {
           sizes: [[728, 90], [300, 300]]
         },

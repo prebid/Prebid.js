@@ -18,11 +18,11 @@ const ID_KEY = MODULE_NAME;
 const version = '1.0';
 const SYNC_URL = 'https://t.adx.opera.com/identity/';
 const AJAX_TIMEOUT = 300;
-const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'application/json'};
+const AJAX_OPTIONS = { method: 'GET', withCredentials: true, contentType: 'application/json' };
 
 function constructUrl(pairs) {
   const queries = [];
-  for (let key in pairs) {
+  for (const key in pairs) {
     queries.push(`${key}=${encodeURIComponent(pairs[key])}`);
   }
   return `${SYNC_URL}?${queries.join('&')}`;
@@ -72,7 +72,7 @@ export const operaIdSubmodule = {
    * @returns {{'operaId': string}}
    */
   decode: (id) =>
-    id != null && id.length > 0
+    typeof id === 'string' && id.length > 0
       ? { [ID_KEY]: id }
       : undefined,
 
@@ -85,7 +85,7 @@ export const operaIdSubmodule = {
   getId(config, consentData) {
     logMessage(`${MODULE_NAME}: start synchronizing opera uid`);
     const params = (config && config.params) || {};
-    if (typeof params.pid !== 'string' || params.pid.length == 0) {
+    if (typeof params.pid !== 'string' || params.pid.length === 0) {
       logError(`${MODULE_NAME}: submodule requires a publisher ID to be defined`);
       return;
     }

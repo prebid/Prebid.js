@@ -12,7 +12,7 @@ describe('justpremium adapter', function () {
     sandbox.restore();
   });
 
-  let schainConfig = {
+  const schainConfig = {
     'ver': '1.0',
     'complete': 1,
     'nodes': [
@@ -24,7 +24,7 @@ describe('justpremium adapter', function () {
     ]
   }
 
-  let adUnits = [
+  const adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
       bidder: 'justpremium',
@@ -46,7 +46,13 @@ describe('justpremium adapter', function () {
         zone: 28313,
         allow: ['lb', 'wp']
       },
-      schain: schainConfig
+      ortb2: {
+        source: {
+          ext: {
+            schain: schainConfig
+          }
+        }
+      }
     },
     {
       adUnitCode: 'div-gpt-ad-1471513102552-2',
@@ -58,7 +64,7 @@ describe('justpremium adapter', function () {
     },
   ]
 
-  let bidderRequest = {
+  const bidderRequest = {
     uspConsent: '1YYN',
     refererInfo: {
       referer: 'https://justpremium.com'
@@ -89,7 +95,7 @@ describe('justpremium adapter', function () {
     })
 
     it('Verify build request', function () {
-      expect(spec.isBidRequestValid({bidder: 'justpremium', params: {}})).to.equal(false)
+      expect(spec.isBidRequestValid({ bidder: 'justpremium', params: {} })).to.equal(false)
       expect(spec.isBidRequestValid({})).to.equal(false)
       expect(spec.isBidRequestValid(adUnits[0])).to.equal(true)
       expect(spec.isBidRequestValid(adUnits[1])).to.equal(true)
@@ -128,7 +134,7 @@ describe('justpremium adapter', function () {
   describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits, bidderRequest)
     it('Verify server response', function () {
-      let response = {
+      const response = {
         'bid': {
           '28313': [{
             'id': 3213123,
@@ -149,7 +155,7 @@ describe('justpremium adapter', function () {
         'deals': {}
       }
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: '319a5029c362f4',
           creativeId: 3213123,
@@ -170,7 +176,7 @@ describe('justpremium adapter', function () {
         }
       ]
 
-      let result = spec.interpretResponse({body: response}, request)
+      const result = spec.interpretResponse({ body: response }, request)
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]))
 
       expect(result[0]).to.not.equal(null)
@@ -184,11 +190,11 @@ describe('justpremium adapter', function () {
       expect(result[0].netRevenue).to.equal(true)
       expect(result[0].format).to.equal('lb')
       expect(result[0].meta.advertiserDomains[0]).to.equal('justpremium.com')
-      expect(result[0].adserverTargeting).to.deep.equal({'hb_deal_justpremium': 'jp_pg'})
+      expect(result[0].adserverTargeting).to.deep.equal({ 'hb_deal_justpremium': 'jp_pg' })
     })
 
     it('Verify wrong server response', function () {
-      let response = {
+      const response = {
         'bid': {
           '28313': []
         },
@@ -197,14 +203,14 @@ describe('justpremium adapter', function () {
         }
       }
 
-      let result = spec.interpretResponse({body: response}, request)
+      const result = spec.interpretResponse({ body: response }, request)
       expect(result.length).to.equal(0)
     })
   })
 
   describe('getUserSyncs', function () {
     it('Verifies sync options for iframe', function () {
-      const options = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: 'BOOgjO9OOgjO9APABAENAi-AAAAWd'}, '1YYN')
+      const options = spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'BOOgjO9OOgjO9APABAENAi-AAAAWd' }, '1YYN')
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
       expect(options[0].url).to.match(/\/\/pre.ads.justpremium.com\/v\/1.0\/t\/sync/)
@@ -212,7 +218,7 @@ describe('justpremium adapter', function () {
       expect(options[0].url).to.match(/&usPrivacy=1YYN/)
     })
     it('Returns array of user sync pixels', function () {
-      const options = spec.getUserSyncs({pixelEnabled: true}, serverResponses)
+      const options = spec.getUserSyncs({ pixelEnabled: true }, serverResponses)
       expect(options).to.not.be.undefined
       expect(Array.isArray(options)).to.be.true
       expect(options[0].type).to.equal('image')

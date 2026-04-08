@@ -26,7 +26,7 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL
   },
   imp(buildImp, bidRequest, context) {
-    let imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -96,7 +96,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   });
 
   // See https://docs.prebid.org/dev-docs/bidder-adaptor.html
-  let req = {
+  const req = {
     url: adapterUrl,
     method: 'POST',
     data: {
@@ -153,7 +153,7 @@ const getSamplingRate = (bidderConfig, eventType) => {
 
 const logBidderError = ({ error, bidderRequest }) => {
   if (error) {
-    let jsonReason = {
+    const jsonReason = {
       message: error.reason?.message,
       stack: error.reason?.stack,
     };

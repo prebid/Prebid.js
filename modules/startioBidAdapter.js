@@ -1,13 +1,15 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { logError } from '../src/utils.js';
+import { logError, isFn, isPlainObject, formatQS } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'startio';
 const METHOD = 'POST';
 const GVLID = 1216;
-const ENDPOINT_URL = `http://pbc-rtb.startappnetwork.com/1.3/2.5/getbid?account=pbc`;
+const ENDPOINT_URL = `https://pbc-rtb.startappnetwork.com/1.3/2.5/getbid?account=pbc`;
+const IFRAME_URL = 'https://cs.startappnetwork.com/sync?p=m4b8b3y4';
 
 const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
@@ -18,11 +20,18 @@ const converter = ortbConverter({
       imp.banner.h ??= imp.banner.format[0]?.h;
     }
 
+    const floor = getBidFloor(bidRequest);
+    if (floor) {
+      imp.bidfloor = floor;
+      imp.bidfloorcur = 'USD';
+    }
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const publisherId = bidderRequest?.bids?.[0]?.params?.publisherId;
+    const bidParams = context?.bidParams;
+    const publisherId = bidParams?.publisherId;
     if (request?.site) {
       request.site.publisher = request.site.publisher || {};
       request.site.publisher.id = publisherId;
@@ -32,6 +41,30 @@ const converter = ortbConverter({
     }
     request.ext = request.ext || {};
     request.ext.prebid = request.ext.prebid || {};
+
+    const ortb = bidderRequest.ortb2;
+    request.regs ??= {};
+    request.regs.coppa = ortb?.regs?.coppa;
+
+    if (bidderRequest.uspConsent) {
+      request.regs.ext ??= {};
+      request.regs.ext.us_privacy = bidderRequest.uspConsent;
+    }
+
+    const startioEid = request.user?.ext?.eids?.find(eid => eid.source === 'start.io');
+    if (startioEid?.uids?.[0]?.id) {
+      request.user.buyeruid = startioEid.uids[0].id;
+    }
+
+    request.bcat = ortb?.bcat || bidParams?.bcat;
+    request.badv = ortb?.badv || bidParams?.badv;
+    request.bapp = ortb?.bapp || bidParams?.bapp;
+
+    spec.supportedMediaTypes.forEach(mediaType => {
+      if (request.imp[0].hasOwnProperty(mediaType)) {
+        request.imp[0][mediaType].battr ??= ortb?.[mediaType]?.battr || bidParams?.battr;
+      }
+    })
 
     return request;
   },
@@ -56,16 +89,38 @@ const converter = ortbConverter({
   translator: ortb25Translator()
 });
 
+function getBidFloor(bid) {
+  if (isFn(bid.getFloor)) {
+    const floor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+    if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+      return floor.floor;
+    }
+  }
+  return bid.params?.floor;
+}
+
+function isValidBidFloorCurrency(bid) {
+  return !bid.ortb2Imp?.bidfloorcur || bid.ortb2Imp.bidfloorcur === 'USD';
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
   gvlid: GVLID,
-  isBidRequestValid: (bid) => !!bid,
+  isBidRequestValid: (bid) => !!bid && isValidBidFloorCurrency(bid),
 
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map((bidRequest) => {
       const mediaType = Object.keys(bidRequest.mediaTypes || {})[0] || BANNER;
-      const data = converter.toORTB({ bidRequests: [bidRequest], bidderRequest, context: { mediaType } });
+      const data = converter.toORTB({
+        bidRequests: [bidRequest],
+        bidderRequest,
+        context: { mediaType, bidParams: bidRequest.params }
+      });
 
       return {
         method: METHOD,
@@ -103,6 +158,23 @@ export const spec = {
   },
 
   onSetTargeting: (bid) => { },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    const syncs = [];
+
+    if (syncOptions.iframeEnabled) {
+      const consentParams = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+      const queryString = formatQS(consentParams);
+      const queryParam = queryString ? `&${queryString}` : '';
+
+      syncs.push({
+        type: 'iframe',
+        url: `${IFRAME_URL}${queryParam}`
+      });
+    }
+
+    return syncs;
+  }
 };
 
 registerBidder(spec);

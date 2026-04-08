@@ -1,8 +1,9 @@
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
+import { getBidIdParameter, logInfo, mergeDeep } from '../src/utils.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -65,7 +66,7 @@ export const spec = {
   onTimeout: function (timeoutData) {
     logInfo('Timeout: ', timeoutData);
   },
-  onBidderError: function ({error, bidderRequest}) {
+  onBidderError: function ({ error, bidderRequest }) {
     logInfo('Error: ', error, bidderRequest);
   },
 }
@@ -141,9 +142,9 @@ function isValidVideoRequest(bidRequest) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(validBidRequests, bidderRequest) {
-  let videoBids = validBidRequests.filter(bid => isVideoBid(bid));
-  let bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
-  let requests = [];
+  const videoBids = validBidRequests.filter(bid => isVideoBid(bid));
+  const bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
+  const requests = [];
 
   bannerBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -157,14 +158,14 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(response, request) {
-  return CONVERTER.fromORTB({request: request.data, response: response.body}).bids;
+  return CONVERTER.fromORTB({ request: request.data, response: response.body }).bids;
 }
 
 function buildVideoImp(bidRequest, imp) {
   const videoAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`, {});
   const videoBidderParams = utils.deepAccess(bidRequest, `params.${VIDEO}`, {});
 
-  const videoParams = {...videoAdUnitParams, ...videoBidderParams};
+  const videoParams = { ...videoAdUnitParams, ...videoBidderParams };
 
   const videoSizes = (videoAdUnitParams && videoAdUnitParams.playerSize) || [];
 
@@ -183,16 +184,16 @@ function buildVideoImp(bidRequest, imp) {
     imp.video.plcmt = imp.video.plcmt || 4;
   }
 
-  return {...imp};
+  return { ...imp };
 }
 
 function buildBannerImp(bidRequest, imp) {
   const bannerAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}`, {});
   const bannerBidderParams = utils.deepAccess(bidRequest, `params.${BANNER}`, {});
 
-  const bannerParams = {...bannerAdUnitParams, ...bannerBidderParams};
+  const bannerParams = { ...bannerAdUnitParams, ...bannerBidderParams };
 
-  let sizes = bidRequest.mediaTypes.banner.sizes;
+  const sizes = bidRequest.mediaTypes.banner.sizes;
 
   if (sizes) {
     utils.deepSetValue(imp, 'banner.w', sizes[0][0]);
@@ -205,15 +206,15 @@ function buildBannerImp(bidRequest, imp) {
     }
   });
 
-  return {...imp};
+  return { ...imp };
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const data = CONVERTER.toORTB({bidRequests, bidderRequest, context: {mediaType}})
+  const data = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
 
   const bid = bidRequests.find((b) => b.params.placementId)
   if (!data.site) data.site = {}
-  data.site.ext = {placementId: parseInt(bid.params.placementId)}
+  data.site.ext = { placementId: parseInt(bid.params.placementId) }
 
   if (bidderRequest.gdprConsent) {
     if (!data.user) data.user = {};
@@ -257,9 +258,9 @@ function isBannerBid(bid) {
  */
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let query = [];
-    let syncUrl = getUserSyncUrlByRegion();
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const query = [];
+    const syncUrl = getUserSyncUrlByRegion();
     // GDPR Consent Params in UserSync url
     if (gdprConsent) {
       query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
@@ -303,8 +304,7 @@ function getUserSyncUrlByRegion() {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = getTimeZone().split('/')[0];
 
     switch (region) {
       case 'Europe':

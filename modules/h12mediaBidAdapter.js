@@ -2,6 +2,7 @@ import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '..
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -30,7 +31,7 @@ export const spec = {
         pubsubid = '';
       }
       const pubcontainerid = bidderParams.pubcontainerid;
-      const adUnitElement = document.getElementById(pubcontainerid || bidRequest.adUnitCode);
+      const adUnitElement = pubcontainerid ? document.getElementById(pubcontainerid) : getAdUnitElement(bidRequest);
       const ishidden = !isVisible(adUnitElement);
       const framePos = getFramePos();
       const coords = isiframe ? {
@@ -66,7 +67,7 @@ export const spec = {
       return {
         method: 'POST',
         url: requestUrl,
-        options: {withCredentials: true},
+        options: { withCredentials: true },
         data: {
           gdpr: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           gdpr_cs: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
@@ -95,7 +96,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, bidRequests) {
-    let bidResponses = [];
+    const bidResponses = [];
     try {
       const serverBody = serverResponse.body;
       if (serverBody) {
@@ -219,7 +220,7 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const {document: {documentElement, body}} = getWinDimensions();
+    const { document: { documentElement, body } } = getWinDimensions();
     const width = body.clientWidth;
     const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
     return [width, height];

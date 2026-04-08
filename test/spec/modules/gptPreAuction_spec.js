@@ -1,6 +1,5 @@
 import {
   appendGptSlots,
-  appendPbAdSlot,
   _currentConfig,
   makeBidRequestsHook,
   getAuctionsIdsFromTargeting,
@@ -31,7 +30,7 @@ describe('GPT pre-auction module', () => {
     makeSlot({ code: 'slotCode4', divId: 'div5' })
   ];
 
-  const mockTargeting = {'/123456/header-bid-tag-0': {'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus'}}
+  const mockTargeting = { '/123456/header-bid-tag-0': { 'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus' } }
 
   const mockAuctionManager = {
     findBidByAdId(adId) {
@@ -112,56 +111,6 @@ describe('GPT pre-auction module', () => {
     },
   ]
 
-  describe('appendPbAdSlot', () => {
-    // sets up our document body to test the pbAdSlot dom actions against
-    document.body.innerHTML = '<div id="foo1" data-adslotid="bar1">test1</div>' +
-          '<div id="foo2" data-adslotid="bar2">test2</div>' +
-          '<div id="foo3">test2</div>';
-
-    it('should be unchanged if already defined on adUnit', () => {
-      const adUnit = { ortb2Imp: { ext: { data: { pbadslot: '12345' } } } };
-      appendPbAdSlot(adUnit);
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('12345');
-    });
-
-    it('should use adUnit.code if matching id exists', () => {
-      const adUnit = { code: 'foo1', ortb2Imp: { ext: { data: {} } } };
-      appendPbAdSlot(adUnit);
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('bar1');
-    });
-
-    it('should use the gptSlot.adUnitPath if the adUnit.code matches a div id but does not have a data-adslotid', () => {
-      const adUnit = { code: 'foo3', mediaTypes: { banner: { sizes: [[250, 250]] } }, ortb2Imp: { ext: { data: { adserver: { name: 'gam', adslot: '/baz' } } } } };
-      appendPbAdSlot(adUnit);
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('/baz');
-    });
-
-    it('should use the video adUnit.code (which *should* match the configured "adSlotName", but is not being tested) if there is no matching div with "data-adslotid" defined', () => {
-      const adUnit = { code: 'foo4', mediaTypes: { video: { sizes: [[250, 250]] } }, ortb2Imp: { ext: { data: {} } } };
-      adUnit.code = 'foo5';
-      appendPbAdSlot(adUnit, undefined);
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('foo5');
-    });
-
-    it('should use the adUnit.code if all other sources failed', () => {
-      const adUnit = { code: 'foo4', ortb2Imp: { ext: { data: {} } } };
-      appendPbAdSlot(adUnit, undefined);
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('foo4');
-    });
-
-    it('should use the customPbAdSlot function if one is given', () => {
-      config.setConfig({
-        gptPreAuction: {
-          customPbAdSlot: () => 'customPbAdSlotName'
-        }
-      });
-
-      const adUnit = { code: 'foo1', ortb2Imp: { ext: { data: {} } } };
-      appendPbAdSlot(adUnit);
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('customPbAdSlotName');
-    });
-  });
-
   describe('appendGptSlots', () => {
     it('should not add adServer object to context if no slots defined', () => {
       const adUnit = { code: 'adUnitCode', ortb2Imp: { ext: { data: {} } } };
@@ -214,7 +163,7 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
       ]);
-      const adUnit = {code: '/12345,21212/slot'};
+      const adUnit = { code: '/12345,21212/slot' };
       expect(appendGptSlots([adUnit])).to.eql({
         '/12345,21212/slot': '/12345,21212/slot'
       })
@@ -234,9 +183,8 @@ describe('GPT pre-auction module', () => {
 
     it('should use the customGptSlotMatching function if one is given', () => {
       config.setConfig({
-        gptPreAuction: {
-          customGptSlotMatching: slot =>
-            adUnitCode => adUnitCode.toUpperCase() === slot.getAdUnitPath().toUpperCase()
+        customGptSlotMatching: slot => {
+          return (adUnitCode) => adUnitCode.toUpperCase() === slot.getAdUnitPath().toUpperCase();
         }
       });
 
@@ -245,6 +193,7 @@ describe('GPT pre-auction module', () => {
       appendGptSlots([adUnit]);
       expect(adUnit.ortb2Imp.ext.data.adserver).to.be.an('object');
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode1' });
+      config.resetConfig();
     });
   });
 
@@ -259,32 +208,14 @@ describe('GPT pre-auction module', () => {
       expect(_currentConfig).to.be.an('object').that.is.empty;
     });
 
-    it('should accept custom functions in config', () => {
-      config.setConfig({
-        gptPreAuction: {
-          customGptSlotMatching: () => 'customGptSlot',
-          customPbAdSlot: () => 'customPbAdSlot'
-        }
-      });
-
-      expect(_currentConfig.enabled).to.equal(true);
-      expect(_currentConfig.customGptSlotMatching).to.a('function');
-      expect(_currentConfig.customPbAdSlot).to.a('function');
-      expect(_currentConfig.customGptSlotMatching()).to.equal('customGptSlot');
-      expect(_currentConfig.customPbAdSlot()).to.equal('customPbAdSlot');
-    });
-
     it('should check that custom functions in config are type function', () => {
       config.setConfig({
         gptPreAuction: {
-          customGptSlotMatching: 12345,
-          customPbAdSlot: 'test'
+          customPreAuction: 12345,
         }
       });
       expect(_currentConfig).to.deep.equal({
         enabled: true,
-        customGptSlotMatching: false,
-        customPbAdSlot: false,
         customPreAuction: false,
         useDefaultPreAuction: true
       });
@@ -300,87 +231,6 @@ describe('GPT pre-auction module', () => {
       makeBidRequestsHook(next, adUnits);
     };
 
-    it('should append PB Ad Slot and GPT Slot info to first-party data in each ad unit', () => {
-      const testAdUnits = [{
-        code: 'adUnit1',
-        ortb2Imp: { ext: { data: { pbadslot: '12345' } } }
-      }, {
-        code: 'slotCode1',
-        ortb2Imp: { ext: { data: { pbadslot: '67890' } } }
-      }, {
-        code: 'slotCode3',
-      }];
-
-      // first two adUnits directly pass in pbadslot => gpid is same
-      const expectedAdUnits = [{
-        code: 'adUnit1',
-        ortb2Imp: {
-          ext: {
-            data: {
-              pbadslot: '12345'
-            },
-            gpid: '12345'
-          }
-        }
-      },
-      // second adunit
-      {
-        code: 'slotCode1',
-        ortb2Imp: {
-          ext: {
-            data: {
-              pbadslot: '67890',
-              adserver: {
-                name: 'gam',
-                adslot: 'slotCode1'
-              }
-            },
-            gpid: '67890'
-          }
-        }
-      }, {
-        code: 'slotCode3',
-        ortb2Imp: {
-          ext: {
-            data: {
-              pbadslot: 'slotCode3',
-              adserver: {
-                name: 'gam',
-                adslot: 'slotCode3'
-              }
-            },
-            gpid: 'slotCode3'
-          }
-        }
-      }];
-
-      window.googletag.pubads().setSlots(testSlots);
-      runMakeBidRequests(testAdUnits);
-      expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
-    });
-
-    it('should not apply gpid if pbadslot was set by adUnitCode', () => {
-      const testAdUnits = [{
-        code: 'noMatchCode',
-      }];
-
-      // first two adUnits directly pass in pbadslot => gpid is same
-      const expectedAdUnits = [{
-        code: 'noMatchCode',
-        ortb2Imp: {
-          ext: {
-            data: {
-              pbadslot: 'noMatchCode'
-            },
-          }
-        }
-      }];
-
-      window.googletag.pubads().setSlots(testSlots);
-      runMakeBidRequests(testAdUnits);
-      expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
-    });
-
     it('should use the passed customPreAuction logic', () => {
       let counter = 0;
       config.setConfig({
@@ -395,7 +245,7 @@ describe('GPT pre-auction module', () => {
       const testAdUnits = [
         {
           code: 'adUnit1',
-          ortb2Imp: { ext: { data: { pbadslot: '12345' } } }
+          ortb2Imp: { ext: { data: {} } }
         },
         {
           code: 'adUnit2',
@@ -414,9 +264,7 @@ describe('GPT pre-auction module', () => {
         ortb2Imp: {
           ext: {
             // no slotname match so uses adUnit.code-counter
-            data: {
-              pbadslot: 'adUnit1-1'
-            },
+            data: {},
             gpid: 'adUnit1-1'
           }
         }
@@ -427,9 +275,7 @@ describe('GPT pre-auction module', () => {
         ortb2Imp: {
           ext: {
             // no slotname match so uses adUnit.code-counter
-            data: {
-              pbadslot: 'adUnit2-2'
-            },
+            data: {},
             gpid: 'adUnit2-2'
           }
         }
@@ -439,7 +285,6 @@ describe('GPT pre-auction module', () => {
           ext: {
             // slotname found, so uses code + slotname (which is same)
             data: {
-              pbadslot: 'slotCode3-slotCode3',
               adserver: {
                 name: 'gam',
                 adslot: 'slotCode3'
@@ -454,7 +299,6 @@ describe('GPT pre-auction module', () => {
           ext: {
             // slotname found, so uses code + slotname
             data: {
-              pbadslot: 'div4-slotCode4',
               adserver: {
                 name: 'gam',
                 adslot: 'slotCode4'
@@ -482,7 +326,7 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
       ]);
-      const adUnit = {code: '/12345,21212/slot'};
+      const adUnit = { code: '/12345,21212/slot' };
       makeBidRequestsHook(sinon.stub(), [adUnit]);
       sinon.assert.calledWith(customPreAuction, adUnit, '/12345/slot', adUnit.code);
     });
@@ -508,7 +352,7 @@ describe('GPT pre-auction module', () => {
         // First adUnit should use the preset pbadslot
         {
           code: 'adUnit1',
-          ortb2Imp: { ext: { data: { pbadslot: '12345' } } }
+          ortb2Imp: { ext: { data: {} } }
         },
         // Second adUnit should not match a gam slot, so no slot set
         {
@@ -528,10 +372,7 @@ describe('GPT pre-auction module', () => {
         code: 'adUnit1',
         ortb2Imp: {
           ext: {
-            data: {
-              pbadslot: '12345'
-            },
-            gpid: '12345'
+            data: {},
           }
         }
       },
@@ -549,7 +390,6 @@ describe('GPT pre-auction module', () => {
         ortb2Imp: {
           ext: {
             data: {
-              pbadslot: 'slotCode3',
               adserver: {
                 name: 'gam',
                 adslot: 'slotCode3'
@@ -563,7 +403,6 @@ describe('GPT pre-auction module', () => {
         ortb2Imp: {
           ext: {
             data: {
-              pbadslot: 'slotCode4#div4',
               adserver: {
                 name: 'gam',
                 adslot: 'slotCode4'
@@ -584,7 +423,7 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
       ]);
-      const adUnit = {code: '/12345,21212/slot'};
+      const adUnit = { code: '/12345,21212/slot' };
       makeBidRequestsHook(sinon.stub(), [adUnit]);
       expect(adUnit.ortb2Imp.ext.gpid).to.eql('/12345/slot');
     });
@@ -612,7 +451,7 @@ describe('GPT pre-auction module', () => {
     it('should filter out adIds that do not map to any auction', () => {
       const auctionsIds = getAuctionsIdsFromTargeting({
         ...mockTargeting,
-        'au': {'hb_adid': 'missing'},
+        'au': { 'hb_adid': 'missing' },
       }, mockAuctionManager);
       expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]);
     })
@@ -621,7 +460,7 @@ describe('GPT pre-auction module', () => {
       let auctionsIds = getAuctionsIdsFromTargeting({}, mockAuctionManager);
       expect(Array.isArray(auctionsIds)).to.equal(true);
       expect(auctionsIds).to.length(0);
-      auctionsIds = getAuctionsIdsFromTargeting({'/123456/header-bid-tag-0/bg': {'invalidContent': '123'}}, mockAuctionManager);
+      auctionsIds = getAuctionsIdsFromTargeting({ '/123456/header-bid-tag-0/bg': { 'invalidContent': '123' } }, mockAuctionManager);
       expect(Array.isArray(auctionsIds)).to.equal(true);
       expect(auctionsIds).to.length(0);
     });

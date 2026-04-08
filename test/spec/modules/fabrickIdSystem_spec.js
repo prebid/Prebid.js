@@ -1,7 +1,7 @@
 import * as utils from '../../../src/utils.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
-import {fabrickIdSubmodule, appendUrl} from 'modules/fabrickIdSystem.js';
+import { fabrickIdSubmodule, appendUrl } from 'modules/fabrickIdSystem.js';
 
 const defaultConfigParams = {
   apiKey: '123',
@@ -9,7 +9,7 @@ const defaultConfigParams = {
   p: ['def', 'hij'],
   url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
-const responseHeader = {'Content-Type': 'application/json'}
+const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('Fabrick ID System', function() {
   let logErrorStub;
@@ -30,13 +30,13 @@ describe('Fabrick ID System', function() {
   });
 
   it('should error on json parsing', function() {
-    let submoduleCallback = fabrickIdSubmodule.getId({
+    const submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
       params: defaultConfigParams
     }).callback;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     request.respond(
       200,
       responseHeader,
@@ -51,20 +51,20 @@ describe('Fabrick ID System', function() {
     for (let i = 0; i < 1500; i++) {
       r += 'r';
     }
-    let configParams = Object.assign({}, defaultConfigParams, {
+    const configParams = Object.assign({}, defaultConfigParams, {
       refererInfo: {
         topmostLocation: r,
         stack: ['s-0'],
         canonicalUrl: 'cu-0'
       }
     });
-    let submoduleCallback = fabrickIdSubmodule.getId({
+    const submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
       params: configParams
     }).callback;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     r = '';
     for (let i = 0; i < 1000 - 3; i++) {
       r += 'r';
@@ -79,20 +79,20 @@ describe('Fabrick ID System', function() {
   });
 
   it('should complete successfully', function() {
-    let configParams = Object.assign({}, defaultConfigParams, {
+    const configParams = Object.assign({}, defaultConfigParams, {
       refererInfo: {
         topmostLocation: 'r-0',
         stack: ['s-0'],
         canonicalUrl: 'cu-0'
       }
     });
-    let submoduleCallback = fabrickIdSubmodule.getId({
+    const submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
       params: configParams
     }).callback;
-    let callBackSpy = sinon.spy();
+    const callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.match(/r=r-0&r=s-0&r=cu-0&r=http/);
     request.respond(
       200,
@@ -103,7 +103,7 @@ describe('Fabrick ID System', function() {
   });
 
   it('should truncate 2', function() {
-    let configParams = {
+    const configParams = {
       maxUrlLen: 10,
       maxRefLen: 5,
       maxSpaceAvailable: 2

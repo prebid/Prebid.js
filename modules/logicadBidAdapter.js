@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { deepAccess } from '../src/utils.js';
 
@@ -42,19 +42,11 @@ export const spec = {
       bids.push(seatbid.bid);
     })
 
-    const fledgeAuctionConfigs = deepAccess(serverResponse, 'ext.fledgeAuctionConfigs') || [];
-    if (fledgeAuctionConfigs.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
-    }
-
     return bids;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     if (serverResponses.length > 0 && serverResponses[0].body.userSync &&
-      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type == 'image') {
+      syncOptions.pixelEnabled && serverResponses[0].body.userSync.type === 'image') {
       return [{
         type: 'image',
         url: serverResponses[0].body.userSync.url
@@ -72,14 +64,6 @@ function newBidRequest(bidRequest, bidderRequest) {
     sizes: bidRequest.sizes,
     params: bidRequest.params,
     mediaTypes: bidRequest.mediaTypes,
-  }
-
-  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
-  if (fledgeEnabled) {
-    const ae = deepAccess(bidRequest, 'ortb2Imp.ext.ae');
-    if (ae) {
-      bid.ae = ae;
-    }
   }
 
   const data = {
@@ -104,8 +88,9 @@ function newBidRequest(bidRequest, bidderRequest) {
     data.userData = userData;
   }
 
-  if (bidRequest.schain) {
-    data.schain = bidRequest.schain;
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    data.schain = schain;
   }
 
   return data;

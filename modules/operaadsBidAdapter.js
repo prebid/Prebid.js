@@ -2,7 +2,6 @@ import {
   deepAccess,
   deepSetValue,
   generateUUID,
-  getDNT,
   isArray,
   isFn,
   isPlainObject,
@@ -11,12 +10,13 @@ import {
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -28,8 +28,8 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
  */
 const BIDDER_CODE = 'operaads';
 
-const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
-const USER_SYNC_ENDPOINT = 'https://s.adx.opera.com/usersync/page';
+const ENDPOINT = 'https://s.oa.opera.com/ortb/v2/';
+const USER_SYNC_ENDPOINT = 'https://s.oa.opera.com/usersync/page';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -680,18 +680,18 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
-  let operaId = deepAccess(bidRequest, 'userId.operaId');
+  const operaId = deepAccess(bidRequest, 'userId.operaId');
   if (operaId) {
     return operaId;
   }
 
-  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
   }
 
   for (const idModule of ['pubcid', 'tdid']) {
-    let userId = deepAccess(bidRequest, `userId.${idModule}`);
+    const userId = deepAccess(bidRequest, `userId.${idModule}`);
     if (userId) {
       return userId;
     }
@@ -709,7 +709,7 @@ function getUserId(bidRequest) {
  * @param {*} params.size
  * @returns {Object} floor price
  */
-function getBidFloor(bid, {mediaType = '*', size = '*'}) {
+function getBidFloor(bid, { mediaType = '*', size = '*' }) {
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,

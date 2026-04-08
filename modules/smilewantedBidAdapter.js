@@ -1,10 +1,10 @@
-import {deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn} from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js'
-import {convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse} from '../src/native.js';
+import { deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { serializeSupplyChain } from '../libraries/schainSerializer/schainSerializer.js'
+import { convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'smilewanted';
@@ -84,7 +84,7 @@ export const spec = {
          */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$',
-        schain: serializeSupplyChain(bid.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
+        schain: serializeSupplyChain(bid?.ortb2?.source?.ext?.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
       };
 
       const floor = getBidFloor(bid);
@@ -120,7 +120,7 @@ export const spec = {
       if (nativeMediaType) {
         payload.context = 'native';
         payload.nativeParams = nativeMediaType;
-        let sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
+        const sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
@@ -215,7 +215,7 @@ export const spec = {
     const syncs = [];
 
     if (syncOptions.iframeEnabled) {
-      let params = [];
+      const params = [];
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined

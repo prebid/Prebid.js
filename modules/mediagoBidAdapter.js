@@ -10,6 +10,7 @@ import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 // import { config } from '../src/config.js';
@@ -31,9 +32,8 @@ export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
-let globals = {};
-let itemMaps = {};
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const globals = {};
 
 /* ----- mguid:start ------ */
 export const COOKIE_KEY_MGUID = '__mguid_';
@@ -43,8 +43,7 @@ const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 let reqTimes = 0;
 
 /**
- * get pmg uid
- * 获取并生成用户的id
+ * Get or generate pmg uid
  *
  * @return {string}
  */
@@ -64,16 +63,16 @@ export const getPmgUID = () => {
 /* ----- pmguid:end ------ */
 
 /**
- * 获取一个对象的某个值，如果没有则返回空字符串
+ * Get a nested property value from object, return empty string if not found
  *
- * @param  {Object}    obj  对象
- * @param  {...string} keys 键名
+ * @param  {Object}    obj  object
+ * @param  {...string} keys key path
  * @return {any}
  */
 function getProperty(obj, ...keys) {
   let o = obj;
 
-  for (let key of keys) {
+  for (const key of keys) {
     // console.log(key, o);
     if (o && o[key]) {
       o = o[key];
@@ -85,7 +84,21 @@ function getProperty(obj, ...keys) {
 }
 
 /**
- * 获取底价
+ * Retrieve device platform/OS, priority order: userAgentData.platform > navigator.platform > UA parsing
+ * @returns {string}
+ */
+function getDeviceOs() {
+  if (navigator.userAgentData?.platform) {
+    return navigator.userAgentData.platform;
+  }
+  if (navigator.platform) {
+    return navigator.platform;
+  }
+  return getOsInfo().os || '';
+}
+
+/**
+ * Get bid floor
  * @param {*} bid
  * @param {*} mediaType
  * @param {*} sizes
@@ -107,11 +120,11 @@ function getProperty(obj, ...keys) {
 //   return floor;
 // }
 
-// 支持的广告尺寸
+// Supported ad sizes
 const mediagoAdSize = normalAdSize;
 
 /**
- * 获取广告位配置
+ * Get ad slot config
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
@@ -120,13 +133,13 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-    let mediaTypes = getProperty(req, 'mediaTypes');
+    const mediaTypes = getProperty(req, 'mediaTypes');
 
-    let sizes = transformSizes(getProperty(req, 'sizes'));
+    const sizes = transformSizes(getProperty(req, 'sizes'));
     let matchSize;
 
-    // 确认尺寸是否符合我们要求
-    for (let size of sizes) {
+    // Validate size meets requirements
+    for (const size of sizes) {
       matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
         break;
@@ -139,8 +152,7 @@ function getItems(validBidRequests, bidderRequest) {
     const bidFloor = getBidFloor(req);
     const gpid =
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
-      utils.deepAccess(req, 'params.placementId', 0);
+      utils.deepAccess(req, 'params.placementId', '');
 
     const gdprConsent = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -155,9 +167,10 @@ function getItems(validBidRequests, bidderRequest) {
     }
 
     // if (mediaTypes.native) {}
-    // banner广告类型
+    // Banner ad type
     if (mediaTypes.banner) {
-      let id = '' + (i + 1);
+      // fix id is not unique where there are multiple requests in the same page
+      const id = getProperty(req, 'bidId') || ('' + (i + 1) + Math.random().toString(36).substring(2, 15));
       ret = {
         id: id,
         bidfloor: bidFloor,
@@ -170,17 +183,14 @@ function getItems(validBidRequests, bidderRequest) {
         ext: {
           adUnitCode: req.adUnitCode,
           referrer: getReferrer(req, bidderRequest),
-          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
-          gpid: gpid, // 加入后无法返回广告
+          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'),
+          gpid: gpid,
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
           publisher: req.params.publisher || '',
+          transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
-      };
-      itemMaps[id] = {
-        req,
-        ret
       };
     }
 
@@ -200,7 +210,7 @@ export function getCurrentTimeToUTCString() {
 }
 
 /**
- * 获取rtb请求参数
+ * Get RTB request params
  *
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
@@ -215,11 +225,11 @@ function getParam(validBidRequests, bidderRequest) {
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
 
-  let isMobile = getDevice() ? 1 : 0;
+  const isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
-  let isTest = validBidRequests[0].params.test || 0;
-  let auctionId = getProperty(bidderRequest, 'auctionId');
-  let items = getItems(validBidRequests, bidderRequest);
+  const isTest = validBidRequests[0].params.test || 0;
+  const bidderRequestId = getProperty(bidderRequest, 'bidderRequestId');
+  const items = getItems(validBidRequests, bidderRequest);
 
   const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
   const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
@@ -233,9 +243,8 @@ function getParam(validBidRequests, bidderRequest) {
   const keywords = getPageKeywords();
 
   if (items && items.length) {
-    let c = {
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      id: 'mgprebidjs_' + auctionId,
+    const c = {
+      id: 'mgprebidjs_' + bidderRequestId,
       test: +isTest,
       at: 1,
       cur: ['USD'],
@@ -246,11 +255,12 @@ function getParam(validBidRequests, bidderRequest) {
         // language: 'en',
         // os: 'Microsoft Windows',
         // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
-        os: navigator.platform || '',
+        os: getDeviceOs(),
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language
       },
       ext: {
+        pbjsversion: '$prebid.version$',
         eids,
         bidsUserIdAsEids,
         firstPartyData,
@@ -296,7 +306,6 @@ function getParam(validBidRequests, bidderRequest) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -324,7 +333,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = getParam(validBidRequests, bidderRequest);
+    const payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
     return {
@@ -344,12 +353,11 @@ export const spec = {
     const cur = getProperty(serverResponse, 'body', 'cur');
 
     const bidResponses = [];
-    for (let bid of bids) {
-      let impid = getProperty(bid, 'impid');
-      if (itemMaps[impid]) {
-        let bidId = getProperty(itemMaps[impid], 'req', 'bidId');
+    for (const bid of bids) {
+      const impid = getProperty(bid, 'impid');
+      if (impid) {
         const bidResponse = {
-          requestId: bidId,
+          requestId: getProperty(bid, 'impid'),
           cpm: getProperty(bid, 'price'),
           width: getProperty(bid, 'w'),
           height: getProperty(bid, 'h'),
@@ -387,7 +395,7 @@ export const spec = {
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
-  //     // Bidder specifc code
+  //     // Bidder specific code
   //   },
 
   /**

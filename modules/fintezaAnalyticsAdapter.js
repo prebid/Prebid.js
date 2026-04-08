@@ -2,12 +2,12 @@ import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { EVENTS } from '../src/constants.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_CODE = 'finteza';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';
@@ -53,7 +53,7 @@ function getUniqId() {
   }
 
   if (uniq && isUniqFromLS) {
-    let expires = new Date();
+    const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {
@@ -76,7 +76,7 @@ function initFirstVisit() {
     cookies = {};
   }
 
-  visitDate = cookies[ FIRST_VISIT_DATE ];
+  visitDate = cookies[FIRST_VISIT_DATE];
 
   if (!visitDate) {
     now = new Date();
@@ -181,7 +181,7 @@ function initSession() {
     cookies = {};
   }
 
-  sessionId = cookies[ SESSION_ID ];
+  sessionId = cookies[SESSION_ID];
 
   if (!sessionId ||
       !checkSessionByExpires() ||
@@ -269,7 +269,7 @@ function getTrackRequestLastTime() {
 
     // TODO: commented out because of rule violations
     cookie = {} // parseCookies(document.cookie);
-    cookie = cookie[ TRACK_TIME_KEY ];
+    cookie = cookie[TRACK_TIME_KEY];
     if (cookie) {
       return parseInt(cookie, 10);
     }
@@ -282,14 +282,14 @@ function getAntiCacheParam() {
   const date = new Date();
   const rand = (Math.random() * 99999 + 1) >>> 0;
 
-  return ([ date.getTime(), rand ].join(''));
+  return ([date.getTime(), rand].join(''));
 }
 
 function replaceBidder(str, bidder) {
   let _str = str;
-  _str = _str.replace(/\%bidder\%/, bidder.toLowerCase());
-  _str = _str.replace(/\%BIDDER\%/, bidder.toUpperCase());
-  _str = _str.replace(/\%Bidder\%/, bidder.charAt(0).toUpperCase() + bidder.slice(1).toLowerCase());
+  _str = _str.replace(/%bidder%/, bidder.toLowerCase());
+  _str = _str.replace(/%BIDDER%/, bidder.toUpperCase());
+  _str = _str.replace(/%Bidder%/, bidder.charAt(0).toUpperCase() + bidder.slice(1).toLowerCase());
 
   return _str;
 }

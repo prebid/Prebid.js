@@ -238,7 +238,7 @@ var adUnits = [{
 									
                     params = pbjs.getAdserverTargetingForAdUnitCode("jb-target");
                     iframe = document.getElementById("jb-target");
-                    
+
                     if (params && params['hb_adid']) {
                         pbjs.renderAd(iframe.contentDocument, params['hb_adid']);
                     }

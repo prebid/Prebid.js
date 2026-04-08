@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vidoomyBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { INSTREAM } from '../../../src/video';
+import { INSTREAM } from '../../../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}']
@@ -44,7 +44,7 @@ describe('vidoomyBidAdapter', function() {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -60,7 +60,7 @@ describe('vidoomyBidAdapter', function() {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'vidoomy',
         'params': {
@@ -74,32 +74,38 @@ describe('vidoomyBidAdapter', function() {
             'sizes': [[300, 250], [200, 100]]
           }
         },
-        'schain': {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'exchange1.com',
-              'sid': '1234!abcd',
-              'hp': 1,
-              'rid': 'bid-request-1',
-              'name': 'publisher, Inc.',
-              'domain': 'publisher.com'
-            },
-            {
-              'asi': 'exchange2.com',
-              'sid': 'abcd',
-              'hp': 1
-            },
-            {
-              'asi': 'exchange2.com',
-              'sid': 'abcd',
-              'hp': 1,
-              'rid': 'bid-request-2',
-              'name': 'intermediary',
-              'domain': 'intermediary.com'
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'exchange1.com',
+                    'sid': '1234!abcd',
+                    'hp': 1,
+                    'rid': 'bid-request-1',
+                    'name': 'publisher, Inc.',
+                    'domain': 'publisher.com'
+                  },
+                  {
+                    'asi': 'exchange2.com',
+                    'sid': 'abcd',
+                    'hp': 1
+                  },
+                  {
+                    'asi': 'exchange2.com',
+                    'sid': 'abcd',
+                    'hp': 1,
+                    'rid': 'bid-request-2',
+                    'name': 'intermediary',
+                    'domain': 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       },
       {
@@ -118,7 +124,7 @@ describe('vidoomyBidAdapter', function() {
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -403,7 +409,7 @@ describe('vidoomyBidAdapter', function() {
         }
       }
 
-      let result = spec.interpretResponse(serverResponseVideo, bidRequest);
+      const result = spec.interpretResponse(serverResponseVideo, bidRequest);
 
       expect(result[0].renderer).to.not.be.undefined;
       expect(result[0].ad).to.equal(serverResponseVideo.body[0].vastUrl);
@@ -412,7 +418,7 @@ describe('vidoomyBidAdapter', function() {
 
     it('should get the correct bids responses for banner with same requestId ', function () {
       const bidRequest = {};
-      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].requestId).to.equal(serverResponseBanner.body[0].requestId);
       expect(result[1].requestId).to.equal(serverResponseBanner.body[1].requestId);
@@ -420,7 +426,7 @@ describe('vidoomyBidAdapter', function() {
 
     it('should get the correct bids responses for banner with same creativeId ', function () {
       const bidRequest = {};
-      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].creativeId).to.equal(serverResponseBanner.body[0].creativeId);
       expect(result[1].creativeId).to.equal(serverResponseBanner.body[1].creativeId);

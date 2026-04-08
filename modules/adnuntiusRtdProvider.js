@@ -87,6 +87,7 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
 /** @type {RtdSubmodule} */
 export const adnuntiusSubmodule = {
   name: 'adnuntius',
+  gvlid: GVLID,
   init: init,
   getBidRequestData: alterBidRequests,
   setGlobalConfig: setGlobalConfig,

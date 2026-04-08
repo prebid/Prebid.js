@@ -5,12 +5,13 @@ import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'
@@ -20,7 +21,7 @@ const analyticsType = 'endpoint'
 const isBydata = isKeyInUrl('bydata_debug')
 const adunitsMap = {}
 const MODULE_CODE = 'bydata';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 let initOptions = {}
 var payload = {}
@@ -207,7 +208,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     return signedToken;
   }
   function detectWidth() {
-    const {width: viewportWidth} = getViewportSize();
+    const { width: viewportWidth } = getViewportSize();
     const windowDimensions = getWinDimensions();
     return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
@@ -234,7 +235,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua["brv"] = info.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
-    ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
+    ua['tz'] = getTimeZone();
   }
   var signedToken = getJWToken(ua);
   payload['visitor_data'] = signedToken;
@@ -320,7 +321,7 @@ ascAdapter.dataProcess = function (t) {
 
 ascAdapter.sendPayload = function (data) {
   var obj = { 'records': [{ 'value': data }] };
-  let strJSON = JSON.stringify(obj);
+  const strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 }
 

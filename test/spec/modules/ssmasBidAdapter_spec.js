@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, SSMAS_CODE, SSMAS_ENDPOINT, SSMAS_REQUEST_METHOD } from 'modules/ssmasBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('ssmasBidAdapter', function () {
@@ -68,7 +68,7 @@ describe('ssmasBidAdapter', function () {
 
     it('test bad bid request', function () {
       // empty bid
-      expect(spec.isBidRequestValid({bidId: '', params: {}})).to.be.false;
+      expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false;
 
       // empty bidId
       bid.bidId = '';
@@ -89,7 +89,7 @@ describe('ssmasBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidOrtbResponse = {
+    const bidOrtbResponse = {
       'id': 'aa02e2fe-56d9-4713-88f9-d8672ceae8ab',
       'seatbid': [
         {
@@ -138,7 +138,7 @@ describe('ssmasBidAdapter', function () {
       'cur': 'EUR',
       'nbr': -1
     };
-    let bidResponse = {
+    const bidResponse = {
       'mediaType': 'banner',
       'ad': '<a href=\"https://ssmas.com/es\" target=\"blank\"><img src=\"https://source.unsplash.com/featured/300x202\"/></a><style>body{overflow:hidden;}</style>',
       'requestId': '37c658fe8ba57b',
@@ -158,7 +158,7 @@ describe('ssmasBidAdapter', function () {
         ]
       }
     };
-    let bidRequest = {
+    const bidRequest = {
       'imp': [
         {
           'ext': {

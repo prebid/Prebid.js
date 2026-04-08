@@ -1,25 +1,26 @@
-import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
-import {expect} from 'chai';
-import {TARGETING_KEYS} from 'src/constants.js';
+import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
+import { expect } from 'chai';
+import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
-import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
+import { binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad } from 'src/utils.js';
+import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
+import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
 
 describe('Utils', function () {
-  var obj_string = 's',
-    obj_number = 1,
-    obj_object = {},
-    obj_array = [],
-    obj_function = function () {};
+  var obj_string = 's';
+  var obj_number = 1;
+  var obj_object = {};
+  var obj_array = [];
+  var obj_function = function () {};
 
-  var type_string = 'String',
-    type_number = 'Number',
-    type_object = 'Object',
-    type_array = 'Array',
-    type_function = 'Function';
+  var type_string = 'String';
+  var type_number = 'Number';
+  var type_object = 'Object';
+  var type_array = 'Array';
+  var type_function = 'Function';
 
   describe('canAccessWindowTop', function () {
     let sandbox;
@@ -197,7 +198,7 @@ describe('Utils', function () {
         in: '1x',
         out: []
       }
-    }).forEach(([t, {in: input, out}]) => {
+    }).forEach(([t, { in: input, out }]) => {
       it(`can parse ${t}`, () => {
         expect(sizesToSizeTuples(input)).to.eql(out);
       })
@@ -284,13 +285,13 @@ describe('Utils', function () {
     it('should return size string with input single size array', function () {
       var size = [300, 250];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('should return size string with input single size array', function () {
       var size = ['300', '250'];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('return undefined using string input', function () {
@@ -505,15 +506,15 @@ describe('Utils', function () {
   });
 
   describe('contains', function () {
-    	it('should return true if the input string contains in the input obj', function () {
+    it('should return true if the input string contains in the input obj', function () {
       var output = utils.contains('123', '1');
       assert.deepEqual(output, true);
-    	});
+    });
 
-    	it('should return false if the input string do not contain in the input obj', function () {
+    it('should return false if the input string do not contain in the input obj', function () {
       var output = utils.contains('234', '1');
       assert.deepEqual(output, false);
-    	});
+    });
 
     it('should return false if the input string is empty', function () {
       var output = utils.contains();
@@ -522,37 +523,37 @@ describe('Utils', function () {
   });
 
   describe('_map', function () {
-    	it('return empty array when input object is empty', function () {
+    it('return empty array when input object is empty', function () {
       var input = {};
       var callback = function () {};
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, []);
-    	});
+    });
 
-    	it('return value array with vaild input object', function () {
+    it('return value array with vaild input object', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v) { return v; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
-    	});
+    });
 
-    	it('return value array with vaild input object_callback func changed 1', function () {
+    it('return value array with vaild input object_callback func changed 1', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k) { return v + k; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
-    	});
+    });
 
-    	it('return value array with vaild input object_callback func changed 2', function () {
+    it('return value array with vaild input object_callback func changed 2', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k, o) { return o; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
-    	});
+    });
   });
 
   describe('createInvisibleIframe', function () {
@@ -704,7 +705,7 @@ describe('Utils', function () {
     it('deep copies objects', function () {
       const adUnit = [{
         code: 'swan',
-        mediaTypes: {video: {context: 'outstream'}},
+        mediaTypes: { video: { context: 'outstream' } },
         renderer: {
           render: bid => player.render(bid),
           url: '/video/renderer.js'
@@ -763,12 +764,12 @@ describe('Utils', function () {
 
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
-      let var1 = 'placementIdTest';
-      let test1 = convertCamelToUnderscore(var1);
+      const var1 = 'placementIdTest';
+      const test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
-      let var2 = 'my_test_value';
-      let test2 = convertCamelToUnderscore(var2);
+      const var2 = 'my_test_value';
+      const test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
     });
   });
@@ -819,7 +820,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { noDecodeWholeURL: true });
       });
 
       it('extracts the search query', function () {
@@ -839,7 +840,7 @@ describe('Utils', function () {
           hostname: 'example.com',
           port: 3000,
           pathname: '/pathname/',
-          search: {foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx'},
+          search: { foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx' },
           hash: 'hash'
         })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test&bar=foo%26foo%3Dxxx#hash');
       });
@@ -855,7 +856,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { decodeSearchAsString: true });
       });
 
       it('extracts the search query', function () {
@@ -1108,8 +1109,8 @@ describe('Utils', function () {
       function Typed(obj) {
         Object.assign(this, obj);
       }
-      const obj = {key: 'value'};
-      expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
+      const obj = { key: 'value' };
+      expect(deepEqual({ outer: obj }, { outer: new Typed(obj) }, { checkTypes: true })).to.be.false;
     });
     it('should work when adding properties to the prototype of Array', () => {
       after(function () {
@@ -1205,25 +1206,25 @@ describe('Utils', function () {
 
   describe('convertObjectToArray', () => {
     it('correctly converts object to array', () => {
-      const obj = {key: 1, anotherKey: 'fred', third: ['fred'], fourth: {sub: {obj: 'test'}}};
+      const obj = { key: 1, anotherKey: 'fred', third: ['fred'], fourth: { sub: { obj: 'test' } } };
       const array = utils.convertObjectToArray(obj);
 
-      expect(JSON.stringify(array[0])).equal(JSON.stringify({'key': 1}))
-      expect(JSON.stringify(array[1])).equal(JSON.stringify({'anotherKey': 'fred'}))
-      expect(JSON.stringify(array[2])).equal(JSON.stringify({'third': ['fred']}))
-      expect(JSON.stringify(array[3])).equal(JSON.stringify({'fourth': {sub: {obj: 'test'}}}));
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }))
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }))
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }))
+      expect(JSON.stringify(array[3])).equal(JSON.stringify({ 'fourth': { sub: { obj: 'test' } } }));
       expect(array.length).to.equal(4);
     });
   });
 
   describe('setScriptAttributes', () => {
     it('correctly adds attributes from an object', () => {
-      const script = document.createElement('script'),
-        attrs = {
-          'data-first_prop': '1',
-          'data-second_prop': 'b',
-          'id': 'newId'
-        };
+      const script = document.createElement('script');
+      const attrs = {
+        'data-first_prop': '1',
+        'data-second_prop': 'b',
+        'id': 'newId'
+      };
       script.id = 'oldId';
       utils.setScriptAttributes(script, attrs);
       expect(script.dataset['first_prop']).to.equal('1');
@@ -1245,7 +1246,7 @@ describe('Utils', function () {
       expect(result).to.equal(`{"key1":"val1","key2":{"key3":100,"key4":true}}`);
     });
     it('return empty string for stringify errors', () => {
-      const jsonObj = {k: 2n};
+      const jsonObj = { k: 2n };
       const result = utils.safeJSONEncode(jsonObj);
       expect(result).to.equal('');
     });
@@ -1266,7 +1267,7 @@ describe('Utils', function () {
             if (typeof window.CompressionStream === 'undefined') {
               cachedResult = false;
             } else {
-              let newCompressionStream = new window.CompressionStream('gzip');
+              const newCompressionStream = new window.CompressionStream('gzip');
               cachedResult = true;
             }
           } catch (error) {
@@ -1421,7 +1422,7 @@ describe('memoize', () => {
           [100, 5]
         ]
       }
-    ].forEach(({arr, tests}) => {
+    ].forEach(({ arr, tests }) => {
       describe(`on ${arr}`, () => {
         tests.forEach(([el, pos]) => {
           it(`finds index for ${el} => ${pos}`, () => {
@@ -1444,18 +1445,18 @@ describe('getWinDimensions', () => {
     clock.restore();
   });
 
-  it('should invoke resetWinDimensions once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(internal, 'resetWinDimensions');
-    getWinDimensions();
+  it('should clear cache once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledOnce(resetWinDimensionsSpy);
     clock.tick(18);
-    getWinDimensions();
+    expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
 });

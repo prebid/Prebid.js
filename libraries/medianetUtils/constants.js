@@ -9,13 +9,11 @@ export const mnetGlobals = {
   refererInfo: null,
 };
 
-export const LOGGING_DELAY = 2000;
-
-export const LOG_TYPE_ID = 'kfk';
-export const LOG_EVT_ID = 'projectevents';
+export const LOGGING_DELAY = 500;
 export const EVENT_PIXEL_URL = 'https://qsearch-a.akamaihd.net/log';
 export const POST_ENDPOINT = 'https://navvy.media.net/log';
-export const GET_ENDPOINT = 'https://pb-logs.media.net/log';
+export const POST_ENDPOINT_RA = 'https://navvy.media.net/clog';
+export const GET_ENDPOINT_RA = 'https://pb-logs.media.net/clog';
 export const ANALYTICS_VERSION = '2.0.0';
 export const PREBID_VERSION = '$prebid.version$';
 export const MEDIANET = 'medianet';
@@ -41,7 +39,6 @@ export const DBF_PRIORITY = {
 };
 
 // Properties
-export const SEND_ALL_BID_PROP = 'enableSendAllBids';
 export const AUCTION_OPTIONS = 'auctionOptions';
 
 // Errors
@@ -55,7 +52,7 @@ export const ERROR_IWB_BID_MISSING = 'iwb_bid_missing';
 export const CONFIG_PENDING = 0;
 export const CONFIG_PASS = 1;
 export const CONFIG_ERROR = 3;
-export const DEFAULT_LOGGING_PERCENT = 50;
+export const DEFAULT_LOGGING_PERCENT = 10;
 export const CONFIG_URL = 'https://prebid.media.net/rtb/prebid/analytics/config';
 // Dummy Bidder
 export const DUMMY_BIDDER = '-2';
@@ -76,3 +73,8 @@ export const VIDEO_PLACEMENT = {
 // Log Types
 export const LOG_APPR = 'APPR';
 export const LOG_RA = 'RA';
+export const LOGGING_TOPICS = {
+  [LOG_RA]: 'pba_aw',
+  [LOG_APPR]: 'prebid_analytics_events_client',
+  PROJECT_EVENTS: 'projectevents',
+};

@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -79,7 +79,8 @@ export const spec = {
         payload.gdprConsent = '';
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+      if (schain) { payload.schain = schain; }
       if (userEids !== null) payload.userEids = userEids;
     };
     payload.connectionType = getConnectionType();
@@ -176,7 +177,7 @@ export const spec = {
     };
     params.price = bid.cpm;
     const url = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`;
-    ajax(url, null, undefined, {method: 'GET', withCredentials: true});
+    ajax(url, null, undefined, { method: 'GET', withCredentials: true });
     return true;
   }
 

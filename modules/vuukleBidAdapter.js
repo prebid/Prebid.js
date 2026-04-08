@@ -11,7 +11,7 @@ const VENDOR_ID = 1004;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
     return true
@@ -31,7 +31,7 @@ export const spec = {
         rnd: Math.random(),
         bidId: bid.bidId,
         source: 'pbjs',
-        schain: JSON.stringify(bid.schain),
+        schain: JSON.stringify(bid?.ortb2?.source?.ext?.schain),
         requestId: bid.bidderRequestId,
         tmax: bidderRequest.timeout,
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
@@ -56,7 +56,7 @@ export const spec = {
         method: 'GET',
         url: URL,
         data: params,
-        options: {withCredentials: false}
+        options: { withCredentials: false }
       }
     });
 

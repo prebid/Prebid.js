@@ -28,8 +28,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    let videoParams = deepAccess(bid, 'mediaTypes.video');
-    let bannerParams = deepAccess(bid, 'mediaTypes.banner');
+    const videoParams = deepAccess(bid, 'mediaTypes.video');
+    const bannerParams = deepAccess(bid, 'mediaTypes.banner');
 
     if (!bid.params) {
       logError('The bid params are missing');
@@ -46,9 +46,9 @@ export const spec = {
      */
 
     if (bannerParams) {
-      let sizes = bannerParams.sizes;
+      const sizes = bannerParams.sizes;
 
-      if (!sizes || parseSizesInput(sizes).length == 0) {
+      if (!sizes || parseSizesInput(sizes).length === 0) {
         logError('mediaTypes.banner.sizes must be set for banner placement at the right format.');
         return false;
       }
@@ -92,7 +92,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let payload = {};
+    const payload = {};
 
     /** Viously Publisher ID */
     if (validBidRequests[0].params.pid) {
@@ -101,12 +101,12 @@ export const spec = {
 
     // Referer Info
     if (config.getConfig('pageUrl')) {
-      let parsedUrl = parseUrl(config.getConfig('pageUrl'));
+      const parsedUrl = parseUrl(config.getConfig('pageUrl'));
 
       payload.domain = parsedUrl.hostname;
       payload.page_domain = config.getConfig('pageUrl');
     } else if (bidderRequest && bidderRequest.refererInfo) {
-      let parsedUrl = parseUrl(bidderRequest.refererInfo.page);
+      const parsedUrl = parseUrl(bidderRequest.refererInfo.page);
 
       payload.domain = parsedUrl.hostname;
       payload.page_domain = bidderRequest.refererInfo.page;
@@ -132,8 +132,9 @@ export const spec = {
     }
 
     // Schain
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
     // Currency
     payload.currency_code = CURRENCY;
@@ -145,13 +146,13 @@ export const spec = {
 
     // Placements
     payload.placements = validBidRequests.map(bidRequest => {
-      let request = {
+      const request = {
         id: bidRequest.adUnitCode,
         bid_id: bidRequest.bidId
       };
 
       if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-        let position = deepAccess(bidRequest, 'mediaTypes.banner.pos');
+        const position = deepAccess(bidRequest, 'mediaTypes.banner.pos');
 
         request.type = BANNER;
 
@@ -185,10 +186,10 @@ export const spec = {
     if (responseBody.ads && responseBody.ads.length > 0) {
       responseBody.ads.forEach(function(bidResponse) {
         if (bidResponse.bid) {
-          let bidRequest = ((requests.data.placements) || []).find(bid => bid.bid_id === bidResponse.bid_id);
+          const bidRequest = ((requests.data.placements) || []).find(bid => bid.bid_id === bidResponse.bid_id);
 
           if (bidRequest) {
-            let sizes = bidResponse.size.split('x');
+            const sizes = bidResponse.size.split('x');
 
             const bid = {
               requestId: bidRequest.bid_id,
@@ -206,7 +207,7 @@ export const spec = {
               nurl: bidResponse.nurl ? bidResponse.nurl : []
             };
 
-            if (bidResponse.type == VIDEO) {
+            if (bidResponse.type === VIDEO) {
               if (bidResponse.ad_url) {
                 bid.vastUrl = bidResponse.ad_url;
               } else {

@@ -1,10 +1,11 @@
-import {spec, storage, VIDEO_RENDERER_URL} from 'modules/tpmnBidAdapter.js';
-import {generateUUID} from '../../../src/utils.js';
-import {expect} from 'chai';
+import { spec, storage, VIDEO_RENDERER_URL } from 'modules/tpmnBidAdapter.js';
+import { generateUUID } from '../../../src/utils.js';
+import { expect } from 'chai';
 import * as utils from 'src/utils';
 import * as sinon from 'sinon';
 import 'modules/consentManagementTcf.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
@@ -124,7 +125,7 @@ describe('tpmnAdapterTests', function () {
   let sandbox = sinon.createSandbox();
   let getCookieStub;
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       tpmn: {
         storageAllowed: true
       }
@@ -136,12 +137,12 @@ describe('tpmnAdapterTests', function () {
   afterEach(function () {
     sandbox.restore();
     getCookieStub.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
   });
 
   describe('isBidRequestValid()', function () {
     it('should accept request if placementId is passed', function () {
-      let bid = {
+      const bid = {
         bidder: BIDDER_CODE,
         params: {
           inventoryId: 123
@@ -156,7 +157,7 @@ describe('tpmnAdapterTests', function () {
     });
 
     it('should reject requests without params', function () {
-      let bid = {
+      const bid = {
         bidder: BIDDER_CODE,
         params: {}
       };
@@ -179,7 +180,7 @@ describe('tpmnAdapterTests', function () {
           gdprApplies: true,
         }
       }));
-      let request = spec.buildRequests([bid], req)[0];
+      const request = spec.buildRequests([bid], req)[0];
 
       const payload = request.data;
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
@@ -193,7 +194,7 @@ describe('tpmnAdapterTests', function () {
         mediaTypes: { banner: { battr: [1] } }
       });
 
-      let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+      const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
 
       expect(request).to.exist.and.to.be.an('object');
       const payload = request.data;
@@ -217,7 +218,7 @@ describe('tpmnAdapterTests', function () {
       it('should create request data', function () {
         const bid = utils.deepClone(BANNER_BID);
 
-        let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+        const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;
         expect(payload.imp[0]).to.have.property('id', bid.bidId);
@@ -261,7 +262,7 @@ describe('tpmnAdapterTests', function () {
           expect(spec.isBidRequestValid(bid)).to.equal(true);
           const requests = spec.buildRequests([bid], BIDDER_REQUEST);
           const request = requests[0].data;
-          expect(request.imp[0].video).to.deep.include({...check});
+          expect(request.imp[0].video).to.deep.include({ ...check });
         });
       }
 
@@ -269,8 +270,8 @@ describe('tpmnAdapterTests', function () {
         it('when mediaType New Video', () => {
           const NEW_VIDEO_BID = {
             'bidder': 'tpmn',
-            'params': {'inventoryId': 2, 'bidFloor': 2},
-            'userId': {'pubcid': '88a49ee6-beeb-4dd6-92ac-3b6060e127e1'},
+            'params': { 'inventoryId': 2, 'bidFloor': 2 },
+            'userId': { 'pubcid': '88a49ee6-beeb-4dd6-92ac-3b6060e127e1' },
             'mediaTypes': {
               'video': {
                 'context': 'outstream',
@@ -292,7 +293,7 @@ describe('tpmnAdapterTests', function () {
           const check = {
             w: 1024,
             h: 768,
-            mimes: [ 'video/mp4' ],
+            mimes: ['video/mp4'],
             playbackmethod: [2, 4, 6],
             api: [1, 2, 3, 6],
             protocols: [3, 4],
@@ -305,7 +306,7 @@ describe('tpmnAdapterTests', function () {
           }
 
           expect(spec.isBidRequestValid(NEW_VIDEO_BID)).to.equal(true);
-          let requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);
+          const requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);
           const request = requests[0].data;
           expect(request.imp[0].video.w).to.equal(check.w);
           expect(request.imp[0].video.h).to.equal(check.h);
@@ -324,7 +325,7 @@ describe('tpmnAdapterTests', function () {
 
       if (FEATURES.VIDEO) {
         it('should use bidder video params if they are set', () => {
-          let bid = utils.deepClone(VIDEO_BID);
+          const bid = utils.deepClone(VIDEO_BID);
           const check = {
             api: [1, 2],
             mimes: ['video/mp4', 'video/x-flv'],
@@ -339,14 +340,14 @@ describe('tpmnAdapterTests', function () {
             h: 480
 
           };
-          bid.mediaTypes.video = {...check};
+          bid.mediaTypes.video = { ...check };
           bid.mediaTypes.video.context = 'instream';
           bid.mediaTypes.video.playerSize = [[640, 480]];
 
           expect(spec.isBidRequestValid(bid)).to.equal(true);
           const requests = spec.buildRequests([bid], BIDDER_REQUEST);
           const request = requests[0].data;
-          expect(request.imp[0].video).to.deep.include({...check});
+          expect(request.imp[0].video).to.deep.include({ ...check });
         });
       }
     });
@@ -379,7 +380,7 @@ describe('tpmnAdapterTests', function () {
       it('should handle empty bid response', function () {
         const bid = utils.deepClone(BANNER_BID);
 
-        let request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
+        const request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
         const EMPTY_RESP = Object.assign({}, BANNER_BID_RESPONSE, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, request);
         expect(bids).to.be.empty;
@@ -429,7 +430,7 @@ describe('tpmnAdapterTests', function () {
     });
 
     it('case 1 -> allow iframe', () => {
-      const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
     });

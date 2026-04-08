@@ -1,6 +1,6 @@
-import {BidRequest} from './spec.js';
-import {logWarn} from '../../src/utils.js';
-import {toOrtb25} from '../ortb2.5Translator/translator.js';
+import { BidRequest } from './spec.js';
+import { logWarn } from '../../src/utils.js';
+import { toOrtb25 } from '../ortb2.5Translator/translator.js';
 
 function deleteField(errno, path, obj, field, value) {
   logWarn(`${path} is not valid ORTB 2.5, field will be removed from request:`, value);

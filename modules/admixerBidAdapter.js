@@ -1,28 +1,35 @@
-import {isStr, logError, isFn, deepAccess} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { isStr, logError, isFn, deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
+const GVLID = 511;
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ALIASES = [
-  {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
+  { code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx' },
   'adblender',
-  {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
-  {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
-  {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
-  'rtbstack'
+  { code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx' },
+  { code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx' },
+  { code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx' },
+  'rtbstack',
+  'theads',
+];
+const RTB_RELATED_ALIASES = [
+  'rtbstack',
+  'theads',
 ];
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ALIASES.map(val => isStr(val) ? val : val.code),
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return bid.bidder === 'rtbstack'
+    return RTB_RELATED_ALIASES.includes(bid.bidder)
       ? !!bid.params.tagId
       : !!bid.params.zone;
   },
@@ -46,13 +53,14 @@ export const spec = {
     const payload = {
       imps: [],
       ortb2: bidderRequest.ortb2,
-      docReferrer: docRef};
+      docReferrer: docRef
+    };
     let endpointUrl;
     if (bidderRequest) {
       // checks if there is specified any endpointUrl in bidder config
       endpointUrl = config.getConfig('bidderURL');
-      if (!endpointUrl && bidderRequest.bidderCode === 'rtbstack') {
-        logError('The bidderUrl config is required for RTB Stack bids. Please set it with setBidderConfig() for "rtbstack".');
+      if (!endpointUrl && RTB_RELATED_ALIASES.includes(bidderRequest.bidderCode)) {
+        logError(`The bidderUrl config is required for ${bidderRequest.bidderCode} bids. Please set it with setBidderConfig() for "${bidderRequest.bidderCode}".`);
         return;
       }
       // TODO: is 'page' the right value here?
@@ -71,17 +79,19 @@ export const spec = {
       }
     }
     validRequest.forEach((bid) => {
-      let imp = {};
-      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      const imp = {};
+      Object.keys(bid).forEach(key => {
+        imp[key] = bid[key];
+      });
       imp.ortb2 && delete imp.ortb2;
-      let bidFloor = getBidFloor(bid);
+      const bidFloor = getBidFloor(bid);
       if (bidFloor) {
         imp.bidFloor = bidFloor;
       }
       payload.imps.push(imp);
     });
 
-    let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
+    const urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
       method: 'POST',
       url: urlForRequest,
@@ -94,7 +104,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     try {
-      const {body: {ads = []} = {}} = serverResponse;
+      const { body: { ads = [] } = {} } = serverResponse;
       ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
       logError(e);
@@ -103,13 +113,13 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const pixels = [];
-    serverResponses.forEach(({body: {cm = {}} = {}}) => {
-      const {pixels: img = [], iframes: frm = []} = cm;
+    serverResponses.forEach(({ body: { cm = {} } = {} }) => {
+      const { pixels: img = [], iframes: frm = [] } = cm;
       if (syncOptions.pixelEnabled) {
-        img.forEach((url) => pixels.push({type: 'image', url}));
+        img.forEach((url) => pixels.push({ type: 'image', url }));
       }
       if (syncOptions.iframeEnabled) {
-        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+        frm.forEach((url) => pixels.push({ type: 'iframe', url }));
       }
     });
     return pixels;

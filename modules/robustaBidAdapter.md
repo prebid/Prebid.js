@@ -1,8 +1,8 @@
 # Overview
 
-Module Name: Robusta Bid Adapter  
-Module Type: Bidder Adapter  
-Maintainer: dev@robustadigital.com  
+Module Name: Robusta Bid Adapter
+Module Type: Bidder Adapter
+Maintainer: dev@robustadigital.com
 
 # Description
 

@@ -1,5 +1,5 @@
-import {config} from 'src/config.js';
-import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
+import { config } from 'src/config.js';
+import { getRealTimeData, anonymisedRtdSubmodule, storage } from 'modules/anonymisedRtdProvider.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('anonymisedRtdProvider', function() {
@@ -33,7 +33,7 @@ describe('anonymisedRtdProvider', function() {
 
   describe('anonymisedRtdSubmodule', function() {
     it('successfully instantiates', function () {
-		  expect(anonymisedRtdSubmodule.init()).to.equal(true);
+      expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
     it('should load external script when params.tagConfig.clientId is set', function () {
       const rtdConfig = {
@@ -93,7 +93,7 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      const expected = 'https://static.anonymised.io/light/loader.js?ref=prebid';
+      const expected = `https://static.anonymised.io/light/loader.js?ref=prebid&d=${window.location.hostname}`;
       const expectedTagConfig = {
         idw_client_id: 'testId'
       };

@@ -1,10 +1,13 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +19,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'gumgum';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALIAS_BIDDER_CODE = ['gg'];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -25,7 +28,7 @@ const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
 
-let invalidRequestIds = {};
+const invalidRequestIds = {};
 let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
@@ -42,8 +45,8 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   let ns;
 
   function getNetworkSpeed () {
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
-    const Mbps = connection && (connection.downlink || connection.bandwidth);
+    const connection = getConnectionInfo();
+    const Mbps = connection?.downlink ?? connection?.bandwidth;
     return Mbps ? Math.round(Mbps * 1024) : null;
   }
 
@@ -89,7 +92,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
     pu: stripGGParams(topUrl),
     tpl: mosttopURL,
     ce: storage.cookiesAreEnabled(),
-    dpr: topWindow.devicePixelRatio || 1,
+    dpr: getDevicePixelRatio(topWindow),
     jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   };
@@ -122,7 +125,7 @@ function _serializeSupplyChainObj(schainObj) {
   let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
 
   // order of properties: asi,sid,hp,rid,name,domain
-  schainObj.nodes.map(node => {
+  schainObj.nodes.forEach(node => {
     serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
@@ -278,7 +281,7 @@ function _getDeviceData(ortb2Data) {
     ipv6: _device.ipv6,
     ua: _device.ua,
     sua: _device.sua ? JSON.stringify(_device.sua) : undefined,
-    dnt: _device.dnt,
+    dnt: getDNT() ? 1 : 0,
     os: _device.os,
     osv: _device.osv,
     dt: _device.devicetype,
@@ -287,6 +290,8 @@ function _getDeviceData(ortb2Data) {
     model: _device.model,
     ppi: _device.ppi,
     pxratio: _device.pxratio,
+    lmt: _device.lmt,
+    ifa: _device.lmt !== 1 ? _device.ifa : undefined,
     foddid: _device?.ext?.fiftyonedegrees_deviceId,
   };
 
@@ -310,8 +315,8 @@ function getGreatestDimensions(sizes) {
   let maxh = 0;
   let greatestVal = 0;
   sizes.forEach(bannerSize => {
-    let [width, height] = bannerSize;
-    let greaterSide = width > height ? width : height;
+    const [width, height] = bannerSize;
+    const greaterSide = width > height ? width : height;
     if ((greaterSide > greatestVal) || (greaterSide === greatestVal && width >= maxw && height >= maxh)) {
       greatestVal = greaterSide;
       maxw = width;
@@ -367,15 +372,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
-      schain,
       userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
-    const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
-    const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     let sizes = [1, 1];
     let data = {};
     data.displaymanager = 'Prebid.js - gumgum';
@@ -399,9 +402,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     // Send filtered pubProvidedId's
     if (userId && userId.pubProvidedId) {
-      let filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
-      let maxLength = 1800; // replace this with your desired maximum length
-      let truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
+      const filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
+      const maxLength = 1800; // replace this with your desired maximum length
+      const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
       data.pubProvidedId = truncatedJsonString
     }
     // ADJS-1286 Read id5 id linktype field
@@ -464,9 +467,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) };
     }
-    if (paapiEligible) {
-      data.ae = paapiEligible
-    }
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }
@@ -490,6 +490,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (coppa) {
       data.coppa = coppa;
     }
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
@@ -526,7 +527,7 @@ export function getCids(site) {
   return null;
 }
 export function setIrisId(data, site, params) {
-  let irisID = getCids(site);
+  const irisID = getCids(site);
   if (irisID) {
     data.irisid = irisID;
   } else {
@@ -633,11 +634,11 @@ function interpretResponse(serverResponse, bidRequest) {
       mediaType: type
     }
   } = Object.assign(defaultResponse, serverResponseBody);
-  let data = bidRequest.data || {};
-  let product = data.pi;
-  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER;
-  let isTestUnit = (product === 3 && data.si === 9);
-  let metaData = {
+  const data = bidRequest.data || {};
+  const product = data.pi;
+  const mediaType = (product === 6 || product === 7) ? VIDEO : BANNER;
+  const isTestUnit = (product === 3 && data.si === 9);
+  const metaData = {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
   };
@@ -649,14 +650,14 @@ function interpretResponse(serverResponse, bidRequest) {
   // added logic for in-slot multi-szie
   } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [ width, height ] = current;
+      const [width, height] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];
     sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
-  let [width, height] = sizes[0].split('x');
+  const [width, height] = sizes[0].split('x');
 
   if (jcsi) {
     serverResponseBody.jcsi = JCSI

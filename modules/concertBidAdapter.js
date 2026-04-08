@@ -4,6 +4,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -44,7 +45,7 @@ export const spec = {
 
     const eids = [];
 
-    let payload = {
+    const payload = {
       meta: {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.page,
@@ -70,10 +71,10 @@ export const spec = {
 
     payload.slots = validBidRequests.map((bidRequest) => {
       eids.push(...(bidRequest.userIdAsEids || []));
-      const adUnitElement = document.getElementById(bidRequest.adUnitCode);
+      const adUnitElement = getAdUnitElement(bidRequest);
       const coordinates = getOffset(adUnitElement);
 
-      let slot = {
+      const slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
         transactionId: bidRequest.ortb2Imp?.ext?.tid,

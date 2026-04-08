@@ -1,9 +1,10 @@
-import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
-import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
+import { deepAccess, isEmpty, isStr, logWarn, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
+import { browserTypes, osTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
+import { BOL_LIKE_USER_AGENTS } from '../libraries/userAgentUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -23,7 +24,7 @@ const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/d
 const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
-const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
+const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -125,6 +126,12 @@ export const spec = {
         payload.gpid = gpid;
       }
 
+      // instl
+      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      if (instl === 1 || instl === '1') {
+        payload.instl = 1;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
@@ -169,7 +176,7 @@ export const spec = {
 
       if (response.adTag && renderId === 'ViewableRendering') {
         bidResponse.mediaType = BANNER;
-        let viewableScript = `
+        const viewableScript = `
         <script src="${VIEWABLE_PERCENTAGE_URL}"></script>
         <script>
         let width =${bidResponse.width};
@@ -320,7 +327,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
     }
 
     const splited = size.split('x');
-    const sizeObj = {w: parseInt(splited[0], 10), h: parseInt(splited[1], 10)};
+    const sizeObj = { w: parseInt(splited[0], 10), h: parseInt(splited[1], 10) };
     const _isValidPlayerSize = !(isEmpty(sizeObj)) && (isFinite(sizeObj.w) && isFinite(sizeObj.h));
     if (!_isValidPlayerSize) {
       return result;
@@ -410,12 +417,12 @@ function cmerRender(bid) {
 }
 
 /**
- * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies.
+ * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies OR it's bot-like traffic.
  * Data extracted from navigator's userAgent
  * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
  */
 function skipSync(gdprConsent) {
-  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent);
+  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent) || isBotLikeTraffic();
 }
 
 /**
@@ -423,6 +430,15 @@ function skipSync(gdprConsent) {
  */
 function gdprApplies(gdprConsent) {
   return gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies;
+}
+
+/**
+ * Check if the user agent is bot-like
+ * @returns {boolean}
+ */
+function isBotLikeTraffic() {
+  const botPattern = new RegExp(BOL_LIKE_USER_AGENTS.join('|'), 'i');
+  return botPattern.test(navigator.userAgent);
 }
 
 registerBidder(spec);

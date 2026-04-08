@@ -4,6 +4,7 @@
       "33acrossIdSystem",
       "admixerIdSystem",
       "adqueryIdSystem",
+      "adplusIdSystem",
       "adriverIdSystem",
       "adtelligentIdSystem",
       "amxIdSystem",
@@ -13,11 +14,11 @@
       "czechAdIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
-      "dmdIdSystem",
       "euidIdSystem",
       "fabrickIdSystem",
       "freepassIdSystem",
       "ftrackIdSystem",
+      "gemiusIdSystem",
       "gravitoIdSystem",
       "growthCodeIdSystem",
       "hadronIdSystem",
@@ -30,6 +31,7 @@
       "kinessoIdSystem",
       "liveIntentIdSystem",
       "lmpIdSystem",
+      "locIdSystem",
       "lockrAIMIdSystem",
       "lotamePanoramaIdSystem",
       "merkleIdSystem",
@@ -47,9 +49,9 @@
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "pubmaticIdSystem",
-      "quantcastIdSystem",
       "rewardedInterestIdSystem",
       "sharedIdSystem",
+      "startioIdSystem",
       "taboolaIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
@@ -61,10 +63,6 @@
       "verizonMediaIdSystem",
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
-    ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "dfpAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
@@ -83,9 +81,11 @@
       "blueconicRtdProvider",
       "brandmetricsRtdProvider",
       "browsiRtdProvider",
+      "chromeAiRtdProvider",
       "cleanioRtdProvider",
       "confiantRtdProvider",
       "contxtfulRtdProvider",
+      "datamageRtdProvider",
       "dgkeywordRtdProvider",
       "dynamicAdBoostRtdProvider",
       "experianRtdProvider",
@@ -108,11 +108,13 @@
       "mobianRtdProvider",
       "neuwoRtdProvider",
       "nodalsAiRtdProvider",
+      "oftmediaRtdProvider",
       "oneKeyRtdProvider",
       "optableRtdProvider",
       "optimeraRtdProvider",
       "overtoneRtdProvider",
       "oxxionRtdProvider",
+      "panxoRtdProvider",
       "permutiveRtdProvider",
       "pubmaticRtdProvider",
       "pubxaiRtdProvider",
@@ -121,6 +123,7 @@
       "raynRtdProvider",
       "reconciliationRtdProvider",
       "relevadRtdProvider",
+      "scope3RtdProvider",
       "semantiqRtdProvider",
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
@@ -136,10 +139,6 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
-    ],
-    "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
     ]
   }
 }

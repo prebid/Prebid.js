@@ -1,20 +1,20 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {spec} from 'modules/revcontentBidAdapter.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/revcontentBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
 describe('revcontent adapter', function () {
   let serverResponse, bidRequest, bidResponses;
-  let bids = [];
+  const bids = [];
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: 'revcontent',
       nativeParams: {},
       params: {
-        size: {width: 300, height: 250},
+        size: { width: 300, height: 250 },
         apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
         userId: 673,
         domain: 'test.com',
@@ -34,52 +34,52 @@ describe('revcontent adapter', function () {
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {},
         params: {
-          size: {width: 300, height: 250},
+          size: { width: 300, height: 250 },
           apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
           userId: 673,
           widgetId: 33861,
           endpoint: 'trends-s0.revcontent.com'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
       request = request[0];
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://trends-s0.revcontent.com/rtb?apiKey=8a33fa9cf220ae685dcc3544f847cdda858d3b1c&userId=673&widgetId=33861');
-      assert.deepEqual(request.options, {contentType: 'application/json'});
+      assert.deepEqual(request.options, { contentType: 'application/json' });
       assert.ok(request.data);
     });
 
     it('should have default request structure', function () {
-      let keys = 'method,options,url,data,bid'.split(',');
-      let validBidRequests = [{
+      const keys = 'method,options,url,data,bid'.split(',');
+      const validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {},
         params: {
-          size: {width: 300, height: 250},
+          size: { width: 300, height: 250 },
           apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
           userId: 673,
           domain: 'test.com',
           endpoint: 'trends-s0.revcontent.com'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
       request = request[0];
-      let data = Object.keys(request);
+      const data = Object.keys(request);
 
       assert.deepEqual(keys, data);
     });
 
     it('should send info about device and unique bidfloor', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {},
         params: {
-          size: {width: 300, height: 250},
+          size: { width: 300, height: 250 },
           apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
           userId: 673,
           domain: 'test.com',
@@ -87,18 +87,18 @@ describe('revcontent adapter', function () {
           bidfloor: 0.05
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
       request = JSON.parse(request[0].data);
       assert.equal(request.imp[0].bidfloor, 0.05);
       assert.equal(request.device.ua, navigator.userAgent);
     });
 
     it('should send info about device and use getFloor', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {},
         params: {
-          size: {width: 300, height: 250},
+          size: { width: 300, height: 250 },
           apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
           userId: 673,
           domain: 'test.com',
@@ -112,14 +112,14 @@ describe('revcontent adapter', function () {
           currency: 'USD'
         };
       };
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
       request = JSON.parse(request[0].data);
       assert.equal(request.imp[0].bidfloor, 0.07);
       assert.equal(request.device.ua, navigator.userAgent);
     });
 
     it('should send info about the site and default bidfloor', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {
           image: {
@@ -139,32 +139,32 @@ describe('revcontent adapter', function () {
           }
         },
         params: {
-          size: {width: 300, height: 250},
+          size: { width: 300, height: 250 },
           apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
           userId: 673,
           domain: 'test.com',
           endpoint: 'trends-s0.revcontent.com'
         }
       }];
-      let refererInfo = {page: 'page'};
-      let request = spec.buildRequests(validBidRequests, {refererInfo});
+      const refererInfo = { page: 'page' };
+      let request = spec.buildRequests(validBidRequests, { refererInfo });
 
       request = JSON.parse(request[0].data);
       assert.equal(request.imp[0].bidfloor, 0.1);
       assert.deepEqual(request.site, {
         domain: 'test.com',
         page: 'page',
-        publisher: {id: 673, domain: 'test.com'}
+        publisher: { id: 673, domain: 'test.com' }
       });
     });
   });
 
   describe('interpretResponse', function () {
     it('should return if no body in response', function () {
-      let serverResponse = {};
-      let bidRequest = {};
+      const serverResponse = {};
+      const bidRequest = {};
 
-      let result = spec.interpretResponse(serverResponse, bidRequest);
+      const result = spec.interpretResponse(serverResponse, bidRequest);
       assert.equal(result.length, 0);
     });
 
@@ -320,13 +320,13 @@ describe('revcontent adapter', function () {
         body: {
           id: null,
           bidid: null,
-          seatbid: [{bid: []}],
+          seatbid: [{ bid: [] }],
           cur: 'USD'
         }
       };
-      let bidRequest = {
+      const bidRequest = {
         data: '{}',
-        bids: [{bidId: 'bidId1'}]
+        bids: [{ bidId: 'bidId1' }]
       };
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
       assert.ok(!result);

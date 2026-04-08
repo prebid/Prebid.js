@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/pubxBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pubxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('pubxAdapter', function () {
@@ -26,7 +26,7 @@ describe('pubxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);

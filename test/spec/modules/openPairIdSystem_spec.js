@@ -10,7 +10,7 @@ import {
   setSubmoduleRegistry
 } from '../../../modules/userId/index.js';
 
-import {createEidsArray, getEids} from '../../../modules/userId/eids.js';
+import { createEidsArray, getEids } from '../../../modules/userId/eids.js';
 
 describe('openPairId', function () {
   let sandbox;
@@ -25,36 +25,38 @@ describe('openPairId', function () {
   });
 
   it('should read publisher id from specified clean room if configured with storageKey', function() {
-    let publisherIds = ['dGVzdC1wYWlyLWlkMQ==', 'test-pair-id2', 'test-pair-id3'];
-    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({'envelope': publisherIds})));
+    const publisherIds = ['dGVzdC1wYWlyLWlkMQ==', 'test-pair-id2', 'test-pair-id3'];
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({ 'envelope': publisherIds })));
 
-    let id = openPairIdSubmodule.getId({
+    const id = openPairIdSubmodule.getId({
       params: {
         habu: {
           storageKey: 'habu_pairId_custom'
         }
-      }})
+      }
+    })
 
-    expect(id).to.be.deep.equal({id: publisherIds});
+    expect(id).to.be.deep.equal({ id: publisherIds });
   });
 
   it('should read publisher id from liveramp with default storageKey and additional clean room with configured storageKey', function() {
-    let getDataStub = sandbox.stub(storage, 'getDataFromLocalStorage');
-    let liveRampPublisherIds = ['lr-test-pair-id1', 'lr-test-pair-id2', 'lr-test-pair-id3'];
-    getDataStub.withArgs('_lr_pairId').returns(btoa(JSON.stringify({'envelope': liveRampPublisherIds})));
+    const getDataStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+    const liveRampPublisherIds = ['lr-test-pair-id1', 'lr-test-pair-id2', 'lr-test-pair-id3'];
+    getDataStub.withArgs('_lr_pairId').returns(btoa(JSON.stringify({ 'envelope': liveRampPublisherIds })));
 
-    let habuPublisherIds = ['habu-test-pair-id1', 'habu-test-pair-id2', 'habu-test-pair-id3'];
-    getDataStub.withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({'envelope': habuPublisherIds})));
+    const habuPublisherIds = ['habu-test-pair-id1', 'habu-test-pair-id2', 'habu-test-pair-id3'];
+    getDataStub.withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({ 'envelope': habuPublisherIds })));
 
-    let id = openPairIdSubmodule.getId({
+    const id = openPairIdSubmodule.getId({
       params: {
         habu: {
           storageKey: 'habu_pairId_custom'
         },
         liveramp: {}
-      }})
+      }
+    })
 
-    expect(id).to.be.deep.equal({id: habuPublisherIds.concat(liveRampPublisherIds)});
+    expect(id).to.be.deep.equal({ id: habuPublisherIds.concat(liveRampPublisherIds) });
   });
 
   it('should log an error if no ID is found when getId', function() {
@@ -63,57 +65,60 @@ describe('openPairId', function () {
   });
 
   it('should read publisher id from local storage if exists', function() {
-    let publisherIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
+    const publisherIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
     sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('pairId').returns(btoa(JSON.stringify(publisherIds)));
 
-    let id = openPairIdSubmodule.getId({ params: {} });
-    expect(id).to.be.deep.equal({id: publisherIds});
+    const id = openPairIdSubmodule.getId({ params: {} });
+    expect(id).to.be.deep.equal({ id: publisherIds });
   });
 
   it('should read publisher id from cookie if exists', function() {
-    let publisherIds = ['test-pair-id4', 'test-pair-id5', 'test-pair-id6'];
+    const publisherIds = ['test-pair-id4', 'test-pair-id5', 'test-pair-id6'];
     sandbox.stub(storage, 'getCookie').withArgs('pairId').returns(btoa(JSON.stringify(publisherIds)));
 
-    let id = openPairIdSubmodule.getId({ params: {} });
-    expect(id).to.be.deep.equal({id: publisherIds});
+    const id = openPairIdSubmodule.getId({ params: {} });
+    expect(id).to.be.deep.equal({ id: publisherIds });
   });
 
   it('should read publisher id from default liveramp envelope local storage key if configured', function() {
-    let publisherIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
-    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('_lr_pairId').returns(btoa(JSON.stringify({'envelope': publisherIds})));
-    let id = openPairIdSubmodule.getId({
+    const publisherIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('_lr_pairId').returns(btoa(JSON.stringify({ 'envelope': publisherIds })));
+    const id = openPairIdSubmodule.getId({
       params: {
         liveramp: {}
-      }})
-    expect(id).to.be.deep.equal({id: publisherIds})
+      }
+    })
+    expect(id).to.be.deep.equal({ id: publisherIds })
   });
 
   it('should read publisher id from default liveramp envelope cookie entry if configured', function() {
-    let publisherIds = ['test-pair-id4', 'test-pair-id5', 'test-pair-id6'];
-    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('_lr_pairId').returns(btoa(JSON.stringify({'envelope': publisherIds})));
-    let id = openPairIdSubmodule.getId({
+    const publisherIds = ['test-pair-id4', 'test-pair-id5', 'test-pair-id6'];
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('_lr_pairId').returns(btoa(JSON.stringify({ 'envelope': publisherIds })));
+    const id = openPairIdSubmodule.getId({
       params: {
         liveramp: {}
-      }})
-    expect(id).to.be.deep.equal({id: publisherIds})
+      }
+    })
+    expect(id).to.be.deep.equal({ id: publisherIds })
   });
 
   it('should read publisher id from specified liveramp envelope cookie entry if configured with storageKey', function() {
-    let publisherIds = ['test-pair-id7', 'test-pair-id8', 'test-pair-id9'];
-    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('lr_pairId_custom').returns(btoa(JSON.stringify({'envelope': publisherIds})));
-    let id = openPairIdSubmodule.getId({
+    const publisherIds = ['test-pair-id7', 'test-pair-id8', 'test-pair-id9'];
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('lr_pairId_custom').returns(btoa(JSON.stringify({ 'envelope': publisherIds })));
+    const id = openPairIdSubmodule.getId({
       params: {
         liveramp: {
           storageKey: 'lr_pairId_custom'
         }
-      }})
-    expect(id).to.be.deep.equal({id: publisherIds})
+      }
+    })
+    expect(id).to.be.deep.equal({ id: publisherIds })
   });
 
   it('should not get data from storage if local storage and cookies are disabled', function () {
     sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
     sandbox.stub(storage, 'cookiesAreEnabled').returns(false);
-    let id = openPairIdSubmodule.getId({
+    const id = openPairIdSubmodule.getId({
       params: {
         liveramp: {
           storageKey: 'lr_pairId_custom'
@@ -153,9 +158,9 @@ describe('openPairId', function () {
     it('encodes and decodes the original value with atob/btoa', function () {
       const value = 'dGVzdC1wYWlyLWlkMQ==';
 
-      let publisherIds = [value];
+      const publisherIds = [value];
 
-      const stored = btoa(JSON.stringify({'envelope': publisherIds}));
+      const stored = btoa(JSON.stringify({ 'envelope': publisherIds }));
 
       const read = JSON.parse(atob(stored));
 

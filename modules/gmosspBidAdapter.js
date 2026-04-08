@@ -6,7 +6,6 @@ import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue, getBidIdParameter,
-  getDNT,
   getWindowTop,
   isEmpty,
   logError
@@ -51,7 +50,6 @@ export const spec = {
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType(bidderRequest);
-    const dnt = getDNT() ? '1' : '0';
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -76,7 +74,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'meta_url', urlInfo.canonicalLink);
       queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = tryAppendQueryString(queryString, 'cur', cur);
-      queryString = tryAppendQueryString(queryString, 'dnt', dnt);
 
       bidRequests.push({
         method: 'GET',
@@ -94,7 +91,7 @@ export const spec = {
    * @param {Array} requests
    * @return {Array} An array of bids which were nested inside the server.
    */
- interpretResponse: function (bidderResponse, requests) {
+  interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
     if (isEmpty(res)) {
@@ -165,9 +162,9 @@ function getUrlInfo(refererInfo) {
   let canonicalLink = refererInfo.canonicalUrl;
 
   if (!canonicalLink) {
-    let metaElements = getMetaElements();
+    const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }

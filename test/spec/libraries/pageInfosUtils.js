@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from './pageInfosUtils';
+import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from './pageInfosUtils.js';
 
 describe('pageInfosUtils', () => {
   describe('getReferrerInfo', () => {

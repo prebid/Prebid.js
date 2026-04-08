@@ -149,21 +149,21 @@ describe('pilotxAdapter', function () {
     }];
     it('should return correct response', function () {
       const builtRequest = spec.buildRequests(mockVideo1, mockRequest)
-      let builtRequestData = builtRequest.data
-      let data = JSON.parse(builtRequestData)
+      const builtRequestData = builtRequest.data
+      const data = JSON.parse(builtRequestData)
       expect(data['379'].bidId).to.equal(mockVideo1[0].bidId)
     });
     it('should return correct response for only array of size', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequest)
-      let builtRequestData = builtRequest.data
-      let data = JSON.parse(builtRequestData)
+      const builtRequestData = builtRequest.data
+      const data = JSON.parse(builtRequestData)
       expect(data['379'].sizes[0][0]).to.equal(mockVideo2[0].sizes[0])
       expect(data['379'].sizes[0][1]).to.equal(mockVideo2[0].sizes[1])
     });
     it('should be valid and pass gdpr items correctly', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequestGDPR)
-      let builtRequestData = builtRequest.data
-      let data = JSON.parse(builtRequestData)
+      const builtRequestData = builtRequest.data
+      const data = JSON.parse(builtRequestData)
       expect(data['379'].gdprConsentString).to.equal(mockRequestGDPR.gdprConsent.consentString)
       expect(data['379'].gdprConsentRequired).to.equal(mockRequestGDPR.gdprConsent.gdprApplies)
     });

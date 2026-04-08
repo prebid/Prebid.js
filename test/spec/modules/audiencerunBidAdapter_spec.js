@@ -35,7 +35,7 @@ describe('AudienceRun bid adapter tests', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: 'audiencerun',
       params: {
         zoneId: '12345abcde',
@@ -60,7 +60,7 @@ describe('AudienceRun bid adapter tests', function () {
     });
 
     it('should return true when zoneId is valid', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         zoneId: '12345abcde',
@@ -70,7 +70,7 @@ describe('AudienceRun bid adapter tests', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
 
       invalidBid.params = {};
@@ -142,8 +142,8 @@ describe('AudienceRun bid adapter tests', function () {
     });
 
     it('should send GDPR to endpoint and honor gdprApplies value', function () {
-      let consentString = 'bogusConsent';
-      let bidderRequest = {
+      const consentString = 'bogusConsent';
+      const bidderRequest = {
         gdprConsent: {
           consentString: consentString,
           gdprApplies: true,
@@ -156,7 +156,7 @@ describe('AudienceRun bid adapter tests', function () {
       expect(payload.gdpr.consent).to.equal(consentString);
       expect(payload.gdpr.applies).to.equal(true);
 
-      let bidderRequest2 = {
+      const bidderRequest2 = {
         gdprConsent: {
           consentString: consentString,
           gdprApplies: false,
@@ -239,17 +239,23 @@ describe('AudienceRun bid adapter tests', function () {
 
     it('should add schain object if available', function() {
       const bid = Object.assign({}, bidRequest)
-      bid.schain = {
-        ver: '1.0',
-        complete: 1,
-        nodes: [
-          {
-            asi: 'directseller.com',
-            sid: '00001',
-            rid: 'BidRequest1',
-            hp: 1,
-          },
-        ],
+      bid.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'directseller.com',
+                  sid: '00001',
+                  rid: 'BidRequest1',
+                  hp: 1,
+                },
+              ],
+            }
+          }
+        }
       };
 
       const request = spec.buildRequests([bid]);
@@ -291,7 +297,7 @@ describe('AudienceRun bid adapter tests', function () {
     ];
 
     it('should get the correct bid response by display ad', function () {
-      let result = spec.interpretResponse(BID_SERVER_RESPONSE);
+      const result = spec.interpretResponse(BID_SERVER_RESPONSE);
       expect(Object.keys(result[0])).to.have.members(
         Object.keys(expectedResponse[0])
       );
@@ -301,7 +307,7 @@ describe('AudienceRun bid adapter tests', function () {
       const response = {
         body: {},
       };
-      let result = spec.interpretResponse(response);
+      const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
     });
   });

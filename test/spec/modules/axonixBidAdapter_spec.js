@@ -125,7 +125,7 @@ describe('AxonixBidAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let validBids = [
+    const validBids = [
       {
         bidder: 'axonix',
         params: {
@@ -145,7 +145,7 @@ describe('AxonixBidAdapter', function () {
       },
     ];
 
-    let invalidBids = [
+    const invalidBids = [
       {
         bidder: 'axonix',
         params: {},
@@ -156,13 +156,13 @@ describe('AxonixBidAdapter', function () {
     ];
 
     it('should accept valid bids', function () {
-      for (let bid of validBids) {
+      for (const bid of validBids) {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       }
     });
 
     it('should reject invalid bids', function () {
-      for (let bid of invalidBids) {
+      for (const bid of invalidBids) {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       }
     });

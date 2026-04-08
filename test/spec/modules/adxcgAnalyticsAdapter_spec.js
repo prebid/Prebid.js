@@ -4,7 +4,7 @@ import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('adxcg analytics adapter', function () {
   beforeEach(function () {
@@ -16,14 +16,14 @@ describe('adxcg analytics adapter', function () {
   });
 
   describe('track', function () {
-    let initOptions = {
+    const initOptions = {
       publisherId: '42'
     };
 
-    let auctionTimestamp = 1496510254313;
+    const auctionTimestamp = 1496510254313;
 
     // prepare general auction - request and response
-    let bidRequest = {
+    const bidRequest = {
       'bidderCode': 'appnexus',
       'bids': [{
         'params': {
@@ -38,9 +38,8 @@ describe('adxcg analytics adapter', function () {
       ]
     };
 
-    let bidResponse = {
+    const bidResponse = {
       'height': 250,
-      'statusMessage': 'Bid available',
       'adId': '2eddfdc0c791dc',
       'mediaType': 'banner',
       'source': 'client',
@@ -60,7 +59,7 @@ describe('adxcg analytics adapter', function () {
     };
 
     // what we expect after general auction
-    let expectedAfterBid = {
+    const expectedAfterBid = {
       'bidRequests': [
         {
           'bidderCode': 'appnexus',
@@ -81,7 +80,6 @@ describe('adxcg analytics adapter', function () {
         {
           'adUnitCode': 'div-gpt-ad-1438287399331-0',
           'bidderCode': 'appnexus',
-          'statusMessage': 'Bid available',
           'mediaType': 'banner',
           'renderedSize': '300x250',
           'cpm': 0.5,
@@ -100,7 +98,7 @@ describe('adxcg analytics adapter', function () {
     };
 
     // lets simulate that some bidders timeout
-    let bidTimeoutArgsV1 = [
+    const bidTimeoutArgsV1 = [
       {
         bidId: '2baa51527bd015',
         bidder: 'bidderOne',
@@ -116,7 +114,7 @@ describe('adxcg analytics adapter', function () {
     ];
 
     // now simulate some WIN and RENDERING
-    let wonRequest = {
+    const wonRequest = {
       'adId': '4587fec4900b81',
       'mediaType': 'banner',
       'requestId': '4587fec4900b81',
@@ -126,7 +124,6 @@ describe('adxcg analytics adapter', function () {
       'netRevenue': true,
       'ttl': 302,
       'auctionId': '914bedad-b145-4e46-ba58-51365faea6cb',
-      'statusMessage': 'Bid available',
       'responseTimestamp': 1530628534437,
       'requestTimestamp': 1530628534219,
       'bidder': 'testbidder4',
@@ -136,7 +133,7 @@ describe('adxcg analytics adapter', function () {
       'status': 'rendered'
     };
 
-    let wonExpect = {
+    const wonExpect = {
       'bidWons': [{
         'bidderCode': 'testbidder4',
         'adUnitCode': 'div-gpt-ad-1438287399331-0',
@@ -147,7 +144,6 @@ describe('adxcg analytics adapter', function () {
         'netRevenue': true,
         'timeToRespond': 218,
         'bidId': '4587fec4900b81',
-        'statusMessage': 'Bid available',
         'status': 'rendered',
         'creativeId': '2126'
       }]
@@ -189,7 +185,7 @@ describe('adxcg analytics adapter', function () {
 
       expect(server.requests.length).to.equal(1);
 
-      let realAfterBid = JSON.parse(server.requests[0].requestBody);
+      const realAfterBid = JSON.parse(server.requests[0].requestBody);
 
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
@@ -199,7 +195,7 @@ describe('adxcg analytics adapter', function () {
       events.emit(EVENTS.BID_WON, wonRequest);
 
       expect(server.requests.length).to.equal(2);
-      let winEventData = JSON.parse(server.requests[1].requestBody);
+      const winEventData = JSON.parse(server.requests[1].requestBody);
 
       expect(winEventData).to.deep.equal(wonExpect);
     });

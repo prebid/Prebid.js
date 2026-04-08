@@ -7,7 +7,7 @@ describe('AjaAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'aja',
       'params': {
         'asi': '123456'
@@ -24,7 +24,7 @@ describe('AjaAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'asi': 0
@@ -54,17 +54,40 @@ describe('AjaAdapter', function () {
                 version: ['8', '0', '0']
               },
               browsers: [
-                {brand: 'Not_A Brand', version: ['99', '0', '0', '0']},
-                {brand: 'Google Chrome', version: ['109', '0', '5414', '119']},
-                {brand: 'Chromium', version: ['109', '0', '5414', '119']}
+                { brand: 'Not_A Brand', version: ['99', '0', '0', '0'] },
+                { brand: 'Google Chrome', version: ['109', '0', '5414', '119'] },
+                { brand: 'Chromium', version: ['109', '0', '5414', '119'] }
               ],
               mobile: 1,
               model: 'SM-G955U',
               bitness: '64',
               architecture: ''
             },
+          },
+          source: {
             ext: {
-              cdep: 'example_label_1'
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'exchange1.com',
+                    sid: '1234',
+                    hp: 1,
+                    rid: 'bid-request-1',
+                    name: 'publisher',
+                    domain: 'publisher.com'
+                  },
+                  {
+                    asi: 'exchange2.com',
+                    sid: 'abcd',
+                    hp: 1,
+                    rid: 'bid-request-2',
+                    name: 'intermediary',
+                    domain: 'intermediary.com'
+                  }
+                ]
+              }
             }
           }
         },
@@ -74,28 +97,7 @@ describe('AjaAdapter', function () {
             gpid: '/1111/homepage#300x250'
           }
         },
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'exchange1.com',
-              sid: '1234',
-              hp: 1,
-              rid: 'bid-request-1',
-              name: 'publisher',
-              domain: 'publisher.com'
-            },
-            {
-              asi: 'exchange2.com',
-              sid: 'abcd',
-              hp: 1,
-              rid: 'bid-request-2',
-              name: 'intermediary',
-              domain: 'intermediary.com'
-            }
-          ]
-        },
+
       }
     ];
     const serializedSchain = encodeURIComponent('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com')
@@ -110,7 +112,7 @@ describe('AjaAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal(`asi=123456&skt=5&gpid=%2F1111%2Fhomepage%23300x250&tid=cea1eb09-d970-48dc-8585-634d3a7b0544&cdep=example_label_1&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&schain=${serializedSchain}&ad_format_ids=2&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&`);
+      expect(requests[0].data).to.equal(`asi=123456&skt=5&gpid=%2F1111%2Fhomepage%23300x250&tid=cea1eb09-d970-48dc-8585-634d3a7b0544&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&schain=${serializedSchain}&ad_format_ids=2&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&`);
     });
   });
 
@@ -154,7 +156,7 @@ describe('AjaAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get correct banner bid response', function () {
-      let response = {
+      const response = {
         'is_ad_return': true,
         'ad': {
           'ad_type': 1,
@@ -179,7 +181,7 @@ describe('AjaAdapter', function () {
         ]
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           'requestId': '51ef8751f9aead',
           'cpm': 12.34,
@@ -201,18 +203,18 @@ describe('AjaAdapter', function () {
       ];
 
       let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
-      let response = {
+      const response = {
         'is_ad_return': false,
         'ad': {}
       };
 
       let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

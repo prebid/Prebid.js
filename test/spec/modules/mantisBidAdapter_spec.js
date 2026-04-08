@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec, storage} from 'modules/mantisBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
+import { expect } from 'chai';
+import { spec, storage } from 'modules/mantisBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { sfPostMessage, iframePostMessage } from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
@@ -17,7 +17,7 @@ describe('MantisAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'mantis',
       'params': {
         'property': '10433394',
@@ -35,7 +35,7 @@ describe('MantisAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
@@ -60,7 +60,7 @@ describe('MantisAdapter', function () {
         }
       ]);
 
-      iframePostMessage({innerHeight: 500, innerWidth: 500}, 'mantis', () => viewed = true);
+      iframePostMessage({ innerHeight: 500, innerWidth: 500 }, 'mantis', () => viewed = true);
 
       sandbox.clock.runAll();
 
@@ -105,7 +105,7 @@ describe('MantisAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'mantis',
         'params': {
@@ -121,19 +121,19 @@ describe('MantisAdapter', function () {
     ];
 
     it('gdpr consent not required', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: false}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: false } });
 
       expect(request.url).not.to.include('consent=false');
     });
 
     it('gdpr consent required', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: true}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: true } });
 
       expect(request.url).to.include('consent=false');
     });
 
     it('usp consent', function () {
-      const request = spec.buildRequests(bidRequests, {uspConsent: 'foobar'});
+      const request = spec.buildRequests(bidRequests, { uspConsent: 'foobar' });
 
       expect(request.url).to.include('usp=foobar');
     });
@@ -199,7 +199,7 @@ describe('MantisAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('iframe', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -208,7 +208,7 @@ describe('MantisAdapter', function () {
     });
 
     it('pixel', function () {
-      let result = spec.getUserSyncs({
+      const result = spec.getUserSyncs({
         pixelEnabled: true
       });
 
@@ -219,7 +219,7 @@ describe('MantisAdapter', function () {
 
   describe('interpretResponse', function () {
     it('use ad ttl if provided', function () {
-      let response = {
+      const response = {
         body: {
           ttl: 360,
           uuid: 'uuid',
@@ -237,7 +237,7 @@ describe('MantisAdapter', function () {
         }
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: 'bid',
           cpm: 1,
@@ -255,12 +255,12 @@ describe('MantisAdapter', function () {
       ];
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('use global ttl if provded', function () {
-      let response = {
+      const response = {
         body: {
           ttl: 360,
           uuid: 'uuid',
@@ -278,7 +278,7 @@ describe('MantisAdapter', function () {
         }
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: 'bid',
           cpm: 1,
@@ -296,12 +296,12 @@ describe('MantisAdapter', function () {
       ];
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('display ads returned', function () {
-      let response = {
+      const response = {
         body: {
           uuid: 'uuid',
           ads: [
@@ -318,7 +318,7 @@ describe('MantisAdapter', function () {
         }
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: 'bid',
           cpm: 1,
@@ -339,7 +339,7 @@ describe('MantisAdapter', function () {
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
       const spy = sandbox.spy(storage, 'setDataInLocalStorage');
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
 
       expect(spy.calledWith('mantis:uuid', 'uuid'));
       expect(result[0]).to.deep.equal(expectedResponse[0]);
@@ -347,14 +347,14 @@ describe('MantisAdapter', function () {
     });
 
     it('no ads returned', function () {
-      let response = {
+      const response = {
         body: {
           ads: []
         }
       };
       let bidderRequest;
 
-      let result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

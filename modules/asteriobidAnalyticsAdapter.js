@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { EVENTS } from '../src/constants.js'
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
-import {getRefererInfo} from '../src/refererDetection.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { collectUtmTagData, trimAdUnit, trimBid, trimBidderRequest } from '../libraries/asteriobidUtils/asteriobidUtils.js'
 
 /**
@@ -17,17 +17,17 @@ const analyticsType = 'endpoint'
 const analyticsName = 'AsterioBid Analytics'
 const _VERSION = 1
 
-let ajax = ajaxBuilder(20000)
+const ajax = ajaxBuilder(20000)
 let initOptions
-let auctionStarts = {}
-let auctionTimeouts = {}
+const auctionStarts = {}
+const auctionTimeouts = {}
 let sampling
 let pageViewId
 let flushInterval
 let eventQueue = []
 let asteriobidAnalyticsEnabled = false
 
-let asteriobidAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
+const asteriobidAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
   track({ eventType, args }) {
     handleEvent(eventType, args)
   }
@@ -227,9 +227,6 @@ function handleEvent(eventType, eventArgs) {
       break
     }
     case EVENTS.REQUEST_BIDS: {
-      break
-    }
-    case EVENTS.ADD_AD_UNITS: {
       break
     }
     case EVENTS.AD_RENDER_FAILED: {

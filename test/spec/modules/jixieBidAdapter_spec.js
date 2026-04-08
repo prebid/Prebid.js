@@ -26,7 +26,7 @@ describe('jixie Adapter', function () {
    * isBidRequestValid
    */
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'jixie',
       'params': {
         'unit': 'prebidsampleunit'
@@ -43,13 +43,13 @@ describe('jixie Adapter', function () {
     });
 
     it('should return false when required params obj does not exist', function () {
-      let bid0 = Object.assign({}, bid);
+      const bid0 = Object.assign({}, bid);
       delete bid0.params;
       expect(spec.isBidRequestValid(bid0)).to.equal(false);
     });
 
     it('should return false when params obj does not contain unit property', function () {
-      let bid1 = Object.assign({}, bid);
+      const bid1 = Object.assign({}, bid);
       bid1.params = { rubbish: '' };
       expect(spec.isBidRequestValid(bid1)).to.equal(false);
     });
@@ -89,12 +89,28 @@ describe('jixie Adapter', function () {
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
-      refererInfo: {referer: pageurl_},
+      refererInfo: { referer: pageurl_ },
       auctionId: auctionId_,
-      timeout: timeout_
+      timeout: timeout_,
+      ortb2: {
+        site: {
+          ext: {
+            data: {
+              keyA: 'abcde'
+            }
+          }
+        },
+        user: {
+          ext: {
+            data: {
+              abc: 'def'
+            }
+          }
+        }
+      }
     };
     // to serve as the object that prebid will call jixie buildRequest with: (param1)
-    let bidRequests_ = [
+    const bidRequests_ = [
       {
         'bidder': 'jixie',
         'params': {
@@ -239,16 +255,16 @@ describe('jixie Adapter', function () {
       // similar to above test case but here we force some clientid sessionid values
       // and domain, pageurl
       // get the interceptors ready:
-      let getConfigStub = sinon.stub(config, 'getConfig');
+      const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'jixie') {
+        if (prop === 'jixie') {
           return testJixieCfg_;
         }
         return null;
       });
 
-      let getCookieStub = sinon.stub(storage, 'getCookie');
-      let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      const getCookieStub = sinon.stub(storage, 'getCookie');
+      const getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
         .withArgs('ckname1')
         .returns(ckname1Val_);
@@ -283,7 +299,7 @@ describe('jixie Adapter', function () {
         .withArgs('_jxxs')
         .returns(sessionIdTest1_
         );
-      let miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
+      const miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
       miscDimsStub
         .returns({ device: device_, pageurl: pageurl_, domain: domain_, mkeywords: keywords_ });
 
@@ -307,6 +323,8 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('timeout', timeout_);
       expect(payload).to.have.property('currency', currency_);
       expect(payload).to.have.property('bids').that.deep.equals(refBids_);
+      expect(payload).to.have.property('siteKvs').that.deep.equals(bidderRequest_.ortb2.site.ext.data);
+      expect(payload).to.have.property('userKvs').that.deep.equals(bidderRequest_.ortb2.user.ext.data);
 
       // unwire interceptors
       getCookieStub.restore();
@@ -316,7 +334,7 @@ describe('jixie Adapter', function () {
     });// it
 
     it('it should popular the pricegranularity when info is available', function () {
-      let content = {
+      const content = {
         'ranges': [{
           'max': 12,
           'increment': 0.5
@@ -327,9 +345,9 @@ describe('jixie Adapter', function () {
         }],
         precision: 1
       };
-      let getConfigStub = sinon.stub(config, 'getConfig');
+      const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'priceGranularity') {
+        if (prop === 'priceGranularity') {
           return content;
         }
         return null;
@@ -343,10 +361,10 @@ describe('jixie Adapter', function () {
     });
 
     it('it should popular the device info when it is available', function () {
-      let getConfigStub = sinon.stub(config, 'getConfig');
-      let content = {w: 500, h: 400};
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      const content = { w: 500, h: 400 };
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'device') {
+        if (prop === 'device') {
           return content;
         }
         return null;
@@ -369,7 +387,15 @@ describe('jixie Adapter', function () {
           hp: 1
         }]
       };
-      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { schain: schain });
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
+        ortb2: {
+          source: {
+            ext: {
+              schain: schain
+            }
+          }
+        }
+      });
       const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.deep.equal(schain);
@@ -377,15 +403,15 @@ describe('jixie Adapter', function () {
     });
 
     it('it should populate the floor info when available', function () {
-      let oneSpecialBidReq = deepClone(bidRequests_[0]);
-      let request, payload = null;
+      const oneSpecialBidReq = deepClone(bidRequests_[0]);
+      let request; let payload = null;
       // 1 floor is not set
       request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       payload = JSON.parse(request.data);
       expect(payload.bids[0].bidFloor).to.not.exist;
 
       // 2 floor is set
-      let getFloorResponse = { currency: 'USD', floor: 2.1 };
+      const getFloorResponse = { currency: 'USD', floor: 2.1 };
       oneSpecialBidReq.getFloor = () => getFloorResponse;
       request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       payload = JSON.parse(request.data);
@@ -393,16 +419,16 @@ describe('jixie Adapter', function () {
     });
 
     it('it should populate the aid field when available', function () {
-      let oneSpecialBidReq = deepClone(bidRequests_[0]);
+      const oneSpecialBidReq = deepClone(bidRequests_[0]);
       // 1 aid is not set in the jixie config
       let request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       let payload = JSON.parse(request.data);
       expect(payload.aid).to.eql('');
 
       // 2 aid is set in the jixie config
-      let getConfigStub = sinon.stub(config, 'getConfig');
+      const getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.callsFake(function fakeFn(prop) {
-        if (prop == 'jixie') {
+        if (prop === 'jixie') {
           return { aid: '11223344556677889900' };
         }
         return null;
@@ -609,14 +635,14 @@ describe('jixie Adapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
     });
 
     it('should get correct bid response', function () {
-      let setCookieSpy = sinon.spy(storage, 'setCookie');
-      let setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
-      const result = spec.interpretResponse({body: responseBody_}, requestObj_)
+      const setCookieSpy = sinon.spy(storage, 'setCookie');
+      const setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
+      const result = spec.interpretResponse({ body: responseBody_ }, requestObj_)
       expect(setLocalStorageSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setLocalStorageSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setCookieSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
@@ -700,7 +726,7 @@ describe('jixie Adapter', function () {
       ajaxStub.restore();
     })
 
-    let TRACKINGURL_ = 'https://abc.com/sync?action=bidwon';
+    const TRACKINGURL_ = 'https://abc.com/sync?action=bidwon';
 
     it('Should fire if the adserver trackingUrl flag says so', function() {
       spec.onBidWon({ trackingUrl: TRACKINGURL_ })
@@ -725,7 +751,7 @@ describe('jixie Adapter', function () {
           }
         ]
       }
-      let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+      const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
       expect(result[0].type).to.equal('iframe')
       expect(result[1].type).to.equal('image')
     })
@@ -746,7 +772,7 @@ describe('jixie Adapter', function () {
           }
         ]
       }
-      let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+      const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
       expect(result[0].type).to.equal('image')
       expect(result[1].type).to.equal('image')
     })
@@ -766,7 +792,7 @@ describe('jixie Adapter', function () {
           }
         ]
       }
-      let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+      const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
       expect(result.length).to.equal(0)
     })
   })

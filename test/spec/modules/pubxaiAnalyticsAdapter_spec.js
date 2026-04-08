@@ -33,14 +33,14 @@ describe('pubxai analytics adapter', () => {
 
   describe('track', () => {
     const pubxId = '6c415fc0-8b0e-4cf5-be73-01526a4db625';
-    let initOptions = {
+    const initOptions = {
       samplingRate: '1',
       pubxId: pubxId,
     };
 
     let originalVS;
 
-    let location = getWindowLocation();
+    const location = getWindowLocation();
 
     const replaceProperty = (obj, params) => {
       let strObj = JSON.stringify(obj);
@@ -53,7 +53,7 @@ describe('pubxai analytics adapter', () => {
       return JSON.parse(strObj);
     };
 
-    let prebidEvent = {
+    const prebidEvent = {
       auctionInit: {
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         timestamp: 1603865707180,
@@ -125,11 +125,7 @@ describe('pubxai analytics adapter', () => {
               },
             ],
             ortb2: {
-              device: {
-                ext: {
-                  cdep: true,
-                },
-              },
+              device: {},
             },
             auctionStart: 1603865707180,
             timeout: 1000,
@@ -189,11 +185,7 @@ describe('pubxai analytics adapter', () => {
           },
         ],
         ortb2: {
-          device: {
-            ext: {
-              cdep: true,
-            },
-          },
+          device: {},
         },
         auctionStart: 1603865707180,
         timeout: 1000,
@@ -212,7 +204,6 @@ describe('pubxai analytics adapter', () => {
         bidderCode: 'appnexus',
         width: 300,
         height: 250,
-        statusMessage: 'Bid available',
         adId: '32780c4bc382cb',
         requestId: '248f9a4489835e',
         mediaType: 'banner',
@@ -347,11 +338,7 @@ describe('pubxai analytics adapter', () => {
               },
             ],
             ortb2: {
-              device: {
-                ext: {
-                  cdep: true,
-                },
-              },
+              device: {},
             },
             auctionStart: 1603865707180,
             timeout: 1000,
@@ -372,7 +359,6 @@ describe('pubxai analytics adapter', () => {
             bidderCode: 'appnexus',
             width: 300,
             height: 250,
-            statusMessage: 'Bid available',
             adId: '32780c4bc382cb',
             requestId: '248f9a4489835e',
             mediaType: 'banner',
@@ -449,7 +435,6 @@ describe('pubxai analytics adapter', () => {
         bidderCode: 'appnexus',
         width: 300,
         height: 250,
-        statusMessage: 'Bid available',
         adId: '32780c4bc382cb',
         requestId: '248f9a4489835e',
         mediaType: 'banner',
@@ -520,7 +505,7 @@ describe('pubxai analytics adapter', () => {
       },
     };
 
-    let expectedAfterBid = {
+    const expectedAfterBid = {
       bids: [
         {
           bidderCode: 'appnexus',
@@ -538,7 +523,6 @@ describe('pubxai analytics adapter', () => {
           cpm: 0.5,
           netRevenue: true,
           mediaType: 'banner',
-          statusMessage: 'Bid available',
           floorData: {
             fetchStatus: 'success',
             floorProvider: 'PubXFloorProvider',
@@ -591,7 +575,6 @@ describe('pubxai analytics adapter', () => {
         deviceType: getDeviceType(),
         deviceOS: getOS(),
         browser: getBrowser(),
-        cdep: true,
       },
       userDetail: {
         userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
@@ -607,7 +590,7 @@ describe('pubxai analytics adapter', () => {
       },
     };
 
-    let expectedAfterBidWon = {
+    const expectedAfterBidWon = {
       winningBid: {
         adUnitCode: '/19968336/header-bid-tag-1',
         gptSlotCode:
@@ -658,7 +641,6 @@ describe('pubxai analytics adapter', () => {
         responseTimestamp: 1616654313071,
         requestTimestamp: 1616654312804,
         status: 'rendered',
-        statusMessage: 'Bid available',
         timeToRespond: 267,
         source: 'client',
       },
@@ -686,7 +668,6 @@ describe('pubxai analytics adapter', () => {
         deviceType: getDeviceType(),
         deviceOS: getOS(),
         browser: getBrowser(),
-        cdep: true,
       },
       userDetail: {
         userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),

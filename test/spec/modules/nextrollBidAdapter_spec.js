@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/nextrollBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { deepClone } from '../../../src/utils';
+import { deepClone } from '../../../src/utils.js';
 
 describe('nextrollBidAdapter', function() {
   let utilsMock;
@@ -14,7 +14,7 @@ describe('nextrollBidAdapter', function() {
     utilsMock.restore();
   });
 
-  let validBid = {
+  const validBid = {
     bidder: 'nextroll',
     adUnitCode: 'adunit-code',
     bidId: 'bid_id',
@@ -25,24 +25,24 @@ describe('nextrollBidAdapter', function() {
       publisherId: 'publisher_id'
     }
   };
-  let bidWithoutValidId = { id: '' };
-  let bidWithoutId = { params: { zoneId: 'zone1' } };
+  const bidWithoutValidId = { id: '' };
+  const bidWithoutId = { params: { zoneId: 'zone1' } };
 
   describe('nativeBidRequest', () => {
     it('validates native spec', () => {
-      let nativeAdUnit = [{
+      const nativeAdUnit = [{
         bidder: 'nextroll',
         adUnitCode: 'adunit-code',
         bidId: 'bid_id',
         mediaTypes: {
           native: {
-            title: {required: true, len: 80},
-            image: {required: true, sizes: [728, 90]},
-            sponsoredBy: {required: false, len: 20},
-            clickUrl: {required: true},
-            body: {required: true, len: 25},
-            icon: {required: true, sizes: [50, 50], aspect_ratios: [{ratio_height: 3, ratio_width: 4}]},
-            someRandomAsset: {required: false, len: 100} // This should be ignored
+            title: { required: true, len: 80 },
+            image: { required: true, sizes: [728, 90] },
+            sponsoredBy: { required: false, len: 20 },
+            clickUrl: { required: true },
+            body: { required: true, len: 25 },
+            icon: { required: true, sizes: [50, 50], aspect_ratios: [{ ratio_height: 3, ratio_width: 4 }] },
+            someRandomAsset: { required: false, len: 100 } // This should be ignored
           }
         },
         params: {
@@ -52,15 +52,15 @@ describe('nextrollBidAdapter', function() {
         }
       }];
 
-      let request = spec.buildRequests(nativeAdUnit)
-      let assets = request[0].data.imp.native.request.native.assets
+      const request = spec.buildRequests(nativeAdUnit)
+      const assets = request[0].data.imp.native.request.native.assets
 
-      let excptedAssets = [
-        {id: 1, required: 1, title: {len: 80}},
-        {id: 2, required: 1, img: {w: 728, h: 90, wmin: 1, hmin: 1, type: 3}},
-        {id: 3, required: 1, img: {w: 50, h: 50, wmin: 4, hmin: 3, type: 1}},
-        {id: 5, required: 0, data: {len: 20, type: 1}},
-        {id: 6, required: 1, data: {len: 25, type: 2}}
+      const excptedAssets = [
+        { id: 1, required: 1, title: { len: 80 } },
+        { id: 2, required: 1, img: { w: 728, h: 90, wmin: 1, hmin: 1, type: 3 } },
+        { id: 3, required: 1, img: { w: 50, h: 50, wmin: 4, hmin: 3, type: 1 } },
+        { id: 5, required: 0, data: { len: 20, type: 1 } },
+        { id: 6, required: 1, data: { len: 25, type: 2 } }
       ]
       expect(assets).to.be.deep.equal(excptedAssets)
     })
@@ -130,7 +130,7 @@ describe('nextrollBidAdapter', function() {
       expect(request.data.imp.bidfloor).to.not.exist;
 
       // bidfloor defined, getFloor defined, use getFloor
-      let getFloorResponse = { currency: 'USD', floor: 3 };
+      const getFloorResponse = { currency: 'USD', floor: 3 };
       bid = deepClone(validBid);
       bid.getFloor = () => getFloorResponse;
       request = spec.buildRequests([bid], {})[0];
@@ -149,14 +149,14 @@ describe('nextrollBidAdapter', function() {
 
     it('sets the CCPA consent string', function () {
       const us_privacy = '1YYY';
-      const request = spec.buildRequests([validBid], {'uspConsent': us_privacy})[0];
+      const request = spec.buildRequests([validBid], { 'uspConsent': us_privacy })[0];
 
       expect(request.data.regs.ext.us_privacy).to.be.equal(us_privacy);
     });
   });
 
   describe('interpretResponse', function () {
-    let responseBody = {
+    const responseBody = {
       id: 'bidresponse_id',
       dealId: 'deal_id',
       seatbid: [
@@ -190,11 +190,11 @@ describe('nextrollBidAdapter', function() {
     });
 
     it('builds the same amount of responses as server responses it receives', function () {
-      expect(spec.interpretResponse({body: responseBody}, {})).to.be.lengthOf(2);
+      expect(spec.interpretResponse({ body: responseBody }, {})).to.be.lengthOf(2);
     });
 
     it('builds a response with the expected fields', function () {
-      const response = spec.interpretResponse({body: responseBody}, {})[0];
+      const response = spec.interpretResponse({ body: responseBody }, {})[0];
 
       expect(response.requestId).to.be.equal('bidresponse_id');
       expect(response.cpm).to.be.equal(1.2);
@@ -210,15 +210,15 @@ describe('nextrollBidAdapter', function() {
   });
 
   describe('interpret native response', () => {
-    let clickUrl = 'https://clickurl.com/with/some/path'
-    let titleText = 'Some title'
-    let imgW = 300
-    let imgH = 250
-    let imgUrl = 'https://clickurl.com/img.png'
-    let brandText = 'Some Brand'
-    let impUrl = 'https://clickurl.com/imptracker'
+    const clickUrl = 'https://clickurl.com/with/some/path'
+    const titleText = 'Some title'
+    const imgW = 300
+    const imgH = 250
+    const imgUrl = 'https://clickurl.com/img.png'
+    const brandText = 'Some Brand'
+    const impUrl = 'https://clickurl.com/imptracker'
 
-    let responseBody = {
+    const responseBody = {
       body: {
         id: 'bidresponse_id',
         seatbid: [{
@@ -226,11 +226,11 @@ describe('nextrollBidAdapter', function() {
             price: 1.2,
             crid: 'crid1',
             adm: {
-              link: {url: clickUrl},
+              link: { url: clickUrl },
               assets: [
-                {id: 1, title: {text: titleText}},
-                {id: 2, img: {w: imgW, h: imgH, url: imgUrl}},
-                {id: 5, data: {value: brandText}}
+                { id: 1, title: { text: titleText } },
+                { id: 2, img: { w: imgW, h: imgH, url: imgUrl } },
+                { id: 5, data: { value: brandText } }
               ],
               imptrackers: [impUrl]
             }
@@ -240,14 +240,14 @@ describe('nextrollBidAdapter', function() {
     };
 
     it('Should interpret response', () => {
-      let response = spec.interpretResponse(utils.deepClone(responseBody))
-      let expectedResponse = {
+      const response = spec.interpretResponse(utils.deepClone(responseBody))
+      const expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
         privacyLink: 'https://app.adroll.com/optout/personalized',
         privacyIcon: 'https://s.adroll.com/j/ad-choices-small.png',
         title: titleText,
-        image: {url: imgUrl, width: imgW, height: imgH},
+        image: { url: imgUrl, width: imgW, height: imgH },
         sponsoredBy: brandText,
         clickTrackers: [],
         jstracker: []
@@ -257,19 +257,19 @@ describe('nextrollBidAdapter', function() {
     })
 
     it('Should interpret all assets', () => {
-      let allAssetsResponse = utils.deepClone(responseBody)
-      let iconUrl = imgUrl + '?icon=true', iconW = 10, iconH = 15
-      let logoUrl = imgUrl + '?logo=true', logoW = 20, logoH = 25
-      let bodyText = 'Some body text'
+      const allAssetsResponse = utils.deepClone(responseBody)
+      const iconUrl = imgUrl + '?icon=true'; const iconW = 10; const iconH = 15
+      const logoUrl = imgUrl + '?logo=true'; const logoW = 20; const logoH = 25
+      const bodyText = 'Some body text'
 
       allAssetsResponse.body.seatbid[0].bid[0].adm.assets.push(...[
-        {id: 3, img: {w: iconW, h: iconH, url: iconUrl}},
-        {id: 4, img: {w: logoW, h: logoH, url: logoUrl}},
-        {id: 6, data: {value: bodyText}}
+        { id: 3, img: { w: iconW, h: iconH, url: iconUrl } },
+        { id: 4, img: { w: logoW, h: logoH, url: logoUrl } },
+        { id: 6, data: { value: bodyText } }
       ])
 
-      let response = spec.interpretResponse(allAssetsResponse)
-      let expectedResponse = {
+      const response = spec.interpretResponse(allAssetsResponse)
+      const expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
         jstracker: [],
@@ -277,9 +277,9 @@ describe('nextrollBidAdapter', function() {
         privacyLink: 'https://app.adroll.com/optout/personalized',
         privacyIcon: 'https://s.adroll.com/j/ad-choices-small.png',
         title: titleText,
-        image: {url: imgUrl, width: imgW, height: imgH},
-        icon: {url: iconUrl, width: iconW, height: iconH},
-        logo: {url: logoUrl, width: logoW, height: logoH},
+        image: { url: imgUrl, width: imgW, height: imgH },
+        icon: { url: iconUrl, width: iconW, height: iconH },
+        logo: { url: logoUrl, width: logoW, height: logoH },
         body: bodyText,
         sponsoredBy: brandText
       }

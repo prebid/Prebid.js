@@ -1,8 +1,9 @@
 import { timestamp, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { EVENTS, STATUS } from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const URL = 'https://analytics.adnuntius.com/prebid';
 const REQUEST_SENT = 1;
@@ -18,15 +19,15 @@ const cache = {
   auctions: {}
 };
 
-const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endpoint'}), {
-  track({eventType, args}) {
+const adnAnalyticsAdapter = Object.assign(adapter({ url: '', analyticsType: 'endpoint' }), {
+  track({ eventType, args }) {
     const time = timestamp();
     logInfo('ADN_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         logInfo('ADN_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
+        cache.auctions[args.auctionId] = { bids: {}, bidAdUnits: {} };
         break;
       case EVENTS.BID_REQUESTED:
         logInfo('ADN_BID_REQUESTED:', args);
@@ -36,7 +37,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
 
-          const container = document.getElementById(bidReq.adUnitCode);
+          const container = getAdUnitElement(bidReq);
           const containerAttr = container ? container.getAttribute('data-adunitid') : undefined;
           const adUnitId = containerAttr || undefined;
 
@@ -63,7 +64,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
         logInfo('ADN_BID_RESPONSE:', args);
 
         const bidResp = cache.auctions[args.auctionId].bids[args.requestId];
-        bidResp.isBid = args.getStatusCode() === STATUS.GOOD;
+        bidResp.isBid = true;
         bidResp.width = args.width;
         bidResp.height = args.height;
         bidResp.cpm = args.cpm;
@@ -91,7 +92,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
       case EVENTS.BIDDER_DONE:
         logInfo('ADN_BIDDER_DONE:', args);
         args.bids.forEach(doneBid => {
-          let bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId || doneBid.requestId];
+          const bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId || doneBid.requestId];
           if (!bid.ttr) {
             bid.ttr = time - bid.start;
           }
@@ -169,7 +170,7 @@ adnAnalyticsAdapter.sendEvents = function() {
     return;
   }
 
-  ajax(initOptions.endPoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+  ajax(initOptions.endPoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
 };
 
 function getSentRequests() {
@@ -183,7 +184,7 @@ function getSentRequests() {
     const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
 
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
-      let bid = auction.bids[bidId];
+      const bid = auction.bids[bidId];
       if (!(bid.sendStatus & REQUEST_SENT)) {
         bid.sendStatus |= REQUEST_SENT;
 
@@ -202,7 +203,7 @@ function getSentRequests() {
     });
   });
 
-  return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
+  return { gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests };
 }
 
 function getResponses(gdpr, auctionIds) {
@@ -210,14 +211,14 @@ function getResponses(gdpr, auctionIds) {
 
   Object.keys(cache.auctions).forEach(auctionId => {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
-      let auction = cache.auctions[auctionId];
-      let gdprPos = getGdprPos(gdpr, auction);
-      let auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
-      let bid = auction.bids[bidId];
+      const auction = cache.auctions[auctionId];
+      const gdprPos = getGdprPos(gdpr, auction);
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSE_SENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSE_SENT;
 
-        let response = getResponseObject(auction, bid, gdprPos, auctionIdPos);
+        const response = getResponseObject(auction, bid, gdprPos, auctionIdPos);
 
         responses.push(response);
       }
@@ -278,7 +279,7 @@ function getGdprPos(gdpr, auction) {
   }
 
   if (gdprPos === gdpr.length) {
-    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+    gdpr[gdprPos] = { gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent };
   }
 
   return gdprPos;
@@ -336,7 +337,7 @@ function getTimeouts(gdpr, auctionIds) {
       if (!(bid.sendStatus & TIMEOUT_SENT) && bid.timeout) {
         bid.sendStatus |= TIMEOUT_SENT;
 
-        let timeout = getResponseObject(auction, bid, gdprPos, auctionIdPos);
+        const timeout = getResponseObject(auction, bid, gdprPos, auctionIdPos);
 
         timeouts.push(timeout);
       }
@@ -401,6 +402,7 @@ function getBidAdUnits() {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adnAnalyticsAdapter,
+  gvlid: 855,
   code: 'adnuntius'
 });
 

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import {deepAccess, deepClone, replaceAuctionPrice} from '../src/utils.js';
+import { deepAccess, deepClone, replaceAuctionPrice } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'dvgroup';
@@ -29,15 +29,15 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    let valid = bid.params.sspId;
+    const valid = bid.params.sspId;
 
     return !!valid;
   },
 
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
-      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
-      let bidMediaType = deepAccess(bid, 'mediaTypes.video');
+      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      const bidMediaType = deepAccess(bid, 'mediaTypes.video');
       return {
         method: 'POST',
         url: `https://${endpoint}/bid?sspuid=${bid.params.sspId}`,
@@ -57,12 +57,12 @@ export const spec = {
       return [];
     }
 
-    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.ttl = bid.ttl || TIME_TO_LIVE;
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
-      if (bid.meta.advertiserDomains.length == 0) {
+      if (bid.meta.advertiserDomains.length === 0) {
         bid.meta.advertiserDomains.push('dvgroup.com');
       }
     });
@@ -92,7 +92,7 @@ export const spec = {
     return syncs;
   },
 
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);
