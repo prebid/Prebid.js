@@ -5,13 +5,13 @@
  * @requires module:modules/userId
  */
 
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
-import {getRefererInfo} from '../src/refererDetection.js';
-import {getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE} from '../src/storageManager.js';
-import {formatQS, isNumber, isPlainObject, logError, parseUrl} from '../src/utils.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
+import { formatQS, isNumber, isPlainObject, logError, parseUrl } from '../src/utils.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -42,7 +42,7 @@ const O_AND_O_DOMAINS = [
   'techcrunch.com',
   'autoblog.com',
 ];
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * Stores the ConnectID object in browser storage according to storage configuration
@@ -201,7 +201,7 @@ export const connectIdSubmodule = {
       return undefined;
     }
     return (isPlainObject(value) && (value.connectId || value.connectid))
-      ? {connectId: value.connectId || value.connectid} : undefined;
+      ? { connectId: value.connectId || value.connectid } : undefined;
   },
   /**
    * Gets the Yahoo ConnectID
@@ -239,7 +239,7 @@ export const connectIdSubmodule = {
       if (!shouldResync) {
         storedId.lastUsed = Date.now();
         storeObject(storedId, storageConfig);
-        return {id: storedId};
+        return { id: storedId };
       }
     }
 
@@ -316,9 +316,9 @@ export const connectIdSubmodule = {
       };
       const endpoint = UPS_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
       const url = `${params.endpoint || endpoint}?${formatQS(data)}`;
-      connectIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
+      connectIdSubmodule.getAjaxFn()(url, callbacks, null, { method: 'GET', withCredentials: true });
     };
-    const result = {callback: resp};
+    const result = { callback: resp };
     if (shouldResync && storedId) {
       result.id = storedId;
     }

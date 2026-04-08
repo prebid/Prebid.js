@@ -1,11 +1,11 @@
-import {spec, storage, VIDEO_RENDERER_URL} from 'modules/tpmnBidAdapter.js';
-import {generateUUID} from '../../../src/utils.js';
-import {expect} from 'chai';
+import { spec, storage, VIDEO_RENDERER_URL } from 'modules/tpmnBidAdapter.js';
+import { generateUUID } from '../../../src/utils.js';
+import { expect } from 'chai';
 import * as utils from 'src/utils';
 import * as sinon from 'sinon';
 import 'modules/consentManagementTcf.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
@@ -262,7 +262,7 @@ describe('tpmnAdapterTests', function () {
           expect(spec.isBidRequestValid(bid)).to.equal(true);
           const requests = spec.buildRequests([bid], BIDDER_REQUEST);
           const request = requests[0].data;
-          expect(request.imp[0].video).to.deep.include({...check});
+          expect(request.imp[0].video).to.deep.include({ ...check });
         });
       }
 
@@ -270,8 +270,8 @@ describe('tpmnAdapterTests', function () {
         it('when mediaType New Video', () => {
           const NEW_VIDEO_BID = {
             'bidder': 'tpmn',
-            'params': {'inventoryId': 2, 'bidFloor': 2},
-            'userId': {'pubcid': '88a49ee6-beeb-4dd6-92ac-3b6060e127e1'},
+            'params': { 'inventoryId': 2, 'bidFloor': 2 },
+            'userId': { 'pubcid': '88a49ee6-beeb-4dd6-92ac-3b6060e127e1' },
             'mediaTypes': {
               'video': {
                 'context': 'outstream',
@@ -293,7 +293,7 @@ describe('tpmnAdapterTests', function () {
           const check = {
             w: 1024,
             h: 768,
-            mimes: [ 'video/mp4' ],
+            mimes: ['video/mp4'],
             playbackmethod: [2, 4, 6],
             api: [1, 2, 3, 6],
             protocols: [3, 4],
@@ -340,14 +340,14 @@ describe('tpmnAdapterTests', function () {
             h: 480
 
           };
-          bid.mediaTypes.video = {...check};
+          bid.mediaTypes.video = { ...check };
           bid.mediaTypes.video.context = 'instream';
           bid.mediaTypes.video.playerSize = [[640, 480]];
 
           expect(spec.isBidRequestValid(bid)).to.equal(true);
           const requests = spec.buildRequests([bid], BIDDER_REQUEST);
           const request = requests[0].data;
-          expect(request.imp[0].video).to.deep.include({...check});
+          expect(request.imp[0].video).to.deep.include({ ...check });
         });
       }
     });
@@ -430,7 +430,7 @@ describe('tpmnAdapterTests', function () {
     });
 
     it('case 1 -> allow iframe', () => {
-      const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
     });

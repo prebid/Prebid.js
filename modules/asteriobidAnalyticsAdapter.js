@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { EVENTS } from '../src/constants.js'
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
-import {getRefererInfo} from '../src/refererDetection.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { collectUtmTagData, trimAdUnit, trimBid, trimBidderRequest } from '../libraries/asteriobidUtils/asteriobidUtils.js'
 
 /**
@@ -227,9 +227,6 @@ function handleEvent(eventType, eventArgs) {
       break
     }
     case EVENTS.REQUEST_BIDS: {
-      break
-    }
-    case EVENTS.ADD_AD_UNITS: {
       break
     }
     case EVENTS.AD_RENDER_FAILED: {

@@ -1,5 +1,5 @@
-import {deepClone, logError, logInfo} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { deepClone, logError, logInfo } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';

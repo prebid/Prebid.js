@@ -1,4 +1,4 @@
-import {createTrackPixelHtml, getWindowSelf, getWindowTop, isArray, isFn, isPlainObject} from '../../src/utils.js';
+import { createTrackPixelHtml, getWindowSelf, getWindowTop, isArray, isFn, isPlainObject } from '../../src/utils.js';
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
@@ -24,7 +24,7 @@ export function isIframe() {
 
 export function getProcessedSizes(sizes = []) {
   const bidSizes = ((isArray(sizes) && isArray(sizes[0])) ? sizes : [sizes]).filter(size => isArray(size));
-  return bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+  return bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 }
 
 export function getDeviceType(ua = navigator.userAgent, sua) {

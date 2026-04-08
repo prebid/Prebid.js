@@ -23,7 +23,8 @@ describe('BidfuseBidAdapter', function () {
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          battr: [1, 3]
         }
       },
       params: {
@@ -38,7 +39,8 @@ describe('BidfuseBidAdapter', function () {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
-          maxduration: 60
+          maxduration: 60,
+          battr: [1, 3]
         }
       },
       params: {
@@ -164,8 +166,7 @@ describe('BidfuseBidAdapter', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -192,17 +193,16 @@ describe('BidfuseBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('publisher');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -241,9 +241,6 @@ describe('BidfuseBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('network');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
@@ -287,7 +284,7 @@ describe('BidfuseBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -296,7 +293,7 @@ describe('BidfuseBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=0'
@@ -304,7 +301,7 @@ describe('BidfuseBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse]);
 
       expect(result).to.deep.equal([{
         'url': 'https://syncbf.bidfuse.com/image?pbjs=1&coppa=0',
@@ -316,7 +313,7 @@ describe('BidfuseBidAdapter', function () {
       config.setConfig({
         coppa: 1
       });
-      const result = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [serverResponse]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://syncbf.bidfuse.com/iframe?pbjs=1&coppa=1'
@@ -334,7 +331,7 @@ describe('BidfuseBidAdapter', function () {
         applicableSections: [7]
       }
 
-      const result = spec.getUserSyncs({pixelEnabled: true}, [serverResponse], gdprConsent, uspConsent, gppConsent);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
         'url': 'https://syncbf.bidfuse.com/image?pbjs=1&gdpr=1&gdpr_consent=consent_string&ccpa_consent=usp_string&gpp=gpp_string&gpp_sid=7&coppa=1',
