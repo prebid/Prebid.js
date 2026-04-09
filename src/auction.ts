@@ -629,8 +629,6 @@ export function addBidToAuction(auctionInstance, bidResponse: Bid) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { index = auctionManager.index } = {}) {
-  let addBid = true;
-
   const videoMediaType = index.getMediaTypes({
     requestId: bidResponse.originalRequestId || bidResponse.requestId,
     adUnitId: bidResponse.adUnitId
@@ -643,23 +641,25 @@ function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { inde
     ignoreBidderCacheKey
   } = config.getConfig('cache') || {};
 
-  if (useLocal) {
+  const shouldUseCache = cacheUrl && (useCacheKey || context !== OUTSTREAM);
+  const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
+
+  if (shouldUseCache && shouldStoreBid) {
+    if (!useLocal) {
+      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+      return;
+    }
     // stores video/audio bid vast as local blob in the browser
     storeLocally(bidResponse);
-  } else if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
-    if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
-      addBid = false;
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
-    } else if (!bidResponse.vastUrl) {
-      logError('videoCacheKey specified but not required vastUrl for video bid');
-      addBid = false;
-    }
   }
 
-  if (addBid) {
-    addBidToAuction(auctionInstance, bidResponse);
-    afterBidAdded();
+  if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
+    logError('videoCacheKey specified but not required vastUrl for video bid');
+    return;
   }
+
+  addBidToAuction(auctionInstance, bidResponse);
+  afterBidAdded();
 }
 
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
