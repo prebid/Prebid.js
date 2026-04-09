@@ -100,7 +100,6 @@ export const spec = {
             method: 'POST',
             url: endpoint,
             data: ortbRequest,
-            options: {contentType: 'application/json'},
         };
     },
     interpretResponse(serverResponse, request) {
