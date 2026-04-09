@@ -134,7 +134,7 @@ const converter = ortbConverter({
 
     // Fallback when price floors / getFloor did not set imp.bidfloor (see overrides.imp.bidfloor)
     const paramFloor = parseFloat(bidRequest.params?.floor);
-    if (!imp.bidfloor && !Number.isNaN(paramFloor)) {
+    if (imp.bidfloor == null && Number.isFinite(paramFloor) && paramFloor >= 0) {
       imp.bidfloor = paramFloor;
       imp.bidfloorcur = 'USD';
     }
