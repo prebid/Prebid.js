@@ -258,10 +258,6 @@ export const spec = {
       'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
     };
 
-    if (window.qid) { // only for new users (new qid)
-      syncData.qid = window.qid;
-    }
-
     const syncUrlObject = {
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_USER_SYNC_DOMAIN,
@@ -288,27 +284,6 @@ export const spec = {
 };
 
 function buildRequest(bid, bidderRequest, isVideo = false) {
-  let userId = null;
-  if (window.qid) {
-    userId = window.qid;
-  }
-
-  if (bid.userId && bid.userId.qid) {
-    userId = bid.userId.qid
-  }
-
-  if (!userId) {
-    userId = bid.ortb2?.user.ext.eids.find(eid => eid.source === "adquery.io")?.uids[0]?.id;
-  }
-
-  if (!userId) {
-    // onetime User ID
-    const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    userId = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
-    logMessage('generated onetime User ID: ', userId);
-    window.qid = userId;
-  }
-
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.page || '';
@@ -326,6 +301,14 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
 
     deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
     videoRequest.id = bid.bidId
+
+    if (bidderRequest?.gdprConsent?.consentString) {
+      deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+      deepSetValue(videoRequest, 'user.consent', bidderRequest.gdprConsent.consentString);
+    }
+    if (bidderRequest?.uspConsent) {
+      deepSetValue(videoRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
     videoRequest.cur = [currency]
@@ -355,7 +338,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     auctionId: null,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
-    bidQid: userId,
+    eids: bid.userIdAsEids || [],
     bidId: bid.bidId,
     bidder: bid.bidder,
     bidPageUrl: pageUrl,
@@ -363,6 +346,9 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
     sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
+    gdpr: bidderRequest?.gdprConsent?.gdprApplies ? 1 : 0,
+    gdpr_consent: bidderRequest?.gdprConsent?.consentString || '',
+    us_privacy: bidderRequest?.uspConsent || '',
   };
 }
 
