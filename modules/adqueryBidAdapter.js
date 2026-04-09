@@ -275,6 +275,25 @@ export const spec = {
 };
 
 function buildRequest(bid, bidderRequest, isVideo = false) {
+  let userId = null;
+
+  const eids = bid.userIdAsEids;
+  if (Array.isArray(eids)) {
+    const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
+    userId = adqueryEid?.uids?.[0]?.id;
+
+    if (!userId) {
+      userId = eids[0]?.uids?.[0]?.id;
+    }
+  }
+
+  if (!userId) {
+    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26);
+    userId = `qd_${randomPart}`;
+    logMessage('generated onetime User ID: ', userId);
+  }
+
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.page || '';
@@ -329,7 +348,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     auctionId: null,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
-    eids: bid.userIdAsEids || [],
+    bidQid: userId,
     bidId: bid.bidId,
     bidder: bid.bidder,
     bidPageUrl: pageUrl,
