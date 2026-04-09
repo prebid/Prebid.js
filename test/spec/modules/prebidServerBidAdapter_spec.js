@@ -4634,6 +4634,19 @@ describe('S2S Adapter', function () {
           }
         });
       });
+
+      it('does not include restricted IDs that are not for any requested bidder', () => {
+        expect(consolidateEids({
+          eids: [
+            eidEntry('idA', 'idA1'),
+            eidEntry('idB', 'idB1', ['bidderA'])
+          ]
+        }, ['bidderB'])).to.eql({
+          global: [mkEid('idA', 'idA1')],
+          permissions: [],
+          bidder: {}
+        })
+      })
     })
   });
 });
