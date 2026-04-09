@@ -21,7 +21,7 @@ header-bidding@magnite.com for more information.
 | `accountId` | required | Number | Magnite account ID. | `14062` |
 | `siteId` | required | Number | Magnite site ID. | `70608` |
 | `zoneId` | required | Number | Magnite zone ID. | `498816` |
-| `floor` | optional | Number | Minimum bid floor in **USD** for this impression. Used only when `imp.bidfloor` was not already set from the [Price Floors](https://docs.prebid.org/dev-docs/modules/floors.html) module (see **Bid floors** below). Must parse as a finite number. | `2.50` |
+| `floor` | optional | Number | Minimum bid floor in **USD** for this impression. Used only when `imp.bidfloor` was not already set from the [Price Floors](https://docs.prebid.org/dev-docs/modules/floors.html) module (see **Bid floors** below). Must be a **non-negative** finite number in USD; values that are negative, non-finite, or not numeric are ignored (no `imp.bidfloor` from this param). | `2.50` |
 
 # Bid floors
 
@@ -32,7 +32,7 @@ Magnite’s request is built with the shared ORTB converter. Floors behave as fo
    See the [Price Floors module](https://docs.prebid.org/dev-docs/modules/floors.html) for setup (`pbjs.setConfig({ floors: ... })`, rules, enforcement, etc.).
 
 2. **`params.floor` (fallback)**  
-   If `imp.bidfloor` is still unset after that step—for example, no floors module, no matching rule, or `getFloor` returned a non-USD currency—the adapter may set `imp.bidfloor` and `imp.bidfloorcur: 'USD'` from **`params.floor`** when it is a valid numeric value.
+   If `imp.bidfloor` is still unset after that step—for example, no floors module, no matching rule, or `getFloor` returned a non-USD currency—the adapter may set `imp.bidfloor` and `imp.bidfloorcur: 'USD'` from **`params.floor`** only when it parses to a **finite, non-negative** USD amount. Negative floors are ignored; so are `NaN`, `Infinity`, and non-numeric values.
 
 **USD only on `imp`:** Non-USD results from `getFloor` are not copied onto `imp.bidfloor` / `imp.bidfloorcur`. In those cases, `params.floor` (USD) can still apply as the fallback.
 
