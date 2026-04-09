@@ -273,7 +273,7 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
     const xmlDoc = xmlUtil.parse(gamVastWrapper);
     const vastAdTagUriElement = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME)[0];
 
-    if (!vastAdTagUriElement || !vastAdTagUriElement.textContent || !vastAdTagUriElement.textContent.startsWith(config.getConfig('cache.url'))) {
+    if (!vastAdTagUriElement || !vastAdTagUriElement.textContent) {
       return gamVastWrapper;
     }
 
