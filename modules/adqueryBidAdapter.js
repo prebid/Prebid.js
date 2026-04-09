@@ -6,7 +6,8 @@ import {
   logMessage,
   parseSizesInput,
   triggerPixel,
-  deepSetValue
+  deepSetValue,
+  deepAccess
 } from '../src/utils.js';
 
 /**
@@ -99,68 +100,58 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
 
-    if (response?.body?.seatbid) {
-      response.body.seatbid.forEach(seat => {
+    const seatbids = deepAccess(response, 'body.seatbid');
+    if (seatbids) {
+      seatbids.forEach(seat => {
         seat.bid.forEach(bid => {
           logMessage('bidObj', bid);
 
-          const bidResponse = {
+          bidResponses.push({
             requestId: bid.impid,
-            mediaType: 'video',
+            mediaType: VIDEO,
             cpm: bid.price,
-            currency: response.body.cur || 'USD',
-            ttl: 3600, // video żyje dłużej
+            currency: deepAccess(response, 'body.cur') || 'USD',
+            ttl: 3600,
             creativeId: bid.crid || bid.id,
             netRevenue: true,
-            dealId: bid.dealid || undefined,
-            nurl: bid.nurl || undefined,
-
-            // VAST – priority: inline XML > admurl > nurl as a wrapper
+            dealId: bid.dealid,
+            nurl: bid.nurl,
             vastXml: bid.adm || null,
             vastUrl: bid.admurl || null,
-
             width: bid.w || 640,
             height: bid.h || 360,
-
             meta: {
-              advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : [],
-              networkName: seat.seat || undefined,
-              mediaType: 'video'
-            }
-          };
-
-          bidResponses.push(bidResponse);
+              advertiserDomains: deepAccess(bid, 'adomain') || [],
+              networkName: seat.seat,
+              mediaType: VIDEO,
+            },
+          });
         });
       });
     }
 
-    const res = response && response.body && response.body.data;
+    const res = deepAccess(response, 'body.data');
+    if (!res) return bidResponses;
 
-    if (!res) {
-      return bidResponses;
-    }
-
-    const bidResponse = {
+    bidResponses.push({
       requestId: res.requestId,
       cpm: res.cpm,
-      width: res.mediaType.width,
-      height: res.mediaType.height,
+      width: deepAccess(res, 'mediaType.width'),
+      height: deepAccess(res, 'mediaType.height'),
       creativeId: res.creationId,
       dealId: res.dealid || '',
       currency: res.currency || ADQUERY_DEFAULT_CURRENCY,
       netRevenue: ADQUERY_NET_REVENUE,
       ttl: ADQUERY_TTL,
-      referrer: '',
-      ad: '<script src="' + res.adqLib + '"></script>' + res.tag,
-      mediaType: res.mediaType.name || 'banner',
+      ad: `<script src="${res.adqLib}"></script>${res.tag}`,
+      mediaType: deepAccess(res, 'mediaType.name') || BANNER,
       meta: {
-        advertiserDomains: res.adDomains && res.adDomains.length ? res.adDomains : [],
-        mediaType: res.mediaType.name || 'banner',
-      }
-    };
-    bidResponses.push(bidResponse);
-    logInfo('bidResponses', bidResponses);
+        advertiserDomains: deepAccess(res, 'adDomains') || [],
+        mediaType: deepAccess(res, 'mediaType.name') || BANNER,
+      },
+    });
 
+    logInfo('bidResponses', bidResponses);
     return bidResponses;
   },
 
