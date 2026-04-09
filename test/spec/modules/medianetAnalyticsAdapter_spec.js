@@ -127,7 +127,6 @@ function createBidWon(bidderCode, adId, requestId, cpm) {
     bidderCode,
     width: 300,
     height: 250,
-    statusMessage: 'Bid available',
     adId,
     requestId,
     mediaType: 'banner',

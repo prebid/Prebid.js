@@ -123,7 +123,6 @@ describe('NoBid Prebid Analytic', function () {
         bidderCode: 'nobid',
         width: 728,
         height: 9,
-        statusMessage: 'Bid available',
         adId: '106d14b7d06b607',
         requestId: '67a7f0e7ea55c4',
         transactionId: 'd58cbeae-92c8-4262-ba8d-0e649cbf5470',
@@ -174,7 +173,6 @@ describe('NoBid Prebid Analytic', function () {
       const expectedOutgoingRequest = {
         version: nobidAnalyticsVersion,
         bidderCode: 'nobid',
-        statusMessage: 'Bid available',
         adId: '106d14b7d06b607',
         requestId: '67a7f0e7ea55c4',
         mediaType: 'banner',
@@ -209,7 +207,6 @@ describe('NoBid Prebid Analytic', function () {
       const bidWonRequest = JSON.parse(server.requests[0].requestBody);
       expect(bidWonRequest).to.have.property('version', nobidAnalyticsVersion);
       expect(bidWonRequest).to.have.property('bidderCode', expectedOutgoingRequest.bidderCode);
-      expect(bidWonRequest).to.have.property('statusMessage', expectedOutgoingRequest.statusMessage);
       expect(bidWonRequest).to.have.property('adId', expectedOutgoingRequest.adId);
       expect(bidWonRequest).to.have.property('requestId', expectedOutgoingRequest.requestId);
       expect(bidWonRequest).to.have.property('mediaType', expectedOutgoingRequest.mediaType);
@@ -311,7 +308,6 @@ describe('NoBid Prebid Analytic', function () {
             bidderCode: 'nobid',
             width: 728,
             height: 90,
-            statusMessage: 'Bid available',
             adId: '95781b6ae5ef2f',
             requestId: '6ef0277f36c8df',
             transactionId: 'bcda424d-f4f4-419b-acf9-1808d2dd22b1',

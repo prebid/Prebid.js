@@ -211,10 +211,6 @@ function filterBidResponse(data) {
   if (typeof modified.ts !== 'undefined') {
     modified.ts = '';
   }
-  // clean up a property to make simpler
-  if (typeof modified.statusMessage !== 'undefined' && modified.statusMessage === 'Bid returned empty or error response') {
-    modified.statusMessage = 'eoe';
-  }
   modified.auctionEnded = auctionEnded;
   return modified;
 }

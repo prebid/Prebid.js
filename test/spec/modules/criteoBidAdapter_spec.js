@@ -1927,22 +1927,6 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.imp[1].ext.bidder.uid).to.equal(888);
     });
 
-    it('should properly transmit device.ext.cdep if available', async function () {
-      const bidderRequest = {
-        ortb2: {
-          device: {
-            ext: {
-              cdep: 'cookieDeprecationLabel'
-            }
-          }
-        }
-      };
-      const bidRequests = [];
-      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const ortbRequest = request.data;
-      expect(ortbRequest.device.ext.cdep).to.equal('cookieDeprecationLabel');
-    });
-
     it('should interpret correctly gzip configuration given as a string', async function() {
       bidderConfigStub.returns({ criteo: { gzipEnabled: 'false' } });
 
