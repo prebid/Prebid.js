@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/reklamupBidAdapter.js';
+import { spec } from '../../../modules/reklamupBidAdapter.ts';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
@@ -145,8 +145,7 @@ describe('ReklamupBidAdapter', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -474,8 +473,12 @@ describe('ReklamupBidAdapter', function () {
   });
 
   describe('getUserSyncs', function() {
+    it('Should return empty array if both sync types are disabled', function() {
+      const syncData = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, {}, {}, undefined);
+      expect(syncData).to.be.an('array').that.is.empty;
+    });
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         consentString: 'ALL',
         gdprApplies: true,
       }, undefined);
@@ -487,7 +490,7 @@ describe('ReklamupBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, '1---');
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -496,7 +499,7 @@ describe('ReklamupBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://usersync.reklamup.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, undefined, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, {
         gppString: 'abc123',
         applicableSections: [8]
       });

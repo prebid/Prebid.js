@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
@@ -6,7 +6,19 @@ const BIDDER_CODE = 'reklamup';
 const AD_URL = 'https://node.reklamup.com/pbjs';
 const SYNC_URL = 'https://usersync.reklamup.com';
 
-export const spec = {
+interface ReklamupBidParams {
+  [key: string]: unknown;
+  placementId?: string;
+  endpointId?: string;
+}
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: ReklamupBidParams;
+  }
+}
+
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
