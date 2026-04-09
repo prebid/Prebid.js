@@ -15,6 +15,7 @@ import { hook } from '../../../src/hook.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
 import { getVastXml, getVastXmlByCacheId } from '../../../modules/gamAdServerVideo.js';
+import * as ajax from '../../../src/ajax.js';
 import { server } from '../../mocks/xhr.js';
 import { generateUUID } from '../../../src/utils.js';
 import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
@@ -752,6 +753,17 @@ describe('The DFP video support module', function () {
 
   it('should return undefined for an unknown locally cached cache id', async () => {
     const vastXml = await getVastXmlByCacheId(generateUUID(), new Map());
+    expect(vastXml).to.be.undefined;
+  });
+
+  it('should return undefined when fetching a locally cached cache id rejects', async () => {
+    const cacheId = generateUUID();
+    const blobUrl = 'blob:https://example.com/revoked';
+    const localMap = new Map([[cacheId, blobUrl]]);
+    sandbox.stub(ajax, 'fetch').rejects(new Error('The operation was aborted.'));
+
+    const vastXml = await getVastXmlByCacheId(cacheId, localMap);
+
     expect(vastXml).to.be.undefined;
   });
 

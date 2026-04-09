@@ -373,31 +373,32 @@ function retrieveUspInfoFromGpp(gpp) {
   return undefined
 }
 
-export async function getVastXmlByCacheId(cacheId, localCacheMap = vastLocalCache) {
-  const blobUrl = localCacheMap?.get(cacheId);
-  if (!blobUrl) return;
-
-  const response = await fetch(blobUrl);
-  if (!response.ok) {
-    logError('Unable to fetch blob');
-    return;
-  }
-
-  return response.text();
-}
-
-export async function getBase64BlobContent(blobUrl) {
+async function getBlobContent(blobUrl) {
   const response = await fetch(blobUrl);
   if (!response.ok) {
     logError('Unable to fetch blob');
     throw new Error('Blob not found');
   }
+  return response.text();
+}
+
+export async function getVastXmlByCacheId(cacheId, localCacheMap = vastLocalCache) {
+  const blobUrl = localCacheMap?.get(cacheId);
+  if (!blobUrl) return;
+
+  try {
+    return await getBlobContent(blobUrl);
+  } catch (err) {
+    logError('Unable to fetch vast xml', err);
+  }
+}
+
+export async function getBase64BlobContent(blobUrl) {
   // Mechanism to handle cases where VAST tags are fetched
   // from a context where the blob resource is not accessible.
   // like IMA SDK iframe
-  const blobContent = await response.text();
-  const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
-  return dataUrl;
+  const blobContent = await getBlobContent(blobUrl);
+  return `data://text/xml;base64,${btoa(blobContent)}`;
 }
 
 export { buildGamVideoUrl as buildDfpVideoUrl };
