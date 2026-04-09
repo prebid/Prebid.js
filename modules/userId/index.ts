@@ -368,6 +368,10 @@ function mkPriorityMaps() {
       const refreshing = new Set(addtlModules.map(mod => mod.submodule));
       map.submodules = map.submodules.filter((mod) => !refreshing.has(mod.submodule)).concat(addtlModules);
       update();
+    },
+    reset() {
+      map.submodules = [];
+      update();
     }
   }
   function update() {
@@ -892,8 +896,24 @@ function updatePPID(priorityMaps) {
   }
 }
 
+function hasOptedOut() {
+  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out localStorage found, userId disabled`);
+    return true;
+  }
+  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out cookie found, userId disabled`);
+    return true;
+  }
+  return false;
+}
+
 function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
+    if (hasOptedOut()) {
+      priorityMaps.reset();
+      return [];
+    }
     if (!submodules.length) return []; // to simplify log messages from here on
     submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
@@ -987,12 +1007,6 @@ function canUseLocalStorage(submodule) {
   if (!submodule.storageMgr.localStorageIsEnabled()) {
     return false;
   }
-
-  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
-    return false
-  }
-
   return true;
 }
 
@@ -1000,12 +1014,6 @@ function canUseCookies(submodule) {
   if (!submodule.storageMgr.cookiesAreEnabled()) {
     return false;
   }
-
-  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
-    return false;
-  }
-
   return true
 }
 

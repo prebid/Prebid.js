@@ -86,7 +86,7 @@ const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
 const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number } } = {};
 
-let _s2sConfigs = [];
+let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
   if (config && config.s2sConfig) {
     _s2sConfigs = isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
@@ -214,6 +214,7 @@ const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
   'nativeOrtbRequest',
   'renderer',
+  'element',
 ] as const;
 
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
@@ -926,6 +927,7 @@ const adapterManager = {
     config: AnalyticsConfig<keyof AnalyticsProviderConfig>
             | AnalyticsConfig<AnalyticsProvider>
             | AnalyticsConfig<AnalyticsProvider>[]
+            | any
   ) {
     if (!isArray(config)) {
       config = [config];

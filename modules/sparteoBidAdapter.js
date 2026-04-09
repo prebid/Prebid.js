@@ -91,6 +91,7 @@ function createRenderer(rendererConfig) {
 }
 
 function outstreamRender(bid) {
+  // TODO this should use getAdUnitElement
   if (!document.getElementById(bid.adUnitCode)) {
     logError(`Sparteo Bid Adapter: Video renderer did not started. bidResponse.adUnitCode is probably not a DOM element : ${bid.adUnitCode}`);
     return;

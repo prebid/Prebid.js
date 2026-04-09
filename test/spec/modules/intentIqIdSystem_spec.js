@@ -7,7 +7,8 @@ import {
   handleClientHints,
   firstPartyData as moduleFPD,
   isCMPStringTheSame, createPixelUrl, translateMetadata,
-  initializeGlobalIIQ
+  initializeGlobalIIQ,
+  setGamReporting
 } from '../../../modules/intentIqIdSystem.js';
 import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
@@ -218,6 +219,45 @@ describe('IntentIQ tests', function () {
     const submodule = intentIqIdSubmodule.getId({ params: { partner: '10' } });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
+  });
+
+  it('should use setConfig when available in setGamReporting', function () {
+    const setConfigSpy = sinon.spy();
+    const pubadsSetTargetingSpy = sinon.spy();
+    const mockGAM = {
+      cmd: [],
+      setConfig: setConfigSpy,
+      pubads: () => ({
+        setTargeting: pubadsSetTargetingSpy
+      })
+    };
+
+    setGamReporting(mockGAM, 'intent_iq_group', 'A');
+    mockGAM.cmd.forEach((fn) => fn());
+
+    expect(setConfigSpy.calledOnce).to.equal(true);
+    expect(setConfigSpy.firstCall.args[0]).to.deep.equal({
+      targeting: {
+        intent_iq_group: 'A'
+      }
+    });
+    expect(pubadsSetTargetingSpy.called).to.equal(false);
+  });
+
+  it('should fall back to pubads.setTargeting when setConfig is missing', function () {
+    const pubadsSetTargetingSpy = sinon.spy();
+    const mockGAM = {
+      cmd: [],
+      pubads: () => ({
+        setTargeting: pubadsSetTargetingSpy
+      })
+    };
+
+    setGamReporting(mockGAM, 'intent_iq_group', 'B');
+    mockGAM.cmd.forEach((fn) => fn());
+
+    expect(pubadsSetTargetingSpy.calledOnce).to.equal(true);
+    expect(pubadsSetTargetingSpy.firstCall.args).to.deep.equal(['intent_iq_group', 'B']);
   });
 
   it('should not save data in cookie if relevant type not set', async function () {

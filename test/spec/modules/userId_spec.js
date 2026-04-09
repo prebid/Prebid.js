@@ -1431,37 +1431,96 @@ describe('User ID', function () {
   });
 
   describe('Opt out', function () {
-    before(function () {
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
-    });
-
-    beforeEach(function () {
-      sinon.stub(utils, 'logInfo');
-    });
-
-    afterEach(function () {
-      // removed cookie
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
-      requestBids.removeAll();
-      utils.logInfo.restore();
-    });
-
-    it('does not fetch ids if opt out cookie exists', function () {
+    let mockIdSystem, cfg;
+    beforeEach(() => {
+      mockIdSystem = {
+        name: 'mockId',
+        decode: sinon.stub().callsFake(function (value) {
+          return {
+            'mid': value.mock
+          };
+        }),
+        getId: sinon.stub().callsFake(function () {
+          return { id: { mock: 'id' } };
+        })
+      };
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      const cfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      cfg.userSync.auctionDelay = 1; // to let init complete without an auction
-      config.setConfig(cfg);
-      return getGlobal().getUserIdsAsync().then((uid) => {
-        expect(uid).to.eql({});
-      })
-    });
+      setSubmoduleRegistry([mockIdSystem]);
+      cfg = {
+        userSync: {
+          syncDelay: 0,
+          auctionDelay: 1, // to let init complete without an auction
+          userIds: [{
+            name: 'mockId'
+          }]
+        }
+      }
+    })
+    Object.entries({
+      'cookies': {
+        setup() {
+          coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
+        },
+        teardown() {
+          coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
+        }
+      },
+      'localStorage': {
+        setup() {
+          coreStorage.setDataInLocalStorage(PBJS_USER_ID_OPTOUT_NAME, '1');
+        },
+        teardown() {
+          coreStorage.removeDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME);
+        }
+      }
+    }).forEach(([t, { setup, teardown }]) => {
+      describe(`via ${t}`, () => {
+        afterEach(teardown);
 
-    it('initializes if no opt out cookie exists', function () {
-      init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
+        it('does not fetch ids if opt out flag is set', function () {
+          setup();
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            sinon.assert.notCalled(mockIdSystem.getId);
+            expect(uid).to.eql({});
+          })
+        });
+
+        it('initializes if opt out flag is not set', async function () {
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            sinon.assert.called(mockIdSystem.getId);
+            expect(uid).to.eql({ mid: 'id' });
+          })
+        });
+
+        it('should opt out on refresh', () => {
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            expect(uid).to.eql({ mid: 'id' });
+            sinon.assert.calledOnce(mockIdSystem.getId);
+            setup();
+            return getGlobal().refreshUserIds().then((uid) => {
+              sinon.assert.calledOnce(mockIdSystem.getId);
+              expect(uid).to.eql({});
+            })
+          })
+        });
+
+        it('should opt back in on refresh', () => {
+          setup();
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            expect(uid).to.eql({});
+            sinon.assert.notCalled(mockIdSystem.getId);
+            teardown();
+            return getGlobal().refreshUserIds().then((uid) => {
+              sinon.assert.calledOnce(mockIdSystem.getId);
+              expect(uid).to.eql({ mid: 'id' });
+            });
+          });
+        });
+      });
     });
   });
 
