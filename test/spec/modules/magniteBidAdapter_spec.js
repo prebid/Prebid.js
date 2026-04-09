@@ -532,12 +532,14 @@ describe('the magnite adapter', function () {
         });
 
         it('should not set bidfloor from invalid params.floor', function () {
-          const bid = getBannerBidRequest({
-            params: { floor: 'not-a-number' }
+          ['not-a-number', Infinity, -1].forEach((floor) => {
+            const bid = getBannerBidRequest({
+              params: { floor }
+            });
+            const requests = spec.buildRequests([bid], bidderRequest);
+            expect(requests[0].data.imp[0].bidfloor).to.be.undefined;
+            expect(requests[0].data.imp[0].bidfloorcur).to.be.undefined;
           });
-          const requests = spec.buildRequests([bid], bidderRequest);
-          expect(requests[0].data.imp[0].bidfloor).to.be.undefined;
-          expect(requests[0].data.imp[0].bidfloorcur).to.be.undefined;
         });
       });
 
