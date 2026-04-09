@@ -132,6 +132,13 @@ const converter = ortbConverter({
     // Building imps of request
     const imp = buildImp(bidRequest, context);
 
+    // Fallback when price floors / getFloor did not set imp.bidfloor (see overrides.imp.bidfloor)
+    const paramFloor = parseFloat(bidRequest.params?.floor);
+    if (!imp.bidfloor && !Number.isNaN(paramFloor)) {
+      imp.bidfloor = paramFloor;
+      imp.bidfloorcur = 'USD';
+    }
+
     // remove any mediaTypes on imp that are not in our context
     [BANNER, NATIVE, VIDEO].forEach(mediaType => {
       if (mediaType !== context.mediaType) {
@@ -247,10 +254,10 @@ const converter = ortbConverter({
   },
   overrides: {
     imp: {
-      bidfloor(setBidFloor, imp, bidRequest, context) {
-        // Floors should always be in USD
+      bidfloor(applyDefaultBidFloor, imp, bidRequest, context) {
+        // Floors should always be in USD (applyDefaultBidFloor is the core ortb bidfloor processor)
         const floor = {};
-        setBidFloor(floor, bidRequest, { ...context, currency: 'USD' });
+        applyDefaultBidFloor(floor, bidRequest, { ...context, currency: 'USD' });
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }

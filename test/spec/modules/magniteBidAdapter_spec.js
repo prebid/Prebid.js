@@ -495,6 +495,52 @@ describe('the magnite adapter', function () {
         expect(bannerReq.data.imp[0].ext.rp.rtb.formats).to.include('video');
       });
 
+      describe('imp bidfloor', function () {
+        it('should set imp.bidfloor and bidfloorcur from params.floor when getFloor is not used', function () {
+          const bid = getBannerBidRequest({
+            params: { floor: 2.25 }
+          });
+          const requests = spec.buildRequests([bid], bidderRequest);
+          expect(requests[0].data.imp[0].bidfloor).to.equal(2.25);
+          expect(requests[0].data.imp[0].bidfloorcur).to.equal('USD');
+        });
+
+        it('should prefer getFloor USD over params.floor', function () {
+          const bid = getBannerBidRequest({
+            params: { floor: 1.5 },
+            getFloor: () => ({
+              currency: 'USD',
+              floor: 9.99
+            })
+          });
+          const requests = spec.buildRequests([bid], bidderRequest);
+          expect(requests[0].data.imp[0].bidfloor).to.equal(9.99);
+          expect(requests[0].data.imp[0].bidfloorcur).to.equal('USD');
+        });
+
+        it('should use params.floor when getFloor returns a non-USD currency', function () {
+          const bid = getBannerBidRequest({
+            params: { floor: 3.5 },
+            getFloor: () => ({
+              currency: 'EUR',
+              floor: 8.88
+            })
+          });
+          const requests = spec.buildRequests([bid], bidderRequest);
+          expect(requests[0].data.imp[0].bidfloor).to.equal(3.5);
+          expect(requests[0].data.imp[0].bidfloorcur).to.equal('USD');
+        });
+
+        it('should not set bidfloor from invalid params.floor', function () {
+          const bid = getBannerBidRequest({
+            params: { floor: 'not-a-number' }
+          });
+          const requests = spec.buildRequests([bid], bidderRequest);
+          expect(requests[0].data.imp[0].bidfloor).to.be.undefined;
+          expect(requests[0].data.imp[0].bidfloorcur).to.be.undefined;
+        });
+      });
+
       it('should not delete device.dnt from request', function () {
         const requests = spec.buildRequests([getBannerBidRequest()], bidderRequest);
         // dnt should be deleted by the adapter
