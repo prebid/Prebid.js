@@ -40,11 +40,14 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
-    if (video && ['instream', 'outstream'].includes(video.context)) {
-      return !!(video.playerSize);
+    if (video) {
+      if (['instream', 'outstream'].includes(video.context)) {
+        return !!(video.playerSize);
+      }
+      return false;
     }
 
-    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes?.banner?.sizes)
   },
 
   /**
