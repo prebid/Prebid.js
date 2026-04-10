@@ -47,7 +47,7 @@ export const spec = {
       return false;
     }
 
-    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes?.banner?.sizes)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
   },
 
   /**
