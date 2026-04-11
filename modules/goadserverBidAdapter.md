@@ -23,6 +23,7 @@ Supported media types: `banner`, `video`, `native`.
 | `floor`  | optional | Per-bid CPM floor (USD). Honored only if the Price Floors module hasn't already set `imp.bidfloor`.                                | `0.50`                | `number` |
 | `subid`  | optional | Per-impression sub-identifier for stats attribution (page section, article bucket, A/B test group, etc.). Emitted as `imp.ext.goadserver.subid` and logged against the bid in goadserver's reporting. Normalized server-side (stripped of `,\|"'` and capped at 1024 chars). | `"article_page"`      | `string` |
 | `deals`  | optional | Array of private marketplace deal objects attached to this impression. Each entry maps to OpenRTB `imp.pmp.deals[]`: `id` (required), `bidfloor`, `bidfloorcur`, `at` (auction type), `wseat[]` (whitelisted seats), `wadomain[]` (whitelisted advertiser domains). Forwarded verbatim to downstream DSPs; winning bids return with `bid.dealid` which Prebid.js surfaces in `bid.dealId` for GAM line-item targeting. | see below             | `Object[]` |
+| `outstreamRendererUrl` | optional | Override URL for the outstream video renderer script. Defaults to `https://{host}/prebid-outstream.js`, which every goadserver deployment hosts. Set this if you want to self-host or bundle a custom player script. | `"https://cdn.pub.example.com/my-outstream.js"` | `string` |
 
 ## Deals / Private Marketplace
 
@@ -42,7 +43,9 @@ bids: [{
 
 ## Outstream Video
 
-Outstream is supported via the standard `mediaTypes.video.context: 'outstream'` setting. The adapter forwards the video imp untouched; publishers are expected to configure an outstream renderer at the ad unit level per the standard Prebid.js pattern. Example:
+Outstream is supported via the standard `mediaTypes.video.context: 'outstream'` setting. When a video bid is returned for an outstream ad unit, the adapter attaches a Prebid.js `Renderer` that loads the goadserver-hosted outstream player (served at `https://{params.host}/prebid-outstream.js`). The player parses the VAST XML, injects a muted auto-playing `<video>` element into the slot, and fires impression / click trackers. No publisher-side renderer configuration is required.
+
+Publishers who prefer to bundle their own outstream player can override the hosted script via `params.outstreamRendererUrl`, or fall back to defining a standard ad-unit-level `renderer` which takes precedence over the adapter's default.
 
 ```js
 adUnit = {
@@ -54,13 +57,13 @@ adUnit = {
       mimes: ['video/mp4']
     }
   },
-  renderer: {
-    url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
-    render: function (bid) { /* call your outstream player */ }
-  },
   bids: [{
     bidder: 'goadserver',
-    params: { host: 'ads.example.com', token: 'your-token' }
+    params: {
+      host: 'ads.example.com',
+      token: 'your-token'
+      // outstreamRendererUrl: 'https://cdn.pub.example.com/my-outstream.js' // optional override
+    }
   }]
 };
 ```

@@ -1,7 +1,8 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepSetValue, triggerPixel, isStr } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, triggerPixel, isStr } from '../src/utils.js';
 
 /**
  * Prebid.js adapter for goadserver — a self-hosted, multi-tenant ad
@@ -27,6 +28,60 @@ import { deepSetValue, triggerPixel, isStr } from '../src/utils.js';
 const BIDDER_CODE = 'goadserver';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
+
+/**
+ * Outstream video renderer — delegates to the goadserver-hosted player
+ * script (served at https://{params.host}/prebid-outstream.js) which
+ * parses the VAST XML, injects a muted auto-playing <video> element
+ * into the ad unit's slot, and fires impression / click trackers.
+ *
+ * Prebid.js invokes outstreamRender once the Renderer.url script has
+ * loaded. We push onto renderer so execution is deferred until after
+ * that load completes — attempting to render synchronously would race
+ * the script fetch.
+ *
+ * @param {Bid} bid
+ */
+function outstreamRender(bid) {
+  bid.renderer.push(function () {
+    try {
+      if (window.goadserverOutstream && typeof window.goadserverOutstream.render === 'function') {
+        window.goadserverOutstream.render(bid);
+      }
+    } catch (e) {
+      logError('goadserver: outstream render failed', e);
+    }
+  });
+}
+
+/**
+ * Install a fresh Prebid.js Renderer for an outstream video bid. The
+ * renderer URL defaults to the deployment's hosted player but can be
+ * overridden via `params.outstreamRendererUrl` for publishers who want
+ * to self-host or bundle a custom player.
+ *
+ * @param {Bid} bid
+ * @param {string} host    The publisher's goadserver deployment host.
+ * @param {string} [custom] Optional override URL for a self-hosted renderer.
+ * @returns {Renderer}
+ */
+function newOutstreamRenderer(bid, host, custom) {
+  const url = (isStr(custom) && custom.length > 0)
+    ? custom
+    : `https://${host}/prebid-outstream.js`;
+  const renderer = Renderer.install({
+    id: bid.bidId || bid.requestId,
+    url,
+    loaded: false,
+    adUnitCode: bid.adUnitCode,
+  });
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (e) {
+    logError('goadserver: renderer.setRender failed', e);
+  }
+  return renderer;
+}
 // GVL ID: not yet registered with IAB Europe. File a TCF registration at
 // https://iabeurope.eu/tcf/ and populate this field before EU traffic
 // goes through the adapter, otherwise CMPs may drop bid requests.
@@ -137,6 +192,11 @@ export const spec = {
       method: 'POST',
       url,
       data,
+      // Stash the original bidRequests so interpretResponse can
+      // correlate bids back to their ad unit context (needed to
+      // detect outstream video and attach a Renderer).
+      bidRequests: validBidRequests,
+      host,
       options: { contentType: 'application/json', withCredentials: true },
     };
   },
@@ -154,10 +214,41 @@ export const spec = {
     if (!serverResponse?.body) {
       return [];
     }
-    return converter.fromORTB({
+    const bids = converter.fromORTB({
       response: serverResponse.body,
       request: request.data,
     }).bids;
+
+    // Post-process: attach an outstream renderer to video bids whose
+    // original ad unit requested video.context = 'outstream'. Without
+    // this, publishers with no in-page video player can't render the
+    // creative. Also prefer the Prebid Cache URL (hb_cache_url) over
+    // the raw VAST XML when both are present, so large VAST blobs
+    // don't have to live in Prebid's in-memory targeting store.
+    const originalBids = request.bidRequests || [];
+    const host = request.host;
+    bids.forEach(function (bid) {
+      if (bid.mediaType !== VIDEO) return;
+
+      // vastUrl fallback to the server-cached URL emitted in targeting.
+      const cacheUrl = deepAccess(bid, 'adserverTargeting.hb_cache_url');
+      if (cacheUrl && !bid.vastUrl) {
+        bid.vastUrl = cacheUrl;
+      }
+
+      // Look up the originating bid request by requestId and check
+      // whether it declared outstream context.
+      const origBid = originalBids.find(function (b) { return b.bidId === bid.requestId; });
+      if (!origBid) return;
+      const context = deepAccess(origBid, 'mediaTypes.video.context');
+      if (context !== 'outstream') return;
+
+      bid.adUnitCode = origBid.adUnitCode;
+      const customUrl = deepAccess(origBid, 'params.outstreamRendererUrl');
+      bid.renderer = newOutstreamRenderer(bid, host, customUrl);
+    });
+
+    return bids;
   },
 
   /**
