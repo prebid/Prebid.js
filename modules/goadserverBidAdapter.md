@@ -3,7 +3,7 @@
 ```
 Module Name: goadserver Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: support@goadserver.com
+Maintainer: jan@goadserver.com
 ```
 
 # Description
