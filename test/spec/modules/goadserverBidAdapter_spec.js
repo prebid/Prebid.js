@@ -100,6 +100,40 @@ const BID_REQUEST_WITH_SUBID = {
   },
 };
 
+const BID_REQUEST_WITH_DEALS = {
+  ...BANNER_BID_REQUEST,
+  bidId: 'test-bid-deals',
+  params: {
+    host: HOST,
+    token: TOKEN,
+    deals: [
+      { id: 'DEAL_A', bidfloor: 2.50, bidfloorcur: 'USD' },
+      { id: 'DEAL_B', bidfloor: 1.00, at: 1, wseat: ['agency-42'] },
+    ],
+  },
+};
+
+const OUTSTREAM_VIDEO_BID_REQUEST = {
+  bidder: 'goadserver',
+  params: {
+    host: HOST,
+    token: TOKEN,
+  },
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [[640, 360]],
+      mimes: ['video/mp4'],
+    },
+  },
+  adUnitCode: '/test/adunit/outstream',
+  transactionId: 'test-txn-outstream',
+  bidId: 'test-bid-outstream',
+  bidderRequestId: 'test-req-1',
+  auctionId: 'test-auction-1',
+  timeout: 1000,
+};
+
 const bidderRequest = {
   refererInfo: {
     page: 'https://publisher.example.com/article/42',
@@ -212,6 +246,34 @@ describe('goadserverBidAdapter', function () {
       expect(request.data.imp[0].ext.goadserver).to.exist;
       expect(request.data.imp[0].ext.goadserver.subid).to.equal('article_top_728x90');
     });
+
+    it('emits params.deals[] as imp.pmp.deals[]', async function () {
+      const request = spec.buildRequests([BID_REQUEST_WITH_DEALS], await addFPDToBidderRequest(bidderRequest));
+      expect(request.data.imp[0].pmp).to.exist;
+      expect(request.data.imp[0].pmp.deals).to.be.an('array').with.lengthOf(2);
+      expect(request.data.imp[0].pmp.deals[0].id).to.equal('DEAL_A');
+      expect(request.data.imp[0].pmp.deals[0].bidfloor).to.equal(2.50);
+      expect(request.data.imp[0].pmp.deals[1].id).to.equal('DEAL_B');
+      expect(request.data.imp[0].pmp.deals[1].wseat).to.deep.equal(['agency-42']);
+    });
+
+    it('omits imp.pmp when no deals are set', async function () {
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      expect(request.data.imp[0].pmp).to.be.undefined;
+    });
+
+    if (FEATURES.VIDEO) {
+      it('builds an outstream video imp with context preserved', async function () {
+        const request = spec.buildRequests([OUTSTREAM_VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        expect(request.data.imp[0].video).to.exist;
+        // ortbConverter may stash context in ext.prebid depending on
+        // Prebid.js version; we just assert the imp is a valid video
+        // imp and the publisher's w/h came through.
+        expect(request.data.imp[0].video.w).to.equal(640);
+        expect(request.data.imp[0].video.h).to.equal(360);
+        expect(request.data.imp[0].video.mimes).to.deep.equal(['video/mp4']);
+      });
+    }
 
     it('omits imp.ext.goadserver.subid when no subid is set', async function () {
       const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));

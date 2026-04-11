@@ -22,6 +22,48 @@ Supported media types: `banner`, `video`, `native`.
 | `token`  | required | SSP campaign authentication token from the publisher's goadserver panel. Goes into `site.publisher.id`.                            | `"a1b2c3d4..."`       | `string` |
 | `floor`  | optional | Per-bid CPM floor (USD). Honored only if the Price Floors module hasn't already set `imp.bidfloor`.                                | `0.50`                | `number` |
 | `subid`  | optional | Per-impression sub-identifier for stats attribution (page section, article bucket, A/B test group, etc.). Emitted as `imp.ext.goadserver.subid` and logged against the bid in goadserver's reporting. Normalized server-side (stripped of `,\|"'` and capped at 1024 chars). | `"article_page"`      | `string` |
+| `deals`  | optional | Array of private marketplace deal objects attached to this impression. Each entry maps to OpenRTB `imp.pmp.deals[]`: `id` (required), `bidfloor`, `bidfloorcur`, `at` (auction type), `wseat[]` (whitelisted seats), `wadomain[]` (whitelisted advertiser domains). Forwarded verbatim to downstream DSPs; winning bids return with `bid.dealid` which Prebid.js surfaces in `bid.dealId` for GAM line-item targeting. | see below             | `Object[]` |
+
+## Deals / Private Marketplace
+
+```js
+bids: [{
+  bidder: 'goadserver',
+  params: {
+    host: 'ads.example.com',
+    token: 'your-sspcampaigns-hash',
+    deals: [
+      { id: 'DEAL_XYZ', bidfloor: 2.50, bidfloorcur: 'USD' },
+      { id: 'DEAL_ABC', bidfloor: 1.00, at: 1, wseat: ['agency-42'] }
+    ]
+  }
+}]
+```
+
+## Outstream Video
+
+Outstream is supported via the standard `mediaTypes.video.context: 'outstream'` setting. The adapter forwards the video imp untouched; publishers are expected to configure an outstream renderer at the ad unit level per the standard Prebid.js pattern. Example:
+
+```js
+adUnit = {
+  code: 'outstream-1',
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [[640, 360]],
+      mimes: ['video/mp4']
+    }
+  },
+  renderer: {
+    url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+    render: function (bid) { /* call your outstream player */ }
+  },
+  bids: [{
+    bidder: 'goadserver',
+    params: { host: 'ads.example.com', token: 'your-token' }
+  }]
+};
+```
 
 # Test Parameters
 

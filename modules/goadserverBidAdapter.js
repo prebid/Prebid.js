@@ -53,6 +53,26 @@ const converter = ortbConverter({
     if (bidRequest.params?.subid) {
       deepSetValue(imp, 'ext.goadserver.subid', String(bidRequest.params.subid));
     }
+    // Private marketplace deals — publishers list them in params.deals[].
+    // Each entry is an OpenRTB imp.pmp.deal object (id required, optional
+    // bidfloor / bidfloorcur / at / wseat / wadomain). The adapter stuffs
+    // them into imp.pmp.deals so downstream DSPs see the deal objects
+    // and can return bids with matching bid.dealid.
+    if (Array.isArray(bidRequest.params?.deals) && bidRequest.params.deals.length > 0) {
+      const deals = bidRequest.params.deals
+        .filter(d => d && d.id)
+        .map(d => ({
+          id: String(d.id),
+          bidfloor: typeof d.bidfloor === 'number' ? d.bidfloor : 0,
+          bidfloorcur: d.bidfloorcur || DEFAULT_CURRENCY,
+          at: typeof d.at === 'number' ? d.at : 0,
+          wseat: Array.isArray(d.wseat) ? d.wseat : undefined,
+          wadomain: Array.isArray(d.wadomain) ? d.wadomain : undefined,
+        }));
+      if (deals.length > 0) {
+        imp.pmp = { private_auction: 0, deals };
+      }
+    }
     return imp;
   },
 
