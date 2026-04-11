@@ -40,13 +40,18 @@ const converter = ortbConverter({
   },
 
   // Per-impression hook: apply the optional per-bid floor override the
-  // publisher set via `params.floor`. Only applied when the Price Floors
-  // module hasn't already populated `imp.bidfloor` from a floors config.
+  // publisher set via `params.floor` (only when the Price Floors module
+  // hasn't already populated `imp.bidfloor`), and copy the optional
+  // `params.subid` into the imp's goadserver extension so the server
+  // can attribute the auction result to the right sub-identifier.
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     if (bidRequest.params?.floor != null && !imp.bidfloor) {
       imp.bidfloor = Number(bidRequest.params.floor);
       imp.bidfloorcur = DEFAULT_CURRENCY;
+    }
+    if (bidRequest.params?.subid) {
+      deepSetValue(imp, 'ext.goadserver.subid', String(bidRequest.params.subid));
     }
     return imp;
   },

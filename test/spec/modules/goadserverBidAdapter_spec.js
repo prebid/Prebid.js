@@ -90,6 +90,16 @@ const BID_REQUEST_WITH_FLOOR = {
   },
 };
 
+const BID_REQUEST_WITH_SUBID = {
+  ...BANNER_BID_REQUEST,
+  bidId: 'test-bid-subid',
+  params: {
+    host: HOST,
+    token: TOKEN,
+    subid: 'article_top_728x90',
+  },
+};
+
 const bidderRequest = {
   refererInfo: {
     page: 'https://publisher.example.com/article/42',
@@ -194,6 +204,21 @@ describe('goadserverBidAdapter', function () {
       const request = spec.buildRequests([BID_REQUEST_WITH_FLOOR], await addFPDToBidderRequest(bidderRequest));
       expect(request.data.imp[0].bidfloor).to.equal(1.25);
       expect(request.data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
+    it('emits params.subid as imp.ext.goadserver.subid', async function () {
+      const request = spec.buildRequests([BID_REQUEST_WITH_SUBID], await addFPDToBidderRequest(bidderRequest));
+      expect(request.data.imp[0].ext).to.exist;
+      expect(request.data.imp[0].ext.goadserver).to.exist;
+      expect(request.data.imp[0].ext.goadserver.subid).to.equal('article_top_728x90');
+    });
+
+    it('omits imp.ext.goadserver.subid when no subid is set', async function () {
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const goadserverExt = request.data.imp[0].ext && request.data.imp[0].ext.goadserver;
+      if (goadserverExt) {
+        expect(goadserverExt.subid).to.be.undefined;
+      }
     });
 
     it('forwards GDPR consent to regs.ext.gdpr and user.ext.consent', async function () {

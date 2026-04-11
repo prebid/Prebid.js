@@ -16,11 +16,12 @@ Supported media types: `banner`, `video`, `native`.
 
 # Bid Parameters
 
-| Name     | Scope    | Description                                                                                                   | Example               | Type     |
-| -------- | -------- | ------------------------------------------------------------------------------------------------------------- | --------------------- | -------- |
-| `host`   | required | The goadserver deployment's public domain. The adapter POSTs to `https://{host}/openrtb2/auction`.             | `"ads.example.com"`   | `string` |
-| `token`  | required | SSP campaign authentication token from the publisher's goadserver panel. Goes into `site.publisher.id`.        | `"a1b2c3d4..."`       | `string` |
-| `floor`  | optional | Per-bid CPM floor (USD). Honored only if the Price Floors module hasn't already set `imp.bidfloor`.            | `0.50`                | `number` |
+| Name     | Scope    | Description                                                                                                                       | Example               | Type     |
+| -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------- | -------- |
+| `host`   | required | The goadserver deployment's public domain. The adapter POSTs to `https://{host}/openrtb2/auction`.                                 | `"ads.example.com"`   | `string` |
+| `token`  | required | SSP campaign authentication token from the publisher's goadserver panel. Goes into `site.publisher.id`.                            | `"a1b2c3d4..."`       | `string` |
+| `floor`  | optional | Per-bid CPM floor (USD). Honored only if the Price Floors module hasn't already set `imp.bidfloor`.                                | `0.50`                | `number` |
+| `subid`  | optional | Per-impression sub-identifier for stats attribution (page section, article bucket, A/B test group, etc.). Emitted as `imp.ext.goadserver.subid` and logged against the bid in goadserver's reporting. Normalized server-side (stripped of `,\|"'` and capped at 1024 chars). | `"article_page"`      | `string` |
 
 # Test Parameters
 
