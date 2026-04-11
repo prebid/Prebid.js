@@ -303,4 +303,44 @@ describe('goadserverBidAdapter', function () {
       expect(() => spec.onBidWon({ nurl: 123 })).to.not.throw();
     });
   });
+
+  describe('getUserSyncs', function () {
+    const SYNC_URL = 'https://ads.example.com/openrtb2/sync';
+
+    const responseWithSync = {
+      body: {
+        ext: {
+          goadserver: {
+            usersync: { type: 'image', url: SYNC_URL },
+          },
+        },
+      },
+    };
+
+    it('returns empty array when no server responses', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.deep.equal([]);
+    });
+
+    it('returns empty array when no ext.goadserver.usersync is present', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: {} }])).to.deep.equal([]);
+    });
+
+    it('returns an image sync when pixelEnabled and type is image', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [responseWithSync]);
+      expect(syncs).to.deep.equal([{ type: 'image', url: SYNC_URL }]);
+    });
+
+    it('returns empty array when pixelEnabled is false and type is image', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [responseWithSync]);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('returns an iframe sync when iframeEnabled and type is iframe', function () {
+      const iframeResponse = {
+        body: { ext: { goadserver: { usersync: { type: 'iframe', url: SYNC_URL } } } },
+      };
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [iframeResponse]);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: SYNC_URL }]);
+    });
+  });
 });

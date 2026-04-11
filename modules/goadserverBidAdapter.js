@@ -152,6 +152,35 @@ export const spec = {
       triggerPixel(bid.nurl);
     }
   },
+
+  /**
+   * Drop the goadserver sync pixel after each auction so subsequent
+   * bid requests carry a stable user.id cookie instead of the ad
+   * server's UA+IP+lang fingerprint. Sync URL is emitted by the
+   * server at `response.body.ext.goadserver.usersync` so each
+   * publisher's goadserver deployment publishes its own endpoint.
+   *
+   * @param {Object} syncOptions
+   * @param {Object[]} serverResponses
+   * @returns {UserSync[]}
+   */
+  getUserSyncs: function (syncOptions, serverResponses) {
+    if (!serverResponses || serverResponses.length === 0) {
+      return [];
+    }
+    const syncs = [];
+    serverResponses.forEach(function (rsp) {
+      const entry = rsp?.body?.ext?.goadserver?.usersync;
+      if (!entry || !entry.url) return;
+      const type = entry.type || 'image';
+      if (type === 'iframe' && syncOptions.iframeEnabled) {
+        syncs.push({ type: 'iframe', url: entry.url });
+      } else if (type === 'image' && syncOptions.pixelEnabled) {
+        syncs.push({ type: 'image', url: entry.url });
+      }
+    });
+    return syncs;
+  },
 };
 
 registerBidder(spec);
