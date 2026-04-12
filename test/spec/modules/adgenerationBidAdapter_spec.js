@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adgenerationBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { NATIVE } from 'src/mediaTypes.js';
+import { BANNER, NATIVE } from 'src/mediaTypes.js';
 import prebid from 'package.json';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
-  const ADGENE_PREBID_VERSION = '1.6.5';
+  const ADGENE_PREBID_VERSION = '1.6.6';
   const ENDPOINT_STG = 'https://api-test.scaleout.jp/adgen/prebid';
   const ENDPOINT_RELEASE = 'https://d.socdm.com/adgen/prebid';
 
@@ -1127,7 +1127,8 @@ describe('AdgenerationAdapter', function () {
           netRevenue: true,
           ttl: 1000,
           ad: '<div></div>',
-          adomain: ['advertiserdomain.com']
+          adomain: ['advertiserdomain.com'],
+          mediaType: BANNER
         },
         native: {
           requestId: '2f6ac468a9c15e',
@@ -1174,7 +1175,8 @@ describe('AdgenerationAdapter', function () {
           netRevenue: true,
           ttl: 1000,
           ad: `<script type="text/javascript" src="https://i.socdm.com/sdk/js/adg-browser-m.js"></script><script type="text/javascript">window.ADGBrowserM.init({vastXml: '<?xml version="1.0" encoding="UTF-8" standalone="no" ?><VAST version="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast.xsd"></VAST>', marginTop: '50'});</script><img src="http://example.com" width="1" height="1" style="display:none;border:none;padding:0;margin:0;width:1px;height:1px"/>`,
-          adomain: ['advertiserdomain.com']
+          adomain: ['advertiserdomain.com'],
+          mediaType: BANNER
         },
       }
     };
@@ -1205,6 +1207,7 @@ describe('AdgenerationAdapter', function () {
         expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue);
         expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl);
         expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad);
+        expect(result.mediaType).to.equal(BANNER);
         setCurrencyConfig({});
       });
     });
@@ -1220,6 +1223,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.netRevenue).to.equal(bidResponses.normal.banner.netRevenue);
       expect(result.ttl).to.equal(bidResponses.normal.banner.ttl);
       expect(result.ad).to.equal(bidResponses.normal.banner.ad);
+      expect(result.mediaType).to.equal(BANNER);
       // no adomian
       expect(result).to.not.have.any.keys('meta');
       expect(result).to.not.have.any.keys('advertiserDomains');
@@ -1266,6 +1270,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.netRevenue).to.equal(bidResponses.normal.banner.netRevenue);
       expect(result.ttl).to.equal(bidResponses.normal.banner.ttl);
       expect(result.ad).to.equal(bidResponses.normal.banner.ad);
+      expect(result.mediaType).to.equal(BANNER);
       // no adomain
       expect(result).to.not.have.any.keys('meta');
       expect(result).to.not.have.any.keys('advertiserDomains');
