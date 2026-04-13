@@ -25,11 +25,6 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    if (!!(bidderRequest?.ortb2?.site) && !!(bidderRequest?.ortb2?.app)) {
-      request.site = bidderRequest.ortb2.site;
-      delete request.app;
-    }
-
     const hasSite = !!request.site;
     const hasApp = !!request.app;
     const root = hasSite ? 'site' : (hasApp ? 'app' : null);
@@ -51,7 +46,7 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
-    deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
+    deepSetValue(imp, 'ext.sparteo.params', { ...bidRequest.params });
     imp.ext.sparteo.params.adUnitCode = bidRequest.adUnitCode;
 
     return imp;
@@ -63,7 +58,10 @@ const converter = ortbConverter({
 
     if (context.mediaType === 'video') {
       response.nurl = bid.nurl;
-      response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url') ?? null;
+      const cacheUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url');
+      if (cacheUrl) {
+        response.vastUrl = cacheUrl;
+      }
     }
 
     // extract renderer config, if present, and create Prebid renderer
@@ -245,7 +243,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncurl = '';
 
     if (!isSynced && !window.sparteoCrossfire?.started) {
@@ -254,8 +252,12 @@ export const spec = {
         syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
         syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
       }
-      if (uspConsent && uspConsent.consentString) {
-        syncurl += `&usp_consent=${uspConsent.consentString}`;
+      if (uspConsent) {
+        syncurl += '&usp_consent=' + encodeURIComponent(uspConsent);
+      }
+      if (gppConsent) {
+        syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString || '');
+        syncurl += '&gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(','));
       }
 
       if (syncOptions.iframeEnabled) {
