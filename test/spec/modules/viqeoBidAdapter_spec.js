@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/viqeoBidAdapter';
+import { expect } from 'chai';
+import { spec } from 'modules/viqeoBidAdapter';
 
 describe('viqeoBidAdapter', function () {
   it('minimal params', function () {
@@ -11,14 +11,16 @@ describe('viqeoBidAdapter', function () {
           videoId: 'ed584da454c7205ca7e4',
           profileId: 1382,
         },
-      }})).to.equal(true);
+      }
+    })).to.equal(true);
   });
   it('minimal params no playerOptions', function () {
     expect(spec.isBidRequestValid({
       bidder: 'viqeo',
       params: {
         currency: 'EUR',
-      }})).to.equal(false);
+      }
+    })).to.equal(false);
   });
   it('build request check data', function () {
     const bidRequestData = [{

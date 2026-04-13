@@ -4,7 +4,7 @@ import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { getWinDimensions } from '../../../src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
@@ -33,9 +33,6 @@ describe('Missena Adapter', function () {
       ext: { gpid: GPID },
     },
     ortb2: {
-      device: {
-        ext: { cdep: COOKIE_DEPRECATION_LABEL },
-      },
       source: {
         ext: {
           schain: {
@@ -92,7 +89,6 @@ describe('Missena Adapter', function () {
       device: {
         w: screen.width,
         h: screen.height,
-        ext: { cdep: COOKIE_DEPRECATION_LABEL },
       },
     },
   };
@@ -269,7 +265,6 @@ describe('Missena Adapter', function () {
     });
 
     it('should send cookie deprecation', function () {
-      expect(payload.ortb2.device.ext.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
 

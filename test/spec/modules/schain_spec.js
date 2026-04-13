@@ -1,7 +1,7 @@
-import {expect} from 'chai/index.js';
+import { expect } from 'chai/index.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
-import {applySchainConfig} from 'modules/schain.js';
+import { config } from 'src/config.js';
+import { applySchainConfig } from 'modules/schain.js';
 
 describe('Supply Chain fpd', function() {
   const SAMPLE_SCHAIN = {

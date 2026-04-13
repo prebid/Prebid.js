@@ -249,7 +249,6 @@ const SAMPLE_EVENTS = {
         'bidderCode': 'zeta_global_ssp',
         'width': 480,
         'height': 320,
-        'statusMessage': 'Bid available',
         'adId': '5759bb3ef7be1e8',
         'requestId': '206be9a13236af',
         'mediaType': 'banner',
@@ -315,7 +314,6 @@ const SAMPLE_EVENTS = {
       'bidderCode': 'zeta_global_ssp',
       'width': 480,
       'height': 320,
-      'statusMessage': 'Bid available',
       'adId': '5759bb3ef7be1e8',
       'requestId': '206be9a13236af',
       'mediaType': 'banner',
@@ -586,7 +584,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
       expect(requests.length).to.equal(1);
       const auctionEnd = JSON.parse(requests[0].requestBody);
       expect(auctionEnd).to.be.deep.equal({
-        zetaParams: {sid: 111, tags: {position: 'top', shortname: 'name'}},
+        zetaParams: { sid: 111, tags: { position: 'top', shortname: 'name' } },
         bidderRequests: [{
           bidderCode: 'zeta_global_ssp',
           domain: 'test-zeta-ssp.net:63342',
@@ -709,11 +707,11 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           'language': 'en',
           'sua': {
             'source': 1,
-            'platform': {'brand': 'macOS'},
-            'browsers': [{'brand': 'Google Chrome', 'version': ['123']}, {
+            'platform': { 'brand': 'macOS' },
+            'browsers': [{ 'brand': 'Google Chrome', 'version': ['123'] }, {
               'brand': 'Not:A-Brand',
               'version': ['8']
-            }, {'brand': 'Chromium', 'version': ['123']}],
+            }, { 'brand': 'Chromium', 'version': ['123'] }],
             'mobile': 0
           }
         },
@@ -736,11 +734,11 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           'language': 'en',
           'sua': {
             'source': 1,
-            'platform': {'brand': 'macOS'},
-            'browsers': [{'brand': 'Google Chrome', 'version': ['123']}, {
+            'platform': { 'brand': 'macOS' },
+            'browsers': [{ 'brand': 'Google Chrome', 'version': ['123'] }, {
               'brand': 'Not:A-Brand',
               'version': ['8']
-            }, {'brand': 'Chromium', 'version': ['123']}],
+            }, { 'brand': 'Chromium', 'version': ['123'] }],
             'mobile': 0
           }
         },

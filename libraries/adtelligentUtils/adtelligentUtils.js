@@ -1,6 +1,7 @@
-import {deepAccess, isArray} from '../../src/utils.js';
+import { deepAccess, isArray } from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { getPlacementPositionUtils } from "../placementPositionInfo/placementPositionInfo.js";
 
 export const supportedMediaTypes = [VIDEO, BANNER]
 
@@ -50,9 +51,11 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
 }
 
 export function createTag(bidRequests, adapterRequest) {
+  const placementEnv = getPlacementPositionUtils().getPlacementEnv()
   const tag = {
     // TODO: is 'page' the right value here?
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),
+    ...placementEnv
   };
 
   if (config.getConfig('coppa') === true) {

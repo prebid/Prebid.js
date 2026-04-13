@@ -5,12 +5,12 @@
  * @requires module:modules/userId
  */
 
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isFn, isStr, isPlainObject, logError, logInfo} from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isFn, isStr, isPlainObject, logError, logInfo } from '../src/utils.js';
 import { config } from '../src/config.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 /**
@@ -25,7 +25,7 @@ export const LS_TAM_KEY = 'auHadronId';
 const AU_GVLID = 561;
 const DEFAULT_HADRON_URL_ENDPOINT = 'https://id.hadron.ad.gt/api/v1/pbhid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * Param or default.
@@ -89,7 +89,7 @@ export const hadronIdSubmodule = {
     if (isStr(hadronId) && hadronId.length > 0) {
       logInfo(LOG_PREFIX, `${LS_TAM_KEY} found in localStorage = ${hadronId}`)
       // return {callback: function(cb) { cb(hadronId) }};
-      return {id: hadronId}
+      return { id: hadronId }
     }
     const partnerId = config.params.partnerId | 0;
     const resp = function (callback) {
@@ -144,9 +144,9 @@ export const hadronIdSubmodule = {
 
       logInfo(LOG_PREFIX, `${MODULE_NAME} not found, calling home (${url})`);
 
-      ajax(url, callbacks, undefined, {method: 'GET'});
+      ajax(url, callbacks, undefined, { method: 'GET' });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
   eids: {
     'hadronId': {

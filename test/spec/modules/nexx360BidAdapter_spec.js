@@ -345,7 +345,7 @@ describe('Nexx360 bid adapter tests', () => {
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
             bidderVersion: '7.1',
-            localStorage: { amxId: 'abcdef'},
+            localStorage: { amxId: 'abcdef' },
             sessionId: requestContent.ext.sessionId,
             requestCounter: 0,
           },
@@ -717,7 +717,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
-        cookies: [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}]
+        cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
       };
       const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
       const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];
