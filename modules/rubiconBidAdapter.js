@@ -4,7 +4,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { Renderer } from '../src/Renderer.js';
 import {
   deepAccess,
   deepSetValue,
@@ -23,6 +22,7 @@ import {
 } from '../src/utils.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+import { outstreamRenderer } from '../libraries/magniteUtils/outstream.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,8 +30,6 @@ import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.3.7.js';
-// renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
@@ -241,7 +239,7 @@ export const converter = ortbConverter({
     bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = outstreamRenderer(bidResponse);
+      bidResponse.renderer = outstreamRenderer(bidResponse, rubiConf.rendererUrl, rubiConf.rendererConfig);
     }
 
     if (deepAccess(bid, 'ext.bidder.rp.advid')) {
@@ -428,7 +426,6 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
-        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -502,7 +499,6 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
-      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'ip': bidRequest.ortb2?.device?.ip,
       'ipv6': bidRequest.ortb2?.device?.ipv6,
       'p_screen_res': _getScreenResolution(),
@@ -808,71 +804,6 @@ function _renderCreative(script, impId) {
 </div>
 </body>
 </html>`;
-}
-
-function hideGoogleAdsDiv(adUnit) {
-  const el = adUnit.querySelector("div[id^='google_ads']");
-  if (el) {
-    el.style.setProperty('display', 'none');
-  }
-}
-
-function hideSmartAdServerIframe(adUnit) {
-  const el = adUnit.querySelector("script[id^='sas_script']");
-  const nextSibling = el && el.nextSibling;
-  if (nextSibling && nextSibling.localName === 'iframe') {
-    nextSibling.style.setProperty('display', 'none');
-  }
-}
-
-function renderBid(bid) {
-  // hide existing ad units
-  const adUnitElement = document.getElementById(bid.adUnitCode);
-  hideGoogleAdsDiv(adUnitElement);
-  hideSmartAdServerIframe(adUnitElement);
-
-  // configure renderer
-  const defaultConfig = {
-    align: 'center',
-    position: 'append',
-    closeButton: false,
-    label: undefined,
-    collapse: true
-  };
-  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
-  bid.renderer.push(() => {
-    window.MagniteApex.renderAd({
-      width: bid.width,
-      height: bid.height,
-      vastUrl: bid.vastUrl,
-      placement: {
-        attachTo: `#${bid.adUnitCode}`,
-        align: config.align,
-        position: config.position
-      },
-      closeButton: config.closeButton,
-      label: config.label,
-      collapse: config.collapse
-    });
-  });
-}
-
-function outstreamRenderer(rtbBid) {
-  const renderer = Renderer.install({
-    id: rtbBid.adId,
-    url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
-    config: rubiConf.rendererConfig || {},
-    loaded: false,
-    adUnitCode: rtbBid.adUnitCode
-  });
-
-  try {
-    renderer.setRender(renderBid);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
 }
 
 function parseSizes(bid, mediaType) {

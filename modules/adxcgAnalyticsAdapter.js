@@ -79,7 +79,6 @@ function mapBidResponse (bidResponse, eventType) {
     bidderCode: bidResponse.bidder,
     transactionId: bidResponse.transactionId,
     adUnitCode: bidResponse.adUnitCode,
-    statusMessage: bidResponse.statusMessage,
     mediaType: bidResponse.mediaType,
     renderedSize: bidResponse.size,
     cpm: bidResponse.cpm,
@@ -97,7 +96,6 @@ function mapBidWon (bidResponse) {
   return [{
     bidderCode: bidResponse.bidder,
     adUnitCode: bidResponse.adUnitCode,
-    statusMessage: bidResponse.statusMessage,
     mediaType: bidResponse.mediaType,
     renderedSize: bidResponse.size,
     cpm: bidResponse.cpm,

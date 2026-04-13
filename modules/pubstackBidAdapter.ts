@@ -1,21 +1,23 @@
-import { canAccessWindowTop, deepSetValue, getWindowSelf, getWindowTop, logError } from '../src/utils.js';
+import { deepSetValue, logError } from '../src/utils.js';
 import { AdapterRequest, BidderSpec, registerBidder, ServerResponse } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getPlacementPositionUtils } from '../libraries/placementPositionInfo/placementPositionInfo.js';
-import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBRequest } from '../src/prebid.public.js';
 import { config } from '../src/config.js';
 import { SyncType } from '../src/userSync.js';
-import { ConsentData, CONSENT_GDPR, CONSENT_USP, CONSENT_GPP } from '../src/consentHandler.js';
+import { ConsentDataForKey, CONSENT_GDPR, CONSENT_USP, CONSENT_GPP } from '../src/consentHandler.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'pubstack';
 const GVLID = 1408;
 const REQUEST_URL = 'https://node.pbstck.com/openrtb2/auction';
 const COOKIESYNC_IFRAME_URL = 'https://cdn.pbstck.com/async_usersync.html';
 const COOKIESYNC_PIXEL_URL = 'https://cdn.pbstck.com/async_usersync.png';
+const DEFAULT_TTL = 300;
+const DEFAULT_NET_REVENUE = true;
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -32,38 +34,27 @@ type GetUserSyncFn = (
     pixelEnabled: boolean;
   },
   responses: ServerResponse[],
-  gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
-  uspConsent: null | ConsentData[typeof CONSENT_USP],
-  gppConsent: null | ConsentData[typeof CONSENT_GPP]) => ({ type: SyncType, url: string })[]
+  gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
+  uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
+  gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>) => ({ type: SyncType, url: string })[]
 
 const siteIds: Set<string> = new Set();
 let cntRequest = 0;
 let cntTimeouts = 0;
 const { getPlacementEnv, getPlacementInfo } = getPlacementPositionUtils();
 
-const getElementForAdUnitCode = (adUnitCode: string): HTMLElement | undefined => {
-  if (!adUnitCode) return;
-  const win = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
-  const doc = win?.document;
-  let element = doc?.getElementById(adUnitCode) as HTMLElement | null;
-  if (element) return element;
-  const divId = getGptSlotInfoForAdUnitCode(adUnitCode)?.divId;
-  element = divId ? doc?.getElementById(divId) as HTMLElement | null : null;
-  if (element) return element;
-};
-
 const converter = ortbConverter({
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
-    const element = getElementForAdUnitCode(bidRequest.adUnitCode);
+    const element = getAdUnitElement(bidRequest);
     const placementInfo = getPlacementInfo(bidRequest);
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, `ext.prebid.bidder.${BIDDER_CODE}.adUnitName`, bidRequest.params.adUnitName);
     deepSetValue(imp, `ext.prebid.placement.code`, bidRequest.adUnitCode);
-    deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
-    deepSetValue(imp, `ext.prebid.placement.viewability`, placementInfo.PlacementPercentView);
-    deepSetValue(imp, `ext.prebid.placement.viewportDistance`, placementInfo.DistanceToView);
-    deepSetValue(imp, `ext.prebid.placement.height`, placementInfo.ElementHeight);
     deepSetValue(imp, `ext.prebid.placement.auctionsCount`, placementInfo.AuctionsCount);
+    if (element) deepSetValue(imp, `ext.prebid.placement.domId`, element?.id);
+    if (element) deepSetValue(imp, `ext.prebid.placement.viewability`, placementInfo.PlacementPercentView);
+    if (element) deepSetValue(imp, `ext.prebid.placement.viewportDistance`, placementInfo.DistanceToView);
+    if (element) deepSetValue(imp, `ext.prebid.placement.height`, placementInfo.ElementHeight);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -77,22 +68,29 @@ const converter = ortbConverter({
     deepSetValue(request, 'ext.prebid.version', getGlobal()?.version ?? 'unknown');
     deepSetValue(request, `ext.prebid.request.count`, cntRequest);
     deepSetValue(request, `ext.prebid.request.timeoutCount`, cntTimeouts);
-    deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
-    deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
-    deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
-    deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
+    if (placementEnv?.TabActive !== undefined) deepSetValue(request, `ext.prebid.page.tabActive`, placementEnv.TabActive);
+    if (placementEnv?.PageHeight !== undefined) deepSetValue(request, `ext.prebid.page.height`, placementEnv.PageHeight);
+    if (placementEnv?.ViewportHeight !== undefined) deepSetValue(request, `ext.prebid.page.viewportHeight`, placementEnv.ViewportHeight);
+    if (placementEnv?.TimeFromNavigation !== undefined) deepSetValue(request, `ext.prebid.page.timeFromNavigation`, placementEnv.TimeFromNavigation);
     return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    return {
+      ...buildBidResponse(bid, context),
+      ttl: (bid as any).ttl ?? bid.exp ?? DEFAULT_TTL,
+      netRevenue: (bid as any).netRevenue ?? DEFAULT_NET_REVENUE,
+    };
   },
 });
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
   if (!bid.params.siteId || typeof bid.params.siteId !== 'string') {
     logError('bid.params.siteId needs to be a string');
-    if (config.getConfig('debug') === false) return false;
+    return false;
   }
   if (!bid.params.adUnitName || typeof bid.params.adUnitName !== 'string') {
     logError('bid.params.adUnitName needs to be a string');
-    if (config.getConfig('debug') === false) return false;
+    return false;
   }
   return true;
 };
@@ -143,7 +141,7 @@ const getUserSyncs: GetUserSyncFn = (syncOptions, _serverResponses, gdprConsent,
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  aliases: [ {code: `${BIDDER_CODE}_server`, gvlid: GVLID} ],
+  aliases: [{ code: `${BIDDER_CODE}_server`, gvlid: GVLID }],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,

@@ -26,7 +26,6 @@ const sampleBid = {
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
-  'statusMessage': 'Bid available',
   'adId': '148018fe5e',
   'cpm': 0.537234,
   'ad': 'markup',
@@ -60,7 +59,6 @@ const bid2 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
-  'statusMessage': 'Bid available',
   'adId': '5454545',
   'cpm': 0.25,
   'ad': 'markup',
@@ -90,7 +88,6 @@ const bid3 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '600',
-  'statusMessage': 'Bid available',
   'adId': '48747745',
   'cpm': 0.75,
   'ad': 'markup',
@@ -120,7 +117,6 @@ const nativeBid1 = mkBid({
   'bidderCode': 'appnexus',
   'width': 0,
   'height': 0,
-  'statusMessage': 'Bid available',
   'adId': '591e7c9354b633',
   'requestId': '24aae81e32d6f6',
   'mediaType': 'native',
@@ -188,7 +184,6 @@ const nativeBid2 = mkBid({
   'bidderCode': 'dgads',
   'width': 0,
   'height': 0,
-  'statusMessage': 'Bid available',
   'adId': '6e0aba55ed54e5',
   'requestId': '4de26ec83d9661',
   'mediaType': 'native',
@@ -1124,6 +1119,82 @@ describe('targeting tests', function () {
       expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', 'hb_adid', 'hb_bidder');
       expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
     });
+
+    describe('bidTargetingExclusion', function () {
+      it('includes all bids in targeting when bidTargetingExclusion is not set', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.53');
+      });
+
+      it('includes bid in targeting when bidTargetingExclusion returns true for that bid', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid) => bid.cpm >= 0.5
+        });
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.53');
+        config.resetConfig();
+      });
+
+      it('excludes bid from targeting when bidTargetingExclusion returns false for that bid', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid) => bid.adId !== bid1.adId
+        });
+        // Pass bidsReceived so both bid1 and bid2 are in the pool (getBidsReceived() returns only one per bidder per ad unit)
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0'], undefined, bidsReceived);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid2.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.25');
+        config.resetConfig();
+      });
+
+      it('excludes all bids for ad unit when bidTargetingExclusion returns false for all', function () {
+        config.setConfig({
+          bidTargetingExclusion: () => false
+        });
+        // Pass bidsReceived so both ad units have bids; all excluded so no winner for either
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1'], undefined, bidsReceived);
+        expect(targeting).to.contain.key('/123456/header-bid-tag-0');
+        expect(targeting).to.contain.key('/123456/header-bid-tag-1');
+        expect(targeting['/123456/header-bid-tag-0']).to.not.contain.key('hb_adid');
+        expect(targeting['/123456/header-bid-tag-1']).to.not.contain.key('hb_adid');
+        config.resetConfig();
+      });
+
+      it('calls bidTargetingExclusion with (bid, initiallyFilteredBids) and uses second argument', function () {
+        config.setConfig({
+          bidTargetingExclusion: (bid, initiallyFilteredBids) => {
+            const sameUnit = initiallyFilteredBids.filter(b => b.adUnitCode === bid.adUnitCode);
+            return sameUnit.length > 1;
+          }
+        });
+        // tag-0 has bid1 and bid2 (2 bids), tag-1 has bid3 only (1 bid) → only tag-0 bids included
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0', '/123456/header-bid-tag-1'], undefined, bidsReceived);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+        expect(targeting['/123456/header-bid-tag-1']).to.not.contain.key('hb_adid');
+        config.resetConfig();
+      });
+
+      it('excludes bid from targeting when bidTargetingExclusion throws and logs warning', function () {
+        logWarnStub.resetHistory();
+        config.setConfig({
+          bidTargetingExclusion: (bid) => {
+            if (bid.adId === bid1.adId) {
+              throw new Error('test error');
+            }
+            return true;
+          }
+        });
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0'], undefined, bidsReceived);
+        expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid2.adId);
+        expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.25');
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.include('Error in bidTargetingExclusion function');
+        expect(logWarnStub.firstCall.args[0]).to.include('rubicon');
+        expect(logWarnStub.firstCall.args[0]).to.include('/123456/header-bid-tag-0');
+        config.resetConfig();
+      });
+    });
   }); // end getAllTargeting tests
 
   describe('getAllTargeting will work correctly when a hook raises has modified flag in getHighestCpmBidsFromBidPool', function () {
@@ -1652,22 +1723,22 @@ describe('targeting tests', function () {
 
     it('can find slots by ad unit path', () => {
       const paths = ['slot/1', 'slot/2']
-      expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({ [paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]] });
+      expect(getGPTSlotsForAdUnits(paths, () => slots)).to.eql({ [paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]] });
     })
 
     it('can find slots by ad element ID', () => {
       const elementIds = ['div-1', 'div-2']
-      expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({ [elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]] });
+      expect(getGPTSlotsForAdUnits(elementIds, () => slots)).to.eql({ [elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]] });
     })
 
     it('returns empty list on no match', () => {
-      expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], null, () => slots)).to.eql({
+      expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], () => slots)).to.eql({
         missing: [],
         'slot/2': [slots[1]]
       });
     });
 
-    it('can use customSlotMatching resolving to ad unit codes', () => {
+    it('can use customGptSlotMatching resolving to ad unit codes', () => {
       const csm = (slot) => {
         if (slot.getAdUnitPath() === 'slot/1') {
           return (au) => {
@@ -1675,13 +1746,17 @@ describe('targeting tests', function () {
           }
         }
       }
-      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], csm, () => slots)).to.eql({
+      config.setConfig({
+        customGptSlotMatching: csm
+      })
+      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], () => slots)).to.eql({
         'custom': [slots[0], slots[2]],
         'div-2': [slots[1]]
       })
+      config.resetConfig();
     });
 
-    it('can use customSlotMatching resolving to elementIds', () => {
+    it('can use customGptSlotMatching resolving to elementIds', () => {
       const csm = (slot) => {
         if (slot.getSlotElementId() === 'div-1') {
           return (au) => {
@@ -1689,14 +1764,18 @@ describe('targeting tests', function () {
           }
         }
       }
-      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], csm, () => slots)).to.eql({
+      config.setConfig({
+        customGptSlotMatching: csm
+      })
+      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], () => slots)).to.eql({
         'custom': [slots[0]],
         'div-2': [slots[1]]
       })
+      config.resetConfig();
     });
 
     it('can handle repeated adUnitCodes', () => {
-      expect(getGPTSlotsForAdUnits(['div-1', 'div-1'], null, () => slots)).to.eql({
+      expect(getGPTSlotsForAdUnits(['div-1', 'div-1'], () => slots)).to.eql({
         'div-1': [slots[0]]
       })
     })

@@ -40,10 +40,6 @@ describe('Adloox Analytics Adapter', function () {
     }
   };
 
-  adapterManager.registerAnalyticsAdapter({
-    code: analyticsAdapterName,
-    adapter: analyticsAdapter
-  });
   describe('enableAnalytics', function () {
     afterEach(function () {
       analyticsAdapter.disableAnalytics();

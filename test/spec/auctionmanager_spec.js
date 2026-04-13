@@ -7,7 +7,7 @@ import {
   getPriceByGranularity,
   addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
-import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
+import { BID_STATUS, EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
@@ -28,7 +28,7 @@ import { setConfig as setCurrencyConfig } from '../../modules/currency.js'
 import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 import { sandbox } from 'sinon';
-import { getMinBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
@@ -105,6 +105,10 @@ function mockBidRequest(bid, opts) {
   const defaultMediaType = {
     banner: {
       sizes: [[300, 250], [300, 600]]
+    },
+    video: {
+      context: 'outstream',
+      renderer: {}
     }
   }
   const mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
@@ -836,7 +840,7 @@ describe('auctionmanager.js', function () {
       }
       const auction = auctionManager.createAuction({ adUnits, ortb2Fragments });
       expect(auction.getNonBids()[0]).to.equal(undefined);
-      events.emit(EVENTS.SEAT_NON_BID, {
+      events.emit(EVENTS.PBS_ANALYTICS, {
         auctionId: auction.getAuctionId(),
         seatnonbid: ['test']
       });
@@ -863,6 +867,29 @@ describe('auctionmanager.js', function () {
         onMinBidCacheTTLChange((ttl) => { newTTL = ttl; });
         config.setConfig({ minBidCacheTTL: 2 });
         expect(newTTL).to.eql(2);
+      })
+    })
+
+    describe('setConfig(minTargetedBidCacheTTL)', () => {
+      it('should update getMinTargetedBidCacheTTL', () => {
+        expect(getMinTargetedBidCacheTTL()).to.eql(null);
+        config.setConfig({ minTargetedBidCacheTTL: 3600 });
+        expect(getMinTargetedBidCacheTTL()).to.eql(3600);
+      });
+
+      it('getEffectiveMinBidCacheTTL uses minTargetedBidCacheTTL for bids with targeting set', () => {
+        config.setConfig({ minBidCacheTTL: 30, minTargetedBidCacheTTL: 3600 });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        const bidWithoutTargeting = { status: 'other' };
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(3600);
+        expect(getEffectiveMinBidCacheTTL(bidWithoutTargeting)).to.eql(30);
+      });
+
+      it('getEffectiveMinBidCacheTTL uses minBidCacheTTL when minTargetedBidCacheTTL not set', () => {
+        config.resetConfig();
+        config.setConfig({ minBidCacheTTL: 30 });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(30);
       })
     })
 
@@ -906,7 +933,7 @@ describe('auctionmanager.js', function () {
 
         it('pick up updates to minBidCacheTTL that happen during bid lifetime', async () => {
           auction.callBids();
-          await auction.edn;
+          await auction.end;
           clock.tick(10 * 1000);
           config.setConfig({
             minBidCacheTTL: 20
@@ -914,6 +941,37 @@ describe('auctionmanager.js', function () {
           await clock.tick(0);
           await clock.tick(20 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(1);
+        });
+
+        it('do not expire targeted bids when minTargetedBidCacheTTL is set', async () => {
+          config.setConfig({
+            minBidCacheTTL: 30,
+            minTargetedBidCacheTTL: 3600
+          });
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10,
+              adId: utils.getUniqueIdentifierStr(),
+              auctionId: auction.getAuctionId()
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100,
+              adId: utils.getUniqueIdentifierStr(),
+              auctionId: auction.getAuctionId()
+            }
+          ];
+          auction.callBids();
+          await auction.end;
+          const shortTtlBid = auctionManager.getBidsReceived().find(b => b.ttl === 10);
+          auctionManager.setStatusForBids(shortTtlBid.adId, BID_STATUS.BID_TARGETING_SET);
+          await clock.tick(105 * 1000);
+          await clock.tick(0);
+          const bidsReceived = auctionManager.getBidsReceived();
+          expect(bidsReceived.length).to.equal(1);
+          expect(bidsReceived[0].adId).to.equal(shortTtlBid.adId);
         })
       })
 
@@ -1159,7 +1217,7 @@ describe('auctionmanager.js', function () {
           bids[0],
           {
             bidderCode: BIDDER_CODE,
-            mediaType: 'video-outstream',
+            mediaType: 'video',
           }
         );
         spec.interpretResponse.returns(bids1);
@@ -1276,6 +1334,12 @@ describe('auctionmanager.js', function () {
         adUnits[0].ttlBuffer = 0;
         auction.callBids();
         expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
+      });
+
+      it('sets bidResponse.element from adUnit.element', () => {
+        adUnits[0].element = 'test';
+        auction.callBids();
+        expect(auction.getBidsReceived()[0].element).to.equal('test');
       });
 
       [

@@ -1,10 +1,11 @@
 'use strict';
 
 import { getDNT } from '../libraries/dnt/index.js';
-import { deepAccess } from '../src/utils.js';
+import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { buildImpressionList, interpretCommonResponse } from '../libraries/rhythmoneMarsUtils/index.js';
+
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';

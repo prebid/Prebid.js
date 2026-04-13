@@ -3,8 +3,8 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
-import { getDNT } from '../libraries/dnt/index.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,7 +19,6 @@ const BIDADAPTERVERSION = 'TTD-PREBID-2025.07.15';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
-const BIDDER_ENDPOINT_HTTP2 = 'https://d2.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
 const TTL = 360;
 
@@ -286,15 +285,13 @@ function selectEndpoint(params) {
     return params.customBidderEndpoint
   }
 
-  if (params.useHttp2) {
-    return BIDDER_ENDPOINT_HTTP2;
-  }
   return BIDDER_ENDPOINT;
 }
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 21,
+  alwaysHasCapacity: true,
   aliases: [BIDDER_CODE_LONG],
   supportedMediaTypes: [BANNER, VIDEO],
 

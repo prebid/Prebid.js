@@ -49,7 +49,6 @@ const bids = [{
   'bidderCode': 'mediasquare',
   'width': 640,
   'height': 480,
-  'statusMessage': 'Bid available',
   'adId': '3647626fdbe68a',
   'requestId': '2d891705d2125b',
   'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41',
@@ -86,7 +85,6 @@ const bids = [{
   'bidderCode': 'appnexusAst',
   'width': 640,
   'height': 480,
-  'statusMessage': 'Bid available',
   'adId': '4b2e1581c0ca1a',
   'requestId': '2d891705d2125b',
   'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41',
@@ -109,7 +107,9 @@ const bids = [{
   'adUnitCode': 'msq_tag_200125_video',
   'timeToRespond': 146,
   'size': '640x480',
-  'vastImpUrl': 'https://some.tracking-url.com'
+  'vastTrackers': {
+    'impression': ['https://some.tracking-url.com']
+  }
 },
 ];
 
