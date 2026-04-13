@@ -90,7 +90,9 @@ export const spec = {
       payloadItems[placementId]['bidId'] = bidRequest.bidId
       payloadItems[placementId]['gppString'] = gppString
       payloadItems[placementId]['gppApplicableSections'] = applicablesections
-      payloadItems[placementId]['uspConsent'] = bidderRequest.uspConsent
+      if (bidderRequest?.uspConsent) {
+        payloadItems[placementId]['uspConsent'] = bidderRequest.uspConsent
+      }
     });
     const payload = payloadItems;
     const payloadString = JSON.stringify(payload);
