@@ -98,6 +98,7 @@
       "hadronRtdProvider",
       "humansecurityRtdProvider",
       "iasRtdProvider",
+      "insuradsRtdProvider",
       "imRtdProvider",
       "intersectionRtdProvider",
       "jwplayerRtdProvider",
