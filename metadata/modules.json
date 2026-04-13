@@ -4035,6 +4035,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "reklamup",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "relaido",
       "aliasOf": null,
       "gvlid": null,
@@ -4101,6 +4108,13 @@
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "revealon",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5429,6 +5443,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "insuradsRtd",
+      "gvlid": 596,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "jwplayer",
       "gvlid": null,
       "disclosureURL": null
@@ -5954,6 +5974,13 @@
       "componentType": "userId",
       "componentName": "pubmaticId",
       "gvlid": 76,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "rediadsId",
+      "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
     },
