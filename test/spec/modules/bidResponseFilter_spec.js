@@ -406,7 +406,7 @@ describe('bidResponseFilter', () => {
       ortb2Imp: {}
     });
 
-    config.setConfig({[MODULE_NAME]: {mediaTypes: {rejectIbvBannerOnMultiFormat: true}}});
+    config.setConfig({ [MODULE_NAME]: { mediaTypes: { rejectIbvBannerOnMultiFormat: true } } });
 
     addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
     sinon.assert.calledWith(reject, BID_MEDIA_TYPE_REJECTION_REASON);
