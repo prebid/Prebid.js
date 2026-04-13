@@ -829,6 +829,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adsmovil",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adspirit",
       "aliasOf": null,
       "gvlid": null,
@@ -3021,6 +3028,13 @@
     {
       "componentType": "bidder",
       "componentName": "logicad",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "logly",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
