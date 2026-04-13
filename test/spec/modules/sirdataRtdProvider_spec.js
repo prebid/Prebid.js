@@ -119,6 +119,26 @@ describe('sirdataRtdProvider', function () {
   });
 
   describe('Add Segment Data', function () {
+    let originalGoogletag;
+    let setTargetingSpy;
+
+    beforeEach(function () {
+      originalGoogletag = window.googletag;
+      setTargetingSpy = sinon.spy();
+      window.googletag = {
+        cmd: {
+          push: (fn) => fn()
+        },
+        pubads: () => ({
+          setTargeting: setTargetingSpy
+        })
+      };
+    });
+
+    afterEach(function () {
+      window.googletag = originalGoogletag;
+    });
+
     it('adds segment data', function () {
       const firstConfig = {
         params: {
@@ -180,6 +200,7 @@ describe('sirdataRtdProvider', function () {
       }
       addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function() { return true; });
       expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
+      expect(setTargetingSpy.calledOnceWithExactly('sd_rtd', ['111111', '222222', '333333', '444444', '555555', '666666'])).to.equal(true);
     });
   });
 

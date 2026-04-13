@@ -18,6 +18,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
+import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -671,13 +672,9 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
         sirdataMergedList = [...sirdataMergedList, ...gamCurationData.segments, ...gamCurationData.categories];
       }
 
-      window.googletag.cmd.push(() => {
-        window.googletag.pubads().getSlots().forEach(slot => {
-          if (typeof slot.setTargeting !== 'undefined' && sirdataMergedList.length > 0) {
-            slot.setTargeting('sd_rtd', sirdataMergedList);
-          }
-        });
-      });
+      if (sirdataMergedList.length > 0) {
+        setKeyValue('sd_rtd', sirdataMergedList);
+      }
     } catch (e) {
       logError(LOG_PREFIX, e);
     }
