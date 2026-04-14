@@ -1181,7 +1181,7 @@ type GetBidResponseByAdIdOptions = {
  */
 function getBidResponseByAdId(adId: string, options?: GetBidResponseByAdIdOptions): Bid {
   const bid = findBidByAdId(adId);
-  if (options?.markAsUsed) {
+  if (bid != null && options?.markAsUsed) {
     markAsUsed(bid, true);
   }
   return bid;
