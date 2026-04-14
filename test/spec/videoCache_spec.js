@@ -541,6 +541,21 @@ describe('The video cache', function () {
 
       sinon.assert.calledOnce(logErrorStub);
     });
+
+    it('adds bids to auction otherwise', () => {
+      const logErrorStub = sandbox.stub(utils, 'logError');
+      let request = {
+        bidResponse: {},
+        auctionInstance: {
+          addBidReceived: sinon.stub(),
+        },
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      }
+      handleVideoBidCaching(request);
+      sinon.assert.calledWith(request.auctionInstance.addBidReceived, request.bidResponse);
+      sinon.assert.called(request.afterBidAdded);
+    })
   });
 });
 

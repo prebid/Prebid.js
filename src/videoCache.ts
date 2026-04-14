@@ -249,10 +249,14 @@ export function handleVideoBidCaching({
 
   if (shouldUseCache && shouldStoreBid) {
     callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+    return;
   }
   if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
     logError('videoCacheKey specified but not required vastUrl for video bid');
+    return;
   }
+  addBidToAuction(auctionInstance, bidResponse);
+  afterBidAdded();
 }
 
 const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {
