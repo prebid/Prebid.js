@@ -9,7 +9,8 @@ import {
   getTargetingKeysBidLandscape
 } from 'test/fixtures/fixtures.js';
 import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
-import { filters, newTargeting, targeting } from 'src/targeting.js';
+import { newTargeting, targeting } from 'src/targeting.js';
+import { bidFilters } from '../../../src/targeting/filters.js';
 import { config as configObj } from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
@@ -212,7 +213,7 @@ describe('Unit: Prebid Module', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     mockFpdEnrichments(sandbox);
-    bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
+    bidExpiryStub = sinon.stub(bidFilters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
     resetAuctionState();
   });
@@ -3801,7 +3802,7 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return _bidsReceived };
 
       bidExpiryStub.restore();
-      bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake((bid) => bid.cpm !== 13);
+      bidExpiryStub = sinon.stub(bidFilters, 'isBidNotExpired').callsFake((bid) => bid.cpm !== 13);
       const highestBid = pbjs.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
       expect(highestBid).to.deep.equal(_bidsReceived[2])
     })
