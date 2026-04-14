@@ -1,5 +1,13 @@
 import chai from 'chai';
-import { batchingCache, getCacheUrl, handleVideoBidCaching, store, _internal, storeBatch } from 'src/videoCache.js';
+import {
+  batchingCache,
+  getCacheUrl,
+  handleVideoBidCaching,
+  store,
+  _internal,
+  storeBatch,
+  callPrebidCache
+} from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from '../../src/auctionManager.js';
@@ -442,29 +450,58 @@ describe('The video cache', function () {
       sandbox.restore();
     });
 
-    it('returns true and stores bid locally when useLocal is enabled', function () {
-      config.setConfig({
-        cache: {
-          useLocal: true
-        }
+    describe('when using local cache', () => {
+      let bidResponse, addBidReceived, afterBidAdded;
+      beforeEach(() => {
+        config.setConfig({
+          cache: {
+            useLocal: true
+          }
+        });
+        bidResponse = {
+          vastXml: '<VAST version="3.0"></VAST>'
+        };
+        addBidReceived = sinon.stub();
+        afterBidAdded = sinon.stub();
+      })
+
+      function runCaching() {
+        return handleVideoBidCaching({
+          bidResponse,
+          auctionInstance: {
+            addBidReceived
+          },
+          afterBidAdded,
+          videoMediaType: { context: 'instream' }
+        });
+      }
+      it('stores bid locally and adds to auction when useLocal is enabled', function () {
+        runCaching();
+        expect(bidResponse.videoCacheKey).to.exist;
+        expect(bidResponse.vastUrl.startsWith('blob:http://')).to.be.true;
+        sinon.assert.calledWith(addBidReceived, bidResponse);
+        sinon.assert.called(afterBidAdded);
       });
-      const bidResponse = {
-        vastXml: '<VAST version="3.0"></VAST>'
-      };
+      describe('when prebid cache hooks are set up', () => {
+        let cacheHook;
+        before(() => {
+          cacheHook = sinon.stub().callsFake((next, ...args) => {
+            return next(...args);
+          })
+          callPrebidCache.before(cacheHook);
+        });
+        after(() => {
+          callPrebidCache.getHooks({hook: cacheHook}).remove();
+        });
+        it('they should run', () => {
+          runCaching();
+          sinon.assert.called(cacheHook);
+        })
+      })
 
-      const result = handleVideoBidCaching({
-        bidResponse,
-        auctionInstance: {},
-        afterBidAdded: sinon.stub(),
-        videoMediaType: { context: 'instream' }
-      });
+    })
 
-      expect(result).to.equal(true);
-      expect(bidResponse.videoCacheKey).to.exist;
-      expect(bidResponse.vastUrl.startsWith('blob:http://')).to.be.true;
-    });
-
-    it('returns false and calls prebid cache path when remote cache is enabled', function () {
+    it('calls prebid cache path when remote cache is enabled', function () {
       config.setConfig({
         cache: {
           url: 'https://test.cache.url/endpoint'
@@ -475,18 +512,17 @@ describe('The video cache', function () {
       };
       const storeStub = sandbox.stub(_internal, 'store').callsFake(() => {});
 
-      const result = handleVideoBidCaching({
+      handleVideoBidCaching({
         bidResponse,
         auctionInstance: {},
         afterBidAdded: sinon.stub(),
         videoMediaType: { context: 'instream' }
       });
 
-      expect(result).to.equal(false);
       sinon.assert.calledOnce(storeStub);
     });
 
-    it('returns false and logs error when bid has videoCacheKey but no vastUrl', function () {
+    it('logs error when bid has videoCacheKey but no vastUrl', function () {
       config.setConfig({
         cache: {
           url: 'https://test.cache.url/endpoint'
@@ -497,14 +533,13 @@ describe('The video cache', function () {
         videoCacheKey: 'existing-cache-key'
       };
 
-      const result = handleVideoBidCaching({
+      handleVideoBidCaching({
         bidResponse,
         auctionInstance: {},
         afterBidAdded: sinon.stub(),
         videoMediaType: { context: 'instream' }
       });
 
-      expect(result).to.equal(false);
       sinon.assert.calledOnce(logErrorStub);
     });
   });

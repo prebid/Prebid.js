@@ -632,15 +632,12 @@ function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { inde
     requestId: bidResponse.originalRequestId || bidResponse.requestId,
     adUnitId: bidResponse.adUnitId
   })?.video;
-  if (handleVideoBidCaching({
+  handleVideoBidCaching({
     bidResponse,
     auctionInstance,
     afterBidAdded,
     videoMediaType
-  })) {
-    addBidToAuction(auctionInstance, bidResponse);
-    afterBidAdded();
-  }
+  });
 }
 
 declare module './bidfactory' {

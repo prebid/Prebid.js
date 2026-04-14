@@ -248,20 +248,11 @@ export function handleVideoBidCaching({
   const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
 
   if (shouldUseCache && shouldStoreBid) {
-    if (!useLocal) {
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
-      return false;
-    }
-    // stores video/audio bid vast as local blob in the browser
-    storeLocally(bidResponse);
+    callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
   }
-
   if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
     logError('videoCacheKey specified but not required vastUrl for video bid');
-    return false;
   }
-
-  return true;
 }
 
 const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {
@@ -353,7 +344,11 @@ export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
 export const batchAndStore = batchingCache();
 
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  if (FEATURES.VIDEO || FEATURES.AUDIO) {
+  if (config.getConfig('cache.useLocal')) {
+    storeLocally(bidResponse);
+    addBidToAuction(auctionInstance, bidResponse);
+    afterBidAdded();
+  } else {
     batchAndStore(auctionInstance, bidResponse, afterBidAdded);
   }
 }, 'callPrebidCache');
