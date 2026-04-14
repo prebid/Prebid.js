@@ -3952,7 +3952,7 @@ describe('Unit: Prebid Module', function () {
     it('should not choke when markAsUsed = true, but the bid cannot be found', () => {
       expect(pbjs.getBidResponseByAdId('missing', { markAsUsed: true })).to.not.exist;
     });
-  })
+  });
 
   describe('setTargetingForAst', function () {
     let targeting;
