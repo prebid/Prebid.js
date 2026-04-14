@@ -11,12 +11,12 @@ const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].inclu
 
 const isBidNotLocked = (bid) => !lock.isLocked(bid.adserverTargeting);
 
-export const filters = {
+export const bidFilters = {
   isBidNotExpired,
   isUnusedBid,
   isBidNotLocked
 };
 
 export function isBidUsable(bid) {
-  return !Object.values(filters).some((predicate) => !predicate(bid));
+  return !Object.values(bidFilters).some((predicate) => !predicate(bid));
 }
