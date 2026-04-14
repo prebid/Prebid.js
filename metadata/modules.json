@@ -829,6 +829,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adsmovil",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adspirit",
       "aliasOf": null,
       "gvlid": null,
@@ -1070,6 +1077,13 @@
       "componentName": "allegro",
       "aliasOf": null,
       "gvlid": 1493,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "alliance_gravity",
+      "aliasOf": null,
+      "gvlid": 501,
       "disclosureURL": null
     },
     {
@@ -2964,6 +2978,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pgamrtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3007,6 +3028,13 @@
     {
       "componentType": "bidder",
       "componentName": "logicad",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "logly",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -3776,6 +3804,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "playstream",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "prebidServer",
       "aliasOf": null,
       "gvlid": null,
@@ -4000,6 +4035,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "reklamup",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "relaido",
       "aliasOf": null,
       "gvlid": null,
@@ -4066,6 +4108,13 @@
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "revealon",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5310,6 +5359,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "datamage",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "dgkeyword",
       "gvlid": null,
       "disclosureURL": null
@@ -5384,6 +5439,12 @@
       "componentType": "rtd",
       "componentName": "im",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "insuradsRtd",
+      "gvlid": 596,
       "disclosureURL": null
     },
     {
@@ -5564,7 +5625,7 @@
       "componentType": "rtd",
       "componentName": "wurfl",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/wurflRtdProvider.json"
     },
     {
       "componentType": "userId",
@@ -5918,6 +5979,13 @@
     },
     {
       "componentType": "userId",
+      "componentName": "rediadsId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
       "componentName": "rewardedInterestId",
       "gvlid": null,
       "disclosureURL": null,
@@ -5936,6 +6004,13 @@
       "gvlid": null,
       "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
+    },
+    {
+      "componentType": "userId",
+      "componentName": "startioId",
+      "gvlid": 1216,
+      "disclosureURL": null,
+      "aliasOf": null
     },
     {
       "componentType": "userId",

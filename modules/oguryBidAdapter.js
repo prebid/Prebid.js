@@ -14,7 +14,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.5';
+const ADAPTER_VERSION = '2.0.6';
 
 export const ortbConverterProps = {
   context: {
@@ -86,12 +86,13 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   const consent = (gdprConsent && gdprConsent.consentString) || '';
   const gpp = (gppConsent && gppConsent.gppString) || '';
   const gppSid = (gppConsent && gppConsent.applicableSections && gppConsent.applicableSections.toString()) || '';
+  const usp = uspConsent || '';
 
   if (syncOptions.iframeEnabled) {
     return [
       {
         type: 'iframe',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}&us_privacy=${usp}`,
       }
     ];
   }
@@ -100,7 +101,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync?source=prebid&gdpr_consent=${consent}&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync?source=prebid&gdpr_consent=${consent}&gpp=${gpp}&gpp_sid=${gppSid}&us_privacy=${usp}`,
       }
     ];
   }

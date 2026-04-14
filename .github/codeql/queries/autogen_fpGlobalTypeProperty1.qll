@@ -8,7 +8,7 @@ class GlobalTypeProperty1 extends string {
   
   GlobalTypeProperty1() {
       
-      ( this = "resolvedOptions"  and weight = 19.01  and global0 = "Intl"  and global1 = "DateTimeFormat" )
+      ( this = "resolvedOptions"  and weight = 20.7  and global0 = "Intl"  and global1 = "DateTimeFormat" )
   }  
 
   float getWeight() {

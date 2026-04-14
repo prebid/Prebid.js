@@ -3721,7 +3721,6 @@ describe('Unit: Prebid Module', function () {
           'dealId': '1234',
           'width': 300,
           'height': 250,
-          'statusMessage': 'Bid available',
           'adId': '233bcbee889d46d',
           'creative_id': 29681110,
           'cpm': 10,

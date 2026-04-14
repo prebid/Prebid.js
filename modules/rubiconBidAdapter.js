@@ -426,7 +426,6 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
-        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -500,7 +499,6 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
-      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'ip': bidRequest.ortb2?.device?.ip,
       'ipv6': bidRequest.ortb2?.device?.ipv6,
       'p_screen_res': _getScreenResolution(),

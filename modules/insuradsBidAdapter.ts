@@ -4,7 +4,7 @@ import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidd
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
@@ -36,11 +36,12 @@ type InsurAdsBidParams = RequireAtLeastOne<{
   allBids?: boolean;
   customId?: string;
   bidders?: Record<string, unknown>;
+  rtdData?: Record<string, unknown>;
 }, "tagId" | "placement">;
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    ['nexx360']: InsurAdsBidParams;
+    ['insurads']: InsurAdsBidParams;
   }
 }
 
@@ -82,6 +83,11 @@ const converter = ortbConverter({
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }
+    if (bidRequest.params.rtdData) {
+      deepSetValue(imp, 'ext.rtdData', bidRequest.params.rtdData);
+      delete bidRequest.params.rtdData;
+    }
+
     deepSetValue(imp, 'ext.nexx360', bidRequest.params);
     deepSetValue(imp, 'ext.nexx360.divId', divId);
     if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
@@ -95,6 +101,24 @@ const converter = ortbConverter({
     return request;
   },
 });
+
+function getRtdTargetingFromRequest(request: AdapterRequest): Record<string, string> {
+  const targeting: Record<string, string> = {};
+  const imps = request?.data?.imp;
+  if (!Array.isArray(imps)) return targeting;
+
+  for (const imp of imps) {
+    const rtdData = imp?.ext?.rtdData;
+    if (!rtdData || typeof rtdData !== 'object') continue;
+
+    for (const [key, value] of Object.entries(rtdData)) {
+      if (value === null || value === undefined) continue;
+      targeting[key] = String(value);
+    }
+  }
+
+  return targeting;
+}
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
   if (bid.params.adUnitName && (typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '')) {
@@ -136,6 +160,25 @@ const buildRequests = (
   return adapterRequest;
 }
 
+const interpretResponse = (serverResponse, request) => {
+  const responses: any[] = nexxInterpretResponse(serverResponse) as any;
+  const rtdTargeting = getRtdTargetingFromRequest(request);
+
+  if (!rtdTargeting || Object.keys(rtdTargeting).length === 0) {
+    return responses;
+  }
+
+  return responses.map((bidResponse) => {
+    return {
+      ...bidResponse,
+      adserverTargeting: {
+        ...(bidResponse?.adserverTargeting || {}),
+        ...rtdTargeting,
+      }
+    };
+  });
+};
+
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -143,7 +186,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
+  getUserSyncs
 };
 
 registerBidder(spec);

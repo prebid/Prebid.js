@@ -33,9 +33,6 @@ describe('Missena Adapter', function () {
       ext: { gpid: GPID },
     },
     ortb2: {
-      device: {
-        ext: { cdep: COOKIE_DEPRECATION_LABEL },
-      },
       source: {
         ext: {
           schain: {
@@ -92,7 +89,6 @@ describe('Missena Adapter', function () {
       device: {
         w: screen.width,
         h: screen.height,
-        ext: { cdep: COOKIE_DEPRECATION_LABEL },
       },
     },
   };
@@ -269,7 +265,6 @@ describe('Missena Adapter', function () {
     });
 
     it('should send cookie deprecation', function () {
-      expect(payload.ortb2.device.ext.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
 

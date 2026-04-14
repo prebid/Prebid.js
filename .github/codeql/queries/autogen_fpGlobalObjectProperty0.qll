@@ -7,57 +7,61 @@ class GlobalObjectProperty0 extends string {
   
   GlobalObjectProperty0() {
       
-      ( this = "availHeight"  and weight = 65.33  and global0 = "screen" )
+      ( this = "cookieEnabled"  and weight = 15.03  and global0 = "navigator" )
        or 
-      ( this = "availWidth"  and weight = 61.95  and global0 = "screen" )
+      ( this = "availHeight"  and weight = 87.99  and global0 = "screen" )
        or 
-      ( this = "colorDepth"  and weight = 38.5  and global0 = "screen" )
+      ( this = "availWidth"  and weight = 83.8  and global0 = "screen" )
        or 
-      ( this = "availTop"  and weight = 1305.37  and global0 = "screen" )
+      ( this = "colorDepth"  and weight = 42.63  and global0 = "screen" )
        or 
-      ( this = "plugins"  and weight = 15.16  and global0 = "navigator" )
+      ( this = "deviceMemory"  and weight = 62.07  and global0 = "navigator" )
        or 
-      ( this = "deviceMemory"  and weight = 64.15  and global0 = "navigator" )
+      ( this = "availTop"  and weight = 1217.02  and global0 = "screen" )
        or 
-      ( this = "getBattery"  and weight = 41.16  and global0 = "navigator" )
+      ( this = "plugins"  and weight = 15.17  and global0 = "navigator" )
        or 
-      ( this = "webdriver"  and weight = 27.64  and global0 = "navigator" )
+      ( this = "getBattery"  and weight = 37.48  and global0 = "navigator" )
        or 
-      ( this = "permission"  and weight = 24.67  and global0 = "Notification" )
+      ( this = "webdriver"  and weight = 26.24  and global0 = "navigator" )
        or 
-      ( this = "storage"  and weight = 35.77  and global0 = "navigator" )
+      ( this = "permission"  and weight = 24.97  and global0 = "Notification" )
        or 
-      ( this = "onLine"  and weight = 18.84  and global0 = "navigator" )
+      ( this = "storage"  and weight = 41.56  and global0 = "navigator" )
        or 
-      ( this = "pixelDepth"  and weight = 45.77  and global0 = "screen" )
+      ( this = "orientation"  and weight = 35.51  and global0 = "screen" )
        or 
-      ( this = "availLeft"  and weight = 624.44  and global0 = "screen" )
+      ( this = "onLine"  and weight = 19.45  and global0 = "navigator" )
        or 
-      ( this = "orientation"  and weight = 34.16  and global0 = "screen" )
+      ( this = "pixelDepth"  and weight = 47.8  and global0 = "screen" )
        or 
-      ( this = "vendorSub"  and weight = 1873.27  and global0 = "navigator" )
+      ( this = "availLeft"  and weight = 621.32  and global0 = "screen" )
        or 
-      ( this = "productSub"  and weight = 381.87  and global0 = "navigator" )
+      ( this = "vendorSub"  and weight = 2499.81  and global0 = "navigator" )
        or 
-      ( this = "webkitTemporaryStorage"  and weight = 37.97  and global0 = "navigator" )
+      ( this = "productSub"  and weight = 358.84  and global0 = "navigator" )
        or 
-      ( this = "hardwareConcurrency"  and weight = 51.78  and global0 = "navigator" )
+      ( this = "webkitTemporaryStorage"  and weight = 39.44  and global0 = "navigator" )
        or 
-      ( this = "appCodeName"  and weight = 173.35  and global0 = "navigator" )
+      ( this = "hardwareConcurrency"  and weight = 71.06  and global0 = "navigator" )
        or 
-      ( this = "keyboard"  and weight = 1722.82  and global0 = "navigator" )
+      ( this = "appCodeName"  and weight = 163.35  and global0 = "navigator" )
        or 
-      ( this = "mediaDevices"  and weight = 149.07  and global0 = "navigator" )
+      ( this = "keyboard"  and weight = 2868.74  and global0 = "navigator" )
        or 
-      ( this = "mediaCapabilities"  and weight = 142.34  and global0 = "navigator" )
+      ( this = "mediaDevices"  and weight = 154.67  and global0 = "navigator" )
        or 
-      ( this = "permissions"  and weight = 89.71  and global0 = "navigator" )
+      ( this = "mediaCapabilities"  and weight = 32.35  and global0 = "navigator" )
        or 
-      ( this = "webkitPersistentStorage"  and weight = 134.12  and global0 = "navigator" )
+      ( this = "permissions"  and weight = 71.6  and global0 = "navigator" )
        or 
-      ( this = "requestMediaKeySystemAccess"  and weight = 18.22  and global0 = "navigator" )
+      ( this = "presentation"  and weight = 28.44  and global0 = "navigator" )
        or 
-      ( this = "getGamepads"  and weight = 209.55  and global0 = "navigator" )
+      ( this = "requestMediaKeySystemAccess"  and weight = 32.15  and global0 = "navigator" )
+       or 
+      ( this = "webkitPersistentStorage"  and weight = 141.94  and global0 = "navigator" )
+       or 
+      ( this = "getGamepads"  and weight = 241.28  and global0 = "navigator" )
   }  
 
   float getWeight() {
