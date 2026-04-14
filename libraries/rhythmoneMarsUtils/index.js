@@ -159,8 +159,7 @@ export function frameVideo(bid, defaultVideoConfig) {
 function getValidSizeSet(dimensionList) {
   const w = parseInt(dimensionList[0]);
   const h = parseInt(dimensionList[1]);
-  // clever check for NaN
-  if (!(w !== w || h !== h)) {
+  if (!Number.isNaN(w) && !Number.isNaN(h)) {
     return [w, h];
   }
   return false;
