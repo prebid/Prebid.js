@@ -7,20 +7,28 @@
 
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const nodemailer = require('nodemailer');
 
 async function getAccessToken(clientId, clientSecret, refreshToken) {
   try {
-    const response = await axios.post('https://oauth2.googleapis.com/token', {
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
     });
-    return response.data.access_token;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(JSON.stringify(errorData));
+    }
+    const data = await response.json();
+    return data.access_token;
   } catch (error) {
-    console.error('Failed to fetch access token:', error.response?.data || error.message);
+    console.error('Failed to fetch access token:', error.message);
     process.exit(1);
   }
 }
@@ -57,14 +65,18 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
     // Fetch changed files from github
     const [owner, repoName] = repo.split('/');
     const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files`;
-    const response = await axios.get(apiUrl, {
+    const response = await fetch(apiUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',
       },
     });
+    if (!response.ok) {
+      throw new Error(`GitHub API request failed with status ${response.status}`);
+    }
+    const data = await response.json();
 
-    const changedFiles = response.data.map(file => file.filename);
+    const changedFiles = data.map(file => file.filename);
     console.log('Changed files:', changedFiles);
 
     // match file pathnames that are in the config and group them by email address
