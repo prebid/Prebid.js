@@ -75,7 +75,7 @@ const GVLID = 111;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['showheroesBs', 'showheroes-bs'],
+  aliases: ['showheroesBs'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: (bid) => {
     return !!bid.params.unitId;
