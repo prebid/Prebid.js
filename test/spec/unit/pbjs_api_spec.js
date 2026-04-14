@@ -3945,7 +3945,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should mark as used when markAsUsed = true', () => {
-      pbjs.getBidResponseByAdId('mock-adid', {markAsUsed: true});
+      pbjs.getBidResponseByAdId('mock-adid', { markAsUsed: true });
       expect(bidResponse.status).to.eql(BID_STATUS.RENDERED);
     })
   })
