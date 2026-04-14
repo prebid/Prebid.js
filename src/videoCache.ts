@@ -14,6 +14,8 @@ import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
 import { addBidToAuction } from './auction.js';
+import { hook } from './hook.js';
+import { OUTSTREAM } from './video.js';
 import type { VideoBid } from "./bidfactory.ts";
 
 /**
@@ -252,6 +254,39 @@ export const storeLocally = (bid) => {
   vastLocalCache.set(bid.videoCacheKey, bidVastUrl);
 };
 
+/**
+ * Handles cache/local-cache flow for a video bid before adding it to auction.
+ * Returns `true` when caller should continue normal addBid flow, `false` when processing is deferred or bid is invalid.
+ */
+export function handleVideoBidCaching({
+  bidResponse,
+  auctionInstance,
+  afterBidAdded,
+  videoMediaType
+}) {
+  const context = videoMediaType && videoMediaType?.context;
+  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  const {
+    useLocal,
+    url: cacheUrl,
+    ignoreBidderCacheKey
+  } = config.getConfig('cache') || {};
+
+  const shouldUseCache = (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM);
+  const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
+
+  if (shouldUseCache && shouldStoreBid) {
+    callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+    return;
+  }
+  if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
+    logError('videoCacheKey specified but not required vastUrl for video bid');
+    return;
+  }
+  addBidToAuction(auctionInstance, bidResponse);
+  afterBidAdded();
+}
+
 const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {
   bid.videoCacheKey = videoCacheKey || generateUUID();
   if (!bid.vastUrl) {
@@ -339,3 +374,13 @@ export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
 };
 
 export const batchAndStore = batchingCache();
+
+export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+  if (config.getConfig('cache.useLocal')) {
+    storeLocally(bidResponse);
+    addBidToAuction(auctionInstance, bidResponse);
+    afterBidAdded();
+  } else {
+    batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+  }
+}, 'callPrebidCache');
