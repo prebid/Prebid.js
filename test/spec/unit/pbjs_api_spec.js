@@ -3918,13 +3918,37 @@ describe('Unit: Prebid Module', function () {
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
         pbjs.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
-        const markedBid = pbjs.getBidResponsesForAdUnitCode(adUnitCode).bids.find(
-          bid => bid.adId === winningBid.adId);
-
         expect(markedBid.status).to.not.equal(BID_STATUS.RENDERED);
       });
     });
   }
+
+  describe('getBidResponseByAdId', () => {
+    let bidResponse;
+    beforeEach(() => {
+      bidResponse = {
+        adId: 'mock-adid'
+      };
+      auction.getBidsReceived = () => [
+        bidResponse
+      ];
+    })
+
+    it('should return null when adId does not exist', () => {
+      sandbox.stub(utils, 'logWarn');
+      expect(pbjs.getBidResponseByAdId('missing')).to.not.exist;
+      sinon.assert.called(utils.logWarn);
+    });
+
+    it('should return the matching bid', () => {
+      expect(pbjs.getBidResponseByAdId('mock-adid')).to.equal(bidResponse);
+    });
+
+    it('should mark as used when markAsUsed = true', () => {
+      pbjs.getBidResponseByAdId('mock-adid', {markAsUsed: true});
+      expect(bidResponse.status).to.eql(BID_STATUS.RENDERED);
+    })
+  })
 
   describe('setTargetingForAst', function () {
     let targeting;

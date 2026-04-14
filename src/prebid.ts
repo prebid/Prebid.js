@@ -479,6 +479,7 @@ declare module './prebidGlobal' {
     getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
     getHighestCpmBids: typeof getHighestCpmBids;
     clearAllAuctions: typeof clearAllAuctions;
+    getBidResponseByAdId: typeof getBidResponseByAdId;
     markWinningBidAsUsed: typeof markWinningBidAsUsed;
     getConfig: typeof config.getConfig;
     readConfig: typeof config.readConfig;
@@ -1145,25 +1146,63 @@ type MarkWinningBidAsUsedOptions = ({
   analytics?: boolean
 }
 
+function findBidByAdId(adId) {
+  if (!adId) {
+    logError('adId is required');
+  } else {
+    const candidates = auctionManager.getBidsReceived().filter(bid => bid.adId === adId);
+    if (!candidates.length) {
+      logWarn(`Could not find ad matching adId '${adId}'`);
+    } else {
+      return candidates[0];
+    }
+  }
+  return null;
+}
+
+function markAsUsed(bid, fireEvents = true) {
+  if (fireEvents) {
+    markWinningBid(bid);
+  } else {
+    auctionManager.addWinningBid(bid);
+  }
+  markBidAsRendered(bid);
+}
+
+type GetBidResponseByAdIdOptions = {
+  /**
+   * If true, mark the bid as used - firing any win trackers and removing it from the bid pool for future auctions.
+   */
+  markAsUsed?: boolean;
+}
+
+/**
+ * @return the bid response matching the given adId, or null if no such bid exists.
+ */
+function getBidResponseByAdId(adId: string, options?: GetBidResponseByAdIdOptions): Bid {
+  const bid = findBidByAdId(adId);
+  if (options?.markAsUsed) {
+    markAsUsed(bid, true);
+  }
+  return bid;
+}
+
+addApiMethod('getBidResponseByAdId', getBidResponseByAdId);
+
 /**
  * Mark the winning bid as used, should only be used in conjunction with video
  */
 function markWinningBidAsUsed({ adId, adUnitCode, analytics = false, events = false }: MarkWinningBidAsUsedOptions) {
-  let bids;
+  let bid;
   if (adUnitCode && adId == null) {
-    bids = targeting.getWinningBids(adUnitCode);
+    bid = targeting.getWinningBids(adUnitCode)[0];
   } else if (adId) {
-    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+    bid = findBidByAdId(adId);
   } else {
     logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
   }
-  if (bids.length > 0) {
-    if (analytics || events) {
-      markWinningBid(bids[0]);
-    } else {
-      auctionManager.addWinningBid(bids[0]);
-    }
-    markBidAsRendered(bids[0])
+  if (bid != null) {
+    markAsUsed(bid, analytics || events);
   }
 }
 
