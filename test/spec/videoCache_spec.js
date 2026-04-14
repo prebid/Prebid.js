@@ -491,14 +491,13 @@ describe('The video cache', function () {
           callPrebidCache.before(cacheHook);
         });
         after(() => {
-          callPrebidCache.getHooks({hook: cacheHook}).remove();
+          callPrebidCache.getHooks({ hook: cacheHook }).remove();
         });
         it('they should run', () => {
           runCaching();
           sinon.assert.called(cacheHook);
         })
       })
-
     })
 
     it('calls prebid cache path when remote cache is enabled', function () {
