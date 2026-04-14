@@ -50,7 +50,7 @@ export function ttlCollection<T>(
   let nextPurge, task;
 
   function reschedulePurge() {
-    task && clearTimeout(task);
+    task && clearTimeout(task());
     if (pendingPurge.length > 0) {
       const now = timestamp();
       nextPurge = Math.max(now, pendingPurge[0].expiry + slack);
