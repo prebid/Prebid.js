@@ -553,6 +553,8 @@ describe('The video cache', function () {
         videoMediaType: { context: 'outstream' }
       }
       handleVideoBidCaching(request);
+      sinon.assert.notCalled(logErrorStub);
+      expect(request.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.calledWith(request.auctionInstance.addBidReceived, request.bidResponse);
       sinon.assert.called(request.afterBidAdded);
     })
