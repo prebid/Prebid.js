@@ -1,5 +1,5 @@
 import chai from 'chai';
-import { batchingCache, getCacheUrl, store, _internal, storeBatch } from 'src/videoCache.js';
+import { batchingCache, getCacheUrl, handleVideoBidCaching, store, _internal, storeBatch } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from '../../src/auctionManager.js';
@@ -427,6 +427,85 @@ describe('The video cache', function () {
 
       expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
       expect(bid.videoCacheKey).to.not.be.empty;
+    });
+  });
+
+  describe('handleVideoBidCaching', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      config.resetConfig();
+      sandbox.restore();
+    });
+
+    it('returns true and stores bid locally when useLocal is enabled', function () {
+      config.setConfig({
+        cache: {
+          useLocal: true
+        }
+      });
+      const bidResponse = {
+        vastXml: '<VAST version="3.0"></VAST>'
+      };
+
+      const result = handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'instream' }
+      });
+
+      expect(result).to.equal(true);
+      expect(bidResponse.videoCacheKey).to.exist;
+      expect(bidResponse.vastUrl.startsWith('blob:http://')).to.be.true;
+    });
+
+    it('returns false and calls prebid cache path when remote cache is enabled', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://test.cache.url/endpoint'
+        }
+      });
+      const bidResponse = {
+        vastXml: '<VAST version="3.0"></VAST>'
+      };
+      const storeStub = sandbox.stub(_internal, 'store').callsFake(() => {});
+
+      const result = handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'instream' }
+      });
+
+      expect(result).to.equal(false);
+      sinon.assert.calledOnce(storeStub);
+    });
+
+    it('returns false and logs error when bid has videoCacheKey but no vastUrl', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://test.cache.url/endpoint'
+        }
+      });
+      const logErrorStub = sandbox.stub(utils, 'logError');
+      const bidResponse = {
+        videoCacheKey: 'existing-cache-key'
+      };
+
+      const result = handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'instream' }
+      });
+
+      expect(result).to.equal(false);
+      sinon.assert.calledOnce(logErrorStub);
     });
   });
 });

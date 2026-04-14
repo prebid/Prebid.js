@@ -12,12 +12,11 @@ import {
 } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { isNativeResponse, setNativeResponseProperties } from './native.js';
-import { batchAndStore, storeLocally } from './videoCache.js';
+import { handleVideoBidCaching } from './videoCache.js';
 import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook, ignoreCallbackArg } from './hook.js';
-import { OUTSTREAM } from './video.js';
 import { AUDIO, VIDEO } from './mediaTypes.js';
 import { auctionManager } from './auctionManager.js';
 import { bidderSettings } from './bidderSettings.js';
@@ -633,40 +632,16 @@ function tryAddVideoAudioBid(auctionInstance, bidResponse, afterBidAdded, { inde
     requestId: bidResponse.originalRequestId || bidResponse.requestId,
     adUnitId: bidResponse.adUnitId
   })?.video;
-  const context = videoMediaType && videoMediaType?.context;
-  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
-  const {
-    useLocal,
-    url: cacheUrl,
-    ignoreBidderCacheKey
-  } = config.getConfig('cache') || {};
-
-  const shouldUseCache = cacheUrl && (useCacheKey || context !== OUTSTREAM);
-  const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
-
-  if (shouldUseCache && shouldStoreBid) {
-    if (!useLocal) {
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
-      return;
-    }
-    // stores video/audio bid vast as local blob in the browser
-    storeLocally(bidResponse);
+  if (handleVideoBidCaching({
+    bidResponse,
+    auctionInstance,
+    afterBidAdded,
+    videoMediaType
+  })) {
+    addBidToAuction(auctionInstance, bidResponse);
+    afterBidAdded();
   }
-
-  if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
-    logError('videoCacheKey specified but not required vastUrl for video bid');
-    return;
-  }
-
-  addBidToAuction(auctionInstance, bidResponse);
-  afterBidAdded();
 }
-
-export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  if (FEATURES.VIDEO || FEATURES.AUDIO) {
-    batchAndStore(auctionInstance, bidResponse, afterBidAdded);
-  }
-}, 'callPrebidCache');
 
 declare module './bidfactory' {
   interface BaseBidResponse {
