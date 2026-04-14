@@ -1,6 +1,4 @@
 'use strict';
-
-import { getDNT } from '../libraries/dnt/index.js';
 import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -267,7 +265,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     devicetype: helpers.getDeviceType(),
     ua: navigator?.userAgent,
     js: 1,
-    dnt: getDNT() ? 1 : 0,
+    dnt: 0,
     language: ((navigator?.language || navigator?.userLanguage || '').split('-'))[0] || 'en',
   };
   const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
