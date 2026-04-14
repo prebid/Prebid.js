@@ -6,6 +6,7 @@ import {
   createBuildRequests,
   interpretResponse as interpretResponseUtil,
 } from '../libraries/adsmartxUtils/bidderUtils.js';
+import { logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'risemediatech';
 const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
@@ -14,7 +15,8 @@ const DEFAULT_TTL = 60;
 
 const converter = createConverter({ defaultCurrency: DEFAULT_CURRENCY, defaultTtl: DEFAULT_TTL });
 
-const isBidRequestValid = validateBidRequest;
+const isBidRequestValid = false;
+logWarn('Risemediatech Bid Adapter has been deprecated. Hence disabling this adapter by rejecting bid requests by default.');
 const buildRequests = createBuildRequests(
   { converter, endpointUrl: ENDPOINT_URL }
 );
