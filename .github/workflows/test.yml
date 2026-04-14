@@ -30,7 +30,10 @@ jobs:
       base-commit: ${{ steps.info.outputs.base-commit }}
     steps:
       - name: Set up Node.js
-        uses: ./.github/actions/setup-node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
       - name: Checkout code (PR)
         id: checkout-pr
         if: ${{ github.event_name == 'pull_request' }}
