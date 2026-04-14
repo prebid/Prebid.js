@@ -1,4 +1,4 @@
-import { callPrebidCache } from '../../src/auction.js';
+import { callPrebidCache } from '../../src/videoCache.js';
 import { VIDEO } from '../../src/mediaTypes.js';
 import { logError, logWarn, isEmptyStr } from '../../src/utils.js';
 import { isArray, isPlainObject, isStr } from '../../src/utils/objects.js';
