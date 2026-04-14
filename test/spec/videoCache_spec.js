@@ -6,7 +6,7 @@ import {
   store,
   _internal,
   storeBatch,
-  callPrebidCache
+  callPrebidCache, updateVast
 } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
@@ -102,60 +102,6 @@ describe('The video cache', function () {
         'Not JSON here');
       assertError(callback);
       callback.firstCall.args[1].should.deep.equal([]);
-    });
-
-    it('should make the expected request when store() is called on an ad with a vastUrl', function () {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({ vastUrl: 'my-mock-url.com', ttl: 25 }, expectedValue)
-    });
-
-    it('should make the expected request when store() is called on an ad with a vastUrl and impression trackers', function () {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastTrackers: { impression: ['imptracker.com'] }, ttl: 25 }, expectedValue)
-    });
-
-    it('should include multiple impression trackers', function() {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastTrackers: { impression: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com'] }, ttl: 25, cpm: 1.2 }, expectedValue)
-    });
-
-    it('should include error trackers', function() {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastTrackers: { error: ['https://error.mydomain.com/error'] }, ttl: 25 }, expectedValue)
-    });
-
-    it('should include both impression and error trackers', function() {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastTrackers: { impression: ['imptracker.com'], error: ['https://error.mydomain.com/error'] }, ttl: 25 }, expectedValue)
-    });
-
-    it('should include tracking events', function() {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking><Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({
-        vastUrl: 'my-mock-url.com',
-        vastTrackers: {
-          trackingEvents: [
-            { event: 'start', url: 'https://tracking.mydomain.com/start' },
-            { event: 'complete', url: 'https://tracking.mydomain.com/complete' }
-          ]
-        },
-        ttl: 25
-      }, expectedValue)
-    });
-
-    it('should include all tracker types together', function() {
-      const expectedValue = '<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>';
-      assertRequestMade({
-        vastUrl: 'my-mock-url.com',
-        vastTrackers: {
-          impression: ['imptracker.com'],
-          error: ['https://error.mydomain.com/error'],
-          trackingEvents: [
-            { event: 'start', url: 'https://tracking.mydomain.com/start' }
-          ]
-        },
-        ttl: 25
-      }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
@@ -433,6 +379,82 @@ describe('The video cache', function () {
         vastUrl: 'mock-cache?uuid=mock-id'
       })
     });
+  })
+
+  describe('updateVast', () => {
+    let bidResponse;
+    beforeEach(() => {
+      bidResponse = {
+        vastUrl: 'my-mock-url.com'
+      };
+    });
+
+    it('should leave vastXml unchanged', () => {
+      bidResponse.vastXml = 'mock';
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('mock');
+    })
+
+    it('should set vastXml with a wrapper around vastUrl', () => {
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should insert impression trackers', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should insert multiple impression trackers', () => {
+      bidResponse.vastTrackers = {
+        impression: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should include error trackers', () => {
+      bidResponse.vastTrackers = {
+        error: ['https://error.mydomain.com/error']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should include both impression and error trackers', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com'],
+        error: ['https://error.mydomain.com/error']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should include tracking events', () => {
+      bidResponse.vastTrackers = {
+        trackingEvents: [
+          { event: 'start', url: 'https://tracking.mydomain.com/start' },
+          { event: 'complete', url: 'https://tracking.mydomain.com/complete' }
+        ]
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking><Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>')
+    });
+
+    it('should include all tracker types together', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com'],
+        error: ['https://error.mydomain.com/error'],
+        trackingEvents: [
+          { event: 'start', url: 'https://tracking.mydomain.com/start' }
+        ]
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
+    })
   })
 
   describe('local video cache', function() {

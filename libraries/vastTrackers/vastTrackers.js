@@ -1,6 +1,6 @@
-import { callPrebidCache } from '../../src/videoCache.js';
+import { updateVast } from '../../src/videoCache.js';
 import { VIDEO } from '../../src/mediaTypes.js';
-import { logError, logWarn, isEmptyStr } from '../../src/utils.js';
+import { isEmptyStr, logError, logWarn } from '../../src/utils.js';
 import { isArray, isPlainObject, isStr } from '../../src/utils/objects.js';
 import { isActivityAllowed } from '../../src/activities/rules.js';
 import { ACTIVITY_REPORT_ANALYTICS } from '../../src/activities/activities.js';
@@ -28,20 +28,20 @@ export function reset() {
 
 export function enable() {
   if (!enabled) {
-    callPrebidCache.before(addTrackersToResponse);
+    updateVast.before(addTrackersToResponse);
     enabled = true;
   }
 }
 
 export function disable() {
   if (enabled) {
-    callPrebidCache.getHooks({ hook: addTrackersToResponse }).remove();
+    updateVast.getHooks({ hook: addTrackersToResponse }).remove();
     enabled = false;
   }
 }
 
-export function cacheVideoBidHook({ index = auctionManager.index } = {}) {
-  return function addTrackersToResponse(next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+export function updateVastHook({ index = auctionManager.index } = {}) {
+  return function addTrackersToResponse(next, bidResponse) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
       const vastTrackers = getVastTrackers(bidResponse, { index });
       if (vastTrackers) {
@@ -49,11 +49,11 @@ export function cacheVideoBidHook({ index = auctionManager.index } = {}) {
         bidResponse.vastTrackers = vastTrackers;
       }
     }
-    next(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+    next(bidResponse);
   }
 }
 
-const addTrackersToResponse = cacheVideoBidHook();
+const addTrackersToResponse = updateVastHook();
 enable();
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {

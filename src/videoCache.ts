@@ -16,7 +16,7 @@ import { generateUUID, logError, logWarn } from './utils.js';
 import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
-import type { VideoBid } from "./bidfactory.ts";
+import type { AudioBidResponse, VideoBid, VideoBidResponse } from "./bidfactory.ts";
 
 /**
  * Might be useful to be configurable in the future
@@ -151,7 +151,7 @@ declare module './config' {
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, { index = auctionManager.index } = {}) {
-  const vastValue = getVastXml(bid);
+  const vastValue = bid.vastXml;
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   const payload: any = {
@@ -218,10 +218,6 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
   }
 }
 
-function getVastXml(bid) {
-  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastTrackers);
-};
-
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
@@ -246,7 +242,7 @@ export function getCacheUrl(id) {
 }
 
 export const storeLocally = (bid) => {
-  const vastXml = getVastXml(bid);
+  const vastXml = bid.vastXml;
   const bidVastUrl = URL.createObjectURL(new Blob([vastXml], { type: 'text/xml' }));
 
   assignVastUrlAndCacheId(bid, bidVastUrl);
@@ -264,6 +260,8 @@ export function handleVideoBidCaching({
   afterBidAdded,
   videoMediaType
 }) {
+  updateVast(bidResponse);
+
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
   const {
@@ -286,6 +284,10 @@ export function handleVideoBidCaching({
   addBidToAuction(auctionInstance, bidResponse);
   afterBidAdded();
 }
+
+export const updateVast = hook('sync', function (bidResponse: VideoBidResponse | AudioBidResponse) {
+  bidResponse.vastXml = bidResponse.vastXml ?? wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers)
+}, 'updateVast');
 
 const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {
   bid.videoCacheKey = videoCacheKey || generateUUID();
@@ -321,7 +323,7 @@ export function storeBatch(batch) {
       });
     }
   });
-};
+}
 
 let batchSize, batchTimeout, cleanupHandler;
 if (FEATURES.VIDEO || FEATURES.AUDIO) {
