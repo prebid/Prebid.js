@@ -302,7 +302,9 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, bannerObj)
       }
-    } else if (videoObj) {
+    }
+
+    if (videoObj) {
       imp.video = {
         ...helpers.createOrtbImpVideoObj(bid)
       }
