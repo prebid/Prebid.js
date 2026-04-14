@@ -50,7 +50,7 @@ import {
 import { getHighestCpm } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
-import { BANNER, VIDEO } from './mediaTypes.js';
+import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
 import { delayIfPrerendering } from './utils/prerendering.js';
 import { type BidAdapter, type BidderSpec, newBidder } from './adapters/bidderFactory.js';
 import { normalizeFPD } from './fpd/normalize.js';
@@ -62,6 +62,7 @@ import type { DeepPartial } from "./types/objects.d.ts";
 import type { AnyFunction, Wraps } from "./types/functions.d.ts";
 import type { BidderScopedSettings, BidderSettings } from "./bidderSettings.ts";
 import { fillAudioDefaults, ORTB_AUDIO_PARAMS } from './audio.ts';
+import { type WrapsInBids, wrapInBids } from "./utils/wrapsInBids.ts";
 
 import { getGlobalVarName } from "./buildOptions.ts";
 import { yieldAll } from "./utils/yield.ts";
@@ -241,18 +242,24 @@ export function validateOrtbFields(adUnit, type, onInvalidParam?) {
   const mediaTypes = adUnit?.mediaTypes || {};
   const params = mediaTypes[type];
 
-  const ORTB_PARAMS = {
-    banner: ORTB_BANNER_PARAMS,
-    audio: ORTB_AUDIO_PARAMS,
-    video: ORTB_VIDEO_PARAMS
-  }[type]
+  const ORTB_PARAMS = ((type) => {
+    if (type === BANNER) {
+      return ORTB_BANNER_PARAMS;
+    }
+    if (FEATURES.AUDIO && type === AUDIO) {
+      return ORTB_AUDIO_PARAMS;
+    }
+    if (FEATURES.VIDEO && type === VIDEO) {
+      return ORTB_VIDEO_PARAMS;
+    }
+  })(type);
 
   if (!isPlainObject(params)) {
     logWarn(`validateOrtb${type}Fields: ${type}Params must be an object.`);
     return;
   }
 
-  if (params != null) {
+  if (ORTB_PARAMS != null && params != null) {
     Object.entries(params)
       .forEach(([key, value]: any) => {
         if (!ORTB_PARAMS.has(key)) {
@@ -541,16 +548,6 @@ function getConsentMetadata() {
   return allConsent.getConsentMeta()
 }
 addApiMethod('getConsentMetadata', getConsentMetadata);
-
-type WrapsInBids<T> = T[] & {
-  bids: T[]
-}
-
-function wrapInBids(arr) {
-  arr = arr.slice();
-  arr.bids = arr;
-  return arr;
-}
 
 function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
   const responses = auctionManager[type]()
