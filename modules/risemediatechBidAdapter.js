@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   createConverter,
-  isBidRequestValid as validateBidRequest,
   createBuildRequests,
   interpretResponse as interpretResponseUtil,
 } from '../libraries/adsmartxUtils/bidderUtils.js';
@@ -15,8 +14,12 @@ const DEFAULT_TTL = 60;
 
 const converter = createConverter({ defaultCurrency: DEFAULT_CURRENCY, defaultTtl: DEFAULT_TTL });
 
-const isBidRequestValid = false;
-logWarn('Risemediatech Bid Adapter has been deprecated. Hence disabling this adapter by rejecting bid requests by default.');
+export function disableAdapter() {
+  logWarn('Risemediatech Bid Adapter has been deprecated. Hence disabling this adapter by rejecting bid requests by default.');
+  return false;
+}
+
+const isBidRequestValid = disableAdapter();
 const buildRequests = createBuildRequests(
   { converter, endpointUrl: ENDPOINT_URL }
 );
