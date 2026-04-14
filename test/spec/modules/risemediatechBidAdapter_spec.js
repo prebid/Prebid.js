@@ -1,5 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/risemediatechBidAdapter.js';
+import sinon from 'sinon';
+import { spec, disableAdapter } from 'modules/risemediatechBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('RiseMediaTech adapter', () => {
   const validBidRequest = {
@@ -51,119 +53,26 @@ describe('RiseMediaTech adapter', () => {
     },
   };
 
+  describe('disableAdapter', () => {
+    it('should log a deprecation warning', () => {
+      const warnStub = sinon.stub(utils, 'logWarn');
+      try {
+        disableAdapter();
+        expect(warnStub.calledOnce).to.be.true;
+        expect(warnStub.firstCall.args[0]).to.include('deprecated');
+      } finally {
+        warnStub.restore();
+      }
+    });
+
+    it('should return false', () => {
+      expect(disableAdapter()).to.equal(false);
+    });
+  });
+
   describe('isBidRequestValid', () => {
-    it('should return true for valid bid request', () => {
-      expect(spec.isBidRequestValid(validBidRequest)).to.equal(true);
-    });
-
-    it('should return false for invalid video bid request', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: [],
-          },
-        },
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
-    });
-
-    it('should return false for video bid request with missing mimes', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            w: 640,
-            h: 480
-            // mimes missing
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
-    });
-
-    it('should return false for video request with invalid mimes (not an array)', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: 'video/mp4', // Not an array
-            w: 640,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video request with empty mimes array', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: [],
-            w: 640,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video request with width <= 0', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 0,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video request with height <= 0', () => {
-      const invalidBid = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 640,
-            h: -10
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false for video bid request with invalid width', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 0,
-            h: 480
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
-    });
-
-    it('should return false for video bid request with invalid height', () => {
-      const invalidVideoRequest = {
-        ...validBidRequest,
-        mediaTypes: {
-          video: {
-            mimes: ['video/mp4'],
-            w: 640,
-            h: 0
-          }
-        }
-      };
-      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
+    it('should be false because the adapter is disabled/deprecated', () => {
+      expect(spec.isBidRequestValid).to.equal(false);
     });
   });
 
