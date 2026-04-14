@@ -37,6 +37,6 @@ export function formatResponse(bid) {
     netRevenue: false,
     currency: bid && bid.cur ? bid.cur : 'USD',
     ttl: 300,
-    dealId: bid && bid.dealId ? bid.dealId : undefined
+    dealId: bid && bid.dealid ? bid.dealid : undefined
   }
 }
