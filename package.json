@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "11.4.0-pre",
+  "version": "11.6.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -119,7 +119,6 @@
     "neostandard": "^0.12.2",
     "nise": "^6.1.1",
     "node-html-parser": "^6.1.5",
-    "opn": "^5.4.0",
     "plugin-error": "^2.0.1",
     "puppeteer": "^24.10.0",
     "resolve-from": "^5.0.0",
