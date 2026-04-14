@@ -286,7 +286,9 @@ export function handleVideoBidCaching({
 }
 
 export const updateVast = hook('sync', function (bidResponse: VideoBidResponse | AudioBidResponse) {
-  bidResponse.vastXml = bidResponse.vastXml ?? wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers)
+  if (!bidResponse.vastXml && bidResponse.vastUrl) {
+    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers)
+  }
 }, 'updateVast');
 
 const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {

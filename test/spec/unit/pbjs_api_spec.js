@@ -3932,7 +3932,7 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = () => [
         bidResponse
       ];
-    })
+    });
 
     it('should return null when adId does not exist', () => {
       sandbox.stub(utils, 'logWarn');
@@ -3951,7 +3951,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should not choke when markAsUsed = true, but the bid cannot be found', () => {
       expect(pbjs.getBidResponseByAdId('missing', { markAsUsed: true })).to.not.exist;
-    })
+    });
   })
 
   describe('setTargetingForAst', function () {
