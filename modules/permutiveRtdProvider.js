@@ -91,11 +91,7 @@ export function getModuleConfig(customModuleConfig) {
       acBidders: [],
       overwrites: {},
       enforceVendorConsent: false,
-      bidders: {
-        msft: {
-          customCohorts: { source: 'ls', key: '_papns' }
-        },
-      },
+      bidders: {},
     },
   },
   permutiveModuleConfig,

@@ -128,11 +128,7 @@ describe('permutiveRtdProvider', function () {
         acBidders: [],
         overwrites: {},
         enforceVendorConsent: false,
-        bidders: {
-          msft: {
-            customCohorts: { source: 'ls', key: '_papns' }
-          },
-        },
+        bidders: {},
       },
     })
 
