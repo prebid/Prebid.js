@@ -1,5 +1,4 @@
 import { auctionManager } from './auctionManager.js';
-import { getBufferedTTL } from './bidTTL.js';
 import { bidderSettings } from './bidderSettings.js';
 import { config } from './config.js';
 import { BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS } from './constants.js';
@@ -18,7 +17,6 @@ import {
   logMessage,
   logWarn,
   sortByHighestCpm,
-  timestamp,
   uniques,
 } from './utils.js';
 import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
@@ -26,6 +24,7 @@ import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
+import { isBidUsable } from './targeting/filters.ts';
 
 var pbTargetingKeys = [];
 
@@ -39,23 +38,6 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
   key => TARGETING_KEYS[key]
 );
 
-// return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 1000) > timestamp();
-
-// return bids whose status is not set. Winning bids can only have a status of `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
-
-const isBidNotLocked = (bid) => !lock.isLocked(bid.adserverTargeting);
-
-export const filters = {
-  isBidNotExpired,
-  isUnusedBid,
-  isBidNotLocked
-};
-
-export function isBidUsable(bid) {
-  return !Object.values(filters).some((predicate) => !predicate(bid));
-}
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
