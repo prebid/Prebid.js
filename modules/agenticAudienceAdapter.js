@@ -6,6 +6,11 @@
  * Context: {@link https://github.com/IABTechLab/agentic-audiences IABTechLab Agentic Audiences}
  *
  * The {@link module:modules/realTimeData} module is required
+ *
+ * Injects one OpenRTB `Data` object into `user.data` (`name` = submodule id, `segment[]` from storage).
+ * Each segment has optional `id`/`name` and `ext.aa` with `ver`, `vector`, `dimension`, `model`, `type`.
+ * Storage is read from the default key (see `DEFAULT_STORAGE_KEY` export) unless `params.storageKey` is set.
+ *
  * @module modules/agenticAudienceAdapter
  * @requires module:modules/realTimeData
  */
@@ -14,7 +19,6 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { logInfo, mergeDeep } from '../src/utils.js';
-import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -22,6 +26,9 @@ import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'agenticAudience';
+
+/** @type {string} Default localStorage / cookie key when `params.storageKey` is omitted. */
+export const DEFAULT_STORAGE_KEY = '_agentic_audience_';
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -37,7 +44,7 @@ function dataFromCookie(key) {
 }
 
 /**
- * Map a stored entry to an OpenRTB Segment (Agentic Audiences): id, name, ext.{ver, vector, dimension, model, type}
+ * Map a stored entry to an OpenRTB Segment (Agentic Audiences): id, name, ext.aa.{ver, vector, dimension, model, type}
  * Assumes storage matches the intended shape; fields are copied without validation or coercion.
  * @param {Object} entry - Raw entry from storage `entries` array
  * @returns {Object|null}
@@ -49,20 +56,18 @@ export function mapEntryToOpenRtbSegment(entry) {
     id: entry.id,
     name: entry.name,
     ext: {
-      ver: entry.ver,
-      vector: entry.vector,
-      dimension: entry.dimension,
-      model: entry.model,
-      type: entry.type
+      aa: {
+        ver: entry.ver,
+        vector: entry.vector,
+        dimension: entry.dimension,
+        model: entry.model,
+        type: entry.type
+      }
     }
   };
 }
 
 function init(config, userConsent) {
-  const providers = config?.params?.providers;
-  if (!providers || typeof providers !== 'object' || Object.keys(providers).length === 0) {
-    return false;
-  }
   return true;
 }
 
@@ -73,39 +78,25 @@ function init(config, userConsent) {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const providers = config?.params?.providers;
-  if (!providers || typeof providers !== 'object' || Object.keys(providers).length === 0) {
-    callback();
-    return;
-  }
+  const customKey = config?.params?.storageKey;
+  const storageKey =
+    typeof customKey === 'string' && customKey.length > 0 ? customKey : DEFAULT_STORAGE_KEY;
 
-  const data = [];
-  const providerKeys = Object.keys(providers);
+  const segments = getSegmentsForStorageKey(storageKey);
 
-  for (let i = 0; i < providerKeys.length; i++) {
-    const provider = providerKeys[i];
-    const providerParams = providers[provider];
-    const storageKey = providerParams && providerParams.storageKey;
-    if (!storageKey) continue;
-
-    const segments = getSegmentsForStorageKey(storageKey);
-
-    if (segments && segments.length > 0) {
-      data.push({
-        name: provider,
-        segment: segments
-      });
-    }
-  }
-
-  if (data.length === 0) {
+  if (!segments || segments.length === 0) {
     callback();
     return;
   }
 
   const updated = {
     user: {
-      data
+      data: [
+        {
+          name: MODULE_NAME,
+          segment: segments
+        }
+      ]
     }
   };
 
@@ -143,7 +134,6 @@ function getSegmentsForStorageKey(key) {
 /** @type {RtdSubmodule} */
 export const agenticAudienceAdapterSubmodule = {
   name: MODULE_NAME,
-  gvlid: VENDORLESS_GVLID,
   init,
   getBidRequestData
 };
