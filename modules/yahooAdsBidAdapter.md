@@ -253,9 +253,12 @@ const adUnits = [{
 ```
 
 # OpenRTB 2.6 Support
-The Yahoo Advertising bid adapter now supports OpenRTB 2.6 protocol. This upgrade includes enhanced privacy controls, improved content classification, and support for video pod advertising. The adapter maintains full backward compatibility with OpenRTB 2.5 configurations.
+The Yahoo Advertising bid adapter supports OpenRTB 2.6 protocol. This includes enhanced privacy controls, improved content classification, top-level field promotions, and support for video pod advertising.
 
 ## New Features in OpenRTB 2.6:
+
+### Protocol Version Header
+All requests include the header `x-openrtb-version: 2.6` to signal the protocol version to the bid endpoint.
 
 ### Category Taxonomy (cattax)
 Specify which content category taxonomy to use:
@@ -298,7 +301,7 @@ pbjs.setConfig({
 **Note:** Prebid.js automatically populates this when User-Agent Client Hints are available in the browser.
 
 ### Enhanced Content Metadata
-Content network and channel now support rich object metadata:
+Content network and channel are now rich objects (previously strings in OpenRTB 2.5):
 ```javascript
 pbjs.setConfig({
     ortb2: {
@@ -319,7 +322,6 @@ pbjs.setConfig({
     }
 });
 ```
-**Note:** String values are automatically converted to objects for backward compatibility.
 
 ### User Keywords Array
 Pass user-specific keywords as an array:
@@ -332,6 +334,53 @@ pbjs.setConfig({
     }
 });
 ```
+
+### Privacy & Consent (regs)
+In OpenRTB 2.6, privacy and consent fields are at the top-level of the `regs` object:
+
+| Field           | Description                                     |
+|-----------------|-------------------------------------------------|
+| regs.gdpr       | GDPR applies flag (1 = applies, 0 = does not)   |
+| regs.us_privacy | US Privacy string (CCPA)                        |
+| regs.gpp        | Global Privacy Platform consent string          |
+| regs.gpp_sid    | GPP applicable section IDs                      |
+| regs.coppa      | COPPA flag (1 = subject to COPPA, 0 = not)      |
+
+These fields are automatically populated by Prebid's CMP and GPP consent modules. You can also set them via `ortb2`:
+```javascript
+pbjs.setConfig({
+    ortb2: {
+        regs: {
+            gdpr: 1,
+            us_privacy: '1YNN',
+            gpp: 'DBABMA~CPXxRfAPXwgAAAAAEXABAAAAAAAAAAA',
+            gpp_sid: [7]
+        }
+    }
+});
+```
+
+### COPPA Support
+The adapter supports the Children's Online Privacy Protection Act (COPPA) flag via `regs.coppa`. Set it using Prebid's global `coppa` config, which Prebid automatically maps to `ortb2.regs.coppa` before calling `buildRequests`:
+```javascript
+pbjs.setConfig({ coppa: true });
+```
+This results in `regs.coppa: 1` in the outbound OpenRTB request. Set `coppa: false` to explicitly send `regs.coppa: 0`.
+
+### Supply Chain Object (source.schain)
+In OpenRTB 2.6 the supply chain is carried in `source.schain` (top-level, not in `ext`). The adapter reads the schain from the Prebid Schain module and maps it to `source.schain` automatically. See the [Schain module section](#optional-schain-module-support) for configuration examples.
+
+### User Consent & Identity
+User-level consent and identity fields are at the top-level of the `user` object in OpenRTB 2.6:
+
+| Field         | Description                                                    |
+|---------------|----------------------------------------------------------------|
+| user.consent  | GDPR consent string — set automatically by Prebid's CMP module |
+| user.eids     | Extended ID arrays — set automatically by Prebid's User ID modules |
+
+These are populated by Prebid modules and do not require manual configuration.
+
+The adapter passes EIDs from the following supported User ID sources: `admixer.net`, `adserver.org`, `adtelligent.com`, `amxdt.net`, `audigent.com`, `britepool.com`, `criteo.com`, `crwdcntrl.net`, `deepintent.com`, `epsilon.com`, `hcn.health`, `id5-sync.com`, `idx.lat`, `intentiq.com`, `intimatemerger.com`, `liveintent.com`, `liveramp.com`, `mediawallahscript.com`, `merkleinc.com`, `netid.de`, `neustar.biz`, `nextroll.com`, `novatiq.com`, `pubcid.org`, `quantcast.com`, `tapad.com`, `uidapi.com`, `yahoo.com`, `zeotap.com`.
 
 # Optional: Schain module support
 The Yahoo Advertising bid adapter supports the Prebid.org Schain module and will pass it through to our bid endpoint.
@@ -581,6 +630,7 @@ pbjs.setConfig({
                     yob: 1985,
                     gender: 'm',
                     keywords: 'a,b',
+                    kwarray: ['tech-enthusiast', 'mobile-gamer'],  // OpenRTB 2.6 top-level
                     data: [{
                             name: "www.dataprovider1.com",
                             ext: { segtax: 4 },
@@ -599,6 +649,20 @@ pbjs.setConfig({
             }
         });
 ```
+
+Notes: The first party user info is filtered and only the following specific keys are allowed in the bidRequests:
+
+| Field                       | Type   |
+|-----------------------------|--------|
+| user.yob                    | Number |
+| user.gender                 | String |
+| user.keywords               | String |
+| user.kwarray                | Array  |
+| user.consent                | String |
+| user.eids                   | Array  |
+| user.data                   | Array  |
+| user.ext                    | Object |
+
 ### Passing First Party "app.content.data" data:
 ```javascript
 pbjs.setConfig({
@@ -644,7 +708,34 @@ const adUnits = [{
                 bids: [{
                     bidder: 'yahooAds',
                     params: {
-                        pubdId: 'DemoPublisher'
+                        pubId: 'DemoPublisher'
+                    }
+                }]
+            }
+        ]
+```
+
+In OpenRTB 2.6, ad unit specific data can also be passed directly via `ortb2Imp.data` (top-level, without the `ext` wrapper):
+```javascript
+const adUnits = [{
+                code: 'placement',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [300, 250]
+                        ]
+                    },
+                },
+                ortb2Imp: {
+                    data: {
+                        pbadslot: "homepage-top-rect",
+                        adUnitSpecificAttribute: "123"
+                    }
+                },
+                bids: [{
+                    bidder: 'yahooAds',
+                    params: {
+                        pubId: 'DemoPublisher'
                     }
                 }]
             }
@@ -708,6 +799,12 @@ Currently the bidOverride object only accepts the following:
     * linearity
     * protocols
     * rewarded
+    * podid
+    * podseq
+    * maxseq
+    * poddur
+    * slotinpod
+    * mincpmpersec
 * site
   * page
 * device
