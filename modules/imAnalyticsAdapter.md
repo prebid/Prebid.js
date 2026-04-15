@@ -3,6 +3,7 @@
 ```
 Module Name: IM Analytics Adapter
 Module Type: Analytics Adapter
+Maintainer: Intimate Merger
 ```
 
 #### About
