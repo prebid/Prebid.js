@@ -52,7 +52,8 @@ export function fetchCeeIdToken(requestData) {
             reject(error);
           }
         },
-        error: (error) => {
+        error: (statusText, xhr) => {
+          const error = statusText || 'Network Error';
           logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
           reject(error);
         }
