@@ -1522,8 +1522,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
       ];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(1);
-      expect(requests[0].data).to.be.an('array');
-      expect(requests[0].data).to.have.lengthOf(3);
+      expect(requests[0].data.bids).to.be.an('array');
+      expect(requests[0].data.bids).to.have.lengthOf(3);
     });
 
     it('should send video bids individually even in singleRequest mode', function () {
@@ -1538,10 +1538,10 @@ describe('Vidazoo Bidder Utils Tests', function () {
         makeBid({ bidId: 'video-2', mediaTypes: { video: { playerSize: [[640, 480]] } } })
       ];
       const requests = buildRequests(bids, baseBidderRequest);
-      const bannerRequests = requests.filter(r => Array.isArray(r.data));
-      const videoRequests = requests.filter(r => !Array.isArray(r.data));
+      const bannerRequests = requests.filter(r => Array.isArray(r.data?.bids));
+      const videoRequests = requests.filter(r => !Array.isArray(r.data?.bids));
       expect(bannerRequests).to.have.lengthOf(1);
-      expect(bannerRequests[0].data).to.have.lengthOf(1);
+      expect(bannerRequests[0].data.bids).to.have.lengthOf(1);
       expect(videoRequests).to.have.lengthOf(2);
     });
 
@@ -1585,9 +1585,9 @@ describe('Vidazoo Bidder Utils Tests', function () {
       ];
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(3);
-      expect(requests[0].data).to.have.lengthOf(2);
-      expect(requests[1].data).to.have.lengthOf(2);
-      expect(requests[2].data).to.have.lengthOf(1);
+      expect(requests[0].data.bids).to.have.lengthOf(2);
+      expect(requests[1].data.bids).to.have.lengthOf(2);
+      expect(requests[2].data.bids).to.have.lengthOf(1);
     });
 
     it('should cap chunkSize at 20', function () {
@@ -1600,8 +1600,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
       const bids = Array.from({ length: 25 }, (_, i) => makeBid({ bidId: `bid-${i}` }));
       const requests = buildRequests(bids, baseBidderRequest);
       expect(requests).to.have.lengthOf(2);
-      expect(requests[0].data).to.have.lengthOf(20);
-      expect(requests[1].data).to.have.lengthOf(5);
+      expect(requests[0].data.bids).to.have.lengthOf(20);
+      expect(requests[1].data.bids).to.have.lengthOf(5);
     });
 
     it('should include host in URL when params.host is a valid two-part domain', function () {
@@ -1622,7 +1622,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       });
       const buildRequests = utilities.createBuildRequestsFn(createDomainSpy, null, storageMock, 'tagoras', '1.0.0', false);
       const bid = makeBid({ params: { cId: 'my-cid', pId: 'my-pid', host: 'invalid' } });
-      const requests = buildRequests([bid], baseBidderRequest);
+      buildRequests([bid], baseBidderRequest);
       expect(createDomainSpy.calledOnce).to.be.true;
       expect(createDomainSpy.firstCall.args.length).to.equal(1);
     });
