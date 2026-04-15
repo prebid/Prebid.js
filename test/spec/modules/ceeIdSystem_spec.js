@@ -1,7 +1,7 @@
 import { ceeIdSubmodule, storage, readId, fetchCeeIdToken } from 'modules/ceeIdSystem.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { logError } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 
 describe('ceeIdSystem', () => {
@@ -137,16 +137,15 @@ describe('ceeIdSystem', () => {
       };
       const responseBody = JSON.stringify({});
 
-      fetchCeeIdToken(requestData).then(() => {
+      const tokenPromise = fetchCeeIdToken(requestData);
+      const request = server.requests[0];
+      request.respond(200, { 'Content-Type': 'application/json' }, responseBody);
+
+      return tokenPromise.then(() => {
         throw new Error('Promise should not be resolved');
       }).catch((error) => {
         expect(error.message).to.equal('No token in response');
       });
-
-      setTimeout(() => {
-        const request = server.requests[0];
-        request.respond(200, { 'Content-Type': 'application/json' }, responseBody);
-      }, 0);
     });
 
     it('should reject if the response is not valid JSON', () => {
@@ -161,20 +160,19 @@ describe('ceeIdSystem', () => {
       };
       const responseBody = 'Invalid JSON';
 
-      fetchCeeIdToken(requestData).then(() => {
+      const tokenPromise = fetchCeeIdToken(requestData);
+      const request = server.requests[0];
+      expect(request).to.not.be.undefined;
+      request.respond(400, { 'Content-Type': 'application/json' }, responseBody);
+
+      return tokenPromise.then(() => {
         throw new Error('Promise should not be resolved');
       }).catch((error) => {
-        expect(error.message).to.equal('Unexpected token I in JSON at position 0');
+        expect(error).to.equal('Bad Request');
       });
-
-      setTimeout(() => {
-        const request = server.requests[0];
-        expect(request).to.not.be.undefined;
-        request.respond(400, { 'Content-Type': 'application/json' }, responseBody);
-      }, 0);
     });
 
-    it('should reject if the request encounters an error', (done) => {
+    it('should reject if the request encounters an error', async () => {
       const consentString = 'testConsentString';
       const requestData = {
         publisherId: 'testPublisher',
@@ -185,43 +183,37 @@ describe('ceeIdSystem', () => {
         },
       };
 
-      fetchCeeIdToken(requestData).then(() => {
+      const tokenPromise = fetchCeeIdToken(requestData);
+      const request = server.requests[0];
+      expect(request).to.not.be.undefined;
+      request.error();
+
+      await tokenPromise.then(() => {
         throw new Error('Promise should not be resolved');
       }).catch((error) => {
-        expect(error.message).to.equal('Network Error');
+        expect(error).to.equal('Network Error');
       });
-
-      setTimeout(() => {
-        const request = server.requests[0];
-        expect(request).to.not.be.undefined;
-        request.error();
-        done();
-      }, 0);
     });
 
-    it('should handle fetchCeeIdToken network error and log it', (done) => {
+    it('should handle fetchCeeIdToken network error and log it', async () => {
       const requestData = {
         publisherId: 'testPublisher',
         type: 'testType',
         value: 'testValue'
       };
-      const logErrorSpy = sinon.spy(logError);
+      const logErrorSpy = sandbox.spy(utils, 'logError');
+      const tokenPromise = fetchCeeIdToken(requestData);
+      const request = server.requests[0];
+      expect(request).to.not.be.undefined;
+      request.error();
 
-      fetchCeeIdToken(requestData).then(() => {
+      await tokenPromise.then(() => {
         throw new Error('Promise should not be resolved');
       }).catch((error) => {
-        expect(error.message).to.equal('Network Error');
+        expect(error).to.equal('Network Error');
         expect(logErrorSpy.calledOnce).to.be.true;
-        expect(logErrorSpy.calledWith(`${MODULE_NAME}: ID fetch encountered an error`, sinon.match.instanceOf(Error))).to.be.true;
-        done();
+        expect(logErrorSpy.calledWith(`${MODULE_NAME}: ID fetch encountered an error`, 'Network Error')).to.be.true;
       });
-
-      setTimeout(() => {
-        const request = server.requests[0];
-        expect(request).to.not.be.undefined;
-        request.error();
-        done();
-      }, 0);
     });
   });
 
