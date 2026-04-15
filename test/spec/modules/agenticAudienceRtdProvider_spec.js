@@ -1,9 +1,9 @@
 import {
-  agenticAudienceAdapterSubmodule,
+  agenticAudienceRtdProviderSubmodule,
   DEFAULT_STORAGE_KEY,
   mapEntryToOpenRtbSegment,
   storage
-} from 'modules/agenticAudienceAdapter.js';
+} from 'modules/agenticAudienceRtdProvider.js';
 
 /** Test fixture: OpenRTB Float32 LE base64 (module expects pre-encoded storage only). */
 function vectorBase64Fixture(arr) {
@@ -16,7 +16,7 @@ function vectorBase64Fixture(arr) {
   return btoa(binary);
 }
 
-describe('agenticAudienceAdapter', function () {
+describe('agenticAudienceRtdProvider', function () {
   let sandbox;
   let reqBidsConfigObj;
   let storageGetLocalStub;
@@ -103,8 +103,8 @@ describe('agenticAudienceAdapter', function () {
 
   describe('init', function () {
     it('returns true regardless of params', function () {
-      expect(agenticAudienceAdapterSubmodule.init({})).to.equal(true);
-      expect(agenticAudienceAdapterSubmodule.init({ params: { storageKey: '_custom_' } })).to.equal(true);
+      expect(agenticAudienceRtdProviderSubmodule.init({})).to.equal(true);
+      expect(agenticAudienceRtdProviderSubmodule.init({ params: { storageKey: '_custom_' } })).to.equal(true);
     });
   });
 
@@ -115,7 +115,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.withArgs(DEFAULT_STORAGE_KEY).returns(encodeData({ entries: [validEntry] }));
       storageGetCookieStub.returns(null);
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.have.length(1);
@@ -131,7 +131,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.withArgs('_custom_agentic_').returns(encodeData({ entries: [validEntry] }));
       storageGetCookieStub.returns(null);
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].name).to.equal('agenticAudience');
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
@@ -145,7 +145,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.withArgs(DEFAULT_STORAGE_KEY).returns(encodeData({ entries: [validEntry] }));
       storageGetCookieStub.returns(null);
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
         mapEntryToOpenRtbSegment(validEntry)
@@ -158,7 +158,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.withArgs(DEFAULT_STORAGE_KEY).returns(null);
       storageGetCookieStub.returns(null);
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
@@ -170,7 +170,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.withArgs(DEFAULT_STORAGE_KEY).returns(encodeData({ entries: [] }));
       storageGetCookieStub.returns(null);
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
@@ -182,7 +182,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.returns(null);
       storageGetCookieStub.withArgs(DEFAULT_STORAGE_KEY).returns(encodeData({ entries: [validEntry] }));
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.deep.equal([
         mapEntryToOpenRtbSegment(validEntry)
@@ -197,7 +197,7 @@ describe('agenticAudienceAdapter', function () {
       storageGetLocalStub.withArgs(DEFAULT_STORAGE_KEY).returns(encodeData({ entries: [validEntry] }));
       storageGetCookieStub.returns(null);
 
-      agenticAudienceAdapterSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
+      agenticAudienceRtdProviderSubmodule.getBidRequestData(reqBidsConfigObj, callback, config);
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.have.length(1);
       const dataObj = reqBidsConfigObj.ortb2Fragments.global.user.data[0];
