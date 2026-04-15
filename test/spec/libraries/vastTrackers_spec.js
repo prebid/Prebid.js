@@ -2,7 +2,7 @@ import {
   getVastTrackers,
   insertVastTrackers,
   registerVastTrackers,
-  reset, cacheVideoBidHook,
+  reset, updateVastHook,
   disable,
   getTrackersFromBidResponse
 } from 'libraries/vastTrackers/vastTrackers.js';
@@ -107,7 +107,7 @@ describe('vast trackers', () => {
 
   if (FEATURES.VIDEO) {
     it('should add trackers to bid response', () => {
-      cacheVideoBidHook({ index })(sinon.stub(), 'au', bid);
+      updateVastHook({ index })(sinon.stub(), bid);
       expect(bid.vastTrackers).to.be.an('object');
       expect(bid.vastTrackers.impression).to.eql([
         'https://vasttracking.mydomain.com/vast?cpm=1'
