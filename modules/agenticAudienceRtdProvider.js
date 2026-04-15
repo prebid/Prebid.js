@@ -11,7 +11,7 @@
  * Each segment has optional `id`/`name` and `ext.aa` with `ver`, `vector`, `dimension`, `model`, `type`.
  * Storage is read from the default key (see `DEFAULT_STORAGE_KEY` export) unless `params.storageKey` is set.
  *
- * @module modules/agenticAudienceAdapter
+ * @module modules/agenticAudienceRtdProvider
  * @requires module:modules/realTimeData
  */
 
@@ -132,10 +132,10 @@ function getSegmentsForStorageKey(key) {
 }
 
 /** @type {RtdSubmodule} */
-export const agenticAudienceAdapterSubmodule = {
+export const agenticAudienceRtdProviderSubmodule = {
   name: MODULE_NAME,
   init,
   getBidRequestData
 };
 
-submodule(REAL_TIME_MODULE, agenticAudienceAdapterSubmodule);
+submodule(REAL_TIME_MODULE, agenticAudienceRtdProviderSubmodule);
