@@ -344,6 +344,34 @@ describe('imAnalyticsAdapter', function() {
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(0);
       });
+
+      it('should send BID_WON immediately when it arrives after timer fired with no bids', function() {
+        const clock = sandbox.useFakeTimers();
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-1', bidderRequests: [] }
+        });
+        requests = [];
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_END,
+          args: { auctionId: 'auc-1' }
+        });
+
+        // timer fires with no bids
+        clock.tick(BID_WON_TIMEOUT + 10);
+        expect(requests.length).to.equal(0);
+
+        // late BID_WON arrives after timer
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, requestId: 'req-1' }
+        });
+
+        expect(requests.length).to.equal(1);
+        expect(requests[0].url).to.include('/won');
+      });
     });
   });
 });

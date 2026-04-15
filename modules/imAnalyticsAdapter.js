@@ -139,7 +139,7 @@ const imAnalyticsAdapter = Object.assign(
         clearTimer(auction.wonBidsTimer);
         auction.wonBidsTimer = setTimeout(() => {
           this.sendWonBidsData(auctionId);
-        }, getBidWonTimeout(this.options));
+        }, getWaitTimeout(this.options));
       }
     },
 
@@ -244,14 +244,19 @@ const imAnalyticsAdapter = Object.assign(
      */
     sendWonBidsData(auctionId) {
       const auction = cache.auctions[auctionId];
-      if (!auction || auction.wonBids.length === 0) {
+      if (!auction) {
+        return;
+      }
+
+      auction.wonSent = true;
+      auction.wonBidsTimer = null;
+
+      if (auction.wonBids.length === 0) {
         return;
       }
 
       const consent = auction.consentData;
       const ts = auction.auctionInitTimestamp || Date.now();
-      auction.wonSent = true;
-      auction.wonBidsTimer = null;
       const bids = auction.wonBids;
       const uid = auction.imUid;
       auction.wonBids = [];
