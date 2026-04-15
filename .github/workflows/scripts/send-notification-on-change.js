@@ -22,8 +22,8 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
       }),
     });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(JSON.stringify(errorData));
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`OAuth token request failed: ${response.status} ${response.statusText} - ${errorBody}`);
     }
     const data = await response.json();
     return data.access_token;
@@ -62,21 +62,28 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
         return { regex: new RegExp(regex), email };
       });
 
-    // Fetch changed files from github
+    // Fetch all changed files from github (paginated)
     const [owner, repoName] = repo.split('/');
-    const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files`;
-    const response = await fetch(apiUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`GitHub API request failed with status ${response.status}`);
-    }
-    const data = await response.json();
+    const changedFiles = [];
+    let url = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files?per_page=100`;
+    while (url) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      changedFiles.push(...data.map(file => file.filename));
 
-    const changedFiles = data.map(file => file.filename);
+      // Follow pagination via Link header
+      const link = response.headers.get('link') || '';
+      const next = link.match(/<([^>]+)>;\s*rel="next"/);
+      url = next ? next[1] : null;
+    }
     console.log('Changed files:', changedFiles);
 
     // match file pathnames that are in the config and group them by email address

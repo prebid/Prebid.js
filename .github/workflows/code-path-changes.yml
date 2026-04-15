@@ -30,7 +30,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install nodemailer
+        run: npm install nodemailer@8.0.5
 
       - name: Run Notification Script
         run: |
