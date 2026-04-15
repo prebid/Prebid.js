@@ -15,7 +15,7 @@ const cache = {
 /**
  * Get CID from adapter options
  * @param {Object} options - Adapter options
- * @returns {string} CID or default value
+ * @returns {string|number} CID or default value
  */
 function getCid(options) {
   return (options && options.cid) || DEFAULT_CID;
