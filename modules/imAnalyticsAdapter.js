@@ -27,12 +27,14 @@ function getCid(options) {
  * @returns {number} Timeout in ms or default value
  */
 function getWaitTimeout(options) {
-  return (options && options.waitTimeout) || DEFAULT_BID_WON_TIMEOUT;
+  const waitTimeout = options && options.waitTimeout;
+  return (typeof waitTimeout === 'number' && waitTimeout >= 0)
+    ? waitTimeout
+    : DEFAULT_BID_WON_TIMEOUT;
 }
 
 /**
  * Build API URL with CID from options
- * @param {Object} options - Adapter options
  * @param {string} endpoint - Endpoint path
  * @returns {string} Full API URL
  */
