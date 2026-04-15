@@ -203,7 +203,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests[0].url).to.include('/won');
       });
 
-      it('should send subsequent won bids immediately', function() {
+      it('should drop BID_WON for an auction whose cache entry has been cleaned up', function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -222,15 +222,17 @@ describe('imAnalyticsAdapter', function() {
           args: { auctionId: 'auc-1' }
         });
 
+        // initial batch sends and deletes cache entry
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(1);
 
+        // BID_WON after cache cleanup is dropped
         imAnalyticsAdapter.track({
           eventType: EVENTS.BID_WON,
           args: { ...bidWonArgs, requestId: 'req-2' }
         });
 
-        expect(requests.length).to.equal(2);
+        expect(requests.length).to.equal(1);
       });
 
       it('should deduplicate won bids with same requestId', function() {
@@ -345,7 +347,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests.length).to.equal(0);
       });
 
-      it('should send BID_WON immediately when it arrives after timer fired with no bids', function() {
+      it('should drop BID_WON that arrives after timer fired with no bids', function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -359,19 +361,73 @@ describe('imAnalyticsAdapter', function() {
           args: { auctionId: 'auc-1' }
         });
 
-        // timer fires with no bids
+        // timer fires with no bids, cache entry is deleted
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(0);
 
-        // late BID_WON arrives after timer
+        // late BID_WON is dropped after cache cleanup
         imAnalyticsAdapter.track({
           eventType: EVENTS.BID_WON,
           args: { ...bidWonArgs, requestId: 'req-1' }
         });
 
-        expect(requests.length).to.equal(1);
-        expect(requests[0].url).to.include('/won');
+        expect(requests.length).to.equal(0);
       });
+    });
+  });
+
+  describe('disableAnalytics', function() {
+    it('should clear pending timers and reset cache', function() {
+      const clock = sandbox.useFakeTimers();
+
+      imAnalyticsAdapter.enableAnalytics({
+        provider: 'imAnalytics',
+        options: { cid: 5126 }
+      });
+
+      imAnalyticsAdapter.track({
+        eventType: EVENTS.AUCTION_INIT,
+        args: { auctionId: 'auc-1', bidderRequests: [] }
+      });
+      imAnalyticsAdapter.track({
+        eventType: EVENTS.BID_WON,
+        args: { auctionId: 'auc-1', bidderCode: 'rubicon', requestId: 'req-1', meta: {} }
+      });
+      imAnalyticsAdapter.track({
+        eventType: EVENTS.AUCTION_END,
+        args: { auctionId: 'auc-1' }
+      });
+      requests = [];
+
+      // disable before timer fires
+      imAnalyticsAdapter.disableAnalytics();
+
+      // timer would have fired here, but should be cancelled
+      clock.tick(BID_WON_TIMEOUT + 10);
+      expect(requests.length).to.equal(0);
+
+      // re-enable and verify no stale state
+      imAnalyticsAdapter.enableAnalytics({
+        provider: 'imAnalytics',
+        options: { cid: 5126 }
+      });
+      imAnalyticsAdapter.track({
+        eventType: EVENTS.AUCTION_INIT,
+        args: { auctionId: 'auc-1', bidderRequests: [] }
+      });
+      requests = [];
+
+      imAnalyticsAdapter.track({
+        eventType: EVENTS.BID_WON,
+        args: { auctionId: 'auc-1', bidderCode: 'rubicon', requestId: 'req-2', meta: {} }
+      });
+      imAnalyticsAdapter.track({
+        eventType: EVENTS.AUCTION_END,
+        args: { auctionId: 'auc-1' }
+      });
+
+      clock.tick(BID_WON_TIMEOUT + 10);
+      expect(requests.length).to.equal(1);
     });
   });
 });

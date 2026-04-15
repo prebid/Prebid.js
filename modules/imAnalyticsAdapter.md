@@ -20,6 +20,7 @@ By enabling this adapter, you agree to Intimate Merger's privacy policy at
 
 #### Analytics Options
 
+{: .table .table-bordered .table-striped }
 | Parameter | Scope | Type | Example | Description |
 |-----------|-------|------|---------|-------------|
 | `cid` | required | number | 5126 | The Customer ID provided by Intimate Merger. |

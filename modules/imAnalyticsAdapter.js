@@ -8,7 +8,6 @@ const DEFAULT_BID_WON_TIMEOUT = 1500; // 1.5 second for initial batch
 const DEFAULT_CID = 5126;
 const API_BASE_URL = 'https://b6.im-apps.net/bid';
 
-
 const cache = {
   auctions: {}
 };
@@ -23,7 +22,7 @@ function getCid(options) {
 }
 
 /**
- * Get Bid Won Timeout from adapter options
+ * Get wait timeout from adapter options
  * @param {Object} options - Adapter options
  * @returns {number} Timeout in ms or default value
  */
@@ -163,6 +162,7 @@ const imAnalyticsAdapter = Object.assign(
     /**
      * Handle auction init data - send immediately for PV tracking
      * @param {Object} args - Auction arguments
+     * @param {string} uid - IM-UID value
      * @param {Object} consent - Consent data
      */
     handleAucInitData(args, uid, consent) {
@@ -252,6 +252,7 @@ const imAnalyticsAdapter = Object.assign(
       auction.wonBidsTimer = null;
 
       if (auction.wonBids.length === 0) {
+        delete cache.auctions[auctionId];
         return;
       }
 
@@ -259,7 +260,7 @@ const imAnalyticsAdapter = Object.assign(
       const ts = auction.auctionInitTimestamp || Date.now();
       const bids = auction.wonBids;
       const uid = auction.imUid;
-      auction.wonBids = [];
+      delete cache.auctions[auctionId];
       sendToApi(buildApiUrlWithOptions(this.options, 'won', auctionId), {
         bids,
         ts,
@@ -275,6 +276,13 @@ imAnalyticsAdapter.enableAnalytics = function(config) {
   this.options = (config && config.options) || {};
   logMessage('IM Analytics: enableAnalytics called with cid:', this.options.cid);
   originalEnableAnalytics.call(this, config);
+};
+
+const originalDisableAnalytics = imAnalyticsAdapter.disableAnalytics;
+imAnalyticsAdapter.disableAnalytics = function() {
+  Object.values(cache.auctions).forEach(auction => clearTimer(auction.wonBidsTimer));
+  cache.auctions = {};
+  originalDisableAnalytics.call(this);
 };
 
 adapterManager.registerAnalyticsAdapter({
