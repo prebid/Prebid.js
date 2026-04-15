@@ -145,7 +145,6 @@ const R2B2_AD_UNIT_2_BID = {
   'bidderCode': 'r2b2',
   'width': 300,
   'height': 100,
-  'statusMessage': 'Bid available',
   'adId': '22c828c62d44da5',
   'requestId': '3c296eca6b08f4',
   'transactionId': 'c8c3643c-9de0-43ea-bcd6-cc0072ec9b45',

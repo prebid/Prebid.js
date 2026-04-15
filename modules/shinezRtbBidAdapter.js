@@ -4,7 +4,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   createBuildRequestsFn,
-  createInterpretResponseFn, createUserSyncGetter
+  createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -32,7 +32,9 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onBidBillable,
 };
 
 registerBidder(spec);
