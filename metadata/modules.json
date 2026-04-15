@@ -829,6 +829,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adsmartx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adsmovil",
       "aliasOf": null,
       "gvlid": null,
@@ -1217,6 +1224,13 @@
       "componentName": "apester",
       "aliasOf": null,
       "gvlid": 354,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "appMonstaMedia",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2743,7 +2757,7 @@
       "componentName": "jixie",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/jixieBidAdapterDisclosure.json"
     },
     {
       "componentType": "bidder",
@@ -5287,6 +5301,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "agenticAudience",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "airgrid",
       "gvlid": 101,
       "disclosureURL": null
@@ -5813,7 +5833,7 @@
       "componentType": "userId",
       "componentName": "jixieId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/jixieIdSystemDisclosure.json",
       "aliasOf": null
     },
     {
