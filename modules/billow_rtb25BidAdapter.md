@@ -65,7 +65,7 @@ Browser-side calls to the bid endpoint require CORS on the Billowlink server if 
 | Name           | Scope    | Type   | Description |
 |----------------|----------|--------|-------------|
 | `placementId`  | Required | String or Number | Placement ID on the Billowlink side; sent as OpenRTB `imp.tagid`. |
-| `endpoint`     | Optional | String | Overrides the default bid URL (e.g. staging or local `http://127.0.0.1:8604/api/rtb/adsWeb`). If omitted, the production default below is used. |
+| `endpoint`     | Optional | String | Overrides the default bid URL (e.g. staging or local `https://adx-sg.billowlink.com/api/rtb/adsWeb`). If omitted, the production default below is used. |
 
 **Default endpoint:** `https://adx-sg.billowlink.com/api/rtb/adsWeb`
 

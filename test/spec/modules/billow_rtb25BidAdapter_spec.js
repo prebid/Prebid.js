@@ -137,7 +137,7 @@ describe('billow_rtb25BidAdapter', function () {
         });
 
         it('should use params.endpoint from the first bid when provided', function () {
-            const customUrl = 'http://127.0.0.1:8604/api/rtb/adsWeb';
+            const customUrl = 'https://adx-sg.billowlink.com/api/rtb/adsWeb';
             const bid = makeBannerBid({
                 params: {placementId: 'p1', endpoint: customUrl},
             });
