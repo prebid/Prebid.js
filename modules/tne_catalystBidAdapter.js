@@ -66,11 +66,13 @@ export const spec = {
 
       if (mediaTypes[VIDEO]) {
         const video = mediaTypes[VIDEO];
+        const playerSize = video.playerSize;
+        const videoSize = playerSize ? (isArray(playerSize[0]) ? playerSize[0] : playerSize) : null;
         imp.video = {
           mimes: video.mimes || ['video/mp4'],
           protocols: video.protocols || [2, 3, 5, 6],
-          w: video.playerSize ? video.playerSize[0][0] : undefined,
-          h: video.playerSize ? video.playerSize[0][1] : undefined,
+          w: videoSize ? videoSize[0] : undefined,
+          h: videoSize ? videoSize[1] : undefined,
           minduration: video.minduration,
           maxduration: video.maxduration,
           startdelay: video.startdelay,
