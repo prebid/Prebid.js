@@ -35,7 +35,9 @@ function getWaitTimeout(options) {
 
 /**
  * Build API URL with CID from options
+ * @param {Object} options - Adapter options
  * @param {string} endpoint - Endpoint path
+ * @param {string} auctionId - Auction ID
  * @returns {string} Full API URL
  */
 function buildApiUrlWithOptions(options, endpoint, auctionId) {
