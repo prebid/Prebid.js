@@ -1,6 +1,6 @@
-import { getWinDimensions, logInfo } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getWinDimensions, logInfo} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,7 +22,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-export const storage = getStorageManager({ bidderCode: CONSTANTS.BIDDER_CODE });
+export const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -225,7 +225,7 @@ function buildRequest(bidRequests, bidderRequest) {
     method: CONSTANTS.METHOD,
     url: endpoint,
     data: data,
-    options: { withCredentials: true },
+    options: {withCredentials: true},
     // for POST: { contentType: 'application/json', withCredentials: true }
     bidRequests: bidRequests
   };
@@ -621,12 +621,22 @@ function readGdprConsent(gdprConsent, usConsent) {
 
     const invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
     const vendorConsents = getVendorConsents(gdprConsent.vendorData);
-    const vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true;
+    let vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true;
+
     if (vendorConsents == null || vendorConsents[invibesVendorId] == null) {
       return 4;
     }
 
-    if (vendorConsents[invibesVendorId] === false && vendorHasLegitimateInterest === false) {
+    const disclosedDecision = getDisclosedVendorDecision(gdprConsent.vendorData, invibesVendorId);
+
+    let vendorHasConsent = vendorConsents[invibesVendorId] === true;
+
+    if (disclosedDecision === false) {
+      vendorHasConsent = false;
+      vendorHasLegitimateInterest = false;
+    }
+
+    if (vendorHasConsent === false && vendorHasLegitimateInterest === false) {
       return 0;
     }
 
@@ -641,6 +651,31 @@ function readGdprConsent(gdprConsent, usConsent) {
 
   setAllPurposesAndLegitimateInterests(false);
   return 0;
+}
+
+function getDisclosedVendorDecision(vendorData, vendorIdStr) {
+  const disclosedMap = getVendorDisclosedVendors(vendorData);
+  if (disclosedMap == null) return null;
+
+  try {
+    if (typeof disclosedMap === 'object' && disclosedMap !== null && Object.keys(disclosedMap).length === 0) {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
+
+  return disclosedMap[vendorIdStr] === true;
+}
+
+function getVendorDisclosedVendors(vendorData) {
+  if (vendorData?.vendors?.disclosedVendors) return vendorData.vendors.disclosedVendors;
+
+  if (vendorData?.vendor?.disclosedVendors) return vendorData.vendor.disclosedVendors;
+
+  if (vendorData?.disclosedVendors) return vendorData.disclosedVendors;
+
+  return null;
 }
 
 function setAllPurposesAndLegitimateInterests(value) {
