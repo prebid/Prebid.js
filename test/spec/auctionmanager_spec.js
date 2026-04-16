@@ -12,7 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import { _internal as store, callPrebidCache, updateVast } from 'src/videoCache.js';
+import { _internal as store, updateVast } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../src/hook.js';
@@ -1179,7 +1179,7 @@ describe('auctionmanager.js', function () {
               vastXml: 'mock-vast'
             })];
             spec.interpretResponse.returns(bids);
-            const pm =  new Promise((resolve, reject) => {
+            const pm = new Promise((resolve, reject) => {
               updateVastHook.callsFake((next, bid) => {
                 try {
                   sinon.assert.calledWith(events.emit, EVENTS.BID_ACCEPTED, bid);
