@@ -24,7 +24,7 @@ By enabling this adapter, you agree to Intimate Merger's privacy policy at
 {: .table .table-bordered .table-striped }
 | Parameter | Scope | Type | Example | Description |
 |-----------|-------|------|---------|-------------|
-| `cid` | required | number | 5126 | The Customer ID provided by Intimate Merger. |
+| `cid` | optional | number | 5126 | The Customer ID provided by Intimate Merger. |
 | `waitTimeout` | optional | number | 1500 | Wait time in milliseconds before sending batched requests. (Default: 1500)  |
 
 #### Example Configuration
@@ -33,7 +33,7 @@ By enabling this adapter, you agree to Intimate Merger's privacy policy at
 pbjs.enableAnalytics({
     provider: 'imAnalytics',
     options: {
-        /* Required: Customer ID */
+        /* Optional: Customer ID */
         cid: 5126,
         /* Optional: Wait 2 seconds */
         waitTimeout: 2000
