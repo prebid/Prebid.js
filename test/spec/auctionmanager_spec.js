@@ -12,7 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import { _internal as store } from 'src/videoCache.js';
+import { _internal as store, callPrebidCache, updateVast } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../src/hook.js';
@@ -1154,6 +1154,47 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting[TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
+
+      if (FEATURES.VIDEO) {
+        describe('BID_ACCEPTED', () => {
+          let updateVastHook, sandbox;
+          before(() => {
+            sandbox = sinon.createSandbox();
+            sandbox.stub(events, 'emit');
+            updateVastHook = sinon.stub();
+            updateVast.before(updateVastHook);
+            config.setConfig({
+              cache: {
+                useLocal: true,
+              }
+            });
+          });
+          after(() => {
+            updateVast.getHooks({ hook: updateVastHook }).remove();
+            sandbox.restore();
+          });
+          it('should be fired before video caching', () => {
+            bids = [Object.assign(bids[0], {
+              mediaType: 'video',
+              vastXml: 'mock-vast'
+            })];
+            spec.interpretResponse.returns(bids);
+            const pm =  new Promise((resolve, reject) => {
+              updateVastHook.callsFake((next, bid) => {
+                try {
+                  sinon.assert.calledWith(events.emit, EVENTS.BID_ACCEPTED, bid);
+                  resolve()
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            })
+            auction.callBids();
+            return pm;
+          });
+        });
+      }
+
       it('should add the bidResponse to the collection before calling BID_RESPONSE', function () {
         let hasBid = false;
         const eventHandler = function(bid) {
