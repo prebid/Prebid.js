@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { generateUUID, deepAccess, isArray } from '../src/utils.js';
+import { generateUUID, deepAccess, isArray, isFn } from '../src/utils.js';
 
 /**
  * TNE Catalyst Bid Adapter
@@ -87,9 +87,16 @@ export const spec = {
         imp.native = { request: JSON.stringify(mediaTypes[NATIVE]) };
       }
 
-      if (bid.params.bidfloor) {
+      const mediaType = mediaTypes[VIDEO] ? VIDEO : mediaTypes[NATIVE] ? NATIVE : BANNER;
+      if (isFn(bid.getFloor)) {
+        const floorInfo = bid.getFloor({ currency: bid.params.currency || 'USD', mediaType, size: '*' });
+        if (floorInfo && floorInfo.floor > 0) {
+          imp.bidfloor = floorInfo.floor;
+          imp.bidfloorcur = floorInfo.currency;
+        }
+      } else if (bid.params.bidfloor) {
         imp.bidfloor = bid.params.bidfloor;
-        imp.bidfloorcur = 'USD';
+        imp.bidfloorcur = bid.params.currency || 'USD';
       }
 
       return imp;
