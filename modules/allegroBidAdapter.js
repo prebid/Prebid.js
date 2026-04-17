@@ -9,6 +9,7 @@ import { triggerPixel, logInfo, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'allegro';
 const BIDDER_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid';
+const SYNC_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/sync';
 const GVLID = 1493;
 
 /**
@@ -250,6 +251,45 @@ export const spec = {
     if (config.getConfig('debug')) {
       logInfo('bid won', bid);
     }
+  },
+  /**
+   * Returns user sync pixels or iframes to be fired after the auction.
+   * Supports iframe and image (pixel) sync types, with GDPR consent parameters
+   * appended to the sync URL as query string.
+   * iframe takes priority over pixel if both are enabled.
+   *
+   * @param {Object} syncOptions - Sync options enabled by the publisher via pbjs config.
+   * @param {boolean} syncOptions.iframeEnabled - Whether iframe syncs are allowed.
+   * @param {boolean} syncOptions.pixelEnabled - Whether pixel (image) syncs are allowed.
+   * @param {Array} serverResponses - Raw server responses from the auction (unused, URL is static).
+   * @param {Object} [gdprConsent] - GDPR consent data from the consent management module.
+   * @param {boolean} [gdprConsent.gdprApplies] - Whether GDPR applies for this user.
+   * @param {string} [gdprConsent.consentString] - IAB TCF consent string.
+   * @param {string} [uspConsent] - USP/CCPA consent string (unused currently).
+   * @returns {Array<{type: string, url: string}>} List of sync objects for Prebid to fire.
+   */
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+    const syncUrl = config.getConfig('allegro.syncUrl') || SYNC_URL;
+
+    let gdprParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    const url = gdprParams ? `${syncUrl}?${gdprParams}` : syncUrl;
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({ type: 'iframe', url });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({ type: 'image', url });
+    }
+
+    return syncs;
   }
 
 }

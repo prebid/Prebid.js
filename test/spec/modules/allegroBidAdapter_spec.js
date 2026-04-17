@@ -213,4 +213,37 @@ describe('Allegro Bid Adapter', () => {
       expect(calledWith).to.equal(bid.burl);
     });
   });
+
+  describe('getUserSyncs', () => {
+    const gdprConsent = { gdprApplies: true, consentString: 'CONSENT123' };
+    const defaultSyncUrl = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/sync';
+
+    it('returns iframe sync with gdpr params when iframeEnabled', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [], gdprConsent);
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(`${defaultSyncUrl}?gdpr=1&gdpr_consent=CONSENT123`);
+    });
+
+    it('returns image sync with gdpr params when pixelEnabled and iframe disabled', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], gdprConsent);
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal(`${defaultSyncUrl}?gdpr=1&gdpr_consent=CONSENT123`);
+    });
+
+    it('uses custom syncUrl from config', () => {
+      configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+        if (key === 'allegro.syncUrl') return 'https://custom.sync.example.com/sync';
+        return undefined;
+      });
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [], gdprConsent);
+      expect(syncs[0].url).to.include('https://custom.sync.example.com/sync');
+    });
+
+    it('returns empty array when both sync options disabled', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [], gdprConsent);
+      expect(syncs).to.have.length(0);
+    });
+  });
 });
