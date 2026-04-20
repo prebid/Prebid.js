@@ -328,6 +328,7 @@ export const spec = {
             const renderer = Renderer.install({
               id: 0,
               url: 'https://dco.smartclip.net/?plc=7777779',
+              adUnitCode: currentBidRequest.adUnitCode,
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],

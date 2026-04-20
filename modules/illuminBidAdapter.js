@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn
+  isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -31,7 +31,9 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onBidBillable,
 };
 
 registerBidder(spec);
