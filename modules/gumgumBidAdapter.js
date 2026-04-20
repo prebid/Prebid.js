@@ -307,6 +307,78 @@ function _getDeviceData(ortb2Data) {
 }
 
 /**
+ * Retrieves content metadata from the ORTB2 object
+ * Supports both site.content and app.content (site takes priority)
+ * @param {Object} ortb2Data ORTB2 object
+ * @returns {Object} Content parameters
+ */
+function _getContentParams(ortb2Data) {
+  // Check site.content first, then app.content
+  const siteContent = deepAccess(ortb2Data, 'site.content');
+  const appContent = deepAccess(ortb2Data, 'app.content');
+  const content = siteContent || appContent;
+
+  if (!content) {
+    return {};
+  }
+
+  const contentParams = {};
+  contentParams.itype = siteContent ? 'site' : 'app';
+
+  // Basic content fields
+  if (content.id) contentParams.cid = content.id;
+  if (content.episode !== undefined && content.episode !== null) contentParams.cepisode = content.episode;
+  if (content.title) contentParams.ctitle = content.title;
+  if (content.series) contentParams.cseries = content.series;
+  if (content.season) contentParams.cseason = content.season;
+  if (content.genre) contentParams.cgenre = content.genre;
+  if (content.contentrating) contentParams.crating = content.contentrating;
+  if (content.userrating) contentParams.cur = content.userrating;
+  if (content.context !== undefined && content.context !== null) contentParams.cctx = content.context;
+  if (content.livestream !== undefined && content.livestream !== null) contentParams.clive = content.livestream;
+  if (content.len !== undefined && content.len !== null) contentParams.clen = content.len;
+  if (content.language) contentParams.clang = content.language;
+  if (content.url) contentParams.curl = content.url;
+  if (content.cattax !== undefined && content.cattax !== null) contentParams.cattax = content.cattax;
+  if (content.prodq !== undefined && content.prodq !== null) contentParams.cprodq = content.prodq;
+  if (content.qagmediarating !== undefined && content.qagmediarating !== null) contentParams.cqag = content.qagmediarating;
+
+  // Handle keywords - can be string or array
+  if (content.keywords) {
+    if (Array.isArray(content.keywords)) {
+      contentParams.ckw = content.keywords.join(',');
+    } else if (typeof content.keywords === 'string') {
+      contentParams.ckw = content.keywords;
+    }
+  }
+
+  // Handle cat array
+  if (content.cat && Array.isArray(content.cat) && content.cat.length > 0) {
+    contentParams.ccat = content.cat.join(',');
+  }
+
+  // Handle producer fields
+  if (content.producer) {
+    if (content.producer.id) contentParams.cpid = content.producer.id;
+    if (content.producer.name) contentParams.cpname = content.producer.name;
+  }
+
+  // Channel fields
+  if (content.channel) {
+    if (content.channel.id) contentParams.cchannelid = content.channel.id;
+    if (content.channel.name) contentParams.cchannel = content.channel.name;
+    if (content.channel.domain) contentParams.cchanneldomain = content.channel.domain;
+  }
+
+  // Network fields
+  if (content.network) {
+    if (content.network.name) contentParams.cnetwork = content.network.name;
+  }
+
+  return contentParams;
+}
+
+/**
  * loops through bannerSizes array to get greatest slot dimensions
  * @param {number[][]} sizes
  * @returns {number[]}
@@ -328,28 +400,53 @@ function getGreatestDimensions(sizes) {
   return [maxw, maxh];
 }
 
-function getEids(userId) {
-  const idProperties = [
-    'uid',
-    'eid',
-    'lipbid',
-    'envelope',
-    'id'
-  ];
+function getFirstUid(eid) {
+  if (!eid || !Array.isArray(eid.uids)) return null;
+  return eid.uids.find(uid => uid && uid.id);
+}
 
-  return Object.keys(userId).reduce(function (eids, provider) {
-    const eid = userId[provider];
-    switch (typeof eid) {
-      case 'string':
-        eids[provider] = eid;
-        break;
+function getUserEids(bidRequest, bidderRequest) {
+  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
+  if (Array.isArray(bidderRequestEids) && bidderRequestEids.length) {
+    return bidderRequestEids;
+  }
+  const bidEids = deepAccess(bidRequest, 'userIdAsEids');
+  if (Array.isArray(bidEids) && bidEids.length) {
+    return bidEids;
+  }
+  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids');
+  if (Array.isArray(bidUserEids) && bidUserEids.length) {
+    return bidUserEids;
+  }
+  return [];
+}
 
-      case 'object':
-        const idProp = idProperties.filter(prop => eid.hasOwnProperty(prop));
-        idProp.length && (eids[provider] = eid[idProp[0]]);
-        break;
+function isPubProvidedIdEid(eid) {
+  const source = (eid && eid.source) ? eid.source.toLowerCase() : '';
+  if (!source || !pubProvidedIdSources.includes(source) || !Array.isArray(eid.uids)) return false;
+  return eid.uids.some(uid => uid && uid.ext && uid.ext.stype);
+}
+
+function getEidsFromEidsArray(eids) {
+  return (Array.isArray(eids) ? eids : []).reduce((ids, eid) => {
+    const source = (eid.source || '').toLowerCase();
+    if (source === 'uidapi.com') {
+      const uid = getFirstUid(eid);
+      if (uid) {
+        ids.uid2 = uid.id;
+      }
+    } else if (source === 'liveramp.com') {
+      const uid = getFirstUid(eid);
+      if (uid) {
+        ids.idl_env = uid.id;
+      }
+    } else if (source === 'adserver.org' && Array.isArray(eid.uids)) {
+      const tdidUid = eid.uids.find(uid => uid && uid.id && uid.ext && uid.ext.rtiPartner === 'TDID');
+      if (tdidUid) {
+        ids.tdid = tdidUid.id;
+      }
     }
-    return eids;
+    return ids;
   }, {});
 }
 
@@ -373,12 +470,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
-      userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
-    const eids = getEids(userId);
+    const userEids = getUserEids(bidRequest, bidderRequest);
+    const eids = getEidsFromEidsArray(userEids);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     let sizes = [1, 1];
     let data = {};
@@ -402,16 +499,20 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
     }
     // Send filtered pubProvidedId's
-    if (userId && userId.pubProvidedId) {
-      const filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
+    if (userEids.length) {
+      const filteredData = userEids.filter(isPubProvidedIdEid);
       const maxLength = 1800; // replace this with your desired maximum length
       const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
-      data.pubProvidedId = truncatedJsonString
+      if (filteredData.length) {
+        data.pubProvidedId = truncatedJsonString
+      }
     }
     // ADJS-1286 Read id5 id linktype field
-    if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
-      data.id5Id = userId.id5id.uid || null
-      data.id5IdLinkType = userId.id5id.ext.linkType || null
+    const id5Eid = userEids.find(eid => (eid.source || '').toLowerCase() === 'id5-sync.com');
+    const id5Uid = getFirstUid(id5Eid);
+    if (id5Uid && id5Uid.ext) {
+      data.id5Id = id5Uid.id || null
+      data.id5IdLinkType = id5Uid.ext.linkType || null
     }
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode;
@@ -441,9 +542,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
       setIrisId(data, bidderRequest.ortb2.site, params);
-      const curl = bidderRequest.ortb2.site.content?.url;
-      if (curl) data.curl = curl;
     }
+    // Extract content metadata from ortb2
+    const contentParams = _getContentParams(bidderRequest?.ortb2);
+    Object.assign(data, contentParams);
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
     }
