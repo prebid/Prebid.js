@@ -180,6 +180,7 @@ describe('sirdataRtdProvider', function () {
       }
       addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function() { return true; });
       expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
+      expect(adUnits[0].adserverTargeting.sd_rtd).to.deep.equal(['111111', '222222', '333333', '444444', '555555', '666666']);
     });
   });
 

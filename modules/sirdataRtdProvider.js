@@ -661,16 +661,17 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
   }
 
   // Google targeting
+  let sirdataMergedList = [...sirdataData.segments, ...sirdataData.categories];
+  if (params.setGptKeyValues) {
+    const gptCurationId = params.gptCurationId || biddersId.sdRtdForGpt;
+    if (gptCurationId && data.shared_taxonomy?.[gptCurationId]) {
+      const gamCurationData = getSegAndCatsArray(data.shared_taxonomy[gptCurationId], params.contextualMinRelevancyScore, '');
+      sirdataMergedList = [...sirdataMergedList, ...gamCurationData.segments, ...gamCurationData.categories];
+    }
+  }
+  const setAdserverTargeting = params.setGptKeyValues && sirdataMergedList.length > 0;
   if (typeof window.googletag !== 'undefined' && params.setGptKeyValues) {
     try {
-      const gptCurationId = params.gptCurationId || biddersId.sdRtdForGpt;
-      let sirdataMergedList = [...sirdataData.segments, ...sirdataData.categories];
-
-      if (gptCurationId && data.shared_taxonomy?.[gptCurationId]) {
-        const gamCurationData = getSegAndCatsArray(data.shared_taxonomy[gptCurationId], params.contextualMinRelevancyScore, '');
-        sirdataMergedList = [...sirdataMergedList, ...gamCurationData.segments, ...gamCurationData.categories];
-      }
-
       window.googletag.cmd.push(() => {
         window.googletag.pubads().getSlots().forEach(slot => {
           if (typeof slot.setTargeting !== 'undefined' && sirdataMergedList.length > 0) {
@@ -684,6 +685,9 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
   }
 
   adUnits.forEach(adUnit => {
+    if (setAdserverTargeting) {
+      deepSetValue(adUnit, 'adserverTargeting.sd_rtd', sirdataMergedList);
+    }
     return adUnit.bids?.forEach(bid => {
       const bidderIndex = params.bidders.findIndex(function (i) { return i.bidder === bid.bidder; });
       try {
