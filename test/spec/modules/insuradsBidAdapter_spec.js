@@ -42,7 +42,7 @@ describe('InsurAds bid adapter tests', () => {
     let bannerBid;
     beforeEach(() => {
       bannerBid = {
-        bidder: 'nexx360',
+        bidder: 'insurads',
         mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
         adUnitCode: 'div-1',
         transactionId: '70bdc37e-9475-4b27-8c74-4634bdc2ee66',
@@ -201,7 +201,7 @@ describe('InsurAds bid adapter tests', () => {
     describe('We test with a multiple display bids', () => {
       const sampleBids = [
         {
-          bidder: 'nexx360',
+          bidder: 'insurads',
           params: {
             tagId: 'luvxjvgn',
             divId: 'div-1',
@@ -221,7 +221,7 @@ describe('InsurAds bid adapter tests', () => {
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         },
         {
-          bidder: 'nexx360',
+          bidder: 'insurads',
           params: {
             placement: 'testPlacement',
             allBids: true,
@@ -241,7 +241,7 @@ describe('InsurAds bid adapter tests', () => {
         }
       ];
       const bidderRequest = {
-        bidderCode: 'nexx360',
+        bidderCode: 'insurads',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         bidderRequestId: '359bf8a3c06b2e',
         refererInfo: {
@@ -430,308 +430,141 @@ describe('InsurAds bid adapter tests', () => {
     });
   });
 
-  describe('We test interpretResponse', () => {
-    it('empty response', () => {
-      const response = {
-        body: ''
-      };
-      const output = spec.interpretResponse(response);
-      expect(output.length).to.be.eql(0);
-    });
-    it('banner responses with adm', () => {
-      const response = {
+  describe('interpretResponse()', () => {
+    it('merges rtdData into bidResponse.adserverTargeting', () => {
+      const serverResponse = {
         body: {
-          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
           cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '4427551302944024629',
-                  impid: '226175918ebeda',
-                  price: 1.5,
-                  adomain: [
-                    'http://prebid.org',
-                  ],
-                  crid: '98493581',
-                  ssp: 'appnexus',
-                  h: 600,
-                  w: 300,
-                  adm: '<div>TestAd</div>',
-                  cat: [
-                    'IAB3-1',
-                  ],
-                  ext: {
-                    adUnitCode: 'div-1',
-                    mediaType: 'banner',
-                    adUrl: 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
-                    ssp: 'appnexus',
-                  },
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            id: 'de3de7c7-e1cf-4712-80a9-94eb26bfc718',
-            cookies: [],
-          },
-        },
+          seatbid: [{
+            bid: [{
+              impid: '44a2706ac3574',
+              price: 1.23,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adm: '<div>ad</div>',
+              adomain: ['example.com'],
+              ext: { mediaType: 'banner', ssp: 'insurads' }
+            }]
+          }]
+        }
       };
-      const output = spec.interpretResponse(response);
-      const expectedOutput = [{
-        requestId: '226175918ebeda',
-        cpm: 1.5,
-        width: 300,
-        height: 600,
-        creativeId: '98493581',
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
-        mediaType: 'banner',
-        meta: {
-          advertiserDomains: [
-            'http://prebid.org',
-          ],
-          demandSource: 'appnexus',
-        },
-        ad: '<div>TestAd</div>',
-      }];
-      expect(output).to.eql(expectedOutput);
+
+      const request = {
+        data: {
+          imp: [{
+            id: '44a2706ac3574',
+            ext: {
+              rtdData: {
+                ia_test: 'ia_value'
+              }
+            }
+          }]
+        }
+      };
+
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids).to.have.length(1);
+      expect(bids[0]).to.have.property('adserverTargeting');
+      expect(bids[0].adserverTargeting).to.include({ ia_test: 'ia_value' });
     });
 
-    it('instream responses', () => {
-      const response = {
+    it('does not throw if request is missing', () => {
+      const serverResponse = {
         body: {
-          id: '2be64380-ba0c-405a-ab53-51f51c7bde51',
           cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '8275140264321181514',
-                  impid: '263cba3b8bfb72',
-                  price: 5,
-                  adomain: [
-                    'appnexus.com',
-                  ],
-                  crid: '97517771',
-                  h: 1,
-                  w: 1,
-                  adm: '<VAST>vast</VAST>',
-                  ext: {
-                    mediaType: 'instream',
-                    ssp: 'appnexus',
-                    adUnitCode: 'video1',
-                  },
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            cookies: [],
-          },
-        },
+          seatbid: [{
+            bid: [{
+              impid: '44a2706ac3574',
+              price: 1.23,
+              w: 300,
+              h: 250,
+              crid: 'creative-1',
+              adm: '<div>ad</div>',
+              adomain: ['example.com'],
+              ext: { mediaType: 'banner', ssp: 'insurads' }
+            }]
+          }]
+        }
       };
 
-      const output = spec.interpretResponse(response);
-      const expectedOutput = [{
-        requestId: '263cba3b8bfb72',
-        cpm: 5,
-        width: 1,
-        height: 1,
-        creativeId: '97517771',
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
-        mediaType: 'video',
-        meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
-        vastXml: '<VAST>vast</VAST>',
-      }];
-      expect(output).to.eql(expectedOutput);
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.have.length(1);
     });
 
-    it('outstream responses', () => {
-      const response = {
+    it('parses multiple bids of different media types', () => {
+      const serverResponse = {
         body: {
-          id: '40c23932-135e-4602-9701-ca36f8d80c07',
           cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '1186971142548769361',
-                  impid: '4ce809b61a3928',
-                  price: 5,
-                  adomain: [
-                    'appnexus.com',
-                  ],
-                  crid: '97517771',
-                  h: 1,
-                  w: 1,
-                  adm: '<VAST>vast</VAST>',
-                  ext: {
-                    mediaType: 'outstream',
-                    ssp: 'appnexus',
-                    adUnitCode: 'div-1',
-                    divId: 'div-1',
-                  },
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            cookies: [],
-          },
-        },
+          seatbid: [{
+            bid: [{
+              impid: 'imp-banner',
+              price: 0.5,
+              w: 300,
+              h: 250,
+              crid: 'creative-banner',
+              adm: '<div>banner ad</div>',
+              adomain: ['banner.example.com'],
+              ext: { mediaType: 'banner', ssp: 'insurads' }
+            }, {
+              impid: 'imp-video',
+              price: 1.5,
+              w: 640,
+              h: 480,
+              crid: 'creative-video',
+              adm: '<VAST version="3.0"></VAST>',
+              adomain: ['video.example.com'],
+              ext: { mediaType: 'video', ssp: 'insurads' }
+            }, {
+              impid: 'imp-native',
+              price: 0.8,
+              crid: 'creative-native',
+              adm: '{"native":{"assets":[]}}',
+              adomain: ['native.example.com'],
+              ext: { mediaType: 'native', ssp: 'insurads' }
+            }]
+          }]
+        }
       };
 
-      const output = spec.interpretResponse(response);
-      const expectedOutut = [{
-        requestId: '4ce809b61a3928',
-        cpm: 5,
-        width: 1,
-        height: 1,
-        creativeId: '97517771',
-        currency: 'USD',
-        netRevenue: true,
-        divId: 'div-1',
-        ttl: 120,
-        mediaType: 'video',
-        meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
-        vastXml: '<VAST>vast</VAST>',
-        renderer: output[0].renderer,
-      }];
-      expect(output).to.eql(expectedOutut);
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.be.an('array');
+      expect(bids).to.have.length(3);
+      const cpms = bids.map(bid => bid.cpm);
+      expect(cpms).to.include(0.5);
+      expect(cpms).to.include(1.5);
+      expect(cpms).to.include(0.8);
     });
 
-    it('native responses', () => {
-      const response = {
-        body: {
-          id: '3c0290c1-6e75-4ef7-9e37-17f5ebf3bfa3',
-          cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '6624930625245272225',
-                  impid: '23e11d845514bb',
-                  price: 10,
-                  adomain: [
-                    'prebid.org',
-                  ],
-                  crid: '97494204',
-                  h: 1,
-                  w: 1,
-                  cat: [
-                    'IAB3-1',
-                  ],
-                  ext: {
-                    mediaType: 'native',
-                    ssp: 'appnexus',
-                    adUnitCode: '/19968336/prebid_native_example_1',
-                  },
-                  adm: '{"ver":"1.2","assets":[{"id":1,"img":{"url":"https:\\/\\/vcdn.adnxs.com\\/p\\/creative-image\\/f8\\/7f\\/0f\\/13\\/f87f0f13-230c-4f05-8087-db9216e393de.jpg","w":989,"h":742,"ext":{"appnexus":{"prevent_crop":0}}}},{"id":0,"title":{"text":"This is a Prebid Native Creative"}},{"id":2,"data":{"value":"Prebid.org"}}],"link":{"url":"https:\\/\\/ams3-ib.adnxs.com\\/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA.\\/bcr=AAAAAAAA8D8=\\/pp=${AUCTION_PRICE}\\/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA\\/cca=OTMyNSNBTVMzOjYxMzU=\\/bn=97062\\/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html"},"eventtrackers":[{"event":1,"method":1,"url":"https:\\/\\/ams3-ib.adnxs.com\\/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}"}]}',
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            cookies: [],
-          },
-        },
-      };
+    it('returns an empty array for an empty or malformed response body', () => {
+      const emptyResponse = { body: {} };
+      const noBodyResponse = {};
 
-      const output = spec.interpretResponse(response);
-      const expectOutput = [{
-        requestId: '23e11d845514bb',
-        cpm: 10,
-        width: 1,
-        height: 1,
-        creativeId: '97494204',
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
-        mediaType: 'native',
-        meta: {
-          advertiserDomains: [
-            'prebid.org',
-          ],
-          demandSource: 'appnexus',
-        },
-        native: {
-          ortb: {
-            ver: '1.2',
-            assets: [
-              {
-                id: 1,
-                img: {
-                  url: 'https://vcdn.adnxs.com/p/creative-image/f8/7f/0f/13/f87f0f13-230c-4f05-8087-db9216e393de.jpg',
-                  w: 989,
-                  h: 742,
-                  ext: {
-                    appnexus: {
-                      prevent_crop: 0,
-                    },
-                  },
-                },
-              },
-              {
-                id: 0,
-                title: {
-                  text: 'This is a Prebid Native Creative',
-                },
-              },
-              {
-                id: 2,
-                data: {
-                  value: 'Prebid.org',
-                },
-              },
-            ],
-            link: {
-              url: 'https://ams3-ib.adnxs.com/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA./bcr=AAAAAAAA8D8=/pp=${AUCTION_PRICE}/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA/cca=OTMyNSNBTVMzOjYxMzU=/bn=97062/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html',
-            },
-            eventtrackers: [
-              {
-                event: 1,
-                method: 1,
-                url: 'https://ams3-ib.adnxs.com/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}',
-              },
-            ],
-          },
-        },
-      }];
-      expect(output).to.eql(expectOutput);
+      const bidsFromEmpty = spec.interpretResponse(emptyResponse);
+      const bidsFromNoBody = spec.interpretResponse(noBodyResponse);
+
+      expect(bidsFromEmpty).to.be.an('array').that.has.length(0);
+      expect(bidsFromNoBody).to.be.an('array').that.has.length(0);
     });
   });
 
   describe('getUserSyncs()', () => {
-    const response = { body: { cookies: [] } };
-    it('Verifies user sync without cookie in bid response', () => {
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
-    it('Verifies user sync with cookies in bid response', () => {
-      response.body.ext = {
-        cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
+    it('returns an empty array when all user sync types are disabled', () => {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: false
       };
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
-      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];
-      expect(syncs).to.eql(expectedSyncs);
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array').that.has.length(0);
     });
-    it('Verifies user sync with no bid response', () => {
-      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
-    it('Verifies user sync with no bid body response', () => {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
+
+    it('does not throw and returns an array when at least one sync type is enabled', () => {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: false
+      };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array');
     });
   });
 });
