@@ -3,7 +3,7 @@
 ```
 Module Name: Billowlink OpenRTB 2.5 Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: publishers@billowlink.com
+Maintainer: zepeng.yin@billowlink.com
 ```
 
 **Bidder code:** `billow_rtb25`
@@ -26,9 +26,7 @@ The Billowlink adapter connects Prebid.js to Billowlink’s OpenRTB 2.5 HTTP end
 - Banner (`adm` → `bid.ad`)
 - Video (`adm` → `bid.vastXml`; optional `nurl` → `bid.vastUrl`)
 - Native (`adm` as OpenRTB Native JSON → `bid.native.ortb`)
-- Audio (`adm` → `bid.vastXml` via converter; optional `nurl` → `bid.vastUrl`)
-
-OpenRTB 2.5 responses do not include `mtype`; the adapter infers `mediaType` from the **request** impression (`imp.native` / `imp.audio` / `imp.video` / otherwise banner).
+  OpenRTB 2.5 responses do not include `mtype`; the adapter infers `mediaType` from the **request** impression (`imp.native` / `imp.video` / otherwise banner).
 
 **OpenRTB macros in markup**
 
@@ -138,26 +136,6 @@ var nativeAdUnits = [{
 
 Ensure the bid request includes a valid native ORTB payload (e.g. `nativeOrtbRequest` / `mediaTypes.native.ortb`) so that `imp.native` is populated for the converter.
 
-# Example: Audio
-
-```javascript
-var audioAdUnits = [{
-  code: 'div-audio-example',
-  mediaTypes: {
-    audio: {
-      mimes: ['audio/mp4'],
-      protocols: [1, 2]
-    }
-  },
-  bids: [{
-    bidder: 'billow_rtb25',
-    params: {
-      placementId: 'YOUR_AUDIO_PLACEMENT_ID'
-    }
-  }]
-}];
-```
-
 # User sync
 
 `getUserSyncs` currently returns no sync URLs. If cookie or iframe sync is added later, it will be documented here and implemented per Prebid’s user-sync rules.
@@ -173,5 +151,5 @@ gulp build --modules=billow_rtb25BidAdapter,...
 # Notes for maintainers
 
 - Responses with no bids should use HTTP 204 or an empty `seatbid` array; the adapter returns `[]` in those cases.
-- Request `Content-Type` is set to `application/json`.
+- Request `Content-Type` uses Prebid's default for POST (`text/plain` with JSON body), which avoids triggering CORS preflight.
 - Default `ttl` for bids is 30 seconds when the response omits `exp`; `netRevenue` is set to `true` in the converter context.
