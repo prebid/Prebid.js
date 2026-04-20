@@ -1,9 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { generateUUID, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getWalletPresence, getWalletProviderFlags } from '../libraries/hypelabUtils/hypelabUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 export const BIDDER_CODE = 'hypelab';
 export const ENDPOINT_URL = 'https://api.hypelab.com';
@@ -40,7 +42,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
     const floor = getBidFloor(request, request.sizes || []);
-    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+    const dpr = typeof window !== 'undefined' ? getDevicePixelRatio(window) : 1;
     const wp = getWalletPresence();
     const wpfs = getWalletProviderFlags();
     const winDimensions = getWinDimensions();
@@ -54,7 +56,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         winDimensions?.innerHeight || 0
       ),
     ];
-    const pp = getPosition(request.adUnitCode);
+    const pp = getPosition(request);
 
     const payload = {
       property_slug: request.params.property_slug,
@@ -120,8 +122,8 @@ function getBidFloor(bid, sizes) {
   return floor;
 }
 
-function getPosition(id) {
-  const element = document.getElementById(id);
+function getPosition(bidRequest) {
+  const element = getAdUnitElement(bidRequest);
   if (!element) return null;
   const rect = getBoundingClientRect(element);
   return [rect.left, rect.top];

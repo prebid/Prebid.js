@@ -2,7 +2,7 @@
  * Module for getting and setting Prebid configuration.
 */
 
-import {isValidPriceConfig} from './cpmBucketManager.js';
+import { isValidPriceConfig } from './cpmBucketManager.js';
 import {
   deepAccess,
   deepClone,
@@ -16,11 +16,12 @@ import {
   logWarn,
   mergeDeep
 } from './utils.js';
-import {DEBUG_MODE} from './constants.js';
-import type {UserSyncConfig} from "./userSync.ts";
-import type {DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty} from "./types/objects.d.ts";
-import type {BidderCode} from "./types/common.d.ts";
-import type {ORTBRequest} from "./types/ortb/request.d.ts";
+import { DEBUG_MODE } from './constants.js';
+import type { UserSyncConfig } from "./userSync.ts";
+import type { DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty } from "./types/objects.d.ts";
+import type { BidderCode } from "./types/common.d.ts";
+import type { ORTBRequest } from "./types/ortb/request.d.ts";
+import { Bid } from './bidfactory.ts';
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -62,13 +63,47 @@ function attachProperties(config, useDefaultValues = true) {
     auctionOptions: {}
   } : {}
 
+  const validateauctionOptions = (() => {
+    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
+    const arrKeys = ['secondaryBidders']
+    const allKeys = [].concat(boolKeys).concat(arrKeys);
+
+    return function validateauctionOptions(val) {
+      if (!isPlainObject(val)) {
+        logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (const k of Object.keys(val)) {
+        if (!allKeys.includes(k)) {
+          logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (arrKeys.includes(k)) {
+          if (!isArray(val[k])) {
+            logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(isStr)) {
+            logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
+        } else if (boolKeys.includes(k)) {
+          if (!isBoolean(val[k])) {
+            logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+  })();
   function getProp(name) {
     return values[name];
   }
 
   function setProp(name, val) {
     if (!values.hasOwnProperty(name)) {
-      Object.defineProperty(config, name, {enumerable: true});
+      Object.defineProperty(config, name, { enumerable: true });
     }
     values[name] = val;
   }
@@ -164,35 +199,6 @@ function attachProperties(config, useDefaultValues = true) {
     }
     return true;
   }
-
-  function validateauctionOptions(val) {
-    if (!isPlainObject(val)) {
-      logWarn('Auction Options must be an object')
-      return false
-    }
-
-    for (const k of Object.keys(val)) {
-      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender' && k !== 'suppressExpiredRender') {
-        logWarn(`Auction Options given an incorrect param: ${k}`)
-        return false
-      }
-      if (k === 'secondaryBidders') {
-        if (!isArray(val[k])) {
-          logWarn(`Auction Options ${k} must be of type Array`);
-          return false
-        } else if (!val[k].every(isStr)) {
-          logWarn(`Auction Options ${k} must be only string`);
-          return false
-        }
-      } else if (k === 'suppressStaleRender' || k === 'suppressExpiredRender') {
-        if (!isBoolean(val[k])) {
-          logWarn(`Auction Options ${k} must be of type boolean`);
-          return false;
-        }
-      }
-    }
-    return true;
-  }
 }
 
 export interface Config {
@@ -249,6 +255,21 @@ export interface Config {
    * https://docs.prebid.org/features/firstPartyData.html
    */
   ortb2?: DeepPartial<ORTBRequest>;
+  /**
+   * When set, only bids for which this function returns a truthy value are included in setTargeting.
+   * The function is called with the bid and the initially filtered bids (bidsReceived) that passed adunit, zero cpm, and other filters for comparison purposes within the function.
+   * Return false to exclude a bid from targeting.
+   */
+  bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
+  /**
+   * Customize how a GPT slot is matched to an ad unit code during targeting.
+   */
+  customGptSlotMatching?: (slot: googletag.Slot) => ((adUnitCode: string) => boolean) | undefined;
+  /**
+   * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
+   * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
+   */
+  disableFingerprintingApis?: Array<'devicepixelratio' | 'webdriver' | 'resolvedoptions'>;
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };
@@ -257,7 +278,7 @@ type BidderConfig = {
   config: PartialConfig;
 }
 
-type TopicalConfig<S extends string> = {[K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown};
+type TopicalConfig<S extends string> = { [K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown };
 type UnregistrationFn = () => void;
 
 type GetConfigOptions = {
@@ -494,7 +515,7 @@ export function newConfig() {
       if (topic === ALL_TOPICS) {
         callback(getConfig());
       } else {
-        callback({[topic]: getConfig(topic)});
+        callback({ [topic]: getConfig(topic) });
       }
     }
 

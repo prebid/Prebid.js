@@ -1,5 +1,5 @@
 import { ajax } from '../src/ajax.js';
-import { generateUUID, isNumber } from '../src/utils.js';
+import { generateUUID, isNumber, parseSizesInput } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
@@ -7,7 +7,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { config as prebidConfig } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 
 const ANALYTICS_TYPE = 'endpoint';
 const URL = 'https://wba.liadm.com/analytic-events';
@@ -19,7 +19,7 @@ const INTEGRATION_ID = getGlobalVarName();
 let partnerIdFromUserIdConfig;
 let sendAuctionInitEvents;
 
-const liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
+const liAnalytics = Object.assign(adapter({ URL, ANALYTICS_TYPE }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
@@ -41,6 +41,13 @@ function handleAuctionInitEvent(auctionInitEvent) {
   // dependeing on the result of rolling the dice outside of Prebid.
   const partnerIdFromAnalyticsLabels = auctionInitEvent.analyticsLabels?.partnerId;
 
+  const asz = auctionInitEvent?.adUnits.reduce((acc, adUnit) =>
+    acc.concat(
+      parseSizesInput(adUnit?.mediaTypes?.banner?.sizes),
+      parseSizesInput(adUnit?.mediaTypes?.video?.playerSize)
+    ), []
+  )
+
   const data = {
     id: generateUUID(),
     aid: auctionInitEvent.auctionId,
@@ -51,14 +58,15 @@ function handleAuctionInitEvent(auctionInitEvent) {
     tr: window.liTreatmentRate,
     me: encodeBoolean(window.liModuleEnabled),
     liip: encodeBoolean(liveIntentIdsPresent),
-    aun: auctionInitEvent?.adUnits?.length || 0
+    aun: auctionInitEvent?.adUnits?.length || 0,
+    asz: asz.join(',')
   };
   const filteredData = ignoreUndefined(data);
   sendData('auction-init', filteredData);
 }
 
 function handleBidWonEvent(bidWonEvent) {
-  const auction = auctionManager.index.getAuction({auctionId: bidWonEvent.auctionId});
+  const auction = auctionManager.index.getAuction({ auctionId: bidWonEvent.auctionId });
   const liveIntentIdsPresent = checkLiveIntentIdsPresent(auction?.getBidRequests())
 
   // This is for old integration that enable or disable the user id module
@@ -82,7 +90,8 @@ function handleBidWonEvent(bidWonEvent) {
     rts: bidWonEvent.responseTimestamp,
     tr: window.liTreatmentRate,
     me: encodeBoolean(window.liModuleEnabled),
-    liip: encodeBoolean(liveIntentIdsPresent)
+    liip: encodeBoolean(liveIntentIdsPresent),
+    asz: bidWonEvent.width + 'x' + bidWonEvent.height
   };
 
   const filteredData = ignoreUndefined(data);

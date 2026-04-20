@@ -1,4 +1,3 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { handleCookieSync, PID_STORAGE_NAME, prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -6,6 +5,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -116,10 +116,6 @@ export const sharethroughAdapterSpec = {
       }
     }
 
-    if (bidderRequest.ortb2?.device?.ext?.cdep) {
-      req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
-    }
-
     // if present, merge device object from ortb2 into `req.device`
     if (bidderRequest?.ortb2?.device) {
       mergeDeep(req.device, bidderRequest.ortb2.device);
@@ -162,10 +158,6 @@ export const sharethroughAdapterSpec = {
 
         const nativeRequest = deepAccess(bidReq, 'mediaTypes.native');
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
-
-        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
-          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
-        }
 
         if (videoRequest) {
           // default playerSize, only change this if we know width and height are properly defined in the request
@@ -296,8 +288,6 @@ export const sharethroughAdapterSpec = {
       return [];
     }
 
-    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
-
     const imp = req.data.imp[0];
 
     const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
@@ -344,15 +334,7 @@ export const sharethroughAdapterSpec = {
 
       return response;
     });
-
-    if (fledgeAuctionEnabled && !isEqtvTest) {
-      return {
-        bids: bidsFromExchange,
-        paapi: body.ext?.auctionConfigs || {},
-      };
-    } else {
-      return bidsFromExchange;
-    }
+    return bidsFromExchange;
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {

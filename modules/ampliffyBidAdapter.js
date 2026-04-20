@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {logError, logInfo, triggerPixel} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { logError, logInfo, triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'ampliffy';
 const DEFAULT_ENDPOINT = 'bidder.ampliffy.com';
@@ -147,7 +147,9 @@ function interpretResponse(serverResponse, bidRequest) {
     bidResponse.adUrl = xmlData.creativeURL;
   }
   if (xmlData.trackingUrl) {
-    bidResponse.vastImpUrl = xmlData.trackingUrl;
+    bidResponse.vastTrackers = {
+      impression: [xmlData.trackingUrl]
+    };
     bidResponse.trackingUrl = xmlData.trackingUrl;
   }
   bidResponses.push(bidResponse);
@@ -347,9 +349,9 @@ function getSyncData(options, syncs) {
   if (syncs?.length) {
     for (const sync of syncs) {
       if (sync.type === 'syncImage' && options.pixelEnabled) {
-        ret.push({url: sync.url, type: 'image'});
+        ret.push({ url: sync.url, type: 'image' });
       } else if (sync.type === 'syncIframe' && options.iframeEnabled) {
-        ret.push({url: sync.url, type: 'iframe'});
+        ret.push({ url: sync.url, type: 'iframe' });
       }
     }
   }

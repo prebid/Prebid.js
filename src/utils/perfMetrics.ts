@@ -1,8 +1,8 @@
-import {config} from '../config.js';
-import type {AnyFunction, Wraps} from "../types/functions.d.ts";
-import {type BeforeHook, type BeforeHookParams, type HookType, Next} from "../hook.ts";
-import type {addBidResponse} from "../auction.ts";
-import type {PrivRequestBidsOptions, StartAuctionOptions} from "../prebid.ts";
+import { config } from '../config.js';
+import type { AnyFunction, Wraps } from "../types/functions.d.ts";
+import { type BeforeHook, type BeforeHookParams, type HookType, Next } from "../hook.ts";
+import type { addBidResponse } from "../auction.ts";
+import type { PrivRequestBidsOptions, StartAuctionOptions } from "../prebid.ts";
 
 export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
@@ -44,9 +44,9 @@ function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () =>
   };
 }
 
-export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES} = {}) {
+export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES } = {}) {
   return function newMetrics() {
-    function makeMetrics(self, rename = (n) => ({forEach(fn) { fn(n); }})) {
+    function makeMetrics(self, rename = (n) => ({ forEach(fn) { fn(n); } })) {
       rename = mkRenamer(rename);
 
       function accessor(slot) {
@@ -248,18 +248,18 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
              * }
              * ```
              */
-            function fork({propagate = true, stopPropagation = false, includeGroups = false}: PropagationOptions = {}): Metrics {
-              return makeMetrics(mkNode([[self, {propagate, stopPropagation, includeGroups}]]), rename);
+            function fork({ propagate = true, stopPropagation = false, includeGroups = false }: PropagationOptions = {}): Metrics {
+              return makeMetrics(mkNode([[self, { propagate, stopPropagation, includeGroups }]]), rename);
             }
 
             /**
              * Join `otherMetrics` with these; all metrics from `otherMetrics` will (by default) be propagated here,
              * and all metrics from here will be included in `otherMetrics`.
              */
-            function join(otherMetrics: Metrics, {propagate = true, stopPropagation = false, includeGroups = false}: PropagationOptions = {}): void {
+            function join(otherMetrics: Metrics, { propagate = true, stopPropagation = false, includeGroups = false }: PropagationOptions = {}): void {
               const other = nodes.get(otherMetrics);
               if (other != null) {
-                other.addParent(self, {propagate, stopPropagation, includeGroups});
+                other.addParent(self, { propagate, stopPropagation, includeGroups });
               }
             }
 
@@ -329,7 +329,7 @@ function makeNode(parents) {
     newSibling() {
       return makeNode(parents.slice());
     },
-    dfWalk({visit, follow = () => true, visited = new Set(), inEdge} = {} as any) {
+    dfWalk({ visit, follow = () => true, visited = new Set(), inEdge } = {} as any) {
       let res;
       if (!visited.has(this)) {
         visited.add(this);
@@ -337,7 +337,7 @@ function makeNode(parents) {
         if (res != null) return res;
         for (const [parent, outEdge] of parents) {
           if (follow(inEdge, outEdge)) {
-            res = parent.dfWalk({visit, follow, visited, inEdge: outEdge});
+            res = parent.dfWalk({ visit, follow, visited, inEdge: outEdge });
             if (res != null) return res;
           }
         }
@@ -349,19 +349,19 @@ function makeNode(parents) {
 const nullMetrics: Metrics = (() => {
   const nop = function () {};
   const empty = () => ({});
-  const none = {forEach: nop};
+  const none = { forEach: nop };
   const nullTimer = () => null;
   nullTimer.stopBefore = (fn) => fn;
   nullTimer.stopAfter = (fn) => fn;
   const nullNode = Object.defineProperties(
-    {dfWalk: nop, newSibling: () => nullNode, addParent: nop},
-    Object.fromEntries(['metrics', 'timestamps', 'groups'].map(prop => [prop, {get: empty}])));
+    { dfWalk: nop, newSibling: () => nullNode, addParent: nop },
+    Object.fromEntries(['metrics', 'timestamps', 'groups'].map(prop => [prop, { get: empty }])));
   return metricsFactory({
     now: () => 0,
     mkNode: () => nullNode as any,
     mkRenamer: () => () => none,
     mkTimer: () => nullTimer,
-    nodes: {get: nop, set: nop} as unknown as Map<any, any>
+    nodes: { get: nop, set: nop } as unknown as Map<any, any>
   })();
 })();
 

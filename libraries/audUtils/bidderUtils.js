@@ -160,7 +160,7 @@ const getSiteDetails = (bidderRequest) => {
     page = bidderRequest.refererInfo.page;
     name = bidderRequest.refererInfo.domain;
   }
-  return {page: page, name: name};
+  return { page: page, name: name };
 }
 // Function to build the user object
 const getUserDetails = (bidReq) => {

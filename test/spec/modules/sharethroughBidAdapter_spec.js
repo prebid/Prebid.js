@@ -895,43 +895,6 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
-      describe('cookie deprecation', () => {
-        it('should not add cdep if we do not get it in an impression request', () => {
-          const builtRequests = spec.buildRequests(bidRequests, {
-            auctionId: 'new-auction-id',
-            ortb2: {
-              device: {
-                ext: {
-                  propThatIsNotCdep: 'value-we-dont-care-about',
-                },
-              },
-            },
-          });
-          const noCdep = builtRequests.every((builtRequest) => {
-            const ourCdepValue = builtRequest.data.device?.ext?.cdep;
-            return ourCdepValue === undefined;
-          });
-          expect(noCdep).to.be.true;
-        });
-
-        it('should add cdep if we DO get it in an impression request', () => {
-          const builtRequests = spec.buildRequests(bidRequests, {
-            auctionId: 'new-auction-id',
-            ortb2: {
-              device: {
-                ext: {
-                  cdep: 'cdep-value',
-                },
-              },
-            },
-          });
-          const cdepPresent = builtRequests.every((builtRequest) => {
-            return builtRequest.data.device.ext.cdep === 'cdep-value';
-          });
-          expect(cdepPresent).to.be.true;
-        });
-      });
-
       describe('first party data', () => {
         const firstPartyData = {
           site: {
@@ -997,22 +960,6 @@ describe('sharethrough adapter spec', function () {
 
           expect(openRtbReq.regs.ext.gpp).to.equal(firstPartyData.regs.gpp);
           expect(openRtbReq.regs.ext.gpp_sid).to.equal(firstPartyData.regs.gpp_sid);
-        });
-      });
-
-      describe('fledge', () => {
-        it('should attach "ae" as a property to the request if 1) fledge auctions are enabled, and 2) request is display (only supporting display for now)', () => {
-          // ASSEMBLE
-          const EXPECTED_AE_VALUE = 1;
-
-          // ACT
-          bidderRequest.paapi = { enabled: true };
-          const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
-          const ACTUAL_AE_VALUE = builtRequests[0].data.imp[0].ext.ae;
-
-          // ASSERT
-          expect(ACTUAL_AE_VALUE).to.equal(EXPECTED_AE_VALUE);
-          expect(builtRequests[1].data.imp[0].ext.ae).to.be.undefined;
         });
       });
 
@@ -1257,53 +1204,6 @@ describe('sharethrough adapter spec', function () {
 
           const resp = spec.interpretResponse(response, request)[0];
           expect(resp.ttl).to.equal(360);
-        });
-
-        it('should return correct properties when fledgeAuctionEnabled is true and isEqtvTest is false', () => {
-          request = spec.buildRequests(bidRequests, bidderRequest)[0];
-          response = {
-            body: {
-              ext: {
-                auctionConfigs: {
-                  key: 'value',
-                },
-              },
-              seatbid: [
-                {
-                  bid: [
-                    {
-                      id: 'abcd1234',
-                      impid: 'aaaabbbbccccdd',
-                      w: 300,
-                      h: 250,
-                      price: 42,
-                      crid: 'creative',
-                      dealid: 'deal',
-                      adomain: ['domain.com'],
-                      adm: 'markup',
-                      exp: -1,
-                    },
-                    {
-                      id: 'efgh5678',
-                      impid: 'ddeeeeffffgggg',
-                      w: 300,
-                      h: 250,
-                      price: 42,
-                      crid: 'creative',
-                      dealid: 'deal',
-                      adomain: ['domain.com'],
-                      adm: 'markup',
-                      exp: -1,
-                    },
-                  ],
-                },
-              ],
-            },
-          };
-
-          const resp = spec.interpretResponse(response, request);
-          expect(resp.bids.length).to.equal(2);
-          expect(resp.paapi).to.deep.equal({ key: 'value' });
         });
       });
 

@@ -1,16 +1,16 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   createBuildRequestsFn,
-  createInterpretResponseFn, createUserSyncGetter
+  createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'shinezRtb';
 const BIDDER_VERSION = '1.0.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.sweetgum.io`;
@@ -32,7 +32,9 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onBidBillable,
 };
 
 registerBidder(spec);

@@ -27,16 +27,6 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: 'dmdId',
-            storage: {
-                name: 'dmd-dgid',
-                type: 'cookie',
-                expires: 30
-            },
-            params: {
-                api_key: '3fdbe297-3690-4f5c-9e11-ee9186a6d77c', // provided by DMD
-            }
-        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -90,6 +80,16 @@ pbjs.setConfig({
                 type: 'cookie',
                 name: '_li_pbid',
                 expires: 60
+            }
+        }, {
+            name: 'locId',
+            params: {
+                endpoint: 'https://id.example.com/locid'
+            },
+            storage: {
+                type: 'html5',
+                name: '_locid',
+                expires: 7
             }
         }, {
              name: 'criteo',
@@ -157,6 +157,21 @@ pbjs.setConfig({
         },
         {
             name: "mygaruId"
+        },
+        {
+            name: "rediadsId",
+            params: {
+                source: "rediads.com"
+            },
+            storage: {
+                type: "html5",
+                name: "rediads_id",
+                expires: 30,
+                refreshInSeconds: 3600
+            }
+        },
+        {
+            name: "startioId"
         }
         ],
         syncDelay: 5000,

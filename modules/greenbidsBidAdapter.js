@@ -1,4 +1,5 @@
 import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
@@ -65,7 +66,7 @@ export const spec = {
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
-      devicePixelRatio: topWindow.devicePixelRatio,
+      devicePixelRatio: getDevicePixelRatio(topWindow),
       screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,

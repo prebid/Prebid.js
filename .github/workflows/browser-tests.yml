@@ -27,7 +27,7 @@ jobs:
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name:  Restore working directory
         uses: ./.github/actions/load
         with:
@@ -35,9 +35,12 @@ jobs:
       - name: "Define testing strategy"
         uses: actions/github-script@v8
         id: define
+        env:
+          browserstack: ${{ secrets.BROWSERSTACK_USER_NAME }}
         with:
           script: |
             const fs = require('node:fs/promises');
+            const process = require('process');
             const browsers = Object.entries(
               require('./.github/workflows/browser_testing.json')
             ).flatMap(([name, browser]) => {
@@ -56,11 +59,18 @@ jobs:
               .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) == null)
             )
             const updatedBrowsersJson = JSON.stringify(bstackBrowsers, null,  2);
-            console.log("Using browsers.json:", updatedBrowsersJson);
+            let bsBrowsers;
+            if (process.env.browserstack) {
+              console.log("Using browsers.json:", updatedBrowsersJson);
+              bsBrowsers = Object.keys(bstackBrowsers).length;
+            } else {
+              console.log("Skipping browserstack tests (credentials are not available)");
+              bsBrowsers = 0;
+            }
             console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
-              bsBrowsers: Object.keys(bstackBrowsers).length,
+              bsBrowsers,
               browsers,
               latestBrowsers: browsers.filter(browser => browser.version === 'latest') 
             }

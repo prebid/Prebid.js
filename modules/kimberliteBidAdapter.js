@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { deepSetValue, replaceMacros } from '../src/utils.js';
-import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 const VERSION = '1.1.0';
 
@@ -86,7 +86,7 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, bidRequest) {
-    const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;
+    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
     return bids;
   }
 };
@@ -96,7 +96,7 @@ export function expandAuctionMacros(str, price, currency) {
 
   const defaultCurrency = 'RUB';
 
-  return replaceMacros(str, {AUCTION_PRICE: price, AUCTION_CURRENCY: currency || defaultCurrency});
+  return replaceMacros(str, { AUCTION_PRICE: price, AUCTION_CURRENCY: currency || defaultCurrency });
 };
 
 registerBidder(spec);

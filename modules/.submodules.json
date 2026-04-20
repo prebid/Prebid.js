@@ -14,7 +14,6 @@
       "czechAdIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
-      "dmdIdSystem",
       "euidIdSystem",
       "fabrickIdSystem",
       "freepassIdSystem",
@@ -32,6 +31,7 @@
       "kinessoIdSystem",
       "liveIntentIdSystem",
       "lmpIdSystem",
+      "locIdSystem",
       "lockrAIMIdSystem",
       "lotamePanoramaIdSystem",
       "merkleIdSystem",
@@ -49,9 +49,10 @@
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "pubmaticIdSystem",
-      "quantcastIdSystem",
+      "rediadsIdSystem",
       "rewardedInterestIdSystem",
       "sharedIdSystem",
+      "startioIdSystem",
       "taboolaIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
@@ -64,10 +65,6 @@
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
     ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "gamAdpod"
-    ],
     "rtdModule": [
       "1plusXRtdProvider",
       "51DegreesRtdProvider",
@@ -77,6 +74,7 @@
       "adlooxRtdProvider",
       "adlaneRtdProvider",
       "adnuntiusRtdProvider",
+      "agenticAudienceAdapter",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "anonymisedRtdProvider",
@@ -89,6 +87,7 @@
       "cleanioRtdProvider",
       "confiantRtdProvider",
       "contxtfulRtdProvider",
+      "datamageRtdProvider",
       "dgkeywordRtdProvider",
       "dynamicAdBoostRtdProvider",
       "experianRtdProvider",
@@ -101,6 +100,7 @@
       "hadronRtdProvider",
       "humansecurityRtdProvider",
       "iasRtdProvider",
+      "insuradsRtdProvider",
       "imRtdProvider",
       "intersectionRtdProvider",
       "jwplayerRtdProvider",
@@ -111,11 +111,13 @@
       "mobianRtdProvider",
       "neuwoRtdProvider",
       "nodalsAiRtdProvider",
+      "oftmediaRtdProvider",
       "oneKeyRtdProvider",
       "optableRtdProvider",
       "optimeraRtdProvider",
       "overtoneRtdProvider",
       "oxxionRtdProvider",
+      "panxoRtdProvider",
       "permutiveRtdProvider",
       "pubmaticRtdProvider",
       "pubxaiRtdProvider",
@@ -140,10 +142,6 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
-    ],
-    "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
     ]
   }
 }

@@ -1,8 +1,8 @@
 import { deepSetValue, generateUUID, logError } from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {AdapterRequest, BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { getStorageManager } from '../src/storageManager.js';
+import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
@@ -59,9 +59,9 @@ const ALIASES = [
   { code: 'scoremedia', gvlid: 965 },
   { code: 'movingup', gvlid: 1416 },
   { code: 'glomexbidder', gvlid: 967 },
-  { code: 'revnew', gvlid: 1468 },
   { code: 'pubxai', gvlid: 1485 },
   { code: 'ybidder', gvlid: 1253 },
+  { code: 'netads', gvlid: 965 },
 ];
 
 export const STORAGE = getStorageManager({
@@ -142,7 +142,7 @@ const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const data:ORTBRequest = converter.toORTB({bidRequests, bidderRequest})
+  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest })
   const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,

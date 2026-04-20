@@ -128,6 +128,7 @@ describe('permutiveRtdProvider', function () {
         acBidders: [],
         overwrites: {},
         enforceVendorConsent: false,
+        bidders: {},
       },
     })
 
@@ -689,6 +690,66 @@ describe('permutiveRtdProvider', function () {
         })
       })
     })
+
+    describe('bidders config with customCohorts', function () {
+      it('should read custom cohorts from localStorage for msft bidder using customCohorts config', function () {
+        const segmentsData = transformedTargeting()
+        const expectedAppnexusCohorts = segmentsData.appnexus
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: ['msft'],
+            maxSegs: 500,
+            bidders: {
+              msft: {
+                customCohorts: { source: 'ls', key: '_papns' }
+              }
+            }
+          }
+        }
+        const bidderConfig = {}
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        expect(bidderConfig['msft'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ])
+
+        expectedAppnexusCohorts.forEach(id => {
+          expect(bidderConfig['msft'].user.keywords).to.include(`permutive=${id}`)
+        })
+      })
+
+      it('should fall back to segmentData lookup when customCohorts is not configured', function () {
+        const segmentsData = transformedTargeting()
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: ['appnexus'],
+            maxSegs: 500,
+            bidders: {}
+          }
+        }
+        const bidderConfig = {}
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        const expectedAppnexusCohorts = segmentsData.appnexus
+        expect(bidderConfig['appnexus'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ])
+      })
+    })
   })
 
   describe('Getting segments', function () {
@@ -1030,7 +1091,7 @@ describe('permutiveIdentityManagerIdSystem', () => {
   })
 
   describe('decode', () => {
-    it('returns the input unchanged', () => {
+    it('returns the input unchanged for most IDs', () => {
       const input = {
         id5id: {
           uid: '0',
@@ -1043,6 +1104,17 @@ describe('permutiveIdentityManagerIdSystem', () => {
       }
       const result = permutiveIdentityManagerIdSubmodule.decode(input)
       expect(result).to.be.equal(input)
+    })
+
+    it('decodes the base64-encoded array for pairId', () => {
+      const input = {
+        pairId: 'WyJBeVhiNUF0dmsvVS8xQ1d2ejJuRVk5aFl4T1g3TVFPUTJVQk1BMFdiV1ZFbSJd'
+      }
+      const result = permutiveIdentityManagerIdSubmodule.decode(input)
+      const expected = {
+        pairId: ["AyXb5Atvk/U/1CWvz2nEY9hYxOX7MQOQ2UBMA0WbWVEm"]
+      }
+      expect(result).to.deep.equal(expected)
     })
   })
 
@@ -1067,6 +1139,46 @@ describe('permutiveIdentityManagerIdSystem', () => {
       expect(result).to.deep.equal(expected)
     })
 
+    it('handles idl_env without pairId', () => {
+      const data = {
+        'providers': {
+          'idl_env': {
+            'userId': 'ats_envelope_value'
+          }
+        }
+      }
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      const expected = {
+        'id': {
+          'idl_env': 'ats_envelope_value'
+        }
+      }
+      expect(result).to.deep.equal(expected)
+    })
+
+    it('handles idl_env with pairId', () => {
+      const data = {
+        'providers': {
+          'idl_env': {
+            'userId': 'ats_envelope_value',
+          },
+          'pairId': {
+            'userId': 'pair_id_encoded_value'
+          }
+        }
+      }
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      const expected = {
+        'id': {
+          'idl_env': 'ats_envelope_value',
+          'pairId': 'pair_id_encoded_value'
+        }
+      }
+      expect(result).to.deep.equal(expected)
+    })
+
     it('returns undefined if no relevant IDs are found in localStorage', () => {
       storage.setDataInLocalStorage(STORAGE_KEY, '{}')
       const result = permutiveIdentityManagerIdSubmodule.getId({})
@@ -1076,7 +1188,7 @@ describe('permutiveIdentityManagerIdSystem', () => {
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
       const cleanup = setWindowPermutive()
       try {
-        const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 300}})
+        const result = permutiveIdentityManagerIdSubmodule.getId({ params: { ajaxTimeout: 300 } })
         expect(result).not.to.be.undefined
         expect(result.id).to.be.undefined
         expect(result.callback).not.to.be.undefined

@@ -1,9 +1,9 @@
 // import or require modules necessary for the test, e.g.:
-import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
+import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 
@@ -378,7 +378,7 @@ describe('Richaudience adapter tests', function () {
 
   it('Referer undefined', function () {
     config.setConfig({
-      'currency': {'adServerCurrency': 'USD'}
+      'currency': { 'adServerCurrency': 'USD' }
     })
 
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
@@ -430,7 +430,6 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('timeout').and.to.equal(600);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
     expect(typeof requestContent.scr_rsl === 'string')
-    expect(typeof requestContent.cpuc === 'number')
     expect(typeof requestContent.gpid === 'string')
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })
@@ -725,7 +724,7 @@ describe('Richaudience adapter tests', function () {
 
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.deep.equal({code: 'ra', gvlid: 108});
+    expect(spec.aliases[0]).to.deep.equal({ code: 'ra', gvlid: 108 });
   });
 
   it('Verifies bidder gvlid', function () {
@@ -941,7 +940,7 @@ describe('Richaudience adapter tests', function () {
     });
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -972,17 +971,17 @@ describe('Richaudience adapter tests', function () {
 
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
     it('Verifies user syncs iframe exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'exclude' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1012,18 +1011,18 @@ describe('Richaudience adapter tests', function () {
 
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(0);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
     it('Verifies user syncs image include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1062,7 +1061,7 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'exclude' } } }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1100,8 +1099,8 @@ describe('Richaudience adapter tests', function () {
       config.setConfig({
         'userSync': {
           filterSettings: {
-            iframe: {bidders: '*', filter: 'include'},
-            image: {bidders: '*', filter: 'include'}
+            iframe: { bidders: '*', filter: 'include' },
+            image: { bidders: '*', filter: 'include' }
           }
         }
       })
@@ -1138,13 +1137,13 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
@@ -1152,8 +1151,8 @@ describe('Richaudience adapter tests', function () {
       config.setConfig({
         'userSync': {
           filterSettings: {
-            iframe: {bidders: '*', filter: 'exclude'},
-            image: {bidders: '*', filter: 'exclude'}
+            iframe: { bidders: '*', filter: 'exclude' },
+            image: { bidders: '*', filter: 'exclude' }
           }
         }
       })
@@ -1189,13 +1188,13 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(0);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
@@ -1203,8 +1202,8 @@ describe('Richaudience adapter tests', function () {
       config.setConfig({
         'userSync': {
           filterSettings: {
-            iframe: {bidders: '*', filter: 'exclude'},
-            image: {bidders: '*', filter: 'include'}
+            iframe: { bidders: '*', filter: 'exclude' },
+            image: { bidders: '*', filter: 'include' }
           }
         }
       })
@@ -1241,13 +1240,13 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
@@ -1255,8 +1254,8 @@ describe('Richaudience adapter tests', function () {
       config.setConfig({
         'userSync': {
           filterSettings: {
-            iframe: {bidders: '*', filter: 'include'},
-            image: {bidders: '*', filter: 'exclude'}
+            iframe: { bidders: '*', filter: 'include' },
+            image: { bidders: '*', filter: 'exclude' }
           }
         }
       })
@@ -1293,22 +1292,22 @@ describe('Richaudience adapter tests', function () {
       syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, [], {consentString: '', gdprApplies: false});
+      }, [], { consentString: '', gdprApplies: false });
       expect(syncs).to.have.lengthOf(1);
 
       syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, [], {consentString: '', gdprApplies: true});
+      }, [], { consentString: '', gdprApplies: true });
       expect(syncs).to.have.lengthOf(0);
     });
 
     it('Verifies user syncs iframe/image include with GPP', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { iframe: { bidders: '*', filter: 'include' } } }
       })
 
-      let syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
+      let syncs = spec.getUserSyncs({ iframeEnabled: true }, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
         applicableSections: [7]
       },
@@ -1317,10 +1316,10 @@ describe('Richaudience adapter tests', function () {
       expect(syncs[0].type).to.equal('iframe');
 
       config.setConfig({
-        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
       })
 
-      syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
+      syncs = spec.getUserSyncs({ pixelEnabled: true }, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
         applicableSections: [7, 5]
       },
@@ -1334,7 +1333,7 @@ describe('Richaudience adapter tests', function () {
         gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA',
         applicableSections: [0]
       };
-      const result = spec.getUserSyncs({pixelEnabled: true}, undefined, undefined, undefined, gppConsent);
+      const result = spec.getUserSyncs({ pixelEnabled: true }, undefined, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'image',
         url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`

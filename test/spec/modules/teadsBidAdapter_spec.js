@@ -3,6 +3,7 @@ import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { spec, storage } from 'modules/teadsBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { getScreenOrientation } from 'src/utils.js';
+import { getDevicePixelRatio } from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -360,7 +361,7 @@ describe('teadsBidAdapter', () => {
     it('should add pixelRatio info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const pixelRatio = window.top.devicePixelRatio
+      const pixelRatio = getDevicePixelRatio();
 
       expect(payload.devicePixelRatio).to.exist;
       expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);
@@ -427,7 +428,7 @@ describe('teadsBidAdapter', () => {
               model: 'iPhone 12 Pro Max',
               os: 'iOS',
               osv: '17.4',
-              ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+              ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
             },
           },
         },
@@ -436,28 +437,6 @@ describe('teadsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.device).to.deep.equal(ortb2DeviceBidderRequest.ortb2.device);
-    });
-
-    it('should add hardwareConcurrency info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
-
-      if (hardwareConcurrency) {
-        expect(payload.hardwareConcurrency).to.exist;
-        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
-      } else expect(payload.hardwareConcurrency).to.not.exist
-    });
-
-    it('should add deviceMemory info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const deviceMemory = window.top.navigator.deviceMemory
-
-      if (deviceMemory) {
-        expect(payload.deviceMemory).to.exist;
-        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
-      } else expect(payload.deviceMemory).to.not.exist;
     });
 
     describe('pageTitle', function () {
@@ -786,20 +765,20 @@ describe('teadsBidAdapter', () => {
               source: 2,
               platform: {
                 brand: 'macOS',
-                version: [ '12', '4', '0' ]
+                version: ['12', '4', '0']
               },
               browsers: [
                 {
                   brand: 'Chromium',
-                  version: [ '106', '0', '5249', '119' ]
+                  version: ['106', '0', '5249', '119']
                 },
                 {
                   brand: 'Google Chrome',
-                  version: [ '106', '0', '5249', '119' ]
+                  version: ['106', '0', '5249', '119']
                 },
                 {
                   brand: 'Not;A=Brand',
-                  version: [ '99', '0', '0', '0' ]
+                  version: ['99', '0', '0', '0']
                 }
               ],
               mobile: 0,
@@ -819,20 +798,20 @@ describe('teadsBidAdapter', () => {
         source: 2,
         platform: {
           brand: 'macOS',
-          version: [ '12', '4', '0' ]
+          version: ['12', '4', '0']
         },
         browsers: [
           {
             brand: 'Chromium',
-            version: [ '106', '0', '5249', '119' ]
+            version: ['106', '0', '5249', '119']
           },
           {
             brand: 'Google Chrome',
-            version: [ '106', '0', '5249', '119' ]
+            version: ['106', '0', '5249', '119']
           },
           {
             brand: 'Not;A=Brand',
-            version: [ '99', '0', '0', '0' ]
+            version: ['99', '0', '0', '0']
           }
         ],
         mobile: 0,
@@ -884,7 +863,7 @@ describe('teadsBidAdapter', () => {
 
     const toEid = (sourceId, value) => ({
       source: sourceId,
-      uids: [{id: value}]
+      uids: [{ id: value }]
     })
 
     describe('User IDs', function () {
@@ -910,7 +889,6 @@ describe('teadsBidAdapter', () => {
         id5Id: toEid('id5-sync.com', 'id5Id-id'),
         criteoId: toEid('criteo.com', 'criteoId-id'),
         yahooConnectId: toEid('yahoo.com', 'yahooConnectId-id'),
-        quantcastId: toEid('quantcast.com', 'quantcastId-id'),
         epsilonPublisherLinkId: toEid('epsilon.com', 'epsilonPublisherLinkId-id'),
         publisherFirstPartyViewerId: toEid('pubcid.org', 'publisherFirstPartyViewerId-id'),
         merkleId: toEid('merkleinc.com', 'merkleId-id'),
@@ -978,7 +956,6 @@ describe('teadsBidAdapter', () => {
           expect(payload['id5Id']).to.equal('id5Id-id');
           expect(payload['criteoId']).to.equal('criteoId-id');
           expect(payload['yahooConnectId']).to.equal('yahooConnectId-id');
-          expect(payload['quantcastId']).to.equal('quantcastId-id');
           expect(payload['epsilonPublisherLinkId']).to.equal('epsilonPublisherLinkId-id');
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
           expect(payload['merkleId']).to.equal('merkleId-id');

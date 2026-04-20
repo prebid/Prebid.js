@@ -4,7 +4,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { Renderer } from '../src/Renderer.js';
 import {
   deepAccess,
   deepSetValue,
@@ -21,8 +20,9 @@ import {
   _each,
   isPlainObject
 } from '../src/utils.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+import { outstreamRenderer } from '../libraries/magniteUtils/outstream.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,8 +30,6 @@ import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
-// renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
@@ -113,8 +111,10 @@ var sizeMap = {
   195: '600x300',
   198: '640x360',
   199: '640x200',
+  210: '1080x1920',
   213: '1030x590',
   214: '980x360',
+  219: '1920x1080',
   221: '1x1',
   229: '320x180',
   230: '2000x1400',
@@ -127,7 +127,6 @@ var sizeMap = {
   259: '998x200',
   261: '480x480',
   264: '970x1000',
-  265: '1920x1080',
   274: '1800x200',
   278: '320x500',
   282: '320x400',
@@ -167,7 +166,7 @@ _each(sizeMap, (item, key) => {
 
 export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
-    const {bidRequests} = context;
+    const { bidRequests } = context;
     const data = buildRequest(imps, bidderRequest, context);
     data.cur = ['USD'];
     data.test = config.getConfig('debug') ? 1 : 0;
@@ -187,7 +186,7 @@ export const converter = ortbConverter({
 
     const modules = (getGlobal()).installedModules;
     if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
-      deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
+      deepSetValue(data, 'ext.prebid.analytics', { 'rubicon': { 'client-analytics': true } });
     }
 
     addOrtbFirstPartyData(data, bidRequests, bidderRequest.ortb2);
@@ -232,7 +231,7 @@ export const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
-    const {bidRequest} = context;
+    const { bidRequest } = context;
 
     const [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
     // 0 by default to avoid undefined size
@@ -240,7 +239,7 @@ export const converter = ortbConverter({
     bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = outstreamRenderer(bidResponse);
+      bidResponse.renderer = outstreamRenderer(bidResponse, rubiConf.rendererUrl, rubiConf.rendererConfig);
     }
 
     if (deepAccess(bid, 'ext.bidder.rp.advid')) {
@@ -316,7 +315,7 @@ export const spec = {
     });
 
     if (filteredRequests && filteredRequests.length) {
-      const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
+      const data = converter.toORTB({ bidRequests: filteredRequests, bidderRequest });
       resetImpIdMap();
 
       filteredHttpRequest.push({
@@ -329,7 +328,7 @@ export const spec = {
 
     const bannerBidRequests = bidRequests.filter((req) => {
       const mediaTypes = bidType(req) || [];
-      const {bidonmultiformat, video} = req.params || {};
+      const { bidonmultiformat, video } = req.params || {};
       return (
         // Send to fastlane if: it must include BANNER and...
         mediaTypes.includes(BANNER) && (
@@ -427,7 +426,6 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
-        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -501,7 +499,6 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
-      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'ip': bidRequest.ortb2?.device?.ip,
       'ipv6': bidRequest.ortb2?.device?.ipv6,
       'p_screen_res': _getScreenResolution(),
@@ -534,7 +531,7 @@ export const spec = {
 
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
-    const posMapping = {1: 'atf', 3: 'btf'};
+    const posMapping = { 1: 'atf', 3: 'btf' };
     const pos = posMapping[deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : pos;
 
@@ -549,7 +546,6 @@ export const spec = {
       data['p_site.mobile'] = bidRequest.ortb2.site.mobile
     }
 
-    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest?.ortb2?.user?.ext?.eids) {
       bidRequest.ortb2.user.ext.eids.forEach(({ source, uids = [], inserter, matcher, mm, ext = {} }) => {
@@ -655,7 +651,7 @@ export const spec = {
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
-    const {data} = request;
+    const { data } = request;
 
     // check overall response
     if (!responseObj || typeof responseObj !== 'object') {
@@ -667,14 +663,14 @@ export const spec = {
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
         logWarn('Rubicon: Error in video response');
       }
-      const bids = converter.fromORTB({request: data, response: responseObj}).bids;
+      const bids = converter.fromORTB({ request: data, response: responseObj }).bids;
       return bids;
     }
 
     let ads = responseObj.ads;
     let lastImpId;
     let multibid = 0;
-    const {bidRequest} = request;
+    const { bidRequest } = request;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest).includes(VIDEO) && typeof ads === 'object') {
@@ -740,12 +736,19 @@ export const spec = {
           [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
         }
 
+        if (ad.bid_cat && ad.bid_cat.length) {
+          bid.meta.primaryCatId = ad.bid_cat[0];
+          if (ad.bid_cat.length > 1) {
+            bid.meta.secondaryCatIds = ad.bid_cat.slice(1);
+          }
+        }
+
         // add server-side targeting
         bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
           .reduce((memo, item) => {
             memo[item.key] = item.values[0];
             return memo;
-          }, {'rpfl_elemid': associatedBidRequest.adUnitCode});
+          }, { 'rpfl_elemid': associatedBidRequest.adUnitCode });
 
         bids.push(bid);
       } else {
@@ -803,71 +806,6 @@ function _renderCreative(script, impId) {
 </html>`;
 }
 
-function hideGoogleAdsDiv(adUnit) {
-  const el = adUnit.querySelector("div[id^='google_ads']");
-  if (el) {
-    el.style.setProperty('display', 'none');
-  }
-}
-
-function hideSmartAdServerIframe(adUnit) {
-  const el = adUnit.querySelector("script[id^='sas_script']");
-  const nextSibling = el && el.nextSibling;
-  if (nextSibling && nextSibling.localName === 'iframe') {
-    nextSibling.style.setProperty('display', 'none');
-  }
-}
-
-function renderBid(bid) {
-  // hide existing ad units
-  const adUnitElement = document.getElementById(bid.adUnitCode);
-  hideGoogleAdsDiv(adUnitElement);
-  hideSmartAdServerIframe(adUnitElement);
-
-  // configure renderer
-  const defaultConfig = {
-    align: 'center',
-    position: 'append',
-    closeButton: false,
-    label: undefined,
-    collapse: true
-  };
-  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
-  bid.renderer.push(() => {
-    window.MagniteApex.renderAd({
-      width: bid.width,
-      height: bid.height,
-      vastUrl: bid.vastUrl,
-      placement: {
-        attachTo: `#${bid.adUnitCode}`,
-        align: config.align,
-        position: config.position
-      },
-      closeButton: config.closeButton,
-      label: config.label,
-      collapse: config.collapse
-    });
-  });
-}
-
-function outstreamRenderer(rtbBid) {
-  const renderer = Renderer.install({
-    id: rtbBid.adId,
-    url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
-    config: rubiConf.rendererConfig || {},
-    loaded: false,
-    adUnitCode: rtbBid.adUnitCode
-  });
-
-  try {
-    renderer.setRender(renderBid);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
-}
-
 function parseSizes(bid, mediaType) {
   const params = bid.params;
   if (mediaType === VIDEO) {
@@ -902,8 +840,8 @@ function parseSizes(bid, mediaType) {
 
 function applyFPD(bidRequest, mediaType, data) {
   const BID_FPD = {
-    user: {ext: {data: {...bidRequest.params.visitor}}},
-    site: {ext: {data: {...bidRequest.params.inventory}}}
+    user: { ext: { data: { ...bidRequest.params.visitor } } },
+    site: { ext: { data: { ...bidRequest.params.inventory } } }
   };
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
@@ -914,8 +852,8 @@ function applyFPD(bidRequest, mediaType, data) {
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const dsa = deepAccess(fpd, 'regs.ext.dsa');
-  const SEGTAX = {user: [4], site: [1, 2, 5, 6, 7]};
-  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
+  const SEGTAX = { user: [4], site: [1, 2, 5, 6, 7] };
+  const MAP = { user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw' };
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
       return prop.filter(name => name.segment && deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
@@ -1049,27 +987,6 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
-  }
-}
-
-function addDesiredSegtaxes(bidderRequest, target) {
-  if (rubiConf.readTopics === false) {
-    return;
-  }
-  const iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
-  const vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
-  const userData = bidderRequest.ortb2?.user?.data || [];
-  const siteData = bidderRequest.ortb2?.site?.content?.data || [];
-  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
-  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
-}
-
-function iterateOverSegmentData(target, char, segments) {
-  return (topic) => {
-    const taxonomy = Number(topic.ext?.segtax);
-    if (segments.includes(taxonomy)) {
-      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
-    }
   }
 }
 
@@ -1218,18 +1135,18 @@ export function determineRubiconVideoSizeId(bid) {
 export function getPriceGranularity(config) {
   return {
     ranges: {
-      low: [{max: 5.00, increment: 0.50}],
-      medium: [{max: 20.00, increment: 0.10}],
-      high: [{max: 20.00, increment: 0.01}],
+      low: [{ max: 5.00, increment: 0.50 }],
+      medium: [{ max: 20.00, increment: 0.10 }],
+      high: [{ max: 20.00, increment: 0.01 }],
       auto: [
-        {max: 5.00, increment: 0.05},
-        {min: 5.00, max: 10.00, increment: 0.10},
-        {min: 10.00, max: 20.00, increment: 0.50}
+        { max: 5.00, increment: 0.05 },
+        { min: 5.00, max: 10.00, increment: 0.10 },
+        { min: 10.00, max: 20.00, increment: 0.50 }
       ],
       dense: [
-        {max: 3.00, increment: 0.01},
-        {min: 3.00, max: 8.00, increment: 0.05},
-        {min: 8.00, max: 20.00, increment: 0.50}
+        { max: 3.00, increment: 0.01 },
+        { min: 3.00, max: 8.00, increment: 0.05 },
+        { min: 8.00, max: 20.00, increment: 0.50 }
       ],
       custom: config.getConfig('customPriceBucket') && config.getConfig('customPriceBucket').buckets
     }[config.getConfig('priceGranularity')]
@@ -1327,8 +1244,8 @@ function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
   const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
   nonBannerRequests.forEach(bidRequest => {
     const bidFirstPartyData = {
-      user: {ext: {data: {...bidRequest.params.visitor}}},
-      site: {ext: {data: {...bidRequest.params.inventory}}}
+      user: { ext: { data: { ...bidRequest.params.visitor } } },
+      site: { ext: { data: { ...bidRequest.params.inventory } } }
     };
 
     // add site.content.language

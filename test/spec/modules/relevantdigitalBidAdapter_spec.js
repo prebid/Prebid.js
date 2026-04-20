@@ -1,4 +1,4 @@
-import {spec, resetBidderConfigs} from 'modules/relevantdigitalBidAdapter.js';
+import { spec, resetBidderConfigs } from 'modules/relevantdigitalBidAdapter.js';
 import { parseUrl } from 'src/utils.js';
 
 const expect = require('chai').expect;
@@ -228,7 +228,7 @@ const resetAndBuildRequest = (params) => {
 describe('Relevant Digital Bid Adaper', function () {
   describe('buildRequests', () => {
     const [request] = resetAndBuildRequest();
-    const {data, url} = request
+    const { data, url } = request
     it('should give the correct URL', () => {
       expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`);
     });
@@ -292,7 +292,7 @@ describe('Relevant Digital Bid Adaper', function () {
     const responseSyncs = BID_RESPONSE.ext.relevant.sync;
     const allSyncs = spec.getUserSyncs({ pixelEnabled: true }, [{ body: BID_RESPONSE }], null, null);
     it('should return one sync object per pixel', () => {
-      const expectedResult = responseSyncs.map(({ url }) => ({url, type: 'image'}));
+      const expectedResult = responseSyncs.map(({ url }) => ({ url, type: 'image' }));
       expect(allSyncs).to.deep.equal(expectedResult)
     });
   });

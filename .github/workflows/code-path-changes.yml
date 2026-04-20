@@ -22,15 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies
-        run: npm install axios nodemailer
+        run: npm install nodemailer@8.0.5
 
       - name: Run Notification Script
         run: |

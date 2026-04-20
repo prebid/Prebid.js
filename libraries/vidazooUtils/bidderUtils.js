@@ -9,11 +9,18 @@ import {
   uniques,
   getWinDimensions
 } from '../../src/utils.js';
-import {chunk} from '../chunk/chunk.js';
-import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
-import {bidderSettings} from '../../src/bidderSettings.js';
-import {config} from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import { chunk } from '../chunk/chunk.js';
+import {
+  CURRENCY,
+  DEAL_ID_EXPIRY, IFRAME_SYNC_DEFAULT_URL, IMAGE_SYNC_DEFAULT_URL,
+  MULTI_REQ_LIST,
+  SESSION_ID_KEY,
+  TTL_SECONDS,
+  UNIQUE_DEAL_ID_EXPIRY
+} from './constants.js';
+import { bidderSettings } from '../../src/bidderSettings.js';
+import { config } from '../../src/config.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());
@@ -21,11 +28,16 @@ export function createSessionId() {
 
 export function getTopWindowQueryParams() {
   try {
-    const parsedUrl = parseUrl(window.top.document.URL, {decodeSearchAsString: true});
+    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';
   }
+}
+
+function isValidParamsHost(params) {
+  // valid is params:{host: 'twist.win'}
+  return params && params.host && typeof params.host === 'string' && params.host.split('.').length === 2
 }
 
 export function extractCID(params) {
@@ -56,7 +68,7 @@ export function tryParseJSON(value) {
 export function setStorageItem(storage, key, value, timestamp) {
   try {
     const created = timestamp || Date.now();
-    const data = JSON.stringify({value, created});
+    const data = JSON.stringify({ value, created });
     storage.setDataInLocalStorage(key, data);
   } catch (e) {
   }
@@ -152,6 +164,30 @@ export function onBidWon(bid) {
   triggerPixel(url);
 }
 
+export function onBidBillable(bid) {
+  if (!bid.burl) {
+    return;
+  }
+  const billBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(billBid);
+  const url = bid.burl + (bid.burl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
+}
+
 /**
  * Create the spec function for getting user syncs
  *
@@ -168,9 +204,9 @@ export function createUserSyncGetter(options = {
 }) {
   return function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     const syncs = [];
-    const {iframeEnabled, pixelEnabled} = syncOptions;
-    const {gdprApplies, consentString = ''} = gdprConsent;
-    const {gppString, applicableSections} = gppConsent;
+    const { iframeEnabled, pixelEnabled } = syncOptions;
+    const { gdprApplies, consentString = '' } = gdprConsent;
+    const { gppString, applicableSections } = gppConsent;
     const coppa = config.getConfig('coppa') ? 1 : 0;
 
     const cidArr = responses.filter(resp => resp?.body?.cid).map(resp => resp.body.cid).filter(uniques);
@@ -179,18 +215,43 @@ export function createUserSyncGetter(options = {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
     }
+    const UsBaseHeader = responses?.[0]?.headers?.get('x-us-base-url')
 
-    if (iframeEnabled && options.iframeSyncUrl) {
-      syncs.push({
-        type: 'iframe',
-        url: `${options.iframeSyncUrl}/${params}`
-      });
+    if (iframeEnabled) {
+      if (options.iframeSyncUrl) {
+        syncs.push({
+          type: 'iframe',
+          url: `${options.iframeSyncUrl}/${params}`
+        });
+      } else if (UsBaseHeader) {
+        syncs.push({
+          type: 'iframe',
+          url: `https://sync.${UsBaseHeader}/api/sync/iframe/${params}`
+        });
+      } else {
+        syncs.push({
+          type: 'iframe',
+          url: `${IFRAME_SYNC_DEFAULT_URL}/${params}`
+        });
+      }
     }
-    if (pixelEnabled && options.imageSyncUrl) {
-      syncs.push({
-        type: 'image',
-        url: `${options.imageSyncUrl}/${params}`
-      });
+    if (pixelEnabled) {
+      if (options.imageSyncUrl) {
+        syncs.push({
+          type: 'image',
+          url: `${options.imageSyncUrl}/${params}`
+        });
+      } else if (UsBaseHeader) {
+        syncs.push({
+          type: 'image',
+          url: `https://sync.${UsBaseHeader}/api/sync/image/${params}`
+        });
+      } else {
+        syncs.push({
+          type: 'image',
+          url: `${IMAGE_SYNC_DEFAULT_URL}/${params}`
+        });
+      }
     }
     return syncs;
   }
@@ -239,8 +300,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestsCount,
     bidderWinsCount
   } = bid;
-  const {ext} = params;
-  let {bidFloor} = params;
+  const { ext } = params;
+  let { bidFloor } = params;
   const hashUrl = hashCode(topWindowUrl);
   const uniqueRequestData = isFn(getUniqueRequestData) ? getUniqueRequestData(hashUrl, bid) : {};
   const uniqueDealId = getUniqueDealId(storage, hashUrl);
@@ -339,13 +400,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.paapi?.enabled) {
-    const fledge = bidderRequest?.ortb2Imp?.ext?.ae;
-    if (fledge) {
-      data.fledge = fledge;
-    }
-  }
-
   const api = mediaTypes?.video?.api || [];
   if (api.includes(7)) {
     const sourceExt = bidderRequest?.ortb2?.source?.ext;
@@ -390,9 +444,10 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
       return [];
     }
 
-    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
+    const allowed = allowSingleRequest && MULTI_REQ_LIST.includes(bidderCode)
+    const singleRequestMode = allowed && config.getConfig(`${bidderCode}.singleRequest`);
     const reqBidId = request?.data?.bidId;
-    const {results} = serverResponse.body;
+    const { results } = serverResponse.body;
 
     const output = [];
 
@@ -408,6 +463,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
           currency,
           bidId,
           nurl,
+          burl,
           advertiserDomains,
           metaData,
           mediaType = BANNER
@@ -429,6 +485,9 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
 
         if (nurl) {
           response.nurl = nurl;
+        }
+        if (burl) {
+          response.burl = burl;
         }
 
         if (metaData) {
@@ -465,35 +524,59 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
 
 export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
   function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
-    const {params} = bid;
+    const { params } = bid;
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
-    const dto = {
-      method: 'POST', url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`, data: data
-    };
-    return dto;
+    // when params are populated with valid host (params: {host: "example.com"} try to add host to url
+    if (isValidParamsHost(params)) {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
+        data: data
+      };
+    } else {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+        data: data
+      };
+    }
   }
 
   function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
-    const {params} = bidRequests[0];
+    const { params } = bidRequests[0];
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = bidRequests.map(bid => {
       const sizes = parseSizesInput(bid.sizes);
       return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData)
     });
-    const chunkSize = Math.min(20, config.getConfig(`${bidderCode}.chunkSize`) || 10);
+    let chSize = 10
+    if (config.getConfig(`${bidderCode}.chunkSize`) && typeof config.getConfig(`${bidderCode}.chunkSize`) === 'number') {
+      chSize = config.getConfig(`${bidderCode}.chunkSize`);
+    }
+    const chunkSize = Math.min(20, chSize);
 
     const chunkedData = chunk(data, chunkSize);
     return chunkedData.map(chunk => {
-      return {
-        method: 'POST',
-        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
-        data: {
-          bids: chunk
-        }
-      };
+      if (isValidParamsHost(params)) {
+        return {
+          method: 'POST',
+          url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
+          data: {
+            bids: chunk
+          }
+        };
+      } else {
+        return {
+          method: 'POST',
+          url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+          data: {
+            bids: chunk
+          }
+        };
+      }
     });
   }
 
@@ -502,8 +585,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
-
-    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
+    const allowed = allowSingleRequest && MULTI_REQ_LIST.includes(bidderCode)
+    const singleRequestMode = allowed && config.getConfig(`${bidderCode}.singleRequest`);
 
     const requests = [];
 
@@ -516,7 +599,6 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
       }
 
       // video bids are sent as a single request for each bid
-
       const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
       videoBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
@@ -524,6 +606,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
         requests.push(request);
       });
     } else {
+      // bulk bids request
       validBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
         const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);

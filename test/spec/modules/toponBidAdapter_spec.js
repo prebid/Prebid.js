@@ -1,6 +1,8 @@
 import { expect } from "chai";
 import { spec } from "modules/toponBidAdapter.js";
 import * as utils from "src/utils.js";
+const USER_SYNC_URL = "https://pb.anyrtb.com/pb/page/prebidUserSyncs.html";
+const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sdk_sync";
 
 describe("TopOn Adapter", function () {
   const PREBID_VERSION = "$prebid.version$";
@@ -117,6 +119,98 @@ describe("TopOn Adapter", function () {
       expect(bidResponses[0].mediaType).to.equal("banner");
       expect(bidResponses[0].width).to.equal(300);
       expect(bidResponses[0].height).to.equal(250);
+    });
+  });
+
+  describe("GetUserSyncs", function () {
+    it("should return correct sync URLs when iframeEnabled is true", function () {
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true,
+      };
+
+      spec.buildRequests(validBidRequests, bidderRequest);
+      const result = spec.getUserSyncs(syncOptions, [], {});
+
+      expect(result).to.be.an("array");
+      expect(result[0].type).to.equal("iframe");
+      expect(result[0].url).to.include(USER_SYNC_URL);
+      expect(result[0].url).to.include("pubid=tpnpub-uuid");
+    });
+
+    it("should return correct sync URLs when pixelEnabled is true", function () {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true,
+      };
+
+      spec.buildRequests(validBidRequests, bidderRequest);
+      const result = spec.getUserSyncs(syncOptions, [], {});
+
+      expect(result).to.be.an("array");
+      expect(result[0].type).to.equal("image");
+      expect(result[0].url).to.include(USER_SYNC_IMG_URL);
+      expect(result[0].url).to.include("pubid=tpnpub-uuid");
+    });
+
+    it("should respect gdpr consent data", function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: "test-consent-string",
+      };
+
+      spec.buildRequests(validBidRequests, bidderRequest);
+      const result = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        gdprConsent
+      );
+      expect(result[0].url).to.include("gdpr=1");
+      expect(result[0].url).to.include("consent=test-consent-string");
+    });
+
+    it("should handle US Privacy consent", function () {
+      const uspConsent = "1YNN";
+
+      spec.buildRequests(validBidRequests, bidderRequest);
+      const result = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        {},
+        uspConsent
+      );
+
+      expect(result[0].url).to.include("us_privacy=1YNN");
+    });
+
+    it("should handle GPP", function () {
+      const gppConsent = {
+        applicableSections: [7],
+        gppString: "test-consent-string",
+      };
+
+      spec.buildRequests(validBidRequests, bidderRequest);
+      const result = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        {},
+        "",
+        gppConsent
+      );
+
+      expect(result[0].url).to.include("gpp=test-consent-string");
+      expect(result[0].url).to.include("gpp_sid=7");
+    });
+
+    it("should return empty array when sync is not enabled", function () {
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: false,
+      };
+
+      const result = spec.getUserSyncs(syncOptions, [], {});
+
+      expect(result).to.be.an("array").that.is.empty;
     });
   });
 });

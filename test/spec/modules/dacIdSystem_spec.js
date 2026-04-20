@@ -82,22 +82,22 @@ describe('dacId module', function () {
       // valid oid, fuuid, no AoneId
       getCookieStub.withArgs(FUUID_COOKIE_NAME).returns(FUUID_DUMMY_VALUE);
       const callbackSpy = sinon.spy();
-      const callback = dacIdSystemSubmodule.getId({params: {oid: configParamTestCase.params.oid[0]}}).callback;
+      const callback = dacIdSystemSubmodule.getId({ params: { oid: configParamTestCase.params.oid[0] } }).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({'uid': AONEID_DUMMY_VALUE}));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal({fuuid: 'dacIdTest', uid: AONEID_DUMMY_VALUE});
+      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ 'uid': AONEID_DUMMY_VALUE }));
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({ fuuid: 'dacIdTest', uid: AONEID_DUMMY_VALUE });
     });
 
     cookieTestCasesForEmpty.forEach(testCase => it('should return undefined when AoneId not exists & API result is empty', function () {
       // valid oid, fuuid, no AoneId, API result empty
       getCookieStub.withArgs(FUUID_COOKIE_NAME).returns(FUUID_DUMMY_VALUE);
       const callbackSpy = sinon.spy();
-      const callback = dacIdSystemSubmodule.getId({params: {oid: configParamTestCase.params.oid[0]}}).callback;
+      const callback = dacIdSystemSubmodule.getId({ params: { oid: configParamTestCase.params.oid[0] } }).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({'uid': testCase}));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal({fuuid: 'dacIdTest', uid: undefined});
+      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ 'uid': testCase }));
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({ fuuid: 'dacIdTest', uid: undefined });
     }));
 
     it('should return the fuuid & AoneId when they exist', function () {

@@ -1,17 +1,35 @@
 import { getEvents } from '../../src/events.js';
-import { logError } from '../../src/utils.js';
+import { isPlainObject, logError } from '../../src/utils.js';
 
 export function gamPredictionReport (gamObjectReference, sendData) {
   try {
-    if (!gamObjectReference || !sendData) logError('Failed to get gamPredictionReport, required data is missed');
+    if (!gamObjectReference || !sendData) {
+      logError('Failed to get gamPredictionReport, required data is missed');
+      return
+    }
     const getSlotTargeting = (slot) => {
       const kvs = {};
       try {
-        (slot.getTargetingKeys() || []).forEach((k) => {
-          kvs[k] = slot.getTargeting(k);
-        });
+        if (typeof slot.getConfig === 'function') {
+          const current = slot.getConfig('targeting');
+          const targeting = isPlainObject(current?.targeting)
+            ? current.targeting
+            : (isPlainObject(current) ? current : {});
+          for (const k in targeting) {
+            const v = targeting[k];
+            if (v == null) continue;
+            kvs[k] = Array.isArray(v) ? v : [typeof v === 'string' ? v : String(v)];
+          }
+          return kvs;
+        }
+        // Fallback in case an older version of Google Publisher Tag is used.
+        if (typeof slot.getTargetingKeys === 'function' && typeof slot.getTargeting === 'function') {
+          (slot.getTargetingKeys() || []).forEach((k) => {
+            kvs[k] = slot.getTargeting(k);
+          });
+        }
       } catch (e) {
-        logError('Failed to get targeting keys: ' + e);
+        logError('Failed to get slot targeting: ' + e);
       }
       return kvs;
     };
@@ -55,6 +73,7 @@ export function gamPredictionReport (gamObjectReference, sendData) {
                 dataToSend.originalCurrency = bid.originalCurrency;
                 dataToSend.status = bid.status;
                 dataToSend.prebidAuctionId = element.args?.auctionId;
+                if (!dataToSend.bidderCode) dataToSend.bidderCode = 'GAM';
               };
               if (dataToSend.bidderCode) {
                 const relevantBid = element.args?.bidsReceived.find(
@@ -86,12 +105,12 @@ export function gamPredictionReport (gamObjectReference, sendData) {
       gamObjectReference.pubads().addEventListener('slotRenderEnded', (event) => {
         if (event.isEmpty) return;
         const data = extractWinData(event);
-        if (data?.cpm) {
+        if (data) {
           sendData(data);
         }
       });
     });
   } catch (error) {
-    this.logger.error('Failed to subscribe to GAM: ' + error);
+    logError('Failed to subscribe to GAM: ' + error);
   }
 };

@@ -25,29 +25,29 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('trims bundleUrl if it contains extra spaces', function () {
-      const config = {params: {bundleUrl: '  https://cdn.optable.co/bundle.js  '}};
+      const config = { params: { bundleUrl: '  https://cdn.optable.co/bundle.js  ' } };
       expect(parseConfig(config).bundleUrl).to.equal('https://cdn.optable.co/bundle.js');
     });
 
-    it('throws an error for invalid bundleUrl format', function () {
-      expect(() => parseConfig({params: {bundleUrl: 'invalidURL'}})).to.throw();
-      expect(() => parseConfig({params: {bundleUrl: 'www.invalid.com'}})).to.throw();
+    it('returns null bundleUrl for invalid bundleUrl format', function () {
+      expect(parseConfig({ params: { bundleUrl: 'invalidURL' } }).bundleUrl).to.be.null;
+      expect(parseConfig({ params: { bundleUrl: 'www.invalid.com' } }).bundleUrl).to.be.null;
     });
 
-    it('throws an error for non-HTTPS bundleUrl', function () {
-      expect(() => parseConfig({params: {bundleUrl: 'http://cdn.optable.co/bundle.js'}})).to.throw();
-      expect(() => parseConfig({params: {bundleUrl: '//cdn.optable.co/bundle.js'}})).to.throw();
-      expect(() => parseConfig({params: {bundleUrl: '/bundle.js'}})).to.throw();
+    it('returns null bundleUrl for non-HTTPS bundleUrl', function () {
+      expect(parseConfig({ params: { bundleUrl: 'http://cdn.optable.co/bundle.js' } }).bundleUrl).to.be.null;
+      expect(parseConfig({ params: { bundleUrl: '//cdn.optable.co/bundle.js' } }).bundleUrl).to.be.null;
+      expect(parseConfig({ params: { bundleUrl: '/bundle.js' } }).bundleUrl).to.be.null;
     });
 
     it('defaults adserverTargeting to true if missing', function () {
       expect(parseConfig(
-        {params: {bundleUrl: 'https://cdn.optable.co/bundle.js'}}
+        { params: { bundleUrl: 'https://cdn.optable.co/bundle.js' } }
       ).adserverTargeting).to.be.true;
     });
 
-    it('throws an error if handleRtd is not a function', function () {
-      expect(() => parseConfig({params: {handleRtd: 'notAFunction'}})).to.throw();
+    it('returns null handleRtd if handleRtd is not a function', function () {
+      expect(parseConfig({ params: { handleRtd: 'notAFunction' } }).handleRtd).to.be.null;
     });
   });
 
@@ -56,7 +56,7 @@ describe('Optable RTD Submodule', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      reqBidsConfigObj = {ortb2Fragments: {global: {}}};
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
       mergeFn = sinon.spy();
       window.optable = {
         instance: {
@@ -71,7 +71,7 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('merges valid targeting data into the global ORTB2 object', async function () {
-      const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
+      const targetingData = { ortb2: { user: { ext: { optable: 'testData' } } } };
       window.optable.instance.targetingFromCache.returns(targetingData);
       window.optable.instance.targeting.resolves(targetingData);
 
@@ -95,7 +95,7 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('uses targeting data from cache if available', async function () {
-      const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
+      const targetingData = { ortb2: { user: { ext: { optable: 'testData' } } } };
       window.optable.instance.targetingFromCache.returns(targetingData);
 
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
@@ -103,7 +103,7 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('calls targeting function if no data is found in cache', async function () {
-      const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
+      const targetingData = { ortb2: { user: { ext: { optable: 'testData' } } } };
       window.optable.instance.targetingFromCache.returns(null);
 
       // Dispatch event with targeting data after a short delay
@@ -125,7 +125,7 @@ describe('Optable RTD Submodule', function () {
     beforeEach(() => {
       sandbox = sinon.createSandbox();
       mergeFn = sinon.spy();
-      reqBidsConfigObj = {ortb2Fragments: {global: {}}};
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
     });
 
     afterEach(() => {
@@ -150,11 +150,11 @@ describe('Optable RTD Submodule', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      reqBidsConfigObj = {ortb2Fragments: {global: {}}};
+      reqBidsConfigObj = { ortb2Fragments: { global: {} } };
       callback = sinon.spy();
-      moduleConfig = {params: {bundleUrl: 'https://cdn.optable.co/bundle.js'}};
+      moduleConfig = { params: { bundleUrl: 'https://cdn.optable.co/bundle.js' } };
 
-      sandbox.stub(window, 'optable').value({cmd: []});
+      sandbox.stub(window, 'optable').value({ cmd: [] });
       sandbox.stub(window.document, 'createElement');
       sandbox.stub(window.document, 'head');
     });
@@ -191,7 +191,7 @@ describe('Optable RTD Submodule', function () {
       // Dispatch the event after a short delay
       setTimeout(() => {
         const event = new CustomEvent('optable-targeting:change', {
-          detail: {ortb2: {user: {ext: {optable: 'testData'}}}}
+          detail: { ortb2: { user: { ext: { optable: 'testData' } } } }
         });
         window.dispatchEvent(event);
       }, 10);
@@ -223,15 +223,32 @@ describe('Optable RTD Submodule', function () {
     it('getBidRequestData catches error and executes callback when something goes wrong', function (done) {
       moduleConfig.params.bundleUrl = null;
       moduleConfig.params.handleRtd = 'not a function';
+      window.optable = {
+        cmd: [],
+        instance: {
+          targetingFromCache: sandbox.stub().returns(null)
+        }
+      };
 
       getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
-      expect(window.optable.cmd.length).to.equal(0);
+      expect(window.optable.cmd.length).to.equal(1);
+
+      // Dispatch event after a short delay
+      setTimeout(() => {
+        const event = new CustomEvent('optable-targeting:change', {
+          detail: { ortb2: { user: { ext: { optable: 'testData' } } } }
+        });
+        window.dispatchEvent(event);
+      }, 10);
+
+      // Execute the queued command
+      window.optable.cmd[0]();
 
       setTimeout(() => {
         expect(callback.calledOnce).to.be.true;
         done();
-      }, 50);
+      }, 100);
     });
 
     it("doesn't fail when optable is not available", function (done) {
@@ -252,7 +269,7 @@ describe('Optable RTD Submodule', function () {
       // Dispatch event after a short delay
       setTimeout(() => {
         const event = new CustomEvent('optable-targeting:change', {
-          detail: {ortb2: {user: {ext: {optable: 'testData'}}}}
+          detail: { ortb2: { user: { ext: { optable: 'testData' } } } }
         });
         window.dispatchEvent(event);
       }, 10);
@@ -272,8 +289,8 @@ describe('Optable RTD Submodule', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      moduleConfig = {params: {adserverTargeting: true}};
-      window.optable = {instance: {targetingKeyValuesFromCache: sandbox.stub().returns({key1: 'value1'})}};
+      moduleConfig = { params: { adserverTargeting: true } };
+      window.optable = { instance: { targetingKeyValuesFromCache: sandbox.stub().returns({ key1: 'value1' }) } };
     });
 
     afterEach(() => {
@@ -282,7 +299,7 @@ describe('Optable RTD Submodule', function () {
 
     it('returns correct targeting data when Optable data is available', function () {
       const result = getTargetingData(['adUnit1'], moduleConfig, {}, {});
-      expect(result).to.deep.equal({adUnit1: {key1: 'value1'}});
+      expect(result).to.deep.equal({ adUnit1: { key1: 'value1' } });
     });
 
     it('returns empty object when no Optable data is found', function () {
@@ -296,10 +313,10 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('returns empty object when provided keys contain no data', function () {
-      window.optable.instance.targetingKeyValuesFromCache.returns({key1: []});
+      window.optable.instance.targetingKeyValuesFromCache.returns({ key1: [] });
       expect(getTargetingData(['adUnit1'], moduleConfig, {}, {})).to.deep.equal({});
 
-      window.optable.instance.targetingKeyValuesFromCache.returns({key1: [], key2: [], key3: []});
+      window.optable.instance.targetingKeyValuesFromCache.returns({ key1: [], key2: [], key3: [] });
       expect(getTargetingData(['adUnit1'], moduleConfig, {}, {})).to.deep.equal({});
     });
   });

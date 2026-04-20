@@ -11,7 +11,7 @@ const GVLID = 1360;
 const ENGINE_VESION = '1.x.x';
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
-const STORAGE_TTL = 3600; // 1 hour in seconds
+const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -116,7 +116,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('getBidRequestData', {config, reqBidsConfigObj, callback, userConsent, storedData });
+      this.#addToCommandQueue('getBidRequestData', { config, reqBidsConfigObj, callback, userConsent, storedData });
     } else {
       try {
         engine.getBidRequestData(
@@ -143,7 +143,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', {config, bidResponse, userConsent, storedData })
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData })
       return;
     }
     try {
@@ -164,7 +164,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onAuctionEndEvent', {config, auctionDetails, userConsent, storedData });
+      this.#addToCommandQueue('onAuctionEndEvent', { config, auctionDetails, userConsent, storedData });
       return;
     }
     try {
@@ -204,7 +204,11 @@ class NodalsAiRtdProvider {
   }
 
   #getEngine() {
-    return window?.$nodals?.adTargetingEngine[ENGINE_VESION];
+    try {
+      return window?.$nodals?.adTargetingEngine?.[ENGINE_VESION];
+    } catch (error) {
+      return undefined;
+    }
   }
 
   #setOverrides(params) {
@@ -320,7 +324,7 @@ class NodalsAiRtdProvider {
   #dataIsStale(dataEnvelope) {
     const currentTime = Date.now();
     const dataTime = dataEnvelope.createdAt || 0;
-    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? STORAGE_TTL;
+    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? DEFAULT_STORAGE_TTL;
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 

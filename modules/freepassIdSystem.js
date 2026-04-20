@@ -50,7 +50,7 @@ export const freepassIdSubmodule = {
       idObject.freepassId = freepassData.commonId;
     }
 
-    return {id: idObject};
+    return { id: idObject };
   },
 
   extendId: function (config, _, storedId) {

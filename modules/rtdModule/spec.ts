@@ -1,9 +1,9 @@
-import type {AllConsentData} from "../../src/consentHandler.ts";
-import type {AdUnitCode, ByAdUnit, StorageDisclosure} from "../../src/types/common";
-import {EVENTS} from '../../src/constants.ts';
-import type {EventPayload} from "../../src/events.ts";
-import type {TargetingMap} from "../../src/targeting.ts";
-import type {StartAuctionOptions} from "../../src/prebid.ts";
+import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { AdUnitCode, ByAdUnit, StorageDisclosure } from "../../src/types/common";
+import { EVENTS } from '../../src/constants.ts';
+import type { EventPayload } from "../../src/events.ts";
+import type { TargetingMap } from "../../src/targeting.ts";
+import type { StartAuctionOptions } from "../../src/prebid.ts";
 
 export type RTDProvider = string;
 
