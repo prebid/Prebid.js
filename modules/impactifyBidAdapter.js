@@ -403,7 +403,18 @@ export const spec = {
             .filter((bid) => bid.price > 0)
             .map((bid) => {
               const isPlayer = impMap[bid.impid]?.ext?.impactify?.format === 'player';
-              const mediaType = bid?.mtype === 2 ? 'video' : 'banner';
+              const isVideo = !!impMap[bid.impid]?.video;
+              let mediaType;
+              if (bid?.mtype === 2) {
+                mediaType = 'video';
+              } else if (bid?.mtype === 1) {
+                mediaType = 'banner';
+              } else if (isPlayer || isVideo) {
+                mediaType = 'video';
+              } else {
+                mediaType = 'banner';
+              }
+
               return {
                 id: bid.id,
                 requestId: bid.impid,
