@@ -1121,6 +1121,38 @@ describe('adqueryBidAdapter', function () {
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.calledWith("https://example.com/test-nurl")).to.equal(true);
     });
+    it('should extract uuid from ad string and remove ad from payload', function () {
+      spec.onBidWon({
+        ad: '<script src="https://example.com/js/example.js"></script><example-ad data-uuid="test-uuid-example"></example-ad>',
+      });
+      const calledUrl = utils.triggerPixel.getCall(0).args[0];
+      const qMatch = calledUrl.match(/[?&]q=([^&]*)/);
+      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])));
+      expect(decodedBid.uuid).to.equal('test-uuid-example');
+      expect(decodedBid.ad).to.be.undefined;
+    });
+    it('should set uuid to null when ad has no data-uuid attribute', function () {
+      spec.onBidWon({
+        ad: '<script src="https://example.com/js/example.js"></script><example-ad></example-ad>',
+      });
+      const calledUrl = utils.triggerPixel.getCall(0).args[0];
+      const qMatch = calledUrl.match(/[?&]q=([^&]*)/);
+      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])));
+      expect(decodedBid.uuid).to.be.null;
+      expect(decodedBid.ad).to.be.undefined;
+    });
+    it('should set uuid to null when bid has no ad field (e.g. video bid with vastXml)', function () {
+      spec.onBidWon({
+        mediaType: 'video',
+        vastXml: '<?xml version="1.0"?><VAST version="2.0"></VAST>',
+        cpm: 1.5,
+      });
+      const calledUrl = utils.triggerPixel.getCall(0).args[0];
+      const qMatch = calledUrl.match(/[?&]q=([^&]*)/);
+      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])));
+      expect(decodedBid.uuid).to.be.null;
+      expect(decodedBid.ad).to.be.undefined;
+    });
   })
 
   describe('onTimeout', function () {

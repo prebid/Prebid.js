@@ -203,6 +203,9 @@ export const spec = {
     }
 
     const copyOfBid = { ...bid }
+
+    const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
+    copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
     delete copyOfBid.ad
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
