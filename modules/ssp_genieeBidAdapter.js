@@ -383,7 +383,6 @@ export const spec = {
     validBidRequests.forEach((bid) => {
       // const isNative = bid.mediaTypes?.native;
       const geparameter = window.geparams || {};
-      // NOTE: codex agent fix for #14574: obtain client hints from request-scoped ORTB2 device.sua.
       const sua = bid.ortb2?.device?.sua || bidderRequest?.ortb2?.device?.sua;
 
       serverRequests.push({
