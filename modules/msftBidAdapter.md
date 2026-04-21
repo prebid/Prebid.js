@@ -161,7 +161,22 @@ var nativeAdUnit = {
           data: {
             type: 1
           }
-        }]
+        }, {
+          eventtrackers:[
+            {
+              event:1,
+              methods:[
+              1
+              ]
+            }, {
+              event:2,
+              methods:[
+                1
+                ]
+              }
+            ]
+          }
+        ]
       }
     }
   },
