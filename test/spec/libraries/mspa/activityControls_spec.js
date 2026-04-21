@@ -280,7 +280,7 @@ describe('setupRules', () => {
   });
 
   function runSetup(api, sids, normalize) {
-    return setupRules(api, sids, normalize, rules, registerRule, () => consent)
+    return setupRules(api, sids, rules, normalize, registerRule, () => consent)
   }
 
   it('should use flatten section data for the given api', () => {
