@@ -1599,6 +1599,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "billow_rtb25",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "bitmedia",
       "aliasOf": null,
       "gvlid": null,
@@ -3505,7 +3512,7 @@
       "componentType": "bidder",
       "componentName": "movingup",
       "aliasOf": "nexx360",
-      "gvlid": 1416,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
