@@ -1,13 +1,12 @@
 import { ERROR_NO_AD } from './constants.js';
 
 /**
- * Self-contained renderer for injection as a string (postMessage → iframe srcdoc, see creative/crossDomain.js).
+ * Self-contained renderer for injection as a string
  * Avoid a literal SCRIPT_END token (less-than, slash, s-c-r-i-p-t, greater-than) — it closes the outer HTML script tag.
  *
  * Custom renderer URL contract (runs inside the ad iframe, after bootstrap):
  *   window.pbRegisterCustomRender(function (ctx) { ... });
- * ctx: { ad, adUrl, width, height, instl, adId, customRendererUrl, vastXml, adUnitCode } — full payload; no HTML
- * from `ad` is written into the iframe document. The remote module decides what to render.
+ * ctx: { ad, adUrl, width, height, instl, adId, customRendererUrl, vastXml, adUnitCode } — full payload;
  * The function must be registered synchronously while the remote script loads (no defer-only registration).
  */
 ;(function () {
@@ -55,7 +54,7 @@ import { ERROR_NO_AD } from './constants.js';
     return scripts;
   }
 
-  function render(data, deps, win) {
+  function render(data, { mkFrame }, win) {
     var ad = data.ad;
     var adUrl = data.adUrl;
     var width = data.width;
@@ -102,7 +101,7 @@ import { ERROR_NO_AD } from './constants.js';
     } else {
       attrs.srcdoc = ad;
     }
-    doc.body.appendChild(deps.mkFrame(doc, attrs));
+    doc.body.appendChild(mkFrame(doc, attrs));
     if (instl && win.frameElement) {
       var style = win.frameElement.style;
       style.width = width ? String(width) + 'px' : '100vw';
