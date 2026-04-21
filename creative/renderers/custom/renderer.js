@@ -6,7 +6,7 @@ import { ERROR_NO_AD } from './constants.js';
  *
  * Custom renderer URL contract (runs inside the ad iframe, after bootstrap):
  *   window.pbRegisterCustomRender(function (ctx) { ... });
- * ctx: { ad, adUrl, width, height, instl, adId, customRendererUrl, vastXml, adUnitCode } — full payload;
+ * ctx: { ad, adUrl, width, height, instl, adId, customRendererUrl, vastXml, adUnitCode } — omitted keys are undefined in JS / absent in JSON;
  * The function must be registered synchronously while the remote script loads (no defer-only registration).
  */
 ;(function () {
@@ -23,7 +23,7 @@ import { ERROR_NO_AD } from './constants.js';
 
   /**
    * Minimal iframe document: only bootstrap, remote customRendererUrl, runner. Empty body — no ad markup.
-   * `ctx` must be the normalized object from render() (stable shape for custom renderers).
+   * `ctx` is built in render(); JSON.stringify omits undefined-valued keys in the inline bootstrap.
    */
   function buildCustomRendererSrcdoc(customRendererUrl, ctx) {
     var sc = scriptClose();
@@ -84,15 +84,15 @@ import { ERROR_NO_AD } from './constants.js';
       height: height != null ? height : '100%'
     };
     var ctx = {
-      ad: ad ?? null,
-      adUrl: adUrl ?? null,
-      width: width ?? null,
-      height: height ?? null,
+      ad,
+      adUrl,
+      width,
+      height,
       instl: !!instl,
-      adId: adId ?? null,
-      customRendererUrl: customRendererUrl ?? null,
-      vastXml: vastXml ?? null,
-      adUnitCode: adUnitCode ?? null
+      adId,
+      customRendererUrl,
+      vastXml,
+      adUnitCode
     };
     if (customRendererUrl) {
       attrs.srcdoc = buildCustomRendererSrcdoc(customRendererUrl, ctx);
