@@ -224,25 +224,14 @@ export function addRtdData(reqBids, data, moduleConfig) {
   // Add RTD data to the global ORTB fragments when no whitelists present
   noWhitelists && setGlobalOrtb2(reqBids.ortb2Fragments?.global, relevadData);
 
-  // Target GAM/GPT
+  // Add ad server targeting for Prebid targeting methods
   const setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
-  if (moduleConfig.dryrun || (typeof window.googletag !== 'undefined' && setgpt)) {
-    try {
-      if (window.googletag && window.googletag.pubads && (typeof window.googletag.pubads === 'function')) {
-        window.googletag.pubads().getSlots().forEach(function (n) {
-          if (typeof n.setTargeting !== 'undefined' && relevadList && relevadList.length > 0) {
-            n.setTargeting('relevad_rtd', relevadList);
-          }
-        });
-      }
-    } catch (e) {
-      logError(e);
-    }
-  }
+  const shouldSetAdserverTargeting = setgpt && !isEmpty(relevadList);
 
   // Set per-bidder RTD
   const adUnits = reqBids.adUnits;
   adUnits.forEach(adUnit => {
+    shouldSetAdserverTargeting && deepSetValue(adUnit, 'adserverTargeting.relevad_rtd', relevadList);
     noWhitelists && deepSetValue(adUnit, 'ortb2Imp.ext.data.relevad_rtd', relevadList);
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
