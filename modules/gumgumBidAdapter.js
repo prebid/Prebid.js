@@ -288,6 +288,7 @@ function _getDeviceData(ortb2Data) {
     lang: _device.language,
     make: _device.make,
     model: _device.model,
+    hwv: _device.hwv,
     ppi: _device.ppi,
     pxratio: _device.pxratio,
     lmt: _device.lmt,
