@@ -120,9 +120,80 @@ describe('pgamdirect: buildRequests', () => {
     const built = spec.buildRequests([bannerBid(), bannerBid({ bidId: 'bid-2' })], bidderRequest());
     expect(built.method).to.equal('POST');
     expect(built.url).to.equal(ENDPOINT_URL);
-    expect(built.options.customHeaders['x-openrtb-version']).to.equal('2.6');
+    // No customHeaders — deliberate, to keep the request CORS-simple
+    // and avoid a browser preflight on every auction.
+    expect(built.options.customHeaders).to.be.undefined;
     // Both imps in ONE request
     expect(built.data.imp).to.have.lengthOf(2);
+  });
+
+  describe('floors module integration', () => {
+    it('uses bid.getFloor() when the Floors module is enabled', () => {
+      const bid = bannerBid();
+      bid.getFloor = ({ currency }) => ({ currency, floor: 1.75 });
+      const built = spec.buildRequests([bid], bidderRequest());
+      expect(built.data.imp[0].bidfloor).to.equal(1.75);
+      expect(built.data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
+    it('falls back to params.bidfloor when Floors module is not present', () => {
+      const bid = bannerBid({ params: { orgId: 'pgam-x', bidfloor: 0.75 } });
+      const built = spec.buildRequests([bid], bidderRequest());
+      expect(built.data.imp[0].bidfloor).to.equal(0.75);
+    });
+
+    it('falls back to params.bidfloor when getFloor() throws', () => {
+      const bid = bannerBid({ params: { orgId: 'pgam-x', bidfloor: 2.00 } });
+      bid.getFloor = () => { throw new Error('boom'); };
+      const built = spec.buildRequests([bid], bidderRequest());
+      expect(built.data.imp[0].bidfloor).to.equal(2.00);
+    });
+
+    it('falls back to 0 when neither Floors module nor params.bidfloor is set', () => {
+      const bid = bannerBid();
+      const built = spec.buildRequests([bid], bidderRequest());
+      expect(built.data.imp[0].bidfloor).to.equal(0);
+    });
+
+    it('preserves the currency the Floors module returned', () => {
+      const bid = bannerBid();
+      bid.getFloor = () => ({ currency: 'EUR', floor: 1.20 });
+      const built = spec.buildRequests([bid], bidderRequest());
+      expect(built.data.imp[0].bidfloorcur).to.equal('EUR');
+    });
+  });
+
+  describe('schain lookup precedence', () => {
+    it('prefers ortb2.source.ext.schain over bid.schain', () => {
+      const ortb2Chain = {
+        complete: 1,
+        ver: '1.0',
+        nodes: [{ asi: 'ortb2.example', sid: 'ortb2', hp: 1 }],
+      };
+      const bidChain = {
+        complete: 1,
+        ver: '1.0',
+        nodes: [{ asi: 'legacy.example', sid: 'legacy', hp: 1 }],
+      };
+      const built = spec.buildRequests(
+        [bannerBid({ schain: bidChain })],
+        bidderRequest({ ortb2: { source: { ext: { schain: ortb2Chain } } } }),
+      );
+      expect(built.data.source.ext.schain).to.deep.equal(ortb2Chain);
+    });
+
+    it('falls back to bid.schain when ortb2 path is empty', () => {
+      const bidChain = {
+        complete: 1,
+        ver: '1.0',
+        nodes: [{ asi: 'legacy.example', sid: 'legacy', hp: 1 }],
+      };
+      const built = spec.buildRequests(
+        [bannerBid({ schain: bidChain })],
+        bidderRequest(),
+      );
+      expect(built.data.source.ext.schain).to.deep.equal(bidChain);
+    });
   });
 
   it('populates site/device/source/regs/tmax/cur defaults', () => {
@@ -240,19 +311,6 @@ describe('pgamdirect: buildRequests', () => {
       bidderRequest({ userIdAsEids: eids }),
     );
     expect(built.data.user.ext.eids).to.deep.equal(eids);
-  });
-
-  it('forwards schain from the first bid', () => {
-    const schain = {
-      complete: 1,
-      ver: '1.0',
-      nodes: [{ asi: 'publisher.example', sid: 'pub-123', hp: 1 }],
-    };
-    const built = spec.buildRequests(
-      [bannerBid({ schain })],
-      bidderRequest(),
-    );
-    expect(built.data.source.ext.schain).to.deep.equal(schain);
   });
 
   it('forwards gpid from ortb2Imp.ext.gpid', () => {

@@ -93,9 +93,10 @@ export const spec = {
       options: {
         contentType: 'application/json;charset=utf-8',
         withCredentials: false,
-        customHeaders: {
-          'x-openrtb-version': '2.6',
-        },
+        // No customHeaders — keeps the request CORS-simple enough to
+        // avoid a browser preflight on every auction (per Prebid review
+        // feedback). The bidder reads OpenRTB version from request.ext
+        // if ever needed; 2.6 is the default.
       },
     };
   },
@@ -137,10 +138,18 @@ export const spec = {
 // ---- request builders ------------------------------------------------------
 
 function buildImp(bid, idx) {
+  // Floors module integration — if the publisher has the Prebid Floors
+  // module enabled, bid.getFloor() returns the computed floor for the
+  // current request (media type + size aware). Falls back to
+  // params.bidfloor for publishers on the legacy per-bidder floor
+  // pattern. This is the fix per Prebid review: publishers using
+  // dynamic floor rules need their floor to flow through to the bid
+  // request, not be silently replaced by params.bidfloor.
+  const floor = resolveFloor(bid);
   const imp = {
     id: bid.bidId || String(idx + 1),
-    bidfloor: bid.params.bidfloor || 0,
-    bidfloorcur: DEFAULT_CUR,
+    bidfloor: floor.floor,
+    bidfloorcur: floor.currency,
     secure: 1,
     ext: {
       pgam: {
@@ -199,6 +208,34 @@ function buildImp(bid, idx) {
   return imp;
 }
 
+/**
+ * resolveFloor — consult the Prebid Floors module first, then fall back
+ * to params.bidfloor, then zero. Returns the currency the floor applied
+ * at so imp.bidfloorcur is set correctly.
+ *
+ * The Floors module exposes `bid.getFloor({ currency, mediaType, size })`
+ * when installed. When the publisher has no floor rule configured for
+ * the current request, getFloor() returns `{}` and we fall through to
+ * the legacy params.bidfloor shape.
+ */
+function resolveFloor(bid) {
+  if (typeof bid.getFloor === 'function') {
+    try {
+      const res = bid.getFloor({ currency: DEFAULT_CUR, mediaType: '*', size: '*' });
+      if (res && typeof res.floor === 'number' && res.floor >= 0) {
+        return { floor: res.floor, currency: res.currency || DEFAULT_CUR };
+      }
+    } catch (e) {
+      // swallow — fall through to params fallback
+    }
+  }
+  const paramFloor = Number(bid.params && bid.params.bidfloor);
+  if (Number.isFinite(paramFloor) && paramFloor >= 0) {
+    return { floor: paramFloor, currency: DEFAULT_CUR };
+  }
+  return { floor: 0, currency: DEFAULT_CUR };
+}
+
 function buildSite(bidderRequest) {
   const refURL = (bidderRequest && bidderRequest.refererInfo) || {};
   return {
@@ -233,9 +270,14 @@ function buildUser(bidderRequest) {
 function buildSource(bidderRequest, firstBid) {
   const tid = deepAccess(bidderRequest, 'ortb2.source.tid') || bidderRequest.auctionId;
   const source = { tid, fd: 1 };
-  // Schain — if publisher has registered one, forward it; our bidder
-  // appends our own node on top before fanning to DSPs.
-  const schain = deepAccess(firstBid, 'schain');
+
+  // Schain lookup precedence — per Prebid review, modern schain is in
+  // ortb2.source.ext.schain (the FPD path). Older publishers still put
+  // it on the bid as `bid.schain`. Check both so neither path drops
+  // the supply chain.
+  const schain =
+    deepAccess(bidderRequest, 'ortb2.source.ext.schain') ||
+    deepAccess(firstBid, 'schain');
   if (schain) {
     source.ext = { schain };
   }
