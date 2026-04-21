@@ -34,6 +34,11 @@
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [300, 250],
+            mimes: ['video/mp4']
           }
         },
         code: adUnitCode,
@@ -97,7 +102,7 @@
 </head>
 
 <body>
-  <h1>Renderer V2 Example</h1>
+  <h1>Custom Renderer Example</h1>
 
   <div id="prebid-example" style="min-width: 300px; min-height: 250px;">
     <script>
