@@ -161,8 +161,8 @@ var nativeAdUnit = {
           data: {
             type: 1
           }
-        },
-        {eventtrackers:[{
+        }],
+        eventtrackers:[{
           event:1,
           methods:[
             1
@@ -173,7 +173,6 @@ var nativeAdUnit = {
               1
               ]}]
           }
-        ]
       }
     }
   },
