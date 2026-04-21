@@ -403,6 +403,18 @@ export const spec = {
             .filter((bid) => bid.price > 0)
             .map((bid) => {
               const isPlayer = impMap[bid.impid]?.ext?.impactify?.format === 'player';
+              const isVideo = !!impMap[bid.impid]?.video;
+              let mediaType;
+              if (bid?.mtype === 2) {
+                mediaType = 'video';
+              } else if (bid?.mtype === 1) {
+                mediaType = 'banner';
+              } else if (isPlayer || isVideo) {
+                mediaType = 'video';
+              } else {
+                mediaType = 'banner';
+              }
+
               return {
                 id: bid.id,
                 requestId: bid.impid,
@@ -413,6 +425,7 @@ export const spec = {
                 height: bid.h || 0,
                 ttl: 300,
                 creativeId: bid.crid || 0,
+                mediaType: mediaType,
                 meta: {
                   advertiserDomains:
                     bid.adomain && bid.adomain.length ? bid.adomain : [],
@@ -420,7 +433,6 @@ export const spec = {
 
                 ...(isPlayer
                   ? {
-                      mediaType: "video",
                       vastUrl: bid.ext?.vast_url,
                       vastXml: bid.adm,
                     }
