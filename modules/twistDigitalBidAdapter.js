@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  isBidRequestValid, createInterpretResponseFn, createUserSyncGetter, createBuildRequestsFn, onBidWon
+  isBidRequestValid, createInterpretResponseFn, createUserSyncGetter, createBuildRequestsFn, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 const GVLID = 1292;
@@ -33,7 +33,8 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon
+  onBidWon,
+  onBidBillable,
 };
 
 registerBidder(spec);

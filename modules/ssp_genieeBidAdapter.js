@@ -136,12 +136,31 @@ export const buildExtuidQuery = ({ id5, imuId }) => {
 }
 
 /**
+ * Get Floor Price from Prebid Price Floors Module
+ * @param {Object} bid - Object bid request
+ * @param {string} currency - currency unit
+ * @returns {number|null}
+ */
+function getFloorPrice(bid, currency) {
+  if (typeof bid.getFloor === 'function') {
+    const floorSize = (bid.sizes && bid.sizes.length === 1) ? bid.sizes[0] : '*';
+    const floorInfo = bid.getFloor({ currency: currency, mediaType: BANNER, size: floorSize });
+    if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
+}
+
+/**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
   const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
-
+  const schain = utils.deepAccess(bid, 'ortb2.source.ext.schain');
+  const currency = bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY;
+  const floorPrice = getFloorPrice(bid, currency);
   const data = {
     zoneid: bid.params.zoneId,
     cb: Math.floor(Math.random() * 99999999999),
@@ -152,12 +171,14 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       : '',
     referer: refererInfo?.ref || encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.REFERRER]) || '',
     topframe: window.parent === window.self ? 1 : 0,
-    cur: bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
+    cur: currency,
     requestid: bid.bidId,
     ua: navigator.userAgent,
     tpaf: 1,
     cks: 1,
+    schain: schain ? JSON.stringify(schain) : '',
     ...(gpid ? { gpid } : {}),
+    ...(floorPrice !== undefined && floorPrice !== null ? { fl_pr: floorPrice } : {}),
   };
 
   const pageTitle = document.title;

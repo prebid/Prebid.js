@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/showheroes-bsBidAdapter.js'
+import { spec } from 'modules/showheroesBidAdapter.js'
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import 'modules/priceFloors.js';
@@ -45,7 +45,7 @@ const schain = {
 }
 
 const bidRequestCommonParamsV2 = {
-  bidder: 'showheroes-bs',
+  bidder: 'showheroes',
   params: {
     unitId: 'AACBWAcof-611K4U',
   },
