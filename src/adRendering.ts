@@ -202,7 +202,7 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const { ad, adUrl, cpm, originalCpm, width, height, instl } = bidResponse
+  const { ad, adUrl, cpm, originalCpm, width, height, instl, customRendererUrl, vastXml, adUnitCode } = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -212,7 +212,10 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
     adUrl: replaceMacros(adUrl, repl),
     width,
     height,
-    instl
+    instl,
+    customRendererUrl,
+    vastXml,
+    adUnitCode,
   };
 })
 
@@ -238,7 +241,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer)) {
+  if (isRendererRequired(bidResponse.renderer) && !bidResponse.customRendererUrl) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
     next.bail();

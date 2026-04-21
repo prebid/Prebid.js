@@ -92,6 +92,10 @@ export interface BaseBidResponse {
   eventtrackers?: EventTrackerResponse[];
   renderer?: Renderer;
   /**
+   * URL of a script loaded inside the creative iframe (with display data) for custom rendering.
+   */
+  customRendererUrl?: string;
+  /**
    * Billing tracker URL.
    */
   burl?: string;

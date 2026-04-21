@@ -20,6 +20,9 @@ module.exports = {
     },
     'renderers/native': {
       import: './creative/renderers/native/renderer.js'
+    },
+    'renderers/custom': {
+      import: './creative/renderers/custom/renderer.js'
     }
   },
   output: {
