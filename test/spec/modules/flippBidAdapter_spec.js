@@ -92,22 +92,20 @@ describe('flippAdapter', function () {
             'inline': [{
               'bidCpm': 1,
               'adId': 262838368,
-              'height': 600,
-              'width': 300,
               'storefront': { 'flyer_id': 5435567 },
               'prebid': {
                 'requestId': '237f4d1a293f99',
                 'cpm': 1.11,
                 'creative': 'Returned from server',
               },
-              'contents': {
+              'contents': [{
                 'data': {
                   'customData': {
                     'compactHeight': 600,
                     'standardHeight': 1800
                   }
                 }
-              }
+              }]
             }]
           },
           'location': { 'city': 'Oakville' },
@@ -121,7 +119,7 @@ describe('flippAdapter', function () {
           currency: 'USD',
           cpm: 1.11,
           netRevenue: true,
-          width: 300,
+          width: 600,
           height: 1800,
           creativeId: 262838368,
           ttl: 30,
@@ -132,6 +130,115 @@ describe('flippAdapter', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result).to.have.lengthOf(1);
       expect(result).to.deep.have.same.members(expectedResponse);
+    });
+
+    it('should return desktop width (600) and standard height from customData when not compact', function() {
+      const bidRequest = {
+        method: 'POST',
+        url: ENDPOINT,
+        data: {
+          placements: [{
+            divName: 'slot',
+            networkId: 12345,
+            siteId: 12345,
+            adTypes: [12345],
+            count: 1,
+            options: { startCompact: false },
+            prebid: { requestId: '237f4d1a293f99' },
+          }],
+          url: 'http://example.com',
+        },
+      };
+      const serverResponse = {
+        body: {
+          decisions: {
+            inline: [{
+              adId: 111,
+              prebid: { requestId: '237f4d1a293f99', cpm: 1, creative: 'ad' },
+              contents: [{ data: { customData: { compactHeight: 500, standardHeight: 2000 } } }],
+            }]
+          }
+        }
+      };
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result[0].width).to.equal(600);
+      expect(result[0].height).to.equal(2000);
+    });
+
+    it('should return mobile width (300) and compact height from customData when compact', function() {
+      const bidRequest = {
+        method: 'POST',
+        url: ENDPOINT,
+        data: {
+          placements: [{
+            divName: 'slot',
+            networkId: 12345,
+            siteId: 12345,
+            adTypes: [12345],
+            count: 1,
+            options: { startCompact: true },
+            prebid: { requestId: '237f4d1a293f99' },
+          }],
+          url: 'http://example.com',
+        },
+      };
+      const serverResponse = {
+        body: {
+          decisions: {
+            inline: [{
+              adId: 111,
+              prebid: { requestId: '237f4d1a293f99', cpm: 1, creative: 'ad' },
+              contents: [{ data: { customData: { compactHeight: 500, standardHeight: 2000 } } }],
+            }]
+          }
+        }
+      };
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result[0].width).to.equal(300);
+      expect(result[0].height).to.equal(500);
+    });
+
+    it('should fall back to default dimensions when customData is absent', function() {
+      const bidRequest = {
+        method: 'POST',
+        url: ENDPOINT,
+        data: {
+          placements: [
+            {
+              options: { startCompact: false },
+              prebid: { requestId: 'req-desktop' },
+            },
+            {
+              options: { startCompact: true },
+              prebid: { requestId: 'req-mobile' },
+            },
+          ],
+          url: 'http://example.com',
+        },
+      };
+      const serverResponse = {
+        body: {
+          decisions: {
+            inline: [
+              {
+                adId: 1,
+                prebid: { requestId: 'req-desktop', cpm: 1, creative: 'ad' },
+                contents: [],
+              },
+              {
+                adId: 2,
+                prebid: { requestId: 'req-mobile', cpm: 1, creative: 'ad' },
+                contents: [],
+              },
+            ]
+          }
+        }
+      };
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result[0].width).to.equal(600);
+      expect(result[0].height).to.equal(1800);
+      expect(result[1].width).to.equal(300);
+      expect(result[1].height).to.equal(600);
     });
 
     it('should get empty bid response when no ad is returned', function() {
