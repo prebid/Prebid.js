@@ -1,22 +1,45 @@
-export interface YandexBidRequestParams {
-  /**
-   * Placement ID.
-   * Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
-   */
-  placementId: string;
+interface YandexBaseParams {
   /**
    * Bid currency. Defaults to `EUR`.
    */
   cur?: string;
   /**
-   * Deprecated. Please use `placementId` instead.
+   * Target reference URL.
    */
-  pageId?: number;
+  targetRef?: string;
   /**
-   * Deprecated. Please use `placementId` instead.
+   * Whether to send credentials with requests. Defaults to `true`.
    */
-  impId?: number;
+  withCredentials?: boolean;
+  /**
+   * Custom container element ID for the ad unit.
+   */
+  pubcontainerid?: string;
 }
+
+interface YandexPlacementIdParams extends YandexBaseParams {
+  /**
+   * Placement ID.
+   * Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
+   */
+  placementId: string;
+  pageId?: never;
+  impId?: never;
+}
+
+interface YandexLegacyParams extends YandexBaseParams {
+  placementId?: never;
+  /**
+   * @deprecated Please use `placementId` instead.
+   */
+  pageId: number;
+  /**
+   * @deprecated Please use `placementId` instead.
+   */
+  impId: number;
+}
+
+export type YandexBidRequestParams = YandexPlacementIdParams | YandexLegacyParams;
 
 declare module '../src/adUnits' {
   interface BidderParams {

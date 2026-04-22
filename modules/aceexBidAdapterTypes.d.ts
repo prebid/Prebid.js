@@ -10,11 +10,11 @@ export interface AceexBidderParams {
   /**
    * Publisher hash on platform.
    */
-  internalKey: string;
+  internalKey?: string;
   /**
    * Bid floor value.
    */
-  bidfloor: number;
+  bidfloor?: number;
 }
 
 declare module '../src/adUnits' {
