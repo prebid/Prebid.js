@@ -89,7 +89,7 @@ export function generateUUID(placeholder) {
  */
 function _getRandomData() {
   if (window && window.crypto && window.crypto.getRandomValues) {
-    return crypto.getRandomValues(new Uint8Array(1))[0] % 16;
+    return window.crypto.getRandomValues(new Uint8Array(1))[0] % 16;
   } else {
     return Math.random() * 16;
   }
