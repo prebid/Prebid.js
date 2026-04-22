@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/tne_catalystBidAdapter.js';
+import { spec } from 'modules/tne_catalystBidAdapter.ts';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
@@ -163,9 +163,9 @@ describe('TNE Catalyst Bid Adapter', () => {
       expect(reqs[0].url).to.equal(ENDPOINT);
     });
 
-    it('sets content-type to application/json', () => {
+    it('sets content-type to text/plain (avoids CORS preflight)', () => {
       const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest());
-      expect(reqs[0].options.contentType).to.equal('application/json');
+      expect(reqs[0].options.contentType).to.equal('text/plain');
     });
 
     it('sets withCredentials to true', () => {
@@ -244,6 +244,43 @@ describe('TNE Catalyst Bid Adapter', () => {
       it('omits bidfloor when not in params', () => {
         const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest());
         expect(reqs[0].data.imp[0].bidfloor).to.be.undefined;
+      });
+
+      it('uses getFloor() result when Floors module is active', () => {
+        const bid = makeBidRequest();
+        bid.getFloor = () => ({ currency: 'USD', floor: 2.75 });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].bidfloor).to.equal(2.75);
+        expect(reqs[0].data.imp[0].bidfloorcur).to.equal('USD');
+      });
+
+      it('prefers getFloor() over params.bidfloor', () => {
+        const bid = makeBidRequest({ params: { publisherId: 'NXS003', slot: 'billboard', bidfloor: 1.00 } });
+        bid.getFloor = () => ({ currency: 'USD', floor: 2.00 });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].bidfloor).to.equal(2.00);
+      });
+
+      it('falls back to params.bidfloor when getFloor() returns invalid currency', () => {
+        const bid = makeBidRequest({ params: { publisherId: 'NXS003', slot: 'billboard', bidfloor: 1.00 } });
+        bid.getFloor = () => ({ currency: 'EUR', floor: 2.00 });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].bidfloor).to.equal(1.00);
+      });
+
+      it('ignores getFloor() when it returns a zero floor', () => {
+        const bid = makeBidRequest({ params: { publisherId: 'NXS003', slot: 'billboard', bidfloor: 1.00 } });
+        bid.getFloor = () => ({ currency: 'USD', floor: 0 });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].bidfloor).to.equal(1.00);
+      });
+
+      it('passes correct mediaType to getFloor() for video imp', () => {
+        const bid = makeVideoBidRequest();
+        const calls = [];
+        bid.getFloor = (args) => { calls.push(args); return { currency: 'USD', floor: 3.00 }; };
+        spec.buildRequests([bid], makeBidderRequest());
+        expect(calls[0].mediaType).to.equal('video');
       });
     });
 

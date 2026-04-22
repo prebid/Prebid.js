@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { generateUUID, deepAccess, isArray, isFn } from '../src/utils.js';
 
@@ -18,36 +18,41 @@ const ENDPOINT_URL = 'https://ads.thenexusengine.com/openrtb2/auction';
 const SYNC_URL = 'https://ads.thenexusengine.com/cookie_sync';
 const GVLID = 1494;
 
-export const spec = {
+interface TneCatalystBidParams {
+  publisherId: string;
+  slot: string;
+  bidfloor?: number;
+}
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: TneCatalystBidParams;
+  }
+}
+
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
-  // ---------------------------------------------------------------------------
-  // isBidRequestValid
-  // ---------------------------------------------------------------------------
   isBidRequestValid(bid) {
+    const params = bid && (bid as any).params;
     return !!(
-      bid &&
-      bid.params &&
-      typeof bid.params.publisherId === 'string' && bid.params.publisherId !== '' &&
-      typeof bid.params.slot === 'string' && bid.params.slot !== ''
+      params &&
+      typeof params.publisherId === 'string' && params.publisherId !== '' &&
+      typeof params.slot === 'string' && params.slot !== ''
     );
   },
 
-  // ---------------------------------------------------------------------------
-  // buildRequests
-  // ---------------------------------------------------------------------------
   buildRequests(validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0) {
       return [];
     }
 
-    const publisherId = validBidRequests[0].params.publisherId;
+    const publisherId = (validBidRequests[0] as any).params.publisherId;
 
-    // --- Impressions ---
-    const imps = validBidRequests.map(bid => {
-      const imp = {
+    const imps = validBidRequests.map((bid: any) => {
+      const imp: any = {
         id: bid.bidId,
         ext: { tne_catalyst: { slot: bid.params.slot } }
       };
@@ -58,7 +63,7 @@ export const spec = {
         const banner = mediaTypes[BANNER];
         const sizes = banner.sizes || [];
         imp.banner = {
-          format: sizes.map(s => ({ w: s[0], h: s[1] })),
+          format: sizes.map((s: [number, number]) => ({ w: s[0], h: s[1] })),
           w: sizes.length > 0 ? sizes[0][0] : undefined,
           h: sizes.length > 0 ? sizes[0][1] : undefined,
         };
@@ -79,7 +84,6 @@ export const spec = {
           placement: video.placement,
           linearity: video.linearity,
         };
-        // Remove undefined fields to keep the request clean
         Object.keys(imp.video).forEach(k => imp.video[k] === undefined && delete imp.video[k]);
       }
 
@@ -87,23 +91,25 @@ export const spec = {
         imp.native = { request: JSON.stringify(mediaTypes[NATIVE]) };
       }
 
-      const mediaType = mediaTypes[VIDEO] ? VIDEO : mediaTypes[NATIVE] ? NATIVE : BANNER;
+      let floorApplied = false;
       if (isFn(bid.getFloor)) {
-        const floorInfo = bid.getFloor({ currency: bid.params.currency || 'USD', mediaType, size: '*' });
-        if (floorInfo && floorInfo.floor > 0) {
+        const mediaType = imp.video ? VIDEO : imp.native ? NATIVE : BANNER;
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size: '*' });
+        if (floorInfo && floorInfo.currency === 'USD' && floorInfo.floor > 0) {
           imp.bidfloor = floorInfo.floor;
-          imp.bidfloorcur = floorInfo.currency;
+          imp.bidfloorcur = 'USD';
+          floorApplied = true;
         }
-      } else if (bid.params.bidfloor) {
+      }
+      if (!floorApplied && bid.params.bidfloor) {
         imp.bidfloor = bid.params.bidfloor;
-        imp.bidfloorcur = bid.params.currency || 'USD';
+        imp.bidfloorcur = 'USD';
       }
 
       return imp;
     });
 
-    // --- Site ---
-    const site = { publisher: { id: publisherId } };
+    const site: any = { publisher: { id: publisherId } };
     const ri = deepAccess(bidderRequest, 'refererInfo');
     if (ri) {
       if (ri.page) site.page = ri.page;
@@ -111,27 +117,23 @@ export const spec = {
       if (ri.ref) site.ref = ri.ref;
     }
 
-    // First-party data from ortb2
     const ortb2Site = deepAccess(bidderRequest, 'ortb2.site');
     if (ortb2Site) {
       Object.assign(site, ortb2Site);
-      site.publisher = { id: publisherId }; // don't let ortb2 override publisher.id
+      site.publisher = { id: publisherId };
     }
 
-    // --- Request ---
-    const ortbRequest = {
+    const ortbRequest: any = {
       id: generateUUID(),
       imp: imps,
       site,
     };
 
-    // Timeout
-    if (bidderRequest.timeout) {
-      ortbRequest.tmax = bidderRequest.timeout;
+    if ((bidderRequest as any).timeout) {
+      ortbRequest.tmax = (bidderRequest as any).timeout;
     }
 
-    // --- Regs (GDPR / CCPA / GPP) ---
-    const regsExt = {};
+    const regsExt: any = {};
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
     if (gdpr) {
       regsExt.gdpr = gdpr.gdprApplies ? 1 : 0;
@@ -151,8 +153,7 @@ export const spec = {
       ortbRequest.regs.ext = regsExt;
     }
 
-    // --- User (consent + EIDs) ---
-    const userExt = {};
+    const userExt: any = {};
     if (gdpr && gdpr.consentString) {
       userExt.consent = gdpr.consentString;
     }
@@ -166,7 +167,6 @@ export const spec = {
       ortbRequest.user.ext = userExt;
     }
 
-    // --- Supply Chain ---
     const schain = deepAccess(validBidRequests[0], 'schain');
     if (schain) {
       ortbRequest.source = { schain };
@@ -176,26 +176,25 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: ortbRequest,
-      options: { contentType: 'application/json', withCredentials: true }
+      // text/plain avoids the CORS preflight that application/json would
+      // trigger, keeping auction latency down.
+      options: { contentType: 'text/plain', withCredentials: true }
     }];
   },
 
-  // ---------------------------------------------------------------------------
-  // interpretResponse
-  // ---------------------------------------------------------------------------
   interpretResponse(serverResponse, request) {
     const body = deepAccess(serverResponse, 'body');
     if (!body || !isArray(body.seatbid) || body.seatbid.length === 0) {
       return [];
     }
 
-    const bids = [];
+    const bids: any[] = [];
 
-    body.seatbid.forEach(seatBid => {
-      (seatBid.bid || []).forEach(bid => {
+    body.seatbid.forEach((seatBid: any) => {
+      (seatBid.bid || []).forEach((bid: any) => {
         if (!bid.price || bid.price <= 0) return;
 
-        const prebidBid = {
+        const prebidBid: any = {
           requestId: bid.impid,
           cpm: bid.price,
           currency: body.cur || 'USD',
@@ -237,23 +236,20 @@ export const spec = {
     return bids;
   },
 
-  // ---------------------------------------------------------------------------
-  // getUserSyncs
-  // ---------------------------------------------------------------------------
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
 
-    const params = [];
+    const params: string[] = [];
     if (gdprConsent) {
-      params.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
-      if (gdprConsent.consentString) {
-        params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`);
+      params.push(`gdpr=${(gdprConsent as any).gdprApplies ? 1 : 0}`);
+      if ((gdprConsent as any).consentString) {
+        params.push(`gdpr_consent=${encodeURIComponent((gdprConsent as any).consentString)}`);
       }
     }
     if (uspConsent) {
-      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+      params.push(`us_privacy=${encodeURIComponent(uspConsent as any)}`);
     }
 
     const syncUrl = SYNC_URL + (params.length > 0 ? '?' + params.join('&') : '');
@@ -263,7 +259,6 @@ export const spec = {
     }
     return [{ type: 'image', url: syncUrl }];
   },
-
 };
 
 registerBidder(spec);
