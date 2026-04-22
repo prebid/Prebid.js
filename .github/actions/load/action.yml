@@ -23,15 +23,12 @@ runs:
       run: |
         rm -r "$(pwd)"/*
 
-    - name: Download artifact
-      uses: Wandalen/wretry.action@v3.8.0
+    - name: Restore working directory cache
+      uses: actions/cache/restore@v4
       with:
-        action: actions/download-artifact@v7
-        attempt_limit: 2
-        attempt_delay: 10000
-        with: |
-          path: '${{ runner.temp }}'
-          name: '${{ inputs.name }}'
+        path: '${{ runner.temp }}/${{ inputs.name }}.tar'
+        key: '${{ inputs.name }}'
+        fail-on-cache-miss: true
 
     - name: 'Untar working directory'
       shell: bash
