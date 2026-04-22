@@ -41,7 +41,10 @@ export const spec = {
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
     if (video) {
-      return !!(video.playerSize && video.context === 'outstream');// Focus on outstream
+      if (['instream', 'outstream'].includes(video.context)) {
+        return !!(video.playerSize);
+      }
+      return false;
     }
 
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
@@ -63,7 +66,7 @@ export const spec = {
 
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const bid = bidRequests[i];
-      const isVideo = bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream';
+      const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context);
 
       let requestUrl = adqueryRequestUrl;
 
@@ -199,8 +202,11 @@ export const spec = {
       return
     }
 
-    const copyOfBid = { ...bid }
-    delete copyOfBid.ad
+    const copyOfBid = { ...bid };
+
+    const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
+    copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
+    delete copyOfBid.ad;
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
