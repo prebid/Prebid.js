@@ -22,13 +22,23 @@ runs:
       shell: bash
       run: |
         rm -r "$(pwd)"/*
-
     - name: Download artifact
+      id: download
+      continue-on-error: true
       uses: actions/download-artifact@v7
       with:
         path: '${{ runner.temp }}'
         name: '${{ inputs.name }}'
-
+    - name: Delay before retrying download
+      if: steps.download.outcome != 'success'
+      shell: bash
+      run: sleep 10
+    - name: Retry downloading artifact
+      if: steps.download.outcome != 'success'
+      uses: actions/download-artifact@v7
+      with:
+        path: '${{ runner.temp }}'
+        name: '${{ inputs.name }}'
     - name: 'Untar working directory'
       shell: bash
       run: |
