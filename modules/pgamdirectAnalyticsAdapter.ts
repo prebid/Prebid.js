@@ -84,10 +84,17 @@ const pgamdirectAnalytics = Object.assign(
         // Content-type 'text/plain' keeps the POST CORS-simple (no
         // preflight). Our analytics sink parses text/plain as JSON
         // deliberately.
+        //
+        // keepalive=true per Prebid AGENTS.md guidance for low-
+        // priority telemetry: without it, events emitted near page
+        // navigation / unload get dropped before the XHR lands. The
+        // most valuable events (BID_WON, AD_RENDER_*) fire exactly
+        // in the unload window, so this directly improves delivery.
         ajax(endpoint, undefined, body, {
           method: 'POST',
           withCredentials: false,
           contentType: 'text/plain',
+          keepalive: true,
         });
       } catch (err) {
         logError('[pgamdirectAnalytics] track failed', err);
@@ -97,6 +104,23 @@ const pgamdirectAnalytics = Object.assign(
 );
 
 // Minimal event shape we extract from each Prebid event.
+//
+// Note on ad_unit_code vs ad_id: they identify different things and
+// must be kept separate so downstream reconciliation can join a
+// BID_WON to its AD_RENDER_* event reliably.
+//
+//   ad_unit_code — the publisher's slot identifier (same on BID_WON
+//                  and on the subsequent AD_RENDER_SUCCEEDED for that
+//                  slot). Stable per-adunit; reused across auctions
+//                  when the same slot refreshes.
+//   ad_id        — Prebid's per-bid adId (unique per bid response,
+//                  changes every auction). Present on the render
+//                  events so we can tie a specific bid's render
+//                  outcome back to the BID_WON that preceded it.
+//
+// Earlier revision misused adId as ad_unit_code on the render events
+// (flagged by Codex review on #14778); this split fixes
+// cross-event reconciliation.
 interface NormalisedEvent {
   t: string;
   ts: number;
@@ -105,6 +129,7 @@ interface NormalisedEvent {
   cpm?: number;
   currency?: string;
   ad_unit_code?: string;
+  ad_id?: string;
   creative_id?: string;
   media_type?: string;
   size?: string;
@@ -158,22 +183,35 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
       };
     }
 
-    case EVENTS.AD_RENDER_SUCCEEDED:
+    case EVENTS.AD_RENDER_SUCCEEDED: {
+      // Render events carry the winning bid nested under args.bid;
+      // extract adUnitCode from THERE (stable across BID_WON ↔
+      // AD_RENDER_* joins). adId goes into its own field for
+      // per-bid traceability.
+      const bid =
+        typeof a.bid === 'object' && a.bid
+          ? (a.bid as Record<string, unknown>)
+          : null;
       return {
         ...base,
-        bidder:
-          typeof a.bid === 'object' && a.bid
-            ? ((a.bid as Record<string, unknown>).bidderCode as string | undefined)
-            : undefined,
-        ad_unit_code: typeof a.adId === 'string' ? a.adId : undefined,
+        bidder: bid && typeof bid.bidderCode === 'string' ? bid.bidderCode : undefined,
+        ad_unit_code: bid && typeof bid.adUnitCode === 'string' ? bid.adUnitCode : undefined,
+        ad_id: typeof a.adId === 'string' ? a.adId : undefined,
       };
+    }
 
-    case EVENTS.AD_RENDER_FAILED:
+    case EVENTS.AD_RENDER_FAILED: {
+      const bid =
+        typeof a.bid === 'object' && a.bid
+          ? (a.bid as Record<string, unknown>)
+          : null;
       return {
         ...base,
         render_fail_reason: typeof a.reason === 'string' ? a.reason : 'unknown',
-        ad_unit_code: typeof a.adId === 'string' ? a.adId : undefined,
+        ad_unit_code: bid && typeof bid.adUnitCode === 'string' ? bid.adUnitCode : undefined,
+        ad_id: typeof a.adId === 'string' ? a.adId : undefined,
       };
+    }
 
     default:
       return base;

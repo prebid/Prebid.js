@@ -136,14 +136,18 @@ describe('pgamdirect Analytics Adapter', () => {
   });
 
   describe('normalise — AD_RENDER_FAILED', () => {
-    it('carries the reason through', () => {
+    it('carries reason + distinguishes ad_unit_code (from bid) from ad_id', () => {
       const n = normalise(EVENTS.AD_RENDER_FAILED, {
         auctionId: 'auction-3',
         reason: 'exception',
         adId: 'ad-1',
+        bid: { adUnitCode: 'div-gpt-top' },
       });
       expect(n.render_fail_reason).to.equal('exception');
-      expect(n.ad_unit_code).to.equal('ad-1');
+      // ad_unit_code comes from bid.adUnitCode (stable across
+      // BID_WON ↔ AD_RENDER_* joins), NOT from args.adId (per-bid).
+      expect(n.ad_unit_code).to.equal('div-gpt-top');
+      expect(n.ad_id).to.equal('ad-1');
     });
 
     it('defaults reason to "unknown" when missing', () => {
@@ -153,14 +157,31 @@ describe('pgamdirect Analytics Adapter', () => {
   });
 
   describe('normalise — AD_RENDER_SUCCEEDED', () => {
-    it('extracts bidder from the nested bid object', () => {
+    it('extracts bidder + ad_unit_code from the nested bid object', () => {
       const n = normalise(EVENTS.AD_RENDER_SUCCEEDED, {
         auctionId: 'auction-4',
-        bid: { bidderCode: 'pgamdirect', cpm: 2.5 },
+        bid: {
+          bidderCode: 'pgamdirect',
+          adUnitCode: 'div-gpt-bottom',
+          cpm: 2.5,
+        },
         adId: 'ad-2',
       });
       expect(n.bidder).to.equal('pgamdirect');
-      expect(n.ad_unit_code).to.equal('ad-2');
+      expect(n.ad_unit_code).to.equal('div-gpt-bottom');
+      expect(n.ad_id).to.equal('ad-2');
+    });
+
+    it('gracefully handles missing bid object', () => {
+      const n = normalise(EVENTS.AD_RENDER_SUCCEEDED, {
+        auctionId: 'auction-5',
+        adId: 'ad-3',
+      });
+      // No bid.adUnitCode available → ad_unit_code undefined;
+      // ad_id still captured for per-bid traceability.
+      expect(n.bidder).to.be.undefined;
+      expect(n.ad_unit_code).to.be.undefined;
+      expect(n.ad_id).to.equal('ad-3');
     });
   });
 
