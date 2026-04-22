@@ -115,7 +115,7 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const sspCohorts = segmentData?.ssp?.cohorts ?? []
   const topics = segmentData?.topics ?? {}
 
-  const bidders = new Set([...acBidders, ...ssps])
+  const bidders = new Set([...acBidders, ...ssps, ...Object.keys(biddersConfig)])
   bidders.forEach(function (bidder) {
     const bidderConfig = biddersConfig[bidder] || {};
     const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
