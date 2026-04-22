@@ -228,12 +228,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       } else if (c.type === 'image' && syncOptions.pixelEnabled) {
         out.push({ type: 'image', url: c.url });
       }
-      // Cap at 5 per auction — Prebid itself doesn't enforce a hard
-      // limit but more than a handful of syncs per page visit is
-      // both wasteful (cookie race conditions in the browser) and
-      // suspicious to auditors.
-      if (out.length >= 5) break;
     }
+    // Per-bidder sync cap is enforced by Prebid's core via
+    // userSync.syncsPerBidder (see src/userSync.ts). We return the
+    // full filtered list and let core clamp it to the publisher's
+    // configured limit. An earlier revision hard-capped at 5 here,
+    // but that silently overrode publishers who raised the limit
+    // (or set 0 = unlimited) — flagged by Codex review and removed.
     return out;
   },
 };

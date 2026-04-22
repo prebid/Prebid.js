@@ -336,14 +336,18 @@ describe('pgamdirect: getUserSyncs', () => {
     ]);
   });
 
-  it('caps at 5 pixels per response to avoid cookie flood', () => {
+  it('returns all eligible syncs and lets Prebid core enforce the per-bidder cap', () => {
+    // Per Codex review on #14777: we deliberately do NOT cap here.
+    // `userSync.syncsPerBidder` is the authoritative limit and lives
+    // in src/userSync.ts; capping inside the adapter would silently
+    // override publishers who raised the limit (or set 0 = unlimited).
     const cookies = Array.from({ length: 10 }, (_, i) => ({
       type: 'image',
       url: `https://dsp-${i}.example/px`,
     }));
     const resp = { body: { ext: { cookies } } };
     const syncs = spec.getUserSyncs(enabledAll, [resp]);
-    expect(syncs).to.have.lengthOf(5);
+    expect(syncs).to.have.lengthOf(10);
   });
 });
 
