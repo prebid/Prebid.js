@@ -23,12 +23,11 @@ runs:
       run: |
         rm -r "$(pwd)"/*
 
-    - name: Restore working directory cache
-      uses: actions/cache/restore@v4
+    - name: Download artifact
+      uses: actions/download-artifact@v7
       with:
-        path: '${{ runner.temp }}/${{ inputs.name }}.tar'
-        key: '${{ inputs.name }}'
-        fail-on-cache-miss: true
+        path: '${{ runner.temp }}'
+        name: '${{ inputs.name }}'
 
     - name: 'Untar working directory'
       shell: bash

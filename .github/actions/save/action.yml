@@ -33,8 +33,9 @@ runs:
         parent="$(dirname "$wdir")"
         target="$(basename "$wdir")"
         tar ${{ fromJSON(steps.platform.outputs.result).platform == 'win32' && '--force-local' || '' }} -C "$parent" -cf "${{ runner.temp }}/${{ fromJSON(steps.platform.outputs.result).name }}.tar" "$target"
-    - name: Save working directory cache
-      uses: actions/cache/save@v4
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
         path: '${{ runner.temp }}/${{ fromJSON(steps.platform.outputs.result).name }}.tar'
-        key: ${{ fromJSON(steps.platform.outputs.result).name }}
+        name: ${{ fromJSON(steps.platform.outputs.result).name }}
+        overwrite: true
