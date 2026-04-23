@@ -50,7 +50,8 @@ export const spec = {
     { code: 'altstar' },
     { code: 'vaayaMedia' },
     { code: 'performist' },
-    { code: 'oveeo' }
+    { code: 'oveeo' },
+    { code: 'nuclion' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
