@@ -110,8 +110,11 @@ describe('gdpr enforcement', function () {
   };
   let gvlids, sandbox;
 
-  function setupConsentData({ gdprApplies = true, apiVersion = 2 } = {}) {
+  function setupConsentData({ gdprApplies = true, apiVersion = 2, tcDataMutator } = {}) {
     const cd = utils.deepClone(staticConfig);
+    if (typeof tcDataMutator === 'function') {
+      tcDataMutator(cd.consentData.getTCData);
+    }
     const consent = {
       vendorData: cd.consentData.getTCData,
       gdprApplies,
@@ -207,6 +210,27 @@ describe('gdpr enforcement', function () {
         }
       });
       setupConsentData();
+      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
+    });
+
+    it('should support TCF 2.3 tcData using disclosedVendors', function () {
+      gvlids.appnexus = 1;
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      setupConsentData({
+        tcDataMutator: (tcData) => {
+          tcData.tcfPolicyVersion = 3;
+          tcData.disclosedVendors = { '1': true, '2': true };
+        }
+      });
       expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
     });
 
