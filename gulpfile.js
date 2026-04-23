@@ -10,7 +10,6 @@ var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
-var opens = require('opn');
 var webpackConfig = require('./webpack.conf.js');
 const standaloneDebuggingConfig = require('./webpack.debugging.js');
 var helpers = require('./gulpHelpers.js');
