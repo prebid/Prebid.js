@@ -63,5 +63,6 @@
   "uid2IdSystem",
   "pubProvidedIdSystem",
   "rtdModule",
-  "permutiveRtdProvider"
+  "permutiveRtdProvider",
+  "prebidServerBidAdapter"
 ]
