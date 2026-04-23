@@ -74,7 +74,7 @@
       "adlooxRtdProvider",
       "adlaneRtdProvider",
       "adnuntiusRtdProvider",
-      "agenticAudienceAdapter",
+      "agenticAudienceRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "anonymisedRtdProvider",
