@@ -9,11 +9,12 @@ import {
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getHighEntropySUA, getLowEntropySUA } from '../src/fpd/sua.js';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
-const MODULE_VERSION = '2.7.0';
+const MODULE_VERSION = '2.9.0';
 
 // WURFL_JS_HOST is the host for the WURFL service endpoints
 const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
@@ -105,8 +106,15 @@ let tier;
 // overQuota stores the over_quota flag from wurfl_pbjs data (possible values: 0, 1)
 let overQuota;
 
-// cachedSUA holds the ORTB 2.6 SUA from Prebid's enrichment pipeline
-let cachedSUA = null;
+// suaPromise is started in getBidRequestData; loadWurflJsAsync chains on it for the wurfl.js URL.
+// We resolve UA client hints via src/fpd/sua.js directly (not via the bid request), so we get
+// high-entropy data regardless of firstPartyData.uaHints publisher config. The data is sent only
+// to WURFL-operated endpoints (wurfl.js and stats beacon), never to the bid request.
+let suaPromise = null;
+
+// resolvedSUA caches the resolved SUA so onAuctionEndEvent can read it synchronously.
+// By the time the auction ends, the promise is (essentially always) already resolved.
+let resolvedSUA = null;
 
 /**
  * Safely gets an object from localStorage with JSON parsing
@@ -288,10 +296,17 @@ function loadWurflJsAsync(config, bidders) {
     }
   };
 
-  if (cachedSUA) {
-    url.searchParams.set('sua', JSON.stringify(cachedSUA));
-  }
-  loadWurflJs(url.toString());
+  // Wait for SUA resolution (started in getBidRequestData) before loading wurfl.js, so the
+  // high-entropy client hints ride along in the ?sua= query param. If unavailable, we load
+  // without it. .catch is defensive: the script must load regardless of the SUA outcome.
+  (suaPromise || Promise.resolve(null))
+    .catch(() => null)
+    .then((sua) => {
+      if (sua) {
+        url.searchParams.set('sua', JSON.stringify(sua));
+      }
+      loadWurflJs(url.toString());
+    });
 }
 
 /**
@@ -1107,7 +1122,8 @@ const init = (config, userConsent) => {
   samplingRate = DEFAULT_SAMPLING_RATE;
   tier = '';
   overQuota = DEFAULT_OVER_QUOTA;
-  cachedSUA = null;
+  suaPromise = null;
+  resolvedSUA = null;
 
   logger.logMessage('initialized', { version: MODULE_VERSION });
 
@@ -1137,8 +1153,15 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     });
   });
 
-  // Read SUA from Prebid's enrichment pipeline (already resolved, publisher-controlled hints)
-  cachedSUA = reqBidsConfigObj.ortb2Fragments?.global?.device?.sua || null;
+  // Kick off SUA resolution once. By the time onAuctionEndEvent fires (after the auction),
+  // resolvedSUA will almost always be populated, so the beacon path stays fully synchronous.
+  // We call sua.js directly (not the bid request) to get full high-entropy data independently
+  // of firstPartyData.uaHints — this data goes only to WURFL-operated endpoints.
+  if (suaPromise === null) {
+    suaPromise = getHighEntropySUA()
+      .then(hi => hi || getLowEntropySUA() || null)
+      .then(sua => { resolvedSUA = sua; return sua; });
+  }
 
   // Determine enrichment type based on cache availability
   WurflDebugger.cacheReadStart();
@@ -1376,7 +1399,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     over_quota: overQuota,
     consent_class: consentClass,
     ad_units: adUnits,
-    sua: cachedSUA
+    sua: resolvedSUA
   };
 
   // Add A/B test fields if enabled
@@ -1413,6 +1436,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 // The WURFL submodule
 export const wurflSubmodule = {
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/wurflRtdProvider.json',
   init,
   getBidRequestData,
   onAuctionEndEvent,
@@ -1420,7 +1444,8 @@ export const wurflSubmodule = {
 
 // Exported for testing only
 export const __testing__ = {
-  setCachedSUA: (value) => { cachedSUA = value; },
+  setResolvedSUA: (value) => { resolvedSUA = value; },
+  setSuaPromise: (value) => { suaPromise = value; },
 };
 
 // Register the WURFL submodule as submodule of realTimeData
