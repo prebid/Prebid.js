@@ -7,10 +7,21 @@ import {
 
 import { deepAccess } from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./aceexBidAdapterTypes.d.ts').AceexBidderParams} AceexBidderParams
+ * @typedef {BidRequest & { params: AceexBidderParams }} AceexBidRequest
+ */
+
 const BIDDER_CODE = 'aceex';
 const GVLID = 1387;
 const AD_REQUEST_URL = 'https://bl-us.aceex.io/?secret_key=prebidjs';
 
+/**
+ * @param {AceexBidRequest} bid
+ * @param bidderRequest
+ * @param placement
+ */
 const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   placement.trafficType = placement.adFormat;
   placement.publisherId = bid.params.publisherId;
@@ -24,6 +35,9 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
+  /**
+   * @param {AceexBidRequest} bid
+   */
   isBidRequestValid: (bid) => {
     return !!(bid.bidId && bid.params?.publisherId && bid.params?.trafficType);
   },
