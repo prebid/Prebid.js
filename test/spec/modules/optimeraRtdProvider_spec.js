@@ -160,12 +160,19 @@ describe('Optimera RTD propery sets the window.optimera object', () => {
     insights: {
       ilv: ['div-5'],
       miv: ['div-6'],
-    }
+    },
+    pagelevel: [
+      'U',
+      'LA_9999',
+      'LB_9999',
+      'LC_9999',
+    ]
   };
   it('Properly set the score file url and scores', () => {
     optimeraRTD.setScores(JSON.stringify(scores));
     expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8']);
     expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
+    expect(window.optimera.pagelevel).to.include.ordered.members(['U', 'LA_9999', 'LB_9999', 'LC_9999']);
   });
 });
 
