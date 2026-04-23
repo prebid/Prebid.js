@@ -1,8 +1,8 @@
 import { ERROR_NO_AD } from './constants.js';
 
 /**
- * Custom creative renderer: builds an empty same-origin iframe, injects
- * `<script src="bid.customRendererUrl">`, then calls `iframe.contentWindow.pbRenderInFrame(bid)`
+ * SafeFrame-style creative renderer: builds an empty same-origin iframe, injects
+ * `<script src="bid.safeFrameRendererUrl">`, then calls `iframe.contentWindow.pbRenderInFrame(bid)`
  * after that script loads.
  *
  * The remote script must assign `window.pbRenderInFrame = function (bid) { ... }`.
@@ -13,13 +13,13 @@ import { ERROR_NO_AD } from './constants.js';
   'use strict';
 
   function render(data, { mkFrame }, win) {
-    var customRendererUrl = data.customRendererUrl;
+    var safeFrameRendererUrl = data.safeFrameRendererUrl;
     var width = data.width;
     var height = data.height;
     var instl = data.instl;
 
-    if (!customRendererUrl) {
-      var err = new Error('Missing customRendererUrl');
+    if (!safeFrameRendererUrl) {
+      var err = new Error('Missing safeFrameRendererUrl');
       err.reason = ERROR_NO_AD;
       throw err;
     }
@@ -54,28 +54,32 @@ import { ERROR_NO_AD } from './constants.js';
           var cw = frame.contentWindow;
           var idoc = cw.document;
           var script = idoc.createElement('script');
-          script.src = customRendererUrl;
+          script.src = safeFrameRendererUrl;
           script.onload = function () {
             try {
               var fn = cw.pbRenderInFrame;
               if (typeof fn !== 'function') {
                 throw new Error(
-                  'Prebid custom renderer: customRendererUrl must define window.pbRenderInFrame as a function.'
+                  'Prebid safe-frame renderer: safeFrameRendererUrl script must define window.pbRenderInFrame as a function.'
                 );
               }
               fn.call(cw, data);
               resolve();
             } catch (e) {
-              reject(
-                new Error(
-                  'Prebid custom renderer: SecurityError while invoking pbRenderInFrame.'
-                )
-              );
+              if (e.name === 'SecurityError') {
+                reject(
+                  new Error(
+                    'Prebid safe-frame renderer: SecurityError while invoking pbRenderInFrame.'
+                  )
+                );
+              } else {
+                reject(e);
+              }
             }
           };
           script.onerror = function () {
             reject(
-              new Error('Prebid custom renderer: failed to load script from customRendererUrl')
+              new Error('Prebid safe-frame renderer: failed to load script from safeFrameRendererUrl')
             );
           };
           (idoc.head || idoc.body).appendChild(script);
@@ -84,7 +88,7 @@ import { ERROR_NO_AD } from './constants.js';
         }
       };
       frame.onerror = function () {
-        reject(new Error('Prebid custom renderer: iframe failed to load'));
+        reject(new Error('Prebid safe-frame renderer: iframe failed to load'));
       };
       doc.body.appendChild(frame);
     });

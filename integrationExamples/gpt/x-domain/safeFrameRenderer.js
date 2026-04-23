@@ -1,6 +1,6 @@
 /* global YVAP */
 /**
- * Reference implementation for `bid.customRendererUrl`.
+ * Reference implementation for `bid.safeFrameRendererUrl`.
  * Prebid injects this script into the creative iframe and then calls `window.pbRenderInFrame(bid)`.
  * `bid` is the full bid payload.
  */
