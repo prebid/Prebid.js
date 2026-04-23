@@ -72,7 +72,7 @@ export const getNexx360LocalStorage = getLocalStorageFunctionGenerator<{ nexx360
   'nexx360Id'
 );
 
-export const getGzipSetting = (): boolean => libGetGzipSetting(BIDDER_CODE, true);
+export const getGzipSetting = (bidderCode: string = BIDDER_CODE): boolean => libGetGzipSetting(bidderCode, true);
 
 const converter = ortbConverter({
   context: {
