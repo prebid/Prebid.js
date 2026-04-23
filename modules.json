@@ -46,6 +46,8 @@
   "adgridBidAdapter",
   "optidigitalBidAdapter",
   "equativBidAdapter",
+  "adkernelBidAdapter",
+  "openwebBidAdapter",
   "adpod",
   "consentManagementTcf",
   "consentManagementUsp",
