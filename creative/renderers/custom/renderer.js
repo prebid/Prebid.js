@@ -1,72 +1,25 @@
 import { ERROR_NO_AD } from './constants.js';
 
 /**
- * Self-contained renderer for injection as a string
- * Avoid a literal SCRIPT_END token (less-than, slash, s-c-r-i-p-t, greater-than) — it closes the outer HTML script tag.
+ * Custom creative renderer: builds an empty same-origin iframe, injects
+ * `<script src="bid.customRendererUrl">`, then calls `iframe.contentWindow.pbRenderInFrame(bid)`
+ * after that script loads.
  *
- * Custom renderer URL contract (runs inside the ad iframe, after bootstrap):
- *   window.pbRegisterCustomRender(function (ctx) { ... });
- * ctx: { ad, adUrl, width, height, instl, adId, customRendererUrl, vastXml, adUnitCode } — omitted keys are undefined in JS / absent in JSON;
- * The function must be registered synchronously while the remote script loads (no defer-only registration).
+ * The remote script must assign `window.pbRenderInFrame = function (bid) { ... }`.
+ * `bid` is the full rendering payload from the page (spread bid response + macro-replaced `ad` / `adUrl`, plus `adId`), same shape as passed to `render()`.
+ *
  */
 ;(function () {
   'use strict';
 
-  function serializeForInlineScript(value) {
-    return JSON.stringify(value).replace(/</g, '\\u003c');
-  }
-
-  /** Closing script tag for HTML inside srcdoc (built from pieces so this source stays embeddable). */
-  function scriptClose() {
-    return '</scr' + 'ipt>';
-  }
-
-  /**
-   * Minimal iframe document: only bootstrap, remote customRendererUrl, runner. Empty body — no ad markup.
-   * `ctx` is built in render(); JSON.stringify omits undefined-valued keys in the inline bootstrap.
-   */
-  function buildCustomRendererSrcdoc(customRendererUrl, ctx) {
-    var sc = scriptClose();
-    var bootstrap =
-      '<script>' +
-      'window.pbCustomRenderContext=' + serializeForInlineScript(ctx) + ';' +
-      'window.pbRegisterCustomRender=function(impl){window.pbCustomRenderImpl=impl;};' +
-      sc;
-    var remote = '<script src="' + customRendererUrl + '">' + sc;
-    var runner =
-      '<script>' +
-      '(function(){' +
-      'function run(){' +
-      'var fn=window.pbCustomRenderImpl;' +
-      'if(typeof fn!=="function"){' +
-      'throw new Error("Prebid custom renderer: call pbRegisterCustomRender(function(ctx){...}) from customRendererUrl");' +
-      '}' +
-      'fn(window.pbCustomRenderContext);' +
-      '}' +
-      'if(document.readyState==="loading"){' +
-      'document.addEventListener("DOMContentLoaded",run);' +
-      '}else{' +
-      'run();' +
-      '}' +
-      '})();' +
-      sc;
-    var scripts = bootstrap + remote + runner;
-    return scripts;
-  }
-
   function render(data, { mkFrame }, win) {
-    var ad = data.ad;
-    var adUrl = data.adUrl;
+    var customRendererUrl = data.customRendererUrl;
     var width = data.width;
     var height = data.height;
     var instl = data.instl;
-    var customRendererUrl = data.customRendererUrl;
-    var adId = data.adId;
-    var vastXml = data.vastXml;
-    var adUnitCode = data.adUnitCode;
 
-    if (!ad && !adUrl && !customRendererUrl) {
-      var err = new Error('Missing ad markup, ad URL, or customRendererUrl');
+    if (!customRendererUrl) {
+      var err = new Error('Missing customRendererUrl');
       err.reason = ERROR_NO_AD;
       throw err;
     }
@@ -83,30 +36,58 @@ import { ERROR_NO_AD } from './constants.js';
       width: width != null ? width : '100%',
       height: height != null ? height : '100%'
     };
-    var ctx = {
-      ad,
-      adUrl,
-      width,
-      height,
-      instl: !!instl,
-      adId,
-      customRendererUrl,
-      vastXml,
-      adUnitCode
-    };
-    if (customRendererUrl) {
-      attrs.srcdoc = buildCustomRendererSrcdoc(customRendererUrl, ctx);
-    } else if (adUrl && !ad) {
-      attrs.src = adUrl;
-    } else {
-      attrs.srcdoc = ad;
-    }
-    doc.body.appendChild(mkFrame(doc, attrs));
+
     if (instl && win.frameElement) {
       var style = win.frameElement.style;
       style.width = width ? String(width) + 'px' : '100vw';
       style.height = height ? String(height) + 'px' : '100vh';
     }
+
+    // Prebid will wait for it to resolve before firing AD_RENDER_SUCCEEDED.
+    return new Promise(function (resolve, reject) {
+      var frame = mkFrame(doc, {
+        width: attrs.width,
+        height: attrs.height
+      });
+      frame.onload = function () {
+        try {
+          var cw = frame.contentWindow;
+          var idoc = cw.document;
+          var script = idoc.createElement('script');
+          script.src = customRendererUrl;
+          script.onload = function () {
+            try {
+              var fn = cw.pbRenderInFrame;
+              if (typeof fn !== 'function') {
+                throw new Error(
+                  'Prebid custom renderer: customRendererUrl must define window.pbRenderInFrame as a function.'
+                );
+              }
+              fn.call(cw, data);
+              resolve();
+            } catch (e) {
+              reject(
+                new Error(
+                  'Prebid custom renderer: SecurityError while invoking pbRenderInFrame.'
+                )
+              );
+            }
+          };
+          script.onerror = function () {
+            reject(
+              new Error('Prebid custom renderer: failed to load script from customRendererUrl')
+            );
+          };
+          (idoc.head || idoc.body).appendChild(script);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      frame.onerror = function () {
+        reject(new Error('Prebid custom renderer: iframe failed to load'));
+      };
+      doc.body.appendChild(frame);
+    });
   }
 
   window.render = render;
