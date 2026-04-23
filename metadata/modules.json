@@ -1599,6 +1599,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "billow_rtb25",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "bitmedia",
       "aliasOf": null,
       "gvlid": null,
@@ -3505,7 +3512,7 @@
       "componentType": "bidder",
       "componentName": "movingup",
       "aliasOf": "nexx360",
-      "gvlid": 1416,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3779,6 +3786,13 @@
       "componentName": "px",
       "aliasOf": "performax",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pgamdirect",
+      "aliasOf": null,
+      "gvlid": 1353,
       "disclosureURL": null
     },
     {
@@ -4336,7 +4350,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "showheroes-bs",
+      "componentName": "showheroes",
       "aliasOf": null,
       "gvlid": 111,
       "disclosureURL": null
@@ -4346,6 +4360,13 @@
       "componentName": "showheroesBs",
       "aliasOf": "showheroes-bs",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "showheroes-bs",
+      "aliasOf": null,
+      "gvlid": 111,
       "disclosureURL": null
     },
     {
@@ -6240,6 +6261,11 @@
     {
       "componentType": "analytics",
       "componentName": "id5Analytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "imAnalytics",
       "gvlid": null
     },
     {

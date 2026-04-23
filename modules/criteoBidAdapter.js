@@ -671,7 +671,9 @@ function createOutstreamVideoRenderer(bid) {
   };
 
   const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });
-  renderer.setRender(render);
+  renderer.setRender(
+    (renderBid, renderDocument) => renderBid.renderer.push(() => render(renderBid, renderDocument))
+  );
   return renderer;
 }
 

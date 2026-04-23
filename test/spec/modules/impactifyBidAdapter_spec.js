@@ -336,6 +336,7 @@ describe('ImpactifyAdapter', function () {
                 id: '65820304700829014',
                 impid: '462c08f20d428',
                 price: 3.40,
+                mtype: 2,
                 adm: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
                 adid: '97517771',
                 iurl: 'https://fra1-ib.adnxs.com/cr?id=97517771',
@@ -343,10 +344,10 @@ describe('ImpactifyAdapter', function () {
                 crid: '97517771',
                 w: 1,
                 h: 1,
-                meta: { 'advertiserDomains': ['testdomain.com'] },
+                adomain: ['testdomain.com'],
                 ext: {
                   prebid: {
-                    'type': 'video'
+                    type: 'video'
                   },
                   bidder: {
                     prebid: {
@@ -406,7 +407,8 @@ describe('ImpactifyAdapter', function () {
             }
           },
         ]
-      }
+      };
+
       const expectedResponse = [
         {
           id: '65820304700829014',
@@ -417,7 +419,8 @@ describe('ImpactifyAdapter', function () {
           ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
           width: 1,
           height: 1,
-          meta: { 'advertiserDomains': ['testdomain.com'] },
+          mediaType: 'video',
+          meta: { advertiserDomains: ['testdomain.com'] },
           ttl: 300,
           creativeId: '97517771'
         }
@@ -448,6 +451,7 @@ describe('ImpactifyAdapter', function () {
               id: 'bid-1',
               impid: 'imp-1',
               price: 2.5,
+              mtype: 2,
               ext: {
                 vast_url: 'https://example.com/vast.xml'
               },
@@ -466,6 +470,51 @@ describe('ImpactifyAdapter', function () {
       expect(result[0].vastUrl).to.equal('https://example.com/vast.xml');
       expect(result[0].vastXml).to.equal('<VAST>fallback</VAST>');
       expect(result[0]).to.not.have.property('ad');
+    });
+
+    it('should map banner responses to banner bids', function () {
+      const bidRequest = {
+        data: JSON.stringify({
+          imp: [{
+            id: 'imp-banner-1',
+            ext: {
+              impactify: {
+                format: 'display'
+              }
+            }
+          }]
+        })
+      };
+
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'bid-banner-1',
+              impid: 'imp-banner-1',
+              price: 1.75,
+              mtype: 1,
+              adm: '<div>banner creative</div>',
+              crid: 'creative-banner-1',
+              w: 300,
+              h: 250,
+              adomain: ['advertiser.com']
+            }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('banner');
+      expect(result[0].ad).to.equal('<div>banner creative</div>');
+      expect(result[0]).to.not.have.property('vastUrl');
+      expect(result[0]).to.not.have.property('vastXml');
+      expect(result[0].meta).to.deep.equal({
+        advertiserDomains: ['advertiser.com']
+      });
     });
   });
   describe('getUserSyncs', function () {

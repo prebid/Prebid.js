@@ -1330,6 +1330,7 @@ describe('gumgumAdapter', function () {
           devicetype: 1,
           make: 'Apple',
           model: 'iPhone 12 Pro Max',
+          hwv: 'iPhone15,2',
           os: 'iOS',
           osv: '17.4',
           ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
@@ -1350,6 +1351,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.dt).to.equal(ortb2.device.devicetype);
       expect(bidRequest.data.make).to.equal(ortb2.device.make);
       expect(bidRequest.data.model).to.equal(ortb2.device.model);
+      expect(bidRequest.data.hwv).to.equal(ortb2.device.hwv);
       expect(bidRequest.data.os).to.equal(ortb2.device.os);
       expect(bidRequest.data.osv).to.equal(ortb2.device.osv);
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
