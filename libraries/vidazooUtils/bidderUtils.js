@@ -425,6 +425,11 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
 
   if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2
   if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
+  if (params.host) {
+    data.params = {
+      host: params.host
+    };
+  }
 
   return data;
 }
