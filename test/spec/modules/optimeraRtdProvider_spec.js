@@ -174,6 +174,43 @@ describe('Optimera RTD propery sets the window.optimera object', () => {
     expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
     expect(window.optimera.pagelevel).to.include.ordered.members(['U', 'LA_9999', 'LB_9999', 'LC_9999']);
   });
+
+  const scoresWithoutPageLevel = {
+    'div-0': ['A1', 'A2'],
+    'div-1': ['A3', 'A4'],
+    device: {
+      de: {
+        'div-0': ['A5', 'A6'],
+        'div-1': ['A7', 'A8'],
+        insights: {
+          ilv: ['div-0'],
+          miv: ['div-4'],
+        }
+      },
+      mo: {
+        'div-0': ['A9', 'B0'],
+        'div-1': ['B1', 'B2'],
+        insights: {
+          ilv: ['div-1'],
+          miv: ['div-2'],
+        }
+      }
+    },
+    insights: {
+      ilv: ['div-5'],
+      miv: ['div-6'],
+    },
+  };
+
+  it('Properly leaves pagelevel empty when it is not provided', () => {
+    window.optimera = {};
+
+    optimeraRTD.setScores(JSON.stringify(scoresWithoutPageLevel));
+    expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8']);
+    expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
+    expect(window.optimera.pagelevel).to.deep.equal([]);
+  });
+
 });
 
 describe('Optimera RTD targeting object is properly formed', () => {
