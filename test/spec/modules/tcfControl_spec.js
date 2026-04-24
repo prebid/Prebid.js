@@ -14,8 +14,8 @@ import {
   ufpdRule,
   validateRules
 } from 'modules/tcfControl.js';
-import {config} from 'src/config.js';
-import adapterManager, {gdprDataHandler} from 'src/adapterManager.js';
+import { config } from 'src/config.js';
+import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {
   MODULE_TYPE_ANALYTICS,
@@ -25,10 +25,10 @@ import {
 } from '../../../src/activities/modules.js';
 import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
-import {requestBids} from 'src/prebid.js';
-import {hook} from '../../../src/hook.js';
-import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
-import {activityParams} from '../../../src/activities/activityParams.js';
+import { requestBids } from 'src/prebid.js';
+import { hook } from '../../../src/hook.js';
+import { GDPR_GVLIDS, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
 import { checkIfCredentialsAllowed } from '../../../modules/tcfControl.js';
 
 describe('gdpr enforcement', function () {
@@ -110,8 +110,11 @@ describe('gdpr enforcement', function () {
   };
   let gvlids, sandbox;
 
-  function setupConsentData({gdprApplies = true, apiVersion = 2} = {}) {
+  function setupConsentData({ gdprApplies = true, apiVersion = 2, tcDataMutator } = {}) {
     const cd = utils.deepClone(staticConfig);
+    if (typeof tcDataMutator === 'function') {
+      tcDataMutator(cd.consentData.getTCData);
+    }
     const consent = {
       vendorData: cd.consentData.getTCData,
       gdprApplies,
@@ -130,13 +133,17 @@ describe('gdpr enforcement', function () {
   })
 
   function expectAllow(allow, ruleResult) {
-    allow ? expect(ruleResult).to.not.exist : sinon.assert.match(ruleResult, {allow: false});
+    if (allow) {
+      expect(ruleResult).to.not.exist;
+    } else {
+      sinon.assert.match(ruleResult, { allow: false });
+    }
   }
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     gvlids = {};
-    sandbox.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({gvlid: gvlids[name], modules: {}}));
+    sandbox.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({ gvlid: gvlids[name], modules: {} }));
   });
 
   afterEach(() => {
@@ -203,6 +210,27 @@ describe('gdpr enforcement', function () {
         }
       });
       setupConsentData();
+      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
+    });
+
+    it('should support TCF 2.3 tcData using disclosedVendors', function () {
+      gvlids.appnexus = 1;
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      setupConsentData({
+        tcDataMutator: (tcData) => {
+          tcData.tcfPolicyVersion = 3;
+          tcData.disclosedVendors = { '1': true, '2': true };
+        }
+      });
       expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
     });
 
@@ -316,7 +344,7 @@ describe('gdpr enforcement', function () {
 
     it('should allow userId module if gdpr not in scope', function () {
       gvlids.sampleUserId = 1;
-      const consent = setupConsentData({gdprApplies: false});
+      const consent = setupConsentData({ gdprApplies: false });
       consent.vendorData.purpose.consents['1'] = false;
       expect(enrichEidsRule(activityParams(MODULE_TYPE_UID, 'sampleUserId'))).to.not.exist;
     });
@@ -399,6 +427,48 @@ describe('gdpr enforcement', function () {
       }).forEach(([bidder, allowed]) => {
         expectAllow(allowed, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
       })
+    });
+
+    it('should allow S2S bidder when deferS2Sbidders is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: [],
+            deferS2Sbidders: true
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.vendor.consents = {};
+      consent.vendorData.vendor.legitimateInterests = {};
+      consent.vendorData.purpose.consents['2'] = true;
+
+      const s2sBidderParams = activityParams(MODULE_TYPE_BIDDER, 's2sBidder', { isS2S: true });
+      expectAllow(true, fetchBidsRule(s2sBidderParams));
+    });
+
+    it('should not make exceptions for client bidders when deferS2Sbidders is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: [],
+            deferS2Sbidders: true
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.vendor.consents = {};
+      consent.vendorData.vendor.legitimateInterests = {};
+      consent.vendorData.purpose.consents['2'] = true;
+
+      const clientBidderParams = activityParams(MODULE_TYPE_BIDDER, 'clientBidder');
+      expectAllow(false, fetchBidsRule(clientBidderParams));
     });
   });
 
@@ -648,18 +718,18 @@ describe('gdpr enforcement', function () {
             cd.vendorData.purpose.consents[4] = true
           },
           'enforcePurpose is false, with vendor consent given'() {
-            setupPAdsRule({enforcePurpose: false});
+            setupPAdsRule({ enforcePurpose: false });
             setVendorConsent();
           },
           'enforceVendor is false, with purpose consent given'() {
-            setupPAdsRule({enforceVendor: false});
+            setupPAdsRule({ enforceVendor: false });
             cd.vendorData.purpose.consents[4] = true;
           },
           'vendor is excepted'() {
-            setupPAdsRule({vendorExceptions: [BIDDER]});
+            setupPAdsRule({ vendorExceptions: [BIDDER] });
           },
           'vendor is softly excepted, with purpose consent given'() {
-            setupPAdsRule({softVendorExceptions: [BIDDER]});
+            setupPAdsRule({ softVendorExceptions: [BIDDER] });
             cd.vendorData.purpose.consents[4] = true;
           }
         }).forEach(([t, setup]) => {
@@ -773,7 +843,7 @@ describe('gdpr enforcement', function () {
           purposeNo: 4,
           allowsLI: false
         },
-      }).forEach(([purpose, {purposeNo, allowsLI}]) => {
+      }).forEach(([purpose, { purposeNo, allowsLI }]) => {
         describe(`purpose ${purpose}`, () => {
           let consent;
           beforeEach(() => {
@@ -876,7 +946,8 @@ describe('gdpr enforcement', function () {
       purpose: 'basicAds',
       enforcePurpose: true,
       enforceVendor: true,
-      vendorExceptions: []
+      vendorExceptions: [],
+      deferS2Sbidders: false
     }];
     beforeEach(function () {
       sandbox = sinon.createSandbox();
@@ -922,7 +993,8 @@ describe('gdpr enforcement', function () {
         purpose: 'basicAds',
         enforcePurpose: false,
         enforceVendor: true,
-        vendorExceptions: ['bidderA']
+        vendorExceptions: ['bidderA'],
+        deferS2Sbidders: false
       }
       setEnforcementConfig({
         gdpr: {
@@ -944,7 +1016,7 @@ describe('gdpr enforcement', function () {
         enforcePurpose: false,
         enforceVendor: false
       }]
-      setEnforcementConfig({gdpr: { rules }});
+      setEnforcementConfig({ gdpr: { rules } });
       expect(ACTIVE_RULES.purpose[1]).to.deep.equal(rules[0]);
       expect(ACTIVE_RULES.purpose[2]).to.deep.equal(rules[1]);
     });
@@ -970,7 +1042,7 @@ describe('gdpr enforcement', function () {
         enforcePurpose: false,
         enforceVendor: false
       }]
-      setEnforcementConfig({gdpr: { rules }});
+      setEnforcementConfig({ gdpr: { rules } });
 
       events.emit('auctionEnd', {})
 
@@ -995,9 +1067,9 @@ describe('gdpr enforcement', function () {
       let entry;
 
       beforeEach(function() {
-        entry = {modules: {}};
+        entry = { modules: {} };
         GDPR_GVLIDS.get.resetHistory();
-        GDPR_GVLIDS.get.callsFake((mod) => mod === MOCK_MODULE ? entry : {modules: {}});
+        GDPR_GVLIDS.get.callsFake((mod) => mod === MOCK_MODULE ? entry : { modules: {} });
       });
 
       it('should return "null" if called without passing any argument', function() {
@@ -1011,7 +1083,7 @@ describe('gdpr enforcement', function () {
       });
 
       it('should return null if the wrong GVL ID was registered', () => {
-        entry = {gvlid: 123};
+        entry = { gvlid: 123 };
         expect(getGvlid('type', 'someOtherModule')).to.equal(null);
       })
 
@@ -1027,29 +1099,29 @@ describe('gdpr enforcement', function () {
               }
             });
 
-            entry = {gvlid: 2};
+            entry = { gvlid: 2 };
 
             const gvlid = getGvlid('type', MOCK_MODULE, fallbackFn);
             expect(gvlid).to.equal(1);
           });
 
           it('should return the GVL ID that was registered', function() {
-            entry = {gvlid: 7};
+            entry = { gvlid: 7 };
             expect(getGvlid('type', MOCK_MODULE, fallbackFn)).to.equal(7);
           });
 
           it('should return VENDORLESS_GVLID for core modules', () => {
-            entry = {gvlid: 123};
+            entry = { gvlid: 123 };
             expect(getGvlid(MODULE_TYPE_PREBID, MOCK_MODULE, fallbackFn)).to.equal(VENDORLESS_GVLID);
           });
 
           describe('multiple GVL IDs are found', () => {
             it('should use bidder over others', () => {
-              entry = {modules: {[MODULE_TYPE_BIDDER]: 123, [MODULE_TYPE_UID]: 321}};
+              entry = { modules: { [MODULE_TYPE_BIDDER]: 123, [MODULE_TYPE_UID]: 321 } };
               expect(getGvlid(MODULE_TYPE_UID, MOCK_MODULE, fallbackFn)).to.equal(123);
             });
             it('should use uid over analytics', () => {
-              entry = {modules: {[MODULE_TYPE_UID]: 123, [MODULE_TYPE_ANALYTICS]: 321}};
+              entry = { modules: { [MODULE_TYPE_UID]: 123, [MODULE_TYPE_ANALYTICS]: 321 } };
               expect(getGvlid(MODULE_TYPE_ANALYTICS, MOCK_MODULE, fallbackFn)).to.equal(123);
             })
           })
@@ -1080,7 +1152,7 @@ describe('gdpr enforcement', function () {
 
       it('should invoke adapter.gvlid if it\'s a function', () => {
         adapter.gvlid = (cfg) => cfg.k
-        const cfg = {k: 231};
+        const cfg = { k: 231 };
         expect(getGvlidFromAnalyticsAdapter('analytics', cfg)).to.eql(231);
       });
 
@@ -1098,8 +1170,8 @@ describe('gdpr enforcement', function () {
         enforcePurpose: true,
         enforceVendor: false
       }]
-      setEnforcementConfig({gdpr: {rules}});
-      const consent = setupConsentData({gdprApplies: false});
+      setEnforcementConfig({ gdpr: { rules } });
+      const consent = setupConsentData({ gdprApplies: false });
       consent.vendorData.purpose.consents['1'] = false;
       const nextSpy = sinon.spy();
       const options = {
@@ -1108,7 +1180,7 @@ describe('gdpr enforcement', function () {
 
       checkIfCredentialsAllowed(nextSpy, options);
 
-      sinon.assert.calledWith(nextSpy, {withCredentials: false});
+      sinon.assert.calledWith(nextSpy, { withCredentials: false });
       expect(logWarn.calledOnce).to.equal(true);
       logWarn.restore();
     })

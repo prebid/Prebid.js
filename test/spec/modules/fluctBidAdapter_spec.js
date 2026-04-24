@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/fluctBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { spec } from 'modules/fluctBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);
@@ -91,7 +91,7 @@ describe('fluctAdapter', function () {
 
     it('sends bid request to ENDPOINT with query parameter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.url).to.equal('https://hb.adingo.jp/prebid?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
+      expect(request.url).to.equal('https://hb.adingo.jp/prebid/?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
     });
 
     it('includes data.page by default', function () {
@@ -437,6 +437,141 @@ describe('fluctAdapter', function () {
       )[0];
       expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
       expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
+    });
+
+    it('sends no instl as instl = 0', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.instl).to.eql(0);
+    })
+
+    it('sends ortb2Imp.instl as instl = 0', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          instl: 0,
+        },
+      })), bidderRequest)[0];
+      expect(request.data.instl).to.eql(0);
+    });
+
+    it('sends ortb2Imp.instl as instl', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          instl: 1,
+        },
+      })), bidderRequest)[0];
+      expect(request.data.instl).to.eql(1);
+    });
+
+    it('includes no data.bidfloor by default (without floor module)', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(undefined);
+      expect(request.data.bidfloorcur).to.eql(undefined);
+    });
+
+    it('includes data.bidfloor from params.bidfloor (without floor module)', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          params: {
+            ...bidReq.params,
+            bidfloor: 100,
+          }
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(100);
+      expect(request.data.bidfloorcur).to.eql('JPY');
+    });
+
+    it('includes data.bidfloor from getFloor', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          getFloor: () => ({
+            currency: 'JPY',
+            floor: 200
+          })
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(200);
+      expect(request.data.bidfloorcur).to.eql('JPY');
+    });
+
+    it('prefers getFloor over params.bidfloor', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          params: {
+            ...bidReq.params,
+            bidfloor: 100,
+          },
+          getFloor: () => ({
+            currency: 'JPY',
+            floor: 200
+          })
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(200);
+      expect(request.data.bidfloorcur).to.eql('JPY');
+    });
+
+    it('does not include data.bidfloor if getFloor returns different currency', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          getFloor: () => ({
+            currency: 'USD',
+            floor: 200
+          })
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(undefined);
+      expect(request.data.bidfloorcur).to.eql(undefined);
+    });
+
+    it('does not include data.bidfloor if getFloor returns invalid floor', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          getFloor: () => ({
+            currency: 'JPY',
+            floor: NaN
+          })
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(undefined);
+      expect(request.data.bidfloorcur).to.eql(undefined);
+    });
+
+    it('includes data.bidfloor from params.bidfloor with JPY currency', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          params: {
+            ...bidReq.params,
+            bidfloor: 100,
+            currency: 'JPY',
+          }
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(100);
+      expect(request.data.bidfloorcur).to.eql('JPY');
+    });
+
+    it('does not include data.bidfloor if params.currency is not JPY', function () {
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign({}, bidReq, {
+          params: {
+            ...bidReq.params,
+            bidfloor: 2,
+            currency: 'USD',
+          }
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.bidfloor).to.eql(undefined);
+      expect(request.data.bidfloorcur).to.eql(undefined);
     });
   });
 

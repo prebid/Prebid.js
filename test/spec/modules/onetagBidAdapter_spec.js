@@ -26,7 +26,7 @@ const getFloor = function(params) {
       floorPrice = 5.0;
       break;
   }
-  return {currency: params.currency, floor: floorPrice};
+  return { currency: params.currency, floor: floorPrice };
 };
 
 describe('onetag', function () {
@@ -110,7 +110,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'native|*': 1.10
@@ -180,7 +180,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'native|*': 1.10
@@ -201,7 +201,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'banner|300x250': 0.10
@@ -224,7 +224,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'video|640x480': 0.10
@@ -246,7 +246,7 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'video|640x480': 0.10
@@ -291,13 +291,15 @@ describe('onetag', function () {
       it('Should return true when correct native bid is passed', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
-        expect(spec.isBidRequestValid(nativeBid)).to.be.true && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.true;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.true;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.true;
       });
       it('Should return false when native is not an object', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
         nativeBid.mediaTypes.native = nativeLegacyBid.mediaTypes.native = 30;
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb if defined but it isn\'t an object', function () {
         const nativeBid = createNativeBid();
@@ -308,20 +310,23 @@ describe('onetag', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
         nativeBid.mediaTypes.native.ortb.assets = nativeLegacyBid.mediaTypes.native.ortb.assets = 30;
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets is an empty array', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
         nativeBid.mediaTypes.native.ortb.assets = nativeLegacyBid.mediaTypes.native.ortb.assets = [];
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] doesnt have \'id\'', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
         Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0], 'id');
         Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[0], 'id');
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] doesnt have any of \'title\', \'img\', \'data\' and \'video\' properties', function () {
         const nativeBid = createNativeBid();
@@ -330,7 +335,8 @@ describe('onetag', function () {
         const legacyTitleIndex = nativeLegacyBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
         Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[titleIndex], 'title');
         Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[legacyTitleIndex], 'title');
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] have title, but doesnt have \'len\' property', function () {
         const nativeBid = createNativeBid();
@@ -339,7 +345,8 @@ describe('onetag', function () {
         const legacyTitleIndex = nativeLegacyBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
         Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[titleIndex].title, 'len');
         Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[legacyTitleIndex].title, 'len');
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is data but doesnt have \'type\' property', function () {
         const nativeBid = createNativeBid();
@@ -347,7 +354,8 @@ describe('onetag', function () {
         const dataIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.data);
         Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[dataIndex].data, 'type');
         Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[dataIndex].data, 'type');
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is video but doesnt have \'mimes\' property', function () {
         const nativeBid = createNativeBid();
@@ -483,7 +491,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
@@ -494,12 +502,6 @@ describe('onetag', function () {
       expect(data.sWidth).to.be.a('number');
       expect(data.wWidth).to.be.a('number');
       expect(data.wHeight).to.be.a('number');
-      expect(data.oHeight).to.be.a('number');
-      expect(data.oWidth).to.be.a('number');
-      expect(data.aWidth).to.be.a('number');
-      expect(data.aHeight).to.be.a('number');
-      expect(data.sLeft).to.be.a('number');
-      expect(data.sTop).to.be.a('number');
       expect(data.hLength).to.be.a('number');
       expect(data.networkConnectionType).to.satisfy(function (value) {
         return value === null || typeof value === 'string'
@@ -541,7 +543,7 @@ describe('onetag', function () {
             'sizes',
             'type',
             'priceFloors'
-          ) &&
+          );
           expect(bid.mediaTypeInfo).to.have.key('ortb');
         } else if (isValid(BANNER, bid)) {
           expect(bid).to.have.all.keys(
@@ -578,7 +580,7 @@ describe('onetag', function () {
               }
               if (size !== null) {
                 const keys = Object.keys(size);
-                if (keys.length == 0) {
+                if (keys.length === 0) {
                   return true;
                 }
                 expect(size).to.have.keys('width', 'height');
@@ -692,7 +694,7 @@ describe('onetag', function () {
                 cids: ['iris_c73g5jq96mwso4d8']
               },
               // the bare minimum are the IDs. These IDs are the ones from the new IAB Content Taxonomy v3
-              segment: [ { id: '687' }, { id: '123' } ]
+              segment: [{ id: '687' }, { id: '123' }]
             }]
           },
           ext: {
@@ -766,38 +768,6 @@ describe('onetag', function () {
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
     });
-    it('Should send FLEDGE eligibility flag when FLEDGE is enabled', function () {
-      const bidderRequest = {
-        'bidderCode': 'onetag',
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'paapi': {
-          'enabled': true
-        }
-      };
-      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
-      const payload = JSON.parse(serverRequest.data);
-
-      expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
-    });
-    it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
-      const bidderRequest = {
-        'bidderCode': 'onetag',
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        paapi: {
-          enabled: false
-        }
-      };
-      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
-      const payload = JSON.parse(serverRequest.data);
-
-      expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
-    });
     it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
       const bidderRequest = {
         'bidderCode': 'onetag',
@@ -819,13 +789,7 @@ describe('onetag', function () {
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
-      const fledgeInterpretedResponse = spec.interpretResponse(fledgeResponse, request);
       expect(interpretedResponse).to.be.an('array').that.is.not.empty;
-      expect(fledgeInterpretedResponse).to.be.an('object');
-      expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
-        return value === null || Array.isArray(value);
-      });
-      expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         const dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
@@ -873,8 +837,8 @@ describe('onetag', function () {
         },
         'adrender': 1
       };
-      const responseWithDsa = {...response};
-      responseWithDsa.body.bids.forEach(bid => bid.dsa = {...dsaResponseObj});
+      const responseWithDsa = { ...response };
+      responseWithDsa.body.bids.forEach(bid => bid.dsa = { ...dsaResponseObj });
       const serverResponse = spec.interpretResponse(responseWithDsa, request);
       serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
     });
@@ -1127,14 +1091,8 @@ function getBannerVideoRequest() {
       masked: 0,
       wWidth: 860,
       wHeight: 949,
-      oWidth: 1853,
-      oHeight: 1053,
       sWidth: 1920,
       sHeight: 1080,
-      aWidth: 1920,
-      aHeight: 1053,
-      sLeft: 1987,
-      sTop: 27,
       xOffset: 0,
       yOffset: 0,
       docHidden: false,

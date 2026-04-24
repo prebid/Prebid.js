@@ -748,7 +748,7 @@ describe('contxtful bid adapter', function () {
 
     it('will contains the receptivity value within the ortb2.user.data with contxtful name', () => {
       const obtained_receptivity_data = bidRequest.data.ortb2.user.data.filter(function (userData) {
-        return userData.name == 'contxtful';
+        return userData.name === 'contxtful';
       });
       expect(obtained_receptivity_data.length).to.equal(1);
       expect(obtained_receptivity_data[0].ext).to.deep.equal(expectedReceptivityData);
@@ -884,8 +884,7 @@ describe('contxtful bid adapter', function () {
         const userSyncs = spec.getUserSyncs({}, [{ body: bidResponse }]);
         expect(userSyncs).to.deep.equal([
           {
-            'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
-            'type': 'image'
+            'url': 'mysyncurl.com?qparam1=qparamv1&qparam2=qparamv2'
           }
         ]);
       });

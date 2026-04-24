@@ -34,7 +34,13 @@ const matchResponse = function (requestBody) {
 
   // delete 'uuid' from `expected request body`
   requestResponsePairs
-    .forEach(reqRes => { reqRes.request.httpRequest && reqRes.request.httpRequest.body.tags.forEach(body => body.uuid && delete body.uuid) });
+    .forEach(reqRes => {
+      if (reqRes.request.httpRequest) {
+        reqRes.request.httpRequest.body.tags.forEach(body => {
+          if (body.uuid) delete body.uuid;
+        });
+      }
+    });
 
   const match = requestResponsePairs.filter(reqRes => reqRes.request.httpRequest && deepEqual(reqRes.request.httpRequest.body.tags, requestBody.tags));
 

@@ -12,7 +12,12 @@ import { logError, logInfo, deepAccess, insertUserSyncIframe } from '../src/util
 
 const GVL_ID = 898;
 const MODULE_NAME = 'mobkoiId';
-export const PROD_PREBID_JS_INTEGRATION_ENDPOINT = 'https://pbjs.mobkoi.com';
+/**
+ * The base URL for the mobkoi integration. It should provide the following endpoints:
+ * - /pixeliframe
+ * - /getPixel
+ */
+export const PROD_PREBID_JS_INTEGRATION_BASE_URL = 'https://pbjs.mobkoi.com';
 export const EQUATIV_BASE_URL = 'https://sync.smartadserver.com';
 export const EQUATIV_NETWORK_ID = '5290';
 
@@ -101,7 +106,7 @@ export const utils = {
     logInfo('Start requesting Equativ SAS ID');
     const integrationBaseUrl = deepAccess(
       syncUserOptions,
-      `params.${USER_SYNC_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`) || PROD_PREBID_JS_INTEGRATION_ENDPOINT;
+      `params.${USER_SYNC_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`) || PROD_PREBID_JS_INTEGRATION_BASE_URL;
 
     const equativPixelUrl = utils.buildEquativPixelUrl(syncUserOptions, consentObject);
     logInfo('Equativ SAS ID request URL:', equativPixelUrl);
@@ -147,7 +152,7 @@ export const utils = {
     const integrationBaseUrl =
       deepAccess(
         syncUserOptions,
-        `params.${USER_SYNC_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`) || PROD_PREBID_JS_INTEGRATION_ENDPOINT;
+        `params.${USER_SYNC_PARAMS.PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT}`) || PROD_PREBID_JS_INTEGRATION_BASE_URL;
 
     const gdprConsentString = consentObject && consentObject.gdpr && consentObject.gdpr.consentString ? consentObject.gdpr.consentString : '';
     const smartServerUrl = EQUATIV_BASE_URL + '/getuid?' +

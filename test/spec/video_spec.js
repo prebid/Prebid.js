@@ -1,8 +1,9 @@
-import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/video.js';
-import {hook} from '../../src/hook.js';
-import {stubAuctionIndex} from '../helpers/indexStub.js';
+import { fillVideoDefaults, isValidVideoBid } from 'src/video.js';
+import { hook } from '../../src/hook.js';
+import { stubAuctionIndex } from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
-import { syncOrtb2 } from '../../src/prebid.js';
+import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
+import { config } from 'src/config.js';
 
 describe('video.js', function () {
   let sandbox;
@@ -19,26 +20,27 @@ describe('video.js', function () {
 
   afterEach(() => {
     utilsMock.restore();
+    config.resetConfig();
     sandbox.restore();
   });
 
   describe('fillVideoDefaults', () => {
     function fillDefaults(videoMediaType = {}) {
-      const adUnit = {mediaTypes: {video: videoMediaType}};
+      const adUnit = { mediaTypes: { video: videoMediaType } };
       fillVideoDefaults(adUnit);
       return adUnit.mediaTypes.video;
     }
 
     describe('should set plcmt = 4 when', () => {
       it('context is "outstream"', () => {
-        expect(fillDefaults({context: 'outstream'})).to.eql({
+        expect(fillDefaults({ context: 'outstream' })).to.eql({
           context: 'outstream',
           plcmt: 4
         })
       });
       [2, 3, 4].forEach(placement => {
         it(`placemement is "${placement}"`, () => {
-          expect(fillDefaults({placement})).to.eql({
+          expect(fillDefaults({ placement })).to.eql({
             placement,
             plcmt: 4
           });
@@ -48,7 +50,7 @@ describe('video.js', function () {
     describe('should set plcmt = 2 when', () => {
       [[2], [6]].forEach(playbackmethod => {
         it(`playbackmethod is "${playbackmethod}"`, () => {
-          expect(fillDefaults({playbackmethod})).to.eql({
+          expect(fillDefaults({ playbackmethod })).to.eql({
             playbackmethod,
             plcmt: 2,
           });
@@ -84,7 +86,7 @@ describe('video.js', function () {
             playbackmethod: 2
           }
         }
-      }).forEach(([t, {expected, video}]) => {
+      }).forEach(([t, { expected, video }]) => {
         it(t, () => {
           expect(fillDefaults(video).plcmt).to.eql(expected);
         })
@@ -153,93 +155,95 @@ describe('video.js', function () {
     });
   })
 
-  describe('validateOrtbVideoFields', () => {
-    it('remove incorrect ortb properties, and keep non ortb ones', () => {
-      sandbox.spy(utils, 'logWarn');
+  if (FEATURES.VIDEO) {
+    describe('validateOrtbVideoFields', () => {
+      it('remove incorrect ortb properties, and keep non ortb ones', () => {
+        sandbox.spy(utils, 'logWarn');
 
-      const mt = {
-        content: 'outstream',
+        const mt = {
+          content: 'outstream',
 
-        mimes: ['video/mp4'],
-        minduration: 5,
-        maxduration: 15,
-        startdelay: 0,
-        maxseq: 0,
-        poddur: 0,
-        protocols: [7],
-        w: 600,
-        h: 480,
-        podid: 'an-id',
-        podseq: 0,
-        rqddurs: [5],
-        placement: 1,
-        plcmt: 1,
-        linearity: 1,
-        skip: 0,
-        skipmin: 3,
-        skipafter: 3,
-        sequence: 0,
-        slotinpod: 0,
-        mincpmpersec: 2.5,
-        battr: [6, 7],
-        maxextended: 0,
-        minbitrate: 800,
-        maxbitrate: 1000,
-        boxingallowed: 1,
-        playbackmethod: [1],
-        playbackend: 1,
-        delivery: [2],
-        pos: 0,
-        api: 6, // -- INVALID
-        companiontype: [1, 2, 3],
-        poddedupe: [1],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 15,
+          startdelay: 0,
+          maxseq: 0,
+          poddur: 0,
+          protocols: [7],
+          w: 600,
+          h: 480,
+          podid: 'an-id',
+          podseq: 0,
+          rqddurs: [5],
+          placement: 1,
+          plcmt: 1,
+          linearity: 1,
+          skip: 0,
+          skipmin: 3,
+          skipafter: 3,
+          sequence: 0,
+          slotinpod: 0,
+          mincpmpersec: 2.5,
+          battr: [6, 7],
+          maxextended: 0,
+          minbitrate: 800,
+          maxbitrate: 1000,
+          boxingallowed: 1,
+          playbackmethod: [1],
+          playbackend: 1,
+          delivery: [2],
+          pos: 0,
+          api: 6, // -- INVALID
+          companiontype: [1, 2, 3],
+          poddedupe: [1],
 
-        otherOne: 'test',
-      };
+          otherOne: 'test',
+        };
 
-      const expected = {...mt};
-      delete expected.api;
+        const expected = { ...mt };
+        delete expected.api;
 
-      const adUnit = {
-        code: 'adUnitCode',
-        mediaTypes: { video: mt }
-      };
-      validateOrtbVideoFields(adUnit);
+        const adUnit = {
+          code: 'adUnitCode',
+          mediaTypes: { video: mt }
+        };
+        validateOrtbFields(adUnit, 'video');
 
-      expect(adUnit.mediaTypes.video).to.eql(expected);
-      sinon.assert.callCount(utils.logWarn, 1);
-    });
+        expect(adUnit.mediaTypes.video).to.eql(expected);
+        sinon.assert.callCount(utils.logWarn, 1);
+      });
 
-    it('Early return when 1st param is not a plain object', () => {
-      sandbox.spy(utils, 'logWarn');
+      it('Early return when 1st param is not a plain object', () => {
+        sandbox.spy(utils, 'logWarn');
 
-      validateOrtbVideoFields();
-      validateOrtbVideoFields([]);
-      validateOrtbVideoFields(null);
-      validateOrtbVideoFields('hello');
-      validateOrtbVideoFields(() => {});
+        validateOrtbFields(undefined, 'video');
+        validateOrtbFields([], 'video');
+        validateOrtbFields(null, 'video');
+        validateOrtbFields('hello', 'video');
+        validateOrtbFields(() => {}, 'video');
 
-      sinon.assert.callCount(utils.logWarn, 5);
-    });
+        sinon.assert.callCount(utils.logWarn, 5);
+      });
 
-    it('Calls onInvalidParam when a property is invalid', () => {
-      const onInvalidParam = sandbox.spy();
-      const adUnit = {
-        code: 'adUnitCode',
-        mediaTypes: {
-          video: {
-            content: 'outstream',
-            mimes: ['video/mp4'],
-            api: 6
+      it('Calls onInvalidParam when a property is invalid', () => {
+        const onInvalidParam = sandbox.spy();
+        const adUnit = {
+          code: 'adUnitCode',
+          mediaTypes: {
+            video: {
+              content: 'outstream',
+              mimes: ['video/mp4'],
+              api: 6
+            }
           }
-        }
-      };
-      validateOrtbVideoFields(adUnit, onInvalidParam);
+        };
+        validateOrtbFields(adUnit, 'video', onInvalidParam);
 
-      sinon.assert.calledOnce(onInvalidParam);
-      sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
-    });
-  })
+        sinon.assert.calledOnce(onInvalidParam);
+        sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
+      });
+    })
+  }
 
   describe('isValidVideoBid', () => {
     it('validates valid instream bids', function () {
@@ -251,10 +255,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'instream'}
+          video: { context: 'instream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(true);
     });
 
@@ -265,10 +269,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'instream'}
+          video: { context: 'instream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(false);
     });
 
@@ -276,12 +280,27 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         bidder: 'vastOnlyVideoBidder',
-        mediaTypes: {video: {}},
+        mediaTypes: { video: {} },
       }];
 
-      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
 
       expect(valid).to.equal(false);
+    });
+
+    it('validates vastXml-only bids when cache.allowVastXmlOnly is enabled', function () {
+      utilsMock.expects('logWarn').once();
+      utilsMock.expects('logError').never();
+      config.setConfig({ cache: { allowVastXmlOnly: true } });
+
+      const adUnits = [{
+        adUnitId: 'au',
+        bidder: 'vastOnlyVideoBidder',
+        mediaTypes: { video: {} },
+      }];
+
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
     });
 
     it('validates valid outstream bids', function () {
@@ -295,10 +314,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'outstream'}
+          video: { context: 'outstream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(true);
     });
 
@@ -318,7 +337,7 @@ describe('video.js', function () {
           render: () => true,
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(true);
     });
 
@@ -329,10 +348,10 @@ describe('video.js', function () {
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
-          video: {context: 'outstream'}
+          video: { context: 'outstream' }
         }
       }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(false);
     });
   })

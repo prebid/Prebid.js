@@ -1,7 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {getStorageManager} from 'src/storageManager.js';
-import {spec} from 'modules/seedingAllianceBidAdapter.js';
+import { assert, expect } from 'chai';
+import { getStorageManager } from 'src/storageManager.js';
+import { spec } from 'modules/seedingAllianceBidAdapter.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('SeedingAlliance adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -88,7 +89,7 @@ describe('SeedingAlliance adapter', function () {
 
     it('should return an empty array if local storage is not enabled', function () {
       localStorageIsEnabledStub.returns(false);
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -99,7 +100,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an empty array if local storage is enabled but storageAllowed is false', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: false
         }
@@ -111,7 +112,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return a non empty array if local storage is enabled and storageAllowed is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
@@ -123,7 +124,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should return an array containing the nativendoUserEid', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
+      getGlobal().bidderSettings = {
         seedingAlliance: {
           storageAllowed: true
         }
@@ -151,8 +152,8 @@ describe('SeedingAlliance adapter', function () {
               adm: JSON.stringify({
                 native: {
                   assets: [
-                    {id: 0, title: {text: 'this is a title'}},
-                    {id: 1, img: {url: 'https://domain.for/img.jpg'}},
+                    { id: 0, title: { text: 'this is a title' } },
+                    { id: 1, img: { url: 'https://domain.for/img.jpg' } },
                   ],
                   imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
                   link: {
@@ -188,20 +189,22 @@ describe('SeedingAlliance adapter', function () {
       }
     };
 
-    const badResponse = { body: {
-      cur: 'EUR',
-      id: 'bidid1',
-      seatbid: []
-    }};
+    const badResponse = {
+      body: {
+        cur: 'EUR',
+        id: 'bidid1',
+        seatbid: []
+      }
+    };
 
     const bidNativeRequest = {
       data: {},
-      bidRequests: [{bidId: '1', nativeParams: {title: {required: true, len: 800}, image: {required: true, sizes: [300, 250]}}}]
+      bidRequests: [{ bidId: '1', nativeParams: { title: { required: true, len: 800 }, image: { required: true, sizes: [300, 250] } } }]
     };
 
     const bidBannerRequest = {
       data: {},
-      bidRequests: [{bidId: '1', sizes: [300, 250]}]
+      bidRequests: [{ bidId: '1', sizes: [300, 250] }]
     };
 
     it('should return null if body is missing or empty', function () {

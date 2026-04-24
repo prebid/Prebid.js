@@ -1,5 +1,5 @@
-import {GreedyPromise, greedySetTimeout} from '../../../../libraries/greedy/greedyPromise.js';
-import {delay} from '../../../../src/utils/promise.js';
+import { GreedyPromise, greedySetTimeout } from '../../../../libraries/greedy/greedyPromise.js';
+import { delay } from '../../../../src/utils/promise.js';
 
 describe('GreedyPromise', () => {
   it('throws when resolver is not a function', () => {
@@ -113,7 +113,7 @@ describe('GreedyPromise', () => {
             const greedy = op(GreedyPromise);
             // note that we are not using `allSettled` & co to resolve our promises,
             // to avoid transformations those methods do under the hood
-            const {actual = {}, expected = {}} = {};
+            const { actual = {}, expected = {} } = {};
             return new Promise((resolve) => {
               let pending = 2;
               function collect(dest, slot) {
@@ -148,7 +148,11 @@ describe('GreedyPromise', () => {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
                 const run = () => fail ? reject(value) : resolve(value);
-                delay === 0 ? run() : setTimeout(run, delay);
+                if (delay === 0) {
+                  run();
+                } else {
+                  setTimeout(run, delay);
+                }
               })
             };
             pendingSuccess = makePromise(GreedyPromise, 'pending result');

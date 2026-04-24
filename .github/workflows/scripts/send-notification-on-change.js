@@ -7,20 +7,28 @@
 
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const nodemailer = require('nodemailer');
 
 async function getAccessToken(clientId, clientSecret, refreshToken) {
   try {
-    const response = await axios.post('https://oauth2.googleapis.com/token', {
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
     });
-    return response.data.access_token;
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`OAuth token request failed: ${response.status} ${response.statusText} - ${errorBody}`);
+    }
+    const data = await response.json();
+    return data.access_token;
   } catch (error) {
-    console.error('Failed to fetch access token:', error.response?.data || error.message);
+    console.error('Failed to fetch access token:', error.message);
     process.exit(1);
   }
 }
@@ -54,17 +62,28 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
         return { regex: new RegExp(regex), email };
       });
 
-    // Fetch changed files from github
+    // Fetch all changed files from github (paginated)
     const [owner, repoName] = repo.split('/');
-    const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files`;
-    const response = await axios.get(apiUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
+    const changedFiles = [];
+    let url = `https://api.github.com/repos/${owner}/${repoName}/pulls/${prNumber}/files?per_page=100`;
+    while (url) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`GitHub API request failed: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      changedFiles.push(...data.map(file => file.filename));
 
-    const changedFiles = response.data.map(file => file.filename);
+      // Follow pagination via Link header
+      const link = response.headers.get('link') || '';
+      const next = link.match(/<([^>]+)>;\s*rel="next"/);
+      url = next ? next[1] : null;
+    }
     console.log('Changed files:', changedFiles);
 
     // match file pathnames that are in the config and group them by email address

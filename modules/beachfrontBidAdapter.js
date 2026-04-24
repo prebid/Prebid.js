@@ -7,10 +7,12 @@ import {
   logWarn,
   formatQS
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const ADAPTER_VERSION = '1.21';
 const GVLID = 157;
@@ -38,7 +40,7 @@ let appId = '';
 
 export const spec = {
   code: 'beachfront',
-  supportedMediaTypes: [ VIDEO, BANNER ],
+  supportedMediaTypes: [VIDEO, BANNER],
   gvlid: GVLID,
   isBidRequestValid(bid) {
     if (isVideoBid(bid)) {
@@ -304,7 +306,7 @@ function createVideoRequestData(bid, bidderRequest) {
       ua: navigator.userAgent,
       language: navigator.language,
       devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
-      dnt: getDoNotTrack() ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       js: 1,
       geo: {}
     },
@@ -338,8 +340,8 @@ function createVideoRequestData(bid, bidderRequest) {
     deepSetValue(payload, 'user.ext.eids', eids);
   }
 
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (connection && connection.effectiveType) {
+  const connection = getConnectionInfo();
+  if (connection?.effectiveType) {
     deepSetValue(payload, 'device.connectiontype', connection.effectiveType);
   }
 
@@ -370,7 +372,7 @@ function createBannerRequestData(bids, bidderRequest) {
     ua: navigator.userAgent,
     deviceOs: getOsVersion(),
     isMobile: isMobile() ? 1 : 0,
-    dnt: getDoNotTrack() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     adapterVersion: ADAPTER_VERSION,
     adapterName: ADAPTER_NAME
   };

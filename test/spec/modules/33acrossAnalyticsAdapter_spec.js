@@ -17,6 +17,7 @@ describe('33acrossAnalyticsAdapter:', function () {
     sandbox = sinon.createSandbox({
       useFakeTimers: {
         now: new Date(2023, 3, 3, 0, 1, 33, 425),
+        shouldClearNativeTimers: true
       },
     });
 
@@ -421,7 +422,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             const timeout = 2000;
             this.enableAnalytics({ timeout });
 
-            performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
+            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] });
 
             sandbox.clock.tick(timeout + 1000);
 
@@ -434,7 +435,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             const request = getMockEvents().prebid[0].BID_REQUESTED[0];
             const bidToTimeout = request.bids[0];
 
-            performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
+            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] });
             sandbox.clock.tick(1);
             events.emit(EVENTS.BID_TIMEOUT, [{
               auctionId: request.auctionId,
@@ -454,7 +455,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           it('logs an error', function () {
             this.enableAnalytics();
 
-            performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
+            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] });
 
             sandbox.clock.tick(this.defaultTimeout + 1000);
 
@@ -469,7 +470,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             const timeout = POST_GAM_TIMEOUT + 2000;
             this.enableAnalytics({ timeout });
 
-            performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+            performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
             sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
 
             assert.strictEqual(navigator.sendBeacon.callCount, 1);
@@ -481,7 +482,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             const timeout = POST_GAM_TIMEOUT + 2000;
             this.enableAnalytics({ timeout });
 
-            performStandardAuction({exclude: ['bidWon', 'auctionEnd'], useSlotElementIds: true});
+            performStandardAuction({ exclude: ['bidWon', 'auctionEnd'], useSlotElementIds: true });
             sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
 
             assert.strictEqual(navigator.sendBeacon.callCount, 1);
@@ -492,7 +493,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           const timeout = POST_GAM_TIMEOUT + 2000;
           this.enableAnalytics({ timeout });
 
-          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
           sandbox.clock.tick(POST_GAM_TIMEOUT - 1);
 
           assert.strictEqual(navigator.sendBeacon.callCount, 0);
@@ -525,7 +526,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           this.enableAnalytics();
 
-          performStandardAuction({exclude: ['auctionEnd']});
+          performStandardAuction({ exclude: ['auctionEnd'] });
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
           const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0];
@@ -537,7 +538,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           this.enableAnalytics();
 
-          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
           const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0];
@@ -550,7 +551,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
-          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
           assert.calledWith(log.info, `Analytics report sent to ${endpoint}`);
@@ -615,7 +616,7 @@ describe('33acrossAnalyticsAdapter:', function () {
         context('and the Google Ad Manager timeout has elapsed', function () {
           it('completes the transaction', function () {
             const timeout = POST_GAM_TIMEOUT + 2000;
-            this.enableAnalytics({timeout});
+            this.enableAnalytics({ timeout });
 
             const { prebid: [auction], gam } = getMockEvents();
             const slotRenderEnded = gam.slotRenderEnded[0];
@@ -1150,7 +1151,6 @@ function getMockEvents() {
         height: 250,
         source: 'client',
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
-        statusMessage: 'Bid available',
         rejectionReason: 'Bid does not meet price floor',
       }],
       AUCTION_END: {

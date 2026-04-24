@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {config} from 'src/config';
+import { config } from 'src/config';
 import {
   buildOrtb2Updates,
   extractConfig,
@@ -11,7 +11,7 @@ import {
   setTargetingDataToConfig,
   updateBidderConfig,
 } from 'modules/1plusXRtdProvider';
-import {deepClone} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from 'src/storageManager.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -161,7 +161,7 @@ describe('1plusXRtdProvider', () => {
       const bidders = ['appnexus', 'rubicon'];
       const moduleConfig = { params: { customerId, timeout, bidders } };
       const { bidders: extractedBidders } = extractConfig(moduleConfig, reqBidsConfigObj);
-      expect(extractedBidders).to.be.an('array').and.to.have.length(1); 7
+      expect(extractedBidders).to.be.an('array').and.to.have.length(1);
       expect(extractedBidders[0]).to.equal('appnexus');
     })
     it('Throws an error if no bidder can be used by the module', () => {

@@ -6,6 +6,7 @@ import * as utils from "src/utils.js";
 import sinon, { stub } from "sinon";
 import { config } from "../../../src/config.js";
 import * as autoplayLib from "../../../libraries/autoplayDetection/autoplay.js";
+import * as adUnits from 'src/utils/adUnits';
 
 describe("C-WIRE bid adapter", () => {
   config.setConfig({ debug: true });
@@ -29,6 +30,9 @@ describe("C-WIRE bid adapter", () => {
       transactionId: "04f2659e-c005-4eb1-a57c-fa93145e3843",
     },
   ];
+  const bidderRequest = {
+    pageViewId: "326dca71-9ca0-4e8f-9e4d-6106161ac1ad"
+  }
   const response = {
     body: {
       cwid: "2ef90743-7936-4a82-8acf-e73382a64e94",
@@ -67,7 +71,7 @@ describe("C-WIRE bid adapter", () => {
   });
   describe("buildRequests", function () {
     it("sends bid request to ENDPOINT via POST", function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).to.equal(BID_ENDPOINT);
       expect(request.method).to.equal("POST");
     });
@@ -89,7 +93,7 @@ describe("C-WIRE bid adapter", () => {
       // set from bid.params
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.cwcreative).to.exist;
       expect(payload.cwcreative).to.deep.equal("str-str");
@@ -98,8 +102,8 @@ describe("C-WIRE bid adapter", () => {
 
   describe("buildRequests reads adUnit offsetWidth and offsetHeight", function () {
     beforeEach(function () {
-      const documentStub = sandbox.stub(document, "getElementById");
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+      const documentStub = sandbox.stub(adUnits, "getAdUnitElement");
+      documentStub.returns({
         offsetWidth: 200,
         offsetHeight: 250,
         getBoundingClientRect() {
@@ -110,13 +114,11 @@ describe("C-WIRE bid adapter", () => {
     it("width and height should be set", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
-      const el = document.getElementById(`${bidRequest.adUnitCode}`);
 
       logInfo(JSON.stringify(payload));
 
-      expect(el).to.exist;
       expect(payload.slots[0].cwExt.dimensions.width).to.equal(200);
       expect(payload.slots[0].cwExt.dimensions.height).to.equal(250);
       expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
@@ -128,8 +130,8 @@ describe("C-WIRE bid adapter", () => {
   });
   describe("buildRequests reads style attributes", function () {
     beforeEach(function () {
-      const documentStub = sandbox.stub(document, "getElementById");
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+      const documentStub = sandbox.stub(adUnits, "getAdUnitElement");
+      documentStub.returns({
         style: {
           maxWidth: "400px",
           maxHeight: "350px",
@@ -142,15 +144,12 @@ describe("C-WIRE bid adapter", () => {
     it("css maxWidth should be set", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
-      const el = document.getElementById(`${bidRequest.adUnitCode}`);
-
       logInfo(JSON.stringify(payload));
 
-      expect(el).to.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq("400px");
-      !expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
+      expect(payload.slots[0].cwExt.style.maxHeight).to.eq("350px");
     });
     afterEach(function () {
       sandbox.restore();
@@ -167,7 +166,7 @@ describe("C-WIRE bid adapter", () => {
     it("read from url parameter", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -190,7 +189,7 @@ describe("C-WIRE bid adapter", () => {
     it("read from url parameter", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -213,7 +212,7 @@ describe("C-WIRE bid adapter", () => {
     it("read from url parameter", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -238,7 +237,7 @@ describe("C-WIRE bid adapter", () => {
     it("cw_id is set", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -263,7 +262,7 @@ describe("C-WIRE bid adapter", () => {
     it("pageId flattened", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       logInfo(JSON.stringify(payload));
@@ -305,7 +304,7 @@ describe("C-WIRE bid adapter", () => {
     it("build request adds pageId", function () {
       const bidRequest = deepClone(bidRequests[0]);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.slots[0].pageId).to.exist;
@@ -392,7 +391,7 @@ describe("C-WIRE bid adapter", () => {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(true);
 
       const bidRequest = deepClone(bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.slots[0].params.autoplay).to.equal(true);
@@ -402,7 +401,7 @@ describe("C-WIRE bid adapter", () => {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(false);
 
       const bidRequest = deepClone(bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.slots[0].params.autoplay).to.equal(false);

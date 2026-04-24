@@ -2,12 +2,13 @@ import { expect } from 'chai';
 import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
-const DEFAULT_VIDEO_HEIGHT = 480;
+const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
@@ -25,7 +26,7 @@ describe('ImpactifyAdapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       impactify: {
         storageAllowed: true
       }
@@ -37,7 +38,7 @@ describe('ImpactifyAdapter', function () {
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     document.body.appendChild.restore();
     sandbox.restore();
   });
@@ -128,81 +129,14 @@ describe('ImpactifyAdapter', function () {
       expect(spec.isBidRequestValid(bid2)).to.equal(false);
     });
 
-    it('should return false when appId is missing', () => {
-      const bid = utils.deepClone(validBids[0]);
-      delete bid.params.appId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-
-      const bid2 = utils.deepClone(validBids[1]);
-      delete bid2.params.appId;
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-    });
-
-    it('should return false when appId is not a string', () => {
-      const bid = utils.deepClone(validBids[0]);
-      const bid2 = utils.deepClone(validBids[1]);
-
-      bid.params.appId = 123;
-      bid2.params.appId = 123;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-
-      bid.params.appId = false;
-      bid2.params.appId = false;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-
-      bid.params.appId = void (0);
-      bid2.params.appId = void (0);
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-
-      bid.params.appId = {};
-      bid2.params.appId = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-    });
-
-    it('should return false when format is missing', () => {
-      const bid = utils.deepClone(validBids[0]);
-      delete bid.params.format;
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when format is not a string', () => {
-      const bid = utils.deepClone(validBids[0]);
-      const bid2 = utils.deepClone(validBids[1]);
-
-      bid.params.format = 123;
-      bid2.params.format = 123;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-
-      bid.params.format = false;
-      bid2.params.format = false;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-
-      bid.params.format = void (0);
-      bid2.params.format = void (0);
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-
-      bid.params.format = {};
-      bid2.params.format = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-    });
-
     it('should return false when format is not equals to screen or display', () => {
       const bid = utils.deepClone(validBids[0]);
-      if (bid.params.format != 'screen' && bid.params.format != 'display') {
+      if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       }
 
       const bid2 = utils.deepClone(validBids[1]);
-      if (bid2.params.format != 'screen' && bid2.params.format != 'display') {
+      if (bid2.params.format !== 'screen' && bid2.params.format !== 'display') {
         expect(spec.isBidRequestValid(bid2)).to.equal(false);
       }
     });
@@ -294,31 +228,101 @@ describe('ImpactifyAdapter', function () {
     });
 
     it('sends video bid request to ENDPOINT via POST', function () {
-      localStorageIsEnabledStub.returns(true);
-
-      getLocalStorageStub.returns('testValue');
-
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
 
       expect(request.url).to.equal(ORIGIN + AUCTIONURI);
       expect(request.method).to.equal('POST');
-      expect(request.options.customHeaders['x-impact']).to.equal('testValue');
     });
 
-    it('should set header value from localstorage correctly', function () {
-      localStorageIsEnabledStub.returns(true);
-      getLocalStorageStub.returns('testValue');
-
+    it('should set instream context and player size for video imps', function () {
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
-      expect(request.options.customHeaders).to.be.an('object');
-      expect(request.options.customHeaders['x-impact']).to.equal('testValue');
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp[0].video.context).to.equal('instream');
+      expect(payload.imp[0].video.playerSize).to.deep.equal([DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]);
     });
 
-    it('should set header value to empty if localstorage is not enabled', function () {
-      localStorageIsEnabledStub.returns(false);
+    it('should pass supported render fields in imp ext', function () {
+      videoBidRequests[0].params.render = {
+        top: 0,
+        bottom: 0,
+        align: 'right',
+        container: '#my-container',
+        expandAd: true,
+        location: 'bottom-left',
+        onAdEventName: 'on-ad-event',
+        onNoAdEventName: 'on-noad-event'
+      };
 
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
-      expect(request.options.customHeaders).to.be.undefined;
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.imp[0].ext.impactify.render).to.deep.equal(videoBidRequests[0].params.render);
+    });
+
+    it('should ignore unsupported render fields and types', function () {
+      videoBidRequests[0].params.render = {
+        top: '0',
+        bottom: 0,
+        align: 'right',
+        container: 123,
+        expandAd: true,
+        location: 'bottom-left',
+        onAdEventName: 'on-ad-event',
+        onNoAdEventName: false,
+        foo: 'bar'
+      };
+
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(requestData.imp[0].ext.impactify.render).to.deep.equal({
+        bottom: 0,
+        align: 'right',
+        expandAd: true,
+        location: 'bottom-left',
+        onAdEventName: 'on-ad-event'
+      });
+    });
+
+    it('should include schain, eids, gdpr and usp in ortb request', function () {
+      const bid = {
+        bidId: '1',
+        adUnitCode: 'adunit-code',
+        params: {
+          appId: 'example.com',
+          style: 'inline',
+          accountId: 'pub-1'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        ortb2: {
+          source: {
+            ext: {
+              schain: { ver: '1.0', complete: 1, nodes: [] }
+            }
+          }
+        },
+        userIdAsEids: [{ source: 'test.com', uids: [{ id: 'abc', atype: 1 }] }]
+      };
+
+      const bidderRequest = {
+        bidderRequestId: 'req-1',
+        refererInfo: { page: 'https://publisher.com/page' },
+        gdprConsent: { gdprApplies: true, consentString: 'consent123' },
+        uspConsent: '1YNN'
+      };
+
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+
+      expect(request.source.ext.schain).to.deep.equal(bid.ortb2.source.ext.schain);
+      expect(request.user.ext.eids).to.deep.equal(bid.userIdAsEids);
+      expect(request.user.ext.consent).to.equal('consent123');
+      expect(request.regs.ext.gdpr).to.equal(1);
+      expect(request.regs.ext.us_privacy).to.equal('1YNN');
     });
   });
   describe('interpretResponse', function () {
@@ -332,6 +336,7 @@ describe('ImpactifyAdapter', function () {
                 id: '65820304700829014',
                 impid: '462c08f20d428',
                 price: 3.40,
+                mtype: 2,
                 adm: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
                 adid: '97517771',
                 iurl: 'https://fra1-ib.adnxs.com/cr?id=97517771',
@@ -339,12 +344,10 @@ describe('ImpactifyAdapter', function () {
                 crid: '97517771',
                 w: 1,
                 h: 1,
-                hash: 'test',
-                expiry: 166192938,
-                meta: { 'advertiserDomains': ['testdomain.com'] },
+                adomain: ['testdomain.com'],
                 ext: {
                   prebid: {
-                    'type': 'video'
+                    type: 'video'
                   },
                   bidder: {
                     prebid: {
@@ -404,7 +407,8 @@ describe('ImpactifyAdapter', function () {
             }
           },
         ]
-      }
+      };
+
       const expectedResponse = [
         {
           id: '65820304700829014',
@@ -415,15 +419,102 @@ describe('ImpactifyAdapter', function () {
           ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
           width: 1,
           height: 1,
-          hash: 'test',
-          expiry: 166192938,
-          meta: { 'advertiserDomains': ['testdomain.com'] },
+          mediaType: 'video',
+          meta: { advertiserDomains: ['testdomain.com'] },
           ttl: 300,
           creativeId: '97517771'
         }
       ];
       const result = spec.interpretResponse({ body: response }, bidderRequest);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+
+    it('should map player responses to video bids', function () {
+      const bidRequest = {
+        data: JSON.stringify({
+          imp: [{
+            id: 'imp-1',
+            ext: {
+              impactify: {
+                format: 'player'
+              }
+            }
+          }]
+        })
+      };
+
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'bid-1',
+              impid: 'imp-1',
+              price: 2.5,
+              mtype: 2,
+              ext: {
+                vast_url: 'https://example.com/vast.xml'
+              },
+              adm: '<VAST>fallback</VAST>',
+              crid: 'creative-1',
+              adomain: ['advertiser.com']
+            }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('video');
+      expect(result[0].vastUrl).to.equal('https://example.com/vast.xml');
+      expect(result[0].vastXml).to.equal('<VAST>fallback</VAST>');
+      expect(result[0]).to.not.have.property('ad');
+    });
+
+    it('should map banner responses to banner bids', function () {
+      const bidRequest = {
+        data: JSON.stringify({
+          imp: [{
+            id: 'imp-banner-1',
+            ext: {
+              impactify: {
+                format: 'display'
+              }
+            }
+          }]
+        })
+      };
+
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'bid-banner-1',
+              impid: 'imp-banner-1',
+              price: 1.75,
+              mtype: 1,
+              adm: '<div>banner creative</div>',
+              crid: 'creative-banner-1',
+              w: 300,
+              h: 250,
+              adomain: ['advertiser.com']
+            }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('banner');
+      expect(result[0].ad).to.equal('<div>banner creative</div>');
+      expect(result[0]).to.not.have.property('vastUrl');
+      expect(result[0]).to.not.have.property('vastXml');
+      expect(result[0].meta).to.deep.equal({
+        advertiserDomains: ['advertiser.com']
+      });
     });
   });
   describe('getUserSyncs', function () {
@@ -477,8 +568,6 @@ describe('ImpactifyAdapter', function () {
               crid: '97517771',
               w: 1,
               h: 1,
-              hash: 'test',
-              expiry: 166192938,
               meta: { 'advertiserDomains': ['testdomain.com'] },
               ext: {
                 prebid: {

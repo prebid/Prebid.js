@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { deepSetValue, replaceAuctionPrice, deepClone, deepAccess } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getUserSyncs } from '../libraries/vizionikUtils/vizionikUtils.js';
 
 const BIDDER_CODE = 'vistars';
 const DEFAULT_ENDPOINT = 'ex-asr.vistarsagency.com';
@@ -62,11 +62,11 @@ export const spec = {
       return [];
     }
 
-    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
-      if (bid.meta.advertiserDomains.length == 0) {
+      if (bid.meta.advertiserDomains.length === 0) {
         bid.meta.advertiserDomains.push(ADOMAIN);
       }
 
@@ -76,36 +76,9 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+  getUserSyncs: getUserSyncs(SYNC_ENDPOINT),
 
-    if (!hasPurpose1Consent(gdprConsent)) {
-      return syncs;
-    }
-
-    let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
-    if (typeof gdprConsent?.gdprApplies === 'boolean') {
-      params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `//${SYNC_ENDPOINT}/match/sp.ifr?${params}`
-      });
-    }
-
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: `//${SYNC_ENDPOINT}/match/sp?${params}`
-      });
-    }
-
-    return syncs;
-  },
-
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);

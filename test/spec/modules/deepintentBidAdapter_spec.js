@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/deepintentBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/deepintentBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
@@ -79,7 +79,7 @@ describe('Deepintent adapter', function () {
             'crid': '13665',
             'w': 300,
             'h': 250,
-            'dealId': 'dee_12312stdszzsx'
+            'dealid': 'dee_12312stdszzsx'
           }],
           'seat': '10000'
         }],
@@ -355,7 +355,7 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['deepintent.com']);
       expect(bResponse[0].ttl).to.equal(300);
       expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
-      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
+      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealid);
     });
     it('bid response check: valid video bid response', function() {
       const request = spec.buildRequests(videoBidRequests);
@@ -376,7 +376,7 @@ describe('Deepintent adapter', function () {
   });
   describe('GPP and coppa', function() {
     it('Request params check with GPP Consent', function () {
-      const bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
+      const bidderReq = { gppConsent: { gppString: 'gpp-string-test', applicableSections: [5] } };
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.regs.gpp).to.equal('gpp-string-test');
@@ -397,10 +397,160 @@ describe('Deepintent adapter', function () {
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
     it('should include coppa flag in bid request if coppa is set to true', () => {
-      const bidderReq = {ortb2: {regs: {coppa: 1}}};
+      const bidderReq = { ortb2: { regs: { coppa: 1 } } };
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.regs.coppa).to.equal(1);
+    });
+  });
+  describe('ortb2 blocking (bcat, badv)', function() {
+    it('should add bcat and badv to payload when bidderRequest.ortb2 has them', function() {
+      const bidderReq = {
+        ortb2: {
+          bcat: ['IAB1', 'IAB2'],
+          badv: ['example.com']
+        }
+      };
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.deep.equal(['IAB1', 'IAB2']);
+      expect(data.badv).to.deep.equal(['example.com']);
+    });
+    it('should not add bcat or badv when bidderRequest.ortb2 does not have them', function() {
+      const bidderReq = { ortb2: {} };
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.be.undefined;
+      expect(data.badv).to.be.undefined;
+    });
+    it('should use params.bcat and params.badv as fallback when ortb2 does not set them', function() {
+      const requestWithParams = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        params: {
+          tagId: '100013',
+          bcat: ['IAB25'],
+          badv: ['blocked-advertiser.com']
+        }
+      }];
+      const bRequest = spec.buildRequests(requestWithParams);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.deep.equal(['IAB25']);
+      expect(data.badv).to.deep.equal(['blocked-advertiser.com']);
+    });
+  });
+  describe('deals functionality', function() {
+    it('should add PMP deals when valid deals array is provided', function() {
+      const requestWithDeals = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: ['deal1234', 'deal5678']
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithDeals);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp).to.be.an('object');
+      expect(data.imp[0].pmp.private_auction).to.equal(0);
+      expect(data.imp[0].pmp.deals).to.be.an('array').with.length(2);
+      expect(data.imp[0].pmp.deals[0].id).to.equal('deal1234');
+      expect(data.imp[0].pmp.deals[1].id).to.equal('deal5678');
+    });
+
+    it('should filter out invalid deal IDs and handle edge cases', function() {
+      const requestWithMixedDeals = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: ['abc', 'valid_deal', 12345, null, 'xy']
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithMixedDeals);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp.deals).to.be.an('array').with.length(1);
+      expect(data.imp[0].pmp.deals[0].id).to.equal('valid_deal');
+    });
+
+    it('should not add pmp when deals is not a valid array', function() {
+      const requestWithInvalidDeals = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: 'not-an-array'
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithInvalidDeals);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp).to.be.undefined;
+    });
+
+    it('should add and clean deal custom targeting', function() {
+      const requestWithDctr = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          dctr: '  key1=val1  |  key2=val2  |  |  key3=val3  '
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithDctr);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].ext.key_val).to.equal('key1=val1|key2=val2|key3=val3');
+    });
+
+    it('should handle both deals and dctr together', function() {
+      const requestWithBoth = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          tagId: '100013',
+          deals: ['deal1234'],
+          dctr: 'key1=val1|key2=val2'
+        }
+      }];
+
+      const bRequest = spec.buildRequests(requestWithBoth);
+      const data = JSON.parse(bRequest.data);
+
+      expect(data.imp[0].pmp.deals[0].id).to.equal('deal1234');
+      expect(data.imp[0].ext.key_val).to.equal('key1=val1|key2=val2');
     });
   });
 });

@@ -8,6 +8,8 @@ import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { findUtiqService } from "../libraries/utiqUtils/utiqUtils.ts";
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -78,6 +80,7 @@ export const utiqIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  disclosureURL: 'local://modules/utiqDeviceStorageDisclosure.json',
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
@@ -151,4 +154,9 @@ export const utiqIdSubmodule = {
   }
 };
 
+const pbjsGlobal = getGlobal();
+const refreshUserIds = pbjsGlobal && typeof pbjsGlobal.refreshUserIds === 'function'
+  ? pbjsGlobal.refreshUserIds.bind(pbjsGlobal)
+  : () => {};
+findUtiqService(storage, refreshUserIds, LOG_PREFIX, MODULE_NAME);
 submodule('userId', utiqIdSubmodule);

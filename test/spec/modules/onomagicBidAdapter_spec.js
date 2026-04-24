@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/onomagicBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://bidder.onomagic.com/hb';
 
@@ -33,9 +35,12 @@ describe('onomagicBidAdapter', function() {
     };
     win = {
       document: {
-        visibilityState: 'visible'
+        visibilityState: 'visible',
+        documentElement: {
+          clientWidth: 800,
+          clientHeight: 600
+        }
       },
-
       innerWidth: 800,
       innerHeight: 600
     };
@@ -56,7 +61,8 @@ describe('onomagicBidAdapter', function() {
     }];
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
+    sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
@@ -112,14 +118,14 @@ describe('onomagicBidAdapter', function() {
     it('sets the proper banner object', function() {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
     });
 
     it('accepts a single array as a size', function() {
       bidRequests[0].mediaTypes.banner.sizes = [300, 250];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
     });
 
     it('sends bidfloor param if present', function () {
@@ -161,8 +167,6 @@ describe('onomagicBidAdapter', function() {
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
-        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 800, height: 800 });
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -172,8 +176,6 @@ describe('onomagicBidAdapter', function() {
 
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
-        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
@@ -286,7 +288,7 @@ describe('onomagicBidAdapter', function() {
   });
 
   describe('getUserSyncs ', () => {
-    const syncOptions = {iframeEnabled: true, pixelEnabled: true};
+    const syncOptions = { iframeEnabled: true, pixelEnabled: true };
 
     it('should not return', () => {
       const returnStatement = spec.getUserSyncs(syncOptions, []);

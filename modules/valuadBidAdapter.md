@@ -23,7 +23,7 @@ Valuad bid adapter supports Banner format only.
         bids: [{
             bidder: 'valuad',
             params: {
-                placementId: '00000', // REQUIRED
+                placementId: '1000', // REQUIRED
             }
         }]
     }];

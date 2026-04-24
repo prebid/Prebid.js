@@ -2,7 +2,6 @@ import {
   logError,
   deepAccess,
   isArray,
-  getDNT,
   generateUUID,
   isEmpty,
   _each,
@@ -21,6 +20,7 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -288,7 +288,7 @@ export const spec = {
         _each(bids.bid, function (smartxBid) {
           let currentBidRequest = {};
           for (const i in bidderRequest.bidRequest.bids) {
-            if (smartxBid.impid == bidderRequest.bidRequest.bids[i].bidId) {
+            if (smartxBid.impid === bidderRequest.bidRequest.bids[i].bidId) {
               currentBidRequest = bidderRequest.bidRequest.bids[i];
             }
           }
@@ -296,7 +296,7 @@ export const spec = {
            * Make sure currency and price are the right ones
            */
           _each(currentBidRequest.params.pre_market_bids, function (pmb) {
-            if (pmb.deal_id == smartxBid.id) {
+            if (pmb.deal_id === smartxBid.id) {
               smartxBid.price = pmb.price;
               serverResponseBody.cur = pmb.currency;
             }
@@ -328,6 +328,7 @@ export const spec = {
             const renderer = Renderer.install({
               id: 0,
               url: 'https://dco.smartclip.net/?plc=7777779',
+              adUnitCode: currentBidRequest.adUnitCode,
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
@@ -389,19 +390,19 @@ function createOutstreamConfig(bid) {
     },
   };
 
-  if (confStartOpen == 'true') {
+  if (confStartOpen === 'true') {
     playerConfig.startOpen = true;
-  } else if (confStartOpen == 'false') {
+  } else if (confStartOpen === 'false') {
     playerConfig.startOpen = false;
   }
 
-  if (confEndingScreen == 'true') {
+  if (confEndingScreen === 'true') {
     playerConfig.endingScreen = true;
-  } else if (confEndingScreen == 'false') {
+  } else if (confEndingScreen === 'false') {
     playerConfig.endingScreen = false;
   }
 
-  if (confTitle || (typeof bid.renderer.config.outstream_options.title == 'string' && bid.renderer.config.outstream_options.title == '')) {
+  if (confTitle || bid.renderer.config.outstream_options.title === '') {
     playerConfig.layoutSettings.advertisingLabel = confTitle;
   }
 

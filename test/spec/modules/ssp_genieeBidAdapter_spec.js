@@ -21,6 +21,7 @@ describe('ssp_genieeBidAdapter', function () {
     bidderRequestId: 'bidderRequestId12345',
     auctionId: 'auctionId12345',
   };
+  let sandbox;
 
   function getGeparamsDefinedBid(bid, params) {
     const newBid = { ...bid };
@@ -72,46 +73,65 @@ describe('ssp_genieeBidAdapter', function () {
   }
 
   beforeEach(function () {
+    sandbox = sinon.createSandbox();
     document.documentElement.innerHTML = '';
     const adTagParent = document.createElement('div');
     adTagParent.id = AD_UNIT_CODE;
     document.body.appendChild(adTagParent);
   });
 
+  afterEach(function () {
+    sandbox.restore();
+    config.resetConfig();
+  });
+
   describe('isBidRequestValid', function () {
-    it('should return true when params.zoneId exists and params.currency does not exist', function () {
-      expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
-    });
-
-    it('should return true when params.zoneId and params.currency exist and params.currency is JPY or USD', function () {
-      config.setConfig({ currency: { adServerCurrency: 'JPY' } });
-      expect(
-        spec.isBidRequestValid({
-          ...BANNER_BID,
-          params: { ...BANNER_BID.params },
-        })
-      ).to.be.true;
-      config.setConfig({ currency: { adServerCurrency: 'USD' } });
-      expect(
-        spec.isBidRequestValid({
-          ...BANNER_BID,
-          params: { ...BANNER_BID.params },
-        })
-      ).to.be.true;
-    });
-
     it('should return false when params.zoneId does not exist', function () {
       expect(spec.isBidRequestValid({ ...BANNER_BID, params: {} })).to.be.false;
     });
 
-    it('should return false when params.zoneId and params.currency exist and params.currency is neither JPY nor USD', function () {
-      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
-      expect(
-        spec.isBidRequestValid({
-          ...BANNER_BID,
-          params: { ...BANNER_BID.params },
-        })
-      ).to.be.false;
+    describe('when params.currency is specified', function() {
+      it('should return true if currency is USD', function() {
+        const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'USD' } };
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
+
+      it('should return true if currency is JPY', function() {
+        const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'JPY' } };
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
+
+      it('should return false if currency is not supported (e.g., EUR)', function() {
+        const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'EUR' } };
+        expect(spec.isBidRequestValid(bid)).to.be.false;
+      });
+
+      it('should return true if currency is valid, ignoring adServerCurrency', function() {
+        config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+        const bid = { ...BANNER_BID, params: { ...BANNER_BID.params, currency: 'USD' } };
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
+    });
+
+    describe('when params.currency is NOT specified (fallback to adServerCurrency)', function() {
+      it('should return true if adServerCurrency is not set', function() {
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
+      });
+
+      it('should return true if adServerCurrency is JPY', function() {
+        config.setConfig({ currency: { adServerCurrency: 'JPY' } });
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
+      });
+
+      it('should return true if adServerCurrency is USD', function() {
+        config.setConfig({ currency: { adServerCurrency: 'USD' } });
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.true;
+      });
+
+      it('should return false if adServerCurrency is not supported (e.g., EUR)', function() {
+        config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+        expect(spec.isBidRequestValid(BANNER_BID)).to.be.false;
+      });
     });
   });
 
@@ -130,6 +150,20 @@ describe('ssp_genieeBidAdapter', function () {
       it('should sets the value of the zoneid query to bid.params.zoneId', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data.zoneid).to.deep.equal(BANNER_BID.params.zoneId);
+      });
+
+      it('should set the title query to the encoded page title', function () {
+        const testTitle = "Test Page Title with 'special' & \"chars\"";
+        sandbox.stub(document, 'title').value(testTitle);
+        const request = spec.buildRequests([BANNER_BID]);
+        const expectedEncodedTitle = encodeURIComponent(testTitle).replace(/'/g, '%27');
+        expect(request[0].data.title).to.deep.equal(expectedEncodedTitle);
+      });
+
+      it('should not set the title query when the page title is empty', function () {
+        sandbox.stub(document, 'title').value('');
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('title');
       });
 
       it('should sets the values for loc and referer queries when bidderRequest.refererInfo.referer has a value', function () {
@@ -330,26 +364,90 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should include only imuid in extuid query when only imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid } }]);
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
 
       it('should include only id5id in extuid query when only id5id exists', function () {
         const id5id = 'id5id';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {id5id: {uid: id5id}}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id } } }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}`);
       });
 
       it('should include id5id and imuid in extuid query when id5id and imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
         const id5id = 'id5id';
-        const request = spec.buildRequests([{...BANNER_BID, userId: {id5id: {uid: id5id}, imuid: imuid}}]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id }, imuid: imuid } }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}\tim:${imuid}`);
       });
 
       it('should not include the extuid query when both id5 and imuid are missing', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('extuid');
+      });
+
+      it('should include schain in data when schain exists', function () {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{ asi: 'example.com', sid: 'publisher-id', hp: 1 }]
+        };
+        const bidWithSchain = {
+          ...BANNER_BID,
+          ortb2: { source: { ext: { schain } } }
+        };
+        const request = spec.buildRequests([bidWithSchain]);
+        expect(request[0].data.schain).to.equal(JSON.stringify(schain));
+      });
+
+      it('should set schain to empty when schain not exists', function () {
+        const bidWithSchain = {
+          ...BANNER_BID,
+          ortb2: { source: { ext: {} } }
+        };
+        const request = spec.buildRequests([bidWithSchain]);
+        expect(request[0].data.schain).to.equal('');
+      });
+
+      it('should set schain to empty string when ortb2 is missing', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data.schain).to.equal('');
+      });
+
+      it('should set fl_pr when bid.getFloor returns a valid floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 10 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(10);
+      });
+
+      it('should not include fl_pr when bid.getFloor is not a function', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should not include fl_pr when getFloor returns NaN floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 'invalid' }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should pass size * when bid has multiple sizes', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          sizes: [[300, 250], [728, 90]],
+          mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 5.5 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(5.5);
       });
 
       describe('buildExtuidQuery', function() {
@@ -521,7 +619,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
       }]);
     });
 
@@ -539,7 +637,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
       }]);
     });
 
@@ -596,7 +694,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
       }, {
         type: 'image',
         url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=appier&format=gif&vid=1',
@@ -616,7 +714,7 @@ describe('ssp_genieeBidAdapter', function () {
       const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, response);
       expect(result).to.have.deep.equal([{
         type: 'iframe',
-        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+        url: `https://aladdin.genieesspv.jp/yie/ld${csUrlParam}`,
       }]);
     });
 

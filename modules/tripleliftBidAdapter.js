@@ -4,7 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
@@ -13,7 +13,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600;
 let gdprApplies = null;
 let consentString = null;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -58,10 +58,6 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest?.paapi?.enabled) {
-      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.paapi.enabled);
-    }
-
     if (config.getConfig('coppa') === true) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
@@ -79,28 +75,10 @@ export const tripleliftAdapterSpec = {
     };
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     let bids = serverResponse.body.bids || [];
-    const paapi = serverResponse.body.paapi || [];
 
-    bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
-
-    if (paapi.length > 0) {
-      const fledgeAuctionConfigs = paapi.map(config => {
-        return {
-          bidId: bidderRequest.bids[config.imp_id].bidId,
-          config: config.auctionConfig
-        };
-      });
-
-      logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs
-      };
-    } else {
-      return bids;
-    }
+    return bids.map(bid => _buildResponseObject(bidderRequest, bid));
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
@@ -368,7 +346,7 @@ function _buildResponseObject(bidderRequest, bid) {
   const creativeId = bid.crid || '';
   const breq = bidderRequest.bids[bid.imp_id];
 
-  if (bid.cpm != 0 && bid.ad) {
+  if (bid.cpm !== 0 && bid.ad) {
     bidResponse = {
       requestId: breq.bidId,
       cpm: bid.cpm,
@@ -398,7 +376,7 @@ function _buildResponseObject(bidderRequest, bid) {
       bidResponse.meta.advertiserDomains = bid.adomain;
     }
 
-    if (bid.tl_source && bid.tl_source == 'hdx') {
+    if (bid.tl_source && bid.tl_source === 'hdx') {
       if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
         bidResponse.meta.mediaType = 'video'
       } else {
@@ -406,7 +384,7 @@ function _buildResponseObject(bidderRequest, bid) {
       }
     }
 
-    if (bid.tl_source && bid.tl_source == 'tlx') {
+    if (bid.tl_source && bid.tl_source === 'tlx') {
       bidResponse.meta.mediaType = 'native';
     }
 

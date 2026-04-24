@@ -5,44 +5,6 @@ import { isActivityAllowed } from './activities/rules.js';
 import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
-// The below list contains modules or vendors whom Prebid allows to load external JS.
-const _approvedLoadExternalJSList = [
-  // Prebid maintained modules:
-  'debugging',
-  'outstream',
-  // RTD modules:
-  'aaxBlockmeter',
-  'adagio',
-  'adloox',
-  'arcspan',
-  'airgrid',
-  'browsi',
-  'brandmetrics',
-  'clean.io',
-  'humansecurityMalvDefense',
-  'humansecurity',
-  'confiant',
-  'contxtful',
-  'hadron',
-  'mediafilter',
-  'medianet',
-  'azerionedge',
-  'a1Media',
-  'geoedge',
-  'qortex',
-  'dynamicAdBoost',
-  '51Degrees',
-  'symitridap',
-  'wurfl',
-  'nodalsAi',
-  'anonymised',
-  'optable',
-  // UserId Submodules
-  'justtag',
-  'tncId',
-  'ftrackId',
-  'id5',
-];
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
@@ -63,20 +25,31 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     logError('cannot load external script without url and moduleCode');
     return;
   }
-  if (!_approvedLoadExternalJSList.includes(moduleCode)) {
-    logError(`${moduleCode} not whitelisted for loading external JavaScript`);
-    return;
+
+  const hasCallback = typeof callback === 'function' || typeof callback?.success === 'function' || typeof callback?.error === 'function';
+
+  function runCallback(cb, err) {
+    if (err == null) {
+      if (typeof cb === 'function') {
+        cb()
+      } else {
+        cb.success?.();
+      }
+    } else {
+      cb.error?.(err);
+    }
   }
+
   if (!doc) {
     doc = document; // provide a "valid" key for the WeakMap
   }
   // only load each asset once
   const storedCachedObject = getCacheObject(doc, url);
   if (storedCachedObject) {
-    if (callback && typeof callback === 'function') {
+    if (hasCallback) {
       if (storedCachedObject.loaded) {
         // invokeCallbacks immediately
-        callback();
+        runCallback(callback, storedCachedObject.error);
       } else {
         // queue the callback
         storedCachedObject.callbacks.push(callback);
@@ -86,6 +59,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   }
   const cachedDocObj = _requestCache.get(doc) || {};
   const cacheObject = {
+    error: null,
     loaded: false,
     tag: null,
     callbacks: []
@@ -93,7 +67,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   cachedDocObj[url] = cacheObject;
   _requestCache.set(doc, cachedDocObj);
 
-  if (callback && typeof callback === 'function') {
+  if (hasCallback) {
     cacheObject.callbacks.push(callback);
   }
 
@@ -102,8 +76,9 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     cacheObject.loaded = true;
     try {
       for (let i = 0; i < cacheObject.callbacks.length; i++) {
-        cacheObject.callbacks[i]();
+        runCallback(cacheObject.callbacks[i], cacheObject.error);
       }
+      cacheObject.callbacks.length = 0;
     } catch (e) {
       logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
@@ -122,16 +97,29 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
       cacheObject.tag = jptScript;
     }
 
+    function errorListener(e) {
+      cacheObject.error = e;
+      exit();
+    }
+    jptScript.addEventListener('error', errorListener)
+
+    function exit() {
+      jptScript.removeEventListener('error', errorListener);
+      jptScript.onload = null;
+      jptScript.onreadystatechange = null;
+      callback();
+    }
+
     if (jptScript.readyState) {
       jptScript.onreadystatechange = function () {
         if (jptScript.readyState === 'loaded' || jptScript.readyState === 'complete') {
           jptScript.onreadystatechange = null;
-          callback();
+          exit();
         }
       };
     } else {
       jptScript.onload = function () {
-        callback();
+        exit();
       };
     }
 

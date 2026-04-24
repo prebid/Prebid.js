@@ -26,7 +26,7 @@ const TNC_PREBIDJS_PROVIDER_ID = 'c8549079-f149-4529-a34b-3fa91ef257d1';
 const TNC_LOCAL_VALUE_KEY = 'tncid';
 let moduleConfig = null;
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function fixURL(config, ns) {
   config.params = (config && config.params) ? config.params : {};
@@ -50,8 +50,8 @@ const loadRemoteScript = function(url) {
 
 function TNCObject(ns) {
   let tnc = window[ns];
-  tnc = typeof tnc !== 'undefined' && tnc !== null && typeof tnc.ready == 'function' ? tnc : {
-    ready: function(f) { this.ready.q = this.ready.q || []; return typeof f == 'function' ? (this.ready.q.push(f), this) : new Promise(resolve => this.ready.q.push(resolve)); },
+  tnc = typeof tnc !== 'undefined' && tnc !== null && typeof tnc.ready === 'function' ? tnc : {
+    ready: function(f) { this.ready.q = this.ready.q || []; return typeof f === 'function' ? (this.ready.q.push(f), this) : new Promise(resolve => this.ready.q.push(resolve)); },
   };
   window[ns] = tnc;
   return tnc;

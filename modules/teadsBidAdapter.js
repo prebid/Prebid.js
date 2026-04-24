@@ -1,9 +1,11 @@
-import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
-import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
-import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
+import { logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -23,7 +25,7 @@ const gdprStatus = {
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,21 +66,21 @@ export const spec = {
       pageReferrer: document.referrer,
       pageTitle: getPageTitle().slice(0, 300),
       pageDescription: getPageDescription().slice(0, 300),
-      networkBandwidth: getConnectionDownLink(window.navigator),
-      networkQuality: getNetworkQuality(window.navigator),
+      networkBandwidth: getConnectionDownLink(),
+      networkQuality: getNetworkQuality(),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       domComplexity: getDomComplexity(document),
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
-      devicePixelRatio: topWindow.devicePixelRatio,
-      screenOrientation: screen.orientation?.type,
+      devicePixelRatio: getDevicePixelRatio(topWindow),
+      screenOrientation: getScreenOrientation(),
       historyLength: getHLen(),
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,
-      hardwareConcurrency: getHC(),
-      deviceMemory: getDM(),
+      hardwareConcurrency: null,
+      deviceMemory: null,
       hb_version: '$prebid.version$',
       timeout: bidderRequest?.timeout,
       eids: getUserIdAsEids(validBidRequests),
@@ -199,7 +201,6 @@ function getSharedViewerIdParameters(validBidRequests) {
     id5Id: 'id5-sync.com', // id5IdSystem
     criteoId: 'criteo.com', // criteoIdSystem
     yahooConnectId: 'yahoo.com', // connectIdSystem
-    quantcastId: 'quantcast.com', // quantcastIdSystem
     epsilonPublisherLinkId: 'epsilon.com', // publinkIdSystem
     publisherFirstPartyViewerId: 'pubcid.org', // sharedIdSystem
     merkleId: 'merkleinc.com', // merkleIdSystem
@@ -256,12 +257,13 @@ function getPageDescription() {
   return (element && element.content) || '';
 }
 
-function getConnectionDownLink(nav) {
-  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+function getConnectionDownLink() {
+  const connection = getConnectionInfo();
+  return connection?.downlink != null ? connection.downlink.toString() : '';
 }
 
-function getNetworkQuality(navigator) {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+function getNetworkQuality() {
+  const connection = getConnectionInfo();
 
   return connection?.effectiveType ?? '';
 }
@@ -343,14 +345,14 @@ function getFirstPartyTeadsIdParameter(validBidRequests) {
   const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userIdAsEids?.find(eid => eid.source === 'teads.com')?.uids?.[0].id;
 
   if (firstPartyTeadsIdFromUserIdModule) {
-    return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};
+    return { firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule };
   }
 
   if (storage.cookiesAreEnabled(null)) {
     const firstPartyTeadsIdFromCookie = storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null);
 
     if (firstPartyTeadsIdFromCookie) {
-      return {firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie};
+      return { firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie };
     }
   }
 

@@ -1,6 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { handleCookieSync, PID_STORAGE_NAME, prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -14,17 +13,14 @@ import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/u
  */
 
 const BIDDER_CODE = 'equativ';
-const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
-const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const DEFAULT_TTL = 300;
 const LOG_PREFIX = 'Equativ:';
 const OUTSTREAM_RENDERER_URL = 'https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js';
-const PID_STORAGE_NAME = 'eqt_pid';
 
-const feedbackArray = [];
-const impIdMap = {};
-let nwid = 0;
-const tokens = {};
+let feedbackArray = [];
+let impIdMap = {};
+let networkId = 0;
+let tokens = {};
 
 /**
  * Gets value of the local variable impIdMap
@@ -56,7 +52,7 @@ function updateFeedbackData(req) {
       if (tokens[info?.bidId]) {
         feedbackArray.push({
           feedback_token: tokens[info.bidId],
-          loss: info.bidderCpm == info.highestBidCpm ? 0 : 102,
+          loss: info.bidderCpm === info.highestBidCpm ? 0 : 102,
           price: info.highestBidCpm
         });
 
@@ -96,7 +92,7 @@ export const spec = {
     const requests = [];
 
     bidRequests.forEach(bid => {
-      const data = converter.toORTB({bidRequests: [bid], bidderRequest});
+      const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
       requests.push({
         data,
         method: 'POST',
@@ -156,36 +152,12 @@ export const spec = {
 
   /**
    * @param syncOptions
+   * @param serverResponses
+   * @param gdprConsent
    * @returns {{type: string, url: string}[]}
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
-    if (syncOptions.iframeEnabled) {
-      window.addEventListener('message', function handler(event) {
-        if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
-          if (event.source && event.source.postMessage) {
-            event.source.postMessage({
-              action: 'consentResponse',
-              id: event.data.id,
-              consents: gdprConsent.vendorData.vendor.consents
-            }, event.origin);
-          }
-
-          if (event.data.pid) {
-            storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid);
-          }
-
-          this.removeEventListener('message', handler);
-        }
-      });
-
-      let url = tryAppendQueryString(COOKIE_SYNC_URL + '?', 'nwid', nwid);
-      url = tryAppendQueryString(url, 'gdpr', (gdprConsent?.gdprApplies ? '1' : '0'));
-
-      return [{ type: 'iframe', url }];
-    }
-
-    return [];
-  }
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent) =>
+    handleCookieSync(syncOptions, serverResponses, gdprConsent, networkId, storage)
 };
 
 export const converter = ortbConverter({
@@ -248,9 +220,9 @@ export const converter = ortbConverter({
 
     let req = buildRequest(splitImps, bidderRequest, context);
 
-    const env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
-    nwid = deepAccess(bid, env + '.id') || bid.params.networkId;
-    deepSetValue(req, env.replace('ortb2.', '') + '.id', nwid);
+    let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
+    networkId = deepAccess(bid, env + '.id') || bid.params.networkId;
+    deepSetValue(req, env.replace('ortb2.', '') + '.id', networkId);
 
     [
       { path: 'mediaTypes.video', props: ['mimes', 'placement'] },

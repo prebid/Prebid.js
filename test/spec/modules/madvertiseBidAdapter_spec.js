@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { config } from 'src/config';
 import * as utils from 'src/utils';
-import {spec} from 'modules/madvertiseBidAdapter';
+import { spec } from 'modules/madvertiseBidAdapter';
 
 describe('madvertise adapater', () => {
   describe('Test validate req', () => {
@@ -155,19 +155,21 @@ describe('madvertise adapater', () => {
           age: 25,
         }
       };
-      const resp = spec.interpretResponse({body: {
-        requestId: 'REQUEST_ID',
-        cpm: 1,
-        ad: '<html><h3>I am an ad</h3></html>',
-        Width: 320,
-        height: 50,
-        creativeId: 'CREATIVE_ID',
-        dealId: 'DEAL_ID',
-        ttl: 180,
-        currency: 'EUR',
-        netRevenue: true,
-        adomain: ['madvertise.com']
-      }}, {bidId: bid.bidId});
+      const resp = spec.interpretResponse({
+        body: {
+          requestId: 'REQUEST_ID',
+          cpm: 1,
+          ad: '<html><h3>I am an ad</h3></html>',
+          Width: 320,
+          height: 50,
+          creativeId: 'CREATIVE_ID',
+          dealId: 'DEAL_ID',
+          ttl: 180,
+          currency: 'EUR',
+          netRevenue: true,
+          adomain: ['madvertise.com']
+        }
+      }, { bidId: bid.bidId });
 
       expect(resp).to.exist.and.to.be.a('array');
       expect(resp[0]).to.have.property('requestId', bid.bidId);
@@ -197,7 +199,7 @@ describe('madvertise adapater', () => {
           age: 25,
         }
       };
-      const resp = spec.interpretResponse({body: null}, {bidId: bid.bidId});
+      const resp = spec.interpretResponse({ body: null }, { bidId: bid.bidId });
 
       expect(resp).to.exist.and.to.be.a('array').that.is.empty;
     });

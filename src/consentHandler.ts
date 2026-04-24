@@ -1,7 +1,7 @@
-import {cyrb53Hash, isStr, timestamp} from './utils.js';
-import {defer, PbPromise} from './utils/promise.js';
-import {config} from './config.js';
-import type {ModuleType} from "./activities/modules.ts";
+import { cyrb53Hash, isStr, timestamp } from './utils.js';
+import { defer, PbPromise } from './utils/promise.js';
+import { config } from './config.js';
+import type { ModuleType } from "./activities/modules.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -21,6 +21,9 @@ export interface ConsentData {
   // importing consent modules also imports the type definitions.
   [CONSENT_COPPA]: boolean;
 }
+
+/** Resolves to ConsentData[K] when module has augmented that key, else unknown (core-only build). */
+export type ConsentDataForKey<K extends ConsentType> = K extends keyof ConsentData ? ConsentData[K] : unknown;
 
 type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
 
@@ -108,12 +111,19 @@ export class ConsentHandler<T> {
   }
 
   getConsentData(): T {
-    return this.#data;
+    if (this.#enabled) {
+      return this.#data;
+    }
+    return null;
   }
 
   get hash() {
     if (this.#dirty) {
-      this.#hash = cyrb53Hash(JSON.stringify(this.#data && this.hashFields ? this.hashFields.map(f => this.#data[f]) : this.#data))
+      this.#hash = cyrb53Hash(
+        JSON.stringify(
+          this.#data && this.hashFields ? this.hashFields.map((f) => this.#data[f]) : this.#data
+        )
+      );
       this.#dirty = false;
     }
     return this.#hash;
@@ -132,16 +142,18 @@ class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP
 }
 
 class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
-  hashFields = ['gdprApplies', 'consentString']
+  hashFields = ["gdprApplies", "consentString"];
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
         gdprApplies: consentData.gdprApplies as boolean,
-        consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
+        consentStringSize: isStr(consentData.vendorData.tcString)
+          ? consentData.vendorData.tcString.length
+          : 0,
         generatedAt: this.generatedTime,
-        apiVersion: consentData.apiVersion
-      }
+        apiVersion: consentData.apiVersion,
+      };
     }
   }
 }
@@ -203,7 +215,7 @@ export function gvlidRegistry() {
      *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName: string) {
-      const result: GVLIDResult = {modules: registry[moduleName] || {}};
+      const result: GVLIDResult = { modules: registry[moduleName] || {} };
       if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
         result.gvlid = flat[moduleName];
       }
@@ -257,7 +269,7 @@ export type AllConsentData = {
 }
 
 interface MultiHandler extends Pick<ConsentHandler<AllConsentData>, 'promise' | 'hash' | 'getConsentData' | 'reset'> {
-  getConsentMeta(): {[K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>}
+  getConsentMeta(): { [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']> }
 }
 
 export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {

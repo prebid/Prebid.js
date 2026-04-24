@@ -76,7 +76,7 @@ describe('eclickBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('should return true if there is correct required params and mediatype', () => {
-      bidItem.params.mediaTypes == NATIVE;
+      bidItem.params.mediaTypes = NATIVE;
       expect(spec.isBidRequestValid(bidItem)).to.be.true;
     });
     it('should return true if there is no size', () => {

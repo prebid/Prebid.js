@@ -16,7 +16,7 @@ describe('betweenBidAdapterTests', function () {
     const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
-      params: {w: 240, h: 400, s: 1112},
+      params: { w: 240, h: 400, s: 1112 },
       sizes: [[240, 400]]
     }]
     const request = spec.buildRequests(bidRequestData);
@@ -28,7 +28,7 @@ describe('betweenBidAdapterTests', function () {
     const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
-      params: {w: 240, h: 400, s: 1112},
+      params: { w: 240, h: 400, s: 1112 },
       mediaTypes: {
         video: {
           context: 'outstream',
@@ -305,8 +305,8 @@ describe('betweenBidAdapterTests', function () {
   it('check getUserSyncs', function() {
     const syncs = spec.getUserSyncs({}, {});
     expect(syncs).to.be.an('array').that.to.have.lengthOf(2);
-    expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe'});
-    expect(syncs[1]).to.deep.equal({type: 'image', url: 'https://ads.betweendigital.com/sspmatch'});
+    expect(syncs[0]).to.deep.equal({ type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe' });
+    expect(syncs[1]).to.deep.equal({ type: 'image', url: 'https://ads.betweendigital.com/sspmatch' });
   });
 
   it('check sizes', function() {

@@ -1,15 +1,15 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {OUTSTREAM} from '../src/video.js';
-import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize, isPlainObject} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {Renderer} from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { _map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize, isPlainObject } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -29,12 +29,12 @@ const NATIVE_ASSET_IDS = Object.entries(NATIVE_PARAMS).reduce((acc, [key, value]
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
+  supportedMediaTypes: [NATIVE, BANNER, VIDEO],
   isBidRequestValid: (bid) => {
     if (typeof bid.params !== 'object') {
       return false;
@@ -219,6 +219,7 @@ export const spec = {
         }
         return bidObject;
       }
+      return null;
     }).filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
@@ -282,7 +283,7 @@ function parseNative(bid) {
           result.impressionTrackers.push(tracker.url);
           break;
         case 2: // js
-          result.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          result.javascriptTrackers = `<script src="${tracker.url}"></script>`;
           break;
       }
     });
@@ -414,7 +415,7 @@ function isValidVideoRequest(bid) {
     return false;
   }
 
-  if (videoAdUnit.context == '') {
+  if (videoAdUnit.context === '') {
     return false;
   }
 

@@ -1,16 +1,17 @@
 import {
-  BANNER
+  BANNER,
+  VIDEO
 } from '../src/mediaTypes.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { deepAccess, deepSetValue, generateUUID, isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils.js';
 
-const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
+const ENDPOINT_URL = 'https://rtb.upremium.asia/ortb/open/auction';
 
 export const spec = {
   code: 'mediaeyes',
-  supportedMediaTypes: BANNER,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     return !!(bid.params.itemId);
@@ -19,8 +20,8 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     const requests = [];
 
-    bidRequests.map(bidRequest => {
-      const {itemId} = bidRequest.params;
+    bidRequests.forEach(bidRequest => {
+      const { itemId } = bidRequest.params;
       const requestData = {
         id: generateUUID(),
         imp: [cookingImp(bidRequest)],
@@ -57,10 +58,24 @@ export const spec = {
         netRevenue: true
       };
 
-      prBid.mediaType = BANNER;
+      let mediaType = rtbBid.ext?.mediaType;
+      if (!mediaType) {
+        if (rtbBid.adm && rtbBid.adm.includes('<VAST')) {
+          mediaType = VIDEO;
+        } else {
+          mediaType = BANNER;
+        }
+      }
+
+      if (mediaType === VIDEO) {
+        prBid.mediaType = VIDEO;
+        prBid.vastXml = rtbBid.adm;
+      } else {
+        prBid.mediaType = BANNER;
+        prBid.ad = rtbBid.adm;
+      }
       prBid.width = rtbBid.w;
       prBid.height = rtbBid.h;
-      prBid.ad = rtbBid.adm;
       if (isArray(rtbBid.adomain)) {
         deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
       }
@@ -96,7 +111,13 @@ function cookingImp(bidReq) {
 
     imp.id = bidReq.bidId;
     imp.bidfloor = bidfloor;
-    imp.banner = cookImpBanner(bidReq);
+    if (bidReq.mediaTypes?.banner) {
+      imp.banner = cookImpBanner(bidReq);
+    }
+
+    if (bidReq.mediaTypes?.video) {
+      imp.video = cookImpVideo(bidReq);
+    }
   }
   return imp;
 }
@@ -105,11 +126,44 @@ const cookImpBanner = ({ mediaTypes, params }) => {
   if (!mediaTypes?.banner) return {};
 
   const { sizes } = mediaTypes.banner;
+
+  const format = sizes
+    .filter(s => Array.isArray(s) && typeof s[0] === 'number' && typeof s[1] === 'number')
+    .map(([w, h]) => ({ w, h }));
+
+  if (!format.length) return {};
+
   return {
-    w: sizes[0][0],
-    h: sizes[0][1]
+    format
   }
 };
+
+function cookImpVideo({ mediaTypes }) {
+  const video = mediaTypes.video;
+
+  const size = Array.isArray(video.playerSize[0])
+    ? video.playerSize[0]
+    : video.playerSize;
+
+  const [w, h] = size;
+
+  let placement = video.placement;
+  if (!placement && video.context) {
+    if (video.context === 'outstream') {
+      placement = 4;
+    } else if (video.context === 'instream') {
+      placement = 1;
+    }
+  }
+
+  return {
+    w,
+    h,
+    mimes: video.mimes || ['video/mp4'],
+    protocols: video.protocols || [2, 3, 5, 6],
+    placement: video.placement || 1
+  };
+}
 
 function getBidFloor(bidRequest) {
   let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)

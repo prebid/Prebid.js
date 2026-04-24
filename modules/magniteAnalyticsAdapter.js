@@ -20,11 +20,11 @@ import {
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getHook } from '../src/hook.js';
 
 const RUBICON_GVL_ID = 52;
@@ -769,7 +769,7 @@ const handleBidResponse = (args, bidStatus) => {
   bid.bidResponse = parseBidResponse(args, bid.bidResponse);
 
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
-  const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
+  const pbsBidId = (Number(args.pbsBidId) === 0 ? generateUUID() : args.pbsBidId) || (Number(args.seatBidId) === 0 ? generateUUID() : args.seatBidId);
   if (pbsBidId && !cache.bidsCachedClientSide.has(args)) {
     bid.pbsBidId = pbsBidId;
   }
@@ -828,15 +828,6 @@ magniteAdapter.track = ({ eventType, args }) => {
       const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
       if (floorData) {
         auctionData.floors = addFloorData(floorData);
-      }
-
-      // Identify chrome cookieless trafic
-      if (!cookieless) {
-        const cdep = deepAccess(args, 'bidderRequests.0.ortb2.device.ext.cdep');
-        if (cdep && (cdep.indexOf('treatment') !== -1 || cdep.indexOf('control_2') !== -1)) {
-          cookieless = 1;
-          auctionData.cdep = 1;
-        }
       }
 
       // GDPR info
@@ -913,7 +904,7 @@ magniteAdapter.track = ({ eventType, args }) => {
         if (adUnit.bids[bid.bidId].source === 'server') adUnit.pbsRequest = 1;
         // set acct site zone id on adunit
         if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
-          if (deepAccess(bid, 'params.accountId') == accountId) {
+          if (Number(deepAccess(bid, 'params.accountId')) === accountId) {
             adUnit.accountId = parseInt(accountId);
             adUnit.siteId = parseInt(deepAccess(bid, 'params.siteId'));
             adUnit.zoneId = parseInt(deepAccess(bid, 'params.zoneId'));
@@ -1021,7 +1012,7 @@ magniteAdapter.track = ({ eventType, args }) => {
 };
 
 const handlePbsAnalytics = function (args) {
-  const {seatnonbid, auctionId, atag} = args;
+  const { seatnonbid, auctionId, atag } = args;
   if (seatnonbid) {
     handleNonBidEvent(seatnonbid, auctionId);
   }
@@ -1049,10 +1040,10 @@ const handleNonBidEvent = function(seatnonbid, auctionId) {
   }
   const adUnits = auction.adUnits;
   seatnonbid.forEach(seatnonbid => {
-    const {seat} = seatnonbid;
+    const { seat } = seatnonbid;
     seatnonbid.nonbid.forEach(nonbid => {
       try {
-        const {status, impid} = nonbid;
+        const { status, impid } = nonbid;
         const matchingTid = Object.keys(adUnits).find(tid => adUnits[tid].adUnitCode === impid);
         const adUnit = adUnits[matchingTid];
         const statusInfo = statusMap[status] || { status: 'no-bid' };

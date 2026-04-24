@@ -145,9 +145,9 @@ export const spec = {
     if (videoParams?.startDelay) {
       return videoParams.startDelay;
     } else if (videoMediaType?.startdelay) {
-      if (videoMediaType.startdelay > 0 || videoMediaType.startdelay == -1) {
+      if (videoMediaType.startdelay > 0 || videoMediaType.startdelay === -1) {
         return 2;
-      } else if (videoMediaType.startdelay == -2) {
+      } else if (videoMediaType.startdelay === -2) {
         return 3;
       }
     }

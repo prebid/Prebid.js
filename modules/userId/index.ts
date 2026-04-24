@@ -3,13 +3,13 @@
  * @module modules/userId
  */
 
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 import * as events from '../../src/events.js';
-import {addApiMethod, startAuction, type StartAuctionOptions} from '../../src/prebid.js';
+import { addApiMethod, startAuction, type StartAuctionOptions } from '../../src/prebid.js';
 import adapterManager from '../../src/adapterManager.js';
-import {EVENTS} from '../../src/constants.js';
-import {module, ready as hooksReady} from '../../src/hook.js';
-import {EID_CONFIG, getEids} from './eids.js';
+import { EVENTS } from '../../src/constants.js';
+import { module, ready as hooksReady } from '../../src/hook.js';
+import { EID_CONFIG, getEids } from './eids.js';
 import {
   discloseStorageUse,
   getCoreStorageManager,
@@ -31,27 +31,28 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn,
+  logWarn, mergeDeep
 } from '../../src/utils.js';
-import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {defer, delay, PbPromise} from '../../src/utils/promise.js';
-import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
-import {findRootDomain} from '../../src/fpd/rootDomain.js';
-import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
-import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
-import {isActivityAllowed, registerActivityControl} from '../../src/activities/rules.js';
-import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
-import {activityParams} from '../../src/activities/activityParams.js';
-import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.js';
-import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
-import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
-import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
+import { getPPID as coreGetPPID } from '../../src/adserver.js';
+import { defer, delay, PbPromise } from '../../src/utils/promise.js';
+import { newMetrics, timedAuctionHook, useMetrics } from '../../src/utils/perfMetrics.js';
+import { findRootDomain } from '../../src/fpd/rootDomain.js';
+import { allConsent, GDPR_GVLIDS } from '../../src/consentHandler.js';
+import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
+import { isActivityAllowed, registerActivityControl } from '../../src/activities/rules.js';
+import { ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS } from '../../src/activities/activities.js';
+import { activityParams } from '../../src/activities/activityParams.js';
+import { USERSYNC_DEFAULT_CONFIG, type UserSyncConfig } from '../../src/userSync.js';
+import type { ORTBRequest } from "../../src/types/ortb/request.d.ts";
+import type { AnyFunction, Wraps } from "../../src/types/functions.d.ts";
+import type { ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse } from "./spec.ts";
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE,
   ACTIVITY_PARAM_STORAGE_TYPE,
   ACTIVITY_PARAM_STORAGE_WRITE
 } from '../../src/activities/params.js';
+import { beforeInitAuction } from '../../src/auction.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -367,6 +368,10 @@ function mkPriorityMaps() {
       const refreshing = new Set(addtlModules.map(mod => mod.submodule));
       map.submodules = map.submodules.filter((mod) => !refreshing.has(mod.submodule)).concat(addtlModules);
       update();
+    },
+    reset() {
+      map.submodules = [];
+      update();
     }
   }
   function update() {
@@ -380,8 +385,8 @@ function mkPriorityMaps() {
 
     function activeModuleGetter(key, useGlobals, modules) {
       return function () {
-        for (const {allowed, bidders, module} of modules) {
-          if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
+        for (const { allowed, bidders, module } of modules) {
+          if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, { init: false }))) {
             continue;
           }
           const value = module.idObj?.[key];
@@ -429,22 +434,22 @@ function mkPriorityMaps() {
           }
         })
         if (!allNonGlobal) {
-          global[key] = activeModuleGetter(key, true, modules.map(({bidders, module}) => ({allowed: bidders == null, bidders, module})));
+          global[key] = activeModuleGetter(key, true, modules.map(({ bidders, module }) => ({ allowed: bidders == null, bidders, module })));
         }
         bidderFilters.forEach(bidderCode => {
           bidder[bidderCode] = bidder[bidderCode] ?? {};
-          bidder[bidderCode][key] = activeModuleGetter(key, false, modules.map(({bidders, module}) => ({allowed: bidders?.includes(bidderCode), bidders, module})));
+          bidder[bidderCode][key] = activeModuleGetter(key, false, modules.map(({ bidders, module }) => ({ allowed: bidders?.includes(bidderCode), bidders, module })));
         })
       });
     const combined = Object.values(bidder).concat([global]).reduce((combo, map) => Object.assign(combo, map), {});
-    Object.assign(map, {global, bidder, combined});
+    Object.assign(map, { global, bidder, combined });
   }
   return map;
 }
 
 export function enrichEids(ortb2Fragments) {
-  const {global: globalFpd, bidder: bidderFpd} = ortb2Fragments;
-  const {global: globalMods, bidder: bidderMods} = initializedSubmodules;
+  const { global: globalFpd, bidder: bidderFpd } = ortb2Fragments;
+  const { global: globalMods, bidder: bidderMods } = initializedSubmodules;
   const globalEids = getEids(globalMods);
   if (globalEids.length > 0) {
     deepSetValue(globalFpd, 'user.ext.eids', (globalFpd.user?.ext?.eids ?? []).concat(globalEids));
@@ -468,14 +473,14 @@ declare module '../../src/adapterManager' {
   }
 }
 
-export function addIdData({ortb2Fragments}) {
-  ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
+export function addIdData({ ortb2Fragments }) {
+  ortb2Fragments = ortb2Fragments ?? { global: {}, bidder: {} }
   enrichEids(ortb2Fragments);
 }
 
 const INIT_CANCELED = {};
 
-function idSystemInitializer({mkDelay = delay} = {}) {
+function idSystemInitializer({ mkDelay = delay } = {}) {
   const startInit = defer<void>();
   const startCallbacks = defer<void>();
   let cancel;
@@ -530,7 +535,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
    * with `ready` = true, starts initialization; with `refresh` = true, reinitialize submodules (optionally
    * filtered by `submoduleNames`).
    */
-  return function ({refresh = false, submoduleNames = null, ready = false} = {}) {
+  return function ({ refresh = false, submoduleNames = null, ready = false } = {}) {
     if (ready && !initialized) {
       initialized = true;
       startInit.resolve();
@@ -592,13 +597,13 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.ts
  */
-export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj: StartAuctionOptions, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
+export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj: StartAuctionOptions, { mkDelay = delay, getIds = getUserIdsAsync } = {}) {
   PbPromise.race([
     getIds().catch(() => null),
     mkDelay(auctionDelay)
   ]).then(() => {
     addIdData(reqBidsConfigObj);
-    uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
+    uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), { propagate: false, includeGroups: true });
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
@@ -614,7 +619,7 @@ function aliasEidsHook(next, bidderRequests) {
       Object.defineProperty(bid, 'userIdAsEids', {
         configurable: true,
         get() {
-          return bidderRequest.ortb2.user?.ext?.eids;
+          return bidderRequest.ortb2.user?.ext?.eids ?? [];
         }
       })
     )
@@ -622,12 +627,41 @@ function aliasEidsHook(next, bidderRequests) {
   next(bidderRequests);
 }
 
+export function adUnitEidsHook(next, auction) {
+  // for backwards-compat, add `userIdAsEids` to ad units' bid objects
+  // before auction events are fired
+  // these are computed similarly to bid requests' `ortb2`, but unlike them,
+  // they are not subject to the same activity checks (since they are not intended for bid adapters)
+
+  const eidsByBidder = {};
+  const globalEids = auction.getFPD()?.global?.user?.ext?.eids ?? [];
+  function getEids(bidderCode) {
+    if (bidderCode == null) return globalEids;
+    if (!eidsByBidder.hasOwnProperty(bidderCode)) {
+      eidsByBidder[bidderCode] = mergeDeep(
+        { eids: [] },
+        { eids: globalEids },
+        { eids: auction.getFPD()?.bidder?.[bidderCode]?.user?.ext?.eids ?? [] }
+      ).eids;
+    }
+    return eidsByBidder[bidderCode];
+  }
+  auction.getAdUnits()
+    .flatMap(au => au.bids)
+    .forEach(bid => {
+      const eids = getEids(bid.bidder);
+      if (eids.length > 0) {
+        bid.userIdAsEids = eids;
+      }
+    });
+  next(auction);
+}
 /**
  * Is startAuctionHook added
  * @returns {boolean}
  */
 function addedStartAuctionHook() {
-  return !!startAuction.getHooks({hook: startAuctionHook}).length;
+  return !!startAuction.getHooks({ hook: startAuctionHook }).length;
 }
 
 /**
@@ -701,21 +735,16 @@ function registerSignalSources() {
     return;
   }
 
-  const providers: googletag.secureSignals.SecureSignalProvider[] = window.googletag.secureSignalProviders = (window.googletag.secureSignalProviders || []) as googletag.secureSignals.SecureSignalProvider[];
-  const existingIds = new Set(providers.map(p => 'id' in p ? p.id : p.networkCode));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
       encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
         source.forEach((src) => {
-          if (!existingIds.has(src)) {
-            providers.push({
-              id: src,
-              collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
-            });
-            existingIds.add(src);
-          }
+          window.googletag.secureSignalProviders.push({
+            id: src,
+            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+          });
         });
       })
     }, registerDelay)
@@ -751,10 +780,10 @@ function retryOnCancel(initParams?) {
  * submoduleNames submodules to refresh. If omitted, refresh all submodules.
  * callback called when the refresh is complete
  */
-function refreshUserIds({submoduleNames}: {
+function refreshUserIds({ submoduleNames }: {
   submoduleNames?: string[]
 } = {}, callback?: () => void): Promise<Partial<UserId>> {
-  return retryOnCancel({refresh: true, submoduleNames})
+  return retryOnCancel({ refresh: true, submoduleNames })
     .then((userIds) => {
       if (callback && isFn(callback)) {
         callback();
@@ -867,8 +896,24 @@ function updatePPID(priorityMaps) {
   }
 }
 
+function hasOptedOut() {
+  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out localStorage found, userId disabled`);
+    return true;
+  }
+  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out cookie found, userId disabled`);
+    return true;
+  }
+  return false;
+}
+
 function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
+    if (hasOptedOut()) {
+      priorityMaps.reset();
+      return [];
+    }
     if (!submodules.length) return []; // to simplify log messages from here on
     submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
@@ -962,12 +1007,6 @@ function canUseLocalStorage(submodule) {
   if (!submodule.storageMgr.localStorageIsEnabled()) {
     return false;
   }
-
-  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
-    return false
-  }
-
   return true;
 }
 
@@ -975,12 +1014,6 @@ function canUseCookies(submodule) {
   if (!submodule.storageMgr.cookiesAreEnabled()) {
     return false;
   }
-
-  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
-    return false;
-  }
-
   return true
 }
 
@@ -1037,10 +1070,10 @@ function updateEIDConfig(submodules) {
 }
 
 export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
-  const {autoRefresh, retainConfig} = options;
+  const { autoRefresh, retainConfig } = options;
   return registry
     .reduce((acc, submodule) => {
-      const {name, aliasName} = submodule;
+      const { name, aliasName } = submodule;
       const matchesName = (query) => [name, aliasName].some(value => value?.toLowerCase() === query.toLowerCase());
       const submoduleConfig = configs.find((configItem) => matchesName(configItem.name));
 
@@ -1155,7 +1188,7 @@ export function attachIdSystem(submodule: IdProviderSpec<UserIdProvider>) {
     updateSubmodules();
     // TODO: a test case wants this to work even if called after init (the setConfig({userId}))
     // so we trigger a refresh. But is that even possible outside of tests?
-    initIdSystem({refresh: true, submoduleNames: [submodule.name]});
+    initIdSystem({ refresh: true, submoduleNames: [submodule.name] });
   }
 }
 
@@ -1191,7 +1224,7 @@ const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
     if (params[ACTIVITY_PARAM_STORAGE_TYPE] !== submoduleConfig.storage.type) {
       const reason = `${submoduleConfig.name} attempts to store data in ${params[ACTIVITY_PARAM_STORAGE_TYPE]} while configuration allows ${submoduleConfig.storage.type}.`;
       if (enforceStorageType) {
-        return {allow: false, reason};
+        return { allow: false, reason };
       } else {
         logWarn(reason);
       }
@@ -1204,12 +1237,12 @@ const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {mkDelay = delay} = {}) {
+export function init(config, { mkDelay = delay } = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
   initializedSubmodules = mkPriorityMaps();
-  initIdSystem = idSystemInitializer({mkDelay});
+  initIdSystem = idSystemInitializer({ mkDelay });
   if (configListener != null) {
     configListener();
   }
@@ -1223,23 +1256,24 @@ export function init(config, {mkDelay = delay} = {}) {
     if (userSync) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
-        const {autoRefresh = false, retainConfig = true, enforceStorageType} = userSync;
+        const { autoRefresh = false, retainConfig = true, enforceStorageType } = userSync;
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
-        updateSubmodules({retainConfig, autoRefresh});
+        updateSubmodules({ retainConfig, autoRefresh });
         unregisterEnforceStorageTypeRule?.();
-        unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({config}) => config), enforceStorageType));
+        unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({ config }) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
-        initIdSystem({ready: true});
+        initIdSystem({ ready: true });
         const submodulesToRefresh = submodules.filter(item => item.refreshIds);
         if (submodulesToRefresh.length) {
-          refreshUserIds({submoduleNames: submodulesToRefresh.map(item => item.submodule.name)});
+          refreshUserIds({ submoduleNames: submodulesToRefresh.map(item => item.submodule.name) });
         }
       }
     }
   });
   adapterManager.makeBidRequests.after(aliasEidsHook);
+  beforeInitAuction.before(adUnitEidsHook);
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   addApiMethod('getUserIds', getUserIds);
@@ -1252,7 +1286,7 @@ export function init(config, {mkDelay = delay} = {}) {
 }
 
 export function resetUserIds() {
-  config.setConfig({userSync: {}})
+  config.setConfig({ userSync: {} })
   init(config);
 }
 

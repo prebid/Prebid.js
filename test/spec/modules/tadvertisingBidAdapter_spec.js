@@ -1,5 +1,6 @@
-import {expect} from 'chai';
-import {spec,
+import { expect } from 'chai';
+import {
+  spec,
   buildSuccessNotification,
   buildErrorNotification,
   buildTimeoutNotification,
@@ -343,36 +344,37 @@ describe('tadvertisingBidAdapter', () => {
 
   describe('interpretResponse', function () {
     function getBidderResponse() {
-      return { body: {
-        "id": "10b1e33f-fddc-4621-a472-d7bff0529cbf",
-        "cur": "USD",
-        "impid": "38c219964ca1998",
-        "seatbid": [
-          {
-            "bid": [
-              {
-                "id": "1",
-                "impid": "38c219964ca1998",
-                "price": 0.78740156,
-                "adm": "<html><h3>I am an ad</h3></html>",
-                "cid": "ay35w7m",
-                "crid": "id8tke3f",
-                "adomain": [
-                  "emetriq.com"
-                ],
-                "cat": [
-                  "IAB2",
-                  "IAB2-3"
-                ],
-                "h": 250,
-                "w": 300,
-                "mtype": 1
-              }
-            ],
-            "seat": "2271"
-          }
-        ]
-      }
+      return {
+        body: {
+          "id": "10b1e33f-fddc-4621-a472-d7bff0529cbf",
+          "cur": "USD",
+          "impid": "38c219964ca1998",
+          "seatbid": [
+            {
+              "bid": [
+                {
+                  "id": "1",
+                  "impid": "38c219964ca1998",
+                  "price": 0.78740156,
+                  "adm": "<html><h3>I am an ad</h3></html>",
+                  "cid": "ay35w7m",
+                  "crid": "id8tke3f",
+                  "adomain": [
+                    "emetriq.com"
+                  ],
+                  "cat": [
+                    "IAB2",
+                    "IAB2-3"
+                  ],
+                  "h": 250,
+                  "w": 300,
+                  "mtype": 1
+                }
+              ],
+              "seat": "2271"
+            }
+          ]
+        }
       }
     }
 
@@ -380,7 +382,7 @@ describe('tadvertisingBidAdapter', () => {
       const bidderRequest = getBidderRequest();
       const bidRequest = spec.buildRequests([], bidderRequest);
 
-      const emptyArray = spec.interpretResponse({body: {}}, bidRequest);
+      const emptyArray = spec.interpretResponse({ body: {} }, bidRequest);
 
       expect(emptyArray).to.deep.equal([]);
     })
@@ -422,6 +424,26 @@ describe('tadvertisingBidAdapter', () => {
       const bid = interpretedBids[0];
 
       expect(bid.mediaType).to.deep.equal("video");
+    })
+
+    it('should return empty array when response has no body', function () {
+      const bidderRequest = getBidderRequest();
+      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const bidderResponse = { body: {} };
+
+      const interpretedBids = spec.interpretResponse(bidderResponse, bidRequest);
+
+      expect(interpretedBids).to.deep.equal([]);
+    })
+
+    it('should return empty array when response has only id and ext.uss', function () {
+      const bidderRequest = getBidderRequest();
+      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const bidderResponse = { body: { id: '10b1e33f-fddc-4621-a472-d7bff0529cbf', ext: { uss: 1 } } };
+
+      const interpretedBids = spec.interpretResponse(bidderResponse, bidRequest);
+
+      expect(interpretedBids).to.deep.equal([]);
     })
   });
 
@@ -465,14 +487,14 @@ describe('tadvertisingBidAdapter', () => {
     });
 
     it('should return an empty array with when sync is not enabled', function () {
-      let serverResponse = {body: {ext: { uss: 0}}};
+      let serverResponse = { body: { ext: { uss: 0 } } };
       let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
 
       expect(result).to.have.length(0);
     });
 
     it('should return an empty array with when purpose one is not consented', function () {
-      let serverResponse = {body: {ext: { uss: 1}}};
+      let serverResponse = { body: { ext: { uss: 1 } } };
       let consent = getGdprConsent()
       consent.vendorData.purpose.consents[1] = false;
 
@@ -482,14 +504,14 @@ describe('tadvertisingBidAdapter', () => {
     });
 
     it('should return an array with sync if purpose and venders are consented', function () {
-      let serverResponse = {body: {ext: { uss: 1}}};
+      let serverResponse = { body: { ext: { uss: 1 } } };
       let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
 
       expect(result).to.have.length(1);
     });
 
     it('should return url with gdpr_consent string only', function () {
-      let serverResponse = {body: {ext: { uss: 1}}};
+      let serverResponse = { body: { ext: { uss: 1 } } };
       let gdprConsent = getGdprConsent();
       gdprConsent.gdprApplies = null;
 
@@ -500,7 +522,7 @@ describe('tadvertisingBidAdapter', () => {
     })
 
     it('should return empty sync array when pixel is not enabled', function () {
-      let serverResponse = {body: {ext: { uss: 1}}};
+      let serverResponse = { body: { ext: { uss: 1 } } };
       let gdprConsent = getGdprConsent();
       gdprConsent.gdprApplies = false;
 

@@ -1,4 +1,4 @@
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import {
   HADRONID_LOCAL_NAME,
   RTD_LOCAL_NAME,
@@ -7,9 +7,9 @@ import {
   hadronSubmodule,
   storage
 } from 'modules/hadronRtdProvider.js';
-import {server} from 'test/mocks/xhr.js';
+import { server } from 'test/mocks/xhr.js';
 
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('hadronRtdProvider', function () {
   let getDataFromLocalStorageStub;
@@ -35,7 +35,7 @@ describe('hadronRtdProvider', function () {
 
       const setConfigUserObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1776'
         }]
@@ -43,7 +43,7 @@ describe('hadronRtdProvider', function () {
 
       const setConfigUserObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1914'
         }]
@@ -135,7 +135,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1776'
         }]
@@ -143,7 +143,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1914'
         }]
@@ -207,7 +207,7 @@ describe('hadronRtdProvider', function () {
 
       const configUserObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1776'
         }]
@@ -215,7 +215,7 @@ describe('hadronRtdProvider', function () {
 
       const configUserObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1914'
         }]
@@ -223,7 +223,7 @@ describe('hadronRtdProvider', function () {
 
       const configUserObj3 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '2003'
         }]
@@ -384,7 +384,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1776'
         }]
@@ -392,7 +392,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1914'
         }]
@@ -400,7 +400,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj3 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '2003'
         }]
@@ -512,10 +512,10 @@ describe('hadronRtdProvider', function () {
       const rtdConfig = {
         params: {
           handleRtd: function (bidConfig, rtd, rtdConfig, pbConfig) {
-            if (rtd.ortb2.user.data[0].segment[0].id == '1776') {
-              pbConfig.setConfig({ortb2: rtd.ortb2});
+            if (String(rtd.ortb2.user.data[0].segment[0].id) === '1776') {
+              pbConfig.setConfig({ ortb2: rtd.ortb2 });
             } else {
-              pbConfig.setConfig({ortb2: {}});
+              pbConfig.setConfig({ ortb2: {} });
             }
           }
         }
@@ -525,7 +525,7 @@ describe('hadronRtdProvider', function () {
 
       const rtdUserObj1 = {
         name: 'www.dataprovider.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1776'
         }]
@@ -580,11 +580,11 @@ describe('hadronRtdProvider', function () {
               var adUnit = adUnits[i];
               for (var j = 0; j < adUnit.bids.length; j++) {
                 var bid = adUnit.bids[j];
-                if (bid.bidder == 'adBuzz') {
+                if (bid.bidder === 'adBuzz') {
                   for (var k = 0; k < rtd.adBuzz.length; k++) {
                     bid.adBuzzData.segments.adBuzz.push(rtd.adBuzz[k]);
                   }
-                } else if (bid.bidder == 'trueBid') {
+                } else if (bid.bidder === 'trueBid') {
                   for (var m = 0; m < rtd.trueBid.length; m++) {
                     bid.trueBidSegments.push(rtd.trueBid[m]);
                   }
@@ -621,8 +621,8 @@ describe('hadronRtdProvider', function () {
       };
 
       const rtd = {
-        adBuzz: [{id: 'adBuzzSeg2'}, {id: 'adBuzzSeg3'}],
-        trueBid: [{id: 'truebidSeg1'}, {id: 'truebidSeg2'}, {id: 'truebidSeg3'}]
+        adBuzz: [{ id: 'adBuzzSeg2' }, { id: 'adBuzzSeg3' }],
+        trueBid: [{ id: 'truebidSeg1' }, { id: 'truebidSeg2' }, { id: 'truebidSeg3' }]
       };
 
       addRealTimeData(bidConfig, rtd, rtdConfig);
@@ -644,7 +644,7 @@ describe('hadronRtdProvider', function () {
         }
       };
 
-      const bidConfig = {ortb2Fragments: {global: {}}};
+      const bidConfig = { ortb2Fragments: { global: {} } };
 
       const rtdUserObj1 = {
         name: 'www.dataprovider3.com',

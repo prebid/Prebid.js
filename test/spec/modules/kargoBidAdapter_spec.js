@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/kargoBidAdapter.js';
 import { config } from 'src/config.js';
 import { getStorageManager } from 'src/storageManager.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 const utils = require('src/utils');
-const STORAGE = getStorageManager({bidderCode: 'kargo'});
+const STORAGE = getStorageManager({ bidderCode: 'kargo' });
 
 describe('kargo adapter tests', function() {
   let bid; let outstreamBid; let testBids; let sandbox; let clock; let frozenNow = new Date(); let oldBidderSettings;
@@ -52,25 +53,25 @@ describe('kargo adapter tests', function() {
     userIdAsEids: [
       {
         source: 'adquery.io',
-        uids: [ {
+        uids: [{
           id: 'adquery-id',
           atype: 1
-        } ]
+        }]
       },
       {
         source: 'criteo.com',
-        uids: [ {
+        uids: [{
           id: 'criteo-id',
           atype: 1
-        } ]
+        }]
       },
       {
         source: 'adserver.org',
-        uids: [ {
+        uids: [{
           id: 'adserver-id',
           atype: 1,
           ext: { rtiPartner: 'TDID' }
-        } ]
+        }]
       },
     ],
     floorData: {
@@ -81,11 +82,11 @@ describe('kargo adapter tests', function() {
       config: {
         ver: '1.0',
         complete: 1,
-        nodes: [ {
+        nodes: [{
           asi: 'indirectseller.com',
           sid: '00001',
           hp: 1,
-        } ]
+        }]
       }
     },
   });
@@ -95,7 +96,7 @@ describe('kargo adapter tests', function() {
       placementId: 'foobar'
     },
     mediaTypes: {
-      banner: { sizes: [ [1, 1] ] }
+      banner: { sizes: [[1, 1]] }
     }
   });
 
@@ -149,8 +150,8 @@ describe('kargo adapter tests', function() {
   }
 
   beforeEach(function() {
-    oldBidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    oldBidderSettings = getGlobal().bidderSettings;
+    getGlobal().bidderSettings = {
       kargo: { storageAllowed: true }
     };
 
@@ -162,11 +163,11 @@ describe('kargo adapter tests', function() {
       },
       mediaTypes: {
         banner: {
-          sizes: [ [970, 250], [1, 1] ]
+          sizes: [[970, 250], [1, 1]]
         }
       },
       adUnitCode: 'displayAdunitCode',
-      sizes: [ [300, 250], [300, 600] ],
+      sizes: [[300, 250], [300, 600]],
       bidId: 'randomBidId',
       bidderRequestId: 'randomBidderRequestId',
       auctionId: 'randomAuctionId'
@@ -182,20 +183,20 @@ describe('kargo adapter tests', function() {
         video: {
           context: 'instream',
           playerSize: [640, 480],
-          api: [ 1, 2 ],
+          api: [1, 2],
           linearity: 1,
           maxduration: 60,
-          mimes: [ 'video/mp4', 'video/webm', 'application/javascript' ],
+          mimes: ['video/mp4', 'video/webm', 'application/javascript'],
           minduration: 0,
           placement: 1,
-          playbackmethod: [ 1, 2, 3 ],
+          playbackmethod: [1, 2, 3],
           plcmt: 1,
-          protocols: [ 2, 3, 5 ],
+          protocols: [2, 3, 5],
           skip: 1
         }
       },
       adUnitCode: 'instreamAdunitCode',
-      sizes: [ [300, 250], [300, 600] ],
+      sizes: [[300, 250], [300, 600]],
       bidId: 'randomBidId2',
       bidderRequestId: 'randomBidderRequestId2',
       auctionId: 'randomAuctionId2'
@@ -210,7 +211,7 @@ describe('kargo adapter tests', function() {
   afterEach(function() {
     sandbox.restore();
     clock.restore();
-    $$PREBID_GLOBAL$$.bidderSettings = oldBidderSettings;
+    getGlobal().bidderSettings = oldBidderSettings;
   });
 
   describe('gvlid', function() {
@@ -306,7 +307,7 @@ describe('kargo adapter tests', function() {
           page: topUrl,
           reachedTop: true,
           ref: referer,
-          stack: [ topUrl ],
+          stack: [topUrl],
           topmostLocation: topUrl,
         },
         start: Date.now(),
@@ -381,7 +382,7 @@ describe('kargo adapter tests', function() {
       // Display bid
       const bidImp = payload.imp[0];
       expect(bidImp.id).to.equal('randomBidId');
-      expect(bidImp.banner).to.deep.equal({ sizes: [ [970, 250], [1, 1] ] });
+      expect(bidImp.banner).to.deep.equal({ sizes: [[970, 250], [1, 1]] });
       expect(bidImp.video).to.be.undefined;
       expect(bidImp.bidRequestCount).to.equal(1);
       expect(bidImp.bidderRequestCount).to.equal(1);
@@ -410,7 +411,7 @@ describe('kargo adapter tests', function() {
 
       // General keys
       expect(payload.aid).to.equal('randomAuctionId');
-      expect(payload.device).to.deep.equal({ size: [ window.screen.width, window.screen.height ] });
+      expect(payload.device).to.deep.equal({ size: [window.screen.width, window.screen.height] });
       expect(payload.ext.ortb2).to.deep.equal(defaultBidParams.ortb2);
       expect(payload.pbv).to.equal('$prebid.version$');
       expect(payload.requestCount).to.equal(spec.buildRequests.callCount - 1);
@@ -719,7 +720,7 @@ describe('kargo adapter tests', function() {
               inventoryCode: 'banner_outstream_test',
               floor: 1.0,
               video: {
-                mimes: [ 'video/mp4' ],
+                mimes: ['video/mp4'],
                 maxduration: 30,
                 minduration: 6,
                 w: 640,
@@ -732,11 +733,11 @@ describe('kargo adapter tests', function() {
                 playerSize: [640, 380]
               },
               banner: {
-                sizes: [ [970, 250], [1, 1] ]
+                sizes: [[970, 250], [1, 1]]
               }
             },
             adUnitCode: 'adunit-code-banner-outstream',
-            sizes: [ [300, 250], [300, 600], [1, 1, 1], ['flex'] ],
+            sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
             bidId: 'banner-outstream-bid-id',
             bidderRequestId: 'kargo-request-id',
             auctionId: 'kargo-auction-id',
@@ -748,7 +749,7 @@ describe('kargo adapter tests', function() {
               inventoryCode: 'banner_outstream_test',
               floor: 1.0,
               video: {
-                mimes: [ 'video/mp4' ],
+                mimes: ['video/mp4'],
                 maxduration: 30,
                 minduration: 6,
                 w: 640,
@@ -757,12 +758,12 @@ describe('kargo adapter tests', function() {
             },
             mediaTypes: {
               banner: {
-                sizes: [ [970, 250], [1, 1] ]
+                sizes: [[970, 250], [1, 1]]
               },
               native: {}
             },
             adUnitCode: 'adunit-code-banner-outstream',
-            sizes: [ [300, 250], [300, 600], [1, 1, 1], ['flex'] ],
+            sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
             bidId: 'banner-outstream-bid-id',
             bidderRequestId: 'kargo-request-id',
             auctionId: 'kargo-auction-id',
@@ -774,7 +775,7 @@ describe('kargo adapter tests', function() {
               inventoryCode: 'banner_outstream_test',
               floor: 1.0,
               video: {
-                mimes: [ 'video/mp4' ],
+                mimes: ['video/mp4'],
                 maxduration: 30,
                 minduration: 6,
                 w: 640,
@@ -789,7 +790,7 @@ describe('kargo adapter tests', function() {
               native: {},
             },
             adUnitCode: 'adunit-code-banner-outstream',
-            sizes: [ [300, 250], [300, 600], [1, 1, 1], ['flex'] ],
+            sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
             bidId: 'banner-outstream-bid-id',
             bidderRequestId: 'kargo-request-id',
             auctionId: 'kargo-auction-id',
@@ -801,7 +802,7 @@ describe('kargo adapter tests', function() {
               inventoryCode: 'banner_outstream_test',
               floor: 1.0,
               video: {
-                mimes: [ 'video/mp4' ],
+                mimes: ['video/mp4'],
                 maxduration: 30,
                 minduration: 6,
                 w: 640,
@@ -814,12 +815,12 @@ describe('kargo adapter tests', function() {
                 playerSize: [640, 380]
               },
               banner: {
-                sizes: [ [970, 250], [1, 1] ]
+                sizes: [[970, 250], [1, 1]]
               },
               native: {},
             },
             adUnitCode: 'adunit-code-banner-outstream',
-            sizes: [ [300, 250], [300, 600], [1, 1, 1], ['flex'] ],
+            sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
             bidId: 'banner-outstream-bid-id',
             bidderRequestId: 'kargo-request-id',
             auctionId: 'kargo-auction-id',
@@ -829,7 +830,7 @@ describe('kargo adapter tests', function() {
         const payload = getPayloadFromTestBids(testBids);
 
         const bannerImp = {
-          sizes: [ [970, 250], [1, 1] ]
+          sizes: [[970, 250], [1, 1]]
         };
         const videoImp = {
           context: 'outstream',
@@ -937,7 +938,7 @@ describe('kargo adapter tests', function() {
           },
         ];
 
-        [ 0, null, false, 'foobar' ].forEach(value => testBids.push({
+        [0, null, false, 'foobar'].forEach(value => testBids.push({
           ...minimumBidParams,
           bidRequestsCount: value,
           bidderRequestsCount: value,
@@ -1122,14 +1123,14 @@ describe('kargo adapter tests', function() {
       });
 
       [
-        [ 'valid', 'invalidB64', 'cookie' ],
-        [ 'valid', 'invalidJson', 'cookie' ],
-        [ 'invalidB64', 'invalidJson', 'none' ],
-        [ 'invalidB64', 'invalidB64', 'none' ],
-        [ 'invalidB64', 'valid', 'localStorage' ],
-        [ 'invalidJson', 'invalidJson', 'none' ],
-        [ 'invalidJson', 'invalidB64', 'none' ],
-        [ 'invalidJson', 'valid', 'localStorage' ],
+        ['valid', 'invalidB64', 'cookie'],
+        ['valid', 'invalidJson', 'cookie'],
+        ['invalidB64', 'invalidJson', 'none'],
+        ['invalidB64', 'invalidB64', 'none'],
+        ['invalidB64', 'valid', 'localStorage'],
+        ['invalidJson', 'invalidJson', 'none'],
+        ['invalidJson', 'invalidB64', 'none'],
+        ['invalidJson', 'valid', 'localStorage'],
       ].forEach(config => {
         it(`uses ${config[2]} if the cookie is ${config[0]} and localStorage is ${config[1]}`, function() {
           setCrb(config[0], config[1]);
@@ -1350,29 +1351,33 @@ describe('kargo adapter tests', function() {
           ...testBids,
           {
             ...minimumBidParams,
-            ortb2: { device: { sua: {
-              platform: {
-                brand: 'macOS',
-                version: ['12', '6', '0']
-              },
-              browsers: [
-                {
-                  brand: 'Chromium',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Google Chrome',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Not;A=Brand',
-                  version: ['99', '0', '0', '0']
+            ortb2: {
+              device: {
+                sua: {
+                  platform: {
+                    brand: 'macOS',
+                    version: ['12', '6', '0']
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: ['106', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: ['106', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: ['99', '0', '0', '0']
+                    }
+                  ],
+                  mobile: 1,
+                  model: 'model',
+                  source: 1,
                 }
-              ],
-              mobile: 1,
-              model: 'model',
-              source: 1,
-            } } }
+              }
+            }
           }
         ]);
         expect(payload.device.sua).to.be.undefined;
@@ -1382,55 +1387,63 @@ describe('kargo adapter tests', function() {
         const payload = getPayloadFromTestBids([
           {
             ...minimumBidParams,
-            ortb2: { device: { sua: {
-              platform: {
-                brand: 'macOS',
-                version: ['12', '6', '0']
-              },
-              browsers: [
-                {
-                  brand: 'Chromium',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Google Chrome',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Not;A=Brand',
-                  version: ['99', '0', '0', '0']
+            ortb2: {
+              device: {
+                sua: {
+                  platform: {
+                    brand: 'macOS',
+                    version: ['12', '6', '0']
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: ['106', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: ['106', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: ['99', '0', '0', '0']
+                    }
+                  ],
+                  mobile: 1,
+                  model: 'model',
+                  source: 1,
                 }
-              ],
-              mobile: 1,
-              model: 'model',
-              source: 1,
-            } } }
+              }
+            }
           },
           {
             ...minimumBidParams,
-            ortb2: { device: { sua: {
-              platform: {
-                brand: 'macOS2',
-                version: ['122', '6', '0']
-              },
-              browsers: [
-                {
-                  brand: 'Chromium2',
-                  version: ['1062', '0', '5249', '119']
-                },
-                {
-                  brand: 'Google Chrome2',
-                  version: ['102', '0', '5249', '119']
-                },
-                {
-                  brand: 'Not;A=Brand2',
-                  version: ['992', '0', '0', '0']
+            ortb2: {
+              device: {
+                sua: {
+                  platform: {
+                    brand: 'macOS2',
+                    version: ['122', '6', '0']
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium2',
+                      version: ['1062', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Google Chrome2',
+                      version: ['102', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Not;A=Brand2',
+                      version: ['992', '0', '0', '0']
+                    }
+                  ],
+                  mobile: 2,
+                  model: 'model2',
+                  source: 2,
                 }
-              ],
-              mobile: 2,
-              model: 'model2',
-              source: 2,
-            } } }
+              }
+            }
           }
         ]);
         expect(payload.device.sua).to.deep.equal({
@@ -1459,34 +1472,39 @@ describe('kargo adapter tests', function() {
       });
 
       it('does not send non-mapped attributes', function() {
-        const payload = getPayloadFromTestBids([{...minimumBidParams,
-          ortb2: { device: { sua: {
-            other: 'value',
-            objectMissing: {
-              key: 'value'
-            },
-            platform: {
-              brand: 'macOS',
-              version: ['12', '6', '0']
-            },
-            browsers: [
-              {
-                brand: 'Chromium',
-                version: ['106', '0', '5249', '119']
-              },
-              {
-                brand: 'Google Chrome',
-                version: ['106', '0', '5249', '119']
-              },
-              {
-                brand: 'Not;A=Brand',
-                version: ['99', '0', '0', '0']
+        const payload = getPayloadFromTestBids([{
+          ...minimumBidParams,
+          ortb2: {
+            device: {
+              sua: {
+                other: 'value',
+                objectMissing: {
+                  key: 'value'
+                },
+                platform: {
+                  brand: 'macOS',
+                  version: ['12', '6', '0']
+                },
+                browsers: [
+                  {
+                    brand: 'Chromium',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Google Chrome',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Not;A=Brand',
+                    version: ['99', '0', '0', '0']
+                  }
+                ],
+                mobile: 1,
+                model: 'model',
+                source: 1,
               }
-            ],
-            mobile: 1,
-            model: 'model',
-            source: 1,
-          } } }
+            }
+          }
         }]);
         expect(payload.device.sua).to.deep.equal({
           platform: {
@@ -1522,27 +1540,32 @@ describe('kargo adapter tests', function() {
           '      ',
           ' ',
         ].forEach(value => {
-          const payload = getPayloadFromTestBids([{...minimumBidParams,
-            ortb2: { device: { sua: {
-              platform: value,
-              browsers: [
-                {
-                  brand: 'Chromium',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Google Chrome',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Not;A=Brand',
-                  version: ['99', '0', '0', '0']
+          const payload = getPayloadFromTestBids([{
+            ...minimumBidParams,
+            ortb2: {
+              device: {
+                sua: {
+                  platform: value,
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: ['106', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: ['106', '0', '5249', '119']
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: ['99', '0', '0', '0']
+                    }
+                  ],
+                  mobile: 1,
+                  model: 'model',
+                  source: 1,
                 }
-              ],
-              mobile: 1,
-              model: 'model',
-              source: 1,
-            } } }
+              }
+            }
           }]);
           expect(payload.device.sua, `Value - ${JSON.stringify(value)}`).to.deep.equal({
             browsers: [
@@ -1569,29 +1592,33 @@ describe('kargo adapter tests', function() {
       it('does not send 0 for mobile or source', function() {
         const payload = getPayloadFromTestBids([{
           ...minimumBidParams,
-          ortb2: { device: { sua: {
-            platform: {
-              brand: 'macOS',
-              version: ['12', '6', '0']
-            },
-            browsers: [
-              {
-                brand: 'Chromium',
-                version: ['106', '0', '5249', '119']
-              },
-              {
-                brand: 'Google Chrome',
-                version: ['106', '0', '5249', '119']
-              },
-              {
-                brand: 'Not;A=Brand',
-                version: ['99', '0', '0', '0']
+          ortb2: {
+            device: {
+              sua: {
+                platform: {
+                  brand: 'macOS',
+                  version: ['12', '6', '0']
+                },
+                browsers: [
+                  {
+                    brand: 'Chromium',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Google Chrome',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Not;A=Brand',
+                    version: ['99', '0', '0', '0']
+                  }
+                ],
+                mobile: 0,
+                model: 'model',
+                source: 0,
               }
-            ],
-            mobile: 0,
-            model: 'model',
-            source: 0,
-          } } }
+            }
+          }
         }]);
         expect(payload.device.sua).to.deep.equal({
           platform: {
@@ -1665,71 +1692,73 @@ describe('kargo adapter tests', function() {
   });
 
   describe('interpretResponse', function() {
-    const response = Object.freeze({ body: {
-      1: {
-        id: 'foo',
-        cpm: 3,
-        adm: '<div id="1"></div>',
-        width: 320,
-        height: 50,
-        metadata: {},
-        creativeID: 'bar'
-      },
-      2: {
-        id: 'bar',
-        cpm: 2.5,
-        adm: '<div id="2"></div>',
-        width: 300,
-        height: 250,
-        targetingCustom: 'dmpmptest1234',
-        metadata: {
-          landingPageDomain: ['https://foobar.com']
+    const response = Object.freeze({
+      body: {
+        1: {
+          id: 'foo',
+          cpm: 3,
+          adm: '<div id="1"></div>',
+          width: 320,
+          height: 50,
+          metadata: {},
+          creativeID: 'bar'
         },
-        creativeID: 'foo'
-      },
-      3: {
-        id: 'bar',
-        cpm: 2.5,
-        adm: '<div id="2"></div>',
-        width: 300,
-        height: 250,
-        creativeID: 'foo'
-      },
-      4: {
-        id: 'bar',
-        cpm: 2.5,
-        adm: '<div id="4"></div>',
-        width: 300,
-        height: 250,
-        mediaType: 'banner',
-        metadata: {},
-        creativeID: 'foo',
-        currency: 'EUR'
-      },
-      5: {
-        id: 'bar',
-        cpm: 2.5,
-        adm: '<VAST></VAST>',
-        width: 300,
-        height: 250,
-        mediaType: 'video',
-        metadata: {},
-        creativeID: 'foo',
-        currency: 'EUR'
-      },
-      6: {
-        id: 'bar',
-        cpm: 2.5,
-        adm: '',
-        admUrl: 'https://foobar.com/vast_adm',
-        width: 300,
-        height: 250,
-        mediaType: 'video',
-        metadata: {},
-        creativeID: 'foo',
-        currency: 'EUR'
+        2: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<div id="2"></div>',
+          width: 300,
+          height: 250,
+          targetingCustom: 'dmpmptest1234',
+          metadata: {
+            landingPageDomain: ['https://foobar.com']
+          },
+          creativeID: 'foo'
+        },
+        3: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<div id="2"></div>',
+          width: 300,
+          height: 250,
+          creativeID: 'foo'
+        },
+        4: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<div id="4"></div>',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          metadata: {},
+          creativeID: 'foo',
+          currency: 'EUR'
+        },
+        5: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '<VAST></VAST>',
+          width: 300,
+          height: 250,
+          mediaType: 'video',
+          metadata: {},
+          creativeID: 'foo',
+          currency: 'EUR'
+        },
+        6: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '',
+          admUrl: 'https://foobar.com/vast_adm',
+          width: 300,
+          height: 250,
+          mediaType: 'video',
+          metadata: {},
+          creativeID: 'foo',
+          currency: 'EUR'
+        }
       }
-    }});
+    });
     const bidderRequest = Object.freeze({
       currency: 'USD',
       bids: [{
@@ -1885,67 +1914,22 @@ describe('kargo adapter tests', function() {
     });
 
     it('adds landingPageDomain data', function() {
-      const response = spec.interpretResponse({ body: { 0: {
-        metadata: {
-          landingPageDomain: [
-            'https://foo.com',
-            'https://bar.com'
-          ]
+      const response = spec.interpretResponse({
+        body: {
+          0: {
+            metadata: {
+              landingPageDomain: [
+                'https://foo.com',
+                'https://bar.com'
+              ]
+            }
+          }
         }
-      } } }, {});
+      }, {});
       expect(response[0].meta).to.deep.equal({
         mediaType: 'banner',
         clickUrl: 'https://foo.com',
-        advertiserDomains: [ 'https://foo.com', 'https://bar.com' ]
-      });
-    });
-
-    it('should return paapi if provided in bid response', function () {
-      const auctionConfig = {
-        seller: 'https://kargo.com',
-        decisionLogicUrl: 'https://kargo.com/decision_logic.js',
-        interestGroupBuyers: ['https://some_buyer.com'],
-        perBuyerSignals: {
-          'https://some_buyer.com': { a: 1 }
-        }
-      }
-
-      const body = response.body;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (key % 2 !== 0) { // Add auctionConfig to every other object
-            body[key].auctionConfig = auctionConfig;
-          }
-        }
-      }
-
-      const result = spec.interpretResponse(response, bidderRequest);
-
-      // Test properties of bidResponses
-      result.bids.forEach(bid => {
-        expect(bid).to.have.property('requestId');
-        expect(bid).to.have.property('cpm');
-        expect(bid).to.have.property('width');
-        expect(bid).to.have.property('height');
-        expect(bid).to.have.property('ttl');
-        expect(bid).to.have.property('creativeId');
-        expect(bid.netRevenue).to.be.true;
-        expect(bid).to.have.property('meta').that.is.an('object');
-      });
-
-      // Test properties of paapi
-      expect(result.paapi).to.have.lengthOf(3);
-
-      const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
-      result.paapi.forEach(config => {
-        expect(config).to.have.property('bidId');
-        expect(expectedBidIds).to.include(config.bidId);
-
-        expect(config).to.have.property('config').that.is.an('object');
-        expect(config.config).to.have.property('seller', 'https://kargo.com');
-        expect(config.config).to.have.property('decisionLogicUrl', 'https://kargo.com/decision_logic.js');
-        expect(config.config.interestGroupBuyers).to.be.an('array').that.includes('https://some_buyer.com');
-        expect(config.config.perBuyerSignals).to.have.property('https://some_buyer.com').that.deep.equals({ a: 1 });
+        advertiserDomains: ['https://foo.com', 'https://bar.com']
       });
     });
   });
@@ -2088,7 +2072,7 @@ describe('kargo adapter tests', function() {
 
   describe('supportedMediaTypes', function() {
     it('exposes video and banner', function() {
-      expect(spec.supportedMediaTypes).to.deep.equal([ 'banner', 'video' ]);
+      expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video']);
     });
   });
 

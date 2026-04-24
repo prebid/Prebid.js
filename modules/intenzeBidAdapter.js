@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,8 +11,12 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  */
 
 const BIDDER_CODE = 'intenze';
-const ACCOUNTID_MACROS = '[account_id]';
-const URL_ENDPOINT = `https://lb-east.intenze.co/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
+const ACCOUNTID_MACROS = '{account_id}';
+const SUBDOMAIN_MACRO = '{subdomain}';
+const DEFAULT_CURRENCY = 'USD';
+
+const URL_ENDPOINT = `https://${SUBDOMAIN_MACRO}.intenze.co/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
+
 const NATIVE_ASSET_IDS = {
   0: 'title',
   2: 'icon',
@@ -52,6 +57,22 @@ const NATIVE_PARAMS = {
   }
 };
 const NATIVE_VERSION = '1.2';
+const US_EAST_SUBDOMAIN = 'lb-east';
+const EU_SUBDOMAIN = 'n2';
+
+function getSubdomain() {
+  const regionMap = {
+    'Europe': EU_SUBDOMAIN,
+    'America': US_EAST_SUBDOMAIN,
+  };
+
+  try {
+    const region = getTimeZone().split('/')[0];
+    return regionMap[region] || US_EAST_SUBDOMAIN;
+  } catch (err) {
+    return US_EAST_SUBDOMAIN;
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -79,7 +100,10 @@ export const spec = {
 
     if (validBidRequests && validBidRequests.length === 0) return []
     const accuontId = validBidRequests[0].params.accountId;
-    const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
+    const subdomain = getSubdomain();
+    const endpointURL = URL_ENDPOINT
+      .replace(SUBDOMAIN_MACRO, subdomain || US_EAST_SUBDOMAIN)
+      .replace(ACCOUNTID_MACROS, accuontId);
     const winTop = window;
     let location;
     location = bidderRequest?.refererInfo ?? null;
@@ -89,11 +113,11 @@ export const spec = {
       const data = {
         id: bidRequest.bidId,
         test: config.getConfig('debug') ? 1 : 0,
-        cur: ['USD'],
+        cur: [DEFAULT_CURRENCY],
         device: {
           w: winTop.screen.width,
           h: winTop.screen.height,
-          language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
+          language: (navigator && navigator.language) ? navigator.language.indexOf('-') !== -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
           page: location?.page,
@@ -148,7 +172,7 @@ export const spec = {
         width: response.seatbid[0].bid[0].w,
         height: response.seatbid[0].bid[0].h,
         ttl: response.ttl || 1200,
-        currency: response.cur || 'USD',
+        currency: response.cur || DEFAULT_CURRENCY,
         netRevenue: true,
         creativeId: response.seatbid[0].bid[0].crid,
         dealId: response.seatbid[0].bid[0].dealid,

@@ -17,13 +17,14 @@ import {
   isInteger, deepSetValue, getBidIdParameter, setOnAny,
   getWinDimensions
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -34,7 +35,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -209,7 +210,7 @@ export const spec = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: ortb2Data?.site || {},
       cur: [cur],
-      geo: {utcoffset: info.timeOffset},
+      geo: { utcoffset: info.timeOffset },
       device: ortb2Data?.device || {},
       ext: {
         mgid_ver: spec.VERSION,
@@ -252,7 +253,7 @@ export const spec = {
     }
     request.device.js = 1;
     if (!isInteger(deepAccess(request.device, 'dnt'))) {
-      request.device.dnt = (navigator?.doNotTrack === 'yes' || navigator?.doNotTrack === '1' || navigator?.msDoNotTrack === '1') ? 1 : 0;
+      request.device.dnt = getDNT() ? 1 : 0;
     }
     if (!isInteger(deepAccess(request.device, 'h'))) {
       request.device.h = screen.height;
@@ -454,7 +455,7 @@ function createBannerRequest(bid) {
   if (sizes.length > 1) {
     for (let f = 0; f < sizes.length; f++) {
       if (sizes[f].length === 2) {
-        format.push({w: sizes[f][0], h: sizes[f][1]});
+        format.push({ w: sizes[f][0], h: sizes[f][1] });
       }
     }
   }
@@ -691,7 +692,7 @@ function getBidFloor(bid, cur) {
   if (reqCur === cur) {
     cur = ''
   }
-  return {floor: bidFloor, cur: cur}
+  return { floor: bidFloor, cur: cur }
 }
 
 function copyFromAdmAsset(asset) {

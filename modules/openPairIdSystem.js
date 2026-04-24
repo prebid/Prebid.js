@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js'
-import {logInfo} from '../src/utils.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js'
+import { logInfo } from '../src/utils.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -27,7 +27,7 @@ const DEFAULT_SOURCE = 'pair-protocol.com';
 
 const MATCH_METHOD = 3;
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function publisherIdFromLocalStorage(key) {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
@@ -56,7 +56,7 @@ export const openPairIdSubmodule = {
    * @returns {{pairId:string} | undefined }
    */
   decode(value) {
-    return value && Array.isArray(value) ? {'openPairId': value} : undefined;
+    return value && Array.isArray(value) ? { 'openPairId': value } : undefined;
   },
   /**
    * Performs action to obtain ID and return a value in the callback's response argument.
@@ -69,7 +69,7 @@ export const openPairIdSubmodule = {
     const publisherIdsString = publisherIdFromLocalStorage(DEFAULT_PUBLISHER_ID_KEY) || publisherIdFromCookie(DEFAULT_PUBLISHER_ID_KEY);
     let ids = []
 
-    if (publisherIdsString && typeof publisherIdsString == 'string') {
+    if (publisherIdsString && typeof publisherIdsString === 'string') {
       try {
         ids = ids.concat(JSON.parse(atob(publisherIdsString)));
       } catch (error) {
@@ -110,12 +110,12 @@ export const openPairIdSubmodule = {
       }
     }
 
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       logInfo('Open Pair ID: no ids found')
       return undefined;
     }
 
-    return {'id': ids};
+    return { 'id': ids };
   },
   eids: {
     openPairId: function(values, config = {}) {

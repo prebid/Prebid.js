@@ -2,6 +2,7 @@
 
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
@@ -13,7 +14,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.4';
+const ADAPTER_VERSION = '2.0.6';
 
 export const ortbConverterProps = {
   context: {
@@ -25,7 +26,7 @@ export const ortbConverterProps = {
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
-    deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
+    deepSetValue(req, 'device.pxratio', getDevicePixelRatio(getWindowContext()));
     deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
@@ -85,12 +86,13 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   const consent = (gdprConsent && gdprConsent.consentString) || '';
   const gpp = (gppConsent && gppConsent.gppString) || '';
   const gppSid = (gppConsent && gppConsent.applicableSections && gppConsent.applicableSections.toString()) || '';
+  const usp = uspConsent || '';
 
   if (syncOptions.iframeEnabled) {
     return [
       {
         type: 'iframe',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}&us_privacy=${usp}`,
       }
     ];
   }
@@ -99,15 +101,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
-      },
-      {
-        type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync?source=prebid&gdpr_consent=${consent}&gpp=${gpp}&gpp_sid=${gppSid}&us_privacy=${usp}`,
       }
     ];
   }
@@ -116,18 +110,18 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  const data = converter.toORTB({bidRequests, bidderRequest});
+  const data = converter.toORTB({ bidRequests, bidderRequest });
 
   return {
     method: 'POST',
     url: BID_HOST,
     data,
-    options: {contentType: 'application/json'},
+    options: { contentType: 'application/json' },
   };
 }
 
 function interpretResponse(response, request) {
-  return converter.fromORTB({response: response.body, request: request.data}).bids;
+  return converter.fromORTB({ response: response.body, request: request.data }).bids;
 }
 
 function getFloor(bid) {
@@ -160,7 +154,7 @@ function onBidWon(bid) {
 }
 
 function onTimeout(timeoutData) {
-  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
+  ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({ ...timeoutData[0], location: window.location.href }), {
     method: 'POST',
     contentType: 'application/json'
   });

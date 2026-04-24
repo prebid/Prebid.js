@@ -1,5 +1,6 @@
 import { VIDEO } from '../../src/mediaTypes.js';
 import { deepAccess, isFn } from '../../src/utils.js';
+import { tryAppendQueryString } from '../urlUtils/urlUtils.js';
 
 const DEFAULT_FLOOR = 0.0;
 
@@ -153,4 +154,47 @@ export function prepareSplitImps(imps, bid, currency, impIdMap, adapter) {
   });
 
   return splitImps;
+}
+
+export const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
+export const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
+export const PID_STORAGE_NAME = 'eqt_pid';
+
+/**
+ * Handles cookie sync logic
+ *
+ * @param {*} syncOptions A sync options object
+ * @param {*} serverResponses A server responses array
+ * @param {*} gdprConsent A gdpr consent object
+ * @param {number} networkId A network id
+ * @param {*} storage A storage object
+ * @returns {{type: string, url: string}[]}
+ */
+export function handleCookieSync(syncOptions, serverResponses, gdprConsent, networkId, storage) {
+  if (syncOptions.iframeEnabled) {
+    window.addEventListener('message', function handler(event) {
+      if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
+        if (event.source && event.source.postMessage) {
+          event.source.postMessage({
+            action: 'consentResponse',
+            id: event.data.id,
+            consents: gdprConsent.vendorData.vendor.consents
+          }, event.origin);
+        }
+
+        if (event.data.pid) {
+          storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid);
+        }
+
+        this.removeEventListener('message', handler);
+      }
+    });
+
+    let url = tryAppendQueryString(COOKIE_SYNC_URL + '?', 'nwid', networkId);
+    url = tryAppendQueryString(url, 'gdpr', (gdprConsent?.gdprApplies ? '1' : '0'));
+
+    return [{ type: 'iframe', url }];
+  }
+
+  return [];
 }

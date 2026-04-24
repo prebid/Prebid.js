@@ -14,9 +14,10 @@ import {
   parseQueryStringParameters,
   parseUrl
 } from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -41,8 +42,6 @@ const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'plcmt', 's
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = getWindowTop();
-const DEFAULT_PLAYBACK_METHOD = 2;
-const DEFAULT_START_DELAY = 0;
 const VAST_TIMEOUT = 15000;
 const MAX_BANNER_REQUEST_URL_LENGTH = 8000;
 const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page_url'];
@@ -77,7 +76,6 @@ export const spec = {
     const serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
-    const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
       const serverRequest = {
         pbav: '$prebid.version$',
@@ -95,7 +93,8 @@ export const spec = {
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
           gpp_sid:
-            deepAccess(bidderRequest, 'gppConsent.applicableSections') || []}),
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
+        }),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {
@@ -105,13 +104,8 @@ export const spec = {
       if (gpc) {
         serverRequest.gpc = gpc;
       }
-      if (cdep) {
-        serverRequest.cdep = cdep;
-      }
-
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
-        serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
         serverRequest.w = getWinDimensions().innerWidth;
         serverRequest.h = getWinDimensions().innerHeight;
@@ -132,7 +126,7 @@ export const spec = {
         }
         const tdid = getId(request, 'tdid');
         if (tdid) {
-          serverRequest.tdid = tdid;
+          serverRequest.tdid = (typeof tdid === 'object') ? tdid.id : tdid;
         }
         const criteoId = getId(request, 'criteoId');
         if (criteoId) {
@@ -211,7 +205,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
@@ -376,16 +370,6 @@ function createNewVideoBid(response, bidRequest) {
 }
 
 /**
- * Detects whether dnt is true
- * @returns true if user enabled dnt
- */
-function getDNT() {
-  return (
-    window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
-  );
-}
-
-/**
  * get page description
  */
 function getPageDescription() {
@@ -449,11 +433,6 @@ function getGPCSignal(bidderRequest) {
   return gpc;
 }
 
-function getCdep(bidderRequest) {
-  const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
-  return cdep;
-}
-
 function getTopics(bidderRequest) {
   const userData = deepAccess(bidderRequest, 'ortb2.user.data') || [];
   const topicsData = userData.filter((dataObj) => {
@@ -514,10 +493,6 @@ function openRtbImpression(bidRequest) {
   if (imp.video.skippable) {
     imp.video.skip = 1;
     delete imp.video.skippable;
-  }
-  if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
-    imp.video.startdelay = DEFAULT_START_DELAY;
-    imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
   }
   if (gpid) {
     imp.ext.gpid = gpid;
@@ -750,7 +725,7 @@ function canAccessTopWindow() {
 }
 
 function isStage(bidderRequest) {
-  return !!bidderRequest.refererInfo?.referer?.includes('pb_force_a');
+  return !!bidderRequest.refererInfo?.page?.includes('pb_force_a');
 }
 
 function getAdserverUrl(path, stage) {

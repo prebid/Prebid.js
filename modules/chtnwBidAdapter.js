@@ -1,6 +1,5 @@
 import {
   generateUUID,
-  getDNT,
   _each,
   getWinDimensions,
 } from '../src/utils.js';
@@ -9,11 +8,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 const ENDPOINT_URL = 'https://prebid.cht.hinet.net/api/v1';
 const BIDDER_CODE = 'chtnw';
 const COOKIE_NAME = '__htid';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const { getConfig } = config;
 
@@ -29,7 +29,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests = [], bidderRequest = {}) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const chtnwId = (storage.getCookie(COOKIE_NAME) != undefined) ? storage.getCookie(COOKIE_NAME) : generateUUID();
+    const chtnwId = storage.getCookie(COOKIE_NAME) ?? generateUUID();
     if (storage.cookiesAreEnabled()) {
       storage.setCookie(COOKIE_NAME, chtnwId);
     }

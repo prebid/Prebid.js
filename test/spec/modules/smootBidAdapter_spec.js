@@ -27,6 +27,7 @@ describe('SmootBidAdapter', function () {
       mediaTypes: {
         [BANNER]: {
           sizes: [[300, 250]],
+          battr: [1, 3],
         },
       },
       params: {
@@ -42,6 +43,7 @@ describe('SmootBidAdapter', function () {
           playerSize: [[300, 300]],
           minduration: 5,
           maxduration: 60,
+          battr: [1, 3],
         },
       },
       params: {
@@ -139,8 +141,7 @@ describe('SmootBidAdapter', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -171,17 +172,16 @@ describe('SmootBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('publisher');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -224,9 +224,6 @@ describe('SmootBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('network');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
@@ -297,8 +294,6 @@ describe('SmootBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-
-      bidderRequest.ortb2;
     });
   });
 
@@ -540,13 +535,13 @@ describe('SmootBidAdapter', function () {
   describe('getUserSyncs', function () {
     it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs(
-        {},
+        { pixelEnabled: true },
         {},
         {
           consentString: 'ALL',
           gdprApplies: true,
         },
-        {}
+        undefined
       );
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object');
@@ -559,12 +554,10 @@ describe('SmootBidAdapter', function () {
     });
     it('Should return array of objects with proper sync config , include CCPA', function () {
       const syncData = spec.getUserSyncs(
+        { pixelEnabled: true },
         {},
         {},
-        {},
-        {
-          consentString: '1---',
-        }
+        '1---'
       );
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object');
@@ -577,10 +570,10 @@ describe('SmootBidAdapter', function () {
     });
     it('Should return array of objects with proper sync config , include GPP', function () {
       const syncData = spec.getUserSyncs(
+        { pixelEnabled: true },
         {},
         {},
-        {},
-        {},
+        undefined,
         {
           gppString: 'abc123',
           applicableSections: [8],
