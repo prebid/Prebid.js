@@ -1,6 +1,8 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec } from 'modules/pgamdirectBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import * as utils from 'src/utils.js';
 
 /**
  * Spec for modules/pgamdirectBidAdapter.ts.
@@ -260,6 +262,14 @@ describe('pgamdirect: interpretResponse', () => {
 // ---------- onBidWon -------------------------------------------------------
 
 describe('pgamdirect: onBidWon', () => {
+  let sandbox;
+  let pixelStub;
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    pixelStub = sandbox.stub(utils, 'triggerPixel');
+  });
+  afterEach(() => sandbox.restore());
+
   it('does not throw on arbitrary bid input', () => {
     expect(() => spec.onBidWon({})).to.not.throw();
     expect(() => spec.onBidWon(null)).to.not.throw();
@@ -273,21 +283,189 @@ describe('pgamdirect: onBidWon', () => {
     expect(() => spec.onBidWon({ nurl: 12345 })).to.not.throw();
     expect(() => spec.onBidWon({ ext: { pgam: { winurl: null } } })).to.not.throw();
   });
+
+  it('fires nurl when ext.pgam.winurl is absent', () => {
+    spec.onBidWon({ nurl: 'https://win.example/?p=${AUCTION_PRICE}', cpm: 1.23 });
+    expect(pixelStub.calledOnce).to.equal(true);
+    expect(pixelStub.firstCall.args[0]).to.equal('https://win.example/?p=1.23');
+  });
+
+  it('prefers ext.pgam.winurl over bid.nurl and substitutes AUCTION_ID', () => {
+    spec.onBidWon({
+      ext: { pgam: { winurl: 'https://p.example/?a=${AUCTION_ID}&c=${AUCTION_PRICE}' } },
+      nurl: 'https://should-not-fire.example',
+      cpm: 2.5,
+      auctionId: 'auc-7',
+    });
+    expect(pixelStub.calledOnce).to.equal(true);
+    expect(pixelStub.firstCall.args[0]).to.equal('https://p.example/?a=auc-7&c=2.5');
+  });
+
+  it('does NOT fire a pixel when neither winurl nor nurl is provided', () => {
+    spec.onBidWon({ cpm: 1 });
+    expect(pixelStub.called).to.equal(false);
+  });
 });
 
 // ---------- onTimeout ------------------------------------------------------
 
 describe('pgamdirect: onTimeout', () => {
+  let sandbox;
+  let pixelStub;
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    pixelStub = sandbox.stub(utils, 'triggerPixel');
+  });
+  afterEach(() => sandbox.restore());
+
   it('swallows empty and malformed input', () => {
     expect(() => spec.onTimeout([])).to.not.throw();
     expect(() => spec.onTimeout(null)).to.not.throw();
     expect(() => spec.onTimeout(undefined)).to.not.throw();
+    expect(pixelStub.called).to.equal(false);
   });
 
-  it('does not throw on a real timeout record', () => {
-    expect(() => spec.onTimeout([
+  it('fires a metrics pixel carrying tmax + auction on a real timeout record', () => {
+    spec.onTimeout([
       { auctionId: 'a1', timeout: 300, bidId: 'b1', bidder: 'pgamdirect' },
-    ])).to.not.throw();
+    ]);
+    expect(pixelStub.calledOnce).to.equal(true);
+    expect(pixelStub.firstCall.args[0]).to.include('/rtb/v1/metrics/timeout');
+    expect(pixelStub.firstCall.args[0]).to.include('tmax=300');
+    expect(pixelStub.firstCall.args[0]).to.include('auction=a1');
+  });
+});
+
+// ---------- onBidBillable --------------------------------------------------
+
+describe('pgamdirect: onBidBillable', () => {
+  let sandbox;
+  let pixelStub;
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    pixelStub = sandbox.stub(utils, 'triggerPixel');
+  });
+  afterEach(() => sandbox.restore());
+
+  it('fires billable-metric pixel with cpm / auction / adid', () => {
+    spec.onBidBillable({ cpm: 1.75, auctionId: 'auc-9', adId: 'pbid-42' });
+    expect(pixelStub.calledOnce).to.equal(true);
+    const url = pixelStub.firstCall.args[0];
+    expect(url).to.include('/rtb/v1/metrics/billable');
+    expect(url).to.include('cpm=1.75');
+    expect(url).to.include('auction=auc-9');
+    expect(url).to.include('adid=pbid-42');
+  });
+
+  it('tolerates missing fields without throwing', () => {
+    expect(() => spec.onBidBillable({})).to.not.throw();
+    expect(() => spec.onBidBillable(null)).to.not.throw();
+    expect(() => spec.onBidBillable(undefined)).to.not.throw();
+  });
+});
+
+// ---------- onAdRenderSucceeded --------------------------------------------
+
+describe('pgamdirect: onAdRenderSucceeded', () => {
+  let sandbox;
+  let pixelStub;
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    pixelStub = sandbox.stub(utils, 'triggerPixel');
+  });
+  afterEach(() => sandbox.restore());
+
+  it('fires render-metric pixel keyed on adId + auctionId', () => {
+    spec.onAdRenderSucceeded({ adId: 'pbid-1', auctionId: 'auc-1' });
+    expect(pixelStub.calledOnce).to.equal(true);
+    const url = pixelStub.firstCall.args[0];
+    expect(url).to.include('/rtb/v1/metrics/render');
+    expect(url).to.include('ok=1');
+    expect(url).to.include('adid=pbid-1');
+    expect(url).to.include('auction=auc-1');
+  });
+
+  it('swallows arbitrary input', () => {
+    expect(() => spec.onAdRenderSucceeded({})).to.not.throw();
+    expect(() => spec.onAdRenderSucceeded(null)).to.not.throw();
+    expect(() => spec.onAdRenderSucceeded(undefined)).to.not.throw();
+  });
+});
+
+// ---------- PAAPI / Protected Audience API ---------------------------------
+
+describe('pgamdirect: interpretResponse PAAPI passthrough', () => {
+  function builtRequest() {
+    return spec.buildRequests([bannerBid()], bidderRequest());
+  }
+
+  it('returns a plain bids array when response has no ext.paapi', () => {
+    const request = builtRequest();
+    const body = {
+      id: request.data.id,
+      cur: 'USD',
+      seatbid: [{
+        seat: 'pgam-test-dsp',
+        bid: [{
+          id: 'b', impid: 'bid-1', price: 2.5, adm: '<html>', crid: 'c', w: 300, h: 250, mtype: 1,
+        }],
+      }],
+    };
+    const out = spec.interpretResponse({ body }, request);
+    expect(Array.isArray(out)).to.equal(true);
+    expect(out).to.have.lengthOf(1);
+  });
+
+  it('surfaces paapi auction configs as { bids, paapi } when present', () => {
+    const request = builtRequest();
+    const body = {
+      id: request.data.id,
+      cur: 'USD',
+      seatbid: [{
+        seat: 'pgam-test-dsp',
+        bid: [{
+          id: 'b', impid: 'bid-1', price: 2.5, adm: '<html>', crid: 'c', w: 300, h: 250, mtype: 1,
+        }],
+      }],
+      ext: {
+        paapi: [
+          { impid: 'bid-1', config: { seller: 'pgammedia.com', decisionLogicUrl: 'https://…' } },
+        ],
+      },
+    };
+    const out = spec.interpretResponse({ body }, request);
+    // When paapi is returned Prebid accepts the wrapped { bids, paapi } shape.
+    expect(out).to.have.property('bids');
+    expect(out).to.have.property('paapi');
+    expect(out.bids).to.have.lengthOf(1);
+    expect(out.paapi).to.have.lengthOf(1);
+    expect(out.paapi[0].bidId).to.equal('bid-1');
+    expect(out.paapi[0].config).to.have.property('seller', 'pgammedia.com');
+  });
+
+  it('filters out paapi entries with no config', () => {
+    const request = builtRequest();
+    const body = {
+      id: request.data.id,
+      cur: 'USD',
+      seatbid: [{ seat: 's', bid: [{ id: 'b', impid: 'bid-1', price: 1, adm: '<a>', crid: 'c', w: 300, h: 250, mtype: 1 }] }],
+      ext: { paapi: [{ impid: 'bid-1' }, null, { impid: 'bid-1', config: {} }] },
+    };
+    const out = spec.interpretResponse({ body }, request);
+    // Only one usable paapi entry — a plain { impid, config: {} } pair.
+    expect(out.paapi).to.have.lengthOf(1);
+  });
+
+  it('accepts bidId OR impid as the correlation key on paapi entries', () => {
+    const request = builtRequest();
+    const body = {
+      id: request.data.id,
+      cur: 'USD',
+      seatbid: [{ seat: 's', bid: [{ id: 'b', impid: 'bid-1', price: 1, adm: '<a>', crid: 'c', w: 300, h: 250, mtype: 1 }] }],
+      ext: { paapi: [{ bidId: 'explicit-1', config: { x: 1 } }] },
+    };
+    const out = spec.interpretResponse({ body }, request);
+    expect(out.paapi[0].bidId).to.equal('explicit-1');
   });
 });
 

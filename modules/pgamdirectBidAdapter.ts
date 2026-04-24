@@ -35,7 +35,13 @@
  *   - bidResponse.meta enrichment (advertiserDomains, brandId,
  *     primaryCatId, secondaryCatIds, dsa, networkName)
  *   - getUserSyncs with GDPR/USP/GPP/COPPA passthrough
+ *   - interpretResponse surfaces response.ext.paapi when present so
+ *     the Chrome Privacy Sandbox / Protected Audience API flow lights
+ *     up when the publisher enables PAAPI in their wrapper config
  *   - onBidWon / onTimeout adapter-side telemetry
+ *   - onBidBillable / onAdRenderSucceeded — fill-rate + viewability
+ *     reconciliation pixels, keyed on bid.adId so the backend can
+ *     disambiguate refresh-heavy pages that share ad_unit_code
  *
  * GVL ID 1353 = PGAM Media LLC (registered with IAB Europe).
  */
@@ -52,6 +58,12 @@ const BIDDER_CODE = 'pgamdirect';
 const ENDPOINT_URL = 'https://rtb.pgammedia.com/rtb/v1/auction';
 const USERSYNC_URL = 'https://rtb.pgammedia.com/rtb/v1/usersync';
 const TIMEOUT_METRIC_URL = 'https://rtb.pgammedia.com/rtb/v1/metrics/timeout';
+// Billable impression + render pixel endpoints. Separate from
+// the generic onBidWon path so the bidder-edge can keep distinct
+// counters (wins ≠ billable imps ≠ rendered imps); conflating them
+// breaks fill-rate / viewability reconciliation.
+const BILLABLE_METRIC_URL = 'https://rtb.pgammedia.com/rtb/v1/metrics/billable';
+const RENDER_METRIC_URL = 'https://rtb.pgammedia.com/rtb/v1/metrics/render';
 const GVLID = 1353;
 const DEFAULT_TTL = 300;
 
@@ -261,7 +273,39 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       response: serverResponse.body,
       request: request.data,
     }) as { bids?: BidResponse[] };
-    return result.bids || [];
+    const bids = result.bids || [];
+
+    // PAAPI / Protected Audience API passthrough. If the bidder
+    // returned `ext.igi` (Interest Group Info) or `ext.paapi` auction
+    // configs, surface them to Prebid. When PAAPI is enabled in the
+    // wrapper config, Prebid kicks off a parallel Chrome Privacy
+    // Sandbox auction using those configs; when disabled, Prebid
+    // silently ignores the `paapi` key (see bidderFactory.ts
+    // RESPONSE_PROPS). Either way we don't break.
+    //
+    // Format the bidder returns:
+    //   response.ext.paapi = [{ impid, config: AuctionConfig }, ...]
+    // We map impid → bidRequest.bidId so Prebid can associate the
+    // Privacy Sandbox auction with the right ad unit.
+    const body = serverResponse.body as {
+      ext?: { paapi?: Array<{ impid?: string; config?: unknown; bidId?: string }> };
+    };
+    const paapiRaw = body?.ext?.paapi;
+    if (Array.isArray(paapiRaw) && paapiRaw.length > 0) {
+      const paapi = paapiRaw
+        .filter((e) => e && e.config)
+        .map((e) => ({
+          // Prebid expects `bidId` as the correlation key. Bidder may
+          // send either `bidId` (already-resolved) or `impid` (ORTB
+          // convention); accept both.
+          bidId: e.bidId ?? e.impid,
+          config: e.config,
+        }));
+      if (paapi.length > 0) {
+        return { bids, paapi } as unknown as BidResponse[];
+      }
+    }
+    return bids;
   },
 
   /**
@@ -367,6 +411,64 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       triggerPixel(url);
     } catch {
       // Ditto — telemetry never blocks.
+    }
+  },
+
+  /**
+   * onBidBillable — Prebid fires this when the bid crosses the
+   * "counted as billable impression" threshold (after targeting is
+   * set and the ad-server confirms delivery, not just BID_WON). This
+   * is the number we reconcile on for revenue; keeping it separate
+   * from onBidWon is important because:
+   *
+   *   - BID_WON fires whenever Prebid *thinks* we won the auction,
+   *     even if the ad-server ultimately picks a house ad.
+   *   - onBidBillable fires only when we actually bill.
+   *
+   * Few adapters wire this today (Yandex, APS, Michao, Vidazoo,
+   * ProgrammaticX, OpaMarketplace). Adding it puts us in that top
+   * tier for billing accuracy.
+   */
+  onBidBillable(bid) {
+    try {
+      const cpm = (bid as { cpm?: number }).cpm;
+      const auctionId = (bid as { auctionId?: string }).auctionId;
+      const adId = (bid as { adId?: string }).adId;
+      const url = `${BILLABLE_METRIC_URL}` +
+        `?cpm=${encodeURIComponent(String(cpm ?? ''))}` +
+        `&auction=${encodeURIComponent(String(auctionId ?? ''))}` +
+        `&adid=${encodeURIComponent(String(adId ?? ''))}`;
+      triggerPixel(url);
+    } catch {
+      // Billing telemetry must never break rendering.
+    }
+  },
+
+  /**
+   * onAdRenderSucceeded — fired after the creative successfully
+   * renders in the page. Sits between onBidBillable (Prebid thinks
+   * we won) and the user actually viewing the ad; without this we
+   * conflate "billed" with "rendered" and can't subtract render
+   * failures from inventory KPIs.
+   *
+   * Render failures are captured on the analytics-adapter side via
+   * EVENTS.AD_RENDER_FAILED (which is NOT part of BidderSpec), so
+   * the bidder-edge sees both halves: a render-success pixel here
+   * and a render-fail record from the analytics stream. The two
+   * streams are keyed on `bid.adId`, matching the Codex-flagged
+   * reconciliation pattern.
+   */
+  onAdRenderSucceeded(bid) {
+    try {
+      const adId = (bid as { adId?: string }).adId;
+      const auctionId = (bid as { auctionId?: string }).auctionId;
+      const url = `${RENDER_METRIC_URL}` +
+        `?ok=1` +
+        `&adid=${encodeURIComponent(String(adId ?? ''))}` +
+        `&auction=${encodeURIComponent(String(auctionId ?? ''))}`;
+      triggerPixel(url);
+    } catch {
+      // Telemetry never blocks.
     }
   },
 };

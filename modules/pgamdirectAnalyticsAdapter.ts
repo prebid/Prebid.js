@@ -114,13 +114,15 @@ const pgamdirectAnalytics = Object.assign(
 //                  slot). Stable per-adunit; reused across auctions
 //                  when the same slot refreshes.
 //   ad_id        — Prebid's per-bid adId (unique per bid response,
-//                  changes every auction). Present on the render
-//                  events so we can tie a specific bid's render
-//                  outcome back to the BID_WON that preceded it.
+//                  changes every auction). Emitted on BID_WON and on
+//                  the AD_RENDER_* events so discrepancy analysis can
+//                  join render outcomes to the exact winning bid by a
+//                  single per-bid key. ad_unit_code alone is ambiguous
+//                  on refresh-heavy pages where several wins share the
+//                  same slot over time.
 //
-// Earlier revision misused adId as ad_unit_code on the render events
-// (flagged by Codex review on #14778); this split fixes
-// cross-event reconciliation.
+// Prior revisions fixed by Codex reviews on #14778 and the follow-up
+// that added ad_id to BID_WON.
 interface NormalisedEvent {
   t: string;
   ts: number;
@@ -163,6 +165,15 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
         creative_id: typeof a.creativeId === 'string' ? a.creativeId : undefined,
         media_type: typeof a.mediaType === 'string' ? a.mediaType : undefined,
         size: typeof a.size === 'string' ? a.size : undefined,
+        // ad_id (Prebid's per-bid adId) is the ONLY reliable join key
+        // between BID_WON and the subsequent AD_RENDER_SUCCEEDED /
+        // AD_RENDER_FAILED. On refresh-heavy pages multiple wins share
+        // the same ad_unit_code within a single adUnitCode lifecycle,
+        // so joining on ad_unit_code alone yields ambiguous matches
+        // and skews win-vs-render reconciliation. Emit it on BID_WON
+        // too so backend discrepancy analysis can key on a single
+        // per-bid identifier.
+        ad_id: typeof a.adId === 'string' ? a.adId : undefined,
       };
 
     case EVENTS.AUCTION_END: {

@@ -72,6 +72,7 @@ describe('pgamdirect Analytics Adapter', () => {
         creativeId: 'cr-1',
         mediaType: 'banner',
         size: '300x250',
+        adId: 'pbid-1',
         // noise we should ignore:
         userIdAsEids: [{ source: 'example.com', uids: [{ id: 'leaky' }] }],
         ortb2: { user: { yob: 1990 } },
@@ -81,6 +82,11 @@ describe('pgamdirect Analytics Adapter', () => {
       expect(n.bidder).to.equal('pgamdirect');
       expect(n.cpm).to.equal(1.23);
       expect(n.size).to.equal('300x250');
+      // ad_id is the join key to AD_RENDER_*. Emitted on BID_WON so
+      // backend discrepancy analysis can reconcile by a single
+      // per-bid identifier on refresh-heavy pages (flagged by Codex
+      // review on #14796).
+      expect(n.ad_id).to.equal('pbid-1');
       // Noise fields are NOT forwarded.
       expect(n).to.not.have.property('userIdAsEids');
       expect(n).to.not.have.property('ortb2');
@@ -90,6 +96,7 @@ describe('pgamdirect Analytics Adapter', () => {
       const n = normalise(EVENTS.BID_WON, {});
       expect(n.t).to.equal(EVENTS.BID_WON);
       expect(n.bidder).to.be.undefined;
+      expect(n.ad_id).to.be.undefined;
     });
   });
 
