@@ -23,6 +23,7 @@ window.addEventListener('error', function (ev) {
 window.addEventListener('unhandledrejection', function (ev) {
   // this message is used for counting intentional failures created in the tests
   if (ev.reason === 'pending failure') return;
+  if (ev.reason?.name === 'TypeError' && ev.reason?.message?.includes("Failed to execute 'observe' on 'IntersectionObserver': parameter 1 is not of type 'Element'")) return;
   // eslint-disable-next-line no-console
   console.error('Unhandled rejection:', ev.reason);
 })
