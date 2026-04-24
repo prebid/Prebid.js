@@ -749,6 +749,40 @@ describe('permutiveRtdProvider', function () {
           },
         ])
       })
+
+      it('should write ortb2 for a bidder configured only via params.bidders (not in acBidders or ssps)', function () {
+        const segmentsData = transformedTargeting()
+        const expectedAppnexusCohorts = segmentsData.appnexus
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: [],
+            maxSegs: 500,
+            bidders: {
+              msft: {
+                customCohorts: { source: 'ls', key: '_papns' }
+              }
+            }
+          }
+        }
+        const bidderConfig = {}
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        expect(bidderConfig['msft']).to.not.be.undefined
+        expect(bidderConfig['msft'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ])
+
+        expectedAppnexusCohorts.forEach(id => {
+          expect(bidderConfig['msft'].user.keywords).to.include(`permutive=${id}`)
+        })
+      })
     })
   })
 

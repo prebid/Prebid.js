@@ -179,10 +179,18 @@ export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = mak
        * Get all registered metrics.
        */
       function getMetrics(): { [name: string]: unknown } {
-        let result = {}
+        const result = {};
         self.dfWalk({
           visit(edge, node) {
-            result = Object.assign({}, !edge || edge.includeGroups ? node.groups : null, node.metrics, result);
+            const addMetric = (name, value) => {
+              if (!Object.prototype.hasOwnProperty.call(result, name)) {
+                result[name] = value;
+              }
+            };
+            Object.entries(node.metrics).forEach(([name, value]) => addMetric(name, value));
+            if (!edge || edge.includeGroups) {
+              Object.entries(node.groups).forEach(([name, value]) => addMetric(name, value));
+            }
           }
         });
         return result;
