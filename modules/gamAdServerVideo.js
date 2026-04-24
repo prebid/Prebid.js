@@ -9,7 +9,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
-import { getHook } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {
@@ -22,13 +21,13 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import {DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams} from '../libraries/gamUtils/gamUtils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
 import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
-import { uspDataHandler } from '../src/consentHandler.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
+import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -89,7 +88,7 @@ export function buildGamVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true });
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -118,6 +117,22 @@ export function buildGamVideoUrl(options) {
     { cust_params: encodedCustomParams },
     gdprParams()
   );
+
+  // The IMA player adds usp info, but not gpp info
+  // For cases where the CMP only exposes gpp but not usp,
+  // it is better to derive an usp string from the gpp info and include it in the url
+  if (window.google?.ima) {
+    const usPrivacy = uspDataHandler.getConsentData?.();
+    const gpp = gppDataHandler.getConsentData?.();
+
+    if (!usPrivacy && gpp) {
+      // Extract an usPrivacy string from the GPP string if possible
+      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
+      if (uspFromGpp) {
+        queryParams['us_privacy'] = uspFromGpp;
+      }
+    }
+  }
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
@@ -183,12 +198,6 @@ export function buildGamVideoUrl(options) {
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
 }
 
-export function notifyTranslationModule(fn) {
-  fn.call(this, 'dfp');
-}
-
-if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
-
 /**
  * Builds a video url from a base dfp video url and a winning bid, appending
  * Prebid-specific key-values.
@@ -245,7 +254,7 @@ function getCustParams(bid, options, urlCustParams) {
   );
 
   // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
-  events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+  events.emit(EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet });
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = options?.params?.cust_params;
@@ -311,7 +320,6 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
     if (usPrivacy) {
       vastUrl.searchParams.set('us_privacy', usPrivacy);
     }
-
     vastUrl = vastUrl.toString();
   }
 
@@ -328,6 +336,41 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   }
 
   return gamVastWrapper;
+}
+/**
+ * Extract a US Privacy string from the GPP data
+ */
+function retrieveUspInfoFromGpp(gpp) {
+  if (!gpp) {
+    return undefined;
+  }
+  const parsedSections = gpp.gppData?.parsedSections;
+  if (parsedSections) {
+    if (parsedSections.uspv1) {
+      const usp = parsedSections.uspv1;
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`
+    } else {
+      let saleOptOut;
+      let saleOptOutNotice;
+      Object.values(parsedSections).forEach(parsedSection => {
+        (Array.isArray(parsedSection) ? parsedSection : [parsedSection]).forEach(ps => {
+          const sectionSaleOptOut = ps.SaleOptOut;
+          const sectionSaleOptOutNotice = ps.SaleOptOutNotice;
+          if (saleOptOut === undefined && saleOptOutNotice === undefined && sectionSaleOptOut != null && sectionSaleOptOutNotice != null) {
+            saleOptOut = sectionSaleOptOut;
+            saleOptOutNotice = sectionSaleOptOutNotice;
+          }
+        });
+      });
+      if (saleOptOut !== undefined && saleOptOutNotice !== undefined) {
+        const uspOptOutSale = saleOptOut === 0 ? '-' : saleOptOut === 1 ? 'Y' : 'N';
+        const uspOptOutNotice = saleOptOutNotice === 0 ? '-' : saleOptOutNotice === 1 ? 'Y' : 'N';
+        const uspLspa = uspOptOutSale === '-' && uspOptOutNotice === '-' ? '-' : 'Y';
+        return `1${uspOptOutNotice}${uspOptOutSale}${uspLspa}`;
+      }
+    }
+  }
+  return undefined
 }
 
 export async function getBase64BlobContent(blobUrl) {

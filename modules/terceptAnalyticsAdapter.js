@@ -1,5 +1,5 @@
 import { parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { ajax, sendBeacon } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
@@ -11,12 +11,33 @@ const defaultHostName = 'us-central1-quikr-ebay.cloudfunctions.net';
 const defaultPathName = '/prebid-analytics';
 
 let initOptions;
-let auctionTimestamp;
-const events = {
-  bids: []
-};
+
+// auctionId → { auctionInit, bids[], timer } — isolated per auction
+const pendingAuctions = new Map();
 
 let adUnitMap = new Map();
+
+let firstSent = false;
+
+function flush(auctionId, useBeacon = false) {
+  const auction = pendingAuctions.get(auctionId);
+  if (!auction) return;
+  clearTimeout(auction.timer);
+  const isFirst = !firstSent;
+  firstSent = true;
+  auction.bids.forEach((bid, i) => {
+    bid.is_pl = isFirst && i === 0;
+  });
+  send({ auctionInit: auction.auctionInit, bids: auction.bids }, useBeacon);
+  pendingAuctions.delete(auctionId);
+}
+
+// flush remaining auctions via sendBeacon on page exit
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    pendingAuctions.forEach((_, auctionId) => flush(auctionId, true));
+  }
+});
 
 var terceptAnalyticsAdapter = Object.assign(adapter(
   {
@@ -24,44 +45,98 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
     analyticsType
   }), {
   track({ eventType, args }) {
-    if (typeof args !== 'undefined') {
-      if (eventType === EVENTS.BID_TIMEOUT) {
-        args.forEach(item => { mapBidResponse(item, 'timeout'); });
-      } else if (eventType === EVENTS.AUCTION_INIT) {
-        Object.assign(events, {bids: []});
-        events.auctionInit = args;
-        auctionTimestamp = args.timestamp;
-        adUnitMap.set(args.auctionId, args.adUnits);
-      } else if (eventType === EVENTS.BID_REQUESTED) {
-        mapBidRequests(args).forEach(item => { events.bids.push(item) });
-      } else if (eventType === EVENTS.BID_RESPONSE) {
-        mapBidResponse(args, 'response');
-      } else if (eventType === EVENTS.NO_BID) {
-        mapBidResponse(args, 'no_bid');
-      } else if (eventType === EVENTS.BIDDER_ERROR) {
-        send({
-          bidderError: mapBidResponse(args, 'bidder_error')
+    if (typeof args === 'undefined') return;
+    try {
+      if (eventType === EVENTS.AUCTION_INIT) {
+        const auctionId = args.auctionId;
+        adUnitMap.set(auctionId, args.adUnits);
+
+        // only first bidderRequest needed — device/site data is identical across all
+        const auctionInit = Object.assign({}, args, {
+          bidderRequests: args.bidderRequests ? args.bidderRequests.slice(0, 1) : []
         });
+
+        pendingAuctions.set(auctionId, {
+          auctionInit,
+          bids: [],
+          timer: null
+        });
+      } else if (eventType === EVENTS.BID_REQUESTED) {
+        mapBidRequests(args).forEach(bid => {
+          const auction = pendingAuctions.get(bid.auctionId);
+          if (auction) auction.bids.push(bid);
+        });
+      } else if (eventType === EVENTS.BID_RESPONSE) {
+        updateBid(args.auctionId, args.requestId, mapBidResponse(args, 'response'));
+      } else if (eventType === EVENTS.BID_TIMEOUT) {
+        args.forEach(item => {
+          updateBid(item.auctionId, item.bidId, mapBidResponse(item, 'timeout'));
+        });
+      } else if (eventType === EVENTS.NO_BID) {
+        updateBid(args.auctionId, args.bidId, mapBidResponse(args, 'no_bid'));
+      } else if (eventType === EVENTS.AUCTION_END) {
+        const auction = pendingAuctions.get(args.auctionId);
+        if (!auction) return;
+        // 1.5s window to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
+        auction.timer = setTimeout(() => flush(args.auctionId), 1500);
       } else if (eventType === EVENTS.BID_WON) {
-        send({
-          bidWon: mapBidResponse(args, 'win')
+        const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);
+        updateBid(args.auctionId, args.requestId, {
+          renderStatus: 4,
+          renderedSize: args.size,
+          host: window.location.hostname,
+          path: window.location.pathname,
+          search: window.location.search,
+          adserverAdSlot,
+          pbAdSlot
         });
       } else if (eventType === EVENTS.AD_RENDER_SUCCEEDED) {
-        send({
-          adRenderSucceeded: mapBidResponse(args, 'render_succeeded')
+        const bid = args.bid;
+        const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid.auctionId, bid.adUnitCode);
+        updateBid(bid.auctionId, bid.requestId, {
+          renderStatus: 7,
+          renderTimestamp: Date.now(),
+          renderedSize: bid.size,
+          host: window.location.hostname,
+          path: window.location.pathname,
+          search: window.location.search,
+          adserverAdSlot,
+          pbAdSlot
         });
       } else if (eventType === EVENTS.AD_RENDER_FAILED) {
-        send({
-          adRenderFailed: mapBidResponse(args, 'render_failed')
+        const bid = args.bid;
+        updateBid(bid.auctionId, bid.requestId, {
+          renderStatus: 8,
+          reason: args.reason,
+          message: args.message,
+          host: window.location.hostname,
+          path: window.location.pathname,
+          search: window.location.search
+        });
+      } else if (eventType === EVENTS.BIDDER_ERROR) {
+        const { bidderRequest, error } = args;
+        if (!bidderRequest || !bidderRequest.bids) return;
+        bidderRequest.bids.forEach(bid => {
+          const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid.auctionId, bid.adUnitCode);
+          updateBid(bid.auctionId, bid.bidId, {
+            renderStatus: 6,
+            status: 'bidError',
+            error: error?.message || error,
+            adserverAdSlot,
+            pbAdSlot
+          });
         });
       }
-    }
-
-    if (eventType === EVENTS.AUCTION_END) {
-      send(events);
-    }
+    } catch (e) { /* do not disrupt the publisher page */ }
   }
 });
+
+function updateBid(auctionId, bidId, fields) {
+  const auction = pendingAuctions.get(auctionId);
+  if (!auction) return;
+  const bid = auction.bids.find(b => b.bidId === bidId);
+  if (bid) Object.assign(bid, fields);
+}
 
 function mapBidRequests(params) {
   const arr = [];
@@ -99,123 +174,59 @@ function getAdSlotData(auctionId, adUnitCode) {
 }
 
 function mapBidResponse(bidResponse, status) {
-  const isRenderEvent = (status === 'render_succeeded' || status === 'render_failed');
-  const bid = isRenderEvent ? bidResponse.bid : bidResponse;
-  const { adserverAdSlot, pbAdSlot } = getAdSlotData(bid?.auctionId, bid?.adUnitCode);
+  const { adserverAdSlot, pbAdSlot } = getAdSlotData(bidResponse?.auctionId, bidResponse?.adUnitCode);
 
-  if (status === 'bidder_error') {
-    return {
-      ...bidResponse,
-      adserverAdSlot: adserverAdSlot,
-      pbAdSlot: pbAdSlot,
-      status: 6,
-      host: window.location.hostname,
-      path: window.location.pathname,
-      search: window.location.search
-    }
-  } else if (status !== 'win') {
-    const existingBid = isRenderEvent ? null : events.bids.filter(o => o.bidId === bid.bidId || o.bidId === bid.requestId)[0];
-    const responseTimestamp = Date.now();
+  const getRenderStatus = () => {
+    if (status === 'timeout') return 3;
+    if (status === 'no_bid') return 5;
+    return 2;
+  };
 
-    const getRenderStatus = () => {
-      if (status === 'timeout') return 3;
-      if (status === 'no_bid') return 5;
-      if (status === 'render_succeeded') return 7;
-      if (status === 'render_failed') return 8;
-      return 2;
-    };
-
-    const mappedData = {
-      bidderCode: bid.bidder,
-      bidId: (status === 'timeout' || status === 'no_bid') ? bid.bidId : bid.requestId,
-      adUnitCode: bid.adUnitCode,
-      auctionId: bid.auctionId,
-      creativeId: bid.creativeId,
-      transactionId: bid.transactionId,
-      currency: bid.currency,
-      cpm: bid.cpm,
-      netRevenue: bid.netRevenue,
-      renderedSize: isRenderEvent ? bid.size : null,
-      width: bid.width,
-      height: bid.height,
-      mediaType: bid.mediaType,
-      statusMessage: bid.statusMessage,
-      status: bid.status,
-      renderStatus: getRenderStatus(),
-      timeToRespond: bid.timeToRespond,
-      requestTimestamp: bid.requestTimestamp,
-      responseTimestamp: bid.responseTimestamp ? bid.responseTimestamp : responseTimestamp,
-      renderTimestamp: isRenderEvent ? Date.now() : null,
-      reason: status === 'render_failed' ? bidResponse.reason : null,
-      message: status === 'render_failed' ? bidResponse.message : null,
-      host: isRenderEvent ? window.location.hostname : null,
-      path: isRenderEvent ? window.location.pathname : null,
-      search: isRenderEvent ? window.location.search : null,
-      adserverAdSlot: adserverAdSlot,
-      pbAdSlot: pbAdSlot,
-      ttl: bid.ttl,
-      dealId: bid.dealId,
-      ad: isRenderEvent ? null : bid.ad,
-      adUrl: isRenderEvent ? null : bid.adUrl,
-      adId: bid.adId,
-      size: isRenderEvent ? null : bid.size,
-      adserverTargeting: isRenderEvent ? null : bid.adserverTargeting,
-      videoCacheKey: isRenderEvent ? null : bid.videoCacheKey,
-      native: isRenderEvent ? null : bid.native,
-      meta: bid.meta || {}
-    };
-
-    if (isRenderEvent) {
-      return mappedData;
-    } else {
-      Object.assign(existingBid, mappedData);
-    }
-  } else {
-    return {
-      bidderCode: bidResponse.bidder,
-      bidId: bidResponse.requestId,
-      adUnitCode: bidResponse.adUnitCode,
-      auctionId: bidResponse.auctionId,
-      creativeId: bidResponse.creativeId,
-      transactionId: bidResponse.transactionId,
-      currency: bidResponse.currency,
-      cpm: bidResponse.cpm,
-      netRevenue: bidResponse.netRevenue,
-      renderedSize: bidResponse.size,
-      width: bidResponse.width,
-      height: bidResponse.height,
-      mediaType: bidResponse.mediaType,
-      statusMessage: bidResponse.statusMessage,
-      status: bidResponse.status,
-      renderStatus: 4,
-      timeToRespond: bidResponse.timeToRespond,
-      requestTimestamp: bidResponse.requestTimestamp,
-      responseTimestamp: bidResponse.responseTimestamp,
-      renderTimestamp: null,
-      reason: null,
-      message: null,
-      host: window.location.hostname,
-      path: window.location.pathname,
-      search: window.location.search,
-      adserverAdSlot: adserverAdSlot,
-      pbAdSlot: pbAdSlot,
-      ttl: bidResponse.ttl,
-      dealId: bidResponse.dealId,
-      ad: bidResponse.ad,
-      adUrl: bidResponse.adUrl,
-      adId: bidResponse.adId,
-      adserverTargeting: bidResponse.adserverTargeting,
-      videoCacheKey: bidResponse.videoCacheKey,
-      native: bidResponse.native,
-      meta: bidResponse.meta || {}
-    }
-  }
+  return {
+    bidderCode: bidResponse.bidder,
+    bidId: (status === 'timeout' || status === 'no_bid') ? bidResponse.bidId : bidResponse.requestId,
+    adUnitCode: bidResponse.adUnitCode,
+    auctionId: bidResponse.auctionId,
+    creativeId: bidResponse.creativeId,
+    transactionId: bidResponse.transactionId,
+    currency: bidResponse.currency,
+    cpm: bidResponse.cpm,
+    netRevenue: bidResponse.netRevenue,
+    renderedSize: null,
+    width: bidResponse.width,
+    height: bidResponse.height,
+    mediaType: bidResponse.mediaType,
+    statusMessage: bidResponse.statusMessage,
+    status: bidResponse.status,
+    renderStatus: getRenderStatus(),
+    timeToRespond: bidResponse.timeToRespond,
+    requestTimestamp: bidResponse.requestTimestamp,
+    responseTimestamp: bidResponse.responseTimestamp,
+    renderTimestamp: null,
+    reason: null,
+    message: null,
+    host: null,
+    path: null,
+    search: null,
+    adserverAdSlot,
+    pbAdSlot,
+    ttl: bidResponse.ttl,
+    dealId: bidResponse.dealId,
+    adId: bidResponse.adId,
+    adserverTargeting: bidResponse.adserverTargeting,
+    videoCacheKey: bidResponse.videoCacheKey,
+    meta: bidResponse.meta || {}
+  };
 }
 
-function send(data) {
+function send(data, useBeacon = false) {
   const location = getWindowLocation();
-  if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-    Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });
+  if (data.auctionInit) {
+    Object.assign(data.auctionInit, {
+      host: location.host,
+      path: location.pathname,
+      search: location.search
+    });
   }
   data.initOptions = initOptions;
 
@@ -224,19 +235,32 @@ function send(data) {
     hostname: (initOptions && initOptions.hostName) || defaultHostName,
     pathname: (initOptions && initOptions.pathName) || defaultPathName,
     search: {
-      auctionTimestamp: auctionTimestamp,
       terceptAnalyticsVersion: terceptAnalyticsVersion,
       prebidVersion: 'v' + '$prebid.version$'
     }
   });
 
-  ajax(terceptAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
+  const body = JSON.stringify(data);
+  if (useBeacon) {
+    sendBeacon(terceptAnalyticsRequestUrl, new Blob([body], { type: 'text/plain' }));
+  } else {
+    ajax(terceptAnalyticsRequestUrl, undefined, body, { method: 'POST', contentType: 'text/plain' });
+  }
 }
 
 terceptAnalyticsAdapter.originEnableAnalytics = terceptAnalyticsAdapter.enableAnalytics;
 terceptAnalyticsAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   terceptAnalyticsAdapter.originEnableAnalytics(config);
+};
+
+terceptAnalyticsAdapter.originDisableAnalytics = terceptAnalyticsAdapter.disableAnalytics;
+terceptAnalyticsAdapter.disableAnalytics = function () {
+  pendingAuctions.forEach(auction => clearTimeout(auction.timer));
+  pendingAuctions.clear();
+  adUnitMap.clear();
+  firstSent = false;
+  terceptAnalyticsAdapter.originDisableAnalytics();
 };
 
 adapterManager.registerAnalyticsAdapter({

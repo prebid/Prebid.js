@@ -1,5 +1,5 @@
-import {DEFAULT_PROCESSORS} from '../../../libraries/ortbConverter/processors/default.js';
-import {BID_RESPONSE, IMP} from '../../../src/pbjsORTB.js';
+import { DEFAULT_PROCESSORS } from '../../../libraries/ortbConverter/processors/default.js';
+import { BID_RESPONSE, IMP } from '../../../src/pbjsORTB.js';
 
 describe('common processors', () => {
   describe('bid response properties', () => {
@@ -13,7 +13,7 @@ describe('common processors', () => {
     })
 
     describe('meta.dsa', () => {
-      const MOCK_DSA = {transparency: 'info'};
+      const MOCK_DSA = { transparency: 'info' };
       it('is not set if bid has no meta.dsa', () => {
         const resp = {};
         responseProps(resp, {}, context);
@@ -21,7 +21,7 @@ describe('common processors', () => {
       });
       it('is set to ext.dsa otherwise', () => {
         const resp = {};
-        responseProps(resp, {ext: {dsa: MOCK_DSA}}, context);
+        responseProps(resp, { ext: { dsa: MOCK_DSA } }, context);
         expect(resp.meta.dsa).to.eql(MOCK_DSA);
       })
     })
@@ -36,7 +36,7 @@ describe('common processors', () => {
     });
 
     it('should not overwrite secure if set by publisher', () => {
-      const imp = {secure: 0};
+      const imp = { secure: 0 };
       impFpd(imp);
       expect(imp.secure).to.eql(0);
     });

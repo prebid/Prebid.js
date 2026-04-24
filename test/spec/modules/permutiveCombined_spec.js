@@ -128,6 +128,7 @@ describe('permutiveRtdProvider', function () {
         acBidders: [],
         overwrites: {},
         enforceVendorConsent: false,
+        bidders: {},
       },
     })
 
@@ -689,6 +690,100 @@ describe('permutiveRtdProvider', function () {
         })
       })
     })
+
+    describe('bidders config with customCohorts', function () {
+      it('should read custom cohorts from localStorage for msft bidder using customCohorts config', function () {
+        const segmentsData = transformedTargeting()
+        const expectedAppnexusCohorts = segmentsData.appnexus
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: ['msft'],
+            maxSegs: 500,
+            bidders: {
+              msft: {
+                customCohorts: { source: 'ls', key: '_papns' }
+              }
+            }
+          }
+        }
+        const bidderConfig = {}
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        expect(bidderConfig['msft'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ])
+
+        expectedAppnexusCohorts.forEach(id => {
+          expect(bidderConfig['msft'].user.keywords).to.include(`permutive=${id}`)
+        })
+      })
+
+      it('should fall back to segmentData lookup when customCohorts is not configured', function () {
+        const segmentsData = transformedTargeting()
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: ['appnexus'],
+            maxSegs: 500,
+            bidders: {}
+          }
+        }
+        const bidderConfig = {}
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        const expectedAppnexusCohorts = segmentsData.appnexus
+        expect(bidderConfig['appnexus'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ])
+      })
+
+      it('should write ortb2 for a bidder configured only via params.bidders (not in acBidders or ssps)', function () {
+        const segmentsData = transformedTargeting()
+        const expectedAppnexusCohorts = segmentsData.appnexus
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: [],
+            maxSegs: 500,
+            bidders: {
+              msft: {
+                customCohorts: { source: 'ls', key: '_papns' }
+              }
+            }
+          }
+        }
+        const bidderConfig = {}
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        expect(bidderConfig['msft']).to.not.be.undefined
+        expect(bidderConfig['msft'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ])
+
+        expectedAppnexusCohorts.forEach(id => {
+          expect(bidderConfig['msft'].user.keywords).to.include(`permutive=${id}`)
+        })
+      })
+    })
   })
 
   describe('Getting segments', function () {
@@ -1127,7 +1222,7 @@ describe('permutiveIdentityManagerIdSystem', () => {
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
       const cleanup = setWindowPermutive()
       try {
-        const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 300}})
+        const result = permutiveIdentityManagerIdSubmodule.getId({ params: { ajaxTimeout: 300 } })
         expect(result).not.to.be.undefined
         expect(result.id).to.be.undefined
         expect(result.callback).not.to.be.undefined

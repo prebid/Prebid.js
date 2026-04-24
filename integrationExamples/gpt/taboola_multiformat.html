@@ -1,0 +1,492 @@
+<!--
+  This page tests multiformat (banner + native) support for the Taboola adapter.
+  It defines three ad units:
+    1. Banner-only
+    2. Native-only
+    3. Multiformat (banner + native) - should split into two requests
+
+  To run: npx gulp serve, or to run without tests: npx gulp serve-fast
+  Then go to: http://localhost:9999/integrationExamples/gpt/taboola_multiformat.html
+-->
+
+<html>
+
+<head>
+    <!-- Patch fetch BEFORE prebid loads, since prebid captures window.fetch at module init -->
+    <script>
+        var xhrLog = {};
+        var allFetchEntries = [];
+        (function () {
+            var origFetch = window.fetch.bind(window);
+            window.fetch = function (resource, options) {
+                var url = (resource instanceof Request) ? resource.url : String(resource);
+
+                if (url.indexOf('bidder.taboola.com') === -1) {
+                    return origFetch.apply(this, arguments);
+                }
+
+                var method = (resource instanceof Request) ? resource.method : ((options && options.method) || 'GET');
+                var entry = {
+                    url: url,
+                    method: method,
+                    requestBody: null,
+                    status: null,
+                    responseBody: null,
+                    adUnitCodes: []
+                };
+                allFetchEntries.push(entry);
+
+                // Read body from Request object (must clone to avoid consuming it)
+                var bodyPromise;
+                try {
+                    bodyPromise = (resource instanceof Request)
+                        ? resource.clone().text()
+                        : Promise.resolve((options && options.body) || '');
+                } catch (e) {
+                    bodyPromise = Promise.resolve('');
+                }
+
+                bodyPromise.then(function (bodyText) {
+                    entry.requestBody = bodyText;
+                    try {
+                        var parsed = JSON.parse(bodyText);
+                        entry.adUnitCodes = (parsed.imp || []).map(function (imp) {
+                            return imp.ext && imp.ext.prebid && imp.ext.prebid.adUnitCode;
+                        }).filter(Boolean);
+                    } catch (e) {}
+                });
+
+                var fetchPromise = origFetch.apply(this, arguments);
+
+                fetchPromise.then(function (response) {
+                    entry.status = response.status;
+                    response.clone().text().then(function (text) {
+                        entry.responseBody = text;
+                    }).catch(function () {});
+                    bodyPromise.then(function () {
+                        entry.adUnitCodes.forEach(function (code) {
+                            if (!xhrLog[code]) xhrLog[code] = [];
+                            xhrLog[code].push(entry);
+                        });
+                    }).catch(function () {});
+                }).catch(function (err) {
+                    entry.status = 'ERR';
+                    entry.responseBody = err && err.message || 'fetch rejected';
+                });
+
+                return fetchPromise;
+            };
+        })();
+    </script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <style>
+        .debug-panel {
+            background: #1d2021;
+            color: #ebdbb2;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .debug-panel summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #fabd2f;
+            margin-bottom: 6px;
+        }
+        .debug-section {
+            margin-bottom: 10px;
+            padding-left: 8px;
+            border-left: 2px solid #504945;
+        }
+        .debug-section > summary {
+            cursor: pointer;
+            color: #8ec07c;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 4px 0;
+        }
+        .debug-item {
+            margin: 4px 0;
+            padding-left: 8px;
+            border-left: 2px solid #3c3836;
+        }
+        .debug-item > summary {
+            cursor: pointer;
+            color: #d3869b;
+            font-size: 12px;
+        }
+        .debug-label { color: #83a598; }
+        .debug-url { color: #fe8019; }
+        .debug-nobid { color: #fb4934; }
+        .render-status {
+            font-family: monospace;
+            font-size: 12px;
+            padding: 6px 10px;
+            margin-top: 4px;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .render-status.success { background: #1d2021; color: #b8bb26; border-color: #b8bb26; }
+        .render-status.warning { background: #1d2021; color: #fabd2f; border-color: #fabd2f; }
+        .render-status.error   { background: #1d2021; color: #fb4934; border-color: #fb4934; }
+    </style>
+    <script>
+        var PREBID_TIMEOUT = 5000;
+
+        var adUnits = [
+            // 1. Banner-only ad unit
+            {
+                code: 'div-banner',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],
+                    }
+                },
+                bids: [{
+                    bidder: 'taboola',
+                    params: {
+                        publisherId: '1317924',
+                        tagId: 'banner-placement',
+                        pageType: 'article'
+                    }
+                }]
+            },
+            // 2. Native-only ad unit
+            {
+                code: 'div-native',
+                mediaTypes: {
+                    native: {
+                        ortb: {
+                            assets: [
+                                { id: 1, required: 1, title: { len: 150 } },
+                                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+                                { id: 3, required: 1, data: { type: 1 } }
+                            ]
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'taboola',
+                    params: {
+                        publisherId: '1317924',
+                        tagId: 'native-placement',
+                        pageType: 'article'
+                    }
+                }]
+            },
+            // 3. Multiformat ad unit (banner + native)
+            {
+                code: 'div-multiformat',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],
+                    },
+                    native: {
+                        ortb: {
+                            assets: [
+                                { id: 1, required: 1, title: { len: 150 } },
+                                { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } },
+                                { id: 3, required: 1, data: { type: 1 } }
+                            ]
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'taboola',
+                    params: {
+                        publisherId: '1317924',
+                        tagId: 'multiformat-placement',
+                        pageType: 'article'
+                    }
+                }]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+        function formatJson(str) {
+            try {
+                var obj = JSON.parse(str);
+                unescapeNewlines(obj);
+                return JSON.stringify(obj, null, 2);
+            } catch (e) {
+                return str;
+            }
+        }
+
+        function unescapeNewlines(obj) {
+            if (!obj || typeof obj !== 'object') return;
+            Object.keys(obj).forEach(function (key) {
+                if (typeof obj[key] === 'string') {
+                    obj[key] = obj[key].replace(/\\n/g, '\n');
+                } else if (typeof obj[key] === 'object') {
+                    unescapeNewlines(obj[key]);
+                }
+            });
+        }
+
+        function renderDebugPanel(code, bidRequests, xhrEntries, bidResponses) {
+            var container = document.getElementById('debug-' + code);
+            if (!container) return;
+
+            var html = '';
+
+            // 1. Bid Request (what the adapter received from Prebid)
+            html += '<details class="debug-section"><summary>Adapter Bid Request (' + bidRequests.length + ')</summary>';
+            if (bidRequests.length) {
+                bidRequests.forEach(function (br, i) {
+                    html += '<details class="debug-item"><summary>Bid Request #' + (i + 1) + ' — ' + br.bidder + '</summary>';
+                    html += '<pre>' + escapeHtml(JSON.stringify(br, null, 2)) + '</pre>';
+                    html += '</details>';
+                });
+            } else {
+                html += '<span class="debug-nobid">No bid requests found</span>';
+            }
+            html += '</details>';
+
+            // 2. Server Requests (HTTP calls with URL, method, body)
+            html += '<details class="debug-section"><summary>Server Requests (' + xhrEntries.length + ')</summary>';
+            if (xhrEntries.length) {
+                xhrEntries.forEach(function (entry, i) {
+                    var endpointType = entry.url.indexOf('native.bidder') !== -1 ? 'native' : 'display';
+                    html += '<details class="debug-item"><summary>Request #' + (i + 1) + ' — ' + endpointType + '</summary>';
+                    html += '<span class="debug-label">URL:</span> <span class="debug-url">' + escapeHtml(entry.url) + '</span>\n';
+                    html += '<span class="debug-label">Method:</span> ' + entry.method + '\n';
+                    html += '<span class="debug-label">Body:</span>\n<pre>' + escapeHtml(formatJson(entry.requestBody)) + '</pre>';
+                    html += '</details>';
+                });
+            } else {
+                html += '<span class="debug-nobid">No server requests captured</span>';
+            }
+            html += '</details>';
+
+            // 3. Server Responses
+            html += '<details class="debug-section"><summary>Server Responses (' + xhrEntries.length + ')</summary>';
+            if (xhrEntries.length) {
+                xhrEntries.forEach(function (entry, i) {
+                    var endpointType = entry.url.indexOf('native.bidder') !== -1 ? 'native' : 'display';
+                    html += '<details class="debug-item"><summary>Response #' + (i + 1) + ' — ' + endpointType + ' (status ' + entry.status + ')</summary>';
+                    if (entry.responseBody) {
+                        try {
+                            var respObj = JSON.parse(entry.responseBody);
+                            var debugInfo = respObj && respObj.ext && respObj.ext.taboolaDebug;
+                            if (debugInfo) {
+                                delete respObj.ext.taboolaDebug;
+                                html += '<pre>' + escapeHtml(JSON.stringify(respObj, null, 2)) + '</pre>';
+                                var debugText = typeof debugInfo === 'string' ? debugInfo : JSON.stringify(debugInfo, null, 2);
+                                html += '<details class="debug-item"><summary>taboolaDebug</summary>';
+                                html += '<pre>' + escapeHtml(debugText.replace(/\\n/g, '\n')) + '</pre>';
+                                html += '</details>';
+                            } else {
+                                html += '<pre>' + escapeHtml(JSON.stringify(respObj, null, 2)) + '</pre>';
+                            }
+                        } catch (e) {
+                            html += '<pre>' + escapeHtml(entry.responseBody) + '</pre>';
+                        }
+                    } else if (entry.status === 204) {
+                        html += '<span class="debug-nobid">204 No Content — server returned no fill</span>';
+                    } else {
+                        html += '<span class="debug-nobid">No response body</span>';
+                    }
+                    html += '</details>';
+                });
+            } else {
+                html += '<span class="debug-nobid">No server responses captured</span>';
+            }
+            html += '</details>';
+
+            // 4. Prebid Bid Response (what interpretResponse returned)
+            html += '<details class="debug-section"><summary>Prebid Bid Response (' + bidResponses.length + ')</summary>';
+            if (bidResponses.length) {
+                bidResponses.forEach(function (bid, i) {
+                    var copy = Object.assign({}, bid);
+                    if (copy.ad && copy.ad.length > 200) {
+                        copy.ad = copy.ad.substring(0, 200) + '... (' + bid.ad.length + ' chars)';
+                    }
+                    html += '<details class="debug-item"><summary>Bid #' + (i + 1) + ' — ' + bid.mediaType + ' $' + bid.cpm.toFixed(4) + '</summary>';
+                    html += '<pre>' + escapeHtml(JSON.stringify(copy, null, 2)) + '</pre>';
+                    html += '</details>';
+                });
+            } else {
+                html += '<span class="debug-nobid">No bids received</span>';
+            }
+            html += '</details>';
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function showRenderStatus(code, cls, message) {
+            var el = document.getElementById('render-status-' + code);
+            if (el) {
+                el.className = 'render-status ' + cls;
+                el.textContent = message;
+            }
+        }
+
+        function renderBidDirect(code, bid) {
+            var container = document.getElementById(code);
+            if (!container) return;
+            container.innerHTML = '';
+
+            var iframe = document.createElement('iframe');
+            iframe.frameBorder = '0';
+            iframe.scrolling = 'no';
+            iframe.style.border = 'none';
+
+            if (bid.mediaType === 'native') {
+                iframe.width = '100%';
+                iframe.setAttribute('srcdoc', document.getElementById('native-template').innerHTML);
+                container.appendChild(iframe);
+                iframe.onload = function () {
+                    pbjs.renderAd(iframe.contentDocument, bid.adId);
+                    setTimeout(function () {
+                        try {
+                            iframe.height = iframe.contentDocument.body.scrollHeight;
+                        } catch (e) {}
+                    }, 500);
+                };
+            } else {
+                iframe.width = bid.width || 300;
+                iframe.height = bid.height || 250;
+                container.appendChild(iframe);
+                pbjs.renderAd(iframe.contentWindow.document, bid.adId);
+            }
+        }
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                ortb2: {
+                    ext: {
+                        taboolaDebug: true
+                    }
+                }
+            });
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.requestBids({
+                bidsBackHandler: function (bids) {
+                    console.log('All bids back:', bids);
+                    console.log('XHR log:', xhrLog);
+
+                    var log = document.getElementById('bid-log');
+                    var entries = [];
+
+                    adUnits.forEach(function (unit) {
+                        var code = unit.code;
+                        var unitBids = bids[code] && bids[code].bids || [];
+                        var types = Object.keys(unit.mediaTypes).join('+');
+
+                        if (unitBids.length === 0) {
+                            entries.push(code + ' (' + types + '): NO BID');
+                            document.getElementById(code).innerHTML = '<em style="color:#fb4934">No bid received (' + types + ')</em>';
+                            showRenderStatus(code, 'error', 'NO BID — server returned no fill for ' + types);
+                        } else {
+                            var winner = unitBids[0];
+                            entries.push(code + ' (' + types + '): ' + winner.mediaType + ' $' + winner.cpm.toFixed(4));
+                            renderBidDirect(code, winner);
+                            showRenderStatus(code, 'success', 'RENDERED — ' + winner.mediaType + ' $' + winner.cpm.toFixed(4));
+                        }
+                    });
+
+                    if (log) log.textContent = entries.join('\n');
+
+                    // Render debug panels after a small delay to let fetch logging finish
+                    setTimeout(function () {
+                        adUnits.forEach(function (unit) {
+                            var code = unit.code;
+                            var unitBids = bids[code] && bids[code].bids || [];
+
+                            var bidRequests = [];
+                            unit.bids.forEach(function (b) {
+                                bidRequests.push({
+                                    bidder: b.bidder,
+                                    params: b.params,
+                                    mediaTypes: unit.mediaTypes
+                                });
+                            });
+
+                            // Get fetch entries (primary: keyed by adUnitCode, fallback: match by tagId)
+                            var xhrEntries = xhrLog[code] || [];
+                            if (xhrEntries.length === 0) {
+                                var tagId = unit.bids[0] && unit.bids[0].params && unit.bids[0].params.tagId;
+                                if (tagId) {
+                                    xhrEntries = allFetchEntries.filter(function (entry) {
+                                        if (!entry.requestBody) return false;
+                                        try {
+                                            var parsed = JSON.parse(entry.requestBody);
+                                            return (parsed.imp || []).some(function (imp) {
+                                                return imp.tagid === tagId;
+                                            });
+                                        } catch (e) { return false; }
+                                    });
+                                }
+                            }
+
+                            renderDebugPanel(code, bidRequests, xhrEntries, unitBids);
+                        });
+                    }, 1500);
+                },
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+    </script>
+</head>
+
+<body>
+<template id="native-template">
+    <style>
+        body { display: inline-block; margin: 0; font-family: sans-serif; font-size: 14px; color: #333; }
+        .native-card { border: 1px solid #ccc; padding: 10px; max-width: 300px; }
+        .native-card img { max-width: 100%; display: block; margin-bottom: 8px; }
+        .native-card .title { font-weight: bold; margin-bottom: 4px; }
+        .native-card .sponsor { color: #666; font-size: 12px; }
+    </style>
+    <a class="native-card" href="##hb_native_linkurl##" target="_blank" style="text-decoration:none;color:inherit;display:block">
+        <img src="##hb_native_asset_id_2##" />
+        <div class="title">##hb_native_asset_id_1##</div>
+        <div class="sponsor">Sponsored by ##hb_native_asset_id_3##</div>
+    </a>
+</template>
+
+<h2>Taboola Multiformat Test</h2>
+<p>The multiformat ad unit should generate requests to <b>both</b> endpoints.</p>
+
+<h4>Bid Results</h4>
+<pre id="bid-log">Waiting for bids...</pre>
+
+<hr>
+<h5>Banner Only</h5>
+<div id='div-banner'><em style="color:#999">Waiting for bids...</em></div>
+<div id="render-status-div-banner" class="render-status warning">Waiting for bids...</div>
+<details class="debug-panel"><summary>Debug: div-banner</summary><div id="debug-div-banner">Loading...</div></details>
+
+<hr>
+<h5>Native Only</h5>
+<div id='div-native'><em style="color:#999">Waiting for bids...</em></div>
+<div id="render-status-div-native" class="render-status warning">Waiting for bids...</div>
+<details class="debug-panel"><summary>Debug: div-native</summary><div id="debug-div-native">Loading...</div></details>
+
+<hr>
+<h5>Multiformat (Banner + Native)</h5>
+<div id='div-multiformat'><em style="color:#999">Waiting for bids...</em></div>
+<div id="render-status-div-multiformat" class="render-status warning">Waiting for bids...</div>
+<details class="debug-panel"><summary>Debug: div-multiformat</summary><div id="debug-div-multiformat">Loading...</div></details>
+</body>
+
+</html>

@@ -4,7 +4,7 @@ import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidd
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
-import { interpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { ORTBRequest } from '../src/prebid.public.js';
 
 const BIDDER_CODE = 'adgrid';
@@ -80,11 +80,14 @@ const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const data:ORTBRequest = converter.toORTB({bidRequests, bidderRequest})
+  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest })
   const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
     data,
+    options: {
+      endpointCompression: getGzipSetting(BIDDER_CODE, true),
+    },
   }
   return adapterRequest;
 }

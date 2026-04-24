@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/smarticoBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/smarticoBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('smarticoBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -13,7 +13,7 @@ describe('smarticoBidAdapter', function () {
     bidderRequestsCount: 1,
     bidderWinsCount: 0,
     bidId: '22499d052045',
-    mediaTypes: {banner: {sizes: [[300, 250]]}},
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
     params: {
       token: 'FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya',
       placementId: 'testPlacementId'
@@ -41,7 +41,7 @@ describe('smarticoBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    const bidRequests = [ bid ];
+    const bidRequests = [bid];
     const request = spec.buildRequests(bidRequests, bidderRequests);
     it('sends bid request via POST', function () {
       expect(request.method).to.equal('POST');
@@ -99,7 +99,8 @@ describe('smarticoBidAdapter', function () {
       meta: {
         advertiserDomains: ['www.advertiser.com'],
         advertiserName: 'Advertiser'
-      }}];
+      }
+    }];
     const result = spec.interpretResponse(serverResponse, bidRequest);
     it('should contain correct creativeId', function () {
       expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId)

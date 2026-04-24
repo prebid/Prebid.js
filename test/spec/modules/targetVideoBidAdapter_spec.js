@@ -7,6 +7,13 @@ describe('TargetVideo Bid Adapter', function() {
   const params = {
     placementId: 12345,
   };
+  const videoMediaTypes = {
+    video: {
+      playerSize: [[640, 360]],
+      context: 'instream',
+      playbackmethod: [1, 2, 3, 4]
+    }
+  }
 
   const defaultBidderRequest = {
     bidderRequestId: 'mock-uuid',
@@ -25,13 +32,7 @@ describe('TargetVideo Bid Adapter', function() {
   const videoRequest = [{
     bidder,
     params,
-    mediaTypes: {
-      video: {
-        playerSize: [[640, 360]],
-        context: 'instream',
-        playbackmethod: [1, 2, 3, 4]
-      }
-    }
+    mediaTypes: videoMediaTypes,
   }];
 
   it('Test the bid validation function', function() {
@@ -131,7 +132,7 @@ describe('TargetVideo Bid Adapter', function() {
     const userIdAsEids = [
       {
         source: 'test1.org',
-        uids: [{id: '123'}]
+        uids: [{ id: '123' }]
       }
     ];
     const bidderRequestWithUserData = {
@@ -284,7 +285,7 @@ describe('TargetVideo Bid Adapter', function() {
     bidderRequest.bids = bannerRequest;
 
     const request = spec.buildRequests(bannerRequest, bidderRequest);
-    expect(request.options).to.deep.equal({withCredentials: true});
+    expect(request.options).to.deep.equal({ withCredentials: true });
     const payload = JSON.parse(request.data);
 
     expect(payload.gdpr_consent).to.exist;
@@ -344,13 +345,52 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test userSync valid sync url for iframe', function () {
-    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, { consentString: 'anyString' });
     expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=targetvideo&gdpr=0&gdpr_consent=anyString');
     expect(userSync.type).to.be.equal('iframe');
   });
 
   it('Test userSyncs iframeEnabled=false', function () {
-    const userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    const userSyncs = spec.getUserSyncs({ iframeEnabled: false });
     expect(userSyncs).to.have.lengthOf(0);
+  });
+
+  it('Test the VIDEO request floor param', function() {
+    const requests = [
+      {
+        bidder,
+        params: {
+          ...params,
+          floor: 2.12,
+        },
+        mediaTypes: videoMediaTypes,
+      },
+      {
+        bidder,
+        params: {
+          ...params,
+          floor: "1.55",
+        },
+        mediaTypes: videoMediaTypes,
+      },
+      {
+        bidder,
+        params: {
+          ...params,
+          floor: "abc",
+        },
+        mediaTypes: videoMediaTypes,
+      }
+    ]
+
+    const bids = spec.buildRequests(requests, defaultBidderRequest)
+
+    const payload1 = JSON.parse(bids[0].data);
+    const payload2 = JSON.parse(bids[1].data);
+    const payload3 = JSON.parse(bids[2].data);
+
+    expect(payload1.imp[0].bidfloor).to.exist.and.equal(2.12);
+    expect(payload2.imp[0].bidfloor).to.exist.and.equal(1.55);
+    expect(payload3.imp[0].bidfloor).to.not.exist;
   });
 });

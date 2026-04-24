@@ -4,6 +4,8 @@ import {
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
 import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 const sandbox = sinon.createSandbox();
 
 describe('Nexx360 bid adapter tests', () => {
@@ -33,9 +35,45 @@ describe('Nexx360 bid adapter tests', () => {
     },
   };
 
-  it('We test getGzipSettings', () => {
-    const output = getGzipSetting();
-    expect(output).to.be.a('boolean');
+  describe('getGzipSetting', () => {
+    let getParamStub;
+    beforeEach(() => {
+      config.resetConfig();
+      getParamStub = sandbox.stub(utils, 'getParameterByName').returns('');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('defaults to true when no config and no URL override', () => {
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns false when bidder config gzipEnabled is the string "false"', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'false' } });
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns true when bidder config gzipEnabled is the string "true"', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'true' } });
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns true when bidder config gzipEnabled is the boolean true', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: true } });
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns false when URL has nexx360_debug=1, even if config would enable gzip', () => {
+      getParamStub.withArgs('nexx360_debug').returns('1');
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'true' } });
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns true when URL has nexx360_debug with a value other than 1', () => {
+      getParamStub.withArgs('nexx360_debug').returns('0');
+      expect(getGzipSetting()).to.equal(true);
+    });
   });
 
   describe('isBidRequestValid()', () => {
@@ -344,8 +382,8 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '7.1',
-            localStorage: { amxId: 'abcdef'},
+            bidderVersion: '8.0',
+            localStorage: { amxId: 'abcdef' },
             sessionId: requestContent.ext.sessionId,
             requestCounter: 0,
           },
@@ -717,7 +755,7 @@ describe('Nexx360 bid adapter tests', () => {
     });
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
-        cookies: [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}]
+        cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
       };
       const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
       const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];

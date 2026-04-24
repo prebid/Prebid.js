@@ -1,6 +1,6 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {submodule} from '../src/hook.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { submodule } from '../src/hook.js';
 import {
   deepAccess,
   deepSetValue,
@@ -8,10 +8,12 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 
 const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
-const {logMessage, logWarn, logError} = prefixLog(LOG_PREFIX);
+const { logMessage, logWarn, logError } = prefixLog(LOG_PREFIX);
 
 // ORTB device types
 const ORTB_DEVICE_TYPE = {
@@ -100,7 +102,7 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/HNZ75HT1');
   }
 
-  return {resourceKey, onPremiseJSUrl};
+  return { resourceKey, onPremiseJSUrl };
 }
 
 /**
@@ -126,7 +128,7 @@ export const get51DegreesJSURL = (pathData, win) => {
   );
   deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height);
   deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width);
-  deepSetNotEmptyValue(qs, '51D_PixelRatio', _window?.devicePixelRatio);
+  deepSetNotEmptyValue(qs, '51D_PixelRatio', getDevicePixelRatio(_window));
 
   const _qs = formatQS(qs);
   const _qsString = _qs ? `${queryPrefix}${_qs}` : '';
@@ -140,8 +142,33 @@ export const get51DegreesJSURL = (pathData, win) => {
  * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
  * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
  */
+const getHighEntropySUA = highEntropySUAAccessor();
+
+function joinVersion(version) {
+  return Array.isArray(version) ? version.join('.') : version;
+}
+
+/**
+ * Retrieves high entropy values from `navigator.userAgentData` if available
+ *
+ * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
+ * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
+ */
 export const getHighEntropyValues = async (hints) => {
-  return navigator?.userAgentData?.getHighEntropyValues?.(hints);
+  const sua = await getHighEntropySUA(hints);
+  if (!sua) {
+    return undefined;
+  }
+
+  return {
+    model: sua.model,
+    platform: sua.platform?.brand,
+    platformVersion: joinVersion(sua.platform?.version),
+    fullVersionList: sua.browsers?.map(({ brand, version }) => ({
+      brand,
+      version: joinVersion(version),
+    })),
+  };
 };
 
 /**
@@ -219,6 +246,8 @@ export const convert51DegreesDataToOrtb2 = (data51) => {
  * @param {string} [device.hardwarevendor] Hardware vendor
  * @param {string} [device.hardwaremodel] Hardware model
  * @param {string[]} [device.hardwarename] Hardware name
+ * @param {string} [device.hardwarenameprefix] Hardware name prefix (e.g. "iPhone" from "iPhone 12 Pro Max")
+ * @param {string} [device.hardwarenameversion] Hardware name version (e.g. "12 Pro Max" from "iPhone 12 Pro Max")
  * @param {string} [device.platformname] Platform name
  * @param {string} [device.platformversion] Platform version
  * @param {number} [device.screenpixelsheight] Screen height in pixels
@@ -239,6 +268,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   }
 
   const deviceModel =
+    device.hardwarenameprefix ||
     device.hardwaremodel || (
       device.hardwarename && device.hardwarename.length
         ? device.hardwarename.join(',')
@@ -256,6 +286,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
   deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor);
   deepSetNotEmptyValue(ortb2Device, 'model', deviceModel);
+  deepSetNotEmptyValue(ortb2Device, 'hwv', device.hardwarenameversion);
   deepSetNotEmptyValue(ortb2Device, 'os', device.platformname);
   deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion);
   deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight);
@@ -269,7 +300,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
     deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
   }
 
-  return {device: ortb2Device};
+  return { device: ortb2Device };
 }
 
 /**
@@ -281,7 +312,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
-    const {resourceKey, onPremiseJSUrl} = extractConfig(moduleConfig, reqBidsConfigObj);
+    const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);
     logMessage('Resource key: ', resourceKey);
     logMessage('On-premise JS URL: ', onPremiseJSUrl);
 
@@ -295,7 +326,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
 
     getHighEntropyValues(['model', 'platform', 'platformVersion', 'fullVersionList']).then((hev) => {
       // Get 51Degrees JS URL, which is either cloud or on-premise
-      const scriptURL = get51DegreesJSURL({resourceKey, onPremiseJSUrl, hev});
+      const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev });
       logMessage('URL of the script to be injected: ', scriptURL);
 
       // Inject 51Degrees script, get device data and merge it into the ORTB2 object
@@ -312,7 +343,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
           logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
           callback();
         });
-      }, document, {crossOrigin: 'anonymous'});
+      }, document, { crossOrigin: 'anonymous' });
     });
   } catch (error) {
     // In case of an error, log it and continue

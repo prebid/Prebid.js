@@ -160,13 +160,13 @@ describe('ClickforceAdapter', function () {
 
     it('should get the correct bid response by display ad', function () {
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('should get the correct bid response by native ad', function () {
       let bidderRequest;
-      const result = spec.interpretResponse({ body: response1 }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse1[0]));
     });
 
