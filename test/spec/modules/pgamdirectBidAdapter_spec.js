@@ -265,6 +265,167 @@ describe('pgamdirect: onBidWon', () => {
     expect(() => spec.onBidWon(null)).to.not.throw();
     expect(() => spec.onBidWon(undefined)).to.not.throw();
   });
+
+  it('does not throw when bid has malformed nurl', () => {
+    // Defensive: adapters must never propagate an exception out of
+    // onBidWon — it runs inside the renderer chain, and a throw here
+    // can block the creative from displaying.
+    expect(() => spec.onBidWon({ nurl: 12345 })).to.not.throw();
+    expect(() => spec.onBidWon({ ext: { pgam: { winurl: null } } })).to.not.throw();
+  });
+});
+
+// ---------- onTimeout ------------------------------------------------------
+
+describe('pgamdirect: onTimeout', () => {
+  it('swallows empty and malformed input', () => {
+    expect(() => spec.onTimeout([])).to.not.throw();
+    expect(() => spec.onTimeout(null)).to.not.throw();
+    expect(() => spec.onTimeout(undefined)).to.not.throw();
+  });
+
+  it('does not throw on a real timeout record', () => {
+    expect(() => spec.onTimeout([
+      { auctionId: 'a1', timeout: 300, bidId: 'b1', bidder: 'pgamdirect' },
+    ])).to.not.throw();
+  });
+});
+
+// ---------- getUserSyncs ---------------------------------------------------
+
+describe('pgamdirect: getUserSyncs', () => {
+  it('returns empty when both sync modes disabled', () => {
+    expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, []))
+      .to.deep.equal([]);
+  });
+
+  it('prefers iframe when both enabled', () => {
+    const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('iframe');
+    expect(syncs[0].url).to.match(/\/rtb\/v1\/usersync\?t=i/);
+  });
+
+  it('falls back to image when iframe disabled', () => {
+    const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, []);
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
+    expect(syncs[0].url).to.match(/\/rtb\/v1\/usersync\?t=p/);
+  });
+
+  it('forwards GDPR consent params when gdprApplies=true', () => {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: false }, [],
+      { gdprApplies: true, consentString: 'CPaaaaaaaaa' },
+    );
+    expect(syncs[0].url).to.include('gdpr=1');
+    expect(syncs[0].url).to.include('gdpr_consent=CPaaaaaaaaa');
+  });
+
+  it('forwards USP (CCPA) consent', () => {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: false }, [],
+      undefined, '1YYY',
+    );
+    expect(syncs[0].url).to.include('us_privacy=1YYY');
+  });
+
+  it('forwards GPP string + SID list', () => {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: false }, [],
+      undefined, undefined,
+      { gppString: 'DBABMA~CPY...', applicableSections: [7, 6] },
+    );
+    expect(syncs[0].url).to.include('gpp=DBABMA~CPY');
+    expect(syncs[0].url).to.include('gpp_sid=7%2C6');
+  });
+});
+
+// ---------- bidResponse hook — enriched meta -------------------------------
+
+describe('pgamdirect: bidResponse meta enrichment', () => {
+  // Build a request + a response that correlates with it. ortbConverter's
+  // fromORTB uses both request.id (top-level) and imp.id (bid.impid) to
+  // match responses back to their originating bidRequest, so BOTH have to
+  // line up or the bid is silently dropped and the hook never runs.
+  function fire({ seat = 'acme-dsp', ext = {}, adomain = [], cat = [] } = {}) {
+    const request = spec.buildRequests([bannerBid()], bidderRequest());
+    const resp = {
+      id: request.data.id,
+      cur: 'USD',
+      seatbid: [{
+        seat,
+        bid: [{
+          id: 'b1',
+          impid: 'bid-1',
+          price: 2.5,
+          adomain,
+          cat,
+          adm: '<html>a</html>',
+          crid: 'c1',
+          w: 300,
+          h: 250,
+          mtype: 1,
+          ext,
+        }],
+      }],
+    };
+    return { bids: spec.interpretResponse({ body: resp }, request), resp };
+  }
+
+  it('populates advertiserDomains from bid.adomain', () => {
+    const { bids } = fire({ adomain: ['cnn.com'] });
+    expect(bids[0].meta.advertiserDomains).to.deep.equal(['cnn.com']);
+  });
+
+  it('splits bid.cat into primaryCatId + secondaryCatIds', () => {
+    const { bids } = fire({ cat: ['IAB12', 'IAB12-1', 'IAB19'] });
+    expect(bids[0].meta.primaryCatId).to.equal('IAB12');
+    expect(bids[0].meta.secondaryCatIds).to.deep.equal(['IAB12-1', 'IAB19']);
+  });
+
+  it('surfaces networkName from seatbid.seat', () => {
+    const { bids } = fire();
+    expect(bids[0].meta.networkName).to.equal('acme-dsp');
+  });
+
+  it('surfaces numeric networkId when seat is all digits', () => {
+    const { bids } = fire({ seat: '162623' });
+    expect(bids[0].meta.networkId).to.equal(162623);
+    expect(bids[0].meta.networkName).to.equal('162623');
+  });
+
+  it('reads brandId / brandName / agencyId / buyerId from bid.ext.meta (both snake+camel)', () => {
+    const { bids } = fire({
+      ext: {
+        meta: { brand_id: 42, brand_name: 'Acme', agencyId: 'agency-7', buyer_id: 'buyer-1' },
+      },
+    });
+    expect(bids[0].meta.brandId).to.equal(42);
+    expect(bids[0].meta.brandName).to.equal('Acme');
+    expect(bids[0].meta.agencyId).to.equal('agency-7');
+    expect(bids[0].meta.buyerId).to.equal('buyer-1');
+  });
+
+  it('surfaces dsa + dchain blocks from bid.ext', () => {
+    const dsa = { adrender: 1, paid: 'paid-abc', behalf: 'AcmeCorp' };
+    const dchain = { ver: '1.0', complete: 1, nodes: [] };
+    const { bids } = fire({ ext: { dsa, dchain } });
+    expect(bids[0].meta.dsa).to.deep.equal(dsa);
+    expect(bids[0].meta.dchain).to.deep.equal(dchain);
+  });
+});
+
+// ---------- imp hook — displaymanager --------------------------------------
+
+describe('pgamdirect: imp displaymanager', () => {
+  it('sets displaymanager + displaymanagerver on every imp', () => {
+    const req = spec.buildRequests([bannerBid()], bidderRequest());
+    const imp = req.data.imp[0];
+    expect(imp.displaymanager).to.equal('Prebid.js');
+    expect(imp.displaymanagerver).to.be.a('string');
+    expect(imp.displaymanagerver.length).to.be.greaterThan(0);
+  });
 });
 
 // ---------- supportedMediaTypes / gvlid ------------------------------------
