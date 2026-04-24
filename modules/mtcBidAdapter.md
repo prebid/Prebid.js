@@ -10,7 +10,7 @@ Maintainer: gabriel@nexx360.io
 
 Connects to Mtc network for bids.
 
-To use us as a bidder you must have an account and an active "tagId" or "placement" on our platform.
+To use us as a bidder you must have an account and an active "tagId" or "placement" from us.
 
 # Test Parameters
 
