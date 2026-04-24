@@ -62,7 +62,7 @@ const converter = ortbConverter({
 });
 
 const isBidRequestValid = (bid:BidRequest<typeof BIDDER_CODE>): boolean => {
-  if (!bid.params.tagId && !bid.params.placement) {
+  if (!bid.params || (!bid.params?.tagId && !bid.params?.placement)) {
     logError('bid.params.tagId or bid.params.placement must be defined');
     return false;
   }
