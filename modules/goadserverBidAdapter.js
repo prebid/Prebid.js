@@ -169,36 +169,55 @@ export const spec = {
   },
 
   /**
-   * Build an OpenRTB 2.5 BidRequest and POST it to the publisher's
-   * specific goadserver deployment. All bids in a single buildRequests
-   * call share the same publisher context (same page, same token) so
-   * we emit one BidRequest with N imps to one endpoint URL.
+   * Build OpenRTB 2.5 BidRequests and POST each to its publisher's
+   * goadserver deployment. A single page can run multiple goadserver
+   * tenants (different `params.host` and/or `params.token`), so we
+   * group the incoming bids by `(host, token)` and emit one
+   * ServerRequest per group — this prevents bids from being routed to
+   * the wrong endpoint or auth'd against the wrong publisher account.
    *
    * @param {Object[]} validBidRequests
    * @param {Object} bidderRequest
-   * @returns {ServerRequest}
+   * @returns {ServerRequest[]}
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0) {
       return [];
     }
-    const host = validBidRequests[0].params.host;
-    const url = `https://${host}/openrtb2/auction`;
-    const data = converter.toORTB({
-      bidRequests: validBidRequests,
-      bidderRequest,
+    const groups = new Map();
+    validBidRequests.forEach(function (bid) {
+      const key = `${bid.params.host}||${bid.params.token}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = [];
+        groups.set(key, group);
+      }
+      group.push(bid);
     });
-    return {
-      method: 'POST',
-      url,
-      data,
-      // Stash the original bidRequests so interpretResponse can
-      // correlate bids back to their ad unit context (needed to
-      // detect outstream video and attach a Renderer).
-      bidRequests: validBidRequests,
-      host,
-      options: { contentType: 'application/json', withCredentials: true },
-    };
+    const requests = [];
+    groups.forEach(function (group) {
+      const host = group[0].params.host;
+      const data = converter.toORTB({
+        bidRequests: group,
+        bidderRequest,
+      });
+      requests.push({
+        method: 'POST',
+        url: `https://${host}/openrtb2/auction`,
+        data,
+        // Stash the original bidRequests so interpretResponse can
+        // correlate bids back to their ad unit context (needed to
+        // detect outstream video and attach a Renderer).
+        bidRequests: group,
+        host,
+        // `text/plain` keeps the POST a simple cross-origin request so
+        // the browser skips the CORS preflight — same JSON body, one
+        // round-trip instead of two. goadserver's /openrtb2/auction
+        // parses the body irrespective of the declared content type.
+        options: { contentType: 'text/plain', withCredentials: true },
+      });
+    });
+    return requests;
   },
 
   /**
@@ -273,7 +292,7 @@ export const spec = {
    *
    * @param {Object} syncOptions
    * @param {Object[]} serverResponses
-   * @returns {UserSync[]}
+   * @returns {Object[]}
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses || serverResponses.length === 0) {

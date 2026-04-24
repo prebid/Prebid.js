@@ -189,25 +189,25 @@ describe('goadserverBidAdapter', function () {
     });
 
     it('targets https://{host}/openrtb2/auction', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(EXPECTED_ENDPOINT);
       expect(request.data).to.be.an('object');
     });
 
     it('places the token in site.publisher.id', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.site).to.have.property('publisher');
       expect(request.data.site.publisher.id).to.equal(TOKEN);
     });
 
     it('defaults currency to USD when unset', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.cur).to.deep.equal(['USD']);
     });
 
     it('builds a valid banner imp', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.imp).to.have.lengthOf(1);
       expect(request.data.imp[0].banner).to.exist;
       expect(request.data.imp[0].banner.format).to.be.an('array').with.lengthOf(2);
@@ -217,7 +217,7 @@ describe('goadserverBidAdapter', function () {
 
     if (FEATURES.VIDEO) {
       it('builds a valid video imp', async function () {
-        const request = spec.buildRequests([VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        const request = spec.buildRequests([VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
         expect(request.data.imp[0].video).to.exist;
         expect(request.data.imp[0].video.w).to.be.a('number');
         expect(request.data.imp[0].video.h).to.be.a('number');
@@ -228,27 +228,27 @@ describe('goadserverBidAdapter', function () {
       // Native serialization in ortbConverter depends on modules/native.js
       // being loaded by the publisher's build; without it the imp will
       // still be emitted but without a native block — mirrors blasto's test.
-      const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.imp).to.have.lengthOf(1);
       expect(request.data.imp[0]).to.be.an('object');
       expect(request.data.imp[0]).to.have.property('id');
     });
 
     it('applies params.floor when Price Floors has not set bidfloor', async function () {
-      const request = spec.buildRequests([BID_REQUEST_WITH_FLOOR], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BID_REQUEST_WITH_FLOOR], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.imp[0].bidfloor).to.equal(1.25);
       expect(request.data.imp[0].bidfloorcur).to.equal('USD');
     });
 
     it('emits params.subid as imp.ext.goadserver.subid', async function () {
-      const request = spec.buildRequests([BID_REQUEST_WITH_SUBID], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BID_REQUEST_WITH_SUBID], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.imp[0].ext).to.exist;
       expect(request.data.imp[0].ext.goadserver).to.exist;
       expect(request.data.imp[0].ext.goadserver.subid).to.equal('article_top_728x90');
     });
 
     it('emits params.deals[] as imp.pmp.deals[]', async function () {
-      const request = spec.buildRequests([BID_REQUEST_WITH_DEALS], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BID_REQUEST_WITH_DEALS], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.imp[0].pmp).to.exist;
       expect(request.data.imp[0].pmp.deals).to.be.an('array').with.lengthOf(2);
       expect(request.data.imp[0].pmp.deals[0].id).to.equal('DEAL_A');
@@ -258,13 +258,13 @@ describe('goadserverBidAdapter', function () {
     });
 
     it('omits imp.pmp when no deals are set', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.imp[0].pmp).to.be.undefined;
     });
 
     if (FEATURES.VIDEO) {
       it('builds an outstream video imp with context preserved', async function () {
-        const request = spec.buildRequests([OUTSTREAM_VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+        const request = spec.buildRequests([OUTSTREAM_VIDEO_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
         expect(request.data.imp[0].video).to.exist;
         // ortbConverter may stash context in ext.prebid depending on
         // Prebid.js version; we just assert the imp is a valid video
@@ -276,7 +276,7 @@ describe('goadserverBidAdapter', function () {
     }
 
     it('omits imp.ext.goadserver.subid when no subid is set', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       const goadserverExt = request.data.imp[0].ext && request.data.imp[0].ext.goadserver;
       if (goadserverExt) {
         expect(goadserverExt.subid).to.be.undefined;
@@ -288,7 +288,7 @@ describe('goadserverBidAdapter', function () {
         ...bidderRequest,
         gdprConsent: GDPR_CONSENT,
       });
-      const request = spec.buildRequests([BANNER_BID_REQUEST], req);
+      const request = spec.buildRequests([BANNER_BID_REQUEST], req)[0];
       expect(request.data.regs.ext.gdpr).to.equal(1);
       expect(request.data.user.ext.consent).to.equal('CONSENT_STRING_TEST');
     });
@@ -298,15 +298,62 @@ describe('goadserverBidAdapter', function () {
         ...bidderRequest,
         uspConsent: '1YYY',
       });
-      const request = spec.buildRequests([BANNER_BID_REQUEST], req);
+      const request = spec.buildRequests([BANNER_BID_REQUEST], req)[0];
       expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
     });
 
     it('forwards COPPA flag to regs.coppa', async function () {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request.data.regs.coppa).to.equal(1);
       config.getConfig.restore();
+    });
+
+    it('posts with contentType text/plain to avoid a CORS preflight', async function () {
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
+      expect(request.options).to.include({ contentType: 'text/plain', withCredentials: true });
+    });
+
+    it('splits bids across (host, token) pairs into separate server requests', async function () {
+      const BID_TENANT_A = { ...BANNER_BID_REQUEST, bidId: 'bid-tenant-a' };
+      const BID_TENANT_B_DIFF_HOST = {
+        ...BANNER_BID_REQUEST,
+        bidId: 'bid-tenant-b-host',
+        params: { host: 'other.example.com', token: TOKEN },
+      };
+      const BID_TENANT_C_DIFF_TOKEN = {
+        ...BANNER_BID_REQUEST,
+        bidId: 'bid-tenant-c-token',
+        params: { host: HOST, token: 'another-token' },
+      };
+      const requests = spec.buildRequests(
+        [BID_TENANT_A, BID_TENANT_B_DIFF_HOST, BID_TENANT_C_DIFF_TOKEN],
+        await addFPDToBidderRequest(bidderRequest),
+      );
+      expect(requests).to.be.an('array').with.lengthOf(3);
+
+      const byHost = (h) => requests.find((r) => r.host === h);
+      expect(byHost(HOST)).to.exist;
+      expect(byHost('other.example.com')).to.exist;
+
+      // Each group's ORTB payload must carry its own token in site.publisher.id.
+      const tokensById = new Set(requests.map((r) => r.data.site.publisher.id));
+      expect(tokensById.has(TOKEN)).to.equal(true);
+      expect(tokensById.has('another-token')).to.equal(true);
+
+      // And every request keeps only its own group's bid(s) for
+      // interpretResponse to correlate against — no cross-contamination.
+      requests.forEach((r) => {
+        expect(r.bidRequests).to.have.lengthOf(1);
+      });
+    });
+
+    it('bundles bids sharing the same (host, token) into a single request', async function () {
+      const BID_A = { ...BANNER_BID_REQUEST, bidId: 'bid-a' };
+      const BID_B = { ...BANNER_BID_REQUEST, bidId: 'bid-b', adUnitCode: '/test/adunit/banner-2' };
+      const requests = spec.buildRequests([BID_A, BID_B], await addFPDToBidderRequest(bidderRequest));
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data.imp).to.have.lengthOf(2);
     });
   });
 
@@ -320,7 +367,7 @@ describe('goadserverBidAdapter', function () {
     });
 
     it('parses a banner bid response', async function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest))[0];
       const serverResponse = {
         body: {
           id: 'test-auction-1',
