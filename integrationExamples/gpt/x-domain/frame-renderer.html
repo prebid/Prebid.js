@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>SafeFrame Renderer Example (safeFrameRendererUrl)</title>
+  <title>Przykład FrameRenderer (frameRendererUrl)</title>
 
   <script src="../../../build/dev/prebid.js" async></script>
   <script
@@ -68,8 +68,8 @@
               then: {
                 creativeId: 'testCreativeIdV2',
                 ad: '<html><body><div style="display:inline-block;width:350px;height:60px;background:#f2f7ff;border:1px solid #7aa2ff;color:#1f3b74;font:14px/60px Arial,sans-serif;text-align:center;">Bid ad html content</div></body></html>',
-                // Hosted externally for GPT/SafeFrame; plik `safeFrameRenderer.js` w repo to tylko referencyjna implementacja.
-                safeFrameRendererUrl: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
+                // Hostowany zewnętrznie (np. GPT); plik `frameRenderer.js` w repo to tylko referencyjna implementacja FrameRenderer.
+                frameRendererUrl: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
                 vastXml,
               }
             }
@@ -103,7 +103,8 @@
 </head>
 
 <body>
-  <h1>SafeFrame Renderer Example (safeFrameRendererUrl)</h1>
+  <h1>Przykład FrameRenderer</h1>
+  <code>bid.frameRendererUrl</code>
 
   <div id="prebid-example" style="min-width: 300px; min-height: 250px;">
     <script>

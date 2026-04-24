@@ -92,9 +92,9 @@ export interface BaseBidResponse {
   eventtrackers?: EventTrackerResponse[];
   renderer?: Renderer;
   /**
-   * URL of a script loaded inside the creative iframe for SafeFrame-style rendering (`pbRenderInFrame`).
+   * URL of a script loaded inside the creative iframe for FrameRenderer (`pbRenderInFrame`).
    */
-  safeFrameRendererUrl?: string;
+  frameRendererUrl?: string;
   /**
    * Billing tracker URL.
    */
