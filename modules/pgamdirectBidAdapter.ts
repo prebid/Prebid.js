@@ -54,6 +54,36 @@ import type { BidRequest } from '../src/adapterManager.js';
 import type { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
 import type { BidResponse } from '../src/bidfactory.js';
 
+/**
+ * sendBeacon — fire-and-forget fetch() with keepalive for low-priority
+ * telemetry. Per Prebid AGENTS.md §Review guidelines: "Low priority
+ * calls should be import ajax method and use fetch keepalive; they
+ * shouldn't use trigger pixel when it can be avoided or fail to
+ * specify keepalive."
+ *
+ * Why not triggerPixel: pixel requests are first-to-be-dropped by
+ * browsers during navigation / unload, which is exactly when billable
+ * + render telemetry fires. Keepalive fetches survive the unload
+ * window (up to 64KB per origin budget), so we actually record the
+ * events we care about for reconciliation.
+ *
+ * Pattern matches kargoBidAdapter.sendTimeoutData + amxBidAdapter
+ * onTimeout + startioBidAdapter. Catch-all swallows errors so a
+ * network hiccup never propagates into the renderer chain.
+ */
+function sendBeacon(url: string): void {
+  try {
+    // Prebid's compat shim makes fetch available everywhere we run.
+    // `keepalive: true` is the essential bit — without it we lose
+    // events on unload.
+    fetch(url, { method: 'GET', keepalive: true }).catch(() => {
+      /* telemetry never throws */
+    });
+  } catch {
+    /* older browsers without fetch — silently skip, not worth a fallback */
+  }
+}
+
 const BIDDER_CODE = 'pgamdirect';
 const ENDPOINT_URL = 'https://rtb.pgammedia.com/rtb/v1/auction';
 const USERSYNC_URL = 'https://rtb.pgammedia.com/rtb/v1/usersync';
@@ -408,7 +438,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       const url = `${TIMEOUT_METRIC_URL}` +
         `?tmax=${encodeURIComponent(String(first.timeout ?? ''))}` +
         `&auction=${encodeURIComponent(String(first.auctionId ?? ''))}`;
-      triggerPixel(url);
+      sendBeacon(url);
     } catch {
       // Ditto — telemetry never blocks.
     }
@@ -438,7 +468,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         `?cpm=${encodeURIComponent(String(cpm ?? ''))}` +
         `&auction=${encodeURIComponent(String(auctionId ?? ''))}` +
         `&adid=${encodeURIComponent(String(adId ?? ''))}`;
-      triggerPixel(url);
+      sendBeacon(url);
     } catch {
       // Billing telemetry must never break rendering.
     }
@@ -466,7 +496,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         `?ok=1` +
         `&adid=${encodeURIComponent(String(adId ?? ''))}` +
         `&auction=${encodeURIComponent(String(auctionId ?? ''))}`;
-      triggerPixel(url);
+      sendBeacon(url);
     } catch {
       // Telemetry never blocks.
     }

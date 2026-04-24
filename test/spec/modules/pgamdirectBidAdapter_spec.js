@@ -310,11 +310,14 @@ describe('pgamdirect: onBidWon', () => {
 // ---------- onTimeout ------------------------------------------------------
 
 describe('pgamdirect: onTimeout', () => {
+  // Low-priority telemetry uses fetch() + keepalive per AGENTS.md §Review
+  // guidelines. Stub the global so we can assert on the URL without
+  // making a real network call.
   let sandbox;
-  let pixelStub;
+  let fetchStub;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    pixelStub = sandbox.stub(utils, 'triggerPixel');
+    fetchStub = sandbox.stub(window, 'fetch').resolves({ ok: true });
   });
   afterEach(() => sandbox.restore());
 
@@ -322,17 +325,21 @@ describe('pgamdirect: onTimeout', () => {
     expect(() => spec.onTimeout([])).to.not.throw();
     expect(() => spec.onTimeout(null)).to.not.throw();
     expect(() => spec.onTimeout(undefined)).to.not.throw();
-    expect(pixelStub.called).to.equal(false);
+    expect(fetchStub.called).to.equal(false);
   });
 
-  it('fires a metrics pixel carrying tmax + auction on a real timeout record', () => {
+  it('sends a keepalive beacon with tmax + auction on a real timeout record', () => {
     spec.onTimeout([
       { auctionId: 'a1', timeout: 300, bidId: 'b1', bidder: 'pgamdirect' },
     ]);
-    expect(pixelStub.calledOnce).to.equal(true);
-    expect(pixelStub.firstCall.args[0]).to.include('/rtb/v1/metrics/timeout');
-    expect(pixelStub.firstCall.args[0]).to.include('tmax=300');
-    expect(pixelStub.firstCall.args[0]).to.include('auction=a1');
+    expect(fetchStub.calledOnce).to.equal(true);
+    const [url, init] = fetchStub.firstCall.args;
+    expect(url).to.include('/rtb/v1/metrics/timeout');
+    expect(url).to.include('tmax=300');
+    expect(url).to.include('auction=a1');
+    // keepalive=true is the whole point — without it Chrome drops the
+    // request on unload and we undercount timeouts.
+    expect(init).to.have.property('keepalive', true);
   });
 });
 
@@ -340,21 +347,22 @@ describe('pgamdirect: onTimeout', () => {
 
 describe('pgamdirect: onBidBillable', () => {
   let sandbox;
-  let pixelStub;
+  let fetchStub;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    pixelStub = sandbox.stub(utils, 'triggerPixel');
+    fetchStub = sandbox.stub(window, 'fetch').resolves({ ok: true });
   });
   afterEach(() => sandbox.restore());
 
-  it('fires billable-metric pixel with cpm / auction / adid', () => {
+  it('sends keepalive beacon with cpm / auction / adid', () => {
     spec.onBidBillable({ cpm: 1.75, auctionId: 'auc-9', adId: 'pbid-42' });
-    expect(pixelStub.calledOnce).to.equal(true);
-    const url = pixelStub.firstCall.args[0];
+    expect(fetchStub.calledOnce).to.equal(true);
+    const [url, init] = fetchStub.firstCall.args;
     expect(url).to.include('/rtb/v1/metrics/billable');
     expect(url).to.include('cpm=1.75');
     expect(url).to.include('auction=auc-9');
     expect(url).to.include('adid=pbid-42');
+    expect(init).to.have.property('keepalive', true);
   });
 
   it('tolerates missing fields without throwing', () => {
@@ -368,21 +376,22 @@ describe('pgamdirect: onBidBillable', () => {
 
 describe('pgamdirect: onAdRenderSucceeded', () => {
   let sandbox;
-  let pixelStub;
+  let fetchStub;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    pixelStub = sandbox.stub(utils, 'triggerPixel');
+    fetchStub = sandbox.stub(window, 'fetch').resolves({ ok: true });
   });
   afterEach(() => sandbox.restore());
 
-  it('fires render-metric pixel keyed on adId + auctionId', () => {
+  it('sends keepalive beacon keyed on adId + auctionId', () => {
     spec.onAdRenderSucceeded({ adId: 'pbid-1', auctionId: 'auc-1' });
-    expect(pixelStub.calledOnce).to.equal(true);
-    const url = pixelStub.firstCall.args[0];
+    expect(fetchStub.calledOnce).to.equal(true);
+    const [url, init] = fetchStub.firstCall.args;
     expect(url).to.include('/rtb/v1/metrics/render');
     expect(url).to.include('ok=1');
     expect(url).to.include('adid=pbid-1');
     expect(url).to.include('auction=auc-1');
+    expect(init).to.have.property('keepalive', true);
   });
 
   it('swallows arbitrary input', () => {
