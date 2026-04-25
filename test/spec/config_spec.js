@@ -487,6 +487,61 @@ describe('config API', function () {
     expect(getConfig('ortb2')).to.deep.equal(expected);
   });
 
+  it('mergeConfig only notifies updated topics', function () {
+    const baseOrtb2 = {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      }
+    };
+    const updateOrtb2 = {
+      site: {
+        name: 'example'
+      }
+    };
+
+    setConfig({
+      currency: { adServerCurrency: 'USD' },
+      ortb2: baseOrtb2
+    });
+
+    const ortb2Listener = sinon.spy();
+    const currencyListener = sinon.spy();
+    const allTopicsListener = sinon.spy();
+
+    getConfig('ortb2', ortb2Listener);
+    getConfig('currency', currencyListener);
+    getConfig(allTopicsListener);
+
+    const result = mergeConfig({ ortb2: updateOrtb2 });
+    const expected = {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      },
+      site: {
+        name: 'example'
+      }
+    };
+
+    sinon.assert.calledOnce(ortb2Listener);
+    sinon.assert.calledWithExactly(ortb2Listener, { ortb2: expected });
+    sinon.assert.notCalled(currencyListener);
+    sinon.assert.calledOnce(allTopicsListener);
+    const allTopicsPayload = allTopicsListener.firstCall.args[0];
+    expect(Object.keys(allTopicsPayload)).to.deep.equal(['ortb2']);
+    expect(allTopicsPayload.ortb2).to.deep.equal(expected);
+
+    expect(result.ortb2).to.deep.equal(expected);
+    expect(result.currency).to.deep.equal({ adServerCurrency: 'USD' });
+  });
+
   it('should log error for a non-object value passed in', function () {
     mergeConfig('invalid object');
     expect(logErrorSpy.calledOnce).to.equal(true);
