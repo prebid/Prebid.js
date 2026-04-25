@@ -12,11 +12,11 @@ export const spec = {
     code: BIDDER_CODE,
     supportedMediaTypes: [BANNER],
 
-    isBidRequestValid: function(bid) {
+    isBidRequestValid: function (bid) {
         return !!(bid.params && bid.params.networkId && bid.params.placementId);
     },
 
-    buildRequests: function(validBidRequests, bidderRequest) {
+    buildRequests: function (validBidRequests, bidderRequest) {
         const userId = storage.getCookie(COOKIE_NAME) || '';
         const gdprConsent = bidderRequest.gdprConsent;
 
@@ -68,7 +68,7 @@ export const spec = {
         };
     },
 
-    interpretResponse: function(serverResponse) {
+    interpretResponse: function (serverResponse) {
         const response = serverResponse.body;
         if (!response || !response.seatbid || !response.seatbid.length) return [];
 
@@ -95,7 +95,7 @@ export const spec = {
         return bids;
     },
 
-    getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
         const gdprParams = gdprConsent?.gdprApplies === true
             ? `&gdpr=1&gdpr_consent=${gdprConsent.consentString}`
             : '';
