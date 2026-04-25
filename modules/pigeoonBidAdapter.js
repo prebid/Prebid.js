@@ -1,24 +1,23 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pigeoon';
 const ENDPOINT_URL = 'https://pbjs.pigeoon.com/bid';
+const COOKIE_NAME = 'pigeoon_uid';
 
-function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : null;
-}
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
     code: BIDDER_CODE,
-    supportedMediaTypes: [BANNER, NATIVE],
+    supportedMediaTypes: [BANNER],
 
-    isBidRequestValid: function (bid) {
+    isBidRequestValid: function(bid) {
         return !!(bid.params && bid.params.networkId && bid.params.placementId);
     },
 
-    buildRequests: function (validBidRequests, bidderRequest) {
-        const userId = getCookie('pigeoon_uid');
+    buildRequests: function(validBidRequests, bidderRequest) {
+        const userId = storage.getCookie(COOKIE_NAME) || '';
         const gdprConsent = bidderRequest.gdprConsent;
 
         const imps = validBidRequests.map(bid => {
@@ -31,12 +30,6 @@ export const spec = {
                 const sizes = bid.mediaTypes[BANNER].sizes || [];
                 imp.banner = {
                     format: sizes.map(s => ({ w: s[0], h: s[1] }))
-                };
-            }
-
-            if (bid.mediaTypes[NATIVE]) {
-                imp.native = {
-                    request: JSON.stringify(bid.mediaTypes[NATIVE])
                 };
             }
 
@@ -53,11 +46,11 @@ export const spec = {
                 }
             },
             user: {
-                id: userId || ''
+                id: userId
             },
             regs: {
                 ext: {
-                    gdpr: gdprConsent ? 1 : 0
+                    gdpr: gdprConsent?.gdprApplies === true ? 1 : 0
                 }
             },
             ext: {
@@ -70,12 +63,12 @@ export const spec = {
             url: ENDPOINT_URL,
             data: JSON.stringify(request),
             options: {
-                contentType: 'application/json'
+                contentType: 'text/plain'
             }
         };
     },
 
-    interpretResponse: function (serverResponse) {
+    interpretResponse: function(serverResponse) {
         const response = serverResponse.body;
         if (!response || !response.seatbid || !response.seatbid.length) return [];
 
@@ -102,8 +95,8 @@ export const spec = {
         return bids;
     },
 
-    getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-        const gdprParams = gdprConsent
+    getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+        const gdprParams = gdprConsent?.gdprApplies === true
             ? `&gdpr=1&gdpr_consent=${gdprConsent.consentString}`
             : '';
 

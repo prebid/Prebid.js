@@ -9,11 +9,11 @@
 | Type          | SSP |
 | GDPR Support  | Yes |
 | User Sync     | iframe |
-| Media Types   | Banner, Native |
+| Media Types   | Banner |
 
 ## Description
 
-Pigeoon is a publisher-focused ad technology platform that helps publishers build and manage their own ad tech stack and revenue. 
+Pigeoon is a publisher-focused ad technology platform that helps publishers build and manage their own ad tech stack. The Pigeoon bid adapter enables header bidding integration with Google Ad Manager (GAM) for direct sales campaigns.
 
 ## Bid Params
 
@@ -32,30 +32,6 @@ var adUnits = [{
     mediaTypes: {
         banner: {
             sizes: [[300, 250], [728, 90]]
-        }
-    },
-    bids: [{
-        bidder: 'pigeoon',
-        params: {
-            networkId: 'net_ABC123',
-            placementId: '12345678'
-        }
-    }]
-}];
-```
-
-### Native Setup
-
-```javascript
-var adUnits = [{
-    code: 'div-native-1',
-    mediaTypes: {
-        native: {
-            title: { required: true, len: 80 },
-            body: { required: false },
-            image: { required: true, sizes: [1200, 627] },
-            icon: { required: false, sizes: [80, 80] },
-            cta: { required: false }
         }
     },
     bids: [{
@@ -93,13 +69,3 @@ This adapter supports GDPR via TCF 2.0. Consent string is passed in the bid requ
 ## ads.txt
 
 Publishers must add the following line to their `ads.txt` file:
-
-```
-pigeoon.com, {networkId}, DIRECT, 22578432533
-```
-
-Replace `{networkId}` with your assigned network ID.
-
-## Contact
-
-For setup assistance or questions, contact: destek@pigeoon.com
