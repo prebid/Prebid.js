@@ -227,6 +227,89 @@ describe('consentManagement', function () {
             expect(consent.vendorData).to.eql(consentData);
             expect(consentConfig.staticConsentData).to.be.equal(consentData);
           });
+
+          it('accepts static TCF 2.3 consent data with disclosedVendors', async () => {
+            const consentData = {
+              'tcString': 'COuqj-POu90rDBcBkBENAZCgAPzAAAPAACiQFwwBAABAA1ADEAbQC4YAYAAgAxAG0A',
+              'cmpId': 92,
+              'cmpVersion': 100,
+              'tcfPolicyVersion': 3,
+              'gdprApplies': true,
+              'isServiceSpecific': true,
+              'useNonStandardStacks': false,
+              'purposeOneTreatment': false,
+              'publisherCC': 'US',
+              'cmpStatus': 'loaded',
+              'eventStatus': 'tcloaded',
+              'outOfBand': {
+                'allowedVendors': {},
+                'discloseVendors': {}
+              },
+              'purpose': {
+                'consents': {
+                  '1': true,
+                  '2': true,
+                  '3': true
+                },
+                'legitimateInterests': {
+                  '1': false,
+                  '2': false,
+                  '3': false
+                }
+              },
+              'vendor': {
+                'consents': {
+                  '1': false,
+                  '2': true,
+                  '3': false
+                },
+                'legitimateInterests': {
+                  '1': false,
+                  '2': true,
+                  '3': false,
+                  '4': false,
+                  '5': false
+                }
+              },
+              'disclosedVendors': {
+                '1': true,
+                '2': true,
+                '3': false
+              },
+              'specialFeatureOptins': {
+                '1': false,
+                '2': false
+              },
+              'restrictions': {},
+              'publisher': {
+                'consents': {
+                  '1': false,
+                  '2': false,
+                  '3': false
+                },
+                'legitimateInterests': {
+                  '1': false,
+                  '2': false,
+                  '3': false
+                },
+                'customPurpose': {
+                  'consents': {},
+                  'legitimateInterests': {}
+                }
+              }
+            };
+
+            await setConsentConfig({
+              cmpApi: 'static',
+              timeout: 7500,
+              consentData: packageCfg(consentData)
+            });
+            const consent = gdprDataHandler.getConsentData();
+            expect(consent.consentString).to.eql(consentData.tcString);
+            expect(consent.vendorData).to.eql(consentData);
+            expect(consent.vendorData.disclosedVendors).to.eql(consentData.disclosedVendors);
+            expect(consent.vendorData.tcfPolicyVersion).to.eql(3);
+          });
         });
       });
     });
