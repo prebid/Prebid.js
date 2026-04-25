@@ -95,7 +95,7 @@ export function extractEids({ global, bidder }) {
  *  - `bidder` is a map from bidder code to EID objects that are specific to that bidder, and cannot be restricted through `permissions`
  *  - `permissions` is a list of EID permissions as expected by PBS.
  */
-export function consolidateEids({ eids, conflicts = new Set() }) {
+export function consolidateEids({ eids, conflicts = new Set() }, requestedBidders) {
   const globalEntries = [];
   const bidderEntries = [];
   const byBidder = {};
@@ -111,18 +111,24 @@ export function consolidateEids({ eids, conflicts = new Set() }) {
       })
     }
   });
+
+  const permissions = Object.fromEntries(
+    globalEntries.filter(({ bidders }) => bidders !== false)
+      .map(({ eid, bidders }) => ([eid.source, {
+        source: eid.source,
+        bidders: bidders.filter(bidder => !requestedBidders?.length || requestedBidders.includes(bidder))
+      }]))
+  );
+
   return {
-    global: globalEntries.map(({ eid }) => eid),
-    permissions: globalEntries.filter(({ bidders }) => bidders !== false).map(({ eid, bidders }) => ({
-      source: eid.source,
-      bidders
-    })),
+    global: globalEntries.map(({ eid }) => eid).filter(eid => permissions[eid.source] == null || permissions[eid.source].bidders.length > 0),
+    permissions: Object.values(permissions).filter(permission => permission.bidders.length > 0),
     bidder: byBidder
   }
 }
 
 function replaceEids({ global, bidder }, requestedBidders) {
-  const consolidated = consolidateEids(extractEids({ global, bidder }));
+  const consolidated = consolidateEids(extractEids({ global, bidder }), requestedBidders);
   global = deepClone(global);
   bidder = deepClone(bidder);
   function removeEids(target) {
@@ -133,11 +139,6 @@ function replaceEids({ global, bidder }, requestedBidders) {
   Object.values(bidder).forEach(removeEids);
   if (consolidated.global.length) {
     deepSetValue(global, 'user.ext.eids', consolidated.global);
-  }
-  if (requestedBidders?.length) {
-    consolidated.permissions.forEach((permission) => {
-      permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder));
-    });
   }
   if (consolidated.permissions.length) {
     deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);

@@ -16,6 +16,10 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveRtdProviderConfig} PermutiveRtdProviderConfig
+ * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveRtdProviderParams} PermutiveRtdProviderParams
+ * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveBidderConfig} PermutiveBidderConfig
+ * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveTransformationConfig} PermutiveTransformationConfig
  */
 
 const MODULE_NAME = 'permutive'
@@ -77,8 +81,8 @@ function getParamsFromPermutive() {
  * As items with a higher priority will be deeply merged into the previous config, deep merges are performed by
  * reversing the priority order.
  *
- * @param {Object} customModuleConfig - Publisher config for module
- * @return {Object} Deep merges of the default, Permutive and custom config.
+ * @param {PermutiveRtdProviderConfig} customModuleConfig - Publisher config for module
+ * @return {PermutiveRtdProviderConfig} Deep merges of the default, Permutive and custom config.
  */
 export function getModuleConfig(customModuleConfig) {
   // Use the params from Permutive if available, otherwise fallback to the cached value set by Permutive.
@@ -91,6 +95,7 @@ export function getModuleConfig(customModuleConfig) {
       acBidders: [],
       overwrites: {},
       enforceVendorConsent: false,
+      bidders: {},
     },
   },
   permutiveModuleConfig,
@@ -101,20 +106,22 @@ export function getModuleConfig(customModuleConfig) {
 /**
  * Sets ortb2 config for ac bidders
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
- * @param {Object} moduleConfig - Publisher config for module
+ * @param {PermutiveRtdProviderConfig} moduleConfig - Publisher config for module
  * @param {Object} segmentData - Segment data grouped by bidder or type
  */
 export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
+  const biddersConfig = deepAccess(moduleConfig, 'params.bidders') || {}
 
   const ssps = segmentData?.ssp?.ssps ?? []
   const sspCohorts = segmentData?.ssp?.cohorts ?? []
   const topics = segmentData?.topics ?? {}
 
-  const bidders = new Set([...acBidders, ...ssps])
+  const bidders = new Set([...acBidders, ...ssps, ...Object.keys(biddersConfig)])
   bidders.forEach(function (bidder) {
+    const bidderConfig = biddersConfig[bidder] || {};
     const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
 
     let cohorts = []
@@ -129,9 +136,27 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
       cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
     }
 
-    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, segmentData)
+    const customCohortsData = getCustomCohortsData(bidderConfig, bidder, segmentData, maxSegs)
+
+    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, customCohortsData)
     bidderOrtb2[bidder] = nextConfig.ortb2
   })
+}
+
+/**
+ * Resolves custom cohorts data for a bidder, reading from localStorage if configured.
+ * @param {PermutiveBidderConfig} bidderCfg - Bidder-specific configuration from params.bidders
+ * @param {string} bidder - The bidder identifier
+ * @param {Object} segmentData - Segment data grouped by bidder or type
+ * @param {number} maxSegs - Maximum number of segments
+ * @return {string[]} Custom cohort IDs
+ */
+function getCustomCohortsData (bidderCfg, bidder, segmentData, maxSegs) {
+  const customCohorts = bidderCfg?.customCohorts
+  if (customCohorts?.source === 'ls' && customCohorts?.key) {
+    return makeSafe(() => readSegments(customCohorts.key, []).map(String).slice(0, maxSegs)) || []
+  }
+  return deepAccess(segmentData, bidder) || []
 }
 
 /**
@@ -141,15 +166,13 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
  * @param {Object} topics - Privacy Sandbox Topics, keyed by IAB taxonomy version (600, 601, etc.)
- * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
+ * @param {PermutiveTransformationConfig[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
- * @param {Object} segmentData - The segments available for targeting
+ * @param {string[]} customCohortsData - Custom cohort IDs for this bidder
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, segmentData) {
+function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, customCohortsData) {
   logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig })
-
-  const customCohortsData = deepAccess(segmentData, bidder) || []
 
   const name = 'permutive.com'
 
@@ -239,7 +262,7 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
 /**
  * Set segments on bid request object
  * @param {Object} reqBidsConfigObj - Bid request object
- * @param {Object} moduleConfig - Module configuration
+ * @param {PermutiveRtdProviderConfig} moduleConfig - Module configuration
  * @param {Object} segmentData - Segment object
  */
 function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
@@ -295,7 +318,7 @@ function getCustomBidderFn (moduleConfig, bidder) {
 
 /**
  * Check whether ac is enabled for bidder
- * @param {Object} moduleConfig - Module configuration
+ * @param {PermutiveRtdProviderConfig} moduleConfig - Module configuration
  * @param {string} bidder - Bidder name
  * @return {boolean}
  */
