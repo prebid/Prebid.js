@@ -1,8 +1,9 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { type AdapterRequest, type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { type Bid } from '../src/bidfactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, logError, triggerPixel, isStr } from '../src/utils.js';
+import { deepAccess, deepSetValue, isStr, logError, triggerPixel } from '../src/utils.js';
 
 /**
  * Prebid.js adapter for goadserver — a self-hosted, multi-tenant ad
@@ -20,14 +21,43 @@ import { deepAccess, deepSetValue, logError, triggerPixel, isStr } from '../src/
  * no bidder-code alias per deployment because the endpoint URL and token
  * are per-bid parameters, not per-registration; publishers running
  * multiple goadserver instances just pass different `params.host` values.
- *
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'goadserver';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
+
+type GoadserverDealParam = {
+  id: string | number;
+  bidfloor?: number;
+  bidfloorcur?: string;
+  at?: number;
+  wseat?: string[];
+  wadomain?: string[];
+};
+
+export type GoadserverBidParams = {
+  host: string;
+  token: string;
+  floor?: number;
+  subid?: string | number;
+  outstreamRendererUrl?: string;
+  deals?: GoadserverDealParam[];
+};
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: GoadserverBidParams;
+  }
+}
+
+// `buildRequests` stashes the originating bid requests + host on each
+// AdapterRequest so `interpretResponse` can correlate bids back to ad
+// unit context (needed to attach an outstream Renderer).
+type GoadserverAdapterRequest = AdapterRequest & {
+  bidRequests: any[];
+  host: string;
+};
 
 /**
  * Outstream video renderer — delegates to the goadserver-hosted player
@@ -39,14 +69,13 @@ const DEFAULT_TTL = 300;
  * loaded. We push onto renderer so execution is deferred until after
  * that load completes — attempting to render synchronously would race
  * the script fetch.
- *
- * @param {Bid} bid
  */
-function outstreamRender(bid) {
+function outstreamRender(bid: Bid): void {
   bid.renderer.push(function () {
     try {
-      if (window.goadserverOutstream && typeof window.goadserverOutstream.render === 'function') {
-        window.goadserverOutstream.render(bid);
+      const w = window as unknown as { goadserverOutstream?: { render: (bid: Bid) => void } };
+      if (w.goadserverOutstream && typeof w.goadserverOutstream.render === 'function') {
+        w.goadserverOutstream.render(bid);
       }
     } catch (e) {
       logError('goadserver: outstream render failed', e);
@@ -59,18 +88,13 @@ function outstreamRender(bid) {
  * renderer URL defaults to the deployment's hosted player but can be
  * overridden via `params.outstreamRendererUrl` for publishers who want
  * to self-host or bundle a custom player.
- *
- * @param {Bid} bid
- * @param {string} host    The publisher's goadserver deployment host.
- * @param {string} [custom] Optional override URL for a self-hosted renderer.
- * @returns {Renderer}
  */
-function newOutstreamRenderer(bid, host, custom) {
+function newOutstreamRenderer(bid: Bid, host: string, custom?: string): Renderer {
   const url = (isStr(custom) && custom.length > 0)
     ? custom
     : `https://${host}/prebid-outstream.js`;
   const renderer = Renderer.install({
-    id: bid.bidId || bid.requestId,
+    id: bid.requestId,
     url,
     loaded: false,
     adUnitCode: bid.adUnitCode,
@@ -87,7 +111,7 @@ function newOutstreamRenderer(bid, host, custom) {
 // goes through the adapter, otherwise CMPs may drop bid requests.
 // const GVLID = 0;
 
-const converter = ortbConverter({
+const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     netRevenue: true,
     ttl: DEFAULT_TTL,
@@ -101,22 +125,23 @@ const converter = ortbConverter({
   // can attribute the auction result to the right sub-identifier.
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (bidRequest.params?.floor != null && !imp.bidfloor) {
-      imp.bidfloor = Number(bidRequest.params.floor);
+    const params = bidRequest.params;
+    if (params?.floor != null && !imp.bidfloor) {
+      imp.bidfloor = Number(params.floor);
       imp.bidfloorcur = DEFAULT_CURRENCY;
     }
-    if (bidRequest.params?.subid) {
-      deepSetValue(imp, 'ext.goadserver.subid', String(bidRequest.params.subid));
+    if (params?.subid) {
+      deepSetValue(imp, 'ext.goadserver.subid', String(params.subid));
     }
     // Private marketplace deals — publishers list them in params.deals[].
     // Each entry is an OpenRTB imp.pmp.deal object (id required, optional
     // bidfloor / bidfloorcur / at / wseat / wadomain). The adapter stuffs
     // them into imp.pmp.deals so downstream DSPs see the deal objects
     // and can return bids with matching bid.dealid.
-    if (Array.isArray(bidRequest.params?.deals) && bidRequest.params.deals.length > 0) {
-      const deals = bidRequest.params.deals
-        .filter(d => d && d.id)
-        .map(d => ({
+    if (Array.isArray(params?.deals) && params.deals.length > 0) {
+      const deals = params.deals
+        .filter((d): d is GoadserverDealParam => Boolean(d && d.id))
+        .map((d) => ({
           id: String(d.id),
           bidfloor: typeof d.bidfloor === 'number' ? d.bidfloor : 0,
           bidfloorcur: d.bidfloorcur || DEFAULT_CURRENCY,
@@ -147,8 +172,7 @@ const converter = ortbConverter({
   },
 });
 
-/** @type {import('../src/adapters/bidderFactory.js').BidderSpec} */
-export const spec = {
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   // gvlid: GVLID,  // TODO: populate once registered with IAB Europe
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -157,15 +181,13 @@ export const spec = {
    * Every bid must carry a host (goadserver deployment domain) and a
    * token (SSP campaign hash from the publisher panel). Without both,
    * the auction can't be authenticated or routed.
-   *
-   * @param {Object} bid
-   * @returns {boolean}
    */
   isBidRequestValid: function (bid) {
-    return Boolean(bid?.params?.host) &&
-      typeof bid.params.host === 'string' &&
-      Boolean(bid?.params?.token) &&
-      typeof bid.params.token === 'string';
+    const params = bid?.params;
+    return Boolean(params?.host) &&
+      typeof params.host === 'string' &&
+      Boolean(params?.token) &&
+      typeof params.token === 'string';
   },
 
   /**
@@ -175,26 +197,22 @@ export const spec = {
    * group the incoming bids by `(host, token)` and emit one
    * ServerRequest per group — this prevents bids from being routed to
    * the wrong endpoint or auth'd against the wrong publisher account.
-   *
-   * @param {Object[]} validBidRequests
-   * @param {Object} bidderRequest
-   * @returns {ServerRequest[]}
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0) {
       return [];
     }
-    const groups = new Map();
+    const groups = new Map<string, typeof validBidRequests>();
     validBidRequests.forEach(function (bid) {
       const key = `${bid.params.host}||${bid.params.token}`;
       let group = groups.get(key);
       if (!group) {
-        group = [];
+        group = [] as unknown as typeof validBidRequests;
         groups.set(key, group);
       }
       group.push(bid);
     });
-    const requests = [];
+    const requests: GoadserverAdapterRequest[] = [];
     groups.forEach(function (group) {
       const host = group[0].params.host;
       const data = converter.toORTB({
@@ -224,19 +242,15 @@ export const spec = {
    * Translate goadserver's OpenRTB 2.5 BidResponse back into Prebid
    * bids. ortbConverter handles the bulk of the mapping — we just
    * delegate.
-   *
-   * @param {Object} serverResponse
-   * @param {ServerRequest} request
-   * @returns {Bid[]}
    */
   interpretResponse: function (serverResponse, request) {
     if (!serverResponse?.body) {
       return [];
     }
-    const bids = converter.fromORTB({
+    const bids: Bid[] = (converter.fromORTB({
       response: serverResponse.body,
       request: request.data,
-    }).bids;
+    }) as { bids: Bid[] }).bids;
 
     // Post-process: attach an outstream renderer to video bids whose
     // original ad unit requested video.context = 'outstream'. Without
@@ -244,8 +258,9 @@ export const spec = {
     // creative. Also prefer the Prebid Cache URL (hb_cache_url) over
     // the raw VAST XML when both are present, so large VAST blobs
     // don't have to live in Prebid's in-memory targeting store.
-    const originalBids = request.bidRequests || [];
-    const host = request.host;
+    const stashed = request as GoadserverAdapterRequest;
+    const originalBids = stashed.bidRequests || [];
+    const host = stashed.host;
     bids.forEach(function (bid) {
       if (bid.mediaType !== VIDEO) return;
 
@@ -274,12 +289,11 @@ export const spec = {
    * Fire the impression URL when a bid wins. goadserver uses the same
    * `nurl` tracking pattern as its existing RTB path, so triggering the
    * pixel here unifies win notification with the rest of the platform.
-   *
-   * @param {Bid} bid
    */
   onBidWon: function (bid) {
-    if (bid?.nurl && isStr(bid.nurl)) {
-      triggerPixel(bid.nurl);
+    const nurl = deepAccess(bid, 'nurl');
+    if (nurl && isStr(nurl)) {
+      triggerPixel(nurl);
     }
   },
 
@@ -289,16 +303,12 @@ export const spec = {
    * server's UA+IP+lang fingerprint. Sync URL is emitted by the
    * server at `response.body.ext.goadserver.usersync` so each
    * publisher's goadserver deployment publishes its own endpoint.
-   *
-   * @param {Object} syncOptions
-   * @param {Object[]} serverResponses
-   * @returns {Object[]}
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses || serverResponses.length === 0) {
       return [];
     }
-    const syncs = [];
+    const syncs: { type: 'iframe' | 'image'; url: string }[] = [];
     serverResponses.forEach(function (rsp) {
       const entry = rsp?.body?.ext?.goadserver?.usersync;
       if (!entry || !entry.url) return;
