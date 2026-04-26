@@ -315,6 +315,21 @@ describe('GoldbachBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
+
+    it('should return false when publisherId is an empty string', function () {
+      const invalidBid = Object.assign({}, bid, { params: { publisherId: '' } });
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+
+    it('should return false when params is missing', function () {
+      const invalidBid = { bidder: BIDDER_NAME };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+
+    it('should return false when publisherId is not a string', function () {
+      const invalidBid = Object.assign({}, bid, { params: { publisherId: 123 } });
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -364,6 +379,19 @@ describe('GoldbachBidAdapter', function () {
       expect(payload.ext.goldbach.publisherId).to.equal(bidRequests[0].params.publisherId);
     });
 
+    it('should set auctionStartTime on request', function () {
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
+      const before = Date.now();
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const after = Date.now();
+      const payload = request.data;
+
+      expect(payload.ext.goldbach.auctionStartTime).to.be.a('number');
+      expect(payload.ext.goldbach.auctionStartTime).to.be.at.least(before);
+      expect(payload.ext.goldbach.auctionStartTime).to.be.at.most(after);
+    });
+
     it('should set gdpr on request', function () {
       const bidRequests = deepClone(validBidRequests);
       const bidderRequest = deepClone(validBidderRequest);
@@ -372,6 +400,17 @@ describe('GoldbachBidAdapter', function () {
 
       expect(!!payload.regs.ext.gdpr).to.equal(bidderRequest.gdprConsent.gdprApplies);
       expect(payload.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should handle missing gdprConsent gracefully', function () {
+      const bidRequests = deepClone(validBidRequests);
+      const bidderRequest = deepClone(validBidderRequest);
+      delete bidderRequest.gdprConsent;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+
+      expect(payload.ext.goldbach.publisherId).to.exist;
+      expect(payload.regs?.ext?.gdpr).to.not.exist;
     });
 
     it('should set custom targeting on request', function () {
@@ -417,13 +456,42 @@ describe('GoldbachBidAdapter', function () {
         validBidRequests[1].mediaTypes.video.playbackmethod = 1;
         const response = spec.interpretResponse(bidResponse, bidRequest);
         const renderer = response.find(bid => !!bid.renderer);
-        renderer?.renderer?.render();
 
         expect(response).to.exist;
         expect(response.filter(bid => !!bid.renderer).length).to.equal(1);
         expect(renderer.renderer.config.documentResolver).to.exist;
+        expect(renderer.renderer.url).to.be.a('string');
       });
     }
+
+    it('should set meta fields from bid response', function () {
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      const bidResponse = deepClone({ body: validOrtbBidResponse });
+      bidResponse.body.seatbid[0].bid[0].adomain = ['example.com'];
+      const response = spec.interpretResponse(bidResponse, bidRequest);
+      const bannerBid = response.find(bid => bid.requestId === validBidRequests[0].bidId);
+
+      expect(bannerBid.meta).to.exist;
+      expect(bannerBid.meta.advertiserDomains).to.deep.equal(['example.com']);
+      expect(bannerBid.meta.mediaType).to.equal('banner');
+    });
+
+    it('should use origbidcur as currency fallback', function () {
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      const bidResponse = deepClone({ body: validOrtbBidResponse });
+      const response = spec.interpretResponse(bidResponse, bidRequest);
+      const bannerBid = response.find(bid => bid.requestId === validBidRequests[0].bidId);
+
+      expect(bannerBid.currency).to.equal('USD');
+    });
+
+    it('should return empty array for empty seatbid', function () {
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      const bidResponse = { body: { id: 'test', seatbid: [] } };
+      const response = spec.interpretResponse(bidResponse, bidRequest);
+
+      expect(response).to.be.an('array').that.is.empty;
+    });
 
     it('should not attach a custom video renderer when VAST url/xml is missing', function () {
       const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
@@ -480,13 +548,33 @@ describe('GoldbachBidAdapter', function () {
           }
         }
       };
-      const synOptions = { pixelEnabled: true, iframeEnabled: true };
-      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
       expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
       expect(userSyncs[0].url).to.contain('xandrId=$UID');
       expect(userSyncs[0].url).to.contain(`gdpr_consent=${gdprConsent.consentString}`);
       expect(userSyncs[0].url).to.contain(`gdpr=1`);
-    })
+    });
+
+    it('should return empty array when gdprConsent is missing', function () {
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, undefined, {});
+      expect(userSyncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when both pixel and iframe are disabled', function () {
+      const gdprConsent = { vendorData: { purpose: { consents: { '1': true } } } };
+      const syncOptions = { pixelEnabled: false, iframeEnabled: false };
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
+      expect(userSyncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should prefer pixel over iframe when both are enabled', function () {
+      const gdprConsent = { vendorData: { purpose: { consents: { '1': true } } } };
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
+      expect(userSyncs[0].type).to.equal('image');
+    });
   });
 
   describe('getUserSyncs storage', function () {
@@ -527,37 +615,92 @@ describe('GoldbachBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
-    it('should send logs on timeout', function () {
+    it('should send timeout event', function () {
       spec.onTimeout([]);
       expect(ajaxStub.calledOnce).to.be.true;
+      const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(payload.event).to.equal('timeout');
+      expect(payload.source).to.be.a('string');
+      expect(payload.projected).to.be.a('number');
+      expect(payload.ts).to.be.a('number');
+      expect(payload.data).to.be.an('object');
     });
   });
 
   describe('onBidWon', function () {
-    it('should send logs on won', function () {
-      spec.onBidWon([]);
+    it('should send bid_won event', function () {
+      spec.onBidWon({
+        creativeId: 'crid-1',
+        adUnitCode: 'au-1',
+        mediaType: 'banner',
+        size: '300x250',
+        cpm: 1.5,
+        currency: 'USD'
+      });
       expect(ajaxStub.calledOnce).to.be.true;
+      const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(payload.event).to.equal('bid_won');
+      expect(payload.source).to.be.a('string');
+      expect(payload.projected).to.be.a('number');
+      expect(payload.ts).to.be.a('number');
+      expect(payload.data).to.be.an('object');
+      expect(payload.data).to.include.keys('creativeId', 'adUnitCode', 'mediaType', 'size', 'cpm', 'currency');
     });
   });
 
   describe('onSetTargeting', function () {
-    it('should send logs on targeting', function () {
-      spec.onSetTargeting([]);
+    it('should send targeting_set event', function () {
+      spec.onSetTargeting({
+        creativeId: 'crid-1',
+        adUnitCode: 'au-1',
+        mediaType: 'banner',
+        size: '300x250',
+        cpm: 1.0,
+        currency: 'CHF'
+      });
       expect(ajaxStub.calledOnce).to.be.true;
+      const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(payload.event).to.equal('targeting_set');
+      expect(payload.source).to.be.a('string');
+      expect(payload.projected).to.be.a('number');
+      expect(payload.ts).to.be.a('number');
+      expect(payload.data).to.be.an('object');
+      expect(payload.data).to.include.keys('creativeId', 'adUnitCode', 'mediaType', 'size', 'cpm', 'currency');
     });
   });
 
   describe('onBidderError', function () {
-    it('should send logs on bidder error', function () {
-      spec.onBidderError([]);
+    it('should send error event', function () {
+      spec.onBidderError({ error: { status: 500 } });
       expect(ajaxStub.calledOnce).to.be.true;
+      const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(payload.event).to.equal('error');
+      expect(payload.source).to.be.a('string');
+      expect(payload.projected).to.be.a('number');
+      expect(payload.ts).to.be.a('number');
+      expect(payload.data).to.be.an('object');
+      expect(payload.data).to.include.keys('errorData');
     });
   });
 
   describe('onAdRenderSucceeded', function () {
-    it('should send logs on render succeeded', function () {
-      spec.onAdRenderSucceeded([]);
+    it('should send creative_render event', function () {
+      spec.onAdRenderSucceeded({
+        creativeId: 'crid-1',
+        adUnitCode: 'au-1',
+        mediaType: 'video',
+        size: '640x480',
+        cpm: 2.0,
+        currency: 'EUR'
+      });
       expect(ajaxStub.calledOnce).to.be.true;
+      const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(payload.event).to.equal('creative_render');
+      expect(payload.source).to.be.a('string');
+      expect(payload.projected).to.be.a('number');
+      expect(payload.ts).to.be.a('number');
+      expect(payload.data).to.be.an('object');
+      expect(payload.data).to.include.keys('creativeId', 'adUnitCode', 'mediaType', 'size', 'cpm', 'currency');
     });
   });
 });

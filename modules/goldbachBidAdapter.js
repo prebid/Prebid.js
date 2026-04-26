@@ -14,18 +14,19 @@ const BIDDER_UID_KEY = 'goldbach_uid';
 const GVLID = 580;
 const URL = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
 const URL_LOCAL = 'http://localhost:3000/openrtb/2.5/auction';
-const URL_LOGGING = 'https://l.da-services.ch/pb';
+const URL_METRICS = 'https://goldlayer-api.prod.gbads.net/metrics';
+const URL_METRICS_LOCAL = 'http://localhost:3000/metrics';
 const URL_COOKIESYNC = 'https://goldlayer-api.prod.gbads.net/cookiesync';
 const METHOD = 'POST';
 const DEFAULT_CURRENCY = 'USD';
-const LOGGING_PERCENTAGE_REGULAR = 0.001;
-const LOGGING_PERCENTAGE_ERROR = 0.001;
+const LOGGING_PERCENTAGE_REGULAR = 0.01;
+const LOGGING_PERCENTAGE_ERROR = 0.01;
 const COOKIE_EXP = 1000 * 60 * 60 * 24 * 365;
 
 /* Renderer settings */
 const RENDERER_OPTIONS = {
   OUTSTREAM_GP: {
-    URL: 'https://goldplayer.prod.gbads.net/scripts/goldplayer.js'
+    URL: 'https://goldplayer.prod.gbadtech.io/scripts/goldplayer.js'
   }
 };
 
@@ -142,6 +143,7 @@ const converter = ortbConverter({
       ortbRequest.ext[BIDDER_CODE].uid = ensureUid(gdprConsent);
       ortbRequest.ext[BIDDER_CODE].publisherId = firstBidRequest?.params?.publisherId;
       ortbRequest.ext[BIDDER_CODE].mockResponse = firstBidRequest?.params?.mockResponse || false;
+      ortbRequest.ext[BIDDER_CODE].auctionStartTime = Date.now();
     }
 
     // Apply gdpr consent data
@@ -183,14 +185,24 @@ const converter = ortbConverter({
 
 /* Logging */
 const sendLog = (data, percentage = 0.0001) => {
-  if (Math.random() > percentage) return;
-  const encodedData = `data=${window.btoa(JSON.stringify({ ...data, source: 'goldbach_pbjs', projectedAmount: (1 / percentage) }))}`;
-  ajax(URL_LOGGING, null, encodedData, {
-    withCredentials: false,
-    method: METHOD,
-    crossOrigin: true,
-    contentType: 'application/x-www-form-urlencoded',
-  });
+  try {
+    if (Math.random() > percentage) return
+    const url = IS_LOCAL_MODE ? URL_METRICS_LOCAL : URL_METRICS
+    const payload = {
+      ...data,
+      source: 'goldbach_pbjs',
+      projected: 1 / percentage,
+      ts: Date.now()
+    }
+    ajax(url, null, JSON.stringify(payload), {
+      withCredentials: false,
+      method: 'POST',
+      crossOrigin: true,
+      contentType: 'text/plain'
+    })
+  } catch (error) {
+    // Silent catch
+  }
 }
 
 export const spec = {
@@ -209,7 +221,7 @@ export const spec = {
       data: data,
       options: {
         withCredentials: false,
-        contentType: 'application/json',
+        contentType: 'text/plain',
       }
     };
   },
@@ -217,11 +229,11 @@ export const spec = {
     const bids = converter.fromORTB({ response: ortbResponse.body, request: request.data }).bids;
     return bids
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = []
     const uid = ensureUid(gdprConsent);
-    if (hasPurpose1Consent(gdprConsent)) {
-      const type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
+    if (gdprConsent && hasPurpose1Consent(gdprConsent)) {
+      const type = syncOptions.pixelEnabled ? 'image' : syncOptions.iframeEnabled ? 'iframe' : null
       if (type) {
         syncs.push({
           type: type,
@@ -234,47 +246,65 @@ export const spec = {
   onTimeout: function(timeoutData) {
     const payload = {
       event: EVENTS.TIMEOUT,
-      error: timeoutData,
+      data: {
+        publisherId: timeoutData?.[0]?.params?.publisherId,
+        timeoutData: timeoutData,
+      }
     };
     sendLog(payload, LOGGING_PERCENTAGE_ERROR);
   },
   onBidWon: function(bid) {
     const payload = {
       event: EVENTS.BID_WON,
-      publisherId: bid.params?.[0]?.publisherId,
-      creativeId: bid.creativeId,
-      adUnitCode: bid.adUnitCode,
-      mediaType: bid.mediaType,
-      size: bid.size,
+      data: {
+        publisherId: bid.params?.[0]?.publisherId,
+        creativeId: bid.creativeId,
+        adUnitCode: bid.adUnitCode,
+        mediaType: bid.mediaType,
+        size: bid.size,
+        cpm: bid.cpm,
+        currency: bid.currency,
+      }
     };
     sendLog(payload, LOGGING_PERCENTAGE_REGULAR);
   },
   onSetTargeting: function(bid) {
     const payload = {
-      event: EVENTS.BID_WON,
-      publisherId: bid.params?.[0]?.publisherId,
-      creativeId: bid.creativeId,
-      adUnitCode: bid.adUnitCode,
-      mediaType: bid.mediaType,
-      size: bid.size,
+      event: EVENTS.TARGETING,
+      data: {
+        publisherId: bid.params?.[0]?.publisherId,
+        creativeId: bid.creativeId,
+        adUnitCode: bid.adUnitCode,
+        mediaType: bid.mediaType,
+        size: bid.size,
+        cpm: bid.cpm,
+        currency: bid.currency,
+      }
     };
     sendLog(payload, LOGGING_PERCENTAGE_REGULAR);
   },
-  onBidderError: function({ error }) {
+  onBidderError: function({ error, bidderRequest }) {
     const payload = {
       event: EVENTS.ERROR,
-      error: error,
+      data: {
+        publisherId: bidderRequest?.bids?.[0]?.params?.publisherId,
+        errorData: error,
+      }
     };
     sendLog(payload, LOGGING_PERCENTAGE_ERROR);
   },
   onAdRenderSucceeded: function(bid) {
     const payload = {
-      event: EVENTS.BID_WON,
-      publisherId: bid.params?.[0]?.publisherId,
-      creativeId: bid.creativeId,
-      adUnitCode: bid.adUnitCode,
-      mediaType: bid.mediaType,
-      size: bid.size,
+      event: EVENTS.RENDER,
+      data: {
+        publisherId: bid.params?.[0]?.publisherId,
+        creativeId: bid.creativeId,
+        adUnitCode: bid.adUnitCode,
+        mediaType: bid.mediaType,
+        size: bid.size,
+        cpm: bid.cpm,
+        currency: bid.currency,
+      }
     };
     sendLog(payload, LOGGING_PERCENTAGE_REGULAR);
   },
