@@ -1,4 +1,4 @@
-import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
+import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -479,6 +479,9 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   if (bid.ext?.marketplace) {
     res.bidderCode = bid.ext.marketplace;
   }
+  if (bid.burl) {
+    res.burl = bid.burl;
+  }
 
   // add meta fields
   // NOTE: We will not receive below fields from the translator response also not sure on what will be the key names for these in the response,
@@ -592,7 +595,7 @@ function optimizeImps(imps, bidderRequest) {
 }
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
-  bootstrapPlayer: function(bid) {
+  bootstrapPlayer: function (bid) {
     const config = {
       code: bid.adUnitCode,
       vastXml: bid.vastXml || null,
@@ -612,7 +615,7 @@ const BB_RENDERER = {
     else logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
   },
 
-  newRenderer: function(rendererCode, adUnitCode) {
+  newRenderer: function (rendererCode, adUnitCode) {
     const rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
     const renderer = Renderer.install({ url: rendererUrl, loaded: false, adUnitCode });
     try {
@@ -623,11 +626,11 @@ const BB_RENDERER = {
     return renderer;
   },
 
-  outstreamRender: function(bid) {
+  outstreamRender: function (bid) {
     bid.renderer.push(() => BB_RENDERER.bootstrapPlayer(bid));
   },
 
-  getRendererId: function(pub, renderer) {
+  getRendererId: function (pub, renderer) {
     return `${pub}-${renderer}`; // NB convention!
   }
 };
@@ -769,7 +772,7 @@ export const spec = {
         return false;
       }
       if (videoMediaTypes.context === 'outstream' && !isStr(bid.params.outstreamAU) &&
-!bid.renderer && !videoMediaTypes.renderer) {
+        !bid.renderer && !videoMediaTypes.renderer) {
         if (mediaTypes.hasOwnProperty(BANNER) || mediaTypes.hasOwnProperty(NATIVE)) {
           delete mediaTypes[VIDEO];
           logWarn(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting mediatype Video of bid: `, bid);
@@ -875,6 +878,12 @@ export const spec = {
 
   onBidWon: (bid) => {
     _calculateBidCpmAdjustment(bid);
+  },
+
+  onBidBillable: function (bid) {
+    if (bid.burl && !bid.deferBilling) {
+      triggerPixel(replaceAuctionPrice(bid.burl, bid.cpm));
+    }
   }
 };
 
