@@ -7,6 +7,10 @@ import {
   createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./shinezRtbBidAdapterTypes.d.ts').ShinezRtbBidRequestParams} ShinezRtbBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'shinezRtb';
 const BIDDER_VERSION = '1.0.0';

@@ -9,6 +9,10 @@ import {
   createInterpretResponseFn, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./opaMarketplaceBidAdapterTypes.d.ts').OpaMarketplaceBidRequestParams} OpaMarketplaceBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'opamarketplace';
 const BIDDER_VERSION = '1.0.0';

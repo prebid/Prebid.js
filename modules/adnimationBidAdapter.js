@@ -9,6 +9,10 @@ import {
   createInterpretResponseFn
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./adnimationBidAdapterTypes.d.ts').AdnimationBidRequestParams} AdnimationBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'adnimation';
 const BIDDER_VERSION = '1.0.0';
