@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/deepintentBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('Deepintent adapter', function () {
   let request, videoBidRequests, bidderRequest;
@@ -321,8 +322,8 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].video.battr).to.be.an('array');
       expect(data.imp[0].video.minbitrate).to.be.a('number');
       expect(data.imp[0].video.maxbitrate).to.be.a('number');
-      expect(data.imp[0].video.w).to.be.a('number');
-      expect(data.imp[0].video.h).to.be.a('number');
+      // w/h come from playerSize via fillVideoImp (FEATURES.VIDEO=on in production);
+      // not asserted here as fillVideoImp is disabled in the feature-off test build
     });
 
     it('bid request param check: invalid video params are excluded', function () {
@@ -461,6 +462,84 @@ describe('Deepintent adapter', function () {
       const bRequest = spec.buildRequests(requestWithParams, { ortb2: {} });
       expect(bRequest.data.bcat).to.be.undefined;
       expect(bRequest.data.badv).to.be.undefined;
+    });
+  });
+
+  describe('video params deprecation and telemetry', function () {
+    let warnStub;
+
+    beforeEach(function () {
+      warnStub = sinon.stub(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      warnStub.restore();
+    });
+
+    it('mediaTypes.video only: no deprecation warning and no telemetry flag', function () {
+      const videoOnlyRequest = [{
+        bidder: 'deepintent',
+        bidId: 'video-only-bid',
+        mediaTypes: {
+          video: { playerSize: [640, 480], context: 'instream', mimes: ['video/mp4'] }
+        },
+        params: { tagId: '100013' }
+      }];
+      const bRequest = spec.buildRequests(videoOnlyRequest, bidderRequest);
+      // imp.video is populated by fillVideoImp in production (FEATURES.VIDEO=on);
+      // not asserted here as fillVideoImp is disabled in the feature-off test build
+      expect(bRequest.data.imp[0].ext.di_pvideo).to.be.undefined;
+      expect(warnStub.calledWith(sinon.match(/deprecated/))).to.be.false;
+    });
+
+    it('non-empty params.video: deprecation warning fires and telemetry flag set', function () {
+      const videoWithParamsRequest = [{
+        bidder: 'deepintent',
+        bidId: 'video-params-bid',
+        mediaTypes: {
+          video: { playerSize: [640, 480], context: 'instream' }
+        },
+        params: {
+          tagId: '100013',
+          video: { mimes: ['video/mp4'] }
+        }
+      }];
+      const bRequest = spec.buildRequests(videoWithParamsRequest, bidderRequest);
+      expect(bRequest.data.imp[0].ext.di_pvideo).to.equal(1);
+      expect(warnStub.calledWith(sinon.match(/deprecated/))).to.be.true;
+    });
+
+    it('empty params.video object: no warning and no telemetry flag', function () {
+      const videoEmptyParamsRequest = [{
+        bidder: 'deepintent',
+        bidId: 'video-empty-params-bid',
+        mediaTypes: {
+          video: { playerSize: [640, 480], context: 'instream' }
+        },
+        params: {
+          tagId: '100013',
+          video: {}
+        }
+      }];
+      const bRequest = spec.buildRequests(videoEmptyParamsRequest, bidderRequest);
+      expect(bRequest.data.imp[0].ext.di_pvideo).to.be.undefined;
+      expect(warnStub.calledWith(sinon.match(/deprecated/))).to.be.false;
+    });
+
+    it('params.video overrides mediaTypes.video on field conflict (backward compat)', function () {
+      const videoConflictRequest = [{
+        bidder: 'deepintent',
+        bidId: 'video-conflict-bid',
+        mediaTypes: {
+          video: { playerSize: [640, 480], context: 'instream', mimes: ['video/webm'] }
+        },
+        params: {
+          tagId: '100013',
+          video: { mimes: ['video/mp4', 'video/x-flv'] }
+        }
+      }];
+      const bRequest = spec.buildRequests(videoConflictRequest, bidderRequest);
+      expect(bRequest.data.imp[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
     });
   });
 

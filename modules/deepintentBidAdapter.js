@@ -10,7 +10,7 @@ const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
-const DI_M_V = '1.0.0';
+const DI_M_V = '2.0.0';
 
 // Extends the shared ORTB video param schema with deepintent-specific validators.
 // The converter's fillVideoImp only whitelists param names — it does not validate values.
@@ -54,33 +54,21 @@ const converter = ortbConverter({
       imp.banner.pos = bidRequest.params.pos || 0;
     }
 
-    // Video: build and validate imp.video independently of fillVideoImp.
-    // fillVideoImp (behind FEATURES.VIDEO) whitelists by name but does not validate
-    // values, and does not read params.video. We own the full video object here.
+    // Video: fillVideoImp (FEATURES.VIDEO=on in production) owns the mediaTypes.video →
+    // imp.video mapping including playerSize → w/h. We only post-process for the
+    // params.video legacy path: warn the publisher and set a telemetry flag.
     if (deepAccess(bidRequest, 'mediaTypes.video')) {
-      const videoAdUnitParams = deepAccess(bidRequest, 'mediaTypes.video', {});
-      const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-      // Compute w/h from playerSize (mirrors fillVideoImp's logic)
-      const computedParams = {};
-      if (Array.isArray(videoAdUnitParams.playerSize)) {
-        const tempSize = Array.isArray(videoAdUnitParams.playerSize[0])
-          ? videoAdUnitParams.playerSize[0]
-          : videoAdUnitParams.playerSize;
-        computedParams.w = tempSize[0];
-        computedParams.h = tempSize[1];
-      }
-      const mergedVideoParams = { ...computedParams, ...videoAdUnitParams, ...videoBidderParams };
-      const validatedVideo = {};
-      Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
-        if (Object.prototype.hasOwnProperty.call(mergedVideoParams, paramName)) {
-          if (ORTB_VIDEO_PARAMS[paramName](mergedVideoParams[paramName])) {
-            validatedVideo[paramName] = mergedVideoParams[paramName];
-          } else {
-            logWarn(`${LOG_WARN_PREFIX}The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
+      const videoBidderParams = deepAccess(bidRequest, 'params.video');
+      if (videoBidderParams && Object.keys(videoBidderParams).length > 0) {
+        logWarn(`${LOG_WARN_PREFIX}params.video is deprecated. Move video parameters to mediaTypes.video instead.`);
+        imp.video = imp.video || {};
+        Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
+          if (paramName in videoBidderParams) {
+            imp.video[paramName] = videoBidderParams[paramName];
           }
-        }
-      });
-      imp.video = validatedVideo;
+        });
+        imp.ext.di_pvideo = 1;
+      }
     }
 
     if (deepAccess(bidRequest, 'params.deals')) {
