@@ -210,7 +210,6 @@ describe('Optimera RTD propery sets the window.optimera object', () => {
     expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
     expect(window.optimera.pagelevel).to.deep.equal([]);
   });
-
 });
 
 describe('Optimera RTD targeting object is properly formed', () => {
