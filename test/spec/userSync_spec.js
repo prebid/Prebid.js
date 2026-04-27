@@ -10,6 +10,7 @@ import {
 import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils.js');
+const ajax = require('../../src/ajax.js');
 const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js');
 
 describe('user sync', function () {
@@ -19,6 +20,8 @@ describe('user sync', function () {
   let shuffleStub;
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;
+  let politeTriggerPixelStub;
+  let politeInsertUserSyncIframeStub;
   const idPrefix = 'test-generated-id-';
   let lastId = 0;
   const defaultUserSyncConfig = config.getConfig('userSync');
@@ -54,6 +57,12 @@ describe('user sync', function () {
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
+    politeTriggerPixelStub = sinon.stub(ajax, 'politeTriggerPixel').callsFake((url) => {
+      utils.triggerPixel(url);
+    });
+    politeInsertUserSyncIframeStub = sinon.stub(ajax, 'politeInsertUserSyncIframe').callsFake((url) => {
+      utils.insertUserSyncIframe(url);
+    });
   });
 
   afterEach(function () {
@@ -62,6 +71,8 @@ describe('user sync', function () {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     insertUserSyncIframeStub.restore();
+    politeTriggerPixelStub.restore();
+    politeInsertUserSyncIframeStub.restore();
     config.resetConfig();
   });
 
@@ -71,6 +82,34 @@ describe('user sync', function () {
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+  });
+
+  it('should use politeTriggerPixel for image syncs', function () {
+    const userSync = newTestUserSync({ usePoliteSync: true });
+
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.syncUsers();
+
+    expect(politeTriggerPixelStub.calledOnce).to.equal(true);
+    expect(politeTriggerPixelStub.getCall(0).args[0]).to.equal('http://example.com');
+  });
+
+  it('should use politeInsertUserSyncIframe for iframe syncs', function () {
+    const userSync = newTestUserSync({
+      usePoliteSync: true,
+      filterSettings: {
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
+      }
+    });
+
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+
+    expect(politeInsertUserSyncIframeStub.calledOnce).to.equal(true);
+    expect(politeInsertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
   it('should NOT fire a sync if a rule blocks syncUser', () => {
