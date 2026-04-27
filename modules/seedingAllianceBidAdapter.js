@@ -186,60 +186,31 @@ function parseNative(bid, nativeParams) {
     native = bid.adm.native;
   }
 
-  const { assets, link, imptrackers } = native;
+  if (native.link.url) {
+    native.link.url = native.link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  }
 
-  const clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
-
-  if (link.clicktrackers) {
-    link.clicktrackers.forEach(function (clicktracker, index) {
-      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  if (native.link.clicktrackers) {
+    native.link.clicktrackers.forEach(function (clicktracker, index) {
+      native.link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
 
-  if (imptrackers) {
-    imptrackers.forEach(function (imptracker, index) {
-      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  if (native.imptrackers) {
+    native.imptrackers.forEach(function (imptracker, index) {
+      native.imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
 
-  const result = {
-    url: clickUrl,
-    clickUrl: clickUrl,
-    clickTrackers: link.clicktrackers || undefined,
-    impressionTrackers: imptrackers || undefined
+  if (native.eventtrackers) {
+    native.eventtrackers.forEach(function(eventtracker, index) {
+      native.eventtrackers[index].url = eventtracker.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+    })
+  }
+
+  return {
+    ortb: native
   };
-
-  const nativeParamKeys = Object.keys(nativeParams);
-  let id = 0;
-
-  nativeParamKeys.forEach(nativeParam => {
-    assets.forEach(asset => {
-      if (asset.id === id) {
-        switch (nativeParam) {
-          case 'title':
-            result.title = asset.title.text;
-            break;
-          case 'body':
-          case 'cta':
-          case 'sponsoredBy':
-            result[nativeParam] = asset.data.value;
-            break;
-          case 'image':
-          case 'icon':
-            result[nativeParam] = {
-              url: asset.img.url,
-              width: asset.img.w,
-              height: asset.img.h
-            };
-            break;
-        }
-      }
-    });
-
-    id++;
-  });
-
-  return result;
 }
 
 registerBidder(spec);
