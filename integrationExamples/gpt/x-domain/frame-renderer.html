@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Przykład FrameRenderer (frameRendererUrl)</title>
+  <title>FrameRenderer example (frameRendererUrl)</title>
 
   <script src="../../../build/dev/prebid.js" async></script>
   <script
@@ -68,7 +68,7 @@
               then: {
                 creativeId: 'testCreativeIdV2',
                 ad: '<html><body><div style="display:inline-block;width:350px;height:60px;background:#f2f7ff;border:1px solid #7aa2ff;color:#1f3b74;font:14px/60px Arial,sans-serif;text-align:center;">Bid ad html content</div></body></html>',
-                // Hostowany zewnętrznie (np. GPT); plik `frameRenderer.js` w repo to tylko referencyjna implementacja FrameRenderer.
+                // Hosted externally (e.g. GPT); repo file `frameRenderer.js` is a reference implementation only.
                 frameRendererUrl: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
                 vastXml,
               }
@@ -103,7 +103,7 @@
 </head>
 
 <body>
-  <h1>Przykład FrameRenderer</h1>
+  <h1>FrameRenderer example</h1>
   <code>bid.frameRendererUrl</code>
 
   <div id="prebid-example" style="min-width: 300px; min-height: 250px;">
