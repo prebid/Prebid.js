@@ -158,7 +158,7 @@ describe('Silverpush Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should reutrn false if player size is not set', () => {
+    it('should return false if player size is not set', () => {
       const bid = utils.deepClone(videoBid);
       delete bid.mediaTypes.video.playerSize;
 

@@ -403,6 +403,23 @@ describe('mileBidAdapter', function () {
       expect(bid.nurl).to.equal('https://example.com/win?price=${AUCTION_PRICE}');
     });
 
+    it('should set adserverTargeting.upstream_partner when upstreamBidder is present', function () {
+      const bids = spec.interpretResponse(serverResponse);
+      const bid = bids[0];
+
+      expect(bid.adserverTargeting).to.be.an('object');
+      expect(bid.adserverTargeting.upstream_partner).to.equal('upstreamBidder');
+    });
+
+    it('should not set adserverTargeting.upstream_partner when upstreamBidder is absent', function () {
+      delete serverResponse.body.bids[0].upstreamBidder;
+      const bids = spec.interpretResponse(serverResponse);
+      const bid = bids[0];
+
+      expect(bid.adserverTargeting).to.be.an('object');
+      expect(bid.adserverTargeting).to.not.have.property('upstream_partner');
+    });
+
     it('should include meta.advertiserDomains', function () {
       const bids = spec.interpretResponse(serverResponse);
       const bid = bids[0];
