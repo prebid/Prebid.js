@@ -9,6 +9,10 @@ import {
   tryParseJSON
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./kueezRtbBidAdapterTypes.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
+ */
+
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
