@@ -231,19 +231,29 @@ export function sendBeacon(url, data) {
  * Falls back to image-based loading when fetch or keepalive requests are unavailable.
  */
 export function politeTriggerPixel(url) {
-  if (window.fetch && window.Request) {
-    try {
-      const request = dep.makeRequest(url, {
-        method: 'GET',
-        mode: 'no-cors',
-        credentials: 'include',
-        keepalive: true
-      });
-      dep.fetch(request).catch(() => triggerPixel(url));
-      return;
-    } catch (e) {}
+  const triggerSync = () => {
+    if (window.fetch && window.Request) {
+      try {
+        const request = dep.makeRequest(url, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials: 'include',
+          keepalive: true
+        });
+        dep.fetch(request).catch(() => triggerPixel(url));
+        return;
+      } catch (e) {}
+    }
+    triggerPixel(url);
+  };
+
+  const scheduler = (window as any).scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(triggerSync, { priority: 'background' }).catch(() => triggerSync());
+    return;
   }
-  triggerPixel(url);
+
+  triggerSync();
 }
 
 export const ajax = ajaxBuilder();

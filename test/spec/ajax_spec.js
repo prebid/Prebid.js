@@ -13,13 +13,17 @@ describe('test sendBeacon wrapper', () => {
 
 describe('politeTriggerPixel', () => {
   let triggerPixelStub;
+  let originalScheduler;
 
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    originalScheduler = window.scheduler;
+    window.scheduler = undefined;
   });
 
   afterEach(() => {
     triggerPixelStub.restore();
+    window.scheduler = originalScheduler;
   });
 
   it('uses keepalive fetch when request creation works', () => {
@@ -35,6 +39,24 @@ describe('politeTriggerPixel', () => {
       credentials: 'include',
       keepalive: true
     });
+    expect(dep.fetch.calledOnce).to.equal(true);
+    expect(triggerPixelStub.called).to.equal(false);
+  });
+
+  it('uses background priority when Scheduler API is available', () => {
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+    dep.makeRequest.resetHistory();
+    dep.fetch.resetHistory();
+
+    politeTriggerPixel('http://example.com/pixel');
+
+    expect(window.scheduler.postTask.calledOnce).to.equal(true);
+    expect(window.scheduler.postTask.getCall(0).args[1]).to.deep.equal({ priority: 'background' });
     expect(dep.fetch.calledOnce).to.equal(true);
     expect(triggerPixelStub.called).to.equal(false);
   });
