@@ -322,7 +322,7 @@ describe('ViouslyAdapter', function () {
                 type: 'video',
                 size: '640x480',
                 nurl: [
-                  'win.domain.com'
+                  'https://win.domain.com'
                 ]
               },
               {
@@ -335,8 +335,8 @@ describe('ViouslyAdapter', function () {
                 type: 'banner',
                 size: '300x50',
                 nurl: [
-                  'win.domain2.com',
-                  'win.domain3.com'
+                  'https://win.domain2.com',
+                  'https://win.domain3.com'
                 ]
               },
               {
@@ -390,7 +390,7 @@ describe('ViouslyAdapter', function () {
             meta: {},
             vastUrl: 'http://www.example.com/vast',
             nurl: [
-              'win.domain.com'
+              'https://win.domain.com'
             ]
           },
           {
@@ -407,8 +407,8 @@ describe('ViouslyAdapter', function () {
             meta: {},
             ad: 'html content',
             nurl: [
-              'win.domain2.com',
-              'win.domain3.com'
+              'https://win.domain2.com',
+              'https://win.domain3.com'
             ]
           },
           {
@@ -451,7 +451,7 @@ describe('ViouslyAdapter', function () {
             meta: {},
             vastUrl: 'http://www.example.com/vast',
             nurl: [
-              'win.domain.com'
+              'https://win.domain.com'
             ]
           },
           {
