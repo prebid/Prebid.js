@@ -1,29 +1,126 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, isArray, logError, logWarn, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
+import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
-import { getDNT } from '../libraries/dnt/index.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
-const DI_M_V = '1.0.0';
+const DI_M_V = '2.0.0';
+
+// Extends the shared ORTB video param schema with deepintent-specific validators.
+// The converter's fillVideoImp only whitelists param names — it does not validate values.
+// This schema is used in the imp() override to validate and warn on malformed params.
 export const ORTB_VIDEO_PARAMS = {
   ...COMMON_ORTB_VIDEO_PARAMS,
   'plcmt': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
   'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
   'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
 };
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: false,
+    ttl: 300,
+    currency: 'USD',
+  },
+
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    // Ensure ext is always an object; addDealCustomTargetings writes to imp.ext directly
+    imp.ext = imp.ext || {};
+    imp.tagid = bidRequest.params.tagId || '';
+    imp.displaymanager = 'di_prebid';
+    imp.displaymanagerver = DI_M_V;
+
+    // params.bidfloor fallback when the price floors module is not active
+    if (imp.bidfloor == null && bidRequest.params.bidfloor != null) {
+      imp.bidfloor = bidRequest.params.bidfloor;
+    }
+
+    // deepintent custom params
+    if (bidRequest.params.custom) {
+      imp.ext.deepintent = bidRequest.params.custom;
+    }
+
+    // Banner: add pos from params. fillBannerImp does not read bidder params.
+    // ps: this is a fallback. pos should be set in the mediaType.banner
+    if (imp.banner) {
+      imp.banner.pos = bidRequest.params.pos || 0;
+    }
+
+    // Video: fillVideoImp (FEATURES.VIDEO=on in production) owns the mediaTypes.video →
+    // imp.video mapping including playerSize → w/h. We only post-process for the
+    // params.video legacy path: warn the publisher and set a telemetry flag.
+    if (deepAccess(bidRequest, 'mediaTypes.video')) {
+      const videoBidderParams = deepAccess(bidRequest, 'params.video');
+      if (videoBidderParams && Object.keys(videoBidderParams).length > 0) {
+        logWarn(`${LOG_WARN_PREFIX}params.video is deprecated. Move video parameters to mediaTypes.video instead.`);
+        imp.video = imp.video || {};
+        Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
+          if (paramName in videoBidderParams) {
+            imp.video[paramName] = videoBidderParams[paramName];
+          }
+        });
+        imp.ext.di_pvideo = 1;
+      }
+    }
+
+    if (deepAccess(bidRequest, 'params.deals')) {
+      addPMPDeals(imp, deepAccess(bidRequest, 'params.deals'), LOG_WARN_PREFIX);
+    }
+
+    if (deepAccess(bidRequest, 'params.dctr')) {
+      addDealCustomTargetings(imp, deepAccess(bidRequest, 'params.dctr'), LOG_WARN_PREFIX);
+    }
+
+    return imp;
+  },
+
+  // fillVideoResponse (which sets vastXml) is behind FEATURES.VIDEO.
+  // Ensure vastXml is always populated for video bids regardless of feature flags.
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    if (bidResponse.mediaType === VIDEO && bid.adm && !bidResponse.vastXml) {
+      bidResponse.vastXml = bid.adm;
+    }
+    return bidResponse;
+  },
+
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+
+    // Explicit first-price auction; OpenRTB default when absent is 2 (second price).
+    request.at = 1;
+
+    // User data from bidder params is not part of standard FPD.
+    const bidRequest = context.bidRequests[0];
+    if (bidRequest?.params?.user) {
+      request.user = mergeDeep({}, request.user, bidRequest.params.user);
+    }
+
+    // user.eids arrives via FPD (ortb2.user.eids). Mirror to user.ext.eids for
+    // legacy DSP compatibility until confirmed no longer needed.
+    const eids = deepAccess(request, 'user.eids');
+    if (isArray(eids) && eids.length > 0) {
+      deepSetValue(request, 'user.ext.eids', eids);
+    }
+
+    return request;
+  },
+});
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: [],
 
-  // tagId is mandatory param
   isBidRequestValid: bid => {
     let valid = false;
     if (bid && bid.params && bid.params.tagId) {
@@ -39,89 +136,35 @@ export const spec = {
     }
     return valid;
   },
-  interpretResponse: function(bidResponse, bidRequest) {
+
+  buildRequests(validBidRequests, bidderRequest) {
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+    return {
+      method: 'POST',
+      url: BIDDER_ENDPOINT,
+      data,
+      options: {
+        contentType: 'application/json'
+      }
+    };
+  },
+
+  interpretResponse(bidResponse, bidRequest) {
     const responses = [];
     if (bidResponse && bidResponse.body) {
       try {
-        const bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
-        if (bids) {
-          bids.forEach(bidObj => {
-            const newBid = formatResponse(bidObj);
-            const mediaType = _checkMediaType(bidObj);
-            if (mediaType === BANNER) {
-              newBid.mediaType = BANNER;
-            } else if (mediaType === VIDEO) {
-              newBid.mediaType = VIDEO;
-              newBid.vastXml = bidObj.adm;
-            }
-            responses.push(newBid);
-          });
-        }
+        const result = converter.fromORTB({
+          request: bidRequest.data,
+          response: bidResponse.body
+        });
+        responses.push(...(result.bids || []));
       } catch (err) {
         logError(err);
       }
     }
     return responses;
   },
-  buildRequests: function (validBidRequests, bidderRequest) {
-    var user = validBidRequests.map(bid => buildUser(bid));
-    clean(user);
-    const openRtbBidRequest = {
-      id: generateUUID(),
-      at: 1,
-      imp: validBidRequests.map(bid => buildImpression(bid)),
-      site: buildSite(bidderRequest),
-      device: buildDevice(),
-      user: user && user.length === 1 ? user[0] : {}
-    };
 
-    if (bidderRequest && bidderRequest.uspConsent) {
-      deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    }
-
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
-    }
-
-    // GPP Consent
-    if (bidderRequest?.gppConsent?.gppString) {
-      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString);
-      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
-    } else if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
-    }
-
-    // coppa compliance
-    if (bidderRequest?.ortb2?.regs?.coppa) {
-      deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
-    }
-
-    // ortb2 blocking: bcat, badv (with optional params fallback)
-    const bcat = bidderRequest?.ortb2?.bcat || deepAccess(validBidRequests, '0.params.bcat');
-    const badv = bidderRequest?.ortb2?.badv || deepAccess(validBidRequests, '0.params.badv');
-    if (isArray(bcat) && bcat.length > 0) {
-      openRtbBidRequest.bcat = bcat;
-    }
-    if (isArray(badv) && badv.length > 0) {
-      openRtbBidRequest.badv = badv;
-    }
-
-    injectEids(openRtbBidRequest, validBidRequests);
-
-    return {
-      method: 'POST',
-      url: BIDDER_ENDPOINT,
-      data: JSON.stringify(openRtbBidRequest),
-      options: {
-        contentType: 'application/json'
-      }
-    };
-  },
-  /**
-   * Register User Sync.
-   */
   getUserSyncs: syncOptions => {
     if (syncOptions.iframeEnabled) {
       return [{
@@ -130,173 +173,6 @@ export const spec = {
       }];
     }
   }
-
 };
-function _checkMediaType(bid) {
-  const videoRegex = new RegExp(/VAST\s+version/);
-  let mediaType;
-  if (bid.adm && bid.adm.indexOf('deepintent_wrapper') >= 0) {
-    mediaType = BANNER;
-  } else if (videoRegex.test(bid.adm)) {
-    mediaType = VIDEO;
-  }
-  return mediaType;
-}
-
-function clean(obj) {
-  for (const propName in obj) {
-    if (obj[propName] === null || obj[propName] === undefined) {
-      delete obj[propName];
-    }
-  }
-}
-
-function buildImpression(bid) {
-  let impression = {};
-  const floor = getFloor(bid);
-  impression = {
-    id: bid.bidId,
-    tagid: bid.params.tagId || '',
-    ...(!isNaN(floor) && { bidfloor: floor }),
-    secure: window.location.protocol === 'https:' ? 1 : 0,
-    displaymanager: 'di_prebid',
-    displaymanagerver: DI_M_V,
-    ext: buildCustomParams(bid)
-  };
-  if (deepAccess(bid, 'mediaTypes.banner')) {
-    impression['banner'] = buildBanner(bid);
-  }
-  if (deepAccess(bid, 'mediaTypes.video')) {
-    impression['video'] = _buildVideo(bid);
-  }
-  if (deepAccess(bid, 'params.deals')) {
-    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX);
-  }
-  if (deepAccess(bid, 'params.dctr')) {
-    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX);
-  }
-  return impression;
-}
-
-function getFloor(bidRequest) {
-  if (!isFn(bidRequest.getFloor)) {
-    return bidRequest.params?.bidfloor;
-  }
-
-  const floor = bidRequest.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
-}
-
-function _buildVideo(bid) {
-  const videoObj = {};
-  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bid, 'params.video', {});
-  const computedParams = {};
-
-  if (Array.isArray(videoAdUnitParams.playerSize)) {
-    const tempSize = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize;
-    computedParams.w = tempSize[0];
-    computedParams.h = tempSize[1];
-  }
-
-  const videoParams = {
-    ...computedParams,
-    ...videoAdUnitParams,
-    ...videoBidderParams
-  };
-
-  Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
-    if (videoParams.hasOwnProperty(paramName)) {
-      if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
-        videoObj[paramName] = videoParams[paramName];
-      } else {
-        logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
-      }
-    }
-  });
-
-  return videoObj;
-};
-
-function buildCustomParams(bid) {
-  if (bid.params && bid.params.custom) {
-    return {
-      deepintent: bid.params.custom
-
-    }
-  } else {
-    return {}
-  }
-}
-function buildUser(bid) {
-  if (bid && bid.params && bid.params.user) {
-    return {
-      id: bid.params.user.id && typeof bid.params.user.id === 'string' ? bid.params.user.id : undefined,
-      buyeruid: bid.params.user.buyeruid && typeof bid.params.user.buyeruid === 'string' ? bid.params.user.buyeruid : undefined,
-      yob: bid.params.user.yob && typeof bid.params.user.yob === 'number' ? bid.params.user.yob : null,
-      gender: bid.params.user.gender && typeof bid.params.user.gender === 'string' ? bid.params.user.gender : undefined,
-      keywords: bid.params.user.keywords && typeof bid.params.user.keywords === 'string' ? bid.params.user.keywords : undefined,
-      customdata: bid.params.user.customdata && typeof bid.params.user.customdata === 'string' ? bid.params.user.customdata : undefined
-    }
-  }
-}
-
-function injectEids(openRtbBidRequest, validBidRequests) {
-  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
-  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-    deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
-    deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids);
-  }
-}
-
-function buildBanner(bid) {
-  if (deepAccess(bid, 'mediaTypes.banner')) {
-    // Get Sizes from MediaTypes Object, Will always take first size, will be overrided by params for exact w,h
-    if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
-      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-      if (isArray(sizes) && sizes.length > 0) {
-        return {
-          h: sizes[0][1],
-          w: sizes[0][0],
-          pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
-        }
-      }
-    } else {
-      return {
-        h: bid.params.height,
-        w: bid.params.width,
-        pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
-      }
-    }
-  }
-}
-
-function buildSite(bidderRequest) {
-  const site = {};
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-    site.page = bidderRequest.refererInfo.page;
-    site.domain = bidderRequest.refererInfo.domain;
-  }
-  return site;
-}
-
-function buildDevice() {
-  return {
-    ua: navigator.userAgent,
-    js: 1,
-    dnt: getDNT() ? 1 : 0,
-    h: screen.height,
-    w: screen.width,
-    language: navigator.language
-  }
-}
 
 registerBidder(spec);
