@@ -65,7 +65,7 @@ function getFirstPartyUUID() {
     d = Math.floor(d / 16);
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
-};
+}
 
 function createUniqueRequestData(hashUrl, bid) {
   const { auctionId, transactionId } = bid;
