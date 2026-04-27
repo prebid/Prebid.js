@@ -10,16 +10,13 @@ import { hook } from './hook.js';
 export const PUC_MIN_VERSION = 3;
 
 export const getCreativeRendererSource = hook('sync', function (bidResponse) {
-  if (bidResponse.frameRendererUrl) {
-    return FRAME_RENDERER;
-  }
   return RENDERER;
 })
 
 export const getCreativeRenderer = (function() {
   const renderers = {};
   return function (bidResponse) {
-    const src = getCreativeRendererSource(bidResponse);
+    const src = bidResponse.frameRendererUrl ? FRAME_RENDERER : getCreativeRendererSource(bidResponse);
     if (!renderers.hasOwnProperty(src)) {
       renderers[src] = new PbPromise((resolve) => {
         const iframe = createInvisibleIframe()

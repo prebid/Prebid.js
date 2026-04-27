@@ -202,6 +202,17 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
+  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
+  return {
+    ad,
+    adUrl,
+    width,
+    height,
+    instl
+  };
+})
+
+function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
   const { ad, adUrl, cpm, originalCpm } = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
@@ -210,9 +221,9 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
   return {
     ...bidResponse,
     ad: replaceMacros(ad, repl),
-    adUrl: replaceMacros(adUrl, repl),
+    adUrl: replaceMacros(adUrl, repl)
   };
-})
+}
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
@@ -225,7 +236,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = getRenderingData(bidResponse, options);
+  const data = bidResponse.frameRendererUrl ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
