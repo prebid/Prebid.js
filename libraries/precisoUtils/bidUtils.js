@@ -9,7 +9,7 @@ import { getTimeZone } from '../timezone/timezone.js';
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
-  const city = getTimeZone();
+  var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
   let req = {
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),

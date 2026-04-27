@@ -12,7 +12,7 @@ const GVLID = 874;
 let sharedId = 'NA';
 
 const endpoint = 'https://ssp-bidder.2trk.info/bid_request/openrtb';
-let syncEndpoint = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
+let syncEndpoint = 'https://ban.2trk.info/rtb/p2/usersync.aspx?';
 
 export const spec = {
   code: BIDDER__CODE,
@@ -20,6 +20,9 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
+
+    sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
+
     return Boolean(bid.bidId && bid.params && bid.params.publisherId);
   },
   buildRequests: buildRequests(endpoint),
