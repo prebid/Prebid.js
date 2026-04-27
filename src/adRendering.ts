@@ -202,19 +202,30 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const { ad, adUrl, cpm, originalCpm, width, height, instl } = bidResponse
-  const repl = {
-    AUCTION_PRICE: originalCpm || cpm,
-    CLICKTHROUGH: options?.clickUrl || ''
-  }
+  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
   return {
-    ad: replaceMacros(ad, repl),
-    adUrl: replaceMacros(adUrl, repl),
+    ad,
+    adUrl,
     width,
     height,
     instl
   };
 })
+
+function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
+  const { ad, adUrl, cpm, originalCpm } = bidResponse
+  const repl = {
+    AUCTION_PRICE: originalCpm || cpm,
+    CLICKTHROUGH: options?.clickUrl || ''
+  }
+
+  return {
+    ...bidResponse,
+    ad: replaceMacros(ad, repl),
+    adUrl: replaceMacros(adUrl, repl),
+    frameRendererUrl: getFrameRendererUrl(bidResponse)
+  };
+}
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
@@ -227,7 +238,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = getRenderingData(bidResponse, options);
+  const data = getFrameRendererUrl(bidResponse) ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
@@ -238,7 +249,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer)) {
+  if (isRendererRequired(bidResponse.renderer) && !getFrameRendererUrl(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
     next.bail();
@@ -414,4 +425,9 @@ export function insertLocatorFrame() {
       document.body.appendChild(frame);
     }
   }
+}
+
+export function getFrameRendererUrl(bidResponse: Bid): string | undefined {
+  const adUnit = auctionManager.index.getAdUnit(bidResponse);
+  return adUnit?.frameRendererUrl ?? bidResponse.frameRendererUrl;
 }

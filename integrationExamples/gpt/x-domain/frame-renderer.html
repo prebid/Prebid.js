@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Przykład FrameRenderer (frameRendererUrl)</title>
+
+  <script src="../../../build/dev/prebid.js" async></script>
+  <script
+    async
+    src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    crossorigin="anonymous">
+  </script>
+
+  <script>
+    window.googletag = window.googletag || { cmd: [] };
+    googletag.cmd.push(function () {
+      googletag
+        .defineSlot('/41758329/prebid-example', [[1, 1],[300, 250]], 'prebid-example')
+        .addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+
+  <script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    const adUnitCode = 'prebid-example';
+    const vastXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
+
+    const adUnits = [
+      {
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [300, 250],
+            mimes: ['video/mp4']
+          }
+        },
+        code: adUnitCode,
+        bids: [
+          {
+            bidder: 'testBidder',
+            params: {}
+          }
+        ]
+      }
+    ];
+
+    pbjs.que.push(function () {
+      pbjs.registerBidAdapter(null, 'testBidder', {
+        supportedMediaTypes: ['banner', 'video', 'native'],
+        isBidRequestValid: () => true
+      });
+
+      pbjs.setConfig({
+        debugging: {
+          enabled: true,
+          intercept: [
+            {
+              when: {
+                bidder: 'testBidder'
+              },
+              then: {
+                creativeId: 'testCreativeIdV2',
+                ad: '<html><body><div style="display:inline-block;width:350px;height:60px;background:#f2f7ff;border:1px solid #7aa2ff;color:#1f3b74;font:14px/60px Arial,sans-serif;text-align:center;">Bid ad html content</div></body></html>',
+                // Hostowany zewnętrznie (np. GPT); plik `frameRenderer.js` w repo to tylko referencyjna implementacja FrameRenderer.
+                frameRendererUrl: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
+                vastXml,
+              }
+            }
+          ]
+        }
+      });
+
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        adUnitCodes: [adUnitCode],
+        bidsBackHandler: sendAdserverRequest
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+
+      googletag.cmd.push(function () {
+        if (pbjs.libLoaded) {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync([adUnitCode]);
+            googletag.pubads().refresh();
+          });
+        } else {
+          googletag.pubads().refresh();
+        }
+      });
+    }
+  </script>
+</head>
+
+<body>
+  <h1>Przykład FrameRenderer</h1>
+  <code>bid.frameRendererUrl</code>
+
+  <div id="prebid-example" style="min-width: 300px; min-height: 250px;">
+    <script>
+      googletag.cmd.push(function () {
+        googletag.display('prebid-example');
+      });
+    </script>
+  </div>
+</body>
+</html>
