@@ -8,6 +8,10 @@ import {
   isBidRequestValid, onBidBillable, onBidWon
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./tagorasBidAdapterTypes.d.ts').TagorasBidRequestParams} TagorasBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'tagoras';
 const BIDDER_VERSION = '1.0.0';
