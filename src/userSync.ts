@@ -1,6 +1,6 @@
 import {
   deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
-  logWarn, isStr, isSafariBrowser
+  logWarn, isStr, isSafariBrowser, isFirefoxBrowser
 } from './utils.js';
 import { config } from './config.js';
 
@@ -388,7 +388,7 @@ export const userSync = newUserSync(Object.defineProperties({
   browserSupportsCookies: {
     get: function() {
       // call storage lazily to give time for consent data to be available
-      return !isSafariBrowser() && storage.cookiesAreEnabled();
+      return !isSafariBrowser() && !isFirefoxBrowser() && storage.cookiesAreEnabled();
     }
   }
 }));

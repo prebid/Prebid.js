@@ -654,6 +654,10 @@ export function isSafariBrowser() {
   return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
+export function isFirefoxBrowser() {
+  return /firefox|fxios/i.test(navigator.userAgent);
+}
+
 export function replaceMacros(str, subs) {
   if (!str) return;
   return Object.entries(subs).reduce((str, [key, val]) => {
