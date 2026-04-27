@@ -3,7 +3,7 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
 import { hook } from './hook.js';
-import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
+import { buildUrl, hasDeviceAccess, logError, parseUrl, triggerPixel } from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -224,6 +224,26 @@ export function sendBeacon(url, data) {
     return false;
   }
   return window.navigator.sendBeacon(url, data);
+}
+
+/**
+ * Trigger a tracking pixel in a way that is less disruptive to the main thread when modern fetch APIs are available.
+ * Falls back to image-based loading when fetch or keepalive requests are unavailable.
+ */
+export function politeTriggerPixel(url) {
+  if (window.fetch && window.Request) {
+    try {
+      const request = dep.makeRequest(url, {
+        method: 'GET',
+        mode: 'no-cors',
+        credentials: 'include',
+        keepalive: true
+      });
+      dep.fetch(request).catch(() => triggerPixel(url));
+      return;
+    } catch (e) {}
+  }
+  triggerPixel(url);
 }
 
 export const ajax = ajaxBuilder();

@@ -10,6 +10,7 @@ import {
 import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils.js');
+const ajax = require('../../src/ajax.js');
 const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js');
 
 describe('user sync', function () {
@@ -19,6 +20,7 @@ describe('user sync', function () {
   let shuffleStub;
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;
+  let politeTriggerPixelStub;
   const idPrefix = 'test-generated-id-';
   let lastId = 0;
   const defaultUserSyncConfig = config.getConfig('userSync');
@@ -54,6 +56,9 @@ describe('user sync', function () {
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
+    politeTriggerPixelStub = sinon.stub(ajax, 'politeTriggerPixel').callsFake((url) => {
+      utils.triggerPixel(url);
+    });
   });
 
   afterEach(function () {
@@ -62,6 +67,7 @@ describe('user sync', function () {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     insertUserSyncIframeStub.restore();
+    politeTriggerPixelStub.restore();
     config.resetConfig();
   });
 
@@ -71,6 +77,16 @@ describe('user sync', function () {
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+  });
+
+  it('should use politeTriggerPixel for image syncs', function () {
+    const userSync = newTestUserSync();
+
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.syncUsers();
+
+    expect(politeTriggerPixelStub.calledOnce).to.equal(true);
+    expect(politeTriggerPixelStub.getCall(0).args[0]).to.equal('http://example.com');
   });
 
   it('should NOT fire a sync if a rule blocks syncUser', () => {

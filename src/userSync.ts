@@ -1,7 +1,8 @@
 import {
-  deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
+  deepClone, isPlainObject, logError, shuffle, logMessage, insertUserSyncIframe, isArray,
   logWarn, isStr, isSafariBrowser
 } from './utils.js';
+import { politeTriggerPixel } from './ajax.js';
 import { config } from './config.js';
 
 import { getCoreStorageManager } from './storageManager.js';
@@ -187,8 +188,7 @@ export function newUserSync(deps) {
     forEachFire(queue.image, (sync) => {
       const [bidderName, trackingPixelUrl] = sync;
       logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
-      triggerPixel(trackingPixelUrl);
+      politeTriggerPixel(trackingPixelUrl);
     });
   }
 
@@ -205,7 +205,6 @@ export function newUserSync(deps) {
     forEachFire(queue.iframe, (sync) => {
       const [bidderName, iframeUrl] = sync;
       logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
-      // Insert iframe into DOM
       insertUserSyncIframe(iframeUrl);
       // for a bidder, if iframe sync is present then remove image pixel
       removeImagePixelsForBidder(queue, bidderName);
