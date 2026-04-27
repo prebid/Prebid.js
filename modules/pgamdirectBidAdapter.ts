@@ -188,6 +188,55 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   onBidWon(_bid) {
     // no-op — burl/nurl handled server-side by bidder-edge
   },
+
+  /**
+   * Cookie-sync pixels. Prebid calls this after the auction with the
+   * consent state + server responses; we return any sync URLs the
+   * bidder chose to include on the OpenRTB response at
+   * `ext.cookies[]`. Shape per pixel:
+   *
+   *   { type: 'image' | 'iframe', url: string }
+   *
+   * The actual URLs are decided server-side (one per DSP that does
+   * cookie-based retargeting), passed through our bidder, and then
+   * fired by Prebid in sequence. This keeps the sync list driven
+   * by our `dsp_configs` table — operators adding a new DSP with a
+   * sync URL see it flow to publishers on the next auction without
+   * re-deploying this adapter.
+   *
+   * Consent: Prebid hands us the parsed GDPR / USP / GPP state. We
+   * don't currently filter server-side; the per-DSP sync URLs
+   * already encode their own consent-handling (appending
+   * `?gdpr=1&gdpr_consent=...` as each DSP requires). A future
+   * revision can add server-side suppression for DSPs that fail
+   * to declare handling of the caller's consent framework.
+   *
+   * `syncOptions` tells us which sync types the publisher allows;
+   * we filter accordingly so an iframe-only publisher doesn't fire
+   * image pixels (rare, but harmless to respect).
+   */
+  getUserSyncs(syncOptions, serverResponses, _gdprConsent, _uspConsent, _gppConsent) {
+    if (!serverResponses || serverResponses.length === 0) return [];
+    const resp = serverResponses[0] as { body?: { ext?: { cookies?: Array<{ type: string; url: string }> } } };
+    const cookies = resp?.body?.ext?.cookies;
+    if (!Array.isArray(cookies) || cookies.length === 0) return [];
+    const out: Array<{ type: 'image' | 'iframe'; url: string }> = [];
+    for (const c of cookies) {
+      if (!c || typeof c.url !== 'string' || !c.url) continue;
+      if (c.type === 'iframe' && syncOptions.iframeEnabled) {
+        out.push({ type: 'iframe', url: c.url });
+      } else if (c.type === 'image' && syncOptions.pixelEnabled) {
+        out.push({ type: 'image', url: c.url });
+      }
+    }
+    // Per-bidder sync cap is enforced by Prebid's core via
+    // userSync.syncsPerBidder (see src/userSync.ts). We return the
+    // full filtered list and let core clamp it to the publisher's
+    // configured limit. An earlier revision hard-capped at 5 here,
+    // but that silently overrode publishers who raised the limit
+    // (or set 0 = unlimited) — flagged by Codex review and removed.
+    return out;
+  },
 };
 
 registerBidder(spec);

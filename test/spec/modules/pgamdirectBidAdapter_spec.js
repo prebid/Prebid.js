@@ -267,6 +267,90 @@ describe('pgamdirect: onBidWon', () => {
   });
 });
 
+// ---------- getUserSyncs ---------------------------------------------------
+
+describe('pgamdirect: getUserSyncs', () => {
+  const enabledAll = { iframeEnabled: true, pixelEnabled: true };
+  const iframeOnly = { iframeEnabled: true, pixelEnabled: false };
+
+  it('returns [] when serverResponses is empty or missing', () => {
+    expect(spec.getUserSyncs(enabledAll, [])).to.deep.equal([]);
+    expect(spec.getUserSyncs(enabledAll, undefined)).to.deep.equal([]);
+  });
+
+  it('returns [] when the response body carries no ext.cookies', () => {
+    const resp = { body: { seatbid: [] } };
+    expect(spec.getUserSyncs(enabledAll, [resp])).to.deep.equal([]);
+  });
+
+  it('forwards iframe + image pixels when both are allowed', () => {
+    const resp = {
+      body: {
+        ext: {
+          cookies: [
+            { type: 'iframe', url: 'https://dsp-a.example/sync?gdpr=1' },
+            { type: 'image', url: 'https://dsp-b.example/px.gif' },
+          ],
+        },
+      },
+    };
+    const syncs = spec.getUserSyncs(enabledAll, [resp]);
+    expect(syncs).to.deep.equal([
+      { type: 'iframe', url: 'https://dsp-a.example/sync?gdpr=1' },
+      { type: 'image', url: 'https://dsp-b.example/px.gif' },
+    ]);
+  });
+
+  it('drops image pixels when the publisher disabled pixel syncs', () => {
+    const resp = {
+      body: {
+        ext: {
+          cookies: [
+            { type: 'iframe', url: 'https://dsp-a.example/sync' },
+            { type: 'image', url: 'https://dsp-b.example/px.gif' },
+          ],
+        },
+      },
+    };
+    const syncs = spec.getUserSyncs(iframeOnly, [resp]);
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('iframe');
+  });
+
+  it('ignores malformed entries (missing url or wrong type)', () => {
+    const resp = {
+      body: {
+        ext: {
+          cookies: [
+            { type: 'iframe' }, // missing url
+            { url: 'https://x.example/sync' }, // missing type
+            { type: 'something-else', url: 'https://y.example/px' }, // unknown type
+            { type: 'iframe', url: 'https://ok.example/sync' },
+          ],
+        },
+      },
+    };
+    const syncs = spec.getUserSyncs(enabledAll, [resp]);
+    expect(syncs).to.deep.equal([
+      { type: 'iframe', url: 'https://ok.example/sync' },
+    ]);
+  });
+
+  it('returns all eligible syncs and lets Prebid core enforce the per-bidder cap', () => {
+    // Per Codex review on #14777: we deliberately do NOT cap here.
+    // `userSync.syncsPerBidder` is the authoritative limit and lives
+    // in src/userSync.ts; capping inside the adapter would silently
+    // override publishers who raised the limit (or set 0 = unlimited).
+    const cookies = Array.from({ length: 10 }, (_, i) => ({
+      type: 'image',
+      url: `https://dsp-${i}.example/px`,
+    }));
+    const resp = { body: { ext: { cookies } } };
+    const syncs = spec.getUserSyncs(enabledAll, [resp]);
+    expect(syncs).to.have.lengthOf(10);
+  });
+});
+
 // ---------- supportedMediaTypes / gvlid ------------------------------------
 
 describe('pgamdirect: adapter metadata', () => {
