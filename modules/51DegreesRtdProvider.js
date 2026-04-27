@@ -9,6 +9,7 @@ import {
   prefixLog,
 } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 
 const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
@@ -141,8 +142,33 @@ export const get51DegreesJSURL = (pathData, win) => {
  * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
  * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
  */
+const getHighEntropySUA = highEntropySUAAccessor();
+
+function joinVersion(version) {
+  return Array.isArray(version) ? version.join('.') : version;
+}
+
+/**
+ * Retrieves high entropy values from `navigator.userAgentData` if available
+ *
+ * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
+ * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
+ */
 export const getHighEntropyValues = async (hints) => {
-  return navigator?.userAgentData?.getHighEntropyValues?.(hints);
+  const sua = await getHighEntropySUA(hints);
+  if (!sua) {
+    return undefined;
+  }
+
+  return {
+    model: sua.model,
+    platform: sua.platform?.brand,
+    platformVersion: joinVersion(sua.platform?.version),
+    fullVersionList: sua.browsers?.map(({ brand, version }) => ({
+      brand,
+      version: joinVersion(version),
+    })),
+  };
 };
 
 /**
