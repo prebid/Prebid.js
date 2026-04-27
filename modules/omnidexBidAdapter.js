@@ -9,6 +9,10 @@ import {
   createInterpretResponseFn, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./omnidexBidAdapterTypes.d.ts').OmnidexBidRequestParams} OmnidexBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'omnidex';
 const BIDDER_VERSION = '1.0.0';

@@ -9,6 +9,10 @@ import {
   createInterpretResponseFn
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./apesterBidAdapterTypes.d.ts').ApesterBidRequestParams} ApesterBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'bidder';
 const BIDDER_CODE = 'apester';
 const BIDDER_VERSION = '1.0.0';

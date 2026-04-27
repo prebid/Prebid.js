@@ -1108,6 +1108,17 @@ describe('Vidazoo Bidder Utils Tests', function () {
       }
     });
 
+    it('should include params.host in data when host is present in params', function () {
+      const bid = {
+        ...baseBid,
+        params: { ...baseBid.params, host: 'twist.win' }
+      };
+      const data = utilities.buildRequestData(
+        bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data.params).to.deep.equal({ host: 'twist.win' });
+    });
+
     it('should handle missing ortb2 sub-objects gracefully', function () {
       const bidderRequest = {
         refererInfo: { ref: 'https://referrer.com' },
