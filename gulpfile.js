@@ -207,16 +207,26 @@ function nodeBundle(modules, dev = false) {
   });
 }
 
-function memoryVinyl(name, contents) {
-  return new Vinyl({
+function memoryVinyl(name, contents, sourcemaps = false) {
+  const file = new Vinyl({
     cwd: '',
     base: 'generated',
     path: name,
     contents: Buffer.from(contents, 'utf-8')
   });
+  if (sourcemaps) {
+    file.sourceMap = {
+      version: 3,
+      names: [],
+      mappings: '',
+      sources: [name],
+      sourcesContent: [contents]
+    };
+  }
+  return file;
 }
 
-function wrapWithHeaderAndFooter(dev, modules) {
+function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
   // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
   // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
   return function wrap(stream) {
@@ -235,10 +245,10 @@ function wrapWithHeaderAndFooter(dev, modules) {
           throw new Error(`Cannot parse bundle template; it must contain exactly one instance of '${placeholder}'`);
         }
         const [header, footer] = parts;
-        wrapped.push(memoryVinyl('prebid-header.js', header));
+        wrapped.push(memoryVinyl('prebid-header.js', header, sourcemaps));
         stream.pipe(wrapped, {end: false});
         stream.on('end', () => {
-          wrapped.push(memoryVinyl('prebid-footer.js', footer));
+          wrapped.push(memoryVinyl('prebid-footer.js', footer, sourcemaps));
           wrapped.push(null);
         });
       })
@@ -309,7 +319,7 @@ function bundle(dev, moduleArr) {
   fancyLog('Generating bundle:', outputFileName);
   fancyLog('Generating storage use disclosure summary:', disclosureFile);
 
-  const wrap = wrapWithHeaderAndFooter(dev, modules);
+  const wrap = wrapWithHeaderAndFooter(dev, modules, sm);
   const source = wrap(gulp.src(entries, {sourcemaps: sm}))
     .pipe(concat(outputFileName));
   const disclosure = disclosureSummary(['prebid-core'].concat(modules), disclosureFile);
