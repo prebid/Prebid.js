@@ -278,13 +278,14 @@ describe('auctionmanager.js', function () {
       it('No bidder level configuration defined - default for video', function () {
         config.setConfig({
           cache: {
-            url: 'https://test.cache.url/endpoint'
+            url: 'ignored'
           }
         });
         getGlobal().bidderSettings = {};
         const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
+        videoBid.cacheUrl = 'https://test.cache.url/endpoint';
 
         const expected = getDefaultExpected(videoBid);
         const response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
@@ -371,12 +372,13 @@ describe('auctionmanager.js', function () {
       it('Custom configuration for all bidders with video bid', function () {
         config.setConfig({
           cache: {
-            url: 'https://test.cache.url/endpoint'
+            url: 'ignored'
           }
         });
         const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
+        videoBid.cacheUrl = 'https://test.cache.url/endpoint';
 
         getGlobal().bidderSettings =
           {
