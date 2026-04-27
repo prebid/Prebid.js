@@ -933,6 +933,10 @@ describe('Utils', function () {
       userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36';
       expect(utils.isSafariBrowser()).to.equal(false);
     });
+    it('does not flag Chromium', function () {
+      userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/124.0.0.0 Safari/537.36';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
     it('does not flag Chrome iOS', function () {
       userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
       expect(utils.isSafariBrowser()).to.equal(false);
