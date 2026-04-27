@@ -254,6 +254,7 @@ const logEvent = (eventType, data) => {
 // Bidder public specification
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1569,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid,
