@@ -242,7 +242,7 @@ describe('encypherRtdProvider', () => {
         const c2pa = req.ortb2Fragments.global.site.ext.data.c2pa;
         assert.strictEqual(c2pa.source, 'auto');
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       // Path C fires a POST request
       const lastReq = server.requests[server.requests.length - 1];
@@ -271,7 +271,7 @@ describe('encypherRtdProvider', () => {
         assert.strictEqual(c2pa.source, 'auto');
         assert.strictEqual(c2pa.extraction_method, 'article-element');
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       const lastReq = server.requests[server.requests.length - 1];
       assert.strictEqual(lastReq.method, 'POST');
@@ -297,7 +297,7 @@ describe('encypherRtdProvider', () => {
         const c2pa = req.ortb2Fragments.global.site.ext.data.c2pa;
         assert.strictEqual(c2pa.extraction_method, 'json-ld');
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       const lastReq = server.requests[server.requests.length - 1];
       const body = JSON.parse(lastReq.requestBody);
@@ -322,7 +322,7 @@ describe('encypherRtdProvider', () => {
 
       encypherSubmodule.getBidRequestData(req, () => {
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       const lastReq = server.requests[server.requests.length - 1];
       const body = JSON.parse(lastReq.requestBody);
@@ -344,7 +344,7 @@ describe('encypherRtdProvider', () => {
 
       encypherSubmodule.getBidRequestData(req, () => {
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       const lastReq = server.requests[server.requests.length - 1];
       const body = JSON.parse(lastReq.requestBody);
@@ -361,7 +361,7 @@ describe('encypherRtdProvider', () => {
         const c2pa = req.ortb2Fragments.global.site.ext.data.c2pa;
         assert.strictEqual(c2pa.extraction_method, 'role-main');
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       const lastReq = server.requests[server.requests.length - 1];
       lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
@@ -374,7 +374,7 @@ describe('encypherRtdProvider', () => {
       encypherSubmodule.getBidRequestData(req, () => {
         assert.strictEqual(req.ortb2Fragments.global.site, undefined);
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       server.requests[server.requests.length - 1].respond(
         500, fakeHeaders, 'Internal Server Error'
@@ -388,7 +388,7 @@ describe('encypherRtdProvider', () => {
       encypherSubmodule.getBidRequestData(req, () => {
         assert.strictEqual(req.ortb2Fragments.global.site, undefined);
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       server.requests[server.requests.length - 1].respond(
         200, fakeHeaders, JSON.stringify({ success: false, error: 'quota_exceeded' })
@@ -419,11 +419,78 @@ describe('encypherRtdProvider', () => {
         assert.strictEqual(cached.manifest_url, fakeSignResponse.manifest_url);
         assert.strictEqual(cached.signer_tier, 'encypher_free');
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       server.requests[server.requests.length - 1].respond(
         200, fakeHeaders, JSON.stringify(fakeSignResponse)
       );
+    });
+  });
+
+  // =========================================================================
+  // Security guards
+  // =========================================================================
+
+  describe('security guards', () => {
+    it('skips Path C when GDPR applies but no consent string', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+      const requestCountBefore = server.requests.length;
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        assert.strictEqual(req.ortb2Fragments.global.site, undefined);
+        assert.strictEqual(server.requests.length, requestCountBefore);
+        done();
+      }, { params: {} }, { gdpr: { gdprApplies: true, consentString: '' } });
+    });
+
+    it('allows Path C when GDPR applies and consent string is present', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        done();
+      }, { params: {} }, { gdpr: { gdprApplies: true, consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA' } });
+
+      const lastReq = server.requests[server.requests.length - 1];
+      assert.strictEqual(lastReq.method, 'POST');
+      lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
+    });
+
+    it('allows Path C when no GDPR object present', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        done();
+      }, { params: {} }, null);
+
+      const lastReq = server.requests[server.requests.length - 1];
+      lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
+    });
+
+    it('skips Path C when apiBase is not in allowed hosts', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+      const requestCountBefore = server.requests.length;
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        assert.strictEqual(req.ortb2Fragments.global.site, undefined);
+        assert.strictEqual(server.requests.length, requestCountBefore);
+        done();
+      }, { params: { apiBase: 'https://evil.example.com' } });
+    });
+
+    it('skips Path C when apiBase uses HTTP instead of HTTPS', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+      const requestCountBefore = server.requests.length;
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        assert.strictEqual(req.ortb2Fragments.global.site, undefined);
+        assert.strictEqual(server.requests.length, requestCountBefore);
+        done();
+      }, { params: { apiBase: 'http://api.encypher.com' } });
     });
   });
 
@@ -466,7 +533,7 @@ describe('encypherRtdProvider', () => {
         assert.ok(c2pa.extraction_method);
         assert.strictEqual(c2pa.source, 'auto');
         done();
-      }, { params: { apiBase: 'https://test.encypher.com' } });
+      }, { params: { apiBase: 'https://api.encypher.com' } });
 
       server.requests[server.requests.length - 1].respond(
         200, fakeHeaders, JSON.stringify(fakeSignResponse)

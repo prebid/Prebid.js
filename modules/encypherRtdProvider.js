@@ -10,8 +10,10 @@ const LOG_PREFIX = '[EncypherRTD]: ';
 const STORAGE_KEY = 'encypher_provenance_v1';
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const DEFAULT_API_BASE = 'https://api.encypher.com';
+const ALLOWED_API_HOSTS = ['api.encypher.com', 'staging-api.encypher.com'];
 const MAX_CONTENT_LENGTH = 50000; // ~50KB ceiling for POST body
 const MIN_CONTENT_LENGTH = 50; // minimum chars to consider as article content
+const AJAX_TIMEOUT_MS = 2000; // max wait for API calls before calling callback
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -257,6 +259,31 @@ function signContent(text, apiBase, pageUrl, metadata, cb) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Validate that a URL uses HTTPS and belongs to an allowed host.
+ */
+function isAllowedApiUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return false;
+    return ALLOWED_API_HOSTS.indexOf(parsed.hostname) !== -1;
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Check if GDPR consent allows data transmission.
+ * Returns true if consent is granted or if no GDPR applies.
+ */
+function hasConsentForDataTransmission(userConsent) {
+  if (!userConsent || !userConsent.gdpr) return true;
+  const gdpr = userConsent.gdpr;
+  if (!gdpr.gdprApplies) return true;
+  // If GDPR applies, require consent string to be present
+  return !!(gdpr.consentString);
+}
+
+/**
  * @param {Object} config - Provider config ({ name, waitForIt, params })
  * @param {Object} userConsent
  * @returns {boolean} - false disables the module
@@ -291,6 +318,27 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
   const canonicalUrl = getCanonicalUrl();
   const urlHash = hashUrl(canonicalUrl);
 
+  // Callback-once guard: ensure callback is never invoked twice
+  let callbackFired = false;
+  function done() {
+    if (callbackFired) return;
+    callbackFired = true;
+    callback();
+  }
+
+  // Safety timeout: never block the auction longer than AJAX_TIMEOUT_MS
+  const timer = setTimeout(() => {
+    if (!callbackFired) {
+      logWarn(LOG_PREFIX, 'Timeout reached, continuing without provenance');
+      done();
+    }
+  }, AJAX_TIMEOUT_MS);
+
+  function finish() {
+    clearTimeout(timer);
+    done();
+  }
+
   // -- Path A: CMS meta tag or manual manifestUrl override -----------------
   const metaTag = document.querySelector('meta[name="c2pa-manifest-url"]');
   const manifestUrl = (metaTag && metaTag.content) || params.manifestUrl || null;
@@ -309,11 +357,11 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
           } catch (e) {
             logError(LOG_PREFIX, 'Path A: manifest parse error', e);
           }
-          callback();
+          finish();
         },
         error(e) {
           logError(LOG_PREFIX, 'Path A: manifest fetch error', e);
-          callback();
+          finish();
         },
       },
       null,
@@ -328,15 +376,30 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
     logInfo(LOG_PREFIX, 'Path B: cache hit for', canonicalUrl);
     const payload = Object.assign({}, cached, { source: 'cache' });
     deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.ext.data.c2pa', payload);
-    callback();
+    finish();
     return;
   }
 
   // -- Path C: auto-sign via Encypher API ----------------------------------
+
+  // Consent gate: do not transmit page content without consent
+  if (!hasConsentForDataTransmission(userConsent)) {
+    logInfo(LOG_PREFIX, 'Path C: skipping, no consent for data transmission');
+    finish();
+    return;
+  }
+
+  // Validate API base URL against allowlist
+  if (!isAllowedApiUrl(apiBase + '/api/v1/public/prebid/sign')) {
+    logWarn(LOG_PREFIX, 'Path C: apiBase not in allowed hosts, skipping');
+    finish();
+    return;
+  }
+
   const content = extractContent();
   if (!content) {
     logInfo(LOG_PREFIX, 'Path C: no extractable content, skipping');
-    callback();
+    finish();
     return;
   }
 
@@ -344,7 +407,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
   signContent(content.text, apiBase, canonicalUrl, content.metadata, (err, resp) => {
     if (err || !resp || !resp.success) {
       logWarn(LOG_PREFIX, 'Path C: sign API error, continuing without provenance', err);
-      callback();
+      finish();
       return;
     }
 
@@ -364,7 +427,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
       Object.assign({}, payload, { source: 'auto' })
     );
     logInfo(LOG_PREFIX, 'Path C: provenance signed and injected');
-    callback();
+    finish();
   });
 };
 
