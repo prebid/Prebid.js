@@ -16,7 +16,7 @@ const DEFAULT_GZIP_ENABLED = false;
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    srid: string
+    placementId: string
   }
 }
 
@@ -37,7 +37,7 @@ const converter = ortbConverter({
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }
-    deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.srid);
+    deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.placementId);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -46,7 +46,7 @@ const converter = ortbConverter({
 });
 
 const isBidRequestValid = (bid:BidRequest<typeof BIDDER_CODE>): boolean => {
-  if (!bid.params.srid || typeof bid.params.srid !== 'string' || bid.params.srid === '') {
+  if (!bid.params.placementId || typeof bid.params.placementId !== 'string' || bid.params.placementId === '') {
     return false;
   }
   return true;

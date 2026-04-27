@@ -31,28 +31,28 @@ describe('Alliance Gravity bid adapter tests', () => {
       }
     });
 
-    it('No srid', () => {
+    it('No placementId', () => {
       bannerBid.params = {};
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('Invalid srid type (number)', () => {
-      bannerBid.params = { srid: 1234 };
+    it('Invalid placementId type (number)', () => {
+      bannerBid.params = { placementId: 1234 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('Invalid srid type (object', () => {
-      bannerBid.params = { srid: {} };
+    it('Invalid placementId type (object)', () => {
+      bannerBid.params = { placementId: {} };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('Empty srid', () => {
-      bannerBid.params = { srid: '' };
+    it('Empty placementId', () => {
+      bannerBid.params = { placementId: '' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('Valid srid', () => {
-      bannerBid.params = { srid: '12345' };
+    it('Valid placementId', () => {
+      bannerBid.params = { placementId: '12345' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
     });
   });
@@ -75,7 +75,7 @@ describe('Alliance Gravity bid adapter tests', () => {
         {
           bidder: 'alliance_gravity',
           params: {
-            srid: "12345"
+            placementId: "12345"
           },
           adUnitCode: 'header-ad-1234',
           transactionId: '469a570d-f187-488d-b1cb-48c1a2009be9',
@@ -87,7 +87,7 @@ describe('Alliance Gravity bid adapter tests', () => {
         {
           bidder: 'alliance_gravity',
           params: {
-            srid: '67890',
+            placementId: '67890',
           },
           mediaTypes: {
             banner: {
