@@ -21,6 +21,7 @@ describe('user sync', function () {
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;
   let politeTriggerPixelStub;
+  let politeInsertUserSyncIframeStub;
   const idPrefix = 'test-generated-id-';
   let lastId = 0;
   const defaultUserSyncConfig = config.getConfig('userSync');
@@ -59,6 +60,9 @@ describe('user sync', function () {
     politeTriggerPixelStub = sinon.stub(ajax, 'politeTriggerPixel').callsFake((url) => {
       utils.triggerPixel(url);
     });
+    politeInsertUserSyncIframeStub = sinon.stub(ajax, 'politeInsertUserSyncIframe').callsFake((url) => {
+      utils.insertUserSyncIframe(url);
+    });
   });
 
   afterEach(function () {
@@ -68,6 +72,7 @@ describe('user sync', function () {
     getUniqueIdentifierStrStub.restore();
     insertUserSyncIframeStub.restore();
     politeTriggerPixelStub.restore();
+    politeInsertUserSyncIframeStub.restore();
     config.resetConfig();
   });
 
@@ -80,13 +85,31 @@ describe('user sync', function () {
   });
 
   it('should use politeTriggerPixel for image syncs', function () {
-    const userSync = newTestUserSync();
+    const userSync = newTestUserSync({ usePoliteSync: true });
 
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
 
     expect(politeTriggerPixelStub.calledOnce).to.equal(true);
     expect(politeTriggerPixelStub.getCall(0).args[0]).to.equal('http://example.com');
+  });
+
+  it('should use politeInsertUserSyncIframe for iframe syncs', function () {
+    const userSync = newTestUserSync({
+      usePoliteSync: true,
+      filterSettings: {
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
+      }
+    });
+
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+
+    expect(politeInsertUserSyncIframeStub.calledOnce).to.equal(true);
+    expect(politeInsertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
   it('should NOT fire a sync if a rule blocks syncUser', () => {

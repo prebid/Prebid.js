@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { dep, politeTriggerPixel, sendBeacon } from '../../src/ajax.js'
+import { dep, politeInsertUserSyncIframe, politeTriggerPixel, sendBeacon } from '../../src/ajax.js'
 import * as utils from '../../src/utils.js';
 
 describe('test sendBeacon wrapper', () => {
@@ -69,5 +69,42 @@ describe('politeTriggerPixel', () => {
 
     expect(triggerPixelStub.calledOnce).to.equal(true);
     window.Request = originalRequest;
+  });
+});
+
+describe('politeInsertUserSyncIframe', () => {
+  let insertUserSyncIframeStub;
+  let originalScheduler;
+
+  beforeEach(() => {
+    insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
+    originalScheduler = window.scheduler;
+    window.scheduler = undefined;
+  });
+
+  afterEach(() => {
+    insertUserSyncIframeStub.restore();
+    window.scheduler = originalScheduler;
+  });
+
+  it('inserts iframe directly without scheduler', () => {
+    politeInsertUserSyncIframe('http://example.com/iframe');
+    expect(insertUserSyncIframeStub.calledOnce).to.equal(true);
+    expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('uses background priority when Scheduler API is available', () => {
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+
+    politeInsertUserSyncIframe('http://example.com/iframe');
+
+    expect(window.scheduler.postTask.calledOnce).to.equal(true);
+    expect(window.scheduler.postTask.getCall(0).args[1]).to.deep.equal({ priority: 'background' });
+    expect(insertUserSyncIframeStub.calledOnce).to.equal(true);
   });
 });

@@ -3,7 +3,7 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
 import { hook } from './hook.js';
-import { buildUrl, hasDeviceAccess, logError, parseUrl, triggerPixel } from './utils.js';
+import { buildUrl, hasDeviceAccess, insertUserSyncIframe, logError, parseUrl, triggerPixel } from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -231,6 +231,15 @@ export function sendBeacon(url, data) {
  * Falls back to image-based loading when fetch or keepalive requests are unavailable.
  */
 export function politeTriggerPixel(url) {
+  const scheduler = (window as any).scheduler;
+  const postTask = (task) => {
+    if (scheduler?.postTask) {
+      scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+      return true;
+    }
+    return false;
+  };
+
   const triggerSync = () => {
     if (window.fetch && window.Request) {
       try {
@@ -247,13 +256,20 @@ export function politeTriggerPixel(url) {
     triggerPixel(url);
   };
 
-  const scheduler = (window as any).scheduler;
-  if (scheduler?.postTask) {
-    scheduler.postTask(triggerSync, { priority: 'background' }).catch(() => triggerSync());
+  if (postTask(triggerSync)) {
     return;
   }
 
   triggerSync();
+}
+
+export function politeInsertUserSyncIframe(url) {
+  const scheduler = (window as any).scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(() => insertUserSyncIframe(url), { priority: 'background' }).catch(() => insertUserSyncIframe(url));
+    return;
+  }
+  insertUserSyncIframe(url);
 }
 
 export const ajax = ajaxBuilder();
