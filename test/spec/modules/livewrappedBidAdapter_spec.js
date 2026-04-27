@@ -13,6 +13,8 @@ describe('Livewrapped adapter tests', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'isFirefoxBrowser').callsFake(() => false);
+    sandbox.stub(utils, 'isChromeIOSBrowser').callsFake(() => false);
 
     window.livewrapped = undefined;
 
@@ -893,7 +895,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should pass no cookie support Firefox', function() {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-      sandbox.stub(utils, 'isFirefoxBrowser').callsFake(() => true);
+      utils.isFirefoxBrowser.callsFake(() => true);
       const result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const data = JSON.parse(result.data);
 
@@ -903,7 +905,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should pass no cookie support Chrome on iOS', function() {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-      sandbox.stub(utils, 'isChromeIOSBrowser').callsFake(() => true);
+      utils.isChromeIOSBrowser.callsFake(() => true);
       const result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const data = JSON.parse(result.data);
 
