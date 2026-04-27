@@ -218,6 +218,7 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
   }
+
   return {
     ...bidResponse,
     ad: replaceMacros(ad, repl),
@@ -248,7 +249,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer) && !bidResponse.frameRendererUrl) {
+  if (isRendererRequired(bidResponse.renderer) && !getFrameRendererUrl(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
     next.bail();
