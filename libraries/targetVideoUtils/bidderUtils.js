@@ -84,7 +84,9 @@ export function bannerBid(serverBid, rtbBid, bidderRequest, margin) {
 
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
-      vastImpUrl: rtbBid.notify_url,
+      vastTrackers: {
+        impression: [rtbBid.notify_url]
+      },
       ad: getBannerHtml(rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url)),
       ttl: 3600
     });

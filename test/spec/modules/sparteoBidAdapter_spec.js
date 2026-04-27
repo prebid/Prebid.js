@@ -408,6 +408,44 @@ describe('SparteoAdapter', function () {
       });
 
       if (FEATURES.VIDEO) {
+        it('should fallback to nurl as vastUrl when no cache URL is present', function () {
+          const response = {
+            body: {
+              'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
+              'cur': 'EUR',
+              'seatbid': [
+                {
+                  'seat': 'sparteo',
+                  'group': 0,
+                  'bid': [
+                    {
+                      'id': 'cdbb6982-a269-40c7-84e5-04797f11d87b',
+                      'impid': '5e6f7g8h',
+                      'price': 5,
+                      'ext': {
+                        'prebid': {
+                          'type': 'video'
+                        }
+                      },
+                      'adm': 'tag',
+                      'crid': 'crid',
+                      'w': 640,
+                      'h': 480,
+                      'nurl': 'https://t.bidder.sparteo.com/vast'
+                    }
+                  ]
+                }
+              ]
+            }
+          };
+
+          const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
+          const bids = adapter.interpretResponse(response, request);
+
+          expect(bids[0].vastUrl).to.equal('https://t.bidder.sparteo.com/vast');
+          expect(bids[0].nurl).to.equal('https://t.bidder.sparteo.com/vast');
+        });
+
         it('should interprete renderer config', function () {
           let response = {
             body: {
@@ -515,8 +553,12 @@ describe('SparteoAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
+    beforeEach(function () {
+      delete window.sparteoCrossfire;
+    });
+
     describe('Check methods succeed', function () {
-      it('should return the sync url', function () {
+      it('should return the sync url with GDPR, USP and GPP consent params', function () {
         const syncOptions = {
           'iframeEnabled': true,
           'pixelEnabled': false
@@ -525,16 +567,18 @@ describe('SparteoAdapter', function () {
           gdprApplies: 1,
           consentString: 'tcfv2'
         };
-        const uspConsent = {
-          consentString: '1Y---'
+        const uspConsent = '1Y---';
+        const gppConsent = {
+          gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+          applicableSections: [2, 6]
         };
 
         const syncUrls = [{
           type: 'iframe',
-          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1Y---'
+          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1Y---&gpp=' + encodeURIComponent('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA') + '&gpp_sid=' + encodeURIComponent('2,6')
         }];
 
-        expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent)).to.deep.equal(syncUrls);
+        expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent, gppConsent)).to.deep.equal(syncUrls);
       });
     });
   });
@@ -710,7 +754,7 @@ describe('SparteoAdapter', function () {
       );
     });
 
-    it('prefers site over app when both are present', function () {
+    it('prefers app over site when both are present (ortbConverter default)', function () {
       const ENDPOINT = 'https://bid.sparteo.com/auction?network_id=${NETWORK_ID}${SITE_DOMAIN_QUERY}${APP_DOMAIN_QUERY}${BUNDLE_QUERY}';
       const bid = deepClone(VALID_BID_BANNER);
       bid.params.endpoint = ENDPOINT;
@@ -727,10 +771,10 @@ describe('SparteoAdapter', function () {
       delete req.data.id;
 
       expect(req.url).to.equal(
-        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&site_domain=site.sparteo.com'
+        'https://bid.sparteo.com/auction?network_id=1234567a-eb1b-1fae-1d23-e1fbaef234cf&app_domain=app.sparteo.com&bundle=com.sparteo.app'
       );
-      expect(req.data.site?.publisher?.ext?.params?.networkId).to.equal('1234567a-eb1b-1fae-1d23-e1fbaef234cf');
-      expect(req.data.app).to.be.undefined;
+      expect(req.data.app?.publisher?.ext?.params?.networkId).to.equal('1234567a-eb1b-1fae-1d23-e1fbaef234cf');
+      expect(req.data.site).to.be.undefined;
     });
 
     ['', '   ', 'null', 'NuLl'].forEach((val) => {
@@ -856,6 +900,7 @@ describe('SparteoAdapter', function () {
       delete req.data.id;
 
       expect(req.data.imp[0]?.ext?.sparteo?.params?.adUnitCode).to.equal(bid.adUnitCode);
+      expect(bid.params.adUnitCode).to.be.undefined;
     });
 
     it('sets pbjsVersion and networkId under site root', function () {

@@ -1369,7 +1369,7 @@ describe('auctionmanager.js', function () {
     });
 
     describe('when auction timeout is 20', function () {
-      let eventsEmitSpy, auctionDone;
+      let eventsEmitSpy, auctionDone, bidsBackCallback;
 
       function respondToRequest(requestIndex) {
         server.requests[requestIndex].respond(200, {}, 'response body');
@@ -1402,7 +1402,8 @@ describe('auctionmanager.js', function () {
         registerBidder(spec1);
         const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
         registerBidder(spec2);
-        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: () => auctionDone(), cbTimeout: 20 });
+        bidsBackCallback = sinon.stub().callsFake(() => { auctionDone() });
+        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: bidsBackCallback, cbTimeout: 20 });
         indexAuctions = [auction];
       });
 
@@ -1558,6 +1559,22 @@ describe('auctionmanager.js', function () {
         });
         respondToRequest(1);
         return pm;
+      })
+
+      it('should invoke callback with bids as quasi-normal arrays', () => {
+        const pm = runAuction();
+        respondToRequest(0);
+        respondToRequest(1);
+
+        function expectBidsArray(arr) {
+          sinon.assert.match(arr[0], { requestId: bids[0].requestId });
+          sinon.assert.match(arr[1], { requestId: bids[1].requestId });
+        }
+        return pm.then(() => {
+          const cbArg0 = bidsBackCallback.args[0][0];
+          expectBidsArray(cbArg0[ADUNIT_CODE]);
+          expectBidsArray(cbArg0[ADUNIT_CODE].bids);
+        })
       })
     });
   });
