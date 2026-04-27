@@ -209,7 +209,10 @@ function parseNative(bid, nativeParams) {
   }
 
   return {
-    ortb: native
+    ortb: native,
+    clickUrl: native.link.url,
+    clickTrackers: native.link.clicktrackers || [],
+    impressionTrackers: native.imptrackers || []
   };
 }
 
