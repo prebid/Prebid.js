@@ -20,7 +20,7 @@ import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { getRenderingData } from '../../src/adRendering.js';
-import { getCreativeRendererSource, PUC_MIN_VERSION } from '../../src/creativeRenderers.js';
+import { getCreativeDefaultRendererSource, PUC_MIN_VERSION } from '../../src/creativeRenderers.js';
 import { deepSetValue } from '../../src/utils.js';
 import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from 'src/eventTrackers.js';
 const utils = require('src/utils');
@@ -253,11 +253,11 @@ describe('native.js', function () {
       describe(`when getRenderingData ${t}`, () => {
         before(() => {
           getRenderingData.before(renderDataHook, 100);
-          getCreativeRendererSource.before(renderSourceHook, 100);
+          getCreativeDefaultRendererSource.before(renderSourceHook, 100);
         });
         after(() => {
           getRenderingData.getHooks({ hook: renderDataHook }).remove();
-          getCreativeRendererSource.getHooks({ hook: renderSourceHook }).remove();
+          getCreativeDefaultRendererSource.getHooks({ hook: renderSourceHook }).remove();
         });
 
         function checkRenderer(message) {

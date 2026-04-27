@@ -120,6 +120,11 @@ export interface AdUnitDefinition {
    * @deprecated - use mediaType specific size parameters instead.
    */
   sizes?: Size | Size[];
+
+  /**
+   * URL of a script loaded inside the creative iframe for FrameRenderer (`pbRenderInFrame`).
+   */
+  frameRendererUrl?: string;
 }
 
 /**

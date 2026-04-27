@@ -221,7 +221,8 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
   return {
     ...bidResponse,
     ad: replaceMacros(ad, repl),
-    adUrl: replaceMacros(adUrl, repl)
+    adUrl: replaceMacros(adUrl, repl),
+    frameRendererUrl: getFrameRendererUrl(bidResponse)
   };
 }
 
@@ -236,7 +237,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = bidResponse.frameRendererUrl ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
+  const data = getFrameRendererUrl(bidResponse) ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
@@ -423,4 +424,9 @@ export function insertLocatorFrame() {
       document.body.appendChild(frame);
     }
   }
+}
+
+export function getFrameRendererUrl(bidResponse: Bid): string | undefined {
+  const adUnit = auctionManager.index.getAdUnit(bidResponse);
+  return adUnit?.frameRendererUrl ?? bidResponse.frameRendererUrl;
 }

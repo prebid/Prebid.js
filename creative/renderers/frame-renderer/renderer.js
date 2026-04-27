@@ -66,15 +66,7 @@ import { ERROR_NO_AD } from './constants.js';
               fn.call(cw, data);
               resolve();
             } catch (e) {
-              if (e.name === 'SecurityError') {
-                reject(
-                  new Error(
-                    'Prebid FrameRenderer: SecurityError while invoking pbRenderInFrame.'
-                  )
-                );
-              } else {
-                reject(e);
-              }
+              reject(e);
             }
           };
           script.onerror = function () {
