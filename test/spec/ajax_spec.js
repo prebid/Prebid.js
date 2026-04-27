@@ -14,16 +14,20 @@ describe('test sendBeacon wrapper', () => {
 describe('politeTriggerPixel', () => {
   let triggerPixelStub;
   let originalScheduler;
+  let originalRequestIdleCallback;
 
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
     window.scheduler = undefined;
+    window.requestIdleCallback = undefined;
   });
 
   afterEach(() => {
     triggerPixelStub.restore();
     window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
   });
 
   it('uses keepalive fetch when request creation works', () => {
@@ -75,22 +79,35 @@ describe('politeTriggerPixel', () => {
 describe('politeInsertUserSyncIframe', () => {
   let insertUserSyncIframeStub;
   let originalScheduler;
+  let originalRequestIdleCallback;
 
   beforeEach(() => {
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
     originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
     window.scheduler = undefined;
+    window.requestIdleCallback = undefined;
   });
 
   afterEach(() => {
     insertUserSyncIframeStub.restore();
     window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
   });
 
-  it('inserts iframe directly without scheduler', () => {
+  it('inserts iframe directly without scheduler or requestIdleCallback', () => {
     politeInsertUserSyncIframe('http://example.com/iframe');
     expect(insertUserSyncIframeStub.calledOnce).to.equal(true);
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
+  it('uses requestIdleCallback when scheduler is unavailable', () => {
+    window.requestIdleCallback = sinon.stub().callsFake((task) => task());
+
+    politeInsertUserSyncIframe('http://example.com/iframe');
+
+    expect(window.requestIdleCallback.calledOnce).to.equal(true);
+    expect(insertUserSyncIframeStub.calledOnce).to.equal(true);
   });
 
   it('uses background priority when Scheduler API is available', () => {

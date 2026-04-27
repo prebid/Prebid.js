@@ -231,14 +231,18 @@ export function sendBeacon(url, data) {
  * Falls back to image-based loading when fetch or keepalive requests are unavailable.
  */
 export function politeTriggerPixel(url) {
-  const scheduler = (window as any).scheduler;
-  const postTask = (task) => {
+  const runBackgroundTask = (task) => {
+    const scheduler = (window as any).scheduler;
     if (scheduler?.postTask) {
       scheduler.postTask(task, { priority: 'background' }).catch(() => task());
-      return true;
+      return;
     }
-    return false;
-  };
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => task(), { timeout: 2000 });
+      return;
+    }
+    task();
+  }
 
   const triggerSync = () => {
     if (window.fetch && window.Request) {
@@ -256,22 +260,25 @@ export function politeTriggerPixel(url) {
     triggerPixel(url);
   };
 
-  if (postTask(triggerSync)) {
-    return;
-  }
-
-  triggerSync();
+  runBackgroundTask(triggerSync);
 }
 
 export function politeInsertUserSyncIframe(url) {
-  const scheduler = (window as any).scheduler;
-  if (scheduler?.postTask) {
-    scheduler.postTask(() => insertUserSyncIframe(url), { priority: 'background' }).catch(() => insertUserSyncIframe(url));
-    return;
-  }
-  insertUserSyncIframe(url);
-}
+  const runBackgroundTask = (task) => {
+    const scheduler = (window as any).scheduler;
+    if (scheduler?.postTask) {
+      scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+      return;
+    }
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => task(), { timeout: 2000 });
+      return;
+    }
+    task();
+  };
 
+  runBackgroundTask(() => insertUserSyncIframe(url));
+}
 export const ajax = ajaxBuilder();
 export const fetch = fetcherFactory();
 
