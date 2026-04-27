@@ -18,7 +18,7 @@ The module runs once per page load through three paths in strict priority:
 
 **Key behavior:** Content signed at the CMS or CDN layer carries invisible provenance markers that survive DOM rendering. When the module sends this text to the API, the markers are detected and verified server-side. Publishers who sign at publish time receive their authenticated `signer_tier` (e.g., `connected` or `byok`) in the bid request, which is a stronger signal than the `encypher_free` tier assigned to auto-signed content.
 
-No external JavaScript is loaded. The module uses only Prebid.js core imports. Every code path, including all error branches, calls `callback()`. The module never blocks an auction.
+No external JavaScript is loaded. The module uses only Prebid.js core imports. Every code path, including all error branches, calls `callback()`. A 2-second safety timeout ensures the module never blocks an auction. Path C requires GDPR consent before transmitting page content and validates the API endpoint against an allowlist of permitted hosts.
 
 Free tier: 1,000 unique content signatures per publisher domain per month. Re-requests for the same content (deduped by content hash) do not count against quota. Verification of already-signed content does not count against quota. Quota exceeded returns gracefully with no provenance data (fail-open).
 
