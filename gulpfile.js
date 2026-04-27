@@ -17,8 +17,6 @@ const execaTask = helpers.execaTask;
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 const execaCmd = require('execa');
-var gulpif = require('gulp-if');
-var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
@@ -188,7 +186,10 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+  return bundle(dev)
+    .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist'), {
+      sourcemaps: dev || argv.sourceMaps ? '.' : false
+    }));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -309,10 +310,8 @@ function bundle(dev, moduleArr) {
   fancyLog('Generating storage use disclosure summary:', disclosureFile);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  const source = wrap(gulp.src(entries))
-    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
-    .pipe(concat(outputFileName))
-    .pipe(gulpif(sm, sourcemaps.write('.')));
+  const source = wrap(gulp.src(entries, {sourcemaps: sm}))
+    .pipe(concat(outputFileName));
   const disclosure = disclosureSummary(['prebid-core'].concat(modules), disclosureFile);
   return merge(source, disclosure);
 }

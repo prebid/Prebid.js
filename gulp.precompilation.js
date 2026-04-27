@@ -2,7 +2,6 @@ const webpackStream = require('webpack-stream');
 const gulp = require('gulp');
 const helpers = require('./gulpHelpers.js');
 const {argv} = require('yargs');
-const sourcemaps = require('gulp-sourcemaps');
 const babel = require('gulp-babel');
 const {glob} = require('glob');
 const path = require('path');
@@ -28,13 +27,15 @@ const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
     return function () {
-      return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev}))})
-        .pipe(sourcemaps.init())
+      return gulp.src(helpers.getSourcePatterns(), {
+        base: '.',
+        since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
+        sourcemaps: true
+      })
         .pipe(babel(babelConfig))
-        .pipe(sourcemaps.write('.', {
-          sourceRoot: path.relative(helpers.getPrecompiledPath(), path.resolve('.'))
-        }))
-        .pipe(gulp.dest(helpers.getPrecompiledPath()));
+        .pipe(gulp.dest(helpers.getPrecompiledPath(), {
+          sourcemaps: '.'
+        }));
     }
   },
   ({dev, distUrlBase, disableFeatures} = {}) => `${dev}::${distUrlBase ?? ''}::${(disableFeatures ?? []).join(':')}`
