@@ -193,7 +193,7 @@ const buildCreative = _.memoize(
   function buildCreative({dev = false} = {}) {
     const opts = {
       mode: dev ? 'development' : 'production',
-      devtool: false
+      devtool: dev ? 'inline-source-map': false
     };
     return function() {
       return gulp.src(['creative/**/*'], {since: gulp.lastRun(buildCreative({dev}))})
