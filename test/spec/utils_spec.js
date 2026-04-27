@@ -947,6 +947,66 @@ describe('Utils', function () {
     });
   });
 
+  describe('isFirefoxBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Firefox on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('properly detects Firefox on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/125.0 Mobile/15E148 Safari/605.1.15';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('does not flag Safari', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
+      expect(utils.isFirefoxBrowser()).to.equal(false);
+    });
+  });
+
+  describe('isChromeIOSBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Chrome on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
+      expect(utils.isChromeIOSBrowser()).to.equal(true);
+    });
+
+    it('does not flag Chrome on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
+    });
+
+    it('does not flag Opera on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 OPR/130.0.0.0';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
+    });
+  });
+
   describe('mergeDeep', function() {
     it('properly merge objects that share same property names', function() {
       const object1 = {
