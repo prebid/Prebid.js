@@ -8,7 +8,7 @@ Maintainer: destek@pigeoon.com
 
 # Description
 
-Module that connects Prebid.JS publishers to Pigeoon ad platform demand.
+Module that connects Prebid.JS publishers to Pigeoon ad platform for direct sales campaigns via Google Ad Manager.
 
 # Parameters
 

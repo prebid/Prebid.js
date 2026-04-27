@@ -8,14 +8,32 @@ const COOKIE_NAME = 'pigeoon_uid';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
+/**
+ * @typedef {object} BidParams
+ * @property {string} networkId - Publisher network ID provided by Pigeoon
+ * @property {string} placementId - Placement ID provided by Pigeoon
+ */
+
+/**
+ * @type {import('../src/adapters/bidderFactory.js').BidderSpec}
+ */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
+  /**
+   * @param {object} bid
+   * @returns {boolean}
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.networkId && bid.params.placementId);
   },
 
+  /**
+   * @param {object[]} validBidRequests
+   * @param {object} bidderRequest
+   * @returns {object}
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const userId = storage.getCookie(COOKIE_NAME) || '';
     const gdprConsent = bidderRequest.gdprConsent;
@@ -68,6 +86,10 @@ export const spec = {
     };
   },
 
+  /**
+   * @param {object} serverResponse
+   * @returns {object[]}
+   */
   interpretResponse: function(serverResponse) {
     const response = serverResponse.body;
     if (!response || !response.seatbid || !response.seatbid.length) return [];
@@ -95,6 +117,12 @@ export const spec = {
     return bids;
   },
 
+  /**
+   * @param {object} syncOptions
+   * @param {object[]} serverResponses
+   * @param {object} gdprConsent
+   * @returns {object[]}
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const gdprParams = gdprConsent?.gdprApplies === true
       ? `&gdpr=1&gdpr_consent=${gdprConsent.consentString}`
