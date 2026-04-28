@@ -11,7 +11,7 @@ describe('gpt targeting shim', () => {
   beforeEach(() => {
     mockGam = {};
   });
-  it('when getConfig/setConfig is defined', () => {
+  describe('when getConfig/setConfig is defined', () => {
     let targetingConfig;
     beforeEach(() => {
       targetingConfig = undefined;

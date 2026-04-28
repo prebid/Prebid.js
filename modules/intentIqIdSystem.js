@@ -39,6 +39,7 @@ import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditio
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
 import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
 import { setPageTargeting } from '../src/utils/gptTargeting.js';
+import { setKeyValueOn } from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -219,9 +220,7 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
 export function setGamReporting(gamObjectReference, gamParameterName, userGroup, isBlacklisted = false) {
   if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
-    gamObjectReference.cmd.push(() => {
-      setPageTargeting(gamParameterName, userGroup, gamObjectReference);
-    });
+    setKeyValueOn(gamParameterName, userGroup, gamObjectReference);
   }
 }
 

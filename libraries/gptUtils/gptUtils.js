@@ -26,10 +26,14 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 export function setKeyValue(key, value) {
   if (!key || typeof key !== 'string') return false;
   window.googletag = window.googletag || { cmd: [] };
-  window.googletag.cmd = window.googletag.cmd || [];
-  window.googletag.cmd.push(() => {
-    setPageTargeting(key, value);
-  });
+  setKeyValueOn(key, value, window.googletag)
+}
+
+export function setKeyValueOn(key, value, gpt = window.googletag) {
+  gpt.cmd = gpt.cmd || [];
+  gpt.cmd.push(() => {
+    setPageTargeting(key, value, gpt);
+  })
 }
 
 /**
