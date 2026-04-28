@@ -38,7 +38,6 @@ import { getIiqServerAddress, iiqPixelServerAddress } from '../libraries/intentI
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
 import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
-import { setPageTargeting } from '../src/utils/gptTargeting.js';
 import { setKeyValueOn } from '../libraries/gptUtils/gptUtils.js';
 
 /**
