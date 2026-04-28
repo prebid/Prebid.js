@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "11.8.0-pre",
+  "version": "11.9.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -90,7 +90,6 @@
     "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.0.0",
-    "gulp-sourcemaps": "^3.0.0",
     "gulp-tap": "^2.0.0",
     "is-docker": "^2.2.1",
     "istanbul": "^0.4.5",
@@ -123,7 +122,6 @@
     "puppeteer": "^24.10.0",
     "resolve-from": "^5.0.0",
     "sinon": "^20.0.0",
-    "source-map-loader": "^5.0.0",
     "through2": "^4.0.2",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",

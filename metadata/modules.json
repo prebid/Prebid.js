@@ -3790,6 +3790,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pgamdirect",
+      "aliasOf": null,
+      "gvlid": 1353,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "pgamssp",
       "aliasOf": null,
       "gvlid": null,
@@ -4343,7 +4350,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "showheroes-bs",
+      "componentName": "showheroes",
       "aliasOf": null,
       "gvlid": 111,
       "disclosureURL": null
@@ -4353,6 +4360,13 @@
       "componentName": "showheroesBs",
       "aliasOf": "showheroes-bs",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "showheroes-bs",
+      "aliasOf": null,
+      "gvlid": 111,
       "disclosureURL": null
     },
     {
@@ -6247,6 +6261,11 @@
     {
       "componentType": "analytics",
       "componentName": "id5Analytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "imAnalytics",
       "gvlid": null
     },
     {
