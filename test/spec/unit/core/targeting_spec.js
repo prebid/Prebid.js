@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import {
-  filters,
   getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
   sortByDealAndPriceBucketOrCpm,
   targeting as targetingInstance
 } from 'src/targeting.js';
+import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
 import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
@@ -296,11 +296,11 @@ describe('targeting tests', function () {
             }
             setup(bid, ttlBuffer);
 
-            expect(filters.isBidNotExpired(bid)).to.be.true;
+            expect(bidFilters.isBidNotExpired(bid)).to.be.true;
             clock.tick((bid.ttl - ttlBuffer) * 1000 - 100);
-            expect(filters.isBidNotExpired(bid)).to.be.true;
+            expect(bidFilters.isBidNotExpired(bid)).to.be.true;
             clock.tick(101);
-            expect(filters.isBidNotExpired(bid)).to.be.false;
+            expect(bidFilters.isBidNotExpired(bid)).to.be.false;
           });
         });
       });
@@ -324,7 +324,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
       logWarnStub = sinon.stub(utils, 'logWarn');
       logErrorStub = sinon.stub(utils, 'logError');
     });
@@ -1212,7 +1212,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
 
       setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, function (fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
         fn.call(this, bidsReceived, highestCpmCallback, adUnitBidLimit, true);
@@ -1244,7 +1244,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
     });
 
     it('returns targetingSet correctly', function () {
@@ -1261,7 +1261,7 @@ describe('targeting tests', function () {
       let auctionManagerStub;
       beforeEach(function () {
         enableSendAllBids = false;
-        bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+        bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
         auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
       });
 

@@ -1,6 +1,7 @@
 import { expect } from 'chai'
-import { spec } from 'modules/showheroes-bsBidAdapter.js'
+import { spec } from 'modules/showheroesBidAdapter.js'
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
@@ -45,7 +46,7 @@ const schain = {
 }
 
 const bidRequestCommonParamsV2 = {
-  bidder: 'showheroes-bs',
+  bidder: 'showheroes',
   params: {
     unitId: 'AACBWAcof-611K4U',
   },
@@ -147,7 +148,6 @@ describe('shBidAdapter', () => {
   describe('interpretResponse', function () {
     const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>'
 
-    const callback_won = 'https://test.com/track/?ver=15&session_id=01ecd03ce381505ccdeb88e555b05001&category=request_session&type=event&request_session_id=01ecd03ce381505ccdeb88e555b05001&label=prebid_won&reason=ok'
     const basicResponse = {
       cur: 'EUR',
       seatbid: [{
@@ -161,9 +161,6 @@ describe('shBidAdapter', () => {
           mtype: 2, // 2 = video
           adomain: adomain,
           ext: {
-            callbacks: {
-              won: [callback_won],
-            },
             extra: 'test',
           },
         }],
@@ -193,9 +190,6 @@ describe('shBidAdapter', () => {
               advertiserDomains: adomain
             },
             vastXml: vastXml,
-            callbacks: {
-              won: [callback_won],
-            },
             extra: 'test',
           }
         ]
@@ -285,9 +279,6 @@ describe('shBidAdapter', () => {
             mtype: 1, // 1 = banner
             adomain: adomain,
             ext: {
-              callbacks: {
-                won: [callback_won],
-              },
               extra: 'test',
             },
           }],
@@ -311,9 +302,6 @@ describe('shBidAdapter', () => {
             advertiserDomains: adomain,
           },
           ad: '<div>test banner</div>',
-          callbacks: {
-            won: [callback_won],
-          },
           extra: 'test',
         }
       ];
@@ -357,6 +345,76 @@ describe('shBidAdapter', () => {
 
       expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal('https://sync.showheroes.com/pixel');
+    });
+  });
+
+  describe('Gzip Configuration', () => {
+    let configStub;
+    let bidderConfigStub;
+
+    beforeEach(() => {
+      configStub = sinon.stub(config, 'getConfig');
+      bidderConfigStub = sinon.stub(config, 'getBidderConfig');
+    });
+
+    afterEach(() => {
+      configStub.restore();
+      if (bidderConfigStub && bidderConfigStub.restore) {
+        bidderConfigStub.restore();
+      }
+    });
+
+    it('should enable gzip compression by default', () => {
+      // No specific configuration set, should use default
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should respect bidder-specific boolean configuration set via setBidderConfig', () => {
+      // Mock bidder-specific config to return false
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: false
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should handle bidder-specific string configuration ("true")', () => {
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: 'true'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should handle bidder-specific string configuration ("false")', () => {
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: 'false'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should fall back to default when bidder-specific value is invalid', () => {
+      // Mock bidder-specific config to return invalid value
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: 'invalid'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      // Should fall back to default (true)
+      expect(request.options.endpointCompression).to.be.true;
     });
   });
 });

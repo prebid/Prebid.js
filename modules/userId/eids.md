@@ -205,6 +205,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'rediads.com',
+        uids: [{
+            id: 'ruid_7b9c1d3f-1e2b-4e7b-9e5a-acde12345678',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'britepool.com',
         uids: [{
             id: 'some-random-id-value',

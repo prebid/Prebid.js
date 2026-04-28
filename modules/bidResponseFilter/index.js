@@ -11,6 +11,13 @@ export const BID_MEDIA_TYPE_REJECTION_REASON = `Media type is not allowed`;
 let moduleConfig;
 let enabled = false;
 
+function isIbvBannerOnMultiFormatAdUnit(metaMediaType, bidRequest) {
+  const mediaTypes = Object.keys(bidRequest?.mediaTypes || {});
+  return metaMediaType === 'banner' &&
+    mediaTypes.length > 1 &&
+    bidRequest?.mediaTypes?.video?.context === 'inbanner';
+}
+
 function init() {
   config.getConfig(MODULE_NAME, (cfg) => {
     moduleConfig = cfg[MODULE_NAME];
@@ -36,7 +43,12 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   const catConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {}) };
   const advConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {}) };
   const attrConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.attr || {}) };
-  const mediaTypesConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.mediaTypes || {}) };
+  const mediaTypesConfig = {
+    enforce: true,
+    blockUnknown: true,
+    rejectIbvBannerOnMultiFormat: false,
+    ...(moduleConfig?.mediaTypes || {})
+  };
 
   const {
     primaryCatId, secondaryCatIds = [],
@@ -50,6 +62,9 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   const normalizedMetaCattax = Number(metaCattax);
   const normalizedRequestCattax = Number(cattax);
   const isCattaxMatch = normalizedMetaCattax === normalizedRequestCattax;
+  const allowedMediaTypes = Object.keys(bidRequest?.mediaTypes || {});
+  const rejectIbvBannerOnMultiFormat = mediaTypesConfig.rejectIbvBannerOnMultiFormat &&
+    isIbvBannerOnMultiFormatAdUnit(metaMediaType, bidRequest);
   if ((catConfig.enforce && isCattaxMatch && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
     (catConfig.blockUnknown && (!isCattaxMatch || !primaryCatId))) {
     reject(BID_CATEGORY_REJECTION_REASON);
@@ -59,7 +74,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } else if ((attrConfig.enforce && battr.includes(metaAttr)) ||
     (attrConfig.blockUnknown && !metaAttr)) {
     reject(BID_ATTR_REJECTION_REASON);
-  } else if ((mediaTypesConfig.enforce && !Object.keys(bidRequest?.mediaTypes || {}).includes(metaMediaType)) ||
+  } else if ((mediaTypesConfig.enforce && (!allowedMediaTypes.includes(metaMediaType) || rejectIbvBannerOnMultiFormat)) ||
     (mediaTypesConfig.blockUnknown && !metaMediaType)) {
     reject(BID_MEDIA_TYPE_REJECTION_REASON);
   } else {
