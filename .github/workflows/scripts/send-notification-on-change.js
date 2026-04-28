@@ -18,7 +18,7 @@ const nodemailer = require('nodemailer');
   const pass = process.env.NOTIFICATION_PASSWORD;
 
   // validate params
-  if (!repo || !prNumber || !token || !clientId || !clientSecret || !refreshToken) {
+  if (!repo || !prNumber || !token || !sender || !pass) {
     console.error('Missing required environment variables.');
     process.exit(1);
   }
