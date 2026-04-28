@@ -19,6 +19,7 @@ import {
 } from '../src/utils.js'
 import { submodule } from '../src/hook.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { setPageTargeting } from '../src/utils/gptTargeting.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -115,7 +116,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
       window.googletag = window.googletag || { cmd: [] };
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', segments);
+        setPageTargeting('im_segments', segments);
       });
     }
   }

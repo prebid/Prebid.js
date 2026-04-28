@@ -3,6 +3,7 @@ import { config } from "../config.ts";
 import { ttlCollection } from "../utils/ttlCollection.ts";
 import { isGptPubadsDefined } from "../utils.js";
 import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
+import { getSlotTargeting } from "../utils/gptTargeting.ts";
 
 const DEFAULT_LOCK_TIMEOUT = 3000;
 
@@ -45,7 +46,7 @@ export function targetingLock() {
   const [setupGpt, tearDownGpt] = (() => {
     let enabled = false;
     function onGptRender({ slot }: SlotRenderEndedEvent) {
-      keys?.forEach(key => slot.getTargeting(key)?.forEach(locked.delete));
+      keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete));
     }
     return [
       () => {

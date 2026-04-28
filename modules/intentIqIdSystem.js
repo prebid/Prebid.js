@@ -5,28 +5,40 @@
  * @requires module:modules/userId
  */
 
-import { logError, isPlainObject, isStr, isNumber } from '../src/utils.js';
+import { isNumber, isPlainObject, isStr, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
-import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js'
+import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js';
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
-import { readData, storeData, defineStorageType, removeDataByKey, tryParse } from '../libraries/intentIqUtils/storageUtils.js';
 import {
-  FIRST_PARTY_KEY,
+  defineStorageType,
+  readData,
+  removeDataByKey,
+  storeData,
+  tryParse
+} from '../libraries/intentIqUtils/storageUtils.js';
+import {
+  CH_KEYS,
   CLIENT_HINTS_KEY,
   EMPTY,
+  FIRST_PARTY_KEY,
   GVLID,
-  VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
-  HOURS_72, CH_KEYS
+  HOURS_72,
+  INVALID_ID,
+  META_DATA_CONSTANT,
+  PREBID,
+  SYNC_REFRESH_MILL,
+  VERSION
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import { SYNC_KEY } from '../libraries/intentIqUtils/getSyncKey.js';
-import { iiqPixelServerAddress, getIiqServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
+import { getIiqServerAddress, iiqPixelServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
 import { handleAdditionalParams } from '../libraries/intentIqUtils/handleAdditionalParams.js';
 import { decryptData, encryptData } from '../libraries/intentIqUtils/cryptionUtils.js';
 import { defineABTestingGroup } from '../libraries/intentIqUtils/defineABTestingGroupUtils.js';
+import { setPageTargeting } from '../src/utils/gptTargeting.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -208,16 +220,7 @@ export function setGamReporting(gamObjectReference, gamParameterName, userGroup,
   if (isBlacklisted) return;
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     gamObjectReference.cmd.push(() => {
-      if (typeof gamObjectReference.setConfig === 'function') {
-        gamObjectReference.setConfig({
-          targeting: {
-            [gamParameterName]: userGroup
-          }
-        });
-        return;
-      }
-      // Fallback in case an older version of Google Publisher Tag is used.
-      gamObjectReference?.pubads?.()?.setTargeting?.(gamParameterName, userGroup);
+      setPageTargeting(gamParameterName, userGroup, gamObjectReference);
     });
   }
 }

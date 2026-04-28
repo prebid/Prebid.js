@@ -1,5 +1,6 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
 import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+import { setPageTargeting } from '../../src/utils/gptTargeting.js';
 
 const slotInfoCache = new Map();
 
@@ -27,7 +28,7 @@ export function setKeyValue(key, value) {
   window.googletag = window.googletag || { cmd: [] };
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
-    window.googletag.pubads().setTargeting(key, value);
+    setPageTargeting(key, value);
   });
 }
 
