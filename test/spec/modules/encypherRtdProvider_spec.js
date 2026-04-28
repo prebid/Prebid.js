@@ -8,7 +8,7 @@ import {
   writeCache,
   extractContent,
   storage,
-} from 'modules/encypherRtdProvider.js';
+} from 'modules/encypherRtdProvider.ts';
 import { server } from 'test/mocks/xhr.js';
 
 describe('encypherRtdProvider', () => {
@@ -176,6 +176,18 @@ describe('encypherRtdProvider', () => {
       );
     });
 
+    it('rejects non-HTTPS manifest URLs', (done) => {
+      addMeta('http://publisher.com/manifest/42');
+      const req = makeReqBidsConfigObj();
+      const requestCountBefore = server.requests.length;
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        assert.strictEqual(req.ortb2Fragments.global.site, undefined);
+        assert.strictEqual(server.requests.length, requestCountBefore);
+        done();
+      }, { params: {} });
+    });
+
     it('sets verified to false when manifest status is not ok', (done) => {
       addMeta(manifestUrl);
       const badManifest = Object.assign({}, fakeManifest, { status: 'error' });
@@ -281,6 +293,21 @@ describe('encypherRtdProvider', () => {
       assert.ok(body.text.length >= 50);
       assert.ok(body.page_url);
 
+      lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
+    });
+
+    it('does not set Content-Type: application/json or custom Accept header (CORS preflight avoidance)', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        done();
+      }, { params: { apiBase: 'https://api.encypher.com' } });
+
+      const lastReq = server.requests[server.requests.length - 1];
+      const headers = lastReq.requestHeaders;
+      assert.notStrictEqual(headers['Content-Type'], 'application/json');
+      assert.strictEqual(headers['Accept'], undefined);
       lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
     });
 
@@ -466,6 +493,56 @@ describe('encypherRtdProvider', () => {
       }, { params: {} }, null);
 
       const lastReq = server.requests[server.requests.length - 1];
+      lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
+    });
+
+    it('skips Path C when USP string indicates opt-out (position 2 = Y)', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+      const requestCountBefore = server.requests.length;
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        assert.strictEqual(req.ortb2Fragments.global.site, undefined);
+        assert.strictEqual(server.requests.length, requestCountBefore);
+        done();
+      }, { params: {} }, { usp: '1YYN' });
+    });
+
+    it('allows Path C when USP notice given but no opt-out', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        done();
+      }, { params: { apiBase: 'https://api.encypher.com' } }, { usp: '1YNN' });
+
+      const lastReq = server.requests[server.requests.length - 1];
+      assert.strictEqual(lastReq.method, 'POST');
+      lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
+    });
+
+    it('skips Path C when COPPA applies', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+      const requestCountBefore = server.requests.length;
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        assert.strictEqual(req.ortb2Fragments.global.site, undefined);
+        assert.strictEqual(server.requests.length, requestCountBefore);
+        done();
+      }, { params: {} }, { coppa: true });
+    });
+
+    it('allows Path C when COPPA is false', (done) => {
+      addArticle('A'.repeat(100));
+      const req = makeReqBidsConfigObj();
+
+      encypherSubmodule.getBidRequestData(req, () => {
+        done();
+      }, { params: { apiBase: 'https://api.encypher.com' } }, { coppa: false });
+
+      const lastReq = server.requests[server.requests.length - 1];
+      assert.strictEqual(lastReq.method, 'POST');
       lastReq.respond(200, fakeHeaders, JSON.stringify(fakeSignResponse));
     });
 

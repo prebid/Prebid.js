@@ -3,6 +3,10 @@ import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { deepSetValue, logError, logInfo, logWarn } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getCanonicalUrl, hashUrl } from '../libraries/encypherUtils/encypherUtils.ts';
+import type { AllConsentData } from '../src/consentHandler.ts';
+import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
+import type { StartAuctionOptions } from '../src/prebid.ts';
 
 const REAL_TIME_MODULE = 'realTimeData';
 export const MODULE_NAME = 'encypher';
@@ -11,9 +15,49 @@ const STORAGE_KEY = 'encypher_provenance_v1';
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const DEFAULT_API_BASE = 'https://api.encypher.com';
 const ALLOWED_API_HOSTS = ['api.encypher.com', 'staging-api.encypher.com'];
-const MAX_CONTENT_LENGTH = 50000; // ~50KB ceiling for POST body
-const MIN_CONTENT_LENGTH = 50; // minimum chars to consider as article content
-const AJAX_TIMEOUT_MS = 2000; // max wait for API calls before calling callback
+const MAX_CONTENT_LENGTH = 50000;
+const MIN_CONTENT_LENGTH = 50;
+const AJAX_TIMEOUT_MS = 2000;
+
+// ---------------------------------------------------------------------------
+// Public interface types
+// ---------------------------------------------------------------------------
+
+export interface EncypherRtdParams {
+  /** Override API base URL (default: https://api.encypher.com). */
+  apiBase?: string;
+  /** Manual manifest URL; skips the signing API call (Path A). */
+  manifestUrl?: string;
+}
+
+declare module './rtdModule/spec.ts' {
+  interface ProviderConfig {
+    encypher: {
+      params?: EncypherRtdParams;
+    };
+  }
+}
+
+export interface C2paPayload {
+  manifest_url: string;
+  verified: boolean;
+  signer_tier: string;
+  signed_at?: string;
+  content_hash?: string;
+  source: 'cms' | 'cache' | 'auto';
+  extraction_method?: 'json-ld' | 'article-element' | 'role-main';
+  action?: string;
+}
+
+interface ContentExtraction {
+  text: string;
+  source: 'json-ld' | 'article-element' | 'role-main';
+  metadata: Record<string, any> | null;
+}
+
+// ---------------------------------------------------------------------------
+// Storage
+// ---------------------------------------------------------------------------
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -21,40 +65,10 @@ export const storage = getStorageManager({
 });
 
 // ---------------------------------------------------------------------------
-// Utilities
+// Cache (localStorage via Prebid storageManager for consent enforcement)
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve the canonical URL for the current page.
- * Prefers <link rel="canonical">, falls back to location.href stripped of hash/query.
- */
-export function getCanonicalUrl() {
-  const link = document.querySelector('link[rel="canonical"]');
-  if (link && link.href) return link.href;
-  return window.location.href.split('#')[0].split('?')[0];
-}
-
-/**
- * djb2 hash (same algorithm as provenance-utils.js hashText).
- * Returns a hex string suitable for use as a cache key.
- */
-export function hashUrl(url) {
-  let h = 0;
-  for (let i = 0; i < url.length; i++) {
-    h = ((h << 5) - h + url.charCodeAt(i)) | 0;
-  }
-  return (h >>> 0).toString(16);
-}
-
-// ---------------------------------------------------------------------------
-// Cache (localStorage via Prebid storageManager for GDPR consent enforcement)
-// ---------------------------------------------------------------------------
-
-/**
- * Read a cached provenance payload for the given URL hash.
- * Returns the payload object or null if missing/expired/unavailable.
- */
-export function readCache(urlHash) {
+export function readCache(urlHash: string): Record<string, any> | null {
   if (!storage.localStorageIsEnabled()) return null;
   try {
     const raw = storage.getDataFromLocalStorage(STORAGE_KEY);
@@ -74,10 +88,7 @@ export function readCache(urlHash) {
   }
 }
 
-/**
- * Write a provenance payload to cache, keyed by URL hash.
- */
-export function writeCache(urlHash, payload) {
+export function writeCache(urlHash: string, payload: Record<string, any>): void {
   if (!storage.localStorageIsEnabled()) return;
   try {
     const raw = storage.getDataFromLocalStorage(STORAGE_KEY);
@@ -93,14 +104,9 @@ export function writeCache(urlHash, payload) {
 // Content extraction
 // ---------------------------------------------------------------------------
 
-/**
- * Extract structured metadata from a JSON-LD item.
- * Returns a flat object with only non-empty string/number values.
- */
-function extractMetadata(item) {
-  const meta = {};
+function extractMetadata(item: Record<string, any>): Record<string, any> | null {
+  const meta: Record<string, any> = {};
 
-  // Author (string or Person/Organization object)
   const author = item.author;
   if (author) {
     if (typeof author === 'string') {
@@ -117,39 +123,26 @@ function extractMetadata(item) {
   if (item.articleSection) meta.section = item.articleSection;
   if (item.wordCount) meta.wordCount = Number(item.wordCount) || undefined;
 
-  // Keywords (string or array)
   if (item.keywords) {
     meta.keywords = Array.isArray(item.keywords)
       ? item.keywords.join(',')
       : String(item.keywords);
   }
 
-  // Publisher name
   const pub = item.publisher;
   if (pub && pub.name) meta.publisher = pub.name;
 
-  // Language
   if (item.inLanguage) meta.language = item.inLanguage;
 
   return Object.keys(meta).length > 0 ? meta : null;
 }
 
-/**
- * Extract article text from the DOM in priority order:
- *   1. JSON-LD schema.org Article/NewsArticle/BlogPosting articleBody
- *   2. <article> element innerText
- *   3. [role="main"] element innerText
- *
- * Returns { text: string, source: string, metadata: object|null }
- * or null if no usable content found.
- */
-export function extractContent() {
+export function extractContent(): ContentExtraction | null {
   // 1. JSON-LD structured data
   const scripts = document.querySelectorAll('script[type="application/ld+json"]');
   for (let i = 0; i < scripts.length; i++) {
     try {
-      let data = JSON.parse(scripts[i].textContent);
-      // Handle @graph arrays
+      let data = JSON.parse(scripts[i].textContent || '');
       if (data['@graph'] && Array.isArray(data['@graph'])) {
         data = data['@graph'];
       }
@@ -174,7 +167,7 @@ export function extractContent() {
   // 2. <article> element
   const article = document.querySelector('article');
   if (article) {
-    const text = article.textContent.trim();
+    const text = (article.textContent || '').trim();
     if (text.length >= MIN_CONTENT_LENGTH) {
       return { text: text.slice(0, MAX_CONTENT_LENGTH), source: 'article-element', metadata: null };
     }
@@ -183,7 +176,7 @@ export function extractContent() {
   // 3. [role="main"]
   const main = document.querySelector('[role="main"]');
   if (main) {
-    const text = main.textContent.trim();
+    const text = (main.textContent || '').trim();
     if (text.length >= MIN_CONTENT_LENGTH) {
       return { text: text.slice(0, MAX_CONTENT_LENGTH), source: 'role-main', metadata: null };
     }
@@ -196,10 +189,7 @@ export function extractContent() {
 // Path A helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Build the OpenRTB payload from a fetched manifest (Path A).
- */
-function buildManifestPayload(manifest, manifestUrl) {
+function buildManifestPayload(manifest: Record<string, any>, manifestUrl: string): Partial<C2paPayload> {
   return {
     manifest_url: manifestUrl,
     verified: manifest.status === 'ok',
@@ -214,13 +204,15 @@ function buildManifestPayload(manifest, manifestUrl) {
 // Path C helpers
 // ---------------------------------------------------------------------------
 
-/**
- * POST article content to the Encypher signing API.
- * Calls cb(err, response) on completion.
- */
-function signContent(text, apiBase, pageUrl, metadata, cb) {
-  const payload = {
-    text: text,
+function signContent(
+  text: string,
+  apiBase: string,
+  pageUrl: string,
+  metadata: Record<string, any> | null,
+  cb: (err: any, resp: any) => void
+): void {
+  const payload: Record<string, any> = {
+    text,
     page_url: pageUrl,
     document_title: document.title || undefined,
   };
@@ -232,24 +224,20 @@ function signContent(text, apiBase, pageUrl, metadata, cb) {
   ajax(
     apiBase + '/api/v1/public/prebid/sign',
     {
-      success(responseText) {
+      success(responseText: string) {
         try {
           cb(null, JSON.parse(responseText));
         } catch (e) {
           cb(e, null);
         }
       },
-      error(error) {
+      error(error: any) {
         cb(error, null);
       },
     },
     body,
     {
       method: 'POST',
-      contentType: 'application/json',
-      customHeaders: {
-        Accept: 'application/json',
-      },
     }
   );
 }
@@ -258,10 +246,7 @@ function signContent(text, apiBase, pageUrl, metadata, cb) {
 // Submodule interface
 // ---------------------------------------------------------------------------
 
-/**
- * Validate that a URL uses HTTPS and belongs to an allowed host.
- */
-function isAllowedApiUrl(url) {
+function isAllowedApiUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:') return false;
@@ -272,23 +257,32 @@ function isAllowedApiUrl(url) {
 }
 
 /**
- * Check if GDPR consent allows data transmission.
- * Returns true if consent is granted or if no GDPR applies.
+ * Check if privacy signals allow data transmission.
+ * Returns false when any applicable regulation indicates opt-out or restriction.
  */
-function hasConsentForDataTransmission(userConsent) {
-  if (!userConsent || !userConsent.gdpr) return true;
-  const gdpr = userConsent.gdpr;
-  if (!gdpr.gdprApplies) return true;
-  // If GDPR applies, require consent string to be present
-  return !!(gdpr.consentString);
+function hasConsentForDataTransmission(userConsent: AllConsentData | null | undefined): boolean {
+  if (!userConsent) return true;
+
+  // COPPA: children's data must never be transmitted
+  if (userConsent.coppa === true) return false;
+
+  // USP/CCPA: position 2 is the opt-out-sale flag; 'Y' means user opted out
+  if (userConsent.usp && typeof userConsent.usp === 'string') {
+    if (userConsent.usp[2] === 'Y') return false;
+  }
+
+  // GDPR: require a consent string when GDPR applies
+  if (userConsent.gdpr) {
+    if (userConsent.gdpr.gdprApplies && !userConsent.gdpr.consentString) return false;
+  }
+
+  return true;
 }
 
-/**
- * @param {Object} config - Provider config ({ name, waitForIt, params })
- * @param {Object} userConsent
- * @returns {boolean} - false disables the module
- */
-const init = (config, userConsent) => {
+const init = (
+  _config: RTDProviderConfig<'encypher'>,
+  _userConsent: AllConsentData
+): boolean => {
   return true;
 };
 
@@ -296,29 +290,22 @@ const init = (config, userConsent) => {
  * Three execution paths in strict priority:
  *
  *   Path A (CMS): <meta name="c2pa-manifest-url"> or params.manifestUrl
- *     -> Fetch manifest JSON, inject site.ext.data.c2pa
- *
  *   Path B (Cache): localStorage hit for canonical URL hash
- *     -> Inject from cache, no network call
- *
  *   Path C (Auto-sign): Extract article text from DOM, POST to Encypher API
- *     -> Cache result, inject site.ext.data.c2pa
  *
- * Every path and every error branch calls callback(). The module never blocks
- * an auction.
- *
- * @param {Object} reqBidsConfigObj - Proxied StartAuctionOptions
- * @param {Function} callback - MUST always be called
- * @param {Object} moduleConfig - Provider config with .params
- * @param {Object} userConsent
+ * Every path and every error branch calls callback().
  */
-const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
+const getBidRequestData = (
+  reqBidsConfigObj: StartAuctionOptions,
+  callback: () => void,
+  moduleConfig: RTDProviderConfig<'encypher'>,
+  userConsent: AllConsentData
+): void => {
   const params = (moduleConfig && moduleConfig.params) || {};
   const apiBase = params.apiBase || DEFAULT_API_BASE;
   const canonicalUrl = getCanonicalUrl();
   const urlHash = hashUrl(canonicalUrl);
 
-  // Callback-once guard: ensure callback is never invoked twice
   let callbackFired = false;
   function done() {
     if (callbackFired) return;
@@ -326,7 +313,6 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
     callback();
   }
 
-  // Safety timeout: never block the auction longer than AJAX_TIMEOUT_MS
   const timer = setTimeout(() => {
     if (!callbackFired) {
       logWarn(LOG_PREFIX, 'Timeout reached, continuing without provenance');
@@ -340,15 +326,26 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
   }
 
   // -- Path A: CMS meta tag or manual manifestUrl override -----------------
-  const metaTag = document.querySelector('meta[name="c2pa-manifest-url"]');
+  const metaTag = document.querySelector('meta[name="c2pa-manifest-url"]') as HTMLMetaElement | null;
   const manifestUrl = (metaTag && metaTag.content) || params.manifestUrl || null;
 
   if (manifestUrl) {
+    try {
+      if (new URL(manifestUrl).protocol !== 'https:') {
+        logWarn(LOG_PREFIX, 'Path A: manifestUrl must use HTTPS, skipping');
+        finish();
+        return;
+      }
+    } catch (_) {
+      logWarn(LOG_PREFIX, 'Path A: invalid manifestUrl, skipping');
+      finish();
+      return;
+    }
     logInfo(LOG_PREFIX, 'Path A: fetching manifest from', manifestUrl);
     ajax(
       manifestUrl,
       {
-        success(responseText) {
+        success(responseText: string) {
           try {
             const manifest = JSON.parse(responseText);
             const payload = buildManifestPayload(manifest, manifestUrl);
@@ -359,13 +356,13 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
           }
           finish();
         },
-        error(e) {
+        error(e: any) {
           logError(LOG_PREFIX, 'Path A: manifest fetch error', e);
           finish();
         },
       },
       null,
-      { method: 'GET', customHeaders: { Accept: 'application/json' } }
+      { method: 'GET' }
     );
     return;
   }
@@ -382,14 +379,12 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
 
   // -- Path C: auto-sign via Encypher API ----------------------------------
 
-  // Consent gate: do not transmit page content without consent
   if (!hasConsentForDataTransmission(userConsent)) {
     logInfo(LOG_PREFIX, 'Path C: skipping, no consent for data transmission');
     finish();
     return;
   }
 
-  // Validate API base URL against allowlist
   if (!isAllowedApiUrl(apiBase + '/api/v1/public/prebid/sign')) {
     logWarn(LOG_PREFIX, 'Path C: apiBase not in allowed hosts, skipping');
     finish();
@@ -411,31 +406,29 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
       return;
     }
 
-    const payload = {
+    const payload: C2paPayload = {
       manifest_url: resp.manifest_url,
       verified: true,
       signer_tier: resp.signer_tier || 'encypher_free',
       signed_at: resp.signed_at,
       content_hash: resp.content_hash,
       extraction_method: content.source,
+      source: 'auto',
     };
 
     writeCache(urlHash, payload);
-    deepSetValue(
-      reqBidsConfigObj.ortb2Fragments.global,
-      'site.ext.data.c2pa',
-      Object.assign({}, payload, { source: 'auto' })
-    );
+    deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.ext.data.c2pa', payload);
     logInfo(LOG_PREFIX, 'Path C: provenance signed and injected');
     finish();
   });
 };
 
-/** @type {import('../src/hook.js').SubmoduleConfig} */
-export const encypherSubmodule = {
-  name: MODULE_NAME,
+export const encypherSubmodule: RtdProviderSpec<'encypher'> = {
+  name: MODULE_NAME as 'encypher',
   init,
   getBidRequestData,
 };
 
 submodule(REAL_TIME_MODULE, encypherSubmodule);
+
+export { getCanonicalUrl, hashUrl };
