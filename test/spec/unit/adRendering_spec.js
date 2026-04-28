@@ -133,6 +133,21 @@ describe('adRendering', () => {
         });
       });
 
+      describe('when the ad has a frame renderer', () => {
+        let bidWithFrameRenderer;
+        beforeEach(() => {
+          bidWithFrameRenderer = {
+            adId: 'mock-ad-id',
+            frameRendererUrl: 'mock-url-frame-renderer'
+          }
+        });
+
+        it('does not emit AD_RENDER_SUCCEDED immediately', () => {
+          doRender({ renderFn, bidResponse: bidWithFrameRenderer })
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
+        });
+      });
+
       if (FEATURES.VIDEO) {
         it('should emit AD_RENDER_FAILED on video bids', () => {
           bidResponse.mediaType = VIDEO;
