@@ -5,6 +5,10 @@ import {
   isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./illuminBidAdapterTypes.d.ts').IlluminBidRequestParams} IlluminBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'illumin';
 const BIDDER_VERSION = '1.0.0';
