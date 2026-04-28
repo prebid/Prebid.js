@@ -338,13 +338,14 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
-    describe('when handling different adunit targeting value types', function () {
+    describe('when the ad unit has adserverTargeting', function () {
       const adUnitCode = '/123456/header-bid-tag-0';
-      const adServerTargeting = {};
+      let adServerTargeting;
 
       let getAdUnitsStub;
 
       before(function() {
+        adServerTargeting = {};
         getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
           return [
             {
@@ -362,27 +363,42 @@ describe('targeting tests', function () {
       afterEach(function() {
         delete adServerTargeting.test_type;
       });
+      describe('when handling different adunit targeting value types', () => {
+        const pairs = [
+          ['string', '2.3', '2.3'],
+          ['number', 2.3, '2.3'],
+          ['boolean', true, 'true'],
+          ['string-separated', '2.3, 4.5', '2.3,4.5'],
+          ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
+          ['array-of-number', [2.3, 4.5], '2.3,4.5'],
+          ['array-of-boolean', [true, false], 'true,false']
+        ];
+        pairs.forEach(([type, value, result]) => {
+          it(`accepts ${type}`, function() {
+            adServerTargeting.test_type = value;
 
-      const pairs = [
-        ['string', '2.3', '2.3'],
-        ['number', 2.3, '2.3'],
-        ['boolean', true, 'true'],
-        ['string-separated', '2.3, 4.5', '2.3,4.5'],
-        ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
-        ['array-of-number', [2.3, 4.5], '2.3,4.5'],
-        ['array-of-boolean', [true, false], 'true,false']
-      ];
-      pairs.forEach(([type, value, result]) => {
-        it(`accepts ${type}`, function() {
-          adServerTargeting.test_type = value;
+            const targeting = targetingInstance.getAllTargeting([adUnitCode]);
 
-          const targeting = targetingInstance.getAllTargeting([adUnitCode]);
-
-          expect(targeting[adUnitCode].test_type).is.equal(result);
+            expect(targeting[adUnitCode].test_type).is.equal(result);
+          });
         });
       });
-    });
+      describe('when bidsReceived is empty', () => {
 
+        it('includes ad unit targeting', () => {
+          adServerTargeting.test = 'value';
+          const targeting = targetingInstance.getAllTargeting([adUnitCode], 0, []);
+          sinon.assert.match(targeting[adUnitCode], {
+            test: 'value'
+          });
+        });
+
+        it('does not look up bids received', () => {
+          targetingInstance.getAllTargeting([adUnitCode], 0, []);
+          sinon.assert.notCalled(auctionManager.getBidsReceived);
+        });
+      })
+    });
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
