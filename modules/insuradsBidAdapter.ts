@@ -4,11 +4,10 @@ import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidd
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, getAmxId, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting as libGetGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
 import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
-import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'insurads';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
@@ -16,8 +15,6 @@ const PAGE_VIEW_ID = generateUUID();
 const BIDDER_VERSION = '7.1';
 const GVLID = 596;
 const ALT_KEY = 'nexx360_storage';
-
-const DEFAULT_GZIP_ENABLED = false;
 
 type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
   Omit<T, Keys> & {
@@ -56,15 +53,7 @@ export const getInsurAdsLocalStorage = getLocalStorageFunctionGenerator<{ nexx36
   'nexx360Id'
 );
 
-export const getGzipSetting = (): boolean => {
-  const bidderConfig = config.getBidderConfig();
-  const gzipEnabled = bidderConfig.insurads?.gzipEnabled;
-
-  if (gzipEnabled === true || gzipEnabled === 'true') {
-    return true;
-  }
-  return DEFAULT_GZIP_ENABLED;
-}
+export const getGzipSetting = (): boolean => libGetGzipSetting(BIDDER_CODE, false);
 
 const converter = ortbConverter({
   context: {
