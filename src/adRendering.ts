@@ -228,8 +228,9 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
 }
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
+  const frameRendererUrl = getFrameRendererUrl(bidResponse);
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
-  if (isMainDocument || videoBid) {
+  if ((isMainDocument || videoBid) && !frameRendererUrl) {
     emitAdRenderFail({
       reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
       message: videoBid ? 'Cannot render video ad without a renderer' : `renderAd was prevented from writing to the main document.`,
@@ -238,7 +239,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = getFrameRendererUrl(bidResponse) ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
+  const data = frameRendererUrl ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
