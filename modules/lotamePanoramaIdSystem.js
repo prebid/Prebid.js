@@ -40,12 +40,14 @@ const DO_NOT_HONOR_CONFIG = false;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 let cookieDomain;
+const defaultStorageConfig = {
+  type: 'cookie&html5',
+  name: 'panoramaId'
+};
+
 const appliedConfig = {
   name: 'lotamePanoramaId',
-  storage: {
-    type: 'cookie&html5',
-    name: 'panoramaId'
-  }
+  storage: { ...defaultStorageConfig }
 };
 
 /**
@@ -205,8 +207,9 @@ function localStorageIsEnabled(honorConfig = true) {
  */
 function checkConfigHasErrorsAndReport(config) {
   let error = null;
+  appliedConfig.storage = { ...defaultStorageConfig };
   if (typeof config.storage !== 'undefined') {
-    Object.assign(appliedConfig.storage, appliedConfig.storage, config.storage);
+    appliedConfig.storage = { ...defaultStorageConfig, ...config.storage };
     const READABLE_MODULE_NAME = 'Lotame ID module';
     const PERMITTED_STORAGE_TYPES = ['cookie', 'html5', 'cookie&html5'];
     if (typeof config.storage.name !== 'undefined' && config.storage.name !== KEY_ID) {
