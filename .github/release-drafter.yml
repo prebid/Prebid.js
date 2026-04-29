@@ -13,6 +13,9 @@ categories:
       - 'fix'
       - 'bugfix'
       - 'bug'
+  - title: '🏛 Core PRs'
+    labels:
+      - 'core'
   - title: '🛠 Maintenance'
     labels: []
 change-template: '- $TITLE (#$NUMBER)'
