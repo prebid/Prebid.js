@@ -24,7 +24,8 @@ describe('MGIDXBidAdapter', function () {
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          battr: [1, 3]
         }
       },
       params: {
@@ -40,7 +41,8 @@ describe('MGIDXBidAdapter', function () {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
-          maxduration: 60
+          maxduration: 60,
+          battr: [1, 3]
         }
       },
       params: {
@@ -160,8 +162,7 @@ describe('MGIDXBidAdapter', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -188,17 +189,16 @@ describe('MGIDXBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('publisher');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -237,9 +237,6 @@ describe('MGIDXBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('network');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');

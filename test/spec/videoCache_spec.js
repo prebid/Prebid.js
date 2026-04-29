@@ -1,5 +1,13 @@
 import chai from 'chai';
-import { batchingCache, getCacheUrl, store, _internal, storeBatch } from 'src/videoCache.js';
+import {
+  batchingCache,
+  getCacheUrl,
+  handleVideoBidCaching,
+  store,
+  _internal,
+  storeBatch,
+  callPrebidCache, updateVast
+} from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from '../../src/auctionManager.js';
@@ -94,46 +102,6 @@ describe('The video cache', function () {
         'Not JSON here');
       assertError(callback);
       callback.firstCall.args[1].should.deep.equal([]);
-    });
-
-    it('should make the expected request when store() is called on an ad with a vastUrl', function () {
-      const expectedValue = `<VAST version="3.0">
-    <Ad>
-      <Wrapper>
-        <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>\n        \n        <Creatives></Creatives>
-      </Wrapper>
-    </Ad>
-  </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com', ttl: 25 }, expectedValue)
-    });
-
-    it('should make the expected request when store() is called on an ad with a vastUrl and a vastImpUrl', function () {
-      const expectedValue = `<VAST version="3.0">
-    <Ad>
-      <Wrapper>
-        <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression><![CDATA[imptracker.com]]></Impression>
-        <Creatives></Creatives>
-      </Wrapper>
-    </Ad>
-  </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
-    });
-
-    it('should include multiple vastImpUrl when it\'s an array', function() {
-      const expectedValue = `<VAST version="3.0">
-    <Ad>
-      <Wrapper>
-        <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression>
-        <Creatives></Creatives>
-      </Wrapper>
-    </Ad>
-  </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com'], ttl: 25, cpm: 1.2 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
@@ -413,6 +381,82 @@ describe('The video cache', function () {
     });
   })
 
+  describe('updateVast', () => {
+    let bidResponse;
+    beforeEach(() => {
+      bidResponse = {
+        vastUrl: 'my-mock-url.com'
+      };
+    });
+
+    it('should leave vastXml unchanged', () => {
+      bidResponse.vastXml = 'mock';
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('mock');
+    })
+
+    it('should set vastXml with a wrapper around vastUrl', () => {
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should insert impression trackers', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should insert multiple impression trackers', () => {
+      bidResponse.vastTrackers = {
+        impression: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should include error trackers', () => {
+      bidResponse.vastTrackers = {
+        error: ['https://error.mydomain.com/error']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should include both impression and error trackers', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com'],
+        error: ['https://error.mydomain.com/error']
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
+    it('should include tracking events', () => {
+      bidResponse.vastTrackers = {
+        trackingEvents: [
+          { event: 'start', url: 'https://tracking.mydomain.com/start' },
+          { event: 'complete', url: 'https://tracking.mydomain.com/complete' }
+        ]
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking><Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>')
+    });
+
+    it('should include all tracker types together', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com'],
+        error: ['https://error.mydomain.com/error'],
+        trackingEvents: [
+          { event: 'start', url: 'https://tracking.mydomain.com/start' }
+        ]
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
+    })
+  })
+
   describe('local video cache', function() {
     afterEach(function () {
       config.resetConfig();
@@ -428,6 +472,128 @@ describe('The video cache', function () {
       expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
       expect(bid.videoCacheKey).to.not.be.empty;
     });
+  });
+
+  describe('handleVideoBidCaching', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      config.resetConfig();
+      sandbox.restore();
+    });
+
+    describe('when using local cache', () => {
+      let bidResponse, addBidReceived, afterBidAdded;
+      beforeEach(() => {
+        config.setConfig({
+          cache: {
+            useLocal: true
+          }
+        });
+        bidResponse = {
+          vastXml: '<VAST version="3.0"></VAST>'
+        };
+        addBidReceived = sinon.stub();
+        afterBidAdded = sinon.stub();
+      })
+
+      function runCaching() {
+        return handleVideoBidCaching({
+          bidResponse,
+          auctionInstance: {
+            addBidReceived
+          },
+          afterBidAdded,
+          videoMediaType: { context: 'instream' }
+        });
+      }
+      it('stores bid locally and adds to auction when useLocal is enabled', function () {
+        runCaching();
+        expect(bidResponse.videoCacheKey).to.exist;
+        expect(bidResponse.vastUrl.startsWith('blob:http://')).to.be.true;
+        sinon.assert.calledWith(addBidReceived, bidResponse);
+        sinon.assert.called(afterBidAdded);
+      });
+      describe('when prebid cache hooks are set up', () => {
+        let cacheHook;
+        before(() => {
+          cacheHook = sinon.stub().callsFake((next, ...args) => {
+            return next(...args);
+          })
+          callPrebidCache.before(cacheHook);
+        });
+        after(() => {
+          callPrebidCache.getHooks({ hook: cacheHook }).remove();
+        });
+        it('they should run', () => {
+          runCaching();
+          sinon.assert.called(cacheHook);
+        })
+      })
+    })
+
+    it('calls prebid cache path when remote cache is enabled', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://test.cache.url/endpoint'
+        }
+      });
+      const bidResponse = {
+        vastXml: '<VAST version="3.0"></VAST>'
+      };
+      const storeStub = sandbox.stub(_internal, 'store').callsFake(() => {});
+
+      handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'instream' }
+      });
+
+      sinon.assert.calledOnce(storeStub);
+    });
+
+    it('logs error when bid has videoCacheKey but no vastUrl', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://test.cache.url/endpoint'
+        }
+      });
+      const logErrorStub = sandbox.stub(utils, 'logError');
+      const bidResponse = {
+        videoCacheKey: 'existing-cache-key'
+      };
+
+      handleVideoBidCaching({
+        bidResponse,
+        auctionInstance: {},
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'instream' }
+      });
+
+      sinon.assert.calledOnce(logErrorStub);
+    });
+
+    it('adds bids to auction otherwise', () => {
+      const logErrorStub = sandbox.stub(utils, 'logError');
+      let request = {
+        bidResponse: {},
+        auctionInstance: {
+          addBidReceived: sinon.stub(),
+        },
+        afterBidAdded: sinon.stub(),
+        videoMediaType: { context: 'outstream' }
+      }
+      handleVideoBidCaching(request);
+      sinon.assert.notCalled(logErrorStub);
+      expect(request.bidResponse.videoCacheKey).to.not.exist;
+      sinon.assert.calledWith(request.auctionInstance.addBidReceived, request.bidResponse);
+      sinon.assert.called(request.afterBidAdded);
+    })
   });
 });
 

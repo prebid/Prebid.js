@@ -830,15 +830,6 @@ magniteAdapter.track = ({ eventType, args }) => {
         auctionData.floors = addFloorData(floorData);
       }
 
-      // Identify chrome cookieless trafic
-      if (!cookieless) {
-        const cdep = deepAccess(args, 'bidderRequests.0.ortb2.device.ext.cdep');
-        if (cdep && (cdep.indexOf('treatment') !== -1 || cdep.indexOf('control_2') !== -1)) {
-          cookieless = 1;
-          auctionData.cdep = 1;
-        }
-      }
-
       // GDPR info
       const gdprData = deepAccess(args, 'bidderRequests.0.gdprConsent');
       if (gdprData) {

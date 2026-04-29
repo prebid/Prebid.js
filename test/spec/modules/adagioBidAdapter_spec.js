@@ -569,52 +569,54 @@ describe('Adagio bid adapter', () => {
         });
       });
 
-      it('Update mediaTypes.video with OpenRTB options. Validate and sanitize whitelisted OpenRTB', function() {
-        sandbox.spy(utils, 'logWarn');
-        const bid01 = new BidRequestBuilder({
-          adUnitCode: 'adunit-code-01',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] },
+      if (FEATURES.VIDEO) {
+        it('Update mediaTypes.video with OpenRTB options. Validate and sanitize whitelisted OpenRTB', function() {
+          sandbox.spy(utils, 'logWarn');
+          const bid01 = new BidRequestBuilder({
+            adUnitCode: 'adunit-code-01',
+            mediaTypes: {
+              banner: { sizes: [[300, 250]] },
+              video: {
+                context: 'outstream',
+                playerSize: [[300, 250]],
+                mimes: ['video/mp4'],
+                api: 'val', // will be removed because invalid
+                playbackmethod: ['val'], // will be removed because invalid
+              }
+            },
+          }).withParams({
+            // options in video, will overide
             video: {
-              context: 'outstream',
-              playerSize: [[300, 250]],
-              mimes: ['video/mp4'],
-              api: 'val', // will be removed because invalid
-              playbackmethod: ['val'], // will be removed because invalid
+              skip: 1,
+              skipafter: 4,
+              minduration: 10,
+              maxduration: 30,
+              plcmt: 4,
+              protocols: [8]
             }
-          },
-        }).withParams({
-          // options in video, will overide
-          video: {
+          }).build();
+
+          const bidderRequest = new BidderRequestBuilder().build();
+          const expected = {
+            context: 'outstream',
+            playerSize: [[300, 250]],
+            playerName: 'adagio',
+            mimes: ['video/mp4'],
             skip: 1,
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
             plcmt: 4,
-            protocols: [8]
-          }
-        }).build();
+            protocols: [8],
+            w: 300,
+            h: 250
+          };
 
-        const bidderRequest = new BidderRequestBuilder().build();
-        const expected = {
-          context: 'outstream',
-          playerSize: [[300, 250]],
-          playerName: 'adagio',
-          mimes: ['video/mp4'],
-          skip: 1,
-          skipafter: 4,
-          minduration: 10,
-          maxduration: 30,
-          plcmt: 4,
-          protocols: [8],
-          w: 300,
-          h: 250
-        };
-
-        const requests = spec.buildRequests([bid01], bidderRequest);
-        expect(requests).to.have.lengthOf(1);
-        expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
-      });
+          const requests = spec.buildRequests([bid01], bidderRequest);
+          expect(requests).to.have.lengthOf(1);
+          expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
+        });
+      }
     });
 
     describe('with sChain', function() {

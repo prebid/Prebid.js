@@ -19,7 +19,7 @@ import { hook } from './hook.js';
 import { fireNativeTrackers } from './native.js';
 import adapterManager from './adapterManager.js';
 import { useMetrics } from './utils/perfMetrics.js';
-import { filters } from './targeting.js';
+import { bidFilters } from './targeting/filters.ts';
 import { EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG } from './eventTrackers.js';
 import type { Bid } from "./bidfactory.ts";
 import { yieldsIf } from "./utils/yield.ts";
@@ -264,7 +264,7 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
         return;
       }
     }
-    if (!filters.isBidNotExpired(bidResponse)) {
+    if (!bidFilters.isBidNotExpired(bidResponse)) {
       logWarn(`Ad id ${adId} has been expired`);
       events.emit(EXPIRED_RENDER, bidResponse);
       if (config.getConfig('auctionOptions')?.suppressExpiredRender) {

@@ -420,7 +420,6 @@ function pickKeyFields(objType, eventArgs) {
           'requestTimestamp',
           'responseTimestamp',
           'seatBidId',
-          'statusMessage',
           'timeToRespond',
           'rejectionReason',
           'ortbId',

@@ -136,7 +136,6 @@ const extractBid = (bidResponse) => {
     responseTimestamp: bidResponse.responseTimestamp,
     status: bidResponse.status,
     sizes: parseSizesInput(bidResponse.size).toString(),
-    statusMessage: bidResponse.statusMessage,
     timeToRespond: bidResponse.timeToRespond,
     transactionId: bidResponse.transactionId,
     bidId: bidResponse.bidId || bidResponse.requestId,
@@ -180,9 +179,6 @@ const track = ({ eventType, args }) => {
           .map((i) => i?.bids.length && i.bids[0]?.floorData)
           .find((i) => i) || {}
       );
-      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
-        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
-        .find((i) => i);
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,
