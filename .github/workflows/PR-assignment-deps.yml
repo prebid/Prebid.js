@@ -4,6 +4,8 @@ on:
     types: [opened, synchronize, reopened]
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
 jobs:
   generate_deps:
     name: Generate dependencies.json
@@ -32,3 +34,52 @@ jobs:
         with:
           name: prInfo
           path: ${{ runner.temp}}/prInfo.json
+
+      - name: Auto-label core PRs
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+
+            const coreModuleNames = new Set([
+              'bidResponseFilter',
+              'dataControllerModule',
+              'debugging',
+              'enrichmentLiftMeasurement',
+              'fpdModule',
+              'multibid',
+              'prebidServerBidAdapter',
+              'previousAuctionInfo',
+              'consentManagementGpp',
+              'consentManagementTcf',
+              'consentManagementUsp',
+              'storageControl',
+              'dsaControl',
+              'tcfControl',
+              'gppControl_usnat',
+              'gppControl_usstates'
+            ]);
+
+            const touchesCore = files.some(({filename}) => {
+              if (filename.startsWith('src/')) return true;
+              const moduleName = filename.match(/^modules\/([^\/]+)(\.(\w+)|\/)/)?.[1];
+              return moduleName != null && coreModuleNames.has(moduleName);
+            });
+
+            if (!touchesCore) {
+              core.info('Skipping "core" label: no matching files changed');
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['core']
+            });
+            core.info('Applied "core" label');
