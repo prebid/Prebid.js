@@ -2488,6 +2488,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "goadserver",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "goldbach",
       "aliasOf": null,
       "gvlid": 580,
@@ -3006,6 +3013,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "nuclion",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3338,6 +3352,13 @@
       "componentName": "msft",
       "aliasOf": null,
       "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "mtc",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4784,6 +4805,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "tne_catalyst",
+      "aliasOf": null,
+      "gvlid": 1494,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "topon",
       "aliasOf": null,
       "gvlid": 1305,
@@ -5413,6 +5441,12 @@
     {
       "componentType": "rtd",
       "componentName": "dynamicAdBoost",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "encypher",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -6331,6 +6365,11 @@
     {
       "componentType": "analytics",
       "componentName": "oxxion",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "pgamdirect",
       "gvlid": null
     },
     {
