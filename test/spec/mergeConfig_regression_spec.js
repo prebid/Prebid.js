@@ -25,13 +25,13 @@ describe('mergeConfig priceGranularity regression', function () {
         increment: 0.01
       }]
     };
-    
+
     mergeConfig({
       priceGranularity: customGranularity
     });
 
     // 3. Verify it changed to 'custom' (internal state)
-    // In Prebid, when a custom object is set to priceGranularity, 
+    // In Prebid, when a custom object is set to priceGranularity,
     // the property itself becomes 'custom' and the buckets are stored in customPriceBucket.
     expect(getConfig('priceGranularity')).to.equal('custom');
     expect(getConfig('customPriceBucket')).to.deep.equal(customGranularity);
