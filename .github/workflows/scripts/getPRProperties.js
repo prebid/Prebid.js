@@ -14,6 +14,9 @@ const EXCLUDE_PATTERNS = [
   /^integrationExamples\//
 ]
 const LIBRARY_PATTERN = /^libraries\/([^\/]+)\//;
+const MODULE_SOURCE_FILE_PATTERN = /^modules\/.*\.(js|ts)$/;
+const MODULE_TYPES_FILE_PATTERN = /^modules\/.*\.d\.ts$/;
+const ADAPTER_TYPES_DEFINITION_FILE_PATTERN = /^modules\/([^\/]+)(Bid|Analytics|Rtd|Id)AdapterTypes\.d\.ts$/;
 
 function extractVendor(chunkName) {
   for (const pat of MODULE_PATTERNS) {
@@ -51,6 +54,18 @@ function isCoreFile(path) {
     // a library is "core" if it's used by more than one vendor
     return getLibraryRefs(lib[1]).size > 1;
   }
+  return true;
+}
+
+function requiresFeatureLabel(path) {
+  if (!MODULE_SOURCE_FILE_PATTERN.test(path)) {
+    return false;
+  }
+
+  if (MODULE_TYPES_FILE_PATTERN.test(path)) {
+    return !ADAPTER_TYPES_DEFINITION_FILE_PATTERN.test(path);
+  }
+
   return true;
 }
 
@@ -92,7 +107,15 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, au
   prebidEngineers = prebidEngineers.data.map(datum=> datum.login);
   authorizedReviewers = authorizedReviewers.data.map(datum=> datum.login);
   let isCoreChange = false;
-  files = files.data.map(datum => datum.filename).map(file => {
+  let shouldAddFeatureLabel = false;
+  files = files.data
+    .filter(datum => datum.status === 'added' || datum.status === 'renamed')
+    .map(datum => datum.filename)
+    .map(file => {
+      if (requiresFeatureLabel(file)) {
+        shouldAddFeatureLabel = true;
+      }
+
     const core = isCoreFile(file);
     if (core) isCoreChange = true;
     return {
@@ -143,6 +166,9 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, au
     prebidReviewers,
     prebidEngineers,
     review,
+    labels: {
+      feature: shouldAddFeatureLabel,
+    }
   }
   data.review.requires = reviewRequirements(data);
   data.review.ok = satisfiesReviewRequirements(data.review);

@@ -65,3 +65,17 @@ jobs:
             const assignReviewers = require('./.github/workflows/scripts/assignReviewers.js')
             const reviewers = await assignReviewers({github, context, prData: ${{ steps.get-props.outputs.result }} });
             console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
+      - name: Add feature label
+        if: ${{ fromJSON(steps.get-props.outputs.result).labels.feature }}
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const prNo = ${{ fromJSON(steps.get-props.outputs.result).pr }};
+            await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/labels', {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNo,
+              labels: ['feature']
+            });
+            console.log(`Feature label applied to PR #${prNo}`);
