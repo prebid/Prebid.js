@@ -76,10 +76,18 @@ jobs:
               return;
             }
 
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              labels: ['core']
-            });
-            core.info('Applied "core" label');
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                labels: ['core']
+              });
+              core.info('Applied "core" label');
+            } catch (e) {
+              if (e?.status === 403) {
+                core.warning('Skipping "core" label: token cannot write labels (read-only token)');
+                return;
+              }
+              throw e;
+            }
