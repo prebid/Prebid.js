@@ -829,6 +829,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adsmartx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adsmovil",
       "aliasOf": null,
       "gvlid": null,
@@ -1221,6 +1228,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "appMonstaMedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "appStockSSP",
       "aliasOf": null,
       "gvlid": 1223,
@@ -1579,6 +1593,13 @@
     {
       "componentType": "bidder",
       "componentName": "big-richmedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "billow_rtb25",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -2467,6 +2488,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "goadserver",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "goldbach",
       "aliasOf": null,
       "gvlid": 580,
@@ -2743,7 +2771,7 @@
       "componentName": "jixie",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/jixieBidAdapterDisclosure.json"
     },
     {
       "componentType": "bidder",
@@ -2979,6 +3007,13 @@
     {
       "componentType": "bidder",
       "componentName": "pgamrtb",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "nuclion",
       "aliasOf": "limelightDigital",
       "gvlid": null,
       "disclosureURL": null
@@ -3321,6 +3356,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mtc",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "my6sense",
       "aliasOf": null,
       "gvlid": null,
@@ -3491,7 +3533,7 @@
       "componentType": "bidder",
       "componentName": "movingup",
       "aliasOf": "nexx360",
-      "gvlid": 1416,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3765,6 +3807,13 @@
       "componentName": "px",
       "aliasOf": "performax",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pgamdirect",
+      "aliasOf": null,
+      "gvlid": 1353,
       "disclosureURL": null
     },
     {
@@ -4322,7 +4371,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "showheroes-bs",
+      "componentName": "showheroes",
       "aliasOf": null,
       "gvlid": 111,
       "disclosureURL": null
@@ -4332,6 +4381,13 @@
       "componentName": "showheroesBs",
       "aliasOf": "showheroes-bs",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "showheroes-bs",
+      "aliasOf": null,
+      "gvlid": 111,
       "disclosureURL": null
     },
     {
@@ -4745,6 +4801,13 @@
       "componentName": "themoneytizer",
       "aliasOf": "themoneytizer",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "tne_catalyst",
+      "aliasOf": null,
+      "gvlid": 1494,
       "disclosureURL": null
     },
     {
@@ -5287,6 +5350,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "agenticAudience",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "airgrid",
       "gvlid": 101,
       "disclosureURL": null
@@ -5372,6 +5441,12 @@
     {
       "componentType": "rtd",
       "componentName": "dynamicAdBoost",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "encypher",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -5813,7 +5888,7 @@
       "componentType": "userId",
       "componentName": "jixieId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://modules/jixieIdSystemDisclosure.json",
       "aliasOf": null
     },
     {
@@ -6224,6 +6299,11 @@
     },
     {
       "componentType": "analytics",
+      "componentName": "imAnalytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
       "componentName": "iiqAnalytics",
       "gvlid": null
     },
@@ -6285,6 +6365,11 @@
     {
       "componentType": "analytics",
       "componentName": "oxxion",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "pgamdirect",
       "gvlid": null
     },
     {

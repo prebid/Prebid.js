@@ -512,7 +512,7 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.invibbvlog).to.equal(true);
     });
 
-    it('does not send query string params from localstorage if unknwon', function () {
+    it('does not send query string params from localstorage if unknown', function () {
       localStorage.ivbs = JSON.stringify({ someparam: true });
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.someparam).to.be.undefined;
