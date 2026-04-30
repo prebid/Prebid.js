@@ -382,8 +382,8 @@ describe('Utils', function () {
     Object.entries({
       'vanilla function': () => null,
       'async function': async () => null,
-      'generator function': function* () {},
-      'async generator function': async function* () {}
+      'generator function': function * () {},
+      'async generator function': async function * () {}
     }).forEach(([t, fn]) => {
       it(`should return true with input ${t}`, function () {
         var output = utils.isFn(fn);
