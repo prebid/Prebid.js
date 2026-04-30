@@ -101,7 +101,7 @@ describe('asterioBidAdapter', function () {
 
       expect(bidderRequest.method).to.equal('POST');
       expect(bidderRequest.url).to.equal(ENDPOINT);
-      expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true });
+      expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': 'true' });
       expect(bidderRequest.options.contentType).to.equal('text/plain');
       expect(bidderRequest.data.requestId).to.equal('123');
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html');
@@ -241,7 +241,10 @@ describe('asterioBidAdapter', function () {
       const bidWonResult = spec.onBidWon(BIDDER_BANNER_RESPONSE.bids[0]);
 
       expect(bidWonResult).to.equal(true);
-      expect(ajaxStub.calledOnceWithExactly('http://tracker.test/win?price=1.23', null)).to.equal(true);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal('http://tracker.test/win?price=1.23');
+      expect(ajaxStub.firstCall.args[1]).to.equal(null);
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ keepalive: true });
     });
 
     it('should return false when there is no winUrl', function () {
