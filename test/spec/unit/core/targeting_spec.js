@@ -1664,6 +1664,53 @@ describe('targeting tests', function () {
     });
   });
 
+  describe('GPT eager targeting', () => {
+    let slots, prevGPT;
+    before(() => {
+      prevGPT = window.googletag;
+    });
+    after(() => {
+      if (typeof prevGPT !== 'undefined') {
+        window.googletag = prevGPT;
+      }
+    })
+    beforeEach(() => {
+      slots = [];
+      window.googletag = {
+        pubads: sandbox.stub().callsFake(() => ({
+          getSlots: () => slots,
+        }))
+      }
+    });
+    describe('updateGPTTargeting', () => {
+      it(' does not modify any slot when passed an empty targeting set', () => {
+        slots = [{
+          getAdUnitPath: sinon.stub(),
+          getSlotElementId: sinon.stub()
+        }];
+        targetingInstance.updateGPTTargeting({});
+        sinon.assert.notCalled(slots[0].getAdUnitPath);
+        sinon.assert.notCalled(slots[0].getSlotElementId);
+      });
+    })
+
+    describe('presetGPTTargeting', () => {
+      it('does not choke when GPT is not available', () => {
+        delete window.googletag;
+        targetingInstance.presetGPTTargeting();
+      });
+      it('has no effect when targetingControls.presetGPTTargeting = false', () => {
+        config.setConfig({
+          targetingControls: {
+            presetGPTTargeting: false
+          }
+        })
+        targetingInstance.presetGPTTargeting();
+        sinon.assert.notCalled(window.googletag.pubads);
+      })
+    })
+  });
+
   describe('setTargetingForAst', function () {
     let sandbox,
       apnTagStub;
