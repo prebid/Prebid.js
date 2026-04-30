@@ -1,7 +1,7 @@
-import {_map, isArray} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
+import { _map, isArray } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -52,8 +52,7 @@ function buildBid(bidData) {
     currency: bidData.currency,
     netRevenue: true,
     ttl: TTL,
-    meta: {
-      advertiserDomains: bidData.advertiserDomains || []}
+    meta: { advertiserDomains: bidData.advertiserDomains || [] }
   };
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {

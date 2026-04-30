@@ -247,7 +247,7 @@ describe('PixFutureAdapter', function () {
 
       expect(bidRequest.data).to.exist;
       expect(bidRequest.data.sizes).to.deep.equal([[300, 250]]);
-      expect(bidRequest.data.params).to.deep.equal({'pix_id': '777'});
+      expect(bidRequest.data.params).to.deep.equal({ 'pix_id': '777' });
       expect(bidRequest.data.adUnitCode).to.deep.equal('26335x300x250x14x_ADSLOT88');
     });
   });

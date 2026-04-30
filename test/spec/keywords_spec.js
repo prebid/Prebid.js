@@ -1,4 +1,4 @@
-import {getAllOrtbKeywords, mergeKeywords} from '../../libraries/keywords/keywords.js';
+import { getAllOrtbKeywords, mergeKeywords } from '../../libraries/keywords/keywords.js';
 
 describe('mergeKeywords', () => {
   Object.entries({
@@ -66,7 +66,7 @@ describe('mergeKeywords', () => {
         'three'
       ]
     }
-  }).forEach(([t, {input, output}]) => {
+  }).forEach(([t, { input, output }]) => {
     it(`can merge ${t}`, () => {
       expect(mergeKeywords(...input)).to.have.members(output);
     })

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const CURRENCY = 'EUR';
@@ -9,7 +9,7 @@ const BIDDER_CODE = 'talkads';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ NATIVE, BANNER ],
+  supportedMediaTypes: [NATIVE, BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.

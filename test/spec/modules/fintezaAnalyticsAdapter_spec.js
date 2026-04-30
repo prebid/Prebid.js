@@ -192,7 +192,7 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({eventType: EVENTS.BID_WON}))
+        sinon.assert.calledWith(fntzAnalyticsAdapter.track, sinon.match({ eventType: EVENTS.BID_WON }))
       });
     });
 

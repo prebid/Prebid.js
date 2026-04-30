@@ -1,7 +1,7 @@
-import {createTrackPixelHtml, logError, getBidIdParameter} from '../src/utils.js';
+import { createTrackPixelHtml, logError, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -98,7 +98,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'skt', SDK_TYPE);
       queryString = tryAppendQueryString(queryString, 'gpid', bidRequest.ortb2Imp?.ext?.gpid);
       queryString = tryAppendQueryString(queryString, 'tid', bidRequest.ortb2Imp?.ext?.tid);
-      queryString = tryAppendQueryString(queryString, 'cdep', bidRequest.ortb2?.device?.ext?.cdep);
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
       queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);

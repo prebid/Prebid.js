@@ -1,5 +1,5 @@
-import {config} from 'src/config.js';
-import {RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, blueconicSubmodule, storage} from 'modules/blueconicRtdProvider.js';
+import { config } from 'src/config.js';
+import { RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, blueconicSubmodule, storage } from 'modules/blueconicRtdProvider.js';
 
 describe('blueconicRtdProvider', function() {
   let getDataFromLocalStorageStub;
@@ -22,13 +22,13 @@ describe('blueconicRtdProvider', function() {
     it('merges ortb2Fragment data', function() {
       const setConfigUserObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 1},
-        segment: [{id: '1776'}]
+        ext: { segtax: 1 },
+        segment: [{ id: '1776' }]
       };
       const setConfigUserObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {segtax: 1},
-        segment: [{id: '1914'}
+        ext: { segtax: 1 },
+        segment: [{ id: '1914' }
         ]
       };
 
@@ -44,8 +44,8 @@ describe('blueconicRtdProvider', function() {
 
       const rtdUserObj1 = {
         name: 'www.dataprovider4.com',
-        ext: {segtax: 1},
-        segment: [{id: '1918'}, {id: '1939'}
+        ext: { segtax: 1 },
+        segment: [{ id: '1918' }, { id: '1939' }
         ]
       };
 
@@ -66,16 +66,15 @@ describe('blueconicRtdProvider', function() {
     it('merges data without duplication', function() {
       const userObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 1},
-        segment: [{id: '1776'}
+        ext: { segtax: 1 },
+        segment: [{ id: '1776' }
         ]
       };
 
       const userObj2 = {
-        ext: {segtax: 1},
+        ext: { segtax: 1 },
         name: 'www.dataprovider2.com',
-        segment: [{id: '1914'
-        }]
+        segment: [{ id: '1914' }]
       };
 
       const bidConfig = {
@@ -113,19 +112,20 @@ describe('blueconicRtdProvider', function() {
           requestParams: {
             publisherId: 'Publisher1',
             coppa: true
-          }}
+          }
+        }
       };
 
-      const bidConfig = {ortb2Fragments: {global: {}}};
+      const bidConfig = { ortb2Fragments: { global: {} } };
 
       const rtdUserObj1 = {
         name: 'blueconic',
-        ext: {segtax: 1},
-        segment: [{id: 'bf23d802-931d-4619-8266-ce9a6328aa2a'}],
+        ext: { segtax: 1 },
+        segment: [{ id: 'bf23d802-931d-4619-8266-ce9a6328aa2a' }],
         bidId: '1234'
       };
 
-      const cachedRtd = {ext: {segtax: 1}, 'segment': [{id: 'bf23d802-931d-4619-8266-ce9a6328aa2a'}], 'bidId': '1234'}
+      const cachedRtd = { ext: { segtax: 1 }, 'segment': [{ id: 'bf23d802-931d-4619-8266-ce9a6328aa2a' }], 'bidId': '1234' }
       getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd));
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});

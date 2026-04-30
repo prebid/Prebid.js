@@ -7,15 +7,15 @@ import {
   isPlainObject,
   logError
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
-import {addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -31,7 +31,7 @@ const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function buildBid(bidData) {
   const bid = bidData;

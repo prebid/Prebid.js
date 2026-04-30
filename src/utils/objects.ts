@@ -1,6 +1,6 @@
-import {klona} from "klona/json";
-import type {AnyFunction} from "../types/functions.d.ts";
-import type {Repeat} from "../types/tuples.d.ts";
+import { klona } from "klona/json";
+import type { AnyFunction } from "../types/functions.d.ts";
+import type { Repeat } from "../types/tuples.d.ts";
 
 export function deepClone<T>(obj: T): T {
   return (klona(obj) || {}) as T;

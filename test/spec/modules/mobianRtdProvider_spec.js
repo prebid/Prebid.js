@@ -8,6 +8,7 @@ import {
   CATEGORIES,
   EMOTIONS,
   GENRES,
+  MAX_CACHE_SIZE,
   RISK,
   SENTIMENT,
   THEMES,
@@ -16,6 +17,7 @@ import {
   fetchContextData,
   getConfig,
   getContextData,
+  makeMemoizedFetch,
   makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
   setTargeting,
@@ -276,6 +278,180 @@ describe('Mobian RTD Submodule', function () {
       const keyValues = Object.entries(mockContextData).reduce(makeContextDataToKeyValuesReducer(config), []);
       const keyValuesObject = Object.fromEntries(keyValues);
       expect(keyValuesObject).to.deep.equal(mockKeyValues);
+    });
+  });
+
+  describe('makeMemoizedFetch cache eviction', function () {
+    it('should evict the oldest entry when cache exceeds maxSize', async function () {
+      const maxSize = 2;
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockResponse);
+      });
+
+      const memoizedFetch = makeMemoizedFetch(maxSize);
+
+      await memoizedFetch();
+      expect(fetchCount).to.equal(1);
+
+      await memoizedFetch();
+      expect(fetchCount).to.equal(1);
+
+      const originalHref = window.location.href;
+      try {
+        history.pushState({}, '', '/page2');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(2, 'new URL /page2 should trigger a fetch');
+
+        history.pushState({}, '', '/page3');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(3, 'new URL /page3 should trigger a fetch and evict the original URL');
+
+        history.pushState({}, '', '/page2');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(3, '/page2 should still be cached');
+
+        history.pushState({}, '', originalHref);
+        await memoizedFetch();
+        expect(fetchCount).to.equal(4, 'original URL was evicted and requires a new fetch');
+      } finally {
+        history.replaceState({}, '', originalHref);
+      }
+    });
+
+    it('should fall back to MAX_CACHE_SIZE when given an invalid maxSize', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockResponse);
+      });
+
+      const memoizedFetch = makeMemoizedFetch(NaN);
+      const originalHref = window.location.href;
+
+      try {
+        for (let i = 0; i < MAX_CACHE_SIZE; i++) {
+          history.pushState({}, '', `/invalid-size-${i}`);
+          await memoizedFetch();
+        }
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE, 'should fetch once per unique URL');
+
+        history.pushState({}, '', '/invalid-size-5');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE, 'revisiting a cached URL should not fetch again');
+
+        history.pushState({}, '', '/invalid-size-overflow');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE + 1, 'new URL beyond limit should fetch and evict oldest (URL 0)');
+
+        history.pushState({}, '', '/invalid-size-0');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE + 2, 'URL 0 was evicted and requires a new fetch');
+
+        history.pushState({}, '', '/invalid-size-5');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(MAX_CACHE_SIZE + 2, 'URL 5 should still be cached');
+      } finally {
+        history.replaceState({}, '', originalHref);
+      }
+    });
+
+    it('should floor fractional maxSize to an integer', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.success(mockResponse);
+      });
+
+      const memoizedFetch = makeMemoizedFetch(1.9);
+      const originalHref = window.location.href;
+
+      try {
+        await memoizedFetch();
+        expect(fetchCount).to.equal(1);
+
+        history.pushState({}, '', '/fractional-page2');
+        await memoizedFetch();
+        expect(fetchCount).to.equal(2);
+
+        history.pushState({}, '', originalHref);
+        await memoizedFetch();
+        expect(fetchCount).to.equal(3);
+      } finally {
+        history.replaceState({}, '', originalHref);
+      }
+    });
+
+    it('should share a single in-flight request for concurrent calls to the same URL', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        setTimeout(() => callbacks.success(mockResponse), 10);
+      });
+
+      const memoizedFetch = makeMemoizedFetch();
+      const [result1, result2, result3] = await Promise.all([
+        memoizedFetch(),
+        memoizedFetch(),
+        memoizedFetch(),
+      ]);
+
+      expect(fetchCount).to.equal(1);
+      expect(result1).to.deep.equal(mockContextData);
+      expect(result2).to.deep.equal(mockContextData);
+      expect(result3).to.deep.equal(mockContextData);
+    });
+
+    it('should delete failed cache entries so subsequent calls refetch after an error', async function () {
+      let fetchCount = 0;
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        callbacks.error(new Error('network error'));
+      });
+
+      const memoizedFetch = makeMemoizedFetch();
+
+      const firstResult = await memoizedFetch();
+      expect(fetchCount).to.equal(1);
+      expect(firstResult).to.deep.equal({});
+
+      const secondResult = await memoizedFetch();
+      expect(fetchCount).to.equal(2, 'cache entry was cleared on error so a new fetch should occur');
+      expect(secondResult).to.deep.equal({});
+    });
+
+    it('should share a failing in-flight request across concurrent callers and allow a new fetch afterward', async function () {
+      let fetchCount = 0;
+      let shouldError = true;
+
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+        fetchCount++;
+        if (shouldError) {
+          setTimeout(() => callbacks.error(new Error('server error')), 10);
+        } else {
+          setTimeout(() => callbacks.success(mockResponse), 10);
+        }
+      });
+
+      const memoizedFetch = makeMemoizedFetch();
+
+      const [result1, result2, result3] = await Promise.all([
+        memoizedFetch(),
+        memoizedFetch(),
+        memoizedFetch(),
+      ]);
+
+      expect(fetchCount).to.equal(1, 'concurrent callers should share a single in-flight request');
+      expect(result1).to.deep.equal({});
+      expect(result2).to.deep.equal({});
+      expect(result3).to.deep.equal({});
+
+      shouldError = false;
+      const value = await memoizedFetch();
+
+      expect(fetchCount).to.equal(2, 'cache entry was cleared on error so a new fetch should occur');
+      expect(value).to.deep.equal(mockContextData);
     });
   });
 });

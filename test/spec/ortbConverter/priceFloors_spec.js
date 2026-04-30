@@ -1,7 +1,7 @@
-import {config} from 'src/config.js';
-import {setOrtbExtPrebidFloors, setOrtbImpBidFloor, setGranularBidfloors} from '../../../modules/priceFloors.js';
+import { config } from 'src/config.js';
+import { setOrtbExtPrebidFloors, setOrtbImpBidFloor, setGranularBidfloors } from '../../../modules/priceFloors.js';
 import 'src/prebid.js';
-import {ORTB_MTYPES} from '../../../libraries/ortbConverter/processors/mediaType.js';
+import { ORTB_MTYPES } from '../../../libraries/ortbConverter/processors/mediaType.js';
 
 describe('pbjs - ortb imp floor params', () => {
   before(() => {
@@ -18,7 +18,7 @@ describe('pbjs - ortb imp floor params', () => {
       getFloor: sinon.stub().callsFake(() => { throw new Error() }),
     },
     'returns invalid floor': {
-      getFloor: sinon.stub().callsFake(() => ({floor: NaN, currency: null}))
+      getFloor: sinon.stub().callsFake(() => ({ floor: NaN, currency: null }))
     }
   }).forEach(([t, req]) => {
     it(`has no effect if bid ${t}`, () => {
@@ -46,9 +46,9 @@ describe('pbjs - ortb imp floor params', () => {
   });
 
   Object.entries({
-    'missing currency': {floor: 1.23},
-    'missing floor': {currency: 'USD'},
-    'not a number': {floor: 'abc', currency: 'USD'}
+    'missing currency': { floor: 1.23 },
+    'missing floor': { currency: 'USD' },
+    'not a number': { floor: 'abc', currency: 'USD' }
   }).forEach(([t, floor]) => {
     it(`should not set bidfloor if floor is ${t}`, () => {
       const imp = {};
@@ -75,7 +75,7 @@ describe('pbjs - ortb imp floor params', () => {
 
     it('from context.currency', () => {
       const imp = {};
-      setOrtbImpBidFloor(imp, req, {currency: 'JPY'});
+      setOrtbImpBidFloor(imp, req, { currency: 'JPY' });
       config.setConfig({
         currency: {
           adServerCurrency: 'EUR'
@@ -109,7 +109,7 @@ describe('pbjs - ortb imp floor params', () => {
         reqMediaType = opts.mediaType;
       }
     }
-    setOrtbImpBidFloor({}, req, {mediaType: 'banner'});
+    setOrtbImpBidFloor({}, req, { mediaType: 'banner' });
     expect(reqMediaType).to.eql('banner');
   })
 });
@@ -118,7 +118,7 @@ describe('setOrtbImpExtBidFloor', () => {
   let bidRequest, floor, currency, imp;
   beforeEach(() => {
     bidRequest = {
-      getFloor: sinon.stub().callsFake(() => ({floor, currency}))
+      getFloor: sinon.stub().callsFake(() => ({ floor, currency }))
     }
     imp = {
       bidfloor: 1.23,
@@ -138,7 +138,7 @@ describe('setOrtbImpExtBidFloor', () => {
         imp[mediaType] = {};
         setGranularBidfloors(imp, bidRequest);
         expect(imp[mediaType].ext).to.not.exist;
-        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({mediaType}))
+        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType }))
       });
       it('should be set otherwise', () => {
         floor = 3.21;
@@ -149,7 +149,7 @@ describe('setOrtbImpExtBidFloor', () => {
           bidfloor: 3.21,
           bidfloorcur: 'JPY'
         });
-        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({mediaType}))
+        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType }))
       });
     });
   });
@@ -158,8 +158,8 @@ describe('setOrtbImpExtBidFloor', () => {
       imp = {
         banner: {
           format: [
-            {w: 1, h: 2},
-            {w: 3, h: 4}
+            { w: 1, h: 2 },
+            { w: 3, h: 4 }
           ]
         }
       }
@@ -171,7 +171,7 @@ describe('setOrtbImpExtBidFloor', () => {
       setGranularBidfloors(imp, bidRequest);
       expect(imp.banner.format.filter(fmt => fmt.bidfloor)).to.eql([]);
       [[1, 2], [3, 4]].forEach(size => {
-        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({size}));
+        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ size }));
       });
     });
 
@@ -180,8 +180,8 @@ describe('setOrtbImpExtBidFloor', () => {
       currency = 'JPY';
       setGranularBidfloors(imp, bidRequest);
       imp.banner.format.forEach((fmt) => {
-        expect(fmt.ext).to.eql({bidfloor: 3.21, bidfloorcur: 'JPY'});
-        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({mediaType: 'banner', size: [fmt.w, fmt.h]}));
+        expect(fmt.ext).to.eql({ bidfloor: 3.21, bidfloorcur: 'JPY' });
+        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType: 'banner', size: [fmt.w, fmt.h] }));
       })
     });
 
@@ -197,10 +197,10 @@ describe('setOrtbImpExtBidFloor', () => {
 
 describe('setOrtbExtPrebidFloors', () => {
   before(() => {
-    config.setConfig({floors: {}});
+    config.setConfig({ floors: {} });
   })
   after(() => {
-    config.setConfig({floors: {enabled: false}});
+    config.setConfig({ floors: { enabled: false } });
   });
 
   it('should set ext.prebid.floors.enabled to false', () => {

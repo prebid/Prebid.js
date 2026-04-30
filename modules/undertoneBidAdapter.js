@@ -2,11 +2,12 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
+import { deepAccess, parseUrl, extractDomainFromHost, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -38,10 +39,10 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
-function getBannerCoords(id) {
-  const element = document.getElementById(id);
+function getBannerCoords(bidRequest) {
+  const element = getAdUnitElement(bidRequest);
   if (element) {
-    const {left, top} = getBoundingClientRect(element);
+    const { left, top } = getBoundingClientRect(element);
     const viewport = getViewportCoordinates();
     return [Math.round(left + (viewport.left || 0)), Math.round(top + (viewport.top || 0))];
   }
@@ -109,7 +110,7 @@ export const spec = {
     validBidRequests.forEach(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
-        coordinates: getBannerCoords(bidReq.adUnitCode),
+        coordinates: getBannerCoords(bidReq),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,

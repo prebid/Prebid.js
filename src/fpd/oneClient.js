@@ -1,4 +1,4 @@
-import {logWarn} from '../utils.js';
+import { logWarn } from '../utils.js';
 
 // mutually exclusive ORTB sections in order of priority - 'dooh' beats 'app' & 'site' and 'app' beats 'site';
 // if one is set, the others will be removed

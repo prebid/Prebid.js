@@ -10,7 +10,7 @@ export const UID1_EIDS = {
       }
     },
     getUidExt: function(data) {
-      return {...{rtiPartner: 'TDID'}, ...data.ext}
+      return { ...{ rtiPartner: 'TDID' }, ...data.ext }
     }
   }
 }

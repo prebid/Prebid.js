@@ -19,9 +19,9 @@ import {
 import {
   getStorageManager
 } from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 const MODULE_NAME = 'dacId';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export const FUUID_COOKIE_NAME = '_a1_f';
 export const AONEID_COOKIE_NAME = '_a1_d';

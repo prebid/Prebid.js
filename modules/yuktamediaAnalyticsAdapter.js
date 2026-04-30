@@ -1,15 +1,15 @@
-import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizesInput, parseUrl} from '../src/utils.js';
-import {ajax, fetch} from '../src/ajax.js';
+import { buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizesInput, parseUrl } from '../src/utils.js';
+import { ajax, fetch } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 const yuktamediaAnalyticsVersion = 'v3.1.0';
 
 let initOptions;

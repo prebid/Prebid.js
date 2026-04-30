@@ -1,6 +1,6 @@
-import {_each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn} from '../../src/utils.js';
-import {getAllOrtbKeywords} from '../keywords/keywords.js';
-import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
+import { _each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn } from '../../src/utils.js';
+import { getAllOrtbKeywords } from '../keywords/keywords.js';
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
 
 const ORTB_SEGTAX_KEY_MAP = {
   526: '1plusX',
@@ -56,7 +56,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
       } // unsuported types - don't send a key
     }
     v = v.filter(kw => kw !== '')
-    const entry = {key: k}
+    const entry = { key: k }
     if (v.length > 0) {
       entry.value = v;
     }

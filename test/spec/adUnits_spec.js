@@ -1,7 +1,7 @@
 import 'src/prebid.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
-import {getGlobalVarName} from '../../src/buildOptions.js';
+import { getGlobalVarName } from '../../src/buildOptions.js';
 
 describe('Publisher API _ AdUnits', function () {
   var assert = require('chai').assert;
@@ -100,7 +100,7 @@ describe('Publisher API _ AdUnits', function () {
     it(`the second adUnits value should be same with the adUnits that is added by ${getGlobalVarName()}.addAdUnits();`, function () {
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
-      assert.deepEqual(adUnit2['ortb2Imp'], {'ext': {'data': {'pbadslot': 'adSlotTest', 'inventory': [4], 'keywords': 'foo,bar', 'visitor': [1, 2, 3]}}}, 'adUnit2 ortb2Imp');
+      assert.deepEqual(adUnit2['ortb2Imp'], { 'ext': { 'data': { 'pbadslot': 'adSlotTest', 'inventory': [4], 'keywords': 'foo,bar', 'visitor': [1, 2, 3] } } }, 'adUnit2 ortb2Imp');
       assert.strictEqual(bids2[0].bidder, 'rubicon', 'adUnit2 bids1 bidder');
       assert.strictEqual(bids2[0].params.rp_account, '4934', 'adUnit2 bids1 params.rp_account');
       assert.strictEqual(bids2[0].params.rp_zonesize, '23948-15', 'adUnit2 bids1 params.rp_zonesize');

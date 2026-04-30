@@ -1,8 +1,9 @@
 import { timestamp, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const URL = 'https://analytics.adnuntius.com/prebid';
 const REQUEST_SENT = 1;
@@ -18,15 +19,15 @@ const cache = {
   auctions: {}
 };
 
-const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endpoint'}), {
-  track({eventType, args}) {
+const adnAnalyticsAdapter = Object.assign(adapter({ url: '', analyticsType: 'endpoint' }), {
+  track({ eventType, args }) {
     const time = timestamp();
     logInfo('ADN_EVENT:', [eventType, args]);
 
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         logInfo('ADN_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
+        cache.auctions[args.auctionId] = { bids: {}, bidAdUnits: {} };
         break;
       case EVENTS.BID_REQUESTED:
         logInfo('ADN_BID_REQUESTED:', args);
@@ -36,7 +37,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
 
-          const container = document.getElementById(bidReq.adUnitCode);
+          const container = getAdUnitElement(bidReq);
           const containerAttr = container ? container.getAttribute('data-adunitid') : undefined;
           const adUnitId = containerAttr || undefined;
 
@@ -169,7 +170,7 @@ adnAnalyticsAdapter.sendEvents = function() {
     return;
   }
 
-  ajax(initOptions.endPoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
+  ajax(initOptions.endPoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
 };
 
 function getSentRequests() {
@@ -202,7 +203,7 @@ function getSentRequests() {
     });
   });
 
-  return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
+  return { gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests };
 }
 
 function getResponses(gdpr, auctionIds) {
@@ -278,7 +279,7 @@ function getGdprPos(gdpr, auction) {
   }
 
   if (gdprPos === gdpr.length) {
-    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+    gdpr[gdprPos] = { gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent };
   }
 
   return gdprPos;

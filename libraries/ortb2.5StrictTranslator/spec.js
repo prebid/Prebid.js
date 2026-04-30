@@ -1,4 +1,4 @@
-import {Arr, extend, ID, IntEnum, Named, Obj} from './dsl.js';
+import { Arr, extend, ID, IntEnum, Named, Obj } from './dsl.js';
 
 const CatDomain = Named[extend](['cat', 'domain']);
 const Segment = Named[extend](['value']);

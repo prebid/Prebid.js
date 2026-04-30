@@ -1,4 +1,4 @@
-import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
+import { logError, deepClone, isFn, isStr } from '../../src/utils.js';
 
 export const EID_CONFIG = new Map();
 
@@ -73,9 +73,9 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
           eids = [eids];
         }
         eids.forEach(eid => {
-          eid.uids = eid.uids.filter(({id}) => isStr(id))
+          eid.uids = eid.uids.filter(({ id }) => isStr(id))
         })
-        eids = eids.filter(({uids}) => uids?.length > 0);
+        eids = eids.filter(({ uids }) => uids?.length > 0);
       } catch (e) {
         logError(`Could not generate EID for "${name}"`, e);
       }

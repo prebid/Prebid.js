@@ -23,7 +23,7 @@ const ADAPTER_VERSION = '1.2.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
@@ -369,19 +369,17 @@ function getTargeting(bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
-    const pubadsTargeting = window.googletag.getConfig('targeting');
-    const keys = Object.keys(pubadsTargeting);
+    const keys = pubads.getTargetingKeys();
     for (const key of keys) {
-      const values = pubadsTargeting[key];
+      const values = pubads.getTargeting(key);
       targetings[key] = values;
     }
   }
   const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
   if (adUnitSlot) {
-    const slotTargeting = adUnitSlot.getConfig('targeting');
-    const keys = Object.keys(slotTargeting);
+    const keys = adUnitSlot.getTargetingKeys();
     for (const key of keys) {
-      const values = slotTargeting[key];
+      const values = adUnitSlot.getTargeting(key);
       targetings[key] = values;
     }
   }

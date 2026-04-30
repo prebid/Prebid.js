@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/dxtechBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/dxtechBidAdapter.js';
 
 const getBannerRequest = () => {
   return {
@@ -19,7 +19,7 @@ const getBannerRequest = () => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 300, 250 ],
+              [300, 250],
             ]
           }
         },
@@ -393,7 +393,7 @@ describe('dxtechBidAdapter', function() {
     let mockBidderRequest;
 
     beforeEach(function() {
-      mockBidderRequest = {refererInfo: {}};
+      mockBidderRequest = { refererInfo: {} };
 
       bidRequestsWithMediaTypes = [{
         bidder: 'dxtech',
@@ -494,7 +494,7 @@ describe('dxtechBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
@@ -530,32 +530,36 @@ describe('dxtechBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
       });
 
       it('should return no bids if the response "nurl" and "adm" are missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              price: 6.01
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                price: 6.01
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
 
       it('should return no bids if the response "price" is missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              adm: '<VAST></VAST>'
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                adm: '<VAST></VAST>'
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
@@ -575,12 +579,12 @@ describe('dxtechBidAdapter', function() {
     });
 
     it('returns none if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -588,7 +592,7 @@ describe('dxtechBidAdapter', function() {
     });
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -596,7 +600,7 @@ describe('dxtechBidAdapter', function() {
     });
 
     it('all sync enabled should prioritize iframe', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
     });

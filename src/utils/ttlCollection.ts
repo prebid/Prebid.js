@@ -1,6 +1,6 @@
-import {PbPromise} from './promise.js';
-import {binarySearch, logError, timestamp} from '../utils.js';
-import {setFocusTimeout} from './focusTimeout.js';
+import { PbPromise } from './promise.js';
+import { binarySearch, logError, timestamp } from '../utils.js';
+import { setFocusTimeout } from './focusTimeout.js';
 
 export type TTLCollection<T> = ReturnType<typeof ttlCollection<T>>;
 
@@ -50,7 +50,7 @@ export function ttlCollection<T>(
   let nextPurge, task;
 
   function reschedulePurge() {
-    task && clearTimeout(task);
+    task && clearTimeout(task());
     if (pendingPurge.length > 0) {
       const now = timestamp();
       nextPurge = Math.max(now, pendingPurge[0].expiry + slack);

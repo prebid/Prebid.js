@@ -1,11 +1,11 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
   buildRequests,
   getUserSyncs,
   interpretResponse,
 } from '../libraries/xeUtils/bidderUtils.js';
-import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js';
+import { deepAccess, getBidIdParameter, isArray, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'anyclip';
 const ENDPOINT = 'https://prebid.anyclip.com';
@@ -45,7 +45,7 @@ export const spec = {
         floor: req.floor
       },
     }))
-    return {...builtRequests, data: JSON.stringify(updatedRequests)}
+    return { ...builtRequests, data: JSON.stringify(updatedRequests) }
   },
   interpretResponse,
   getUserSyncs

@@ -647,7 +647,7 @@ describe('Outbrain Adapter', function () {
 
         const res = spec.buildRequests(
           [bidRequest],
-          {...commonBidderRequest, ...ortb2WithDeviceData},
+          { ...commonBidderRequest, ...ortb2WithDeviceData },
         );
         expect(JSON.parse(res.data).device).to.deep.equal(ortb2WithDeviceData.ortb2.device);
       });

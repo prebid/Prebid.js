@@ -1,8 +1,8 @@
 import { operaIdSubmodule } from 'modules/operaadsIdSystem'
 import * as ajaxLib from 'src/ajax.js'
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 const TEST_ID = 'opera-test-id';
 const operaIdRemoteResponse = { uid: TEST_ID };

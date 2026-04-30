@@ -386,9 +386,11 @@ describe('bidmaticBidAdapter', function () {
       const syncOptions = { pixelEnabled: true, iframeEnabled: true };
       const serverResponses = [
         { body: { cookieURLs: ['https://sync1.bidmatic.com/pixel'] } },
-        { body: [
-          { cookieURLs: ['https://sync2.bidmatic.com/iframe'], cookieURLSTypes: ['iframe'] }
-        ]}
+        {
+          body: [
+            { cookieURLs: ['https://sync2.bidmatic.com/iframe'], cookieURLSTypes: ['iframe'] }
+          ]
+        }
       ];
 
       const result = getUserSyncsFn(syncOptions, serverResponses);

@@ -1,6 +1,6 @@
-import {getWinDimensions, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getWinDimensions, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,7 +22,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-export const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: CONSTANTS.BIDDER_CODE });
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -225,7 +225,7 @@ function buildRequest(bidRequests, bidderRequest) {
     method: CONSTANTS.METHOD,
     url: endpoint,
     data: data,
-    options: {withCredentials: true},
+    options: { withCredentials: true },
     // for POST: { contentType: 'application/json', withCredentials: true }
     bidRequests: bidRequests
   };

@@ -46,7 +46,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
         [reqBidsConfigObj.adUnits, filteredBids] = getFilteredAdUnitsOnBidRates(bidsRateInterests, reqBidsConfigObj.adUnits, config.params, true);
       }
       if (filteredBids.length > 0) {
-        getPromisifiedAjax('https://' + config.params.domain + '.oxxion.io/analytics/request_rejecteds', JSON.stringify({'bids': filteredBids, 'gdpr': gdpr}), {
+        getPromisifiedAjax('https://' + config.params.domain + '.oxxion.io/analytics/request_rejecteds', JSON.stringify({ 'bids': filteredBids, 'gdpr': gdpr }), {
           method: 'POST',
           withCredentials: true
         });
@@ -55,7 +55,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
       const timeToRun = new Date() - moduleStarted;
       logInfo(LOG_PREFIX + ' time to run: ' + timeToRun);
       if (getRandomNumber(50) === 1) {
-        ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {method: 'POST', withCredentials: true});
+        ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({ 'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId }), { method: 'POST', withCredentials: true });
       }
     }).catch(error => logError(LOG_PREFIX, 'bidInterestError', error));
   }

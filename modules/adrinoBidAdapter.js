@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {triggerPixel} from '../src/utils.js';
-import {NATIVE, BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { triggerPixel } from '../src/utils.js';
+import { NATIVE, BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adrino';

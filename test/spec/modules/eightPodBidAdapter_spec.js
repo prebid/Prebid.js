@@ -81,7 +81,8 @@ describe('eightPodBidAdapter', function () {
             dnt: 1,
             js: 1,
           }
-        } }
+        }
+      }
     })
 
     it('should return an empty array when no bid requests', function () {

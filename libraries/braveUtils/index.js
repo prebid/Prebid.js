@@ -66,7 +66,7 @@ export function createBannerRequest(br) {
  * @returns {object} The video request object
  */
 export function createVideoRequest(br) {
-  const videoObj = {...br.mediaTypes.video, id: br.transactionId};
+  const videoObj = { ...br.mediaTypes.video, id: br.transactionId };
 
   if (videoObj.playerSize) {
     const size = Array.isArray(videoObj.playerSize[0]) ? videoObj.playerSize[0] : videoObj.playerSize;

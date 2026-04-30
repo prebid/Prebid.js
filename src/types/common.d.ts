@@ -1,5 +1,5 @@
-import type {DeepPartial} from "./objects.d.ts";
-import type {ORTBRequest} from "./ortb/request.d.ts";
+import type { DeepPartial } from "./objects.d.ts";
+import type { ORTBRequest } from "./ortb/request.d.ts";
 
 /**
  * Prebid-generated identifier.

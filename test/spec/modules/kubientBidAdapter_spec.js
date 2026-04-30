@@ -1,7 +1,7 @@
 import { expect, assert } from 'chai';
 import { spec } from 'modules/kubientBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import {config} from '../../../src/config.js';
+import { config } from '../../../src/config.js';
 
 function encodeQueryData(data) {
   return Object.keys(data).map(function(key) {
@@ -117,8 +117,8 @@ describe('KubientAdapter', function () {
       config.resetConfig();
     });
     it('Creates Banner 1 ServerRequest object with method, URL and data', function () {
-      config.setConfig({'coppa': false});
-      const serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+      config.setConfig({ 'coppa': false });
+      const serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, { bids: [bidBanner] }));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
         const serverRequest = serverRequests[i];
@@ -153,8 +153,8 @@ describe('KubientAdapter', function () {
       config.resetConfig();
     });
     it('Creates Video 1 ServerRequest object with method, URL and data', function () {
-      config.setConfig({'coppa': false});
-      const serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+      config.setConfig({ 'coppa': false });
+      const serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, { bids: [bidVideo] }));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
         const serverRequest = serverRequests[i];
@@ -190,8 +190,8 @@ describe('KubientAdapter', function () {
       config.resetConfig();
     });
     it('Creates Banner 2 ServerRequest object with method, URL and data with bidBanner', function () {
-      config.setConfig({'coppa': true});
-      const serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+      config.setConfig({ 'coppa': true });
+      const serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, { bids: [bidBanner] }));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
         const serverRequest = serverRequests[i];
@@ -227,8 +227,8 @@ describe('KubientAdapter', function () {
       config.resetConfig();
     });
     it('Creates Video 2 ServerRequest object with method, URL and data', function () {
-      config.setConfig({'coppa': true});
-      const serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+      config.setConfig({ 'coppa': true });
+      const serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, { bids: [bidVideo] }));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
         const serverRequest = serverRequests[i];
@@ -300,7 +300,7 @@ describe('KubientAdapter', function () {
                     cur: 'USD',
                     netRevenue: false,
                     ttl: 360,
-                    meta: {adomain: ['google.com', 'yahoo.com']}
+                    meta: { adomain: ['google.com', 'yahoo.com'] }
                   }
                 ]
               }
@@ -351,7 +351,7 @@ describe('KubientAdapter', function () {
                     cur: 'USD',
                     netRevenue: false,
                     ttl: 360,
-                    meta: {adomain: ['google.com', 'yahoo.com']}
+                    meta: { adomain: ['google.com', 'yahoo.com'] }
                   }
                 ]
               }

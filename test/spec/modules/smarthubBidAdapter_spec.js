@@ -13,7 +13,8 @@ describe('SmartHubBidAdapter', function () {
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          battr: [1, 3]
         }
       },
       params: {
@@ -67,6 +68,7 @@ describe('SmartHubBidAdapter', function () {
           minduration: 5,
           maxduration: 60,
           plcmt: 1,
+          battr: [1, 3],
         }
       },
       params: {
@@ -183,8 +185,7 @@ describe('SmartHubBidAdapter', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -214,18 +215,17 @@ describe('SmartHubBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
             expect(placement.plcmt).to.be.an('number');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -443,10 +443,10 @@ describe('SmartHubBidAdapter', function () {
 
   describe('getUserSyncs', function() {
     it('Should return array of objects with GDPR values', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, {});
+      }, undefined);
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -455,9 +455,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0&pid=360')
     });
     it('Should return array of objects with CCPA values', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
-        consentString: '1---'
-      });
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -466,7 +464,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0&pid=360')
     });
     it('Should return array of objects with GPP values', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, {
         gppString: 'ab12345',
         applicableSections: [8]
       });
@@ -478,7 +476,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://us4.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0&pid=360')
     });
     it('Should return iframe type if iframeEnabled is true', function() {
-      const syncData = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {});
+      const syncData = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, undefined, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')

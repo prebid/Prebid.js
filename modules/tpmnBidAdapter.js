@@ -23,7 +23,7 @@ const COMMON_PARAMS = [
 
 export const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 export const ADAPTER_VERSION = '2.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -142,7 +142,7 @@ const CONVERTER = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.mediaType === BANNER) {
       bidResponse.ad = bid.adm;
@@ -160,7 +160,7 @@ const CONVERTER = ortbConverter({
         let videoParams = bidRequest.mediaTypes[VIDEO];
         if (videoParams) {
           videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+          bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
         }
         orig(imp, bidRequest, context);
       },

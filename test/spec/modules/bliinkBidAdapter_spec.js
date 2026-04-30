@@ -139,7 +139,7 @@ const getConfigVideoBid = () => {
  */
 const getConfigCreative = () => {
   return {
-    ad: '<iframe src="https://creative-stg.bliink.io/test-preview-jonathan/index.html?cb=54545&cb=1653984833&gdpr=1&gdpr_consent=#click=https://e-stg.api.bliink.io/c?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTY0MTMzMzgsImlhdCI6MTY1NTgwODUzOCwiaXNzIjoiYmxpaW5rIiwiZGF0YSI6eyJ0eXBlIjoiYWQtc2VydmVyIiwidHJhbnNhY3Rpb25JZCI6IjQ3ZmQyMmY1LThiM2MtNGI4Zi05MzgyLTAzNGEwNGJmNGNmZSIsIm5ldHdvcmtJZCI6MjEsInNpdGVJZCI6NDgsInRhZ0lkIjo4MSwiY29va2llSWQiOiI4NjkwZDEzMDkyNjM5YThhMDliM2MwZDgzMDFlMTBkNmM5MWRhMzBlZWY3NTA2OTRkNTQ5Y2ExYWEwN2M0OTU2IiwiZXZlbnRJZCI6MywidGFyZ2V0aW5nIjp7InBsYXRmb3JtIjoiV2Vic2l0ZSIsInJlZmVycmVyIjoiaHR0cDovL2xvY2FsaG9zdDo5OTk5L2ludGVncmF0aW9uRXhhbXBsZXMvZ3B0L2dkcHJfaGVsbG9fd29ybGQuaHRtbCIsInBhZ2VVcmwiOiJodHRwOi8vbG9jYWxob3N0Ojk5OTkvaW50ZWdyYXRpb25FeGFtcGxlcy9ncHQvZ2Rwcl9oZWxsb193b3JsZC5odG1sIiwidGltZSI6MTY1NTgwODUzOCwibG9jYXRpb24iOnsibGF0aXR1ZGUiOjQ4LjgzMjMsImxvbmdpdHVkZSI6Mi40MDc1LCJyZWdpb24iOiJJREYiLCJjb3VudHJ5IjoiRlIiLCJjaXR5IjoiUGFyaXMiLCJ6aXBDb2RlIjoiNzUwMTUiLCJkZXBhcnRtZW50IjoiNzUifSwiY2l0eSI6IlBhcmlzIiwiY291bnRyeSI6IkZSIiwiZGV2aWNlT3MiOiJtYWNPUyIsImRldmljZVBsYXRmb3JtIjoiV2Vic2l0ZSIsInJhd1VzZXJBZ2VudCI6Ik1vemlsbGEvNS4wIChNYWNpbnRvc2g7IEludGVsIE1hYyBPUyBYIDEwXzE1XzcpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xMDIuMC4wLjAgU2FmYXJpLzUzNy4zNiJ9LCJnZHByIjp7Imhhc0NvbnNlbnQiOmZhbHNlLCJjb25zZW50U3RyaW5nIjoiQlBhbzY5dVBhNHd2WkFBQUJBRlJBQkFBQUFBQUFBIn0sIm5wIjoiNGNCNHVhQW5ncFliZ0RRYXliUGFnUT09IiwiZ3AiOiI3K05UVjErK0ttWndkcDhuTVd3NGl3PT0iLCJjdXJyZW5jeSI6IkVVUiIsIndpbiI6ZmFsc2UsImZvcm1hdCI6MywiZGlzcGxheVR5cGUiOiJzdGlja3kiLCJhZElkIjoxNjgsImFkdmVydGlzZXJJZCI6MjEsImNhbXBhaWduSWQiOjUzNSwiY3JlYXRpdmVJZCI6NzEsImVycm9yIjpmYWxzZX19.8hkPblKo1y1hftESf7e0GN9EzJ1LNVposv_a0TS4h_8&redirect=" style="height: 100%; width: 100%; border: 0;"></iframe><script src="https://tag-stg.bliink.io/creative.min.js?cb=0.0.0"></script>',
+    ad: '<iframe src="https://creative-stg.bliink.io/test-preview/index.html"></iframe>',
     mediaType: 'banner',
     cpm: 4,
     currency: 'EUR',
@@ -355,17 +355,19 @@ const GetUserIds = [
   {
     title: 'Should return eids if exists',
     args: {
-      fn: getUserIds([{ userIdAsEids: [
-        {
-          'source': 'criteo.com',
-          'uids': [
-            {
-              'id': 'testId',
-              'atype': 1
-            }
-          ]
-        }
-      ] }]),
+      fn: getUserIds([{
+        userIdAsEids: [
+          {
+            'source': 'criteo.com',
+            'uids': [
+              {
+                'id': 'testId',
+                'atype': 1
+              }
+            ]
+          }
+        ]
+      }]),
     },
     want: [
       {

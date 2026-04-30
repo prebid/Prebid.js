@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/fluctBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { spec } from 'modules/fluctBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
+import { config } from 'src/config';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);
@@ -91,7 +91,7 @@ describe('fluctAdapter', function () {
 
     it('sends bid request to ENDPOINT with query parameter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.url).to.equal('https://hb.adingo.jp/prebid?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
+      expect(request.url).to.equal('https://hb.adingo.jp/prebid/?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
     });
 
     it('includes data.page by default', function () {

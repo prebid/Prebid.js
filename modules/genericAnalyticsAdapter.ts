@@ -1,11 +1,11 @@
-import AnalyticsAdapter, {type DefaultOptions} from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {prefixLog, isPlainObject} from '../src/utils.js';
-import {type Events, has as hasEvent} from '../src/events.js';
+import AnalyticsAdapter, { type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { prefixLog, isPlainObject } from '../src/utils.js';
+import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import type {AnyFunction} from "../src/types/functions";
+import { ajaxBuilder } from '../src/ajax.js';
+import type { AnyFunction } from "../src/types/functions";
 
-type EventMapping = {[E in keyof Events]?: (payload: Events[E][0]) => any};
+type EventMapping = { [E in keyof Events]?: (payload: Events[E][0]) => any };
 
 type BaseOptions = {
   /**
@@ -92,8 +92,8 @@ const TYPES = {
 const MAX_CALL_DEPTH = 20;
 
 export function GenericAnalytics() {
-  const parent = AnalyticsAdapter<'generic'>({analyticsType: 'endpoint'});
-  const {logError, logWarn} = prefixLog('Generic analytics:');
+  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
+  const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
   let options, handler, timer, translate;
@@ -161,7 +161,7 @@ export function GenericAnalytics() {
     if (!eventHandlers) {
       return (data) => data;
     }
-    return function ({eventType, args}) {
+    return function ({ eventType, args }) {
       if (eventHandlers.hasOwnProperty(eventType)) {
         try {
           return eventHandlers[eventType](args);
@@ -205,16 +205,16 @@ export function GenericAnalytics() {
   )
 }
 
-export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
+export function defaultHandler({ url, method, batchSize, ajax = ajaxBuilder() }) {
   const callbacks = {
     success() {},
     error() {}
   }
   const extract = batchSize > 1 ? (events) => events : (events) => events[0];
-  const serialize = method === 'GET' ? (data) => ({data: JSON.stringify(data)}) : (data) => JSON.stringify(data);
+  const serialize = method === 'GET' ? (data) => ({ data: JSON.stringify(data) }) : (data) => JSON.stringify(data);
 
   return function (events) {
-    ajax(url, callbacks, serialize(extract(events)), {method, keepalive: true})
+    ajax(url, callbacks, serialize(extract(events)), { method, keepalive: true })
   }
 }
 
