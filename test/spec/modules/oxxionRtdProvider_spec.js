@@ -107,7 +107,9 @@ const bids = [{
   'adUnitCode': 'msq_tag_200125_video',
   'timeToRespond': 146,
   'size': '640x480',
-  'vastImpUrl': 'https://some.tracking-url.com'
+  'vastTrackers': {
+    'impression': ['https://some.tracking-url.com']
+  }
 },
 ];
 
