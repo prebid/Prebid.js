@@ -379,10 +379,17 @@ describe('Utils', function () {
   });
 
   describe('isFn', function () {
-    it('should return true with input function', function () {
-      var output = utils.isFn(obj_function);
-      assert.deepEqual(output, true);
-    });
+    Object.entries({
+      'vanilla function': () => null,
+      'async function': async () => null,
+      'generator function': function* () {},
+      'async generator function': async function* () {}
+    }).forEach(([t, fn]) => {
+      it(`should return true with input ${t}`, function () {
+        var output = utils.isFn(fn);
+        assert.deepEqual(output, true);
+      });
+    })
 
     it('should return false with input string', function () {
       var output = utils.isFn(obj_string);

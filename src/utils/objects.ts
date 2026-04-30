@@ -19,11 +19,6 @@ export function getDefinedParams<T extends object, K extends readonly (keyof T)[
     .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
 }
 
-const tStr = 'String';
-const tFn = 'Function';
-const tNumb = 'Number';
-const tObject = 'Object';
-const tBoolean = 'Boolean';
 const toString = Object.prototype.toString;
 
 /**
@@ -38,25 +33,25 @@ export function isA(object, _t) {
 }
 
 export function isFn(object): object is AnyFunction {
-  return isA(object, tFn);
+  return typeof object === 'function';
 }
 
 export function isStr(object): object is string {
-  return isA(object, tStr);
+  return typeof object === 'string';
 }
 
 export const isArray: (object) => object is any[] = Array.isArray.bind(Array);
 
 export function isNumber(object): object is number {
-  return isA(object, tNumb);
+  return typeof object === 'number';
 }
 
 export function isPlainObject(object): object is Record<any, unknown> {
-  return isA(object, tObject);
+  return toString.call(object) === '[object Object]'
 }
 
 export function isBoolean(object): object is boolean {
-  return isA(object, tBoolean);
+  return typeof object === 'boolean';
 }
 
 /**
