@@ -384,7 +384,6 @@ describe('targeting tests', function () {
         });
       });
       describe('when bidsReceived is empty', () => {
-
         it('includes ad unit targeting', () => {
           adServerTargeting.test = 'value';
           const targeting = targetingInstance.getAllTargeting([adUnitCode], 0, []);
