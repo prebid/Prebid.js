@@ -81,7 +81,6 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
