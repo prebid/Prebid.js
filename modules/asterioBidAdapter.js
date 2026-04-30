@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone } from '../src/utils.js';
+import { deepAccess, deepClone } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
@@ -18,7 +18,7 @@ export const spec = {
     const bids = validBidRequests.map(bidRequest => ({
       bidId: bidRequest.bidId,
       adUnitToken: bidRequest.params.adUnitToken,
-      pos: bidRequest.params.pos,
+      pos: getPosition(bidRequest),
       sizes: prepareSizes(bidRequest.sizes)
     }));
 
@@ -38,10 +38,10 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: validBidRequests[0]?.params?.endpoint || ENDPOINT,
+      url: ENDPOINT,
       data: payload,
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         customHeaders: {
           'Rtb-Direct': true
         }
@@ -91,7 +91,15 @@ export const spec = {
 };
 
 function prepareSizes(sizes) {
-  return sizes ? sizes.map(size => ({ width: size[0], height: size[1] })) : [];
+  if (!Array.isArray(sizes) || sizes.length === 0) {
+    return [];
+  }
+  const normalizedSizes = typeof sizes[0] === 'number' ? [sizes] : sizes;
+  return normalizedSizes.map(size => ({ width: size[0], height: size[1] }));
+}
+
+function getPosition(bidRequest) {
+  return bidRequest.params.pos ?? deepAccess(bidRequest, 'mediaTypes.banner.pos') ?? deepAccess(bidRequest, 'mediaTypes.video.pos');
 }
 
 registerBidder(spec);

@@ -102,7 +102,7 @@ describe('asterioBidAdapter', function () {
       expect(bidderRequest.method).to.equal('POST');
       expect(bidderRequest.url).to.equal(ENDPOINT);
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true });
-      expect(bidderRequest.options.contentType).to.equal('application/json');
+      expect(bidderRequest.options.contentType).to.equal('text/plain');
       expect(bidderRequest.data.requestId).to.equal('123');
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html');
       expect(bidderRequest.data.schain).to.deep.equal(REQUEST.ortb2.source.ext.schain);
@@ -118,21 +118,73 @@ describe('asterioBidAdapter', function () {
       });
     });
 
-    it('should allow endpoint override from bidder params', function () {
+    it('should use banner mediaTypes pos when params pos is absent', function () {
+      const bidderRequest = spec.buildRequests([{
+        ...REQUEST,
+        params: {
+          adUnitToken: REQUEST.params.adUnitToken
+        },
+        mediaTypes: {
+          banner: {
+            pos: 0
+          }
+        }
+      }], {
+        bidderRequestId: '123'
+      });
+
+      expect(bidderRequest.data.bids[0].pos).to.equal(0);
+    });
+
+    it('should use video mediaTypes pos when params pos and banner pos are absent', function () {
+      const bidderRequest = spec.buildRequests([{
+        ...REQUEST,
+        params: {
+          adUnitToken: REQUEST.params.adUnitToken
+        },
+        mediaTypes: {
+          video: {
+            pos: 3
+          }
+        }
+      }], {
+        bidderRequestId: '123'
+      });
+
+      expect(bidderRequest.data.bids[0].pos).to.equal(3);
+    });
+
+    it('should use params pos as an override', function () {
       const bidderRequest = spec.buildRequests([{
         ...REQUEST,
         params: {
           ...REQUEST.params,
-          endpoint: 'https://bidder.adsp-dev.asteriosoft.com/prebid/request'
+          pos: 2
+        },
+        mediaTypes: {
+          banner: {
+            pos: 1
+          },
+          video: {
+            pos: 3
+          }
         }
       }], {
-        bidderRequestId: '123',
-        refererInfo: {
-          page: 'http://test.com/path.html'
-        }
+        bidderRequestId: '123'
       });
 
-      expect(bidderRequest.url).to.equal('https://bidder.adsp-dev.asteriosoft.com/prebid/request');
+      expect(bidderRequest.data.bids[0].pos).to.equal(2);
+    });
+
+    it('should support flat size tuples', function () {
+      const bidderRequest = spec.buildRequests([{
+        ...REQUEST,
+        sizes: [640, 360]
+      }], {
+        bidderRequestId: '123'
+      });
+
+      expect(bidderRequest.data.bids[0].sizes).to.deep.equal([{ width: 640, height: 360 }]);
     });
   });
 
