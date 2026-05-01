@@ -54,16 +54,20 @@ export const spec = {
         url += '?' + query.join('&');
       }
 
-      // site
+      // site – params.site is our internal stored-request key, NOT the publisher domain
       const page =
-        params.site || (ortb2.site && ortb2.site.page) || '';
+        (ortb2.site && ortb2.site.page) ||
+        (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) ||
+        '';
       const domain =
-        params.domain || (ortb2.site && ortb2.site.domain) || page;
+        (ortb2.site && ortb2.site.domain) ||
+        (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.domain) ||
+        '';
 
       const site = {
-        id: domain || page || adUnitCode,
-        domain: domain || '',
-        page: page || '',
+        id: params.site || domain || adUnitCode,
+        domain: domain,
+        page: page,
       };
 
       // banner sizes from mediaTypes.banner.sizes
