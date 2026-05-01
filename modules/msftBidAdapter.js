@@ -146,11 +146,6 @@ const converter = ortbConverter({
       if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'instream') {
         extANData.require_asset_url = true;
       }
-
-      if (imp.video.plcmt) {
-        imp.video.placement = imp.video.plcmt;
-        delete imp.video.plcmt;
-      }
     }
 
     if (bidderParams) {
