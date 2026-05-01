@@ -2,7 +2,7 @@ import { loadExternalScript } from './adloader.js';
 import {
   logError, logWarn, logMessage
 } from './utils.js';
-import {getGlobal} from './prebidGlobal.js';
+import { getGlobal } from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
 const pbjsInstance = getGlobal();

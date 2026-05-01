@@ -101,7 +101,7 @@ describe('Timeout RTD submodule', () => {
       }
     });
 
-    const reqBidsConfigObj = {adUnits: [1, 2, 3]}
+    const reqBidsConfigObj = { adUnits: [1, 2, 3] }
     const addedTimeout = 400;
     const rules = {
       numAdUnits: {
@@ -122,7 +122,7 @@ describe('Timeout RTD submodule', () => {
       }
     });
 
-    const reqBidsConfigObj = {adUnits: [1, 2, 3]}
+    const reqBidsConfigObj = { adUnits: [1, 2, 3] }
     const addedTimeout = 400;
     const rules = {
       numAdUnits: {

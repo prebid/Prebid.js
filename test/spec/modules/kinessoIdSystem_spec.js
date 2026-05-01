@@ -1,10 +1,10 @@
 import sinon from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {kinessoIdSubmodule} from '../../../modules/kinessoIdSystem.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { kinessoIdSubmodule } from '../../../modules/kinessoIdSystem.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 import * as utils from '../../../src/utils.js';
 import * as ajaxLib from '../../../src/ajax.js';
-import {expect} from 'chai/index.mjs';
+import { expect } from 'chai/index.mjs';
 
 describe('kinesso ID', () => {
   describe('eid', () => {
@@ -51,7 +51,7 @@ describe('kinesso ID', () => {
     it('decodes a string id', function() {
       const val = 'abc';
       const result = kinessoIdSubmodule.decode(val);
-      expect(result).to.deep.equal({kpuid: val});
+      expect(result).to.deep.equal({ kpuid: val });
       expect(utils.logInfo.calledOnce).to.be.true;
     });
   });
@@ -72,28 +72,28 @@ describe('kinesso ID', () => {
     });
 
     it('requires numeric accountid', function() {
-      const res = kinessoIdSubmodule.getId({params: {accountid: 'bad'}});
+      const res = kinessoIdSubmodule.getId({ params: { accountid: 'bad' } });
       expect(res).to.be.undefined;
       expect(utils.logError.calledOnce).to.be.true;
       expect(ajaxStub.called).to.be.false;
     });
 
     it('skips on coppa requests', function() {
-      const res = kinessoIdSubmodule.getId({params: {accountid: 7}}, {coppa: true});
+      const res = kinessoIdSubmodule.getId({ params: { accountid: 7 } }, { coppa: true });
       expect(res).to.be.undefined;
       expect(utils.logInfo.calledOnce).to.be.true;
       expect(ajaxStub.called).to.be.false;
     });
 
     it('generates an id and posts to the endpoint', function() {
-      const consent = {gdpr: {gdprApplies: true, consentString: 'CONSENT'}, usp: '1NNN'};
-      const result = kinessoIdSubmodule.getId({params: {accountid: 10}}, consent);
+      const consent = { gdpr: { gdprApplies: true, consentString: 'CONSENT' }, usp: '1NNN' };
+      const result = kinessoIdSubmodule.getId({ params: { accountid: 10 } }, consent);
 
       expect(result).to.have.property('id').that.is.a('string').with.length(26);
       expect(ajaxStub.calledOnce).to.be.true;
       const [url,, payload, options] = ajaxStub.firstCall.args;
       expect(url).to.equal('https://id.knsso.com/id?accountid=10&us_privacy=1NNN&gdpr=1&gdpr_consent=CONSENT');
-      expect(options).to.deep.equal({method: 'POST', withCredentials: true});
+      expect(options).to.deep.equal({ method: 'POST', withCredentials: true });
       expect(JSON.parse(payload)).to.have.property('id', result.id);
     });
   });

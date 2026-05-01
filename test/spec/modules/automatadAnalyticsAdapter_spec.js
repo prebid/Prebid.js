@@ -1,7 +1,7 @@
 import * as events from 'src/events';
 import * as utils from 'src/utils.js';
 
-import spec, {self as exports} from 'modules/automatadAnalyticsAdapter.js';
+import spec, { self as exports } from 'modules/automatadAnalyticsAdapter.js';
 
 import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
@@ -154,47 +154,47 @@ describe('Automatad Analytics Adapter', () => {
     })
 
     it('Should call the auctionInitHandler when the auction init event is fired', () => {
-      events.emit(AUCTION_INIT, {type: AUCTION_INIT})
+      events.emit(AUCTION_INIT, { type: AUCTION_INIT })
       expect(global.window.atmtdAnalytics.auctionInitHandler.called).to.equal(true)
     });
 
     it('Should call the bidRequested when the bidRequested event is fired', () => {
-      events.emit(BID_REQUESTED, {type: BID_REQUESTED})
+      events.emit(BID_REQUESTED, { type: BID_REQUESTED })
       expect(global.window.atmtdAnalytics.bidRequestedHandler.called).to.equal(true)
     });
 
     it('Should call the bidRejected when the bidRejected event is fired', () => {
-      events.emit(BID_REJECTED, {type: BID_REJECTED})
+      events.emit(BID_REJECTED, { type: BID_REJECTED })
       expect(global.window.atmtdAnalytics.bidRejectedHandler.called).to.equal(true)
     });
 
     it('Should call the bidResponseHandler when the bidResponse event is fired', () => {
-      events.emit(BID_RESPONSE, {type: BID_RESPONSE})
+      events.emit(BID_RESPONSE, { type: BID_RESPONSE })
       expect(global.window.atmtdAnalytics.bidResponseHandler.called).to.equal(true)
     });
 
     it('Should call the bidderDoneHandler when the bidderDone event is fired', () => {
-      events.emit(BIDDER_DONE, {type: BIDDER_DONE})
+      events.emit(BIDDER_DONE, { type: BIDDER_DONE })
       expect(global.window.atmtdAnalytics.bidderDoneHandler.called).to.equal(true)
     });
 
     it('Should call the bidWonHandler when the bidWon event is fired', () => {
-      events.emit(BID_WON, {type: BID_WON})
+      events.emit(BID_WON, { type: BID_WON })
       expect(global.window.atmtdAnalytics.bidWonHandler.called).to.equal(true)
     });
 
     it('Should call the noBidHandler when the noBid event is fired', () => {
-      events.emit(NO_BID, {type: NO_BID})
+      events.emit(NO_BID, { type: NO_BID })
       expect(global.window.atmtdAnalytics.noBidHandler.called).to.equal(true)
     });
 
     it('Should call the bidTimeoutHandler when the bidTimeout event is fired', () => {
-      events.emit(BID_TIMEOUT, {type: BID_TIMEOUT})
+      events.emit(BID_TIMEOUT, { type: BID_TIMEOUT })
       expect(global.window.atmtdAnalytics.bidderTimeoutHandler.called).to.equal(true)
     });
 
     it('Should call the auctionDebugHandler when the auctionDebug event is fired', () => {
-      events.emit(AUCTION_DEBUG, {type: AUCTION_DEBUG})
+      events.emit(AUCTION_DEBUG, { type: AUCTION_DEBUG })
       expect(global.window.atmtdAnalytics.auctionDebugHandler.called).to.equal(true)
     });
   });
@@ -223,7 +223,7 @@ describe('Automatad Analytics Adapter', () => {
     })
 
     it('Should push to the que when the auctionInit event is fired', () => {
-      events.emit(AUCTION_INIT, {type: AUCTION_INIT})
+      events.emit(AUCTION_INIT, { type: AUCTION_INIT })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -232,7 +232,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the bidResponse event is fired', () => {
-      events.emit(BID_RESPONSE, {type: BID_RESPONSE})
+      events.emit(BID_RESPONSE, { type: BID_RESPONSE })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -241,7 +241,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the bidRequested event is fired', () => {
-      events.emit(BID_REQUESTED, {type: BID_REQUESTED})
+      events.emit(BID_REQUESTED, { type: BID_REQUESTED })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -250,7 +250,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the bidRejected event is fired', () => {
-      events.emit(BID_REJECTED, {type: BID_REJECTED})
+      events.emit(BID_REJECTED, { type: BID_REJECTED })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -259,7 +259,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the bidderDone event is fired', () => {
-      events.emit(BIDDER_DONE, {type: BIDDER_DONE})
+      events.emit(BIDDER_DONE, { type: BIDDER_DONE })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -268,7 +268,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the bidWon event is fired', () => {
-      events.emit(BID_WON, {type: BID_WON})
+      events.emit(BID_WON, { type: BID_WON })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -277,7 +277,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the noBid event is fired', () => {
-      events.emit(NO_BID, {type: NO_BID})
+      events.emit(NO_BID, { type: NO_BID })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -286,7 +286,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the auctionDebug is fired', () => {
-      events.emit(AUCTION_DEBUG, {type: AUCTION_DEBUG})
+      events.emit(AUCTION_DEBUG, { type: AUCTION_DEBUG })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -295,7 +295,7 @@ describe('Automatad Analytics Adapter', () => {
     });
 
     it('Should push to the que when the bidderTimeout event is fired', () => {
-      events.emit(BID_TIMEOUT, {type: BID_TIMEOUT})
+      events.emit(BID_TIMEOUT, { type: BID_TIMEOUT })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -331,7 +331,7 @@ describe('Automatad Analytics Adapter', () => {
     })
 
     it('Should push to the que when the auctionInit event is fired and push to the que even after SDK has loaded after auctionInit event', () => {
-      events.emit(BID_RESPONSE, {type: BID_RESPONSE})
+      events.emit(BID_RESPONSE, { type: BID_RESPONSE })
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
@@ -340,7 +340,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.qBeingUsed).to.equal(true)
       expect(exports.qTraversalComplete).to.equal(undefined)
       global.window.atmtdAnalytics = obj
-      events.emit(BID_RESPONSE, {type: BID_RESPONSE})
+      events.emit(BID_RESPONSE, { type: BID_RESPONSE })
       expect(exports.__atmtdAnalyticsQueue.push.calledTwice).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[1]).to.have.lengthOf(2)
@@ -352,8 +352,8 @@ describe('Automatad Analytics Adapter', () => {
 
     it('Should push to the que when the auctionInit event is fired and push to the analytics adapter handler after the que is processed', () => {
       expect(exports.qBeingUsed).to.equal(undefined)
-      events.emit(AUCTION_INIT, {type: AUCTION_INIT})
-      global.window.atmtdAnalytics = {...obj}
+      events.emit(AUCTION_INIT, { type: AUCTION_INIT })
+      global.window.atmtdAnalytics = { ...obj }
       const handlers = global.window.atmtdAnalytics
       Object.keys(handlers).forEach((handler) => global.window.atmtdAnalytics[handler].resetHistory())
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
@@ -367,13 +367,13 @@ describe('Automatad Analytics Adapter', () => {
       clock.tick(2000)
       expect(exports.qBeingUsed).to.equal(true)
       expect(exports.qTraversalComplete).to.equal(undefined)
-      events.emit(NO_BID, {type: NO_BID})
+      events.emit(NO_BID, { type: NO_BID })
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue.push.calledTwice).to.equal(true)
       clock.tick(1500)
       expect(exports.qBeingUsed).to.equal(false)
       expect(exports.qTraversalComplete).to.equal(true)
-      events.emit(BID_RESPONSE, {type: BID_RESPONSE})
+      events.emit(BID_RESPONSE, { type: BID_RESPONSE })
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue.push.calledTwice).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue.push.calledThrice).to.equal(false)
@@ -419,7 +419,7 @@ describe('Automatad Analytics Adapter', () => {
     it('Should retry processing auctionInit in certain intervals', () => {
       expect(exports.queuePointer).to.equal(0)
       expect(exports.retryCount).to.equal(0)
-      const que = [[AUCTION_INIT, {type: AUCTION_INIT}]]
+      const que = [[AUCTION_INIT, { type: AUCTION_INIT }]]
       exports.__atmtdAnalyticsQueue.push(que[0])
       exports.processEvents()
       expect(exports.prettyLog.getCall(0).args[0]).to.equal('status')
@@ -451,7 +451,7 @@ describe('Automatad Analytics Adapter', () => {
     it('Should retry processing slotRenderEnded in certain intervals', () => {
       expect(exports.queuePointer).to.equal(0)
       expect(exports.retryCount).to.equal(0)
-      const que = [['slotRenderEnded', {type: 'slotRenderEnded'}]]
+      const que = [['slotRenderEnded', { type: 'slotRenderEnded' }]]
       exports.__atmtdAnalyticsQueue.push(que[0])
       exports.processEvents()
       expect(exports.prettyLog.getCall(0).args[0]).to.equal('status')
@@ -483,7 +483,7 @@ describe('Automatad Analytics Adapter', () => {
     it('Should retry processing impressionViewable in certain intervals', () => {
       expect(exports.queuePointer).to.equal(0)
       expect(exports.retryCount).to.equal(0)
-      const que = [['impressionViewable', {type: 'impressionViewable'}]]
+      const que = [['impressionViewable', { type: 'impressionViewable' }]]
       exports.__atmtdAnalyticsQueue.push(que[0])
       exports.processEvents()
       expect(exports.prettyLog.getCall(0).args[0]).to.equal('status')
@@ -545,17 +545,17 @@ describe('Automatad Analytics Adapter', () => {
       exports.retryCount = 0;
       exports.queuePointer = 0;
       exports.__atmtdAnalyticsQueue = [
-        [AUCTION_INIT, {type: AUCTION_INIT}],
-        [BID_RESPONSE, {type: BID_RESPONSE}],
-        [BID_REQUESTED, {type: BID_REQUESTED}],
-        [BID_REJECTED, {type: BID_REJECTED}],
-        [NO_BID, {type: NO_BID}],
-        [BID_WON, {type: BID_WON}],
-        [BIDDER_DONE, {type: BIDDER_DONE}],
-        [AUCTION_DEBUG, {type: AUCTION_DEBUG}],
-        [BID_TIMEOUT, {type: BID_TIMEOUT}],
-        ['slotRenderEnded', {type: 'slotRenderEnded'}],
-        ['impressionViewable', {type: 'impressionViewable'}]
+        [AUCTION_INIT, { type: AUCTION_INIT }],
+        [BID_RESPONSE, { type: BID_RESPONSE }],
+        [BID_REQUESTED, { type: BID_REQUESTED }],
+        [BID_REJECTED, { type: BID_REJECTED }],
+        [NO_BID, { type: NO_BID }],
+        [BID_WON, { type: BID_WON }],
+        [BIDDER_DONE, { type: BIDDER_DONE }],
+        [AUCTION_DEBUG, { type: AUCTION_DEBUG }],
+        [BID_TIMEOUT, { type: BID_TIMEOUT }],
+        ['slotRenderEnded', { type: 'slotRenderEnded' }],
+        ['impressionViewable', { type: 'impressionViewable' }]
       ]
     });
     afterEach(() => {

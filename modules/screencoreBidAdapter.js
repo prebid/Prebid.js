@@ -25,7 +25,8 @@ const REGION_SUBDOMAIN_SUFFIX = {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const region = getTimeZone().split('/')[0];
+    const tz = getTimeZone();
+    const region = tz.split('/')[0];
 
     switch (region) {
       case 'Asia':
@@ -40,6 +41,8 @@ function getRegionSubdomainSuffix() {
       case 'Arctic':
         return REGION_SUBDOMAIN_SUFFIX['EU'];
       case 'America':
+      case 'US':
+      case 'Canada':
         return REGION_SUBDOMAIN_SUFFIX['US'];
       default:
         return REGION_SUBDOMAIN_SUFFIX['EU'];
@@ -55,11 +58,10 @@ export function createDomain() {
   return `https://${subDomain}.screencore.io`;
 }
 
-const AD_URL = `${createDomain()}/prebid`;
-
 const placementProcessingFunction = buildPlacementProcessingFunction();
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
+  const AD_URL = `${createDomain()}/pbjs`;
   return buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction });
 };
 

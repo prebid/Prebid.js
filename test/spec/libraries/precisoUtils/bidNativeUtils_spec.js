@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import { NATIVE } from '../../../../src/mediaTypes.js';
 import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils.js';
 

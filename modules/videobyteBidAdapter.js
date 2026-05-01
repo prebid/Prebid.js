@@ -1,6 +1,6 @@
 import { logMessage, logError, deepAccess, isFn, isPlainObject, isStr, isNumber, isArray, deepSetValue } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -60,7 +60,7 @@ export const spec = {
       return;
     }
     return bidRequests.map(bidRequest => {
-      const {params} = bidRequest;
+      const { params } = bidRequest;
       let pubId = params.pubId;
       const placementId = params.placementId;
       const nId = params.nid;
@@ -164,7 +164,7 @@ export const spec = {
 
 // BUILD REQUESTS: VIDEO
 function buildRequestData(bidRequest, bidderRequest) {
-  const {params} = bidRequest;
+  const { params } = bidRequest;
 
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
@@ -202,7 +202,7 @@ function buildRequestData(bidRequest, bidderRequest) {
     floorData = bidRequest.getFloor(bidFloorRequest);
   } else {
     if (params.bidfloor) {
-      floorData = {floor: params.bidfloor, currency: params.currency || 'USD'};
+      floorData = { floor: params.bidfloor, currency: params.currency || 'USD' };
     }
   }
 

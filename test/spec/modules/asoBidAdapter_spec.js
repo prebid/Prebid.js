@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec} from 'modules/asoBidAdapter.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
-import {OUTSTREAM} from 'src/video.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {parseUrl} from '../../../src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/asoBidAdapter.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { OUTSTREAM } from 'src/video.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { parseUrl } from '../../../src/utils.js';
 
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
@@ -381,8 +381,8 @@ describe('Adserver.Online bidding adapter', function () {
               crid: 123,
               adm: JSON.stringify({
                 assets: [
-                  {id: 0, title: {text: 'Title'}},
-                  {id: 1, img: {type: 3, url: 'https://img'}},
+                  { id: 0, title: { text: 'Title' } },
+                  { id: 1, img: { type: 3, url: 'https://img' } },
                 ],
               }),
               adomain: ['example.com'],

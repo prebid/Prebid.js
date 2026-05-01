@@ -33,8 +33,8 @@ export function metadataRepository() {
       if (components.length === 0) return null;
       const disclosures = Object.fromEntries(
         components
-          .filter(({disclosureURL}) => disclosureURL != null)
-          .map(({disclosureURL}) => [disclosureURL, repo.getStorageDisclosure(disclosureURL)])
+          .filter(({ disclosureURL }) => disclosureURL != null)
+          .map(({ disclosureURL }) => [disclosureURL, repo.getStorageDisclosure(disclosureURL)])
       )
       return {
         disclosures,

@@ -1,6 +1,6 @@
-import {checkParamDataType, spec} from '../../../modules/zmaticooBidAdapter.js'
-import utils, {deepClone} from '../../../src/utils.js';
-import {expect} from 'chai';
+import { checkParamDataType, spec } from '../../../modules/zmaticooBidAdapter.js'
+import utils, { deepClone } from '../../../src/utils.js';
+import { expect } from 'chai';
 
 describe('zMaticoo Bidder Adapter', function () {
   const bannerRequest = [{

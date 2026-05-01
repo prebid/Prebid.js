@@ -330,23 +330,18 @@ function fillEidsData(result) {
 function prepareData(data, result) {
   const adTypeValue = data.adType || data.mediaType;
 
-  if (data.bidderCode) {
-    result.bidderCode = data.bidderCode;
-  }
-  if (data.cpm) {
-    result.cpm = data.cpm;
-  }
-  if (data.currency) {
-    result.currency = data.currency;
-  }
-  if (data.originalCpm) {
-    result.originalCpm = data.originalCpm;
-  }
-  if (data.originalCurrency) {
-    result.originalCurrency = data.originalCurrency;
-  }
-  if (data.status) {
-    result.status = data.status;
+  if (data.bidderCode) result.bidderCode = data.bidderCode;
+  if (data.cpm) result.cpm = data.cpm;
+  if (data.currency) result.currency = data.currency;
+  if (data.originalCpm) result.originalCpm = data.originalCpm;
+  if (data.originalCurrency) result.originalCurrency = data.originalCurrency;
+  if (data.status) result.status = data.status;
+  if (data.size) result.size = data.size;
+  if (typeof data.pos === 'number') {
+    result.pos = data.pos;
+  } else if (data.adUnitCode) {
+    const pos = getUnitPosition(pbjs, data.adUnitCode);
+    if (typeof pos === 'number') result.pos = pos;
   }
   if (data.size) {
     result.size = data.size;
@@ -360,9 +355,7 @@ function prepareData(data, result) {
 
   result.prebidAuctionId = data.auctionId || data.prebidAuctionId;
 
-  if (adTypeValue) {
-    result[PARAMS_NAMES.adType] = adTypeValue;
-  }
+  if (adTypeValue) result[PARAMS_NAMES.adType] = adTypeValue;
 
   switch (iiqAnalyticsAnalyticsAdapter.initOptions.adUnitConfig) {
     case 1:
@@ -387,7 +380,8 @@ function prepareData(data, result) {
   }
 
   result.biddingPlatformId = data.biddingPlatformId || 1;
-  result.partnerAuctionId = 'BW';
+
+  if (data?.partnerAuctionId) result.partnerAuctionId = data.partnerAuctionId;
 }
 
 function extractPlacementId(data) {
@@ -408,7 +402,6 @@ function getDefaultDataObject() {
   return {
     inbbl: false,
     pbjsver: prebidVersion,
-    partnerAuctionId: 'BW',
     reportSource: 'pbjs',
     jsversion: VERSION,
     partnerId: -1,
@@ -424,6 +417,7 @@ function constructFullUrl(data) {
   const reportMethod = iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod;
   const partnerData = window[identityGlobalName]?.partnerData;
   const currentBrowserLowerCase = detectBrowser();
+  const partnerAuctionId = data?.partnerAuctionId;
   data = btoa(JSON.stringify(data));
   report.push(data);
 
@@ -433,8 +427,13 @@ function constructFullUrl(data) {
   let url =
         baseUrl +
         '?pid=' +
-        iiqAnalyticsAnalyticsAdapter.initOptions.partner +
-        '&mct=1' +
+        iiqAnalyticsAnalyticsAdapter.initOptions.partner;
+  if (partnerAuctionId) {
+    url +=
+          '&paucid=' +
+          encodeURIComponent(JSON.stringify([partnerAuctionId]));
+  }
+  url += '&mct=1' +
         (iiqAnalyticsAnalyticsAdapter.initOptions?.fpid
           ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid)
           : '') +
@@ -449,20 +448,25 @@ function constructFullUrl(data) {
         (cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
         (cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
         (cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1' : '&gdpr=0');
+
   url = appendSPData(url, partnerData);
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
 
-  if (reportMethod === 'POST') {
-    return { url, method: 'POST', payload: JSON.stringify(report) };
+  if (reportMethod !== 'POST') {
+    url += '&payload=' + encodeURIComponent(JSON.stringify(report));
   }
-  url += '&payload=' + encodeURIComponent(JSON.stringify(report));
+
   url = handleAdditionalParams(
     currentBrowserLowerCase,
     url,
     2,
     iiqAnalyticsAnalyticsAdapter.initOptions.additionalParams
   );
-  return { url, method: 'GET' };
+
+  if (reportMethod === 'POST') {
+    return { url, method: 'POST', payload: JSON.stringify(report) };
+  }
+  return { url };
 }
 
 iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapter.enableAnalytics;

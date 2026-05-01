@@ -650,7 +650,7 @@ describe('sizeMappingV2', function () {
             },
             native: {}
           },
-          bids: [{bidder: 'appnexus', params: 1234}]
+          bids: [{ bidder: 'appnexus', params: 1234 }]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -672,7 +672,7 @@ describe('sizeMappingV2', function () {
             },
             native: {}
           },
-          bids: [{bidder: 'appnexus', params: 1234}]
+          bids: [{ bidder: 'appnexus', params: 1234 }]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -691,7 +691,7 @@ describe('sizeMappingV2', function () {
           mediaTypes: {
             native: {}
           },
-          bids: [{bidder: 'appnexus', params: 1234}]
+          bids: [{ bidder: 'appnexus', params: 1234 }]
         }];
 
         checkAdUnitSetupHook(adUnit);
@@ -1456,7 +1456,7 @@ describe('sizeMappingV2', function () {
       adUnitDetail.transformedMediaTypes.native = {};
       const actual = setupAdUnitMediaTypes(adUnits, [])[0];
       const bids = bidderMap(actual);
-      expect(bids.rubicon.mediaTypes).to.deep.equal({banner: adUnitDetail.transformedMediaTypes.banner});
+      expect(bids.rubicon.mediaTypes).to.deep.equal({ banner: adUnitDetail.transformedMediaTypes.banner });
     });
   });
 });

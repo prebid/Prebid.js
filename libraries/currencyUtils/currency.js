@@ -1,5 +1,5 @@
-import {getGlobal} from '../../src/prebidGlobal.js';
-import {keyCompare} from '../../src/utils/reducers.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import { keyCompare } from '../../src/utils/reducers.js';
 
 /**
  * Attempt to convert `amount` from the currency `fromCur` to the currency `toCur`.

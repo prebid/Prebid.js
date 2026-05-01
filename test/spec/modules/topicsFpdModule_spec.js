@@ -8,12 +8,12 @@ import {
   reset,
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
-import {config} from 'src/config.js';
-import {deepClone, safeJSONParse} from '../../../src/utils.js';
-import {getCoreStorageManager} from 'src/storageManager.js';
+import { config } from 'src/config.js';
+import { deepClone, safeJSONParse } from '../../../src/utils.js';
+import { getCoreStorageManager } from 'src/storageManager.js';
 import * as activities from '../../../src/activities/rules.js';
-import {registerActivityControl} from '../../../src/activities/rules.js';
-import {ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 
 describe('topics', () => {
   let unregister, enrichUfpdRule;
@@ -25,7 +25,7 @@ describe('topics', () => {
   });
 
   beforeEach(() => {
-    enrichUfpdRule = () => ({allow: true});
+    enrichUfpdRule = () => ({ allow: true });
     reset();
   });
 
@@ -61,7 +61,7 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'}
+              { id: '123' }
             ]
           }
         ]
@@ -76,8 +76,8 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'},
-              {id: '321'}
+              { id: '123' },
+              { id: '321' }
             ]
           }
         ]
@@ -92,8 +92,8 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '1'},
-              {id: '2'}
+              { id: '1' },
+              { id: '2' }
             ]
           },
           {
@@ -102,7 +102,7 @@ describe('topics', () => {
               segclass: 'm2'
             },
             segment: [
-              {id: '3'}
+              { id: '3' }
             ]
           }
         ]
@@ -117,7 +117,7 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'}
+              { id: '123' }
             ]
           }
         ]
@@ -140,7 +140,7 @@ describe('topics', () => {
               segclass: 'm1'
             },
             segment: [
-              {id: '123'}
+              { id: '123' }
             ]
           },
           {
@@ -149,7 +149,7 @@ describe('topics', () => {
               segclass: 'm1',
             },
             segment: [
-              {id: '321'}
+              { id: '321' }
             ]
           },
           {
@@ -158,12 +158,12 @@ describe('topics', () => {
               segclass: 'm2'
             },
             segment: [
-              {id: '213'}
+              { id: '213' }
             ]
           }
         ]
       }
-    ].forEach(({t, topics, expected, taxonomies}) => {
+    ].forEach(({ t, topics, expected, taxonomies }) => {
       describe(`on ${t}`, () => {
         it('should convert topics to user.data segments correctly', () => {
           const actual = getTopicsData('mockName', topics, taxonomies);
@@ -231,17 +231,17 @@ describe('topics', () => {
     const mockData = [
       {
         name: 'domain',
-        segment: [{id: 123}]
+        segment: [{ id: 123 }]
       },
       {
         name: 'domain',
-        segment: [{id: 321}]
+        segment: [{ id: 321 }]
       }
     ];
 
     it('should add topics data', () => {
-      return processFpd({}, {global: {}}, {data: Promise.resolve(mockData)})
-        .then(({global}) => {
+      return processFpd({}, { global: {} }, { data: Promise.resolve(mockData) })
+        .then(({ global }) => {
           expect(global.user.data).to.eql(mockData);
         });
     });
@@ -250,18 +250,18 @@ describe('topics', () => {
       const global = {
         user: {
           data: [
-            {name: 'preexisting'},
+            { name: 'preexisting' },
           ]
         }
       };
-      return processFpd({}, {global: deepClone(global)}, {data: Promise.resolve(mockData)})
+      return processFpd({}, { global: deepClone(global) }, { data: Promise.resolve(mockData) })
         .then((data) => {
           expect(data.global.user.data).to.eql(global.user.data.concat(mockData));
         });
     });
 
     it('should not modify fpd when there is no data', () => {
-      return processFpd({}, {global: {}}, {data: Promise.resolve([])})
+      return processFpd({}, { global: {} }, { data: Promise.resolve([]) })
         .then((data) => {
           expect(data.global).to.eql({});
         });
@@ -304,9 +304,9 @@ describe('topics', () => {
     });
 
     it('does not load frames when accessDevice is not allowed', () => {
-      enrichUfpdRule = ({component}) => {
+      enrichUfpdRule = ({ component }) => {
         if (component === 'bidder.mockBidder') {
-          return {allow: false}
+          return { allow: false }
         }
       }
       const doc = {
@@ -358,7 +358,7 @@ describe('topics', () => {
       });
 
       it('should return no segments when not configured', () => {
-        config.setConfig({userSync: {}});
+        config.setConfig({ userSync: {} });
         expect(getCachedTopics()).to.eql([]);
       })
 
@@ -367,8 +367,8 @@ describe('topics', () => {
           const storedSegments = JSON.stringify(
             [['pubmatic', {
               '2206021246': {
-                'ext': {'segtax': 600, 'segclass': '2206021246'},
-                'segment': [{'id': '243'}, {'id': '265'}],
+                'ext': { 'segtax': 600, 'segclass': '2206021246' },
+                'segment': [{ 'id': '243' }, { 'id': '265' }],
                 'name': 'ads.pubmatic.com'
               },
               'lastUpdated': new Date().getTime()
@@ -393,7 +393,7 @@ describe('topics', () => {
         });
 
         it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
-          enrichUfpdRule = (params) => ({allow: params.component !== 'bidder.pubmatic'})
+          enrichUfpdRule = (params) => ({ allow: params.component !== 'bidder.pubmatic' })
           expect(getCachedTopics()).to.eql([]);
         });
       });
@@ -429,7 +429,7 @@ describe('topics', () => {
           featurePolicy: {
             allowsFeature() { return true }
           },
-          createElement: sinon.stub().callsFake(() => ({style: {}})),
+          createElement: sinon.stub().callsFake(() => ({ style: {} })),
           documentElement: {
             appendChild() {}
           }
@@ -524,8 +524,8 @@ describe('topics', () => {
       const storedSegments = JSON.stringify(
         [['pubmatic', {
           '2206021246': {
-            'ext': {'segtax': 600, 'segclass': '2206021246'},
-            'segment': [{'id': '243'}, {'id': '265'}],
+            'ext': { 'segtax': 600, 'segclass': '2206021246' },
+            'segment': [{ 'id': '243' }, { 'id': '265' }],
             'name': 'ads.pubmatic.com'
           },
           'lastUpdated': new Date().getTime()

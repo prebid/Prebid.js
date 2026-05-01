@@ -1,8 +1,8 @@
-import asteriobidAnalytics, {storage} from 'modules/asteriobidAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import asteriobidAnalytics, { storage } from 'modules/asteriobidAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 
 const events = require('src/events');

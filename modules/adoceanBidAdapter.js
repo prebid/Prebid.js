@@ -54,17 +54,6 @@ function buildRequest(bid, gdprConsent) {
       }
       payload.spots = 1;
     }
-    if (bid.mediaTypes.video.context === 'adpod') {
-      const durationRangeSec = bid.mediaTypes.video.durationRangeSec;
-      if (!bid.mediaTypes.video.adPodDurationSec || !isArray(durationRangeSec) || durationRangeSec.length === 0) {
-        return;
-      }
-      const spots = calculateAdPodSpotsNumber(bid.mediaTypes.video.adPodDurationSec, bid.mediaTypes.video.durationRangeSec);
-      const maxDuration = Math.max(...durationRangeSec);
-      payload.dur = bid.mediaTypes.video.adPodDurationSec;
-      payload.maxdur = maxDuration;
-      payload.spots = spots;
-    }
   } else if (bid.mediaTypes.banner) {
     payload.aosize = parseSizesInput(bid.mediaTypes.banner.sizes).join(',');
   }
@@ -75,12 +64,6 @@ function buildRequest(bid, gdprConsent) {
     data: '',
     bidIdMap: bidIdMap
   };
-}
-
-function calculateAdPodSpotsNumber(adPodDurationSec, durationRangeSec) {
-  const minAllowedDuration = Math.min(...durationRangeSec);
-  const numberOfSpots = Math.floor(adPodDurationSec / minAllowedDuration);
-  return numberOfSpots;
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
@@ -133,9 +116,6 @@ export const spec = {
     if (bid.mediaTypes.video) {
       if (bid.mediaTypes.video.context === 'instream') {
         return true;
-      }
-      if (bid.mediaTypes.video.context === 'adpod') {
-        return !bid.mediaTypes.video.requireExactDuration;
       }
     }
     return false;

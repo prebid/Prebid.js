@@ -1,6 +1,6 @@
-import {hook} from '../hook.js';
-import {getRefererInfo, parseDomain} from '../refererDetection.js';
-import {findRootDomain} from './rootDomain.js';
+import { hook } from '../hook.js';
+import { getRefererInfo, parseDomain } from '../refererDetection.js';
+import { findRootDomain } from './rootDomain.js';
 import {
   deepSetValue,
   deepAccess,
@@ -12,15 +12,10 @@ import {
   mergeDeep,
   memoize
 } from '../utils.js';
-import { getDNT } from '../../libraries/dnt/index.js';
-import {config} from '../config.js';
-import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
-import {PbPromise} from '../utils/promise.js';
-import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
-import {isActivityAllowed} from '../activities/rules.js';
-import {activityParams} from '../activities/activityParams.js';
-import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
-import {MODULE_TYPE_PREBID} from '../activities/modules.js';
+import { config } from '../config.js';
+import { getHighEntropySUA, getLowEntropySUA } from './sua.js';
+import { PbPromise } from '../utils/promise.js';
+import { CLIENT_SECTIONS, clientSectionChecker, hasSection } from './oneClient.js';
 import { getViewportSize } from '../../libraries/viewport/viewport.js';
 
 export const dep = {
@@ -68,10 +63,10 @@ declare module '../config' {
  * @returns {Promise<Object>} - A promise that resolves to an enriched ortb2 object.
  */
 export const enrichFPD = hook('sync', (fpd) => {
-  const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
+  const promArr = [fpd, getSUA().catch(() => null)];
 
   return PbPromise.all(promArr)
-    .then(([ortb2, sua, cdep]) => {
+    .then(([ortb2, sua]) => {
       const ri = dep.getRefererInfo();
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments(ortb2, ri);
@@ -82,13 +77,6 @@ export const enrichFPD = hook('sync', (fpd) => {
 
       if (sua) {
         deepSetValue(ortb2, 'device.sua', Object.assign({}, sua, ortb2.device.sua));
-      }
-
-      if (cdep) {
-        const ext = {
-          cdep
-        }
-        deepSetValue(ortb2, 'device.ext', Object.assign({}, ext, ortb2.device.ext));
       }
 
       const documentLang = dep.getDocument().documentElement.lang;
@@ -131,10 +119,6 @@ function removeUndef(obj) {
   return getDefinedParams(obj, Object.keys(obj))
 }
 
-function tryToGetCdepLabel() {
-  return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && (navigator.cookieDeprecationLabel as any).getValue());
-}
-
 const ENRICHMENTS = {
   site(ortb2, ri) {
     if (CLIENT_SECTIONS.filter(p => p !== 'site').some(hasSection.bind(null, ortb2))) {
@@ -153,12 +137,11 @@ const ENRICHMENTS = {
       const h = getWinDimensions().screen.height;
 
       // vpw and vph are the viewport dimensions of the browser window
-      const {width: vpw, height: vph} = getViewportSize();
+      const { width: vpw, height: vph } = getViewportSize();
 
       const device = {
         w,
         h,
-        dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
         ext: {
@@ -220,7 +203,7 @@ export const getMetaTagKeywords = memoize(() => {
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
 // section is appropriate
 function clientEnrichment(ortb2, ri) {
-  const domain = parseDomain(ri.page, {noLeadingWww: true});
+  const domain = parseDomain(ri.page, { noLeadingWww: true });
   const keywords = new Set();
   if (config.getConfig('firstPartyData.keywords.meta') ?? true) {
     (getMetaTagKeywords() ?? []).forEach(key => keywords.add(key));

@@ -115,9 +115,9 @@ export const fabrickIdSubmodule = {
               callback();
             }
           };
-          ajax(url, callbacks, null, {method: 'GET', withCredentials: true});
+          ajax(url, callbacks, null, { method: 'GET', withCredentials: true });
         };
-        return {callback: resp};
+        return { callback: resp };
       } catch (e) {
         logError(`fabrickIdSystem encountered an error`, e);
       }

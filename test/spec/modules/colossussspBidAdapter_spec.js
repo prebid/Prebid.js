@@ -14,7 +14,8 @@ describe('ColossussspAdapter', function () {
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     mediaTypes: {
       banner: {
-        sizes: [[300, 250]]
+        sizes: [[300, 250]],
+        battr: [1, 3]
       }
     },
     ortb2Imp: {
@@ -193,7 +194,7 @@ describe('ColossussspAdapter', function () {
       const placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         const placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid');
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid', 'battr');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.groupId).to.be.a('number');
@@ -203,6 +204,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.floor).to.be.an('object');
         expect(placement.gpid).to.be.an('string');
         expect(placement.tid).to.be.an('string');
+        expect(placement.battr).to.deep.equal([1, 3]);
       }
     });
 
@@ -216,7 +218,8 @@ describe('ColossussspAdapter', function () {
           video: {
             playerSize: [[300, 300]],
             minduration: 5,
-            maxduration: 60
+            maxduration: 60,
+            battr: [1, 3]
           }
         }
       }
@@ -236,7 +239,7 @@ describe('ColossussspAdapter', function () {
         const placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
-          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid'
+          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid', 'battr'
         );
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
@@ -447,7 +450,7 @@ describe('ColossussspAdapter', function () {
   })
 
   describe('getUserSyncs', function () {
-    const userSync = spec.getUserSyncs({}, {}, { consentString: 'xxx', gdprApplies: 1 }, { consentString: '1YN-' });
+    const userSync = spec.getUserSyncs({ pixelEnabled: true }, {}, { consentString: 'xxx', gdprApplies: 1 }, '1YN-');
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;

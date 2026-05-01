@@ -1,8 +1,8 @@
-import {deepAccess, deepSetValue, isArray, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js';
+import { deepAccess, deepSetValue, isArray, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 
 const ENDPOINT = 'https://exchange.ops.co/openrtb2/auction';
 const BIDDER_CODE = 'opsco';
@@ -12,10 +12,10 @@ const DEFAULT_NET_REVENUE = true;
 
 const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
-    const {bidRequests} = context;
+    const { bidRequests } = context;
     const data = buildRequest(imps, bidderRequest, context);
 
-    const {publisherId, siteId} = bidRequests[0].params;
+    const { publisherId, siteId } = bidRequests[0].params;
 
     data.site = data.site || {};
     data.site.id = siteId;
@@ -120,7 +120,7 @@ export const spec = {
       creativeId: bid.crid,
       netRevenue: DEFAULT_NET_REVENUE,
       currency: DEFAULT_CURRENCY,
-      meta: {advertiserDomains: bid?.adomain || []},
+      meta: { advertiserDomains: bid?.adomain || [] },
       mediaType: bid.mediaType || bid.mtype
     })) || [];
 
@@ -144,7 +144,7 @@ export const spec = {
         syncDetails.forEach(syncDetail => {
           const type = syncDetail.type === 'iframe' ? 'iframe' : 'image';
           if ((type === 'iframe' && syncOptions.iframeEnabled) || (type === 'image' && syncOptions.pixelEnabled)) {
-            syncs.push({type, url: syncDetail.url});
+            syncs.push({ type, url: syncDetail.url });
           }
         });
       }

@@ -7,7 +7,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { config as prebidConfig } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 
 const ANALYTICS_TYPE = 'endpoint';
 const URL = 'https://wba.liadm.com/analytic-events';
@@ -19,7 +19,7 @@ const INTEGRATION_ID = getGlobalVarName();
 let partnerIdFromUserIdConfig;
 let sendAuctionInitEvents;
 
-const liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
+const liAnalytics = Object.assign(adapter({ URL, ANALYTICS_TYPE }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
@@ -66,7 +66,7 @@ function handleAuctionInitEvent(auctionInitEvent) {
 }
 
 function handleBidWonEvent(bidWonEvent) {
-  const auction = auctionManager.index.getAuction({auctionId: bidWonEvent.auctionId});
+  const auction = auctionManager.index.getAuction({ auctionId: bidWonEvent.auctionId });
   const liveIntentIdsPresent = checkLiveIntentIdsPresent(auction?.getBidRequests())
 
   // This is for old integration that enable or disable the user id module

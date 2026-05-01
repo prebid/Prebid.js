@@ -1,14 +1,14 @@
-import {getBidIdParameter, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getBidIdParameter, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {isWebdriverEnabled} from '../libraries/webdriver/webdriver.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
 const BIDDER_CODE = 'trion';
 const BASE_KEY = '_trion_';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -55,7 +55,7 @@ export const spec = {
         bid.currency = result.currency;
         bid.netRevenue = result.netRevenue;
         if (result.adomain) {
-          bid.meta = {advertiserDomains: result.adomain};
+          bid.meta = { advertiserDomains: result.adomain };
         }
         bidResponses.push(bid);
       }

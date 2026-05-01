@@ -13,7 +13,7 @@ describe('Azerion Edge RTD submodule', function () {
   const bidders = ['appnexus', 'improvedigital'];
   const process = { key: 'value' };
   const dataProvider = { name: 'azerionedge', waitForIt: true };
-  const userConsent = {gdpr: {gdprApplies: 'gdpr-applies', consentString: 'consent-string'}, usp: 'usp'};
+  const userConsent = { gdpr: { gdprApplies: 'gdpr-applies', consentString: 'consent-string' }, usp: 'usp' };
 
   const resetAll = () => {
     window.azerionPublisherAudiences.resetHistory();
@@ -65,7 +65,7 @@ describe('Azerion Edge RTD submodule', function () {
       ['uspConsent', userConsent.usp],
     ].forEach(([key, value]) => {
       it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
-        expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
+        expect(window.azerionPublisherAudiences.args[0][0]).to.include({ [key]: value });
       });
     });
 
@@ -104,7 +104,7 @@ describe('Azerion Edge RTD submodule', function () {
         ...Object.entries(process),
       ].forEach(([key, value]) => {
         it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
-          expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
+          expect(window.azerionPublisherAudiences.args[0][0]).to.include({ [key]: value });
         });
       });
     });

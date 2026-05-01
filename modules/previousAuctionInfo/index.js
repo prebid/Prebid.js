@@ -1,8 +1,8 @@
-import {on as onEvent, off as offEvent} from '../../src/events.js';
+import { on as onEvent, off as offEvent } from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
-import {deepSetValue} from '../../src/utils.js';
-import {startAuction} from '../../src/prebid.js';
+import { deepSetValue } from '../../src/utils.js';
+import { startAuction } from '../../src/prebid.js';
 export const CONFIG_NS = 'previousAuctionInfo';
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
@@ -19,7 +19,7 @@ export function resetPreviousAuctionInfo() {
 }
 
 function initPreviousAuctionInfo() {
-  config.getConfig('previousAuctionInfo', ({[CONFIG_NS]: config = {}}) => {
+  config.getConfig('previousAuctionInfo', ({ [CONFIG_NS]: config = {} }) => {
     if (!config?.enabled) {
       resetPreviousAuctionInfo();
       return;
@@ -46,7 +46,7 @@ const deinitHandlers = () => {
   if (handlersAttached) {
     offEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
     offEvent(EVENTS.BID_WON, onBidWonHandler);
-    startAuction.getHooks({hook: startAuctionHook}).remove();
+    startAuction.getHooks({ hook: startAuctionHook }).remove();
     handlersAttached = false;
   }
 }

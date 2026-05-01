@@ -160,6 +160,36 @@ p1 = Advertisers (via Campaign IDs) should target these personas
 
 *AP Values is in the early stages of testing and is subject to change.
 
+------------------
+
+Additional Results Fields (API response)
+
+The fields below are present in the Mobian Contextual API `results` schema and are useful for downstream interpretation of content maturity and taxonomy.
+
+mobianMpaaRating:
+
+Type: integer | null
+
+Description: MPAA-style maturity rating score represented as an integer value in the API response.
+
+Behavior when unavailable: omitted when null.
+
+mobianEsrbRating:
+
+Type: integer | null
+
+Description: ESRB-style maturity rating score represented as an integer value in the API response.
+
+Behavior when unavailable: omitted when null.
+
+mobianContentTaxonomy:
+
+Type: string[]
+
+Description: IAB content taxonomy categories (broad topic buckets such as "News" or "Health").
+
+Behavior when unavailable: may be returned as an empty array.
+
 ## GAM Targeting:
 
 On each page load, the Mobian RTD module finds each ad slot on the page and performs the following function:

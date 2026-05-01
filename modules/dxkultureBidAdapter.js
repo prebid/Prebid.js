@@ -7,10 +7,10 @@ import {
   deepSetValue,
   mergeDeep
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -62,7 +62,7 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     let resMediaType;
-    const {bidRequest} = context;
+    const { bidRequest } = context;
 
     if (bid.adm?.trim().startsWith('<VAST')) {
       resMediaType = VIDEO;
@@ -114,7 +114,7 @@ export const spec = {
       contextMediaType = VIDEO;
     }
 
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: {contextMediaType} });
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: { contextMediaType } });
 
     let publisherId = validBidRequests[0].params.publisherId;
     const placementId = validBidRequests[0].params.placementId;
@@ -137,7 +137,7 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;
+    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
     return bids;
   },
 

@@ -5,7 +5,7 @@ import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import { parseQS } from '../../../src/utils.js'
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
   const originalBuildRequests = spec.buildRequests;

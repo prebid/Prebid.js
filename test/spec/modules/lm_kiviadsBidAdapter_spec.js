@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {spec} from 'modules/lm_kiviadsBidAdapter.js';
-import {deepClone} from 'src/utils';
-import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { spec } from 'modules/lm_kiviadsBidAdapter.js';
+import { deepClone } from 'src/utils';
+import { getBidFloor } from '../../../libraries/xeUtils/bidderUtils.js';
 
 const ENDPOINT = 'https://pbjs.kiviads.live';
 
@@ -99,7 +99,7 @@ describe('lm_kiviadsBidAdapter', () => {
       expect(request).to.have.property('tz').and.to.equal(new Date().getTimezoneOffset());
       expect(request).to.have.property('bc').and.to.equal(1);
       expect(request).to.have.property('floor').and.to.equal(null);
-      expect(request).to.have.property('banner').and.to.deep.equal({sizes: [[300, 250], [300, 200]]});
+      expect(request).to.have.property('banner').and.to.deep.equal({ sizes: [[300, 250], [300, 200]] });
       expect(request).to.have.property('gdprConsent').and.to.deep.equal({});
       expect(request).to.have.property('userEids').and.to.deep.equal([]);
       expect(request).to.have.property('usPrivacy').and.to.equal('');
@@ -192,7 +192,7 @@ describe('lm_kiviadsBidAdapter', () => {
 
     it('should build request with valid bidfloor', function () {
       const bfRequest = deepClone(defaultRequest);
-      bfRequest.getFloor = () => ({floor: 5, currency: 'USD'});
+      bfRequest.getFloor = () => ({ floor: 5, currency: 'USD' });
       const request = JSON.parse(spec.buildRequests([bfRequest], {}).data)[0];
       expect(request).to.have.property('floor').and.to.equal(5);
     });
@@ -208,8 +208,8 @@ describe('lm_kiviadsBidAdapter', () => {
     it('should build request with extended ids', function () {
       const idRequest = deepClone(defaultRequest);
       idRequest.userIdAsEids = [
-        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'pubcid.org', uids: [{id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1}]}
+        { source: 'adserver.org', uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+        { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] }
       ];
       const request = JSON.parse(spec.buildRequests([idRequest], {}).data)[0];
       expect(request).to.have.property('userEids').and.deep.equal(idRequest.userIdAsEids);
@@ -261,7 +261,7 @@ describe('lm_kiviadsBidAdapter', () => {
         }
       };
 
-      const validResponse = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequest});
+      const validResponse = spec.interpretResponse(serverResponse, { bidderRequest: defaultRequest });
       const bid = validResponse[0];
       expect(validResponse).to.be.an('array').that.is.not.empty;
       expect(bid.requestId).to.equal('qwerty');
@@ -270,7 +270,7 @@ describe('lm_kiviadsBidAdapter', () => {
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
       expect(bid.ttl).to.equal(600);
-      expect(bid.meta).to.deep.equal({advertiserDomains: ['lm_kiviads']});
+      expect(bid.meta).to.deep.equal({ advertiserDomains: ['lm_kiviads'] });
     });
 
     it('should interpret valid banner response', function () {
@@ -291,7 +291,7 @@ describe('lm_kiviadsBidAdapter', () => {
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequest});
+      const validResponseBanner = spec.interpretResponse(serverResponse, { bidderRequest: defaultRequest });
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('banner');
@@ -317,7 +317,7 @@ describe('lm_kiviadsBidAdapter', () => {
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequestVideo});
+      const validResponseBanner = spec.interpretResponse(serverResponse, { bidderRequest: defaultRequestVideo });
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('video');
@@ -333,12 +333,12 @@ describe('lm_kiviadsBidAdapter', () => {
     });
 
     it('should return empty if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('should allow iframe sync', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [{
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [{
         body: {
           data: [{
             requestId: 'qwerty',
@@ -357,7 +357,7 @@ describe('lm_kiviadsBidAdapter', () => {
     });
 
     it('should allow pixel sync', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{
         body: {
           data: [{
             requestId: 'qwerty',
@@ -376,7 +376,7 @@ describe('lm_kiviadsBidAdapter', () => {
     });
 
     it('should allow pixel sync and parse consent params', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{
         body: {
           data: [{
             requestId: 'qwerty',
@@ -400,20 +400,20 @@ describe('lm_kiviadsBidAdapter', () => {
 
   describe('getBidFloor', function () {
     it('should return null when getFloor is not a function', () => {
-      const bid = {getFloor: 2};
+      const bid = { getFloor: 2 };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
     });
 
     it('should return null when getFloor doesnt return an object', () => {
-      const bid = {getFloor: () => 2};
+      const bid = { getFloor: () => 2 };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
     });
 
     it('should return null when floor is not a number', () => {
       const bid = {
-        getFloor: () => ({floor: 'string', currency: 'USD'})
+        getFloor: () => ({ floor: 'string', currency: 'USD' })
       };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
@@ -421,7 +421,7 @@ describe('lm_kiviadsBidAdapter', () => {
 
     it('should return null when currency is not USD', () => {
       const bid = {
-        getFloor: () => ({floor: 5, currency: 'EUR'})
+        getFloor: () => ({ floor: 5, currency: 'EUR' })
       };
       const result = getBidFloor(bid);
       expect(result).to.be.null;
@@ -429,7 +429,7 @@ describe('lm_kiviadsBidAdapter', () => {
 
     it('should return floor value when everything is correct', () => {
       const bid = {
-        getFloor: () => ({floor: 5, currency: 'USD'})
+        getFloor: () => ({ floor: 5, currency: 'USD' })
       };
       const result = getBidFloor(bid);
       expect(result).to.equal(5);

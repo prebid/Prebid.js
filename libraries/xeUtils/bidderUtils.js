@@ -1,5 +1,5 @@
-import {deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject} from '../../src/utils.js';
-import {getAdUnitSizes} from '../sizeUtils/sizeUtils.js';
+import { deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject } from '../../src/utils.js';
+import { getAdUnitSizes } from '../sizeUtils/sizeUtils.js';
 
 export function getBidFloor(bid, currency = 'USD') {
   if (!isFn(bid.getFloor)) {
@@ -41,7 +41,7 @@ export function isBidRequestValid(bid, requiredParams = ['pid', 'env']) {
 }
 
 export function buildRequests(validBidRequests, bidderRequest, endpoint) {
-  const {refererInfo = {}, gdprConsent = {}, uspConsent} = bidderRequest;
+  const { refererInfo = {}, gdprConsent = {}, uspConsent } = bidderRequest;
   const requests = validBidRequests.map(req => {
     const request = {};
     request.tmax = bidderRequest.timeout || 0;
@@ -108,7 +108,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
   };
 }
 
-export function interpretResponse(serverResponse, {bidderRequest}) {
+export function interpretResponse(serverResponse, { bidderRequest }) {
   const response = [];
   if (!isArray(deepAccess(serverResponse, 'body.data'))) {
     return response;
@@ -143,7 +143,7 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, usp
 
     pixels.forEach(pixel => {
       const [type, url] = pixel;
-      const sync = {type, url: `${url}&${usPrivacy}${gdprFlag}${gdprString}`};
+      const sync = { type, url: `${url}&${usPrivacy}${gdprFlag}${gdprString}` };
       if (type === 'iframe' && syncOptions.iframeEnabled) {
         syncs.push(sync)
       } else if (type === 'image' && syncOptions.pixelEnabled) {

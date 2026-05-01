@@ -1,8 +1,8 @@
-import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {parseDomain} from '../src/refererDetection.js';
+import { deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { parseDomain } from '../src/refererDetection.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -108,7 +108,7 @@ export const spec = {
         const floorInfo = request.getFloor({
           currency: 'USD',
           mediaType: impData.video ? 'video' : 'banner',
-          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+          size: [impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h]
         });
         if (floorInfo && floorInfo.floor) {
           impData.bidfloor = floorInfo.floor;
@@ -128,8 +128,8 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
-      site: {...bidderRequest?.ortb2?.site, ...params?.site},
-      device: {...bidderRequest?.ortb2?.device, ...params?.device},
+      site: { ...bidderRequest?.ortb2?.site, ...params?.site },
+      device: { ...bidderRequest?.ortb2?.device, ...params?.device },
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -140,7 +140,7 @@ export const spec = {
     const rInfo = bidderRequest.refererInfo;
     if (rInfo) {
       payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
-      payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
+      payload.site.domain = parseDomain(payload.site.page, { noLeadingWww: true });
     }
 
     payload.device.ua = navigator.userAgent;

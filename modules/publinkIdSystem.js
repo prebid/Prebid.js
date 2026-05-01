@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 import { parseUrl, buildUrl, logError } from '../src/utils.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -25,7 +25,7 @@ const PUBLINK_S2S_COOKIE = '_publink_srv';
 const PUBLINK_REQUEST_PATH = '/cvx/client/sync/publink';
 const PUBLINK_REFRESH_PATH = '/cvx/client/sync/publink/refresh';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
@@ -69,7 +69,7 @@ function publinkIdUrl(params, consentData, storedId) {
 
 function makeCallback(config = {}, consentData, storedId) {
   return function(prebidCallback) {
-    const options = {method: 'GET', withCredentials: true};
+    const options = { method: 'GET', withCredentials: true };
     const handleResponse = function(responseText, xhr) {
       if (xhr.status === 200) {
         const response = JSON.parse(responseText);
@@ -136,7 +136,7 @@ export const publinkIdSubmodule = {
    * @returns {{publinkId: string} | undefined}
    */
   decode(publinkId) {
-    return {publinkId: publinkId};
+    return { publinkId: publinkId };
   },
 
   /**
@@ -151,9 +151,9 @@ export const publinkIdSubmodule = {
   getId: function(config, consentData, storedId) {
     const localValue = getlocalValue();
     if (localValue) {
-      return {id: localValue};
+      return { id: localValue };
     }
-    return {callback: makeCallback(config, consentData, storedId)};
+    return { callback: makeCallback(config, consentData, storedId) };
   },
   eids: {
     'publinkId': {

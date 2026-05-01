@@ -1,10 +1,12 @@
 import * as neuwo from "modules/neuwoRtdProvider";
+import * as refererDetection from "src/refererDetection.js";
 import { server } from "test/mocks/xhr.js";
 
-const NEUWO_API_URL = "https://api.url.neuwo.ai/edge/GetAiTopics";
+const NEUWO_API_URL = "https://edge.neuwo.ai/api/aitopics/edge/v1/iab";
 const NEUWO_API_TOKEN = "token";
-const IAB_CONTENT_TAXONOMY_VERSION = "3.0";
+const IAB_CONTENT_TAXONOMY_VERSION = "2.2";
 
+// API config
 const config = () => ({
   params: {
     neuwoApiUrl: NEUWO_API_URL,
@@ -13,7 +15,115 @@ const config = () => ({
   },
 });
 
+/**
+ * API Response Mock
+ * Returns new format with segtax-based structure
+ * Field names: id, name, relevance (lowercase)
+ * Structure: { "6": { "1": [...], "2": [...] }, "4": { "3": [...] } }
+ */
 function getNeuwoApiResponse() {
+  return {
+    7: {
+      1: [
+        {
+          id: "80DV8O",
+        },
+        {
+          id: "52",
+        },
+        {
+          id: "432",
+        },
+      ],
+      2: [
+        {
+          id: "90",
+        },
+      ],
+      3: [
+        {
+          id: "106",
+        },
+      ],
+    },
+    1: {
+      1: [
+        {
+          id: "IAB12",
+        },
+      ],
+    },
+    6: {
+      1: [
+        {
+          id: "52",
+        },
+      ],
+      2: [
+        {
+          id: "90",
+        },
+        {
+          id: "434",
+        },
+      ],
+      3: [
+        {
+          id: "106",
+        },
+      ],
+    },
+    4: {
+      3: [
+        {
+          id: "49",
+        },
+        {
+          id: "780",
+        },
+      ],
+      4: [
+        {
+          id: "431",
+        },
+        {
+          id: "196",
+        },
+        {
+          id: "197",
+        },
+      ],
+      5: [
+        {
+          id: "98",
+        },
+      ],
+    },
+  };
+}
+
+// ============================================================================
+// V1 API Constants and Mocks
+// ============================================================================
+
+const NEUWO_API_URL_V1 = "https://api.url.neuwo.ai/edge/GetAiTopics";
+const IAB_CONTENT_TAXONOMY_VERSION_V1 = "3.0";
+
+// Legacy V1 API config (for backward compatibility tests)
+const configV1 = () => ({
+  params: {
+    neuwoApiUrl: NEUWO_API_URL_V1,
+    neuwoApiToken: NEUWO_API_TOKEN,
+    iabContentTaxonomyVersion: IAB_CONTENT_TAXONOMY_VERSION_V1,
+  },
+});
+
+/**
+ * V1 API Response Mock
+ * Returns legacy format with marketing_categories structure
+ * Field names: ID, label, relevance (capital letters)
+ */
+function getNeuwoApiResponseV1() {
   return {
     brand_safety: {
       BS_score: "1.0",
@@ -65,8 +175,6 @@ function getNeuwoApiResponse() {
     ],
   };
 }
-const CONTENT_TIERS = ["iab_tier_1", "iab_tier_2", "iab_tier_3"];
-const AUDIENCE_TIERS = ["iab_audience_tier_3", "iab_audience_tier_4", "iab_audience_tier_5"];
 
 /**
  * Object generator, like above, written using alternative techniques
@@ -126,38 +234,20 @@ describe("neuwoRtdModule", function () {
   });
 
   describe("buildIabData", function () {
-    it("should return an empty segment array when no matching tiers are found", function () {
-      const marketingCategories = getNeuwoApiResponse().marketing_categories;
-      const tiers = ["non_existent_tier"];
-      const segtax = 0;
-      const result = neuwo.buildIabData(marketingCategories, tiers, segtax);
-      const expected = {
-        name: neuwo.DATA_PROVIDER,
-        segment: [],
-        ext: {
-          segtax,
-        },
-      };
-      expect(result, "should produce a valid object with an empty segment array").to.deep.equal(
-        expected
-      );
-    });
-
     it("should correctly build the data object for content tiers", function () {
-      const marketingCategories = getNeuwoApiResponse().marketing_categories;
+      // format with tier keys "1", "2", "3"
+      const tierData = {
+        "1": [{ id: "274", name: "Home & Garden", relevance: "0.47" }],
+        "2": [{ id: "216", name: "Cooking", relevance: "0.41" }],
+        "3": [],
+      };
       const segtax = 0;
-      const result = neuwo.buildIabData(marketingCategories, CONTENT_TIERS, segtax);
+      const result = neuwo.buildIabData(tierData, segtax);
       const expected = {
         name: neuwo.DATA_PROVIDER,
         segment: [
-          {
-            id: "274",
-            name: "Home & Garden",
-          },
-          {
-            id: "216",
-            name: "Cooking",
-          },
+          { id: "274" },
+          { id: "216" },
         ],
         ext: {
           segtax,
@@ -169,24 +259,20 @@ describe("neuwoRtdModule", function () {
     });
 
     it("should correctly build the data object for audience tiers", function () {
-      const marketingCategories = getNeuwoApiResponse().marketing_categories;
+      // format with tier keys "3", "4", "5" for audience
+      const tierData = {
+        "3": [{ id: "49", name: "Demographic | Gender | Female |", relevance: "0.9923" }],
+        "4": [{ id: "127", name: "Demographic | Household Data | 1 Child |", relevance: "0.9673" }],
+        "5": [{ id: "98", name: "Demographic | Household Data | Parents with Children |", relevance: "0.9066" }],
+      };
       const segtax = 0;
-      const result = neuwo.buildIabData(marketingCategories, AUDIENCE_TIERS, segtax);
+      const result = neuwo.buildIabData(tierData, segtax);
       const expected = {
         name: neuwo.DATA_PROVIDER,
         segment: [
-          {
-            id: "49",
-            name: "Demographic | Gender | Female |",
-          },
-          {
-            id: "127",
-            name: "Demographic | Household Data | 1 Child |",
-          },
-          {
-            id: "98",
-            name: "Demographic | Household Data | Parents with Children |",
-          },
+          { id: "49" },
+          { id: "127" },
+          { id: "98" },
         ],
         ext: {
           segtax,
@@ -197,7 +283,7 @@ describe("neuwoRtdModule", function () {
       );
     });
 
-    it("should return an empty segment array when marketingCategories is null or undefined", function () {
+    it("should return an empty segment array when tierData is null or undefined", function () {
       const segtax = 4;
       const expected = {
         name: neuwo.DATA_PROVIDER,
@@ -207,19 +293,19 @@ describe("neuwoRtdModule", function () {
         },
       };
       expect(
-        neuwo.buildIabData(null, CONTENT_TIERS, segtax),
-        "should handle null marketingCategories gracefully"
+        neuwo.buildIabData(null, segtax),
+        "should handle null tierData gracefully"
       ).to.deep.equal(expected);
       expect(
-        neuwo.buildIabData(undefined, CONTENT_TIERS, segtax),
-        "should handle undefined marketingCategories gracefully"
+        neuwo.buildIabData(undefined, segtax),
+        "should handle undefined tierData gracefully"
       ).to.deep.equal(expected);
     });
 
-    it("should return an empty segment array when marketingCategories is empty", function () {
-      const marketingCategories = {};
+    it("should return an empty segment array when tierData is empty", function () {
+      const tierData = {};
       const segtax = 4;
-      const result = neuwo.buildIabData(marketingCategories, CONTENT_TIERS, segtax);
+      const result = neuwo.buildIabData(tierData, segtax);
       const expected = {
         name: neuwo.DATA_PROVIDER,
         segment: [],
@@ -227,23 +313,23 @@ describe("neuwoRtdModule", function () {
           segtax,
         },
       };
-      expect(result, "should handle an empty marketingCategories object").to.deep.equal(expected);
+      expect(result, "should handle an empty tierData object").to.deep.equal(expected);
     });
 
-    it("should gracefully handle if a marketing_categories key contains a non-array value", function () {
-      const marketingCategories = getNeuwoApiResponse().marketing_categories;
-      // Overwrite iab_tier_1 to be an object instead of an array
-      marketingCategories.iab_tier_1 = { ID: "274", label: "Home & Garden" };
+    it("should gracefully handle if a tier key contains a non-array value", function () {
+      const tierData = {
+        "1": { id: "274", name: "Home & Garden" }, // Not an array
+        "2": [{ id: "216", name: "Cooking", relevance: "0.41" }],
+      };
 
       const segtax = 4;
-      const result = neuwo.buildIabData(marketingCategories, CONTENT_TIERS, segtax);
+      const result = neuwo.buildIabData(tierData, segtax);
       const expected = {
         name: neuwo.DATA_PROVIDER,
-        // The segment should only contain data from the valid iab_tier_2
+        // The segment should only contain data from the valid tier "2"
         segment: [
           {
             id: "216",
-            name: "Cooking",
           },
         ],
         ext: {
@@ -257,30 +343,29 @@ describe("neuwoRtdModule", function () {
     });
 
     it("should ignore malformed objects within a tier array", function () {
-      const marketingCategories = getNeuwoApiResponse().marketing_categories;
-      // Overwrite iab_tier_1 with various malformed objects
-      marketingCategories.iab_tier_1 = [
-        { ID: "274", label: "Valid Object" },
-        { ID: "999" }, // Missing 'label' property
-        { label: "Another Label" }, // Missing 'ID' property
-        null, // A null value
-        "just-a-string", // A string primitive
-        {}, // An empty object
-      ];
+      // Tier "1" with various malformed objects
+      const tierData = {
+        "1": [
+          { id: "274", name: "Valid Object" },
+          { name: "Another Label" }, // Missing 'id' property
+          null, // A null value
+          "just-a-string", // A string primitive
+          {}, // An empty object
+        ],
+        "2": [{ id: "216", name: "Cooking", relevance: "0.41" }],
+      };
 
       const segtax = 4;
-      const result = neuwo.buildIabData(marketingCategories, CONTENT_TIERS, segtax);
+      const result = neuwo.buildIabData(tierData, segtax);
       const expected = {
         name: neuwo.DATA_PROVIDER,
-        // The segment should contain the one valid object from iab_tier_1 and the data from iab_tier_2
+        // The segment should contain the one valid object from tier "1" and the data from tier "2"
         segment: [
           {
             id: "274",
-            name: "Valid Object",
           },
           {
             id: "216",
-            name: "Cooking",
           },
         ],
         ext: {
@@ -293,7 +378,7 @@ describe("neuwoRtdModule", function () {
       );
     });
 
-    it("should return an empty segment array if the entire marketingCategories object is not a valid object", function () {
+    it("should return an empty segment array if the entire tierData is not a valid object", function () {
       const segtax = 4;
       const expected = {
         name: neuwo.DATA_PROVIDER,
@@ -301,10 +386,542 @@ describe("neuwoRtdModule", function () {
         ext: { segtax },
       };
       // Test with a string
-      const resultString = neuwo.buildIabData("incorrect format", CONTENT_TIERS, segtax);
-      expect(resultString, "should handle non-object marketingCategories input").to.deep.equal(
+      const resultString = neuwo.buildIabData("incorrect format", segtax);
+      expect(resultString, "should handle non-object tierData input").to.deep.equal(
         expected
       );
+    });
+  });
+
+  describe("buildFilterQueryParams", function () {
+    it("should return empty array when no filters provided", function () {
+      const result = neuwo.buildFilterQueryParams(null, 6);
+      expect(result, "should return empty array for null filters").to.deep.equal([]);
+    });
+
+    it("should return empty array when filters parameter is undefined", function () {
+      const result = neuwo.buildFilterQueryParams(undefined, 6);
+      expect(result, "should return empty array for undefined filters").to.deep.equal([]);
+    });
+
+    it("should return empty array when filters is empty object", function () {
+      const result = neuwo.buildFilterQueryParams({}, 6);
+      expect(result, "should return empty array for empty filters").to.deep.equal([]);
+    });
+
+    it("should convert ContentTier1 filter correctly", function () {
+      const filters = {
+        ContentTier1: { limit: 3, threshold: 0.5 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.have.lengthOf(2);
+    });
+
+    it("should convert ContentTier2 filter correctly", function () {
+      const filters = {
+        ContentTier2: { limit: 5, threshold: 0.6 }
+      };
+      const contentSegtax = 7;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_7_2_limit=5");
+      expect(result).to.include("filter_7_2_threshold=0.6");
+      expect(result).to.have.lengthOf(2);
+    });
+
+    it("should convert ContentTier3 filter correctly", function () {
+      const filters = {
+        ContentTier3: { limit: 4, threshold: 0.8 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_6_3_limit=4");
+      expect(result).to.include("filter_6_3_threshold=0.8");
+      expect(result).to.have.lengthOf(2);
+    });
+
+    it("should convert AudienceTier3 filter correctly", function () {
+      const filters = {
+        AudienceTier3: { limit: 2, threshold: 0.9 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_4_3_limit=2");
+      expect(result).to.include("filter_4_3_threshold=0.9");
+      expect(result).to.have.lengthOf(2);
+    });
+
+    it("should convert AudienceTier4 filter correctly", function () {
+      const filters = {
+        AudienceTier4: { limit: 10, threshold: 0.85 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_4_4_limit=10");
+      expect(result).to.include("filter_4_4_threshold=0.85");
+      expect(result).to.have.lengthOf(2);
+    });
+
+    it("should convert AudienceTier5 filter correctly", function () {
+      const filters = {
+        AudienceTier5: { limit: 7, threshold: 0.95 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_4_5_limit=7");
+      expect(result).to.include("filter_4_5_threshold=0.95");
+      expect(result).to.have.lengthOf(2);
+    });
+
+    it("should handle multiple content tiers with same segtax", function () {
+      const filters = {
+        ContentTier1: { limit: 3 },
+        ContentTier2: { limit: 5 },
+        ContentTier3: { threshold: 0.7 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_2_limit=5");
+      expect(result).to.include("filter_6_3_threshold=0.7");
+      expect(result).to.have.lengthOf(3);
+    });
+
+    it("should handle multiple audience tiers", function () {
+      const filters = {
+        AudienceTier3: { limit: 2 },
+        AudienceTier4: { limit: 4 },
+        AudienceTier5: { threshold: 0.85 }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_4_3_limit=2");
+      expect(result).to.include("filter_4_4_limit=4");
+      expect(result).to.include("filter_4_5_threshold=0.85");
+      expect(result).to.have.lengthOf(3);
+    });
+
+    it("should handle both content and audience tiers together", function () {
+      const filters = {
+        ContentTier1: { limit: 3, threshold: 0.5 },
+        ContentTier2: { limit: 5 },
+        AudienceTier3: { limit: 2, threshold: 0.9 },
+        AudienceTier4: { threshold: 0.8 }
+      };
+      const contentSegtax = 6;
+      const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.include("filter_6_2_limit=5");
+      expect(result).to.include("filter_4_3_limit=2");
+      expect(result).to.include("filter_4_3_threshold=0.9");
+      expect(result).to.include("filter_4_4_threshold=0.8");
+      expect(result).to.have.lengthOf(6);
+    });
+
+    it("should use different content segtax values correctly", function () {
+      const filters = {
+        ContentTier1: { limit: 3 }
+      };
+
+      // Test with segtax 6 (IAB 2.2)
+      const result6 = neuwo.buildFilterQueryParams(filters, 6, false);
+      expect(result6).to.include("filter_6_1_limit=3");
+      expect(result6).to.not.include("filter_7_1_limit=3");
+
+      // Test with segtax 7 (IAB 3.0)
+      const result7 = neuwo.buildFilterQueryParams(filters, 7, false);
+      expect(result7).to.include("filter_7_1_limit=3");
+      expect(result7).to.not.include("filter_6_1_limit=3");
+    });
+
+    it("should ignore unknown tier names", function () {
+      const filters = {
+        ContentTier1: { limit: 3 },
+        UnknownTier: { limit: 10 },
+        InvalidTier99: { threshold: 0.5 }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.have.lengthOf(1);
+    });
+
+    it("should handle filters with only limit property", function () {
+      const filters = {
+        ContentTier1: { limit: 5 }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_6_1_limit=5");
+      expect(result).to.not.include.match(/filter_6_1_threshold/);
+      expect(result).to.have.lengthOf(1);
+    });
+
+    it("should handle filters with only threshold property", function () {
+      const filters = {
+        AudienceTier3: { threshold: 0.75 }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_4_3_threshold=0.75");
+      expect(result).to.not.include.match(/filter_4_3_limit/);
+      expect(result).to.have.lengthOf(1);
+    });
+
+    it("should handle filters with additional custom properties", function () {
+      const filters = {
+        ContentTier1: { limit: 3, threshold: 0.5, customProp: "value" }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_6_1_limit=3");
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.include("filter_6_1_customProp=value");
+      expect(result).to.have.lengthOf(3);
+    });
+
+    it("should handle empty filter objects for tiers", function () {
+      const filters = {
+        ContentTier1: {},
+        AudienceTier3: {}
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.have.lengthOf(0);
+    });
+
+    it("should not include null limit value", function () {
+      const filters = {
+        ContentTier1: { limit: null, threshold: 0.5 }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.have.lengthOf(1);
+    });
+
+    it("should not include undefined limit value", function () {
+      const filters = {
+        ContentTier1: { limit: undefined, threshold: 0.5 }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_6_1_threshold=0.5");
+      expect(result).to.have.lengthOf(1);
+    });
+
+    it("should not include null threshold value", function () {
+      const filters = {
+        AudienceTier3: { limit: 5, threshold: null }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_4_3_limit=5");
+      expect(result).to.have.lengthOf(1);
+    });
+
+    it("should not include undefined threshold value", function () {
+      const filters = {
+        AudienceTier3: { limit: 5, threshold: undefined }
+      };
+      const result = neuwo.buildFilterQueryParams(filters, 6, false);
+
+      expect(result).to.include("filter_4_3_limit=5");
+      expect(result).to.have.lengthOf(1);
+    });
+
+    // OpenRTB 2.5 Feature Tests
+    describe("with enableOrtb25Fields enabled (default)", function () {
+      it("should add IAB 1.0 filter params when ContentTier1 filter is provided", function () {
+        const filters = {
+          ContentTier1: { limit: 3, threshold: 0.5 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
+
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_1_threshold=0.5");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_1_1_threshold=0.5");
+        expect(result).to.have.lengthOf(4);
+      });
+
+      it("should add IAB 1.0 filter params when ContentTier2 filter is provided", function () {
+        const filters = {
+          ContentTier2: { limit: 5, threshold: 0.6 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
+
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_6_2_threshold=0.6");
+        expect(result).to.include("filter_1_2_limit=5");
+        expect(result).to.include("filter_1_2_threshold=0.6");
+        expect(result).to.have.lengthOf(4);
+      });
+
+      it("should add IAB 1.0 filter params for both ContentTier1 and ContentTier2", function () {
+        const filters = {
+          ContentTier1: { limit: 3 },
+          ContentTier2: { limit: 5 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
+
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_1_2_limit=5");
+        expect(result).to.have.lengthOf(4);
+      });
+
+      it("should NOT add ContentTier3 filter to IAB 1.0 (only tiers 1-2 exist)", function () {
+        const filters = {
+          ContentTier1: { limit: 3 },
+          ContentTier2: { limit: 5 },
+          ContentTier3: { threshold: 0.7 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
+
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_6_3_threshold=0.7");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_1_2_limit=5");
+        expect(result).to.not.include.match(/filter_1_3/);
+        expect(result).to.have.lengthOf(5);
+      });
+
+      it("should NOT add audience tier filters to IAB 1.0", function () {
+        const filters = {
+          AudienceTier3: { limit: 2 },
+          AudienceTier4: { limit: 4 }
+        };
+        const result = neuwo.buildFilterQueryParams(filters, 6);
+
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.include("filter_4_4_limit=4");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(2);
+      });
+
+      it("should add IAB 1.0 filter params alongside audience filters", function () {
+        const filters = {
+          ContentTier1: { limit: 3 },
+          AudienceTier3: { limit: 2 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax);
+
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_1_1_limit=3");
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.have.lengthOf(3);
+      });
+
+      it("should not add segtax 1 params when no content filters are provided", function () {
+        const filters = {
+          AudienceTier3: { limit: 2 }
+        };
+        const result = neuwo.buildFilterQueryParams(filters, 6);
+
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(1);
+      });
+
+      it("should not add segtax 1 params when filters is empty", function () {
+        const result = neuwo.buildFilterQueryParams({}, 6);
+
+        expect(result).to.deep.equal([]);
+      });
+
+      it("should not add segtax 1 params when filters is null", function () {
+        const result = neuwo.buildFilterQueryParams(null, 6);
+
+        expect(result).to.deep.equal([]);
+      });
+
+      it("should work with different content segtax values", function () {
+        const filters = {
+          ContentTier1: { limit: 3 }
+        };
+
+        // Test with segtax 7 (IAB 3.0)
+        const result7 = neuwo.buildFilterQueryParams(filters, 7);
+        expect(result7).to.include("filter_7_1_limit=3");
+        expect(result7).to.include("filter_1_1_limit=3");
+        expect(result7).to.have.lengthOf(2);
+      });
+
+      it("should not produce duplicate query params when contentSegtax is 1", function () {
+        const filters = {
+          ContentTier1: { limit: 5, threshold: 0.8 },
+          ContentTier2: { limit: 3 }
+        };
+
+        const result = neuwo.buildFilterQueryParams(filters, 1);
+
+        // Count occurrences of each param to verify no duplicates
+        const countOccurrences = (arr, val) => arr.filter(p => p === val).length;
+        expect(countOccurrences(result, "filter_1_1_limit=5"), "filter_1_1_limit should appear once").to.equal(1);
+        expect(countOccurrences(result, "filter_1_1_threshold=0.8"), "filter_1_1_threshold should appear once").to.equal(1);
+        expect(countOccurrences(result, "filter_1_2_limit=3"), "filter_1_2_limit should appear once").to.equal(1);
+        expect(result, "should have exactly 3 params total").to.have.lengthOf(3);
+      });
+    });
+
+    describe("with enableOrtb25Fields disabled", function () {
+      it("should not add IAB 1.0 filter params when disabled", function () {
+        const filters = {
+          ContentTier1: { limit: 3, threshold: 0.5 },
+          ContentTier2: { limit: 5 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_1_threshold=0.5");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(3);
+      });
+
+      it("should work correctly with all tier types when disabled", function () {
+        const filters = {
+          ContentTier1: { limit: 3 },
+          ContentTier2: { limit: 5 },
+          ContentTier3: { threshold: 0.7 },
+          AudienceTier3: { limit: 2 }
+        };
+        const contentSegtax = 6;
+        const result = neuwo.buildFilterQueryParams(filters, contentSegtax, false);
+
+        expect(result).to.include("filter_6_1_limit=3");
+        expect(result).to.include("filter_6_2_limit=5");
+        expect(result).to.include("filter_6_3_threshold=0.7");
+        expect(result).to.include("filter_4_3_limit=2");
+        expect(result).to.not.include.match(/filter_1/);
+        expect(result).to.have.lengthOf(4);
+      });
+    });
+  });
+
+  describe("extractCategoryIds", function () {
+    it("should extract IDs from single tier", function () {
+      const tierData = {
+        "1": [
+          { id: "IAB12" },
+          { id: "IAB12-3" }
+        ]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should extract all IDs from tier 1").to.deep.equal(["IAB12", "IAB12-3"]);
+    });
+
+    it("should extract IDs from multiple tiers", function () {
+      const tierData = {
+        "1": [
+          { id: "IAB12" },
+          { id: "IAB12-3" }
+        ],
+        "2": [
+          { id: "IAB12-5" }
+        ]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should extract all IDs from all tiers").to.deep.equal(["IAB12", "IAB12-3", "IAB12-5"]);
+    });
+
+    it("should handle empty tier arrays", function () {
+      const tierData = {
+        "1": [],
+        "2": [
+          { id: "IAB12" }
+        ]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should only extract from non-empty tiers").to.deep.equal(["IAB12"]);
+    });
+
+    it("should skip items without id property", function () {
+      const tierData = {
+        "1": [
+          { id: "IAB12" },
+          { name: "No ID" },
+          { id: "IAB12-3" }
+        ]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should skip items without id").to.deep.equal(["IAB12", "IAB12-3"]);
+    });
+
+    it("should return empty array for null tierData", function () {
+      const result = neuwo.extractCategoryIds(null);
+      expect(result, "should return empty array for null").to.deep.equal([]);
+    });
+
+    it("should return empty array for undefined tierData", function () {
+      const result = neuwo.extractCategoryIds(undefined);
+      expect(result, "should return empty array for undefined").to.deep.equal([]);
+    });
+
+    it("should return empty array for empty object", function () {
+      const result = neuwo.extractCategoryIds({});
+      expect(result, "should return empty array for empty object").to.deep.equal([]);
+    });
+
+    it("should handle non-array tier values", function () {
+      const tierData = {
+        "1": { id: "IAB12" }, // Not an array
+        "2": [
+          { id: "IAB13" }
+        ]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should skip non-array values").to.deep.equal(["IAB13"]);
+    });
+
+    it("should handle null items in tier arrays", function () {
+      const tierData = {
+        "1": [
+          { id: "IAB12" },
+          null,
+          { id: "IAB12-3" }
+        ]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should skip null items").to.deep.equal(["IAB12", "IAB12-3"]);
+    });
+
+    it("should handle non-object tierData", function () {
+      expect(neuwo.extractCategoryIds("string"), "should handle string").to.deep.equal([]);
+      expect(neuwo.extractCategoryIds(123), "should handle number").to.deep.equal([]);
+      expect(neuwo.extractCategoryIds([]), "should handle array").to.deep.equal([]);
+    });
+
+    it("should extract from all tier numbers", function () {
+      const tierData = {
+        "1": [{ id: "IAB1" }],
+        "2": [{ id: "IAB2" }],
+        "3": [{ id: "IAB3" }],
+        "4": [{ id: "IAB4" }],
+        "5": [{ id: "IAB5" }]
+      };
+      const result = neuwo.extractCategoryIds(tierData);
+      expect(result, "should extract from all tiers").to.deep.equal(["IAB1", "IAB2", "IAB3", "IAB4", "IAB5"]);
     });
   });
 
@@ -319,8 +936,438 @@ describe("neuwoRtdModule", function () {
     });
   });
 
+  describe("injectIabCategories", function () {
+    it("should not inject data when responseParsed is null or undefined", function () {
+      const bidsConfig1 = bidsConfiglike();
+      const bidsConfig2 = bidsConfiglike();
+      const bidsConfigCopy = JSON.parse(JSON.stringify(bidsConfig1));
+
+      neuwo.injectIabCategories(null, bidsConfig1, "2.2");
+      neuwo.injectIabCategories(undefined, bidsConfig2, "2.2");
+
+      expect(
+        bidsConfig1.ortb2Fragments.global,
+        "should not modify ortb2Fragments when response is null"
+      ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+      expect(
+        bidsConfig2.ortb2Fragments.global,
+        "should not modify ortb2Fragments when response is undefined"
+      ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+    });
+
+    it("should not inject data when responseParsed is not an object", function () {
+      const bidsConfig1 = bidsConfiglike();
+      const bidsConfig2 = bidsConfiglike();
+      const bidsConfig3 = bidsConfiglike();
+      const bidsConfigCopy = JSON.parse(JSON.stringify(bidsConfig1));
+
+      neuwo.injectIabCategories("invalid string", bidsConfig1, "2.2");
+      neuwo.injectIabCategories(123, bidsConfig2, "2.2");
+      neuwo.injectIabCategories([1, 2, 3], bidsConfig3, "2.2");
+
+      expect(
+        bidsConfig1.ortb2Fragments.global,
+        "should not modify ortb2Fragments when response is a string"
+      ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+      expect(
+        bidsConfig2.ortb2Fragments.global,
+        "should not modify ortb2Fragments when response is a number"
+      ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+      expect(
+        bidsConfig3.ortb2Fragments.global,
+        "should not modify ortb2Fragments when response is an array"
+      ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+    });
+
+    it("should handle empty object response", function () {
+      const bidsConfig = bidsConfiglike();
+      const bidsConfigCopy = JSON.parse(JSON.stringify(bidsConfig));
+
+      neuwo.injectIabCategories({}, bidsConfig, "2.2");
+
+      expect(
+        bidsConfig.ortb2Fragments.global,
+        "should not inject data when response object is empty"
+      ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+    });
+
+    it("should inject content data when valid content segments exist", function () {
+      const response = {
+        "6": {
+          "1": [{ id: "52", name: "Food & Drink" }],
+          "2": [{ id: "90", name: "Cooking" }]
+        }
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+      expect(contentData, "should have content data").to.exist;
+      expect(contentData.ext.segtax, "should have correct segtax").to.equal(6);
+      expect(contentData.segment, "should have segments").to.have.lengthOf(2);
+      expect(contentData.segment[0].id, "first segment should match").to.equal("52");
+    });
+
+    it("should inject audience data when valid audience segments exist", function () {
+      const response = {
+        "4": {
+          "3": [{ id: "49", name: "Female" }],
+          "4": [{ id: "431", name: "Age 25-34" }]
+        }
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+      const userData = bidsConfig.ortb2Fragments.global?.user?.data?.[0];
+      expect(userData, "should have user data").to.exist;
+      expect(userData.ext.segtax, "should have correct segtax").to.equal(4);
+      expect(userData.segment, "should have segments").to.have.lengthOf(2);
+      expect(userData.segment[0].id, "first segment should match").to.equal("49");
+    });
+
+    it("should inject both content and audience data when both exist", function () {
+      const response = {
+        "6": {
+          "1": [{ id: "52", name: "Food & Drink" }]
+        },
+        "4": {
+          "3": [{ id: "49", name: "Female" }]
+        }
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+      const userData = bidsConfig.ortb2Fragments.global?.user?.data?.[0];
+
+      expect(contentData, "should have content data").to.exist;
+      expect(userData, "should have user data").to.exist;
+      expect(contentData.ext.segtax, "content should have segtax 6").to.equal(6);
+      expect(userData.ext.segtax, "audience should have segtax 4").to.equal(4);
+    });
+
+    it("should not inject empty audience data when only content segments exist", function () {
+      const response = {
+        "6": {
+          "1": [{ id: "52", name: "Food & Drink" }]
+        },
+        "4": {}
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+      const userData = bidsConfig.ortb2Fragments.global?.user?.data;
+      expect(contentData, "should have content data").to.exist;
+      expect(userData, "should not inject empty audience data").to.be.undefined;
+    });
+
+    it("should not inject empty content data when only audience segments exist", function () {
+      const response = {
+        "6": {},
+        "4": {
+          "3": [{ id: "49", name: "Female" }]
+        }
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data;
+      const userData = bidsConfig.ortb2Fragments.global?.user?.data?.[0];
+      expect(contentData, "should not inject empty content data").to.be.undefined;
+      expect(userData, "should have audience data").to.exist;
+    });
+
+    it("should handle different IAB Content Taxonomy versions", function () {
+      const response = {
+        "7": {
+          "1": [{ id: "80DV8O", name: "Automotive" }]
+        }
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "3.0");
+
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+      expect(contentData, "should have content data").to.exist;
+      expect(contentData.ext.segtax, "should use segtax 7 for IAB 3.0").to.equal(7);
+    });
+
+    it("should not inject data when segtax has no segments", function () {
+      const response1 = { "6": {} };
+      const response2 = { "4": {} };
+      const response3 = { "6": { "1": [] }, "4": { "3": [] } };
+      const bidsConfig1 = bidsConfiglike();
+      const bidsConfig2 = bidsConfiglike();
+      const bidsConfig3 = bidsConfiglike();
+
+      neuwo.injectIabCategories(response1, bidsConfig1, "2.2");
+      neuwo.injectIabCategories(response2, bidsConfig2, "2.2");
+      neuwo.injectIabCategories(response3, bidsConfig3, "2.2");
+
+      expect(bidsConfig1.ortb2Fragments.global?.site?.content?.data, "should not inject empty content data").to.be.undefined;
+      expect(bidsConfig2.ortb2Fragments.global?.user?.data, "should not inject empty audience data").to.be.undefined;
+      expect(bidsConfig3.ortb2Fragments.global?.site?.content?.data, "should not inject content data with empty segments").to.be.undefined;
+      expect(bidsConfig3.ortb2Fragments.global?.user?.data, "should not inject audience data with empty segments").to.be.undefined;
+    });
+
+    it("should use default taxonomy version when invalid version provided", function () {
+      const response = {
+        "6": {
+          "1": [{ id: "52", name: "Food & Drink" }]
+        }
+      };
+      const bidsConfig = bidsConfiglike();
+
+      neuwo.injectIabCategories(response, bidsConfig, "invalid-version");
+
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+      expect(contentData, "should have content data").to.exist;
+      expect(contentData.ext.segtax, "should default to segtax 6 (IAB 2.2)").to.equal(6);
+    });
+
+    // OpenRTB 2.5 Category Fields Tests
+    describe("OpenRTB 2.5 category fields", function () {
+      describe("with enableOrtb25Fields enabled (default)", function () {
+        it("should inject category fields when IAB 1.0 data exists", function () {
+          const response = {
+            "1": {
+              "1": [{ id: "IAB12" }],
+              "2": [{ id: "IAB12-3" }, { id: "IAB12-5" }]
+            },
+            "6": {
+              "1": [{ id: "52" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          const siteSectioncat = bidsConfig.ortb2Fragments.global?.site?.sectioncat;
+          const sitePagecat = bidsConfig.ortb2Fragments.global?.site?.pagecat;
+          const contentCat = bidsConfig.ortb2Fragments.global?.site?.content?.cat;
+
+          expect(siteCat, "should have site.cat").to.deep.equal(["IAB12", "IAB12-3", "IAB12-5"]);
+          expect(siteSectioncat, "should have site.sectioncat").to.deep.equal(["IAB12", "IAB12-3", "IAB12-5"]);
+          expect(sitePagecat, "should have site.pagecat").to.deep.equal(["IAB12", "IAB12-3", "IAB12-5"]);
+          expect(contentCat, "should have site.content.cat").to.deep.equal(["IAB12", "IAB12-3", "IAB12-5"]);
+        });
+
+        it("should inject category fields with single IAB 1.0 segment", function () {
+          const response = {
+            "1": {
+              "1": [{ id: "IAB12" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          expect(siteCat, "should have single category").to.deep.equal(["IAB12"]);
+        });
+
+        it("should not inject category fields when IAB 1.0 data is missing", function () {
+          const response = {
+            "6": {
+              "1": [{ id: "52" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          const siteSectioncat = bidsConfig.ortb2Fragments.global?.site?.sectioncat;
+
+          expect(siteCat, "should not have site.cat").to.be.undefined;
+          expect(siteSectioncat, "should not have site.sectioncat").to.be.undefined;
+        });
+
+        it("should not inject category fields when IAB 1.0 data is empty", function () {
+          const response = {
+            "1": {},
+            "6": {
+              "1": [{ id: "52" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          expect(siteCat, "should not have site.cat with empty IAB 1.0").to.be.undefined;
+        });
+
+        it("should not inject category fields when IAB 1.0 tiers are empty arrays", function () {
+          const response = {
+            "1": {
+              "1": [],
+              "2": []
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          expect(siteCat, "should not have site.cat with empty tier arrays").to.be.undefined;
+        });
+
+        it("should handle IAB 1.0 data with malformed items", function () {
+          const response = {
+            "1": {
+              "1": [
+                { id: "IAB12" },
+                { name: "No ID" },
+                null,
+                { id: "IAB12-3" }
+              ]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          expect(siteCat, "should skip malformed items").to.deep.equal(["IAB12", "IAB12-3"]);
+        });
+
+        it("should inject both content data and category fields", function () {
+          const response = {
+            "1": {
+              "1": [{ id: "IAB12" }]
+            },
+            "6": {
+              "1": [{ id: "52", name: "Food & Drink" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+
+          expect(contentData, "should have content data").to.exist;
+          expect(contentData.ext.segtax, "should have segtax 6").to.equal(6);
+          expect(siteCat, "should have category fields").to.deep.equal(["IAB12"]);
+        });
+
+        it("should merge category fields with existing data", function () {
+          const response = {
+            "1": {
+              "1": [{ id: "IAB12" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+          // Pre-populate with existing category data
+          bidsConfig.ortb2Fragments.global = {
+            site: {
+              cat: ["EXISTING1"]
+            }
+          };
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2");
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          // mergeDeep should deduplicate and merge arrays
+          expect(siteCat, "should merge with existing data").to.include("IAB12");
+          expect(siteCat, "should preserve existing data").to.include("EXISTING1");
+        });
+      });
+
+      describe("with enableOrtb25Fields disabled", function () {
+        it("should not inject category fields when disabled", function () {
+          const response = {
+            "1": {
+              "1": [{ id: "IAB12" }],
+              "2": [{ id: "IAB12-3" }]
+            },
+            "6": {
+              "1": [{ id: "52" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2", false);
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          const siteSectioncat = bidsConfig.ortb2Fragments.global?.site?.sectioncat;
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+
+          expect(siteCat, "should not have site.cat").to.be.undefined;
+          expect(siteSectioncat, "should not have site.sectioncat").to.be.undefined;
+          expect(contentData, "should still have content data (segtax 6)").to.exist;
+        });
+
+        it("should inject content data but not category fields when disabled", function () {
+          const response = {
+            "1": {
+              "1": [{ id: "IAB12" }]
+            },
+            "6": {
+              "1": [{ id: "52", name: "Food & Drink" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+
+          neuwo.injectIabCategories(response, bidsConfig, "2.2", false);
+
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+
+          expect(contentData, "should have content data").to.exist;
+          expect(contentData.ext.segtax).to.equal(6);
+          expect(siteCat, "should not have category fields").to.be.undefined;
+        });
+      });
+    });
+  });
+
   describe("getBidRequestData", function () {
-    describe("when using IAB Content Taxonomy 3.0", function () {
+    it("should call callback and not make API request when no URL is available", function () {
+      const getRefererInfoStub = sinon.stub(refererDetection, "getRefererInfo").returns({ page: "" });
+      const bidsConfig = bidsConfiglike();
+      const conf = config();
+      let callbackCalled = false;
+
+      neuwo.getBidRequestData(bidsConfig, () => { callbackCalled = true; }, conf, "consent data");
+
+      expect(callbackCalled, "callback should be called for empty URL").to.be.true;
+      expect(server.requests.length, "should not make API request for empty URL").to.equal(0);
+      const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data;
+      expect(contentData, "should not inject any data").to.be.undefined;
+
+      getRefererInfoStub.restore();
+    });
+
+    it("should call callback when response processing throws an error", function (done) {
+      const bidsConfig = { ortb2Fragments: null };
+      const conf = config();
+      conf.params.websiteToAnalyseUrl = "https://publisher.works/processing-error";
+
+      neuwo.getBidRequestData(bidsConfig, () => {
+        const contentData = bidsConfig.ortb2Fragments?.global?.site?.content?.data;
+        expect(contentData, "should not inject data after processing error").to.be.undefined;
+        done();
+      }, conf, "consent data");
+
+      const request = server.requests[0];
+      request.respond(
+        200,
+        { "Content-Type": "application/json; encoding=UTF-8" },
+        JSON.stringify(getNeuwoApiResponse())
+      );
+    });
+
+    describe("when using IAB Content Taxonomy 2.2 (API default)", function () {
       it("should correctly structure the bids object after a successful API response", function () {
         const apiResponse = getNeuwoApiResponse();
         const bidsConfig = bidsConfiglike();
@@ -339,6 +1386,132 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "The request URL should include the encoded website URL").to.include(
           encodeURIComponent(conf.params.websiteToAnalyseUrl)
         );
+        expect(request.url, "The request URL should include the product identifier").to.include(
+          "_neuwo_prod=PrebidModule"
+        );
+        expect(request.url, "API should include iabVersions parameter for segtax 6").to.include(
+          "iabVersions=6"
+        );
+        expect(request.url, "API should include iabVersions parameter for segtax 4").to.include(
+          "iabVersions=4"
+        );
+        expect(request.method, "API should use GET method").to.equal("GET");
+
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
+        expect(contentData.name, "The data provider name should be correctly set").to.equal(
+          neuwo.DATA_PROVIDER
+        );
+        expect(
+          contentData.ext.segtax,
+          "The segtax value should correspond to IAB Content Taxonomy 2.2"
+        ).to.equal(6);
+        expect(
+          contentData.segment[0].id,
+          "The first segment ID should match the API response"
+        ).to.equal(apiResponse["6"]["1"][0].id);
+        expect(
+          contentData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse["6"]["2"][0].id);
+      });
+    });
+
+    describe("when using IAB Content Taxonomy 1.0", function () {
+      it("should correctly structure the bids object after a successful API response", function () {
+        const apiResponse = {
+          1: { 1: [{ id: "IAB1" }], 2: [{ id: "IAB1-1" }], 3: [{ id: "IAB1-1-1" }] },
+          4: { 3: [{ id: "49" }, { id: "780" }], 4: [{ id: "431" }], 5: [{ id: "98" }] },
+        };
+        const bidsConfig = bidsConfiglike();
+        const conf = config();
+        conf.params.iabContentTaxonomyVersion = "1.0";
+        conf.params.websiteToAnalyseUrl =
+          "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
+
+        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+        const request = server.requests[0];
+
+        expect(request.url, "The request URL should be a string").to.be.a("string");
+        expect(request.url, "The request URL should include the public API token").to.include(
+          conf.params.neuwoApiToken
+        );
+        expect(request.url, "The request URL should include the encoded website URL").to.include(
+          encodeURIComponent(conf.params.websiteToAnalyseUrl)
+        );
+        expect(request.url, "The request URL should include the product identifier").to.include(
+          "_neuwo_prod=PrebidModule"
+        );
+        expect(request.url, "API should include iabVersions parameter for segtax 1").to.include(
+          "iabVersions=1"
+        );
+        expect(request.url, "API should include iabVersions parameter for segtax 4").to.include(
+          "iabVersions=4"
+        );
+        expect(request.method, "API should use GET method").to.equal("GET");
+
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
+        expect(contentData.name, "The data provider name should be correctly set").to.equal(
+          neuwo.DATA_PROVIDER
+        );
+        expect(
+          contentData.ext.segtax,
+          "The segtax value should correspond to IAB Content Taxonomy 1.0"
+        ).to.equal(1);
+        expect(
+          contentData.segment[0].id,
+          "The first segment ID should match the API response"
+        ).to.equal(apiResponse["1"]["1"][0].id);
+        expect(
+          contentData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse["1"]["2"][0].id);
+      });
+    });
+
+    describe("when using IAB Content Taxonomy 3.0", function () {
+      it("should correctly structure the bids object after a successful API response", function () {
+        const apiResponse = {
+          7: { 1: [{ id: "80DV8O" }], 2: [{ id: "90" }], 3: [{ id: "106" }] },
+          4: { 3: [{ id: "49" }, { id: "780" }], 4: [{ id: "431" }], 5: [{ id: "98" }] },
+        };
+        const bidsConfig = bidsConfiglike();
+        const conf = config();
+        conf.params.iabContentTaxonomyVersion = "3.0";
+        conf.params.websiteToAnalyseUrl =
+          "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
+
+        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+        const request = server.requests[0];
+
+        expect(request.url, "The request URL should be a string").to.be.a("string");
+        expect(request.url, "The request URL should include the public API token").to.include(
+          conf.params.neuwoApiToken
+        );
+        expect(request.url, "The request URL should include the encoded website URL").to.include(
+          encodeURIComponent(conf.params.websiteToAnalyseUrl)
+        );
+        expect(request.url, "The request URL should include the product identifier").to.include(
+          "_neuwo_prod=PrebidModule"
+        );
+        expect(request.url, "API should include iabVersions parameter for segtax 7").to.include(
+          "iabVersions=7"
+        );
+        expect(request.url, "API should include iabVersions parameter for segtax 4").to.include(
+          "iabVersions=4"
+        );
+        expect(request.method, "API should use GET method").to.equal("GET");
 
         request.respond(
           200,
@@ -357,101 +1530,11 @@ describe("neuwoRtdModule", function () {
         expect(
           contentData.segment[0].id,
           "The first segment ID should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
+        ).to.equal(apiResponse["7"]["1"][0].id);
         expect(
-          contentData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].label);
-      });
-    });
-
-    describe("when using IAB Content Taxonomy 2.2", function () {
-      it("should correctly structure the bids object after a successful API response", function () {
-        const apiResponse = getNeuwoApiResponse();
-        const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.iabContentTaxonomyVersion = "2.2";
-        // control xhr api request target for testing
-        conf.params.websiteToAnalyseUrl =
-          "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
-
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
-
-        expect(request.url, "The request URL should be a string").to.be.a("string");
-        expect(request.url, "The request URL should include the public API token").to.include(
-          conf.params.neuwoApiToken
-        );
-        expect(request.url, "The request URL should include the encoded website URL").to.include(
-          encodeURIComponent(conf.params.websiteToAnalyseUrl)
-        );
-
-        request.respond(
-          200,
-          { "Content-Type": "application/json; encoding=UTF-8" },
-          JSON.stringify(apiResponse)
-        );
-        const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
-        expect(contentData.name, "The data provider name should be correctly set").to.equal(
-          neuwo.DATA_PROVIDER
-        );
-        expect(
-          contentData.ext.segtax,
-          "The segtax value should correspond to IAB Content Taxonomy 2.2"
-        ).to.equal(6);
-        expect(
-          contentData.segment[0].id,
-          "The first segment ID should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
-        expect(
-          contentData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].label);
-      });
-    });
-
-    describe("when using the default IAB Content Taxonomy", function () {
-      it("should correctly structure the bids object after a successful API response", function () {
-        const apiResponse = getNeuwoApiResponse();
-        const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.iabContentTaxonomyVersion = undefined;
-        // control xhr api request target for testing
-        conf.params.websiteToAnalyseUrl =
-          "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
-
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
-
-        expect(request.url, "The request URL should be a string").to.be.a("string");
-        expect(request.url, "The request URL should include the public API token").to.include(
-          conf.params.neuwoApiToken
-        );
-        expect(request.url, "The request URL should include the encoded website URL").to.include(
-          encodeURIComponent(conf.params.websiteToAnalyseUrl)
-        );
-
-        request.respond(
-          200,
-          { "Content-Type": "application/json; encoding=UTF-8" },
-          JSON.stringify(apiResponse)
-        );
-        const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
-        expect(contentData.name, "The data provider name should be correctly set").to.equal(
-          neuwo.DATA_PROVIDER
-        );
-        expect(
-          contentData.ext.segtax,
-          "The segtax value should default to IAB Content Taxonomy 3.0"
-        ).to.equal(7);
-        expect(
-          contentData.segment[0].id,
-          "The first segment ID should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
-        expect(
-          contentData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].label);
+          contentData.segment[1].id,
+          "The second segment ID should match the API response"
+        ).to.equal(apiResponse["7"]["2"][0].id);
       });
     });
 
@@ -474,6 +1557,7 @@ describe("neuwoRtdModule", function () {
         expect(request.url, "The request URL should include the encoded website URL").to.include(
           encodeURIComponent(conf.params.websiteToAnalyseUrl)
         );
+        expect(request.method, "API should use GET method").to.equal("GET");
 
         request.respond(
           200,
@@ -490,12 +1574,12 @@ describe("neuwoRtdModule", function () {
         ).to.equal(4);
         expect(
           userData.segment[0].id,
-          "The first segment ID should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_audience_tier_3[0].ID);
+          "The first segment ID should match the API response (tier 3, first item)"
+        ).to.equal(apiResponse["4"]["3"][0].id);
         expect(
-          userData.segment[1].name,
-          "The second segment name should match the API response"
-        ).to.equal(apiResponse.marketing_categories.iab_audience_tier_4[0].label);
+          userData.segment[1].id,
+          "The second segment ID should match the API response (tier 3, second item)"
+        ).to.equal(apiResponse["4"]["3"][1].id);
       });
     });
 
@@ -515,6 +1599,165 @@ describe("neuwoRtdModule", function () {
         bidsConfig,
         "The bids config object should remain unmodified after a failed API call"
       ).to.deep.equal(bidsConfigCopy);
+    });
+
+    // OpenRTB 2.5 Feature Tests
+    describe("OpenRTB 2.5 category fields", function () {
+      describe("with enableOrtb25Fields enabled (default)", function () {
+        it("should include iabVersions=1 parameter in API request", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "should include iabVersions=1").to.include("iabVersions=1");
+          expect(request.url, "should include iabVersions=6").to.include("iabVersions=6");
+          expect(request.url, "should include iabVersions=4").to.include("iabVersions=4");
+        });
+
+        it("should not duplicate iabVersions=1 when iabContentTaxonomyVersion is 1.0", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+          conf.params.iabContentTaxonomyVersion = "1.0";
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          const matches = request.url.match(/iabVersions=1(?!\d)/g) || [];
+          expect(matches.length, "iabVersions=1 should appear exactly once").to.equal(1);
+          expect(request.url, "should still include iabVersions=4").to.include("iabVersions=4");
+        });
+
+        it("should inject category fields when API returns IAB 1.0 data", function () {
+          const apiResponse = {
+            "1": {
+              "1": [{ id: "IAB12" }],
+              "2": [{ id: "IAB12-3" }]
+            },
+            "6": {
+              "1": [{ id: "52" }]
+            },
+            "4": {
+              "3": [{ id: "49" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+
+          expect(siteCat, "should have site.cat").to.deep.equal(["IAB12", "IAB12-3"]);
+          expect(contentData, "should have content data").to.exist;
+        });
+
+        it("should send IAB 1.0 filter configuration in URL parameters", function () {
+          const apiResponse = {
+            "1": {
+              "1": [{ id: "IAB12" }],
+              "2": [{ id: "IAB12-3" }]
+            },
+            "6": {
+              "1": [{ id: "52" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+          conf.params.iabTaxonomyFilters = {
+            ContentTier1: { limit: 2 }
+          };
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+
+          const request = server.requests[0];
+          expect(request.url, "should have filter for segtax 1 tier 1").to.include("filter_1_1_limit=2");
+          expect(request.url, "should have filter for segtax 6 tier 1").to.include("filter_6_1_limit=2");
+
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          expect(siteCat, "should inject category fields").to.deep.equal(["IAB12", "IAB12-3"]);
+        });
+      });
+
+      describe("with enableOrtb25Fields disabled", function () {
+        it("should not include iabVersions=1 parameter in API request", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+          conf.params.enableOrtb25Fields = false;
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "should not include iabVersions=1").to.not.include("iabVersions=1");
+          expect(request.url, "should still include iabVersions=6").to.include("iabVersions=6");
+        });
+
+        it("should not inject category fields even if API returns IAB 1.0 data", function () {
+          const apiResponse = {
+            "1": {
+              "1": [{ id: "IAB12" }]
+            },
+            "6": {
+              "1": [{ id: "52" }]
+            }
+          };
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+          conf.params.enableOrtb25Fields = false;
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+
+          const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+
+          expect(siteCat, "should not have site.cat").to.be.undefined;
+          expect(contentData, "should still have content data").to.exist;
+        });
+
+        it("should not send IAB 1.0 filters in URL parameters", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+          conf.params.enableOrtb25Fields = false;
+          conf.params.iabTaxonomyFilters = {
+            ContentTier1: { limit: 3 },
+            ContentTier2: { limit: 5 }
+          };
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "should not have segtax 1 filters").to.not.match(/filter_1_/);
+          expect(request.url, "should have segtax 6 filters").to.include("filter_6_1_limit=3");
+          expect(request.url, "should have segtax 6 tier 2 filters").to.include("filter_6_2_limit=5");
+        });
+      });
     });
   });
 
@@ -953,8 +2196,8 @@ describe("neuwoRtdModule", function () {
 
   // Integration Tests
   describe("injectIabCategories edge cases and merging", function () {
-    it("should not inject data if 'marketing_categories' is missing from the successful API response", function () {
-      const apiResponse = { brand_safety: { BS_score: "1.0" } }; // Missing marketing_categories
+    it("should not inject data if response contains no segments", function () {
+      const apiResponse = { "6": {}, "4": {} }; // Empty response (no segments)
       const bidsConfig = bidsConfiglike();
       const bidsConfigCopy = bidsConfiglike();
       const conf = config();
@@ -967,8 +2210,8 @@ describe("neuwoRtdModule", function () {
         JSON.stringify(apiResponse)
       );
 
-      // After a successful response with missing data, the global ortb2 fragments should remain empty
-      // as the data injection logic checks for marketingCategories.
+      // After a successful response with no segments, the global ortb2 fragments should remain empty
+      // as the data injection logic only injects when segments exist
       expect(
         bidsConfig.ortb2Fragments.global,
         "The global ORTB fragments should remain empty"
@@ -1021,6 +2264,67 @@ describe("neuwoRtdModule", function () {
         neuwo.DATA_PROVIDER
       );
     });
+
+    it("should correctly construct API URL when neuwoApiUrl already contains query parameters", function () {
+      const apiResponse = getNeuwoApiResponse();
+      const bidsConfig = bidsConfiglike();
+      const conf = config();
+      // Set API URL that already has query parameters
+      conf.params.neuwoApiUrl = "https://edge.neuwo.ai/api/aitopics/edge/v1/iab?environment=production";
+      conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=5";
+
+      neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+      const request = server.requests[0];
+
+      // Should use & as joiner instead of ?
+      expect(request.url, "URL should contain environment param from base URL").to.include("environment=production");
+      expect(request.url, "URL should contain token param joined with &").to.include("&token=");
+      expect(request.url, "URL should contain url param").to.include("&url=");
+      expect(request.url, "URL should contain product identifier").to.include("&_neuwo_prod=PrebidModule");
+      expect(request.url, "URL should include iabVersions parameter").to.include("iabVersions=");
+      // Should not have ?? in the URL
+      expect(request.url, "URL should not contain double question marks").to.not.include("??");
+
+      request.respond(
+        200,
+        { "Content-Type": "application/json; encoding=UTF-8" },
+        JSON.stringify(apiResponse)
+      );
+
+      const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
+      expect(contentData.name, "Should successfully process response").to.equal(neuwo.DATA_PROVIDER);
+    });
+
+    it("should treat a legacy URL with /v1/iab in query params as a legacy endpoint", function () {
+      const bidsConfig = bidsConfiglike();
+      const conf = config();
+      // Proxy URL where /v1/iab appears in query params, not the path
+      conf.params.neuwoApiUrl = "https://proxy.example.com/api?redirect=/v1/iab";
+      conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php";
+
+      neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+      const request = server.requests[0];
+
+      // Legacy endpoints should NOT include iabVersions params
+      expect(request.url, "should not include iabVersions for legacy endpoint").to.not.include("iabVersions=");
+      // Should still include token and url params
+      expect(request.url, "should include token param").to.include("token=");
+      expect(request.url, "should include url param").to.include("url=");
+    });
+
+    it("should detect /v1/iab endpoint from a malformed URL using fallback parsing", function () {
+      const bidsConfig = bidsConfiglike();
+      const conf = config();
+      // Malformed URL that causes new URL() to throw, but has /v1/iab in path
+      conf.params.neuwoApiUrl = "/v1/iab";
+      conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php";
+
+      neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+      const request = server.requests[0];
+
+      // Fallback parser should detect /v1/iab in path portion and treat as IAB endpoint
+      expect(request.url, "should include iabVersions for IAB endpoint").to.include("iabVersions=");
+    });
   });
 
   describe("getBidRequestData with caching", function () {
@@ -1047,13 +2351,14 @@ describe("neuwoRtdModule", function () {
         neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
         expect(server.requests.length, "Second call should not make a new API request").to.equal(1);
 
-        // Both configs should have the same data
+        // Both configs should have identical data (second served from cache)
         const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
         const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
         expect(contentData1, "First config should have Neuwo data").to.exist;
         expect(contentData2, "Second config should have Neuwo data from cache").to.exist;
         expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
         expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+        expect(contentData1.segment, "Cached data should have same segments as original").to.deep.equal(contentData2.segment);
       });
 
       it("should cache when enableCache is explicitly set to true", function () {
@@ -1078,6 +2383,268 @@ describe("neuwoRtdModule", function () {
         // Second call should use cache
         neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
         expect(server.requests.length, "Second call should use cached response").to.equal(1);
+      });
+
+      it("should handle concurrent requests by sharing a pending request promise", function (done) {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=concurrent";
+        conf.params.enableCache = true;
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 3) {
+            // All callbacks have been called, now verify the data
+            try {
+              const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
+              const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
+              const contentData3 = bidsConfig3.ortb2Fragments.global.site.content.data[0];
+
+              expect(contentData1, "First config should have Neuwo data").to.exist;
+              expect(contentData2, "Second config should have Neuwo data from pending request").to.exist;
+              expect(contentData3, "Third config should have Neuwo data from pending request").to.exist;
+              expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              expect(contentData3.name, "Third config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Make three concurrent calls before responding to the first request
+        neuwo.getBidRequestData(bidsConfig1, callback, conf, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf, "consent data");
+        neuwo.getBidRequestData(bidsConfig3, callback, conf, "consent data");
+
+        // Only one API request should be made
+        expect(server.requests.length, "Only one API request should be made for concurrent calls").to.equal(1);
+
+        const request = server.requests[0];
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+      });
+
+      it("should transition through all three cache states: pending request, then cached response", function (done) {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=three-stage";
+        conf.params.enableCache = true;
+
+        let callback1and2Count = 0;
+
+        const callback1and2 = () => {
+          callback1and2Count++;
+          if (callback1and2Count === 2) {
+            // Both first and second callbacks have been called
+            // Stage 3: Third request should use cached response (not pending request)
+            neuwo.getBidRequestData(bidsConfig3, () => {
+              try {
+                expect(server.requests.length, "Third call should use cache and not make a new API request").to.equal(1);
+
+                // All three configs should have the same data
+                const contentData1 = bidsConfig1.ortb2Fragments.global.site.content.data[0];
+                const contentData2 = bidsConfig2.ortb2Fragments.global.site.content.data[0];
+                const contentData3 = bidsConfig3.ortb2Fragments.global.site.content.data[0];
+
+                expect(contentData1, "First config should have Neuwo data").to.exist;
+                expect(contentData2, "Second config should have Neuwo data from pending request").to.exist;
+                expect(contentData3, "Third config should have Neuwo data from cache").to.exist;
+                expect(contentData1.name, "First config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+                expect(contentData2.name, "Second config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+                expect(contentData3.name, "Third config should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+                done();
+              } catch (e) {
+                done(e);
+              }
+            }, conf, "consent data");
+          }
+        };
+
+        // Stage 1: First request initiates API call (creates pending request)
+        neuwo.getBidRequestData(bidsConfig1, callback1and2, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        // Stage 2: Second request should attach to pending request before response
+        neuwo.getBidRequestData(bidsConfig2, callback1and2, conf, "consent data");
+        expect(server.requests.length, "Second call should not make a new API request").to.equal(1);
+
+        // Respond to the API request, which populates the cache
+        const request = server.requests[0];
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+      });
+
+      it("should not share cache between requests with different parameters", function (done) {
+        const apiResponse1 = getNeuwoApiResponse();
+        const apiResponse2 = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = config();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/page-a";
+        conf1.params.enableCache = true;
+        const conf2 = config();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/page-b";
+        conf2.params.enableCache = true;
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 2) {
+            try {
+              // Both should have made separate API requests
+              expect(server.requests.length, "Should make two separate API requests for different URLs").to.equal(2);
+              expect(server.requests[0].url).to.contain("page-a");
+              expect(server.requests[1].url).to.contain("page-b");
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Two concurrent calls with different URLs
+        neuwo.getBidRequestData(bidsConfig1, callback, conf1, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf2, "consent data");
+
+        expect(server.requests.length, "Should make two separate API requests").to.equal(2);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse1)
+        );
+        server.requests[1].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse2)
+        );
+      });
+
+      it("should use cache for same URL but make new request after config change", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-a";
+        conf.params.enableCache = true;
+
+        // First call
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length).to.equal(1);
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with same URL - should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Same URL should use cache").to.equal(1);
+
+        // Third call with different URL (simulating config change) - should make new request
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-b";
+        neuwo.getBidRequestData(bidsConfig3, () => {}, conf, "consent data");
+        expect(server.requests.length, "Different URL should make new request").to.equal(2);
+        expect(server.requests[1].url).to.contain("page-b");
+      });
+
+      it("should not share cache when iabContentTaxonomyVersion changes", function () {
+        const apiResponse = getNeuwoApiResponse();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf.params.enableCache = true;
+        conf.params.iabContentTaxonomyVersion = "2.2";
+
+        // First call with taxonomy 2.2
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length).to.equal(1);
+        expect(server.requests[0].url).to.contain("iabVersions=6"); // segtax 6 = taxonomy 2.2
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with same taxonomy - should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Same taxonomy version should use cache").to.equal(1);
+
+        // Third call with different taxonomy version - should make new request
+        conf.params.iabContentTaxonomyVersion = "3.0";
+        neuwo.getBidRequestData(bidsConfig3, () => {}, conf, "consent data");
+        expect(server.requests.length, "Different taxonomy version should make new request").to.equal(2);
+        expect(server.requests[1].url).to.contain("iabVersions=7"); // segtax 7 = taxonomy 3.0
+      });
+
+      it("should evict the oldest cache entry when MAX_CACHE_ENTRIES is exceeded", async function () {
+        const apiResponse = getNeuwoApiResponse();
+        const conf = config();
+        conf.params.enableCache = true;
+
+        // Fill cache with 10 entries (MAX_CACHE_ENTRIES)
+        for (let i = 0; i < 10; i++) {
+          const bidsConfig = bidsConfiglike();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/page-" + i;
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          server.requests[i].respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+        }
+        // Flush microtasks so pendingRequests are cleaned up via .finally() handlers
+        await Promise.resolve();
+
+        expect(server.requests.length, "Should have made 10 API requests").to.equal(10);
+
+        // Verify page-0 is cached
+        const bidsConfigCached = bidsConfiglike();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-0";
+        neuwo.getBidRequestData(bidsConfigCached, () => {}, conf, "consent data");
+        expect(server.requests.length, "page-0 should be served from cache").to.equal(10);
+
+        // Add 11th entry to trigger eviction of the oldest (page-0)
+        const bidsConfig11 = bidsConfiglike();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-10";
+        neuwo.getBidRequestData(bidsConfig11, () => {}, conf, "consent data");
+        expect(server.requests.length, "page-10 should trigger new request").to.equal(11);
+        server.requests[10].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+        await Promise.resolve();
+
+        // page-0 should have been evicted and require a new request
+        const bidsConfigEvicted = bidsConfiglike();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-0";
+        neuwo.getBidRequestData(bidsConfigEvicted, () => {}, conf, "consent data");
+        expect(server.requests.length, "page-0 should be evicted and trigger new request").to.equal(12);
+
+        // page-1 should still be cached
+        const bidsConfigStillCached = bidsConfiglike();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/page-1";
+        neuwo.getBidRequestData(bidsConfigStillCached, () => {}, conf, "consent data");
+        expect(server.requests.length, "page-1 should still be in cache").to.equal(12);
       });
     });
 
@@ -1156,145 +2723,1299 @@ describe("neuwoRtdModule", function () {
           JSON.stringify(apiResponse)
         );
       });
+
+      it("should clear pending request after error response and retry on next call", function (done) {
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=error-test";
+        conf.params.enableCache = true;
+
+        // First call - will get 404 error
+        neuwo.getBidRequestData(bidsConfig1, () => {
+          // After error, data should not be injected
+          const contentData = bidsConfig1.ortb2Fragments.global?.site?.content?.data;
+          expect(contentData, "No data should be injected after error").to.be.undefined;
+
+          // Second call - should retry API (pending should be cleared)
+          neuwo.getBidRequestData(bidsConfig2, () => {
+            try {
+              expect(server.requests.length, "Second call should retry after error").to.equal(2);
+              const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+              expect(contentData2, "Second call should have Neuwo data after retry").to.exist;
+              expect(contentData2.name, "Second call should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }, conf, "consent data");
+
+          // Respond with success to second request
+          const request2 = server.requests[1];
+          request2.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(getNeuwoApiResponse())
+          );
+        }, conf, "consent data");
+
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        // Respond with error to first request
+        const request1 = server.requests[0];
+        request1.respond(
+          404,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify({ error: "Not found" })
+        );
+      });
+
+      it("should handle concurrent requests when API returns error", function (done) {
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const bidsConfig3 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=concurrent-error";
+        conf.params.enableCache = true;
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 3) {
+            try {
+              // None of the configs should have data after error
+              const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data;
+              const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data;
+              const contentData3 = bidsConfig3.ortb2Fragments.global?.site?.content?.data;
+
+              expect(contentData1, "First config should not have data after error").to.be.undefined;
+              expect(contentData2, "Second config should not have data after error").to.be.undefined;
+              expect(contentData3, "Third config should not have data after error").to.be.undefined;
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Make three concurrent calls
+        neuwo.getBidRequestData(bidsConfig1, callback, conf, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf, "consent data");
+        neuwo.getBidRequestData(bidsConfig3, callback, conf, "consent data");
+
+        expect(server.requests.length, "Only one API request should be made").to.equal(1);
+
+        // Respond with error
+        const request = server.requests[0];
+        request.respond(
+          500,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify({ error: "Internal server error" })
+        );
+      });
+
+      it("should handle JSON parsing error in success callback", function (done) {
+        const bidsConfig = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=parse-error";
+        conf.params.enableCache = true;
+
+        neuwo.getBidRequestData(bidsConfig, () => {
+          // Callback should still be called
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data;
+          expect(contentData, "No data should be injected after parsing error").to.be.undefined;
+          done();
+        }, conf, "consent data");
+
+        expect(server.requests.length, "Should make an API request").to.equal(1);
+
+        // Respond with invalid JSON
+        const request = server.requests[0];
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          "{ invalid json content }"
+        );
+      });
+
+      it("should not cache response after JSON parsing error and allow retry", function (done) {
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=parse-error-retry";
+        conf.params.enableCache = true;
+
+        neuwo.getBidRequestData(bidsConfig1, () => {
+          // First call with parsing error
+          const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data;
+          expect(contentData1, "No data after parsing error").to.be.undefined;
+
+          // Second call should retry (not use cached error)
+          neuwo.getBidRequestData(bidsConfig2, () => {
+            try {
+              expect(server.requests.length, "Should retry after parsing error").to.equal(2);
+              const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+              expect(contentData2, "Second call should have valid data").to.exist;
+              expect(contentData2.name, "Should have correct provider").to.equal(neuwo.DATA_PROVIDER);
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }, conf, "consent data");
+
+          // Second request gets valid response
+          const request2 = server.requests[1];
+          request2.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(getNeuwoApiResponse())
+          );
+        }, conf, "consent data");
+
+        // First request gets invalid JSON
+        const request1 = server.requests[0];
+        request1.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          "{ this is not valid JSON }"
+        );
+      });
+
+      it("should handle response with empty segments", function (done) {
+        const bidsConfig = bidsConfiglike();
+        const conf = config();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=no-categories";
+
+        neuwo.getBidRequestData(bidsConfig, () => {
+          // Callback should still be called even with empty response
+          const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data;
+          expect(contentData, "No data should be injected without segments").to.be.undefined;
+          done();
+        }, conf, "consent data");
+
+        const request = server.requests[0];
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify({ "6": {}, "4": {} }) // Empty segments
+        );
+      });
+    });
+
+    describe("with URL query param stripping", function () {
+      describe("when stripAllQueryParams is enabled", function () {
+        it("should strip all query parameters from the analyzed URL", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?utm_source=test&utm_campaign=example&id=5";
+          conf.params.stripAllQueryParams = true;
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should not contain encoded query params").to.include(
+            encodeURIComponent("https://publisher.works/article.php")
+          );
+          expect(request.url, "The request URL should not contain utm_source").to.not.include(
+            encodeURIComponent("utm_source")
+          );
+        });
+      });
+
+      describe("when stripQueryParamsForDomains is enabled", function () {
+        it("should strip query params only for matching domains", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?foo=bar&id=5";
+          conf.params.stripQueryParamsForDomains = ["publisher.works"];
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should contain the URL without query params").to.include(
+            encodeURIComponent("https://publisher.works/article.php")
+          );
+          expect(request.url, "The request URL should not contain the id param").to.not.include(
+            encodeURIComponent("id=5")
+          );
+        });
+
+        it("should not strip query params for non-matching domains", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://other-domain.com/page?foo=bar&id=5";
+          conf.params.stripQueryParamsForDomains = ["publisher.works"];
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should contain the full URL with query params").to.include(
+            encodeURIComponent("https://other-domain.com/page?foo=bar&id=5")
+          );
+        });
+
+        it("should handle subdomain matching correctly", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://sub.publisher.works/page?tracking=123";
+          conf.params.stripQueryParamsForDomains = ["publisher.works"];
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should strip params for subdomain").to.include(
+            encodeURIComponent("https://sub.publisher.works/page")
+          );
+          expect(request.url, "The request URL should not contain tracking param").to.not.include(
+            encodeURIComponent("tracking=123")
+          );
+        });
+      });
+
+      describe("when stripQueryParams is enabled", function () {
+        it("should strip only specified query parameters", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?utm_source=test&utm_campaign=example&id=5";
+          conf.params.stripQueryParams = ["utm_source", "utm_campaign"];
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should contain the id param").to.include(
+            encodeURIComponent("id=5")
+          );
+          expect(request.url, "The request URL should not contain utm_source").to.not.include(
+            encodeURIComponent("utm_source")
+          );
+          expect(request.url, "The request URL should not contain utm_campaign").to.not.include(
+            encodeURIComponent("utm_campaign")
+          );
+        });
+
+        it("should handle stripping params that result in no query string", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?utm_source=test";
+          conf.params.stripQueryParams = ["utm_source"];
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should not contain a query string").to.include(
+            encodeURIComponent("https://publisher.works/article.php")
+          );
+          expect(request.url, "The request URL should not contain utm_source").to.not.include(
+            encodeURIComponent("utm_source")
+          );
+        });
+
+        it("should leave URL unchanged if specified params do not exist", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          const originalUrl = "https://publisher.works/article.php?id=5";
+          conf.params.websiteToAnalyseUrl = originalUrl;
+          conf.params.stripQueryParams = ["utm_source", "nonexistent"];
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should contain the original URL").to.include(
+            encodeURIComponent(originalUrl)
+          );
+        });
+      });
+
+      describe("when no stripping options are provided", function () {
+        it("should send the URL with all query parameters intact", function () {
+          const bidsConfig = bidsConfiglike();
+          const conf = config();
+          const originalUrl = "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
+          conf.params.websiteToAnalyseUrl = originalUrl;
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should contain the full original URL").to.include(
+            encodeURIComponent(originalUrl)
+          );
+        });
+      });
     });
   });
 
-  describe("getBidRequestData with URL query param stripping", function () {
-    describe("when stripAllQueryParams is enabled", function () {
-      it("should strip all query parameters from the analyzed URL", function () {
-        const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?utm_source=test&utm_campaign=example&id=5";
-        conf.params.stripAllQueryParams = true;
+  // V1 API Format Tests
+  // These tests use the legacy V1 API response format with marketing_categories structure.
+  // V1 API uses GET requests and returns: { marketing_categories: { iab_tier_1: [], iab_tier_2: [], etc. } }
+  // Field names in V1: ID, label, relevance (capital letters)
+  describe("V1 API", function () {
+    describe("getBidRequestData", function () {
+      describe("when using IAB Content Taxonomy 3.0", function () {
+        it("should correctly structure the bids object after a successful API response", function () {
+          const apiResponse = getNeuwoApiResponseV1();
+          const bidsConfig = bidsConfiglike();
+          const conf = configV1();
+          // control xhr api request target for testing
+          conf.params.websiteToAnalyseUrl =
+            "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
 
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
 
-        expect(request.url, "The request URL should not contain encoded query params").to.include(
-          encodeURIComponent("https://publisher.works/article.php")
-        );
-        expect(request.url, "The request URL should not contain utm_source").to.not.include(
-          encodeURIComponent("utm_source")
-        );
+          expect(request.url, "The request URL should be a string").to.be.a("string");
+          expect(request.url, "The request URL should include the public API token").to.include(
+            conf.params.neuwoApiToken
+          );
+          expect(request.url, "The request URL should include the encoded website URL").to.include(
+            encodeURIComponent(conf.params.websiteToAnalyseUrl)
+          );
+          expect(request.url, "The request URL should include the product identifier").to.include(
+            "_neuwo_prod=PrebidModule"
+          );
+          expect(request.url, "V1 API should NOT include iabVersions parameter").to.not.include(
+            "iabVersions"
+          );
+
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+
+          const contentData = bidsConfig.ortb2Fragments.global.site.content.data[0];
+          expect(contentData.name, "The data provider name should be correctly set").to.equal(
+            neuwo.DATA_PROVIDER
+          );
+          expect(
+            contentData.ext.segtax,
+            "The segtax value should correspond to IAB Content Taxonomy 3.0"
+          ).to.equal(7);
+          expect(
+            contentData.segment[0].id,
+            "The first segment ID should match the API response (transformed from V1)"
+          ).to.equal(apiResponse.marketing_categories.iab_tier_1[0].ID);
+          expect(
+            contentData.segment[1].id,
+            "The second segment ID should match the API response (transformed from V1)"
+          ).to.equal(apiResponse.marketing_categories.iab_tier_2[0].ID);
+        });
+      });
+
+      describe("when using IAB Audience Taxonomy 1.1", function () {
+        it("should correctly structure the bids object after a successful API response", function () {
+          const apiResponse = getNeuwoApiResponseV1();
+          const bidsConfig = bidsConfiglike();
+          const conf = configV1();
+          // control xhr api request target for testing
+          conf.params.websiteToAnalyseUrl =
+            "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+
+          expect(request.url, "The request URL should be a string").to.be.a("string");
+          expect(request.url, "The request URL should include the public API token").to.include(
+            conf.params.neuwoApiToken
+          );
+          expect(request.url, "The request URL should include the encoded website URL").to.include(
+            encodeURIComponent(conf.params.websiteToAnalyseUrl)
+          );
+
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+          const userData = bidsConfig.ortb2Fragments.global.user.data[0];
+          expect(userData.name, "The data provider name should be correctly set").to.equal(
+            neuwo.DATA_PROVIDER
+          );
+          expect(
+            userData.ext.segtax,
+            "The segtax value should correspond to IAB Audience Taxonomy 1.1"
+          ).to.equal(4);
+          expect(
+            userData.segment[0].id,
+            "The first segment ID should match the API response (transformed from V1)"
+          ).to.equal(apiResponse.marketing_categories.iab_audience_tier_3[0].ID);
+          expect(
+            userData.segment[1].id,
+            "The second segment ID should match the API response (transformed from V1)"
+          ).to.equal(apiResponse.marketing_categories.iab_audience_tier_4[0].ID);
+        });
+      });
+
+      describe("edge cases", function () {
+        it("should not inject data if 'marketing_categories' is missing from the successful API response", function () {
+          const apiResponse = { brand_safety: { BS_score: "1.0" } }; // Missing marketing_categories
+          const bidsConfig = bidsConfiglike();
+          const bidsConfigCopy = bidsConfiglike();
+          const conf = configV1();
+
+          neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+          const request = server.requests[0];
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify(apiResponse)
+          );
+
+          // After a successful response with missing data, the global ortb2 fragments should remain empty
+          // as the data injection logic checks for marketing_categories in V1 format
+          expect(
+            bidsConfig.ortb2Fragments.global,
+            "The global ORTB fragments should remain empty"
+          ).to.deep.equal(bidsConfigCopy.ortb2Fragments.global);
+        });
+
+        it("should handle response with missing marketing_categories", function (done) {
+          const bidsConfig = bidsConfiglike();
+          const conf = configV1();
+          conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?id=no-categories";
+
+          neuwo.getBidRequestData(bidsConfig, () => {
+            // Callback should still be called even without marketing_categories
+            const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data;
+            expect(contentData, "No data should be injected without marketing_categories").to.be.undefined;
+            done();
+          }, conf, "consent data");
+
+          const request = server.requests[0];
+          request.respond(
+            200,
+            { "Content-Type": "application/json; encoding=UTF-8" },
+            JSON.stringify({ brand_safety: { BS_score: "1.0" } }) // Missing marketing_categories
+          );
+        });
       });
     });
 
-    describe("when stripQueryParamsForDomains is enabled", function () {
-      it("should strip query params only for matching domains", function () {
+    describe("with iabTaxonomyFilters (client-side filtering)", function () {
+      it("should work without filtering when no iabTaxonomyFilters provided", function (done) {
         const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?foo=bar&id=5";
-        conf.params.stripQueryParamsForDomains = ["publisher.works"];
+        const conf = configV1();
 
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+        neuwo.getBidRequestData(
+          bidsConfig,
+          () => {
+            const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+            const userData = bidsConfig.ortb2Fragments.global?.user?.data?.[0];
+
+            expect(contentData, "should have content data").to.exist;
+            expect(contentData.segment, "should have unfiltered content segments").to.have.lengthOf(2);
+            expect(userData, "should have user data").to.exist;
+            expect(userData.segment, "should have unfiltered audience segments").to.have.lengthOf(3);
+            done();
+          },
+          conf,
+          "consent data"
+        );
+
         const request = server.requests[0];
-
-        expect(request.url, "The request URL should contain the URL without query params").to.include(
-          encodeURIComponent("https://publisher.works/article.php")
-        );
-        expect(request.url, "The request URL should not contain the id param").to.not.include(
-          encodeURIComponent("id=5")
-        );
+        request.respond(200, {}, JSON.stringify(getNeuwoApiResponseV1()));
       });
 
-      it("should not strip query params for non-matching domains", function () {
+      it("should apply client-side filtering when iabTaxonomyFilters are provided", function (done) {
         const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.websiteToAnalyseUrl = "https://other-domain.com/page?foo=bar&id=5";
-        conf.params.stripQueryParamsForDomains = ["publisher.works"];
+        const conf = configV1();
+        conf.params.iabTaxonomyFilters = {
+          ContentTier1: { limit: 1, threshold: 0.4 },
+          AudienceTier3: { limit: 1, threshold: 0.9 }
+        };
 
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
+        neuwo.getBidRequestData(
+          bidsConfig,
+          () => {
+            const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data?.[0];
+            const userData = bidsConfig.ortb2Fragments.global?.user?.data?.[0];
 
-        expect(request.url, "The request URL should contain the full URL with query params").to.include(
-          encodeURIComponent("https://other-domain.com/page?foo=bar&id=5")
+            expect(contentData, "should have content data").to.exist;
+            expect(contentData.segment, "should have filtered content segments").to.have.lengthOf(2);
+
+            // Check that tier 1 was limited to 1
+            const tier1Items = contentData.segment.filter(s => s.id === "274");
+            expect(tier1Items, "should have only 1 tier 1 item").to.have.lengthOf(1);
+
+            expect(userData, "should have user data").to.exist;
+            // Audience tier 3 should be filtered to 1, but tiers 4 and 5 should remain
+            expect(userData.segment, "should have filtered audience segments").to.have.lengthOf(3);
+
+            done();
+          },
+          conf,
+          "consent data"
         );
+
+        const request = server.requests[0];
+        request.respond(200, {}, JSON.stringify(getNeuwoApiResponseV1()));
       });
 
-      it("should handle subdomain matching correctly", function () {
+      it("should apply strict client-side filtering that removes all low-relevance items", function (done) {
         const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.websiteToAnalyseUrl = "https://sub.publisher.works/page?tracking=123";
-        conf.params.stripQueryParamsForDomains = ["publisher.works"];
+        const conf = configV1();
+        conf.params.iabTaxonomyFilters = {
+          ContentTier1: { threshold: 0.9 }, // Only keep items with 90%+ relevance
+          ContentTier2: { threshold: 0.9 },
+          AudienceTier4: { threshold: 0.99 },
+          AudienceTier5: { threshold: 0.99 }
+        };
 
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
+        neuwo.getBidRequestData(
+          bidsConfig,
+          () => {
+            // Tier 1 has 0.47, Tier 2 has 0.41 - both below 0.9 threshold
+            // All content segments are filtered out, so content data should not be injected
+            const contentData = bidsConfig.ortb2Fragments.global?.site?.content?.data;
+            expect(contentData, "should not inject content data when all segments filtered out").to.be.undefined;
+
+            const userData = bidsConfig.ortb2Fragments.global?.user?.data?.[0];
+            expect(userData, "should have user data").to.exist;
+            // Tier 3 has 0.9923 (passes), Tier 4 has 0.9673 (fails), Tier 5 has 0.9066 (fails)
+            expect(userData.segment, "should have only 1 audience segment").to.have.lengthOf(1);
+
+            done();
+          },
+          conf,
+          "consent data"
+        );
+
         const request = server.requests[0];
+        request.respond(200, {}, JSON.stringify(getNeuwoApiResponseV1()));
+      });
 
-        expect(request.url, "The request URL should strip params for subdomain").to.include(
-          encodeURIComponent("https://sub.publisher.works/page")
+      it("should handle client-side filtering with cached response", function (done) {
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = configV1();
+        conf.params.iabTaxonomyFilters = {
+          ContentTier1: { limit: 1 }
+        };
+
+        // First request
+        neuwo.getBidRequestData(
+          bidsConfig1,
+          () => {
+          // Second request (should use cache)
+            neuwo.getBidRequestData(
+              bidsConfig2,
+              () => {
+                const contentData = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+                expect(contentData, "should have content data from cache").to.exist;
+                expect(contentData.segment, "should apply filtering to cached response").to.have.lengthOf(2);
+                done();
+              },
+              conf,
+              "consent data"
+            );
+          },
+          conf,
+          "consent data"
         );
-        expect(request.url, "The request URL should not contain tracking param").to.not.include(
-          encodeURIComponent("tracking=123")
-        );
+
+        const request = server.requests[0];
+        expect(server.requests, "should only make one API request").to.have.lengthOf(1);
+        request.respond(200, {}, JSON.stringify(getNeuwoApiResponseV1()));
       });
     });
 
-    describe("when stripQueryParams is enabled", function () {
-      it("should strip only specified query parameters", function () {
+    describe("OpenRTB 2.5 category fields (V1 API compatibility)", function () {
+      it("should not include iabVersions parameter with legacy API", function () {
         const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?utm_source=test&utm_campaign=example&id=5";
-        conf.params.stripQueryParams = ["utm_source", "utm_campaign"];
+        const conf = configV1();
+        conf.params.enableOrtb25Fields = true;
 
         neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
 
-        expect(request.url, "The request URL should contain the id param").to.include(
-          encodeURIComponent("id=5")
-        );
-        expect(request.url, "The request URL should not contain utm_source").to.not.include(
-          encodeURIComponent("utm_source")
-        );
-        expect(request.url, "The request URL should not contain utm_campaign").to.not.include(
-          encodeURIComponent("utm_campaign")
-        );
+        const request = server.requests[0];
+        expect(request.url, "should not include iabVersions parameter").to.not.include("iabVersions");
       });
 
-      it("should handle stripping params that result in no query string", function () {
+      it("should not inject category fields with legacy API", function () {
         const bidsConfig = bidsConfiglike();
-        const conf = config();
-        conf.params.websiteToAnalyseUrl = "https://publisher.works/article.php?utm_source=test";
-        conf.params.stripQueryParams = ["utm_source"];
+        const conf = configV1();
+        conf.params.enableOrtb25Fields = true;
 
         neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
         const request = server.requests[0];
-
-        expect(request.url, "The request URL should not contain a query string").to.include(
-          encodeURIComponent("https://publisher.works/article.php")
+        request.respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(getNeuwoApiResponseV1())
         );
-        expect(request.url, "The request URL should not contain utm_source").to.not.include(
-          encodeURIComponent("utm_source")
-        );
-      });
 
-      it("should leave URL unchanged if specified params do not exist", function () {
-        const bidsConfig = bidsConfiglike();
-        const conf = config();
-        const originalUrl = "https://publisher.works/article.php?id=5";
-        conf.params.websiteToAnalyseUrl = originalUrl;
-        conf.params.stripQueryParams = ["utm_source", "nonexistent"];
-
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
-
-        expect(request.url, "The request URL should contain the original URL").to.include(
-          encodeURIComponent(originalUrl)
-        );
+        const siteCat = bidsConfig.ortb2Fragments.global?.site?.cat;
+        expect(siteCat, "should not have site.cat with legacy API").to.be.undefined;
       });
     });
 
-    describe("when no stripping options are provided", function () {
-      it("should send the URL with all query parameters intact", function () {
-        const bidsConfig = bidsConfiglike();
-        const conf = config();
-        const originalUrl = "https://publisher.works/article.php?get=horrible_url_for_testing&id=5";
-        conf.params.websiteToAnalyseUrl = originalUrl;
+    describe("filterIabTaxonomyTier", function () {
+      it("should return original array when no filter is provided", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" },
+          { ID: "3", label: "Category 3", relevance: "0.3" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, {});
+        expect(result, "should return all items when no filter is provided").to.have.lengthOf(3);
+      });
 
-        neuwo.getBidRequestData(bidsConfig, () => {}, conf, "consent data");
-        const request = server.requests[0];
+      it("should return original array when filter is empty", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies);
+        expect(result, "should return all items when no filter parameter").to.have.lengthOf(2);
+      });
 
-        expect(request.url, "The request URL should contain the full original URL").to.include(
-          encodeURIComponent(originalUrl)
+      it("should filter by threshold only", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" },
+          { ID: "3", label: "Category 3", relevance: "0.3" },
+          { ID: "4", label: "Category 4", relevance: "0.1" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { threshold: 0.4 });
+        expect(result, "should filter out items below threshold").to.have.lengthOf(2);
+        expect(result[0].ID, "should keep highest relevance item").to.equal("1");
+        expect(result[1].ID, "should keep second highest relevance item").to.equal("2");
+      });
+
+      it("should limit by count only", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" },
+          { ID: "3", label: "Category 3", relevance: "0.3" },
+          { ID: "4", label: "Category 4", relevance: "0.1" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { limit: 2 });
+        expect(result, "should limit to specified count").to.have.lengthOf(2);
+        expect(result[0].ID, "should keep highest relevance item").to.equal("1");
+        expect(result[1].ID, "should keep second highest relevance item").to.equal("2");
+      });
+
+      it("should return empty array when limit is 0", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { limit: 0 });
+        expect(result, "limit 0 should suppress the tier entirely").to.be.an("array").that.is.empty;
+      });
+
+      it("should apply both threshold and limit", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.9" },
+          { ID: "2", label: "Category 2", relevance: "0.7" },
+          { ID: "3", label: "Category 3", relevance: "0.6" },
+          { ID: "4", label: "Category 4", relevance: "0.5" },
+          { ID: "5", label: "Category 5", relevance: "0.2" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { threshold: 0.5, limit: 2 });
+        expect(result, "should apply both threshold and limit").to.have.lengthOf(2);
+        expect(result[0].ID, "should keep highest relevance item").to.equal("1");
+        expect(result[1].ID, "should keep second highest relevance item").to.equal("2");
+      });
+
+      it("should preserve original order when filter is empty", function () {
+        const taxonomies = [
+          { ID: "3", label: "Category 3", relevance: "0.3" },
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, {});
+        expect(result[0].ID, "first item should keep original position").to.equal("3");
+        expect(result[1].ID, "second item should keep original position").to.equal("1");
+        expect(result[2].ID, "third item should keep original position").to.equal("2");
+      });
+
+      it("should sort by relevance descending only when limit is set", function () {
+        const taxonomies = [
+          { ID: "3", label: "Category 3", relevance: "0.3" },
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { limit: 2 });
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].ID, "first item should have highest relevance").to.equal("1");
+        expect(result[1].ID, "second item should have second highest relevance").to.equal("2");
+      });
+
+      it("should not sort when only threshold is set", function () {
+        const taxonomies = [
+          { ID: "3", label: "Category 3", relevance: "0.6" },
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.2" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { threshold: 0.5 });
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].ID, "should preserve original order after threshold filter").to.equal("3");
+        expect(result[1].ID, "should preserve original order after threshold filter").to.equal("1");
+      });
+
+      it("should handle empty array", function () {
+        const result = neuwo.filterIabTaxonomyTier([], { threshold: 0.5, limit: 2 });
+        expect(result, "should return empty array for empty input").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle null input", function () {
+        const result = neuwo.filterIabTaxonomyTier(null, { threshold: 0.5 });
+        expect(result, "should return empty array for null input").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle undefined input", function () {
+        const result = neuwo.filterIabTaxonomyTier(undefined, { threshold: 0.5 });
+        expect(result, "should return empty array for undefined input").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle items with missing relevance", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2" },
+          { ID: "3", label: "Category 3", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { threshold: 0.3 });
+        expect(result, "should handle missing relevance").to.have.lengthOf(2);
+      });
+
+      it("should not mutate original array", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2", relevance: "0.5" },
+          { ID: "3", label: "Category 3", relevance: "0.3" }
+        ];
+        const original = [...taxonomies];
+        neuwo.filterIabTaxonomyTier(taxonomies, { limit: 1 });
+        expect(taxonomies, "should not mutate original array").to.deep.equal(original);
+      });
+
+      it("should sort items with undefined/null relevance to the end", function () {
+        const taxonomies = [
+          { ID: "1", label: "Category 1", relevance: "0.8" },
+          { ID: "2", label: "Category 2" }, // missing relevance
+          { ID: "3", label: "Category 3", relevance: null },
+          { ID: "4", label: "Category 4", relevance: undefined },
+          { ID: "5", label: "Category 5", relevance: "0.5" }
+        ];
+        const result = neuwo.filterIabTaxonomyTier(taxonomies, { limit: 5 });
+        expect(result, "should return all items").to.have.lengthOf(5);
+        expect(result[0].ID, "should have highest relevance first").to.equal("1");
+        expect(result[1].ID, "should have second highest relevance").to.equal("5");
+        // Items with missing/null/undefined relevance should be sorted to the end
+        const lastThreeIds = [result[2].ID, result[3].ID, result[4].ID].sort();
+        expect(lastThreeIds, "items with no relevance should be at the end").to.deep.equal(["2", "3", "4"]);
+      });
+    });
+
+    describe("filterIabTaxonomies", function () {
+      function getTestMarketingCategories() {
+        return {
+          iab_tier_1: [
+            { ID: "1", label: "Cat 1", relevance: "0.9" },
+            { ID: "2", label: "Cat 2", relevance: "0.7" },
+            { ID: "3", label: "Cat 3", relevance: "0.5" }
+          ],
+          iab_tier_2: [
+            { ID: "4", label: "Cat 4", relevance: "0.8" },
+            { ID: "5", label: "Cat 5", relevance: "0.6" }
+          ],
+          iab_audience_tier_3: [
+            { ID: "6", label: "Aud 1", relevance: "0.95" },
+            { ID: "7", label: "Aud 2", relevance: "0.85" },
+            { ID: "8", label: "Aud 3", relevance: "0.75" }
+          ]
+        };
+      }
+
+      it("should return original data when no filters provided", function () {
+        const marketingCategories = getTestMarketingCategories();
+        const result = neuwo.filterIabTaxonomies(marketingCategories, {});
+        expect(result.iab_tier_1, "should return all tier 1 items").to.have.lengthOf(3);
+        expect(result.iab_tier_2, "should return all tier 2 items").to.have.lengthOf(2);
+        expect(result.iab_audience_tier_3, "should return all audience tier 3 items").to.have.lengthOf(3);
+      });
+
+      it("should return original data when filters parameter is undefined", function () {
+        const marketingCategories = getTestMarketingCategories();
+        const result = neuwo.filterIabTaxonomies(marketingCategories);
+        expect(result.iab_tier_1, "should return all tier 1 items").to.have.lengthOf(3);
+      });
+
+      it("should filter ContentTier1 correctly", function () {
+        const marketingCategories = getTestMarketingCategories();
+        const filters = {
+          ContentTier1: { limit: 1, threshold: 0.8 }
+        };
+        const result = neuwo.filterIabTaxonomies(marketingCategories, filters);
+        expect(result.iab_tier_1, "should filter tier 1").to.have.lengthOf(1);
+        expect(result.iab_tier_1[0].ID, "should keep highest relevance item").to.equal("1");
+        expect(result.iab_tier_2, "should not filter tier 2").to.have.lengthOf(2);
+      });
+
+      it("should filter multiple tiers independently", function () {
+        const marketingCategories = getTestMarketingCategories();
+        const filters = {
+          ContentTier1: { limit: 2, threshold: 0.6 },
+          ContentTier2: { limit: 1, threshold: 0.7 },
+          AudienceTier3: { limit: 2, threshold: 0.8 }
+        };
+        const result = neuwo.filterIabTaxonomies(marketingCategories, filters);
+        expect(result.iab_tier_1, "should filter tier 1 to 2 items").to.have.lengthOf(2);
+        expect(result.iab_tier_2, "should filter tier 2 to 1 item").to.have.lengthOf(1);
+        expect(result.iab_tier_2[0].ID, "tier 2 should keep highest item").to.equal("4");
+        expect(result.iab_audience_tier_3, "should filter audience tier 3 to 2 items").to.have.lengthOf(2);
+      });
+
+      it("should handle tier with no matching config", function () {
+        const marketingCategories = getTestMarketingCategories();
+        const filters = {
+          ContentTier1: { limit: 1 }
+        };
+        const result = neuwo.filterIabTaxonomies(marketingCategories, filters);
+        expect(result.iab_tier_1, "should filter configured tier").to.have.lengthOf(1);
+        expect(result.iab_tier_2, "should keep all items in non-configured tier").to.have.lengthOf(2);
+      });
+
+      it("should preserve non-array tier data", function () {
+        const marketingCategories = {
+          iab_tier_1: [{ ID: "1", label: "Cat 1", relevance: "0.9" }],
+          some_other_field: "string value",
+          another_field: 123
+        };
+        const filters = {
+          ContentTier1: { limit: 1 }
+        };
+        const result = neuwo.filterIabTaxonomies(marketingCategories, filters);
+        expect(result.some_other_field, "should preserve string field").to.equal("string value");
+        expect(result.another_field, "should preserve number field").to.equal(123);
+      });
+
+      it("should handle null marketingCategories", function () {
+        const result = neuwo.filterIabTaxonomies(null, { ContentTier1: { limit: 1 } });
+        expect(result, "should return null for null input").to.be.null;
+      });
+
+      it("should handle undefined marketingCategories", function () {
+        const result = neuwo.filterIabTaxonomies(undefined, { ContentTier1: { limit: 1 } });
+        expect(result, "should return undefined for undefined input").to.be.undefined;
+      });
+
+      it("should handle all tier configurations", function () {
+        const marketingCategories = {
+          iab_tier_1: [
+            { ID: "1", label: "C1", relevance: "0.9" },
+            { ID: "2", label: "C2", relevance: "0.5" }
+          ],
+          iab_tier_2: [
+            { ID: "3", label: "C3", relevance: "0.8" },
+            { ID: "4", label: "C4", relevance: "0.4" }
+          ],
+          iab_tier_3: [
+            { ID: "5", label: "C5", relevance: "0.7" },
+            { ID: "6", label: "C6", relevance: "0.3" }
+          ],
+          iab_audience_tier_3: [
+            { ID: "7", label: "A1", relevance: "0.95" },
+            { ID: "8", label: "A2", relevance: "0.45" }
+          ],
+          iab_audience_tier_4: [
+            { ID: "9", label: "A3", relevance: "0.85" },
+            { ID: "10", label: "A4", relevance: "0.35" }
+          ],
+          iab_audience_tier_5: [
+            { ID: "11", label: "A5", relevance: "0.75" },
+            { ID: "12", label: "A6", relevance: "0.25" }
+          ]
+        };
+        const filters = {
+          ContentTier1: { limit: 1, threshold: 0.8 },
+          ContentTier2: { limit: 1, threshold: 0.7 },
+          ContentTier3: { limit: 1, threshold: 0.6 },
+          AudienceTier3: { limit: 1, threshold: 0.9 },
+          AudienceTier4: { limit: 1, threshold: 0.8 },
+          AudienceTier5: { limit: 1, threshold: 0.7 }
+        };
+        const result = neuwo.filterIabTaxonomies(marketingCategories, filters);
+        expect(result.iab_tier_1, "ContentTier1 filtered").to.have.lengthOf(1);
+        expect(result.iab_tier_2, "ContentTier2 filtered").to.have.lengthOf(1);
+        expect(result.iab_tier_3, "ContentTier3 filtered").to.have.lengthOf(1);
+        expect(result.iab_audience_tier_3, "AudienceTier3 filtered").to.have.lengthOf(1);
+        expect(result.iab_audience_tier_4, "AudienceTier4 filtered").to.have.lengthOf(1);
+        expect(result.iab_audience_tier_5, "AudienceTier5 filtered").to.have.lengthOf(1);
+      });
+    });
+
+    describe("transformSegmentsV1ToV2", function () {
+      it("should transform V1 segment format to V2 format", function () {
+        const v1Segments = [
+          { ID: "274", label: "Home & Garden", relevance: "0.47" },
+          { ID: "216", label: "Cooking", relevance: "0.41" }
+        ];
+        const result = neuwo.transformSegmentsV1ToV2(v1Segments);
+
+        expect(result, "should return array with same length").to.have.lengthOf(2);
+        expect(result[0], "first segment should have id property").to.have.property("id", "274");
+        expect(result[0], "first segment should have name property").to.have.property("name", "Home & Garden");
+        expect(result[0], "first segment should have relevance property").to.have.property("relevance", "0.47");
+        expect(result[1], "second segment should have id property").to.have.property("id", "216");
+        expect(result[1], "second segment should have name property").to.have.property("name", "Cooking");
+        expect(result[1], "second segment should have relevance property").to.have.property("relevance", "0.41");
+      });
+
+      it("should handle empty array", function () {
+        const result = neuwo.transformSegmentsV1ToV2([]);
+        expect(result, "should return empty array").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle null input", function () {
+        const result = neuwo.transformSegmentsV1ToV2(null);
+        expect(result, "should return empty array for null").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle undefined input", function () {
+        const result = neuwo.transformSegmentsV1ToV2(undefined);
+        expect(result, "should return empty array for undefined").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle non-array input", function () {
+        const result = neuwo.transformSegmentsV1ToV2("not an array");
+        expect(result, "should return empty array for non-array").to.be.an("array").that.is.empty;
+      });
+
+      it("should handle segments with missing properties", function () {
+        const v1Segments = [
+          { ID: "274", label: "Home & Garden" }, // missing relevance
+          { ID: "216", relevance: "0.41" }, // missing label
+          { label: "Test", relevance: "0.5" } // missing ID
+        ];
+        const result = neuwo.transformSegmentsV1ToV2(v1Segments);
+
+        expect(result, "should return array with same length").to.have.lengthOf(3);
+        expect(result[0].id, "should handle missing relevance").to.equal("274");
+        expect(result[0].relevance, "should set undefined for missing relevance").to.be.undefined;
+        expect(result[1].name, "should set undefined for missing label").to.be.undefined;
+        expect(result[2].id, "should set undefined for missing ID").to.be.undefined;
+      });
+
+      it("should preserve all properties from V1 format", function () {
+        const v1Segments = [
+          { ID: "49", label: "Female", relevance: "0.9923" }
+        ];
+        const result = neuwo.transformSegmentsV1ToV2(v1Segments);
+
+        expect(result[0], "should only have id, name, and relevance properties").to.have.all.keys("id", "name", "relevance");
+      });
+    });
+
+    describe("transformV1ResponseToV2", function () {
+      it("should transform complete V1 response to V2 format", function () {
+        const v1Response = {
+          marketing_categories: {
+            iab_tier_1: [{ ID: "274", label: "Home & Garden", relevance: "0.47" }],
+            iab_tier_2: [{ ID: "216", label: "Cooking", relevance: "0.41" }],
+            iab_tier_3: [{ ID: "388", label: "Recipes", relevance: "0.35" }],
+            iab_audience_tier_3: [{ ID: "49", label: "Female", relevance: "0.9923" }],
+            iab_audience_tier_4: [{ ID: "431", label: "Age 25-34", relevance: "0.9673" }],
+            iab_audience_tier_5: [{ ID: "98", label: "Interest: Cooking", relevance: "0.9066" }]
+          }
+        };
+        const contentSegtax = 7; // IAB Content Taxonomy 3.0
+        const result = neuwo.transformV1ResponseToV2(v1Response, contentSegtax);
+
+        expect(result, "should have content segtax key").to.have.property("7");
+        expect(result, "should have audience segtax key").to.have.property("4");
+        expect(result["7"], "content segtax should have all tiers").to.have.all.keys("1", "2", "3");
+        expect(result["4"], "audience segtax should have all tiers").to.have.all.keys("3", "4", "5");
+        expect(result["7"]["1"][0], "content tier 1 should be transformed").to.deep.equal({
+          id: "274",
+          name: "Home & Garden",
+          relevance: "0.47"
+        });
+        expect(result["4"]["3"][0], "audience tier 3 should be transformed").to.deep.equal({
+          id: "49",
+          name: "Female",
+          relevance: "0.9923"
+        });
+      });
+
+      it("should handle different content segtax values", function () {
+        const v1Response = {
+          marketing_categories: {
+            iab_tier_1: [{ ID: "274", label: "Home & Garden", relevance: "0.47" }]
+          }
+        };
+
+        // Test with segtax 6 (IAB 2.2)
+        const result6 = neuwo.transformV1ResponseToV2(v1Response, 6);
+        expect(result6, "should use segtax 6 for content").to.have.property("6");
+        expect(result6["6"], "should have tier 1").to.have.property("1");
+
+        // Test with segtax 1 (IAB 1.0)
+        const result1 = neuwo.transformV1ResponseToV2(v1Response, 1);
+        expect(result1, "should use segtax 1 for content").to.have.property("1");
+        expect(result1["1"], "should have tier 1").to.have.property("1");
+      });
+
+      it("should handle missing marketing_categories", function () {
+        const v1Response = {};
+        const result = neuwo.transformV1ResponseToV2(v1Response, 6);
+
+        expect(result, "should have content segtax key").to.have.property("6");
+        expect(result, "should have audience segtax key").to.have.property("4");
+        expect(result["6"], "content segtax should be empty object").to.deep.equal({});
+        expect(result["4"], "audience segtax should be empty object").to.deep.equal({});
+      });
+
+      it("should handle null v1Response", function () {
+        const result = neuwo.transformV1ResponseToV2(null, 6);
+
+        expect(result, "should have content segtax key").to.have.property("6");
+        expect(result, "should have audience segtax key").to.have.property("4");
+        expect(result["6"], "content segtax should be empty object").to.deep.equal({});
+        expect(result["4"], "audience segtax should be empty object").to.deep.equal({});
+      });
+
+      it("should handle undefined v1Response", function () {
+        const result = neuwo.transformV1ResponseToV2(undefined, 6);
+
+        expect(result, "should have content segtax key").to.have.property("6");
+        expect(result, "should have audience segtax key").to.have.property("4");
+        expect(result["6"], "content segtax should be empty object").to.deep.equal({});
+        expect(result["4"], "audience segtax should be empty object").to.deep.equal({});
+      });
+
+      it("should handle partial V1 response with only content tiers", function () {
+        const v1Response = {
+          marketing_categories: {
+            iab_tier_1: [{ ID: "274", label: "Home & Garden", relevance: "0.47" }],
+            iab_tier_2: [{ ID: "216", label: "Cooking", relevance: "0.41" }]
+            // No tier 3, no audience tiers
+          }
+        };
+        const result = neuwo.transformV1ResponseToV2(v1Response, 6);
+
+        expect(result["6"], "should have only tier 1 and 2").to.have.all.keys("1", "2");
+        expect(result["6"], "should not have tier 3").to.not.have.property("3");
+        expect(result["4"], "audience segtax should be empty").to.deep.equal({});
+      });
+
+      it("should handle partial V1 response with only audience tiers", function () {
+        const v1Response = {
+          marketing_categories: {
+            iab_audience_tier_3: [{ ID: "49", label: "Female", relevance: "0.9923" }],
+            iab_audience_tier_4: [{ ID: "431", label: "Age 25-34", relevance: "0.9673" }]
+            // No content tiers
+          }
+        };
+        const result = neuwo.transformV1ResponseToV2(v1Response, 6);
+
+        expect(result["6"], "content segtax should be empty").to.deep.equal({});
+        expect(result["4"], "should have tier 3 and 4").to.have.all.keys("3", "4");
+        expect(result["4"], "should not have tier 5").to.not.have.property("5");
+      });
+
+      it("should handle empty arrays in V1 response", function () {
+        const v1Response = {
+          marketing_categories: {
+            iab_tier_1: [],
+            iab_tier_2: [],
+            iab_audience_tier_3: []
+          }
+        };
+        const result = neuwo.transformV1ResponseToV2(v1Response, 6);
+
+        expect(result["6"]["1"], "content tier 1 should be empty array").to.be.an("array").that.is.empty;
+        expect(result["6"]["2"], "content tier 2 should be empty array").to.be.an("array").that.is.empty;
+        expect(result["4"]["3"], "audience tier 3 should be empty array").to.be.an("array").that.is.empty;
+      });
+
+      it("should convert segtax to string keys", function () {
+        const v1Response = {
+          marketing_categories: {
+            iab_tier_1: [{ ID: "274", label: "Home & Garden", relevance: "0.47" }]
+          }
+        };
+        const result = neuwo.transformV1ResponseToV2(v1Response, 6);
+
+        expect(Object.keys(result), "segtax keys should be strings").to.include.members(["6", "4"]);
+        expect(typeof Object.keys(result)[0], "key type should be string").to.equal("string");
+      });
+
+      it("should preserve brand_safety and other non-marketing_categories fields", function () {
+        const v1Response = {
+          brand_safety: { BS_score: "1.0" },
+          marketing_categories: {
+            iab_tier_1: [{ ID: "274", label: "Home & Garden", relevance: "0.47" }]
+          },
+          custom_field: "value"
+        };
+        const result = neuwo.transformV1ResponseToV2(v1Response, 6);
+
+        expect(result, "should not have brand_safety").to.not.have.property("brand_safety");
+        expect(result, "should not have custom_field").to.not.have.property("custom_field");
+        expect(result, "should only have segtax keys").to.have.all.keys("6", "4");
+      });
+    });
+
+    describe("getBidRequestData with caching (legacy cache key isolation)", function () {
+      beforeEach(function () {
+        neuwo.clearCache();
+      });
+
+      it("should not share cache between different iabContentTaxonomyVersion values", function () {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = configV1();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf1.params.enableCache = true;
+        conf1.params.iabContentTaxonomyVersion = "3.0";
+
+        const conf2 = configV1();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf2.params.enableCache = true;
+        conf2.params.iabContentTaxonomyVersion = "2.2";
+
+        // First call with taxonomy 3.0
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf1, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Verify first call has content under segtax 7 (taxonomy 3.0)
+        const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data?.[0];
+        expect(contentData1, "First call should have content data").to.exist;
+        expect(contentData1.ext.segtax, "First call should use segtax 7").to.equal(7);
+
+        // Second call with taxonomy 2.2 - should NOT use cache from taxonomy 3.0
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf2, "consent data");
+        expect(server.requests.length, "Second call should make a new API request for different taxonomy").to.equal(2);
+
+        server.requests[1].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Verify second call has content under segtax 6 (taxonomy 2.2)
+        const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+        expect(contentData2, "Second call should have content data").to.exist;
+        expect(contentData2.ext.segtax, "Second call should use segtax 6").to.equal(6);
+      });
+
+      it("should not share cache between different iabTaxonomyFilters values", function () {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = configV1();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf1.params.enableCache = true;
+        conf1.params.iabTaxonomyFilters = { ContentTier1: { limit: 1 } };
+
+        const conf2 = configV1();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf2.params.enableCache = true;
+        // No filters
+
+        // First call with filters
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf1, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call without filters - should NOT reuse filtered cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf2, "consent data");
+        expect(server.requests.length, "Second call should make a new API request for different filters").to.equal(2);
+      });
+
+      it("should share cache when legacy config is identical", function () {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf = configV1();
+        conf.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf.params.enableCache = true;
+
+        // First call
+        neuwo.getBidRequestData(bidsConfig1, () => {}, conf, "consent data");
+        expect(server.requests.length, "First call should make an API request").to.equal(1);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+
+        // Second call with same config - should use cache
+        neuwo.getBidRequestData(bidsConfig2, () => {}, conf, "consent data");
+        expect(server.requests.length, "Second call should use cache for identical config").to.equal(1);
+
+        const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data?.[0];
+        const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+        expect(contentData1, "First call should have content data").to.exist;
+        expect(contentData2, "Second call should have content data from cache").to.exist;
+        expect(contentData1.segment, "Cached data should match original").to.deep.equal(contentData2.segment);
+      });
+
+      it("should not share pending requests between different taxonomy versions", function (done) {
+        const apiResponse = getNeuwoApiResponseV1();
+        const bidsConfig1 = bidsConfiglike();
+        const bidsConfig2 = bidsConfiglike();
+        const conf1 = configV1();
+        conf1.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf1.params.enableCache = true;
+        conf1.params.iabContentTaxonomyVersion = "3.0";
+
+        const conf2 = configV1();
+        conf2.params.websiteToAnalyseUrl = "https://publisher.works/same-page";
+        conf2.params.enableCache = true;
+        conf2.params.iabContentTaxonomyVersion = "2.2";
+
+        let callbackCount = 0;
+        const callback = () => {
+          callbackCount++;
+          if (callbackCount === 2) {
+            try {
+              // Both should have made separate API requests
+              expect(server.requests.length, "Should make two API requests for different taxonomies").to.equal(2);
+
+              const contentData1 = bidsConfig1.ortb2Fragments.global?.site?.content?.data?.[0];
+              const contentData2 = bidsConfig2.ortb2Fragments.global?.site?.content?.data?.[0];
+              expect(contentData1, "First call should have content data").to.exist;
+              expect(contentData2, "Second call should have content data").to.exist;
+              expect(contentData1.ext.segtax, "First call should use segtax 7").to.equal(7);
+              expect(contentData2.ext.segtax, "Second call should use segtax 6").to.equal(6);
+              done();
+            } catch (e) {
+              done(e);
+            }
+          }
+        };
+
+        // Two concurrent calls with different taxonomy versions
+        neuwo.getBidRequestData(bidsConfig1, callback, conf1, "consent data");
+        neuwo.getBidRequestData(bidsConfig2, callback, conf2, "consent data");
+
+        // Should be two separate requests, not shared pending promise
+        expect(server.requests.length, "Should make two separate API requests").to.equal(2);
+
+        server.requests[0].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
+        );
+        server.requests[1].respond(
+          200,
+          { "Content-Type": "application/json; encoding=UTF-8" },
+          JSON.stringify(apiResponse)
         );
       });
     });
