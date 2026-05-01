@@ -1,6 +1,6 @@
 ## Acxiom Real ID Submodule
 
-Acxiom Real ID module surfaces an Acxiom Real ID in the bid request via the Prebid User ID system.
+Acxiom Real ID module surfaces an Acxiom Real ID in the bid request via the Prebid User ID system. The module sends a POST request to the lookup API with the partner ID, source ID, and user agent, and stores the returned token for use in bid requests.
 
 ## Building Prebid with Acxiom Real ID Support
 
@@ -21,7 +21,7 @@ The following configuration parameters are available:
 | params.partnerId | Required | String | Partner ID issued by GrowthCode on behalf of Acxiom | `'ABC123'` |
 | params.hem | Optional | String | SHA-256 hashed email for improved match rate | `'a1b2c3...'` |
 | params.sourceId | Optional | String | EID source to request from the lookup API. Defaults to `'acxiom.id'` | `'acxiom.id'` |
-| params.apiUrl | Optional | String | Override the default API base URL | `'https://gc-pixel.growthcode.io'` |
+| params.apiUrl | Optional | String | Override the full API endpoint URL | `'https://ids.api.gcprivacy.id/e/l'` |
 | storage | Required | Object | Storage configuration | |
 | storage.type | Required | String | Storage type | `'html5'` |
 | storage.name | Required | String | Storage key | `'acxiomRealId'` |
@@ -47,7 +47,7 @@ pbjs.setConfig({
 });
 ```
 
-### Configuration with Hashed Email
+### Configuration with Custom API URL and Hashed Email
 
 ```javascript
 pbjs.setConfig({
@@ -56,7 +56,8 @@ pbjs.setConfig({
       name: 'acxiomRealId',
       params: {
         partnerId: 'YOUR_PARTNER_ID',
-        hem: 'sha256_hashed_email_here'
+        hem: 'sha256_hashed_email_here',
+        apiUrl: 'https://ids.api.gcprivacy.id/e/l'
       },
       storage: {
         type: 'html5',

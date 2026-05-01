@@ -186,11 +186,13 @@ describe('acxiomRealIdSystem', () => {
         }
       });
 
-      it('should call the default API URL with partnerId and default sourceId', (done) => {
-        let capturedUrl;
+      it('should POST to the default API URL with partnerId and default sourceId in body', (done) => {
+        let capturedUrl, capturedBody, capturedOptions;
         ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
-          (url, callbacks) => {
+          (url, callbacks, body, options) => {
             capturedUrl = url;
+            capturedBody = body;
+            capturedOptions = options;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
           }
         );
@@ -201,20 +203,25 @@ describe('acxiomRealIdSystem', () => {
         );
 
         result.callback((id) => {
-          expect(capturedUrl).to.include('/v1/eid/lookup');
-          expect(capturedUrl).to.include(`partnerId=${PARTNER_ID}`);
-          expect(capturedUrl).to.include('sourceId=acxiom.id');
-          expect(capturedUrl).to.include('gc-pixel.growthcode.io');
+          expect(capturedUrl).to.equal('https://ids.api.gcprivacy.id/e/l');
+          const payload = JSON.parse(capturedBody);
+          expect(payload.partnerId).to.equal(PARTNER_ID);
+          expect(payload.sourceId).to.equal('acxiom.id');
+          expect(payload.userAgent).to.be.a('string');
+          expect(payload.ip).to.equal('');
+          expect(capturedOptions.method).to.equal('POST');
+          expect(capturedOptions.contentType).to.equal('application/json');
+          expect(capturedOptions.withCredentials).to.be.true;
           expect(id).to.deep.equal({ id: REAL_ID_TOKEN, atype: 1 });
           done();
         });
       });
 
-      it('should include HEM parameter when provided', (done) => {
-        let capturedUrl;
+      it('should include HEM in POST body when provided', (done) => {
+        let capturedBody;
         ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
-          (url, callbacks) => {
-            capturedUrl = url;
+          (url, callbacks, body) => {
+            capturedBody = body;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
           }
         );
@@ -225,18 +232,40 @@ describe('acxiomRealIdSystem', () => {
         );
 
         result.callback((id) => {
-          expect(capturedUrl).to.include(`hem=${encodeURIComponent(HEM)}`);
+          const payload = JSON.parse(capturedBody);
+          expect(payload.hem).to.equal(HEM);
           expect(id).to.deep.equal({ id: REAL_ID_TOKEN, atype: 1 });
           done();
         });
       });
 
-      it('should use custom sourceId when provided', (done) => {
-        let capturedUrl;
+      it('should not include HEM in POST body when not provided', (done) => {
+        let capturedBody;
+        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+          (url, callbacks, body) => {
+            capturedBody = body;
+            callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
+          }
+        );
+
+        const result = acxiomRealIdSubmodule.getId(
+          { params: { partnerId: PARTNER_ID } },
+          {}
+        );
+
+        result.callback(() => {
+          const payload = JSON.parse(capturedBody);
+          expect(payload).to.not.have.property('hem');
+          done();
+        });
+      });
+
+      it('should use custom sourceId in POST body when provided', (done) => {
+        let capturedBody;
         const customSourceId = 'custom.source';
         ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
-          (url, callbacks) => {
-            capturedUrl = url;
+          (url, callbacks, body) => {
+            capturedBody = body;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
           }
         );
@@ -247,7 +276,8 @@ describe('acxiomRealIdSystem', () => {
         );
 
         result.callback((id) => {
-          expect(capturedUrl).to.include(`sourceId=${encodeURIComponent(customSourceId)}`);
+          const payload = JSON.parse(capturedBody);
+          expect(payload.sourceId).to.equal(customSourceId);
           expect(id).to.deep.equal({ id: REAL_ID_TOKEN, atype: 1 });
           done();
         });
@@ -255,7 +285,7 @@ describe('acxiomRealIdSystem', () => {
 
       it('should use custom API URL when provided', (done) => {
         let capturedUrl;
-        const customUrl = 'https://custom.example.com';
+        const customUrl = 'https://custom.example.com/e/l';
         ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
           (url, callbacks) => {
             capturedUrl = url;
@@ -269,9 +299,28 @@ describe('acxiomRealIdSystem', () => {
         );
 
         result.callback((id) => {
-          expect(capturedUrl).to.include('custom.example.com');
-          expect(capturedUrl).to.include('/v1/eid/lookup');
+          expect(capturedUrl).to.equal(customUrl);
           expect(id).to.deep.equal({ id: REAL_ID_TOKEN, atype: 1 });
+          done();
+        });
+      });
+
+      it('should strip trailing slashes from custom API URL', (done) => {
+        let capturedUrl;
+        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+          (url, callbacks) => {
+            capturedUrl = url;
+            callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
+          }
+        );
+
+        const result = acxiomRealIdSubmodule.getId(
+          { params: { partnerId: PARTNER_ID, apiUrl: 'https://custom.example.com/e/l///' } },
+          {}
+        );
+
+        result.callback(() => {
+          expect(capturedUrl).to.equal('https://custom.example.com/e/l');
           done();
         });
       });

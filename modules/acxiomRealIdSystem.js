@@ -19,9 +19,8 @@ import { logError, logInfo } from '../src/utils.js';
  */
 
 const MODULE_NAME = 'acxiomRealId';
-const DEFAULT_API_URL = 'https://gc-pixel.growthcode.io';
+const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/e/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
-const LOOKUP_PATH = '/v1/eid/lookup';
 const LOG_PREFIX = 'AcxiomRealId: ';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
@@ -59,16 +58,8 @@ function deleteStoredToken(config) {
   logInfo(LOG_PREFIX + 'Stored token deleted.');
 }
 
-function buildLookupUrl(apiUrl, partnerId, hem, sourceId) {
-  const base = (apiUrl || DEFAULT_API_URL).replace(/\/+$/, '');
-  const params = [
-    `partnerId=${encodeURIComponent(partnerId)}`,
-    `sourceId=${encodeURIComponent(sourceId || DEFAULT_SOURCE_ID)}`
-  ];
-  if (hem) {
-    params.push(`hem=${encodeURIComponent(hem)}`);
-  }
-  return `${base}${LOOKUP_PATH}?${params.join('&')}`;
+function buildLookupUrl(apiUrl) {
+  return (apiUrl || DEFAULT_API_URL).replace(/\/+$/, '');
 }
 
 /** @type {Submodule} */
@@ -87,7 +78,7 @@ export const acxiomRealIdSubmodule = {
 
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
-    const { partnerId, hem, apiUrl, sourceId } = configParams;
+    const { partnerId, apiUrl, sourceId, hem } = configParams;
 
     if (!partnerId) {
       logError(LOG_PREFIX + 'partnerId is required.');
@@ -99,7 +90,17 @@ export const acxiomRealIdSubmodule = {
       return undefined;
     }
 
-    const url = buildLookupUrl(apiUrl, partnerId, hem, sourceId);
+    const url = buildLookupUrl(apiUrl);
+    const payload = {
+      partnerId,
+      ip: '',
+      userAgent: navigator.userAgent,
+      sourceId: sourceId || DEFAULT_SOURCE_ID
+    };
+    if (hem) {
+      payload.hem = hem;
+    }
+    const body = JSON.stringify(payload);
 
     return {
       callback: (cb) => {
@@ -127,9 +128,9 @@ export const acxiomRealIdSubmodule = {
               cb();
             }
           },
-          null,
+          body,
           {
-            method: 'GET',
+            method: 'POST',
             contentType: 'application/json',
             withCredentials: true
           }
