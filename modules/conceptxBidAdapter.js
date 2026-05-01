@@ -1,6 +1,20 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapterManager.js').BidderRequest} BidderRequest
+ */
+
+/**
+ * @typedef {Object} ConceptxBidParams
+ * @property {string} adunit - Stored request ID used to look up the ad unit configuration on our PBS
+ * @property {string} [site] - Internal site identifier (e.g. "some_domain.com") used as site.id;
+ *   NOT the publisher domain. The actual domain/page are sourced from ortb2 or refererInfo.
+ */
+
 const BIDDER_CODE = 'conceptx';
 const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction';
 const GVLID = 1340;
