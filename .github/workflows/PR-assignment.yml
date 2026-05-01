@@ -35,7 +35,7 @@ jobs:
           npm install @aws-sdk/client-s3
       - name: Get PR properties
         id: get-props
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           AWS_ACCESS_KEY_ID: ${{ vars.PR_BOT_AWS_AK }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PR_BOT_AWS_SAK }}
@@ -58,7 +58,7 @@ jobs:
             return props;
       - name: Assign reviewers
         if: ${{ !fromJSON(steps.get-props.outputs.result).review.ok }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
