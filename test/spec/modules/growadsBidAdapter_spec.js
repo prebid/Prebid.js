@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/growadsBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('GrowAdvertising Adapter', function() {
   const ZONE_ID = 'unique-zone-id';
@@ -162,15 +162,15 @@ describe('GrowAdvertising Adapter', function() {
         ];
 
         const requests = spec.buildRequests(validBids);
-        expect(requests[0].data).to.include({i: 0});
-        expect(requests[1].data).to.include({i: 1});
+        expect(requests[0].data).to.include({ i: 0 });
+        expect(requests[1].data).to.include({ i: 1 });
       });
     });
 
     describe('bid responses', function () {
       describe(BANNER, function () {
         it('should return complete bid response banner', function () {
-          const bids = spec.interpretResponse(serverResponseBanner, {bidRequest: bidRequests[0]});
+          const bids = spec.interpretResponse(serverResponseBanner, { bidRequest: bidRequests[0] });
 
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].bidderCode).to.equal('growads');
@@ -190,7 +190,7 @@ describe('GrowAdvertising Adapter', function() {
             }
           });
 
-          const bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
+          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
           expect([]).to.be.lengthOf(0);
         });
 
@@ -201,14 +201,14 @@ describe('GrowAdvertising Adapter', function() {
             }
           });
 
-          const bids = spec.interpretResponse(response, {bidRequest: bidRequests[0]});
+          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
           expect([]).to.be.lengthOf(0);
         });
       });
 
       describe(NATIVE, function () {
         it('should return complete bid response banner', function () {
-          const bids = spec.interpretResponse(serverResponseNative, {bidRequest: bidRequests[1]});
+          const bids = spec.interpretResponse(serverResponseNative, { bidRequest: bidRequests[1] });
 
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].bidderCode).to.equal('growads');

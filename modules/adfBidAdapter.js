@@ -1,10 +1,10 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, getWinDimensions, parseSizesInput, setOnAny} from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepClone, deepSetValue, getWinDimensions, parseSizesInput, setOnAny } from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'adf';
@@ -20,7 +20,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
+  supportedMediaTypes: [NATIVE, BANNER, VIDEO],
   isBidRequestValid: (bid) => {
     const params = bid.params || {};
     const { mid, inv, mname } = params;
@@ -56,7 +56,7 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getCurrencyFromBidderRequest(bidderRequest);
-    const cur = currency && [ currency ];
+    const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
@@ -127,7 +127,7 @@ export const spec = {
       if (bannerParams && bannerParams.sizes) {
         const sizes = parseSizesInput(bannerParams.sizes);
         const format = sizes.map(size => {
-          const [ width, height ] = size.split('x');
+          const [width, height] = size.split('x');
           const w = parseInt(width, 10);
           const h = parseInt(height, 10);
           return { w, h };
@@ -223,7 +223,7 @@ export const spec = {
         }
 
         if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
-          result.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+          result.renderer = Renderer.install({ id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode });
           result.renderer.setRender(renderer);
         }
 

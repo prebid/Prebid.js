@@ -2,7 +2,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { logMessage } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 
 const analyticsType = 'endpoint';
 const url = 'https://ProdSymPrebidEventhub1.servicebus.windows.net/prebid-said-1/messages';
@@ -11,7 +11,7 @@ const { BID_WON } = EVENTS;
 
 let initOptions;
 
-const symitriAnalytics = Object.assign(adapter({url, analyticsType}), {
+const symitriAnalytics = Object.assign(adapter({ url, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case BID_WON:
@@ -41,7 +41,7 @@ function sendEvent(payload) {
 
       ajax(url, cb, body, {
         method: 'POST',
-        customHeaders: {'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': initOptions.apiAuthToken}
+        customHeaders: { 'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': initOptions.apiAuthToken }
       });
     }
   } catch (err) { logMessage('##### symitriAnalytics :: error' + err) }

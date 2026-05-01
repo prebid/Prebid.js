@@ -132,7 +132,7 @@ describe('eightPodAnalyticAdapter', function() {
     });
 
     it('should add event to the queue', function() {
-      getContextStub.returns({adUnitCode: {}});
+      getContextStub.returns({ adUnitCode: {} });
 
       const event1 = {
         detail: {

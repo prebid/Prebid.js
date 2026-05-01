@@ -1,8 +1,8 @@
-import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
+import { deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js'
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -59,7 +59,7 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  const {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
+  const { gdprConsent, uspConsent, refererInfo, ortb2 } = bidderRequest;
   const req = {
     id: bidderRequest.bidderRequestId,
     // TODO: root-level `tid` is not ORTB; is this intentional?
@@ -213,7 +213,7 @@ function buildSyncs(serverResponses, propName, type) {
   return serverResponses.filter(rps => rps.body && rps.body[propName])
     .map(rsp => rsp.body[propName])
     .reduce((a, b) => a.concat(b), [])
-    .map(syncUrl => ({type: type, url: syncUrl}));
+    .map(syncUrl => ({ type: type, url: syncUrl }));
 }
 
 registerBidder(spec);

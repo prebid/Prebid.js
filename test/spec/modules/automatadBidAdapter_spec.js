@@ -7,7 +7,7 @@ describe('automatadBidAdapter', function () {
 
   const bidRequestRequiredParams = {
     bidder: 'automatad',
-    params: {siteId: '123ad'},
+    params: { siteId: '123ad' },
     mediaTypes: {
       banner: {
         sizes: [[300, 600]],
@@ -25,7 +25,7 @@ describe('automatadBidAdapter', function () {
 
   const bidRequestAllParams = {
     bidder: 'automatad',
-    params: {siteId: '123ad', placementId: '123abc345'},
+    params: { siteId: '123ad', placementId: '123abc345' },
     mediaTypes: {
       banner: {
         sizes: [[300, 600]],
@@ -93,7 +93,7 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    const req = spec.buildRequests([ bidRequestRequiredParams ], { refererInfo: { } })
+    const req = spec.buildRequests([bidRequestRequiredParams], { refererInfo: { } })
     let rdata
 
     it('should have withCredentials option as true', function() {
@@ -178,12 +178,12 @@ describe('automatadBidAdapter', function () {
         }
       }]
       const result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
-        const {requestId} = bid;
-        return [ requestId ];
+        const { requestId } = bid;
+        return [requestId];
       });
 
       assert.equal(result.length, 2);
-      assert.deepEqual(result, [[ 'imp1' ], [ 'imp2' ]]);
+      assert.deepEqual(result, [['imp1'], ['imp2']]);
     })
 
     it('handles empty bid response', function () {

@@ -44,7 +44,7 @@ export const spec = {
           if (bidderRequest.gdprConsent.consentString) {
             query.push(
               'gdpr_consent=' +
-                encodeURIComponent(bidderRequest.gdprConsent.consentString)
+              encodeURIComponent(bidderRequest.gdprConsent.consentString)
             );
           }
         }
@@ -217,7 +217,7 @@ export const spec = {
           referrer = originalReq.site.page;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     for (let i = 0; i < body.seatbid.length; i++) {
       const seatbid = body.seatbid[i];

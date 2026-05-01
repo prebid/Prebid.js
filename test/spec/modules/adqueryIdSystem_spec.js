@@ -1,9 +1,9 @@
-import {adqueryIdSubmodule, storage} from 'modules/adqueryIdSystem.js';
-import {server} from 'test/mocks/xhr.js';
+import { adqueryIdSubmodule, storage } from 'modules/adqueryIdSystem.js';
+import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 const config = {
   storage: {

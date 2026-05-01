@@ -26,7 +26,6 @@ describe('symitri analytics adapter', function () {
       'bidderCode': 'appnexus',
       'width': 300,
       'height': 250,
-      'statusMessage': 'Bid available',
       'adId': '393976d8770041',
       'requestId': '263efc09896d0c',
       'mediaType': 'banner',

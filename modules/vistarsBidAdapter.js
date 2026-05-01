@@ -62,7 +62,7 @@ export const spec = {
       return [];
     }
 
-    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
@@ -78,7 +78,7 @@ export const spec = {
 
   getUserSyncs: getUserSyncs(SYNC_ENDPOINT),
 
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);

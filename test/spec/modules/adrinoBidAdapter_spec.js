@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adrinoBidAdapter.js';
-import {config} from '../../../src/config.js';
+import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 
 describe('adrinoBidAdapter', function () {
@@ -67,8 +67,8 @@ describe('adrinoBidAdapter', function () {
       },
       sizes: [[300, 250], [970, 250]],
       userIdAsEids: [
-        {source: 'src1.org', uids: [{id: '1234', atype: 1}]},
-        {source: 'src2.org', uids: [{id: '5678', atype: 1}]}
+        { source: 'src1.org', uids: [{ id: '1234', atype: 1 }] },
+        { source: 'src2.org', uids: [{ id: '5678', atype: 1 }] }
       ],
       adUnitCode: 'adunit-code-2',
       bidId: '12345678901234',
@@ -78,7 +78,7 @@ describe('adrinoBidAdapter', function () {
 
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -95,11 +95,11 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
-        uids: [{id: '1234', atype: 1}]
+        uids: [{ id: '1234', atype: 1 }]
       });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
-        uids: [{id: '5678', atype: 1}]
+        uids: [{ id: '5678', atype: 1 }]
       });
     });
   });
@@ -131,8 +131,8 @@ describe('adrinoBidAdapter', function () {
         }
       },
       userIdAsEids: [
-        {source: 'src1.org', uids: [{id: '1234', atype: 1}]},
-        {source: 'src2.org', uids: [{id: '5678', atype: 1}]}
+        { source: 'src1.org', uids: [{ id: '1234', atype: 1 }] },
+        { source: 'src2.org', uids: [{ id: '5678', atype: 1 }] }
       ],
       adUnitCode: 'adunit-code',
       bidId: '12345678901234',
@@ -141,9 +141,9 @@ describe('adrinoBidAdapter', function () {
     };
 
     it('should build the request correctly with custom domain', function () {
-      config.setConfig({adrino: { host: 'https://stg-prebid-bidder.adrino.io' }});
+      config.setConfig({ adrino: { host: 'https://stg-prebid-bidder.adrino.io' } });
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -160,17 +160,17 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
-        uids: [{id: '1234', atype: 1}]
+        uids: [{ id: '1234', atype: 1 }]
       });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
-        uids: [{id: '5678', atype: 1}]
+        uids: [{ id: '5678', atype: 1 }]
       });
     });
 
     it('should build the request correctly with gdpr', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { gdprConsent: { gdprApplies: true, consentString: 'abc123' }, refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -187,17 +187,17 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
-        uids: [{id: '1234', atype: 1}]
+        uids: [{ id: '1234', atype: 1 }]
       });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
-        uids: [{id: '5678', atype: 1}]
+        uids: [{ id: '5678', atype: 1 }]
       });
     });
 
     it('should build the request correctly without gdpr', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -214,11 +214,11 @@ describe('adrinoBidAdapter', function () {
       expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
-        uids: [{id: '1234', atype: 1}]
+        uids: [{ id: '1234', atype: 1 }]
       });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
-        uids: [{id: '5678', atype: 1}]
+        uids: [{ id: '5678', atype: 1 }]
       });
     });
   });

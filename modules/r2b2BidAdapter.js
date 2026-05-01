@@ -1,10 +1,10 @@
-import {logWarn, logError, triggerPixel, deepSetValue, getParameterByName} from '../src/utils.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js';
-import {bidderSettings} from '../src/bidderSettings.js';
+import { logWarn, logError, triggerPixel, deepSetValue, getParameterByName } from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const ADAPTER_VERSION = '1.0.0';
 const BIDDER_CODE = 'r2b2';
@@ -243,14 +243,14 @@ export const spec = {
           const responseImpId = responseBid.impid;
           const requestCurrentImp = requestImps.find((requestImp) => requestImp.id === responseImpId);
           if (!requestCurrentImp) {
-            r2b2Error('Cant match bid response.', {impid: Boolean(responseBid.impid)});
+            r2b2Error('Cant match bid response.', { impid: Boolean(responseBid.impid) });
             continue;// Skip this iteration if there's no match
           }
           prebidResponses.push(createPrebidResponseBid(requestCurrentImp, responseBid, response, request.bids));
         }
       })
     } catch (e) {
-      r2b2Error('Error while interpreting response:', {msg: e.message});
+      r2b2Error('Error while interpreting response:', { msg: e.message });
     }
     return prebidResponses;
   },

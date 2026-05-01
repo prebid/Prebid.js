@@ -1,13 +1,13 @@
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {config} from '../src/config.js';
-import {submodule} from '../src/hook.js';
-import {deepAccess, mergeDeep, prefixLog} from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { config } from '../src/config.js';
+import { submodule } from '../src/hook.js';
+import { deepAccess, mergeDeep, prefixLog } from '../src/utils.js';
 
 const MODULE_NAME = 'optable';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD]:`;
 const optableLog = prefixLog(LOG_PREFIX);
-const {logMessage, logWarn, logError} = optableLog;
+const { logMessage, logWarn, logError } = optableLog;
 
 /**
  * Extracts the parameters for Optable RTD module from the config object passed at instantiation
@@ -27,15 +27,15 @@ export const parseConfig = (moduleConfig) => {
   // Verify that bundleUrl is a valid URL: only secure (HTTPS) URLs are allowed
   if (typeof bundleUrl === 'string' && bundleUrl.length && !bundleUrl.startsWith('https://')) {
     logError('Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.');
-    return {bundleUrl: null, adserverTargeting, handleRtd: null};
+    return { bundleUrl: null, adserverTargeting, handleRtd: null };
   }
 
   if (handleRtd && typeof handleRtd !== 'function') {
     logError('handleRtd must be a function');
-    return {bundleUrl, adserverTargeting, handleRtd: null};
+    return { bundleUrl, adserverTargeting, handleRtd: null };
   }
 
-  const result = {bundleUrl, adserverTargeting, handleRtd};
+  const result = { bundleUrl, adserverTargeting, handleRtd };
   if (instance !== null) {
     result.instance = instance;
   }
@@ -118,7 +118,7 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Extract the bundle URL from the module configuration
-    const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
+    const { bundleUrl, handleRtd } = parseConfig(moduleConfig);
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
@@ -162,7 +162,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
  */
 export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) => {
   // Extract `adserverTargeting` and `instance` from the module configuration
-  const {adserverTargeting, instance} = parseConfig(moduleConfig);
+  const { adserverTargeting, instance } = parseConfig(moduleConfig);
   logMessage('Ad Server targeting: ', adserverTargeting);
 
   if (!adserverTargeting) {

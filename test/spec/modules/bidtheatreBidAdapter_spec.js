@@ -34,7 +34,7 @@ const BANNER_BID_REQUEST = [
   }
 ];
 
-const BANNER_BIDDER_REQUEST = {'bidderCode': BIDDER_CODE, 'bids': BANNER_BID_REQUEST};
+const BANNER_BIDDER_REQUEST = { 'bidderCode': BIDDER_CODE, 'bids': BANNER_BID_REQUEST };
 
 const BANNER_BID_RESPONSE = {
   'cur': 'USD',
@@ -92,7 +92,7 @@ const VIDEO_BID_REQUEST = [
   }
 ];
 
-const VIDEO_BIDDER_REQUEST = {'bidderCode': BIDDER_CODE, 'bids': VIDEO_BID_REQUEST};
+const VIDEO_BIDDER_REQUEST = { 'bidderCode': BIDDER_CODE, 'bids': VIDEO_BID_REQUEST };
 
 const VIDEO_BID_RESPONSE = {
   'cur': 'USD',
@@ -195,20 +195,20 @@ describe('BidtheatreAdapter', function () {
   describe('interpretResponse', function () {
     it('should have exactly one bid in banner response', function () {
       const request = spec.buildRequests(BANNER_BID_REQUEST, BANNER_BIDDER_REQUEST);
-      const bids = spec.interpretResponse({body: BANNER_BID_RESPONSE}, request[0]);
+      const bids = spec.interpretResponse({ body: BANNER_BID_RESPONSE }, request[0]);
       expect(bids).to.be.an('array').with.lengthOf(1);
       expect(bids[0]).to.be.an('object');
     });
 
     it('should have currency set to USD in banner response', function () {
       const request = spec.buildRequests(BANNER_BID_REQUEST, BANNER_BIDDER_REQUEST);
-      const bids = spec.interpretResponse({body: BANNER_BID_RESPONSE}, request[0]);
+      const bids = spec.interpretResponse({ body: BANNER_BID_RESPONSE }, request[0]);
       expect(bids[0].currency).to.be.a('string').and.to.equal(DEFAULT_CURRENCY);
     });
 
     it('should have ad in response and auction price macros replaced in banner response', function () {
       const request = spec.buildRequests(BANNER_BID_REQUEST, BANNER_BIDDER_REQUEST);
-      const bids = spec.interpretResponse({body: BANNER_BID_RESPONSE}, request[0]);
+      const bids = spec.interpretResponse({ body: BANNER_BID_RESPONSE }, request[0]);
       const ad = bids[0].ad;
       expect(ad).to.exist;
       expect(ad).to.be.a('string');
@@ -219,20 +219,20 @@ describe('BidtheatreAdapter', function () {
     if (FEATURES.VIDEO) {
       it('should have exactly one bid in video response', function () {
         const request = spec.buildRequests(VIDEO_BID_REQUEST, VIDEO_BIDDER_REQUEST);
-        const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request[0]);
+        const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request[0]);
         expect(bids).to.be.an('array').with.lengthOf(1);
         expect(bids[0]).to.be.an('object');
       });
 
       it('should have currency set to USD in video response', function () {
         const request = spec.buildRequests(VIDEO_BID_REQUEST, VIDEO_BIDDER_REQUEST);
-        const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request[0]);
+        const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request[0]);
         expect(bids[0].currency).to.be.a('string').and.to.equal(DEFAULT_CURRENCY);
       });
 
       it('should have vastUrl in response and auction price macros replaced in video response', function () {
         const request = spec.buildRequests(VIDEO_BID_REQUEST, VIDEO_BIDDER_REQUEST);
-        const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request[0]);
+        const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request[0]);
         const vastUrl = bids[0].vastUrl;
         expect(vastUrl).to.exist;
         expect(vastUrl).to.be.a('string');
@@ -260,7 +260,7 @@ describe('BidtheatreAdapter', function () {
     });
 
     it('should return usersync url when pixel is allowed and present in bid response', function () {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: bidResponse}], gdprConsent)).to.deep.equal([{ type: 'image', url: bidResponseSyncURL }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: bidResponse }], gdprConsent)).to.deep.equal([{ type: 'image', url: bidResponseSyncURL }]);
     });
   });
 });

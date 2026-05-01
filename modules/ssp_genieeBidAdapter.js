@@ -16,12 +16,12 @@ const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
 export const USER_SYNC_ENDPOINT_IMAGE = 'https://cs.gssprt.jp/yie/ld/mcs';
 export const USER_SYNC_ENDPOINT_IFRAME = 'https://aladdin.genieesspv.jp/yie/ld';
-const SUPPORTED_MEDIA_TYPES = [ BANNER ];
+const SUPPORTED_MEDIA_TYPES = [BANNER];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
 const NET_REVENUE = true;
 const MODULE_NAME = `ssp_geniee`;
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME })
 
 /**
  * List of keys for geparams (parameters we use)
@@ -124,7 +124,7 @@ function hasParamsNotBlankString(params, key) {
   );
 }
 
-export const buildExtuidQuery = ({id5, imuId}) => {
+export const buildExtuidQuery = ({ id5, imuId }) => {
   const params = [
     ...(id5 ? [`id5:${id5}`] : []),
     ...(imuId ? [`im:${imuId}`] : []),
@@ -136,12 +136,31 @@ export const buildExtuidQuery = ({id5, imuId}) => {
 }
 
 /**
+ * Get Floor Price from Prebid Price Floors Module
+ * @param {Object} bid - Object bid request
+ * @param {string} currency - currency unit
+ * @returns {number|null}
+ */
+function getFloorPrice(bid, currency) {
+  if (typeof bid.getFloor === 'function') {
+    const floorSize = (bid.sizes && bid.sizes.length === 1) ? bid.sizes[0] : '*';
+    const floorInfo = bid.getFloor({ currency: currency, mediaType: BANNER, size: floorSize });
+    if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
+}
+
+/**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
   const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
-
+  const schain = utils.deepAccess(bid, 'ortb2.source.ext.schain');
+  const currency = bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY;
+  const floorPrice = getFloorPrice(bid, currency);
   const data = {
     zoneid: bid.params.zoneId,
     cb: Math.floor(Math.random() * 99999999999),
@@ -152,12 +171,14 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       : '',
     referer: refererInfo?.ref || encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.REFERRER]) || '',
     topframe: window.parent === window.self ? 1 : 0,
-    cur: bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
+    cur: currency,
     requestid: bid.bidId,
     ua: navigator.userAgent,
     tpaf: 1,
     cks: 1,
+    schain: schain ? JSON.stringify(schain) : '',
     ...(gpid ? { gpid } : {}),
+    ...(floorPrice !== undefined && floorPrice !== null ? { fl_pr: floorPrice } : {}),
   };
 
   const pageTitle = document.title;
@@ -233,7 +254,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
   // imuid, id5
   const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
   const imuId = utils.deepAccess(bid, 'userId.imuid');
-  const extuidQuery = buildExtuidQuery({id5, imuId});
+  const extuidQuery = buildExtuidQuery({ id5, imuId });
   if (extuidQuery) data.extuid = extuidQuery;
 
   // makeUAQuery

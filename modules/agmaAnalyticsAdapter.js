@@ -27,10 +27,10 @@ const pageViewId = generateUUID();
 // Helper functions
 const getScreen = () => {
   try {
-    const {width: x, height: y} = getViewportSize();
+    const { width: x, height: y } = getViewportSize();
     return { x, y };
   } catch (e) {
-    return {x: 0, y: 0};
+    return { x: 0, y: 0 };
   }
 };
 

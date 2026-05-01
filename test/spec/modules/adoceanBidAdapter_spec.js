@@ -36,7 +36,7 @@ describe('AdoceanAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bannerBid, {params: {masterId: 0}});
+      const invalidBid = Object.assign({}, bannerBid, { params: { masterId: 0 } });
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
@@ -61,38 +61,6 @@ describe('AdoceanAdapter', function () {
 
     it('should return true for instream video', function () {
       expect(spec.isBidRequestValid(videoInscreenBid)).to.equal(true);
-    });
-
-    const videoAdpodBid = {
-      bidder: 'adocean',
-      params: {
-        masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
-        slaveId: 'adoceanmyaozpniqismex',
-        emitter: 'myao.adocean.pl'
-      },
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        video: {
-          context: 'adpod',
-          playerSize: [300, 250],
-          adPodDurationSec: 300,
-          durationRangeSec: [15, 30],
-          requireExactDuration: false
-        }
-      },
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-    };
-
-    it('should return true for adpod video without requireExactDuration', function () {
-      expect(spec.isBidRequestValid(videoAdpodBid)).to.equal(true);
-    });
-
-    it('should return false for adpod video with requireExactDuration', function () {
-      const invalidBid = Object.assign({}, videoAdpodBid);
-      invalidBid.mediaTypes.video.requireExactDuration = true;
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     const videoOutstreamBid = {
@@ -242,41 +210,6 @@ describe('AdoceanAdapter', function () {
       expect(request.url).to.include('dur=60');
       expect(request.url).to.include('maxdur=60');
       expect(request.url).to.include('mindur=10');
-    });
-
-    const videoAdpodBidRequests = [
-      {
-        bidder: 'adocean',
-        params: {
-          masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
-          slaveId: 'adoceanmyaozpniqismex',
-          emitter: 'myao.adocean.pl'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          video: {
-            playerSize: [200, 200],
-            context: 'adpod',
-            adPodDurationSec: 300,
-            durationRangeSec: [15, 30],
-            requireExactDuration: false
-          }
-        },
-        bidId: '30b31c1838de1h',
-        bidderRequestId: '22edbae2733bf6',
-        auctionId: '1d1a030790a476',
-      }
-    ];
-
-    it('should build correct video adpod request', function () {
-      const request = spec.buildRequests(videoAdpodBidRequests, bidderRequest)[0];
-      expect(request).to.exist;
-      expect(request.url).to.include('id=' + videoAdpodBidRequests[0].params.masterId);
-      expect(request.url).to.include('slaves=zpniqismex');
-      expect(request.url).to.include('spots=20'); // 300 / 15 = 20
-      expect(request.url).to.include('dur=300');
-      expect(request.url).to.include('maxdur=30');
-      expect(request.url).to.not.include('mindur=');
     });
   });
 

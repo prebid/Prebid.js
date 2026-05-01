@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/codefuelBidAdapter.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/codefuelBidAdapter.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {server} from 'test/mocks/xhr';
+import { server } from 'test/mocks/xhr';
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
@@ -269,7 +269,7 @@ describe('Codefuel Adapter', function () {
             ad: '<div>ad</div>',
             width: 300,
             height: 250,
-            meta: {'advertiserDomains': []}
+            meta: { 'advertiserDomains': [] }
           }
         ]
 
@@ -294,25 +294,25 @@ describe('Codefuel Adapter', function () {
     })
 
     it('should not return user sync if pixel enabled with codefuel config', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: true})
+      const ret = spec.getUserSyncs({ pixelEnabled: true })
       expect(ret).to.be.an('array').that.is.empty
     })
 
     it('should not return user sync if pixel disabled', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: false})
+      const ret = spec.getUserSyncs({ pixelEnabled: false })
       expect(ret).to.be.an('array').that.is.empty
     })
 
     it('should not return user sync if url is not set', function () {
       config.resetConfig()
-      const ret = spec.getUserSyncs({pixelEnabled: true})
+      const ret = spec.getUserSyncs({ pixelEnabled: true })
       expect(ret).to.be.an('array').that.is.empty
     })
 
     it('should not pass GDPR consent', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.to.be.an('array').that.is.empty
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.be.an('array').that.is.empty
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.be.an('array').that.is.empty
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.to.be.an('array').that.is.empty
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.be.an('array').that.is.empty
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.be.an('array').that.is.empty
     });
 
     it('should not pass US consent', function() {
@@ -320,7 +320,7 @@ describe('Codefuel Adapter', function () {
     });
 
     it('should pass GDPR and US consent', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.be.an('array').that.is.empty
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.be.an('array').that.is.empty
     });
   })
 })

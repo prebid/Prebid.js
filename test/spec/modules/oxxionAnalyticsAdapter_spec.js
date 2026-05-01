@@ -1,4 +1,4 @@
-import oxxionAnalytics, {dereferenceWithoutRenderer} from 'modules/oxxionAnalyticsAdapter.js';
+import oxxionAnalytics, { dereferenceWithoutRenderer } from 'modules/oxxionAnalyticsAdapter.js';
 
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
@@ -152,7 +152,6 @@ describe('Oxxion Analytics', function () {
         'bidderCode': 'appnexus',
         'width': 970,
         'height': 250,
-        'statusMessage': 'Bid available',
         'adId': '65d16ef039a97a',
         'requestId': '2bd3e8ff8a113f',
         'transactionId': '8b2a8629-d1ea-4bb1-aff0-e335b96dd002',
@@ -207,7 +206,6 @@ describe('Oxxion Analytics', function () {
     'bidderCode': 'appnexus',
     'width': 970,
     'height': 250,
-    'statusMessage': 'Bid available',
     'adId': '65d16ef039a97a',
     'requestId': '2bd3e8ff8a113f',
     'transactionId': '8b2a8629-d1ea-4bb1-aff0-e335b96dd002',
@@ -324,7 +322,7 @@ describe('Oxxion Analytics', function () {
     });
 
     it('test bidWon', function() {
-      window.OXXION_MODE = {'abtest': true};
+      window.OXXION_MODE = { 'abtest': true };
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics

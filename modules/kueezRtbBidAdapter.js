@@ -1,19 +1,23 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   createBuildRequestsFn,
   createInterpretResponseFn,
   createUserSyncGetter,
-  isBidRequestValid,
+  isBidRequestValid, onBidBillable, onBidWon,
   tryParseJSON
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./kueezRtbBidAdapterTypes.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
+ */
 
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
 const BIDDER_VERSION = '1.0.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -28,6 +32,8 @@ export const spec = {
     imageSyncUrl: 'https://sync.kueezrtb.com/api/sync/image'
   }),
   createFirstPartyData,
+  onBidWon,
+  onBidBillable,
 };
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
@@ -59,10 +65,10 @@ function getFirstPartyUUID() {
     d = Math.floor(d / 16);
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
-};
+}
 
 function createUniqueRequestData(hashUrl, bid) {
-  const {auctionId, transactionId} = bid;
+  const { auctionId, transactionId } = bid;
   const fdata = getAndSetFirstPartyData();
   return {
     auctionId,

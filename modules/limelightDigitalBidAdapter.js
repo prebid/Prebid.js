@@ -74,7 +74,6 @@ export const spec = {
   aliases: [
     { code: 'pll' },
     { code: 'iionads', gvlid: 1358 },
-    { code: 'apester' },
     { code: 'adsyield' },
     { code: 'tgm' },
     { code: 'adtg_org' },
@@ -84,12 +83,14 @@ export const spec = {
     { code: 'stellorMediaRtb' },
     { code: 'smootai' },
     { code: 'anzuExchange' },
-    { code: 'adnimation' },
     { code: 'rtbdemand' },
     { code: 'altstar' },
     { code: 'vaayaMedia' },
     { code: 'performist' },
-    { code: 'oveeo' }
+    { code: 'oveeo' },
+    { code: 'embimedia' },
+    { code: 'pgamrtb' },
+    { code: 'nuclion' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 

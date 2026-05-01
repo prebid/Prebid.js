@@ -132,7 +132,7 @@ describe('TargetVideo Bid Adapter', function() {
     const userIdAsEids = [
       {
         source: 'test1.org',
-        uids: [{id: '123'}]
+        uids: [{ id: '123' }]
       }
     ];
     const bidderRequestWithUserData = {
@@ -285,7 +285,7 @@ describe('TargetVideo Bid Adapter', function() {
     bidderRequest.bids = bannerRequest;
 
     const request = spec.buildRequests(bannerRequest, bidderRequest);
-    expect(request.options).to.deep.equal({withCredentials: true});
+    expect(request.options).to.deep.equal({ withCredentials: true });
     const payload = JSON.parse(request.data);
 
     expect(payload.gdpr_consent).to.exist;
@@ -345,13 +345,13 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test userSync valid sync url for iframe', function () {
-    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, { consentString: 'anyString' });
     expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=targetvideo&gdpr=0&gdpr_consent=anyString');
     expect(userSync.type).to.be.equal('iframe');
   });
 
   it('Test userSyncs iframeEnabled=false', function () {
-    const userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    const userSyncs = spec.getUserSyncs({ iframeEnabled: false });
     expect(userSyncs).to.have.lengthOf(0);
   });
 

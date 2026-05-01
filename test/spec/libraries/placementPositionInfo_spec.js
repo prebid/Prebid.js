@@ -3,6 +3,7 @@ import * as utils from '../../../src/utils.js';
 import * as boundingClientRectLib from '../../../libraries/boundingClientRect/boundingClientRect.js';
 import * as percentInViewLib from '../../../libraries/percentInView/percentInView.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
+import * as adUnits from 'src/utils/adUnits';
 
 import assert from 'assert';
 import sinon from 'sinon';
@@ -43,7 +44,7 @@ describe('placementPositionInfo', function () {
     percentInViewStub = sandbox.stub(percentInViewLib, 'getViewability');
     cleanObjStub = sandbox.stub(utils, 'cleanObj').callsFake(obj => obj);
     sandbox.stub(winDimensions, 'getWinDimensions').returns(mockWindow);
-    viewportOffset = {x: 0, y: 0};
+    viewportOffset = { x: 0, y: 0 };
     sandbox.stub(percentInViewLib, 'getViewportOffset').callsFake(() => viewportOffset);
   });
 
@@ -80,7 +81,7 @@ describe('placementPositionInfo', function () {
 
     beforeEach(function () {
       mockElement = { id: 'test-ad-unit' };
-      mockDocument.getElementById.returns(mockElement);
+      sandbox.stub(adUnits, 'getAdUnitElement').returns(mockElement);
 
       getBoundingClientRectStub.returns({
         top: 100,
@@ -162,7 +163,7 @@ describe('placementPositionInfo', function () {
     });
 
     it('should handle null element gracefully', function () {
-      mockDocument.getElementById.returns(null);
+      adUnits.getAdUnitElement.returns(null);
 
       const bidReq = {
         adUnitCode: 'non-existent-unit',
@@ -177,7 +178,7 @@ describe('placementPositionInfo', function () {
     });
 
     it('should not call getViewability when element is null', function () {
-      mockDocument.getElementById.returns(null);
+      adUnits.getAdUnitElement.returns(null);
 
       const bidReq = {
         adUnitCode: 'non-existent-unit',
@@ -400,7 +401,7 @@ describe('placementPositionInfo', function () {
 
   describe('iframe coordinate translation', function () {
     beforeEach(() => {
-      mockDocument.getElementById = sandbox.stub().returns({id: 'test'});
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({ id: 'test' })
       mockWindow.innerHeight = 1000;
       mockDocument.body = {
         scrollHeight: 2000, offsetHeight: 1800
@@ -408,7 +409,7 @@ describe('placementPositionInfo', function () {
       mockDocument.documentElement = { clientHeight: 1900, scrollHeight: 2100, offsetHeight: 1950 }
     });
     it('should apply iframe offset when running inside a friendly iframe', function () {
-      viewportOffset = {y: 200};
+      viewportOffset = { y: 200 };
 
       getBoundingClientRectStub.callsFake((el) => {
         return { top: 100, bottom: 200, height: 100 };
@@ -424,7 +425,7 @@ describe('placementPositionInfo', function () {
     });
 
     it('should calculate correct distance when element is below viewport with iframe offset', function () {
-      viewportOffset = {y: 500};
+      viewportOffset = { y: 500 };
 
       getBoundingClientRectStub.callsFake((el) => {
         return { top: 600, bottom: 700, height: 100 };
@@ -440,7 +441,7 @@ describe('placementPositionInfo', function () {
     });
 
     it('should calculate negative distance when element is above viewport with iframe offset', function () {
-      viewportOffset = {y: -600};
+      viewportOffset = { y: -600 };
 
       getBoundingClientRectStub.callsFake((el) => {
         return { top: 100, bottom: 200, height: 100 };

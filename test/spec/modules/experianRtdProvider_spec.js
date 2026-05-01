@@ -9,7 +9,7 @@ import {
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 import { safeJSONParse, timestamp } from '../../../src/utils.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('Experian realtime module', () => {
   const sandbox = sinon.createSandbox();
@@ -114,7 +114,7 @@ describe('Experian realtime module', () => {
             bidder: {}
           }
         }
-        const userConsent = {gdpr: {}, uspConsent: {}}
+        const userConsent = { gdpr: {}, uspConsent: {} }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
@@ -152,7 +152,7 @@ describe('Experian realtime module', () => {
             bidder: {}
           }
         }
-        const userConsent = {gdpr: {}, uspConsent: {}}
+        const userConsent = { gdpr: {}, uspConsent: {} }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
@@ -168,7 +168,7 @@ describe('Experian realtime module', () => {
             bidder: {}
           }
         }
-        const userConsent = {gdpr: {}, uspConsent: {}}
+        const userConsent = { gdpr: {}, uspConsent: {} }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
@@ -191,7 +191,7 @@ describe('Experian realtime module', () => {
             bidder: {}
           }
         }
-        const userConsent = {gdpr: {}, uspConsent: {}}
+        const userConsent = { gdpr: {}, uspConsent: {} }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
@@ -215,7 +215,7 @@ describe('Experian realtime module', () => {
             bidder: {}
           }
         }
-        const userConsent = {gdpr: {}, uspConsent: {}}
+        const userConsent = { gdpr: {}, uspConsent: {} }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
@@ -239,7 +239,7 @@ describe('Experian realtime module', () => {
             bidder: {}
           }
         }
-        const userConsent = {gdpr: {}, uspConsent: {}}
+        const userConsent = { gdpr: {}, uspConsent: {} }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
@@ -283,10 +283,12 @@ describe('Experian realtime module', () => {
         }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic'] } }
         experianRtdObj.alterBids(bidsConfig, moduleConfig);
-        expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({pubmatic: {
-          experianRtidKey: 'pubmatic-encryption-key-1',
-          experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
-        }})
+        expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
+          pubmatic: {
+            experianRtidKey: 'pubmatic-encryption-key-1',
+            experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+          }
+        })
       })
     })
     describe('data envelope is missing bidders from config', () => {
@@ -318,7 +320,8 @@ describe('Experian realtime module', () => {
           sovrn: {
             experianRtidKey: 'sovrn-encryption-key-1',
             experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
-          }})
+          }
+        })
       })
     })
   })
@@ -334,7 +337,7 @@ describe('Experian realtime module', () => {
       )
 
       expect(requests[0].url).to.equal('https://rtid.tapad.com/acc/ZylatYg/ids?gdpr=0&gdpr_consent=wow&us_privacy=1YYY')
-      expect(safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null))).to.deep.equal([{bidder: 'pubmatic', data: {key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}, {bidder: 'sovrn', data: {key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}])
+      expect(safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null))).to.deep.equal([{ bidder: 'pubmatic', data: { key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } }, { bidder: 'sovrn', data: { key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } }])
       expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY)).to.equal('2023-06-01T00:00:00')
       expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
     })

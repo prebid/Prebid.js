@@ -1,4 +1,4 @@
-import {PROCESSOR_TYPES} from '../../../src/pbjsORTB.js';
+import { PROCESSOR_TYPES } from '../../../src/pbjsORTB.js';
 
 export function mergeProcessors(...processors) {
   const left = processors.shift();

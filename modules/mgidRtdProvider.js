@@ -1,9 +1,9 @@
 import { submodule } from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
-import {deepAccess, logError, logInfo, mergeDeep} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js';
+import { deepAccess, logError, logInfo, mergeDeep } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

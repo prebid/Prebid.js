@@ -1,7 +1,7 @@
-import {PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet} from '../src/adapterManager.js';
-import {getBidderCodes, logWarn} from '../src/utils.js';
+import { PARTITIONS, partitionBidders, filterBidsForAdUnit, getS2SBidderSet } from '../src/adapterManager.js';
+import { getBidderCodes, logWarn } from '../src/utils.js';
 
-const {CLIENT, SERVER} = PARTITIONS;
+const { CLIENT, SERVER } = PARTITIONS;
 export const s2sTesting = {
   ...PARTITIONS,
   clientTestBidders: new Set()
@@ -11,7 +11,7 @@ s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bid
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
 s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
-  var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
+  var sourceBidders = { [SERVER]: {}, [CLIENT]: {} };
 
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them
@@ -117,7 +117,7 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
       memo[CLIENT].push(bidder);
     }
     return memo;
-  }, {[CLIENT]: [], [SERVER]: []}));
+  }, { [CLIENT]: [], [SERVER]: [] }));
 });
 
 filterBidsForAdUnit.before(function(next, bids, s2sConfig) {

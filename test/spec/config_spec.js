@@ -46,7 +46,7 @@ describe('config API', function () {
   });
 
   it('readConfig returns deepCopy of the internal config object', function () {
-    setConfig({ foo: {biz: 'bar'} });
+    setConfig({ foo: { biz: 'bar' } });
     const config1 = readConfig('foo');
     config1.biz = 'buz';
     const config2 = readConfig('foo');
@@ -108,16 +108,16 @@ describe('config API', function () {
 
   it('getConfig subscribers are called immediately if passed {init: true}', () => {
     const listener = sinon.spy();
-    setConfig({foo: 'bar'});
-    getConfig('foo', listener, {init: true});
-    sinon.assert.calledWith(listener, {foo: 'bar'});
+    setConfig({ foo: 'bar' });
+    getConfig('foo', listener, { init: true });
+    sinon.assert.calledWith(listener, { foo: 'bar' });
   });
 
   it('getConfig subscribers with no topic are called immediately if passed {init: true}', () => {
     const listener = sinon.spy();
-    setConfig({foo: 'bar'});
-    getConfig(listener, {init: true});
-    sinon.assert.calledWith(listener, sinon.match({foo: 'bar'}));
+    setConfig({ foo: 'bar' });
+    getConfig(listener, { init: true });
+    sinon.assert.calledWith(listener, sinon.match({ foo: 'bar' }));
   });
 
   it('sets and gets arbitrary configuration properties', function () {
@@ -139,9 +139,9 @@ describe('config API', function () {
   });
 
   it('overwrites existing config properties', function () {
-    setConfig({ foo: {biz: 'buz'} });
-    setConfig({ foo: {baz: 'qux'} });
-    expect(getConfig('foo')).to.eql({baz: 'qux'});
+    setConfig({ foo: { biz: 'buz' } });
+    setConfig({ foo: { baz: 'qux' } });
+    expect(getConfig('foo')).to.eql({ baz: 'qux' });
   });
 
   it('sets debugging', function () {
@@ -167,7 +167,7 @@ describe('config API', function () {
       syncDelay: 3000,
       auctionDelay: 0
     };
-    setDefaults({'userSync': DEFAULT_USERSYNC});
+    setDefaults({ 'userSync': DEFAULT_USERSYNC });
     expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);
   });
 
@@ -258,10 +258,10 @@ describe('config API', function () {
       getter: () => config.getConfig
     },
     'using setBidderConfig': {
-      setter: () => (config) => setBidderConfig({bidders: ['mockBidder'], config}),
+      setter: () => (config) => setBidderConfig({ bidders: ['mockBidder'], config }),
       getter: () => (option) => config.runWithBidder('mockBidder', () => config.getConfig(option))
     }
-  }).forEach(([t, {getter, setter}]) => {
+  }).forEach(([t, { getter, setter }]) => {
     describe(t, () => {
       let getConfig, setConfig;
       beforeEach(() => {
@@ -284,8 +284,8 @@ describe('config API', function () {
   });
 
   it('does not force defaults for bidder config', () => {
-    config.setConfig({bidderSequence: 'fixed'});
-    config.setBidderConfig({bidders: ['mockBidder'], config: {other: 'config'}})
+    config.setConfig({ bidderSequence: 'fixed' });
+    config.setBidderConfig({ bidders: ['mockBidder'], config: { other: 'config' } })
     expect(config.runWithBidder('mockBidder', () => config.getConfig('bidderSequence'))).to.eql('fixed');
   })
 
@@ -361,36 +361,44 @@ describe('config API', function () {
   });
 
   it('should log warning for invalid auctionOptions bidder values', function () {
-    setConfig({ auctionOptions: {
-      'secondaryBidders': 'appnexus, rubicon',
-    }});
+    setConfig({
+      auctionOptions: {
+        'secondaryBidders': 'appnexus, rubicon',
+      }
+    });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options secondaryBidders must be of type Array';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
   it('should log warning for invalid auctionOptions suppress stale render', function () {
-    setConfig({ auctionOptions: {
-      'suppressStaleRender': 'test',
-    }});
+    setConfig({
+      auctionOptions: {
+        'suppressStaleRender': 'test',
+      }
+    });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressStaleRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
   it('should log warning for invalid auctionOptions suppress expired render', function () {
-    setConfig({ auctionOptions: {
-      'suppressExpiredRender': 'test',
-    }});
+    setConfig({
+      auctionOptions: {
+        'suppressExpiredRender': 'test',
+      }
+    });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressExpiredRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
   it('should log warning for invalid properties to auctionOptions', function () {
-    setConfig({ auctionOptions: {
-      'testing': true
-    }});
+    setConfig({
+      auctionOptions: {
+        'testing': true
+      }
+    });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options given an incorrect param: testing';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
@@ -408,16 +416,17 @@ describe('config API', function () {
         }
       }
     };
-    setConfig({ ortb2: {
-      user: {
-        ext: {
-          data: {
-            registered: true,
-            interests: ['cars']
+    setConfig({
+      ortb2: {
+        user: {
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
           }
         }
       }
-    }
     });
     mergeConfig(obj);
     const expected = {
@@ -453,15 +462,17 @@ describe('config API', function () {
         }
       }
     }
-    setConfig({ ortb2: {
-      user: {
-        ext: {
-          data: {
-            registered: false
+    setConfig({
+      ortb2: {
+        user: {
+          ext: {
+            data: {
+              registered: false
+            }
           }
         }
       }
-    }});
+    });
     mergeConfig(input);
     const expected = {
       user: {
@@ -474,6 +485,61 @@ describe('config API', function () {
       }
     }
     expect(getConfig('ortb2')).to.deep.equal(expected);
+  });
+
+  it('mergeConfig only notifies updated topics', function () {
+    const baseOrtb2 = {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      }
+    };
+    const updateOrtb2 = {
+      site: {
+        name: 'example'
+      }
+    };
+
+    setConfig({
+      currency: { adServerCurrency: 'USD' },
+      ortb2: baseOrtb2
+    });
+
+    const ortb2Listener = sinon.spy();
+    const currencyListener = sinon.spy();
+    const allTopicsListener = sinon.spy();
+
+    getConfig('ortb2', ortb2Listener);
+    getConfig('currency', currencyListener);
+    getConfig(allTopicsListener);
+
+    const result = mergeConfig({ ortb2: updateOrtb2 });
+    const expected = {
+      user: {
+        ext: {
+          data: {
+            registered: false
+          }
+        }
+      },
+      site: {
+        name: 'example'
+      }
+    };
+
+    sinon.assert.calledOnce(ortb2Listener);
+    sinon.assert.calledWithExactly(ortb2Listener, { ortb2: expected });
+    sinon.assert.notCalled(currencyListener);
+    sinon.assert.calledOnce(allTopicsListener);
+    const allTopicsPayload = allTopicsListener.firstCall.args[0];
+    expect(Object.keys(allTopicsPayload)).to.deep.equal(['ortb2']);
+    expect(allTopicsPayload.ortb2).to.deep.equal(expected);
+
+    expect(result.ortb2).to.deep.equal(expected);
+    expect(result.currency).to.deep.equal({ adServerCurrency: 'USD' });
   });
 
   it('should log error for a non-object value passed in', function () {

@@ -1,21 +1,21 @@
 import { isArrayOfNums, isInteger, isStr } from './utils.js';
-import type {Size} from "./types/common.d.ts";
-import type {ORTBImp} from "./types/ortb/request.d.ts";
-import type {BaseMediaType} from "./mediaTypes.ts";
+import type { Size } from "./types/common.d.ts";
+import type { ORTBImp } from "./types/ortb/request.d.ts";
+import type { BaseMediaType } from "./mediaTypes.ts";
 
 const ORTB_PARAMS = [
-  [ 'format', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'object') ],
-  [ 'w', isInteger ],
-  [ 'h', isInteger ],
-  [ 'btype', isArrayOfNums ],
-  [ 'battr', isArrayOfNums ],
-  [ 'pos', isInteger ],
-  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-  [ 'topframe', value => [1, 0].includes(value) ],
-  [ 'expdir', isArrayOfNums ],
-  [ 'api', isArrayOfNums ],
-  [ 'id', isStr ],
-  [ 'vcm', value => [1, 0].includes(value) ]
+  ['format', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'object')],
+  ['w', isInteger],
+  ['h', isInteger],
+  ['btype', isArrayOfNums],
+  ['battr', isArrayOfNums],
+  ['pos', isInteger],
+  ['mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string')],
+  ['topframe', value => [1, 0].includes(value)],
+  ['expdir', isArrayOfNums],
+  ['api', isArrayOfNums],
+  ['id', isStr],
+  ['vcm', value => [1, 0].includes(value)]
 ] as const;
 
 /**

@@ -9,15 +9,15 @@ import {
   parseUrl,
   safeJSONEncode,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {BID_STATUS, EVENTS, REJECTION_REASON, S2S, TARGETING_KEYS} from '../src/constants.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
-import {getPriceByGranularity} from '../src/auction.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
-import {registerVastTrackers} from '../libraries/vastTrackers/vastTrackers.js';
+import { BID_STATUS, EVENTS, REJECTION_REASON, S2S, TARGETING_KEYS } from '../src/constants.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { ajax } from '../src/ajax.js';
+import { getPriceByGranularity } from '../src/auction.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { registerVastTrackers } from '../libraries/vastTrackers/vastTrackers.js';
 import {
   filterBidsListByFilters,
   findBidObj,
@@ -33,7 +33,7 @@ import {
   getLoggingPayload,
   shouldLogAPPR
 } from '../libraries/medianetUtils/logger.js';
-import {KeysMap} from '../libraries/medianetUtils/logKeys.js';
+import { KeysMap } from '../libraries/medianetUtils/logKeys.js';
 import {
   LOGGING_DELAY,
   BID_FLOOR_REJECTED,
@@ -64,7 +64,7 @@ import {
   WINNING_AUCTION_MISSING_ERROR,
   WINNING_BID_ABSENT_ERROR, ERROR_IWB_BID_MISSING, POST_ENDPOINT_RA
 } from '../libraries/medianetUtils/constants.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 // General Constants
 const ADAPTER_CODE = 'medianetAnalytics';
@@ -178,16 +178,13 @@ function getErrorTracker(bidResponse, error) {
     bidder: bidResponse.bidderCode || bidResponse.adapterCode,
     context: bidResponse.context,
   };
-  return [
-    {
-      event: 'impressions',
-      url: errorLogger('vast_tracker_handler_' + error, stack).getUrl(),
-    },
-  ];
+  return {
+    impression: [errorLogger('vast_tracker_handler_' + error, stack).getUrl()]
+  };
 }
 
 function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
-  if (!config.getConfig('cache')?.url) return [];
+  if (!config.getConfig('cache')?.url) return null;
   try {
     if (auction) {
       mnetGlobals.eventQueue.enqueueEvent(EVENTS.AUCTION_INIT, auction);
@@ -207,20 +204,17 @@ function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
     }
     const context = auctionObject.adSlots[bidRequestObj?.adUnitCode]?.context;
     if (context !== VIDEO_CONTEXT.INSTREAM) {
-      return [];
+      return null;
     }
     bidRequestObj.status = VIDEO_UUID_PENDING;
     const { validBidResponseObj } = processBidResponse(auctionObject, bidRequestObj, bidResponse);
     const queryParams = getQueryString(auctionObject, bidRequestObj.adUnitCode, LOG_RA, validBidResponseObj);
-    return [
-      {
-        event: 'impressions',
-        url: `${GET_ENDPOINT_RA}?${getLoggingPayload(queryParams, LOG_RA)}`,
-      },
-    ];
+    return {
+      impression: [`${GET_ENDPOINT_RA}?${getLoggingPayload(queryParams, LOG_RA)}`]
+    };
   } catch (e) {
     errorLogger('vast_tracker_handler_error', e).send();
-    return [];
+    return null;
   }
 }
 
@@ -393,7 +387,7 @@ function addS2sInfo(auctionObj, bidderRequests) {
     bidderRequest.bids.forEach((bidRequest) => {
       if (bidRequest.src !== S2S.SRC) return;
 
-      const bidObjs = filterBidsListByFilters(auctionObj.bidsReceived, {bidId: bidRequest.bidId});
+      const bidObjs = filterBidsListByFilters(auctionObj.bidsReceived, { bidId: bidRequest.bidId });
 
       bidObjs.forEach((bidObj) => {
         bidObj.serverLatencyMillis = bidderRequest.serverResponseTimeMs;
@@ -785,11 +779,14 @@ function bidderDoneHandler(eventType, args) {
 }
 
 function adRenderFailedHandler(eventType, args) {
-  const {reason, message, bid: {
-    auctionId,
-    adUnitCode,
-    bidder,
-    creativeId}} = args;
+  const {
+    reason, message, bid: {
+      auctionId,
+      adUnitCode,
+      bidder,
+      creativeId
+    }
+  } = args;
   errorLogger(eventType, {
     reason,
     message,
@@ -801,7 +798,7 @@ function adRenderFailedHandler(eventType, args) {
 }
 
 function adRenderSucceededHandler(eventType, args) {
-  const {bid: {auctionId, adUnitCode, bidder, creativeId}} = args;
+  const { bid: { auctionId, adUnitCode, bidder, creativeId } } = args;
   errorLogger(eventType, {
     auctionId,
     adUnitCode,

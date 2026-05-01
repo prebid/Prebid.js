@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   buildPlacementProcessingFunction,
   buildRequestsBase,
@@ -15,19 +15,19 @@ const SYNC_URLS = {
 };
 
 const ALIASES = {
-  'attekmi': {area: '1', pid: '300'},
-  'markapp': {area: '4', pid: '360'},
-  'jdpmedia': {area: '1', pid: '382'},
-  'tredio': {area: '4', pid: '337'},
-  'felixads': {area: '1', pid: '406'},
-  'artechnology': {area: '1', pid: '420'},
-  'adinify': {area: '1', pid: '424'},
-  'addigi': {area: '1', pid: '425'},
-  'jambojar': {area: '1', pid: '426'},
-  'anzu': {area: '1', pid: '445'},
-  'amcom': {area: '1', pid: '397'},
-  'adastra': {area: '1', pid: '33'},
-  'radiantfusion': {area: '1', pid: '455'},
+  'attekmi': { area: '1', pid: '300' },
+  'markapp': { area: '4', pid: '360' },
+  'jdpmedia': { area: '1', pid: '382' },
+  'tredio': { area: '4', pid: '337' },
+  'felixads': { area: '1', pid: '406' },
+  'artechnology': { area: '1', pid: '420' },
+  'adinify': { area: '1', pid: '424' },
+  'addigi': { area: '1', pid: '425' },
+  'jambojar': { area: '1', pid: '426' },
+  'anzu': { area: '1', pid: '445' },
+  'amcom': { area: '1', pid: '397' },
+  'adastra': { area: '1', pid: '33' },
+  'radiantfusion': { area: '1', pid: '455' },
 };
 
 const BASE_URLS = {

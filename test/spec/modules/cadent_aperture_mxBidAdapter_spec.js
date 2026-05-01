@@ -747,7 +747,7 @@ describe('cadent_aperture_mx Adapter', function () {
       const vastServerResponse = utils.deepClone(serverResponse);
       vastServerResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
       vastServerResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
-      const result = spec.interpretResponse({body: vastServerResponse}, bid_outstream);
+      const result = spec.interpretResponse({ body: vastServerResponse }, bid_outstream);
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.renderer).to.exist.and.to.be.a('object');
@@ -779,7 +779,7 @@ describe('cadent_aperture_mx Adapter', function () {
 
     it('returns valid advertiser domains', function () {
       const bidResponse = utils.deepClone(serverResponse);
-      const result = spec.interpretResponse({body: bidResponse});
+      const result = spec.interpretResponse({ body: bidResponse });
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
       // case where adomains are not in request
       expect(result[1].meta).to.not.exist;
@@ -836,7 +836,7 @@ describe('cadent_aperture_mx Adapter', function () {
     });
 
     it('should pass gpp string and section id', function() {
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {}, {
         gppString: 'abcdefgs',
         applicableSections: [1, 2, 4]
       });

@@ -15,14 +15,14 @@ import {
   getPlayer,
   jwplayerSubmodule
 } from 'modules/jwplayerRtdProvider.js';
-import {server} from 'test/mocks/xhr.js';
-import {deepClone} from '../../../src/utils.js';
+import { server } from 'test/mocks/xhr.js';
+import { deepClone } from '../../../src/utils.js';
 
 describe('jwplayerRtdProvider', function() {
   const testIdForSuccess = 'test_id_for_success';
   const testIdForFailure = 'test_id_for_failure';
   const validSegments = ['test_seg_1', 'test_seg_2'];
-  const responseHeader = {'Content-Type': 'application/json'};
+  const responseHeader = { 'Content-Type': 'application/json' };
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
@@ -527,7 +527,7 @@ describe('jwplayerRtdProvider', function() {
         bids
       };
 
-      const ortb2Fragments = {global: {}};
+      const ortb2Fragments = { global: {} };
       enrichAdUnits([adUnit], ortb2Fragments);
       const bid1 = bids[0];
       const bid2 = bids[1];
@@ -597,13 +597,13 @@ describe('jwplayerRtdProvider', function() {
               id: 'randomContentId',
               data: [{
                 name: 'random',
-                segment: [{id: 'random'}]
+                segment: [{ id: 'random' }]
               }, {
                 name: 'jwplayer.com',
-                segment: [{id: 'randomJwPlayer'}]
+                segment: [{ id: 'randomJwPlayer' }]
               }, {
                 name: 'random2',
-                segment: [{id: 'random2'}]
+                segment: [{ id: 'random2' }]
               }]
             }
           }
@@ -637,11 +637,11 @@ describe('jwplayerRtdProvider', function() {
 
       const randomDatum = data[0];
       expect(randomDatum).to.have.property('name', 'random');
-      expect(randomDatum.segment).to.deep.equal([{id: 'random'}]);
+      expect(randomDatum.segment).to.deep.equal([{ id: 'random' }]);
 
       const randomDatum2 = data[1];
       expect(randomDatum2).to.have.property('name', 'random2');
-      expect(randomDatum2.segment).to.deep.equal([{id: 'random2'}]);
+      expect(randomDatum2.segment).to.deep.equal([{ id: 'random2' }]);
 
       const jwplayerDatum = data[2];
       expect(jwplayerDatum).to.have.property('name', 'jwplayer.com');
@@ -1531,10 +1531,10 @@ describe('jwplayerRtdProvider', function() {
   });
 
   describe('Add Targeting to Bid', function () {
-    const targeting = {foo: 'bar'};
+    const targeting = { foo: 'bar' };
 
     it('creates realTimeData when absent from Bid', function () {
-      const targeting = {foo: 'bar'};
+      const targeting = { foo: 'bar' };
       const bid = {};
       addTargetingToBid(bid, targeting);
       expect(bid).to.have.property('rtd');
@@ -1804,7 +1804,7 @@ describe('jwplayerRtdProvider', function() {
               }
             }
           },
-          bids: [ bid ]
+          bids: [bid]
         };
         const expectedContentId = 'jw_' + adUnit.ortb2Imp.ext.data.jwTargeting.mediaID;
         const expectedTargeting = {
@@ -1813,7 +1813,7 @@ describe('jwplayerRtdProvider', function() {
           }
         };
 
-        jwplayerSubmodule.getBidRequestData({ adUnits: [ adUnit ] }, bidRequestSpy);
+        jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
         expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
         expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
@@ -1828,11 +1828,11 @@ describe('jwplayerRtdProvider', function() {
         const adUnitWithMediaId = {
           code: adUnitCode,
           mediaID: testIdForSuccess,
-          bids: [ bid1 ]
+          bids: [bid1]
         };
         const adUnitEmpty = {
           code: 'test_ad_unit_empty',
-          bids: [ bid2 ]
+          bids: [bid2]
         };
 
         const adUnitEmptyfpd = {
@@ -1842,7 +1842,7 @@ describe('jwplayerRtdProvider', function() {
               id: 'sthg'
             }
           },
-          bids: [ bid3 ]
+          bids: [bid3]
         };
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty, adUnitEmptyfpd] }, bidRequestSpy);

@@ -40,7 +40,6 @@ describe('adxcg analytics adapter', function () {
 
     const bidResponse = {
       'height': 250,
-      'statusMessage': 'Bid available',
       'adId': '2eddfdc0c791dc',
       'mediaType': 'banner',
       'source': 'client',
@@ -81,7 +80,6 @@ describe('adxcg analytics adapter', function () {
         {
           'adUnitCode': 'div-gpt-ad-1438287399331-0',
           'bidderCode': 'appnexus',
-          'statusMessage': 'Bid available',
           'mediaType': 'banner',
           'renderedSize': '300x250',
           'cpm': 0.5,
@@ -126,7 +124,6 @@ describe('adxcg analytics adapter', function () {
       'netRevenue': true,
       'ttl': 302,
       'auctionId': '914bedad-b145-4e46-ba58-51365faea6cb',
-      'statusMessage': 'Bid available',
       'responseTimestamp': 1530628534437,
       'requestTimestamp': 1530628534219,
       'bidder': 'testbidder4',
@@ -147,7 +144,6 @@ describe('adxcg analytics adapter', function () {
         'netRevenue': true,
         'timeToRespond': 218,
         'bidId': '4587fec4900b81',
-        'statusMessage': 'Bid available',
         'status': 'rendered',
         'creativeId': '2126'
       }]

@@ -1,8 +1,8 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter.js';
-import {deepClone} from 'src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { spec, acceptPostMessage, getStorageData, setStorageData } from 'modules/trionBidAdapter.js';
+import { deepClone } from 'src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const CONSTANTS = require('src/constants.js');
 const adloader = require('src/adloader');
@@ -278,13 +278,13 @@ describe('Trion adapter tests', function () {
 
   describe('interpretResponse', function () {
     it('when there is no response do not bid', function () {
-      const response = spec.interpretResponse(null, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse(null, { bidRequest: TRION_BID });
       expect(response).to.deep.equal([]);
     });
 
     it('when place bid is returned as false', function () {
       TRION_BID_RESPONSE.result.placeBid = false;
-      const response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse({ body: TRION_BID_RESPONSE }, { bidRequest: TRION_BID });
 
       expect(response).to.deep.equal([]);
 
@@ -293,14 +293,14 @@ describe('Trion adapter tests', function () {
 
     it('when no cpm is in the response', function () {
       TRION_BID_RESPONSE.result.cpm = 0;
-      const response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse({ body: TRION_BID_RESPONSE }, { bidRequest: TRION_BID });
       expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.cpm = 1;
     });
 
     it('when no ad is in the response', function () {
       TRION_BID_RESPONSE.result.ad = null;
-      const response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse({ body: TRION_BID_RESPONSE }, { bidRequest: TRION_BID });
       expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.ad = 'test';
     });
@@ -310,7 +310,7 @@ describe('Trion adapter tests', function () {
       const bidHeight = '2';
       TRION_BID_RESPONSE.result.width = bidWidth;
       TRION_BID_RESPONSE.result.height = bidHeight;
-      const response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse({ body: TRION_BID_RESPONSE }, { bidRequest: TRION_BID });
       expect(response[0].width).to.equal(bidWidth);
       expect(response[0].height).to.equal(bidHeight);
       TRION_BID_RESPONSE.result.width = '300';
@@ -320,14 +320,14 @@ describe('Trion adapter tests', function () {
     it('cpm is properly set and transformed to cents', function () {
       const bidCpm = 2;
       TRION_BID_RESPONSE.result.cpm = bidCpm * 100;
-      const response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse({ body: TRION_BID_RESPONSE }, { bidRequest: TRION_BID });
       expect(response[0].cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;
     });
 
     it('advertiserDomains is included when sent by server', function () {
       TRION_BID_RESPONSE.result.adomain = ['test_adomain'];
-      const response = spec.interpretResponse({body: TRION_BID_RESPONSE}, {bidRequest: TRION_BID});
+      const response = spec.interpretResponse({ body: TRION_BID_RESPONSE }, { bidRequest: TRION_BID });
       expect(Object.keys(response[0].meta)).to.include.members(['advertiserDomains']);
       expect(response[0].meta.advertiserDomains).to.deep.equal(['test_adomain']);
       delete TRION_BID_RESPONSE.result.adomain;
@@ -352,12 +352,12 @@ describe('Trion adapter tests', function () {
     });
 
     it('should register trion user script', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
       const pageUrl = getPublisherUrl();
       const pubId = 1;
       const sectionId = 2;
       const syncString = `?p=${pubId}&s=${sectionId}&u=${pageUrl}`;
-      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+      expect(syncs[0]).to.deep.equal({ type: 'iframe', url: USER_SYNC_URL + syncString });
     });
 
     it('should register trion user script with gdpr params', function () {
@@ -365,31 +365,31 @@ describe('Trion adapter tests', function () {
         consentString: 'test_gdpr_str',
         gdprApplies: true
       };
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, null, gdprConsent);
       const pageUrl = getPublisherUrl();
       const pubId = 1;
       const sectionId = 2;
       const gcEncoded = encodeURIComponent(gdprConsent.consentString);
       const syncString = `?p=${pubId}&s=${sectionId}&gc=${gcEncoded}&g=1&u=${pageUrl}`;
-      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+      expect(syncs[0]).to.deep.equal({ type: 'iframe', url: USER_SYNC_URL + syncString });
     });
 
     it('should register trion user script with us privacy params', function () {
       const uspConsent = '1YYY';
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, null, null, uspConsent);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, null, null, uspConsent);
       const pageUrl = getPublisherUrl();
       const pubId = 1;
       const sectionId = 2;
       const uspEncoded = encodeURIComponent(uspConsent);
       const syncString = `?p=${pubId}&s=${sectionId}&up=${uspEncoded}&u=${pageUrl}`;
-      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+      expect(syncs[0]).to.deep.equal({ type: 'iframe', url: USER_SYNC_URL + syncString });
     });
 
     it('should except posted messages from user sync script', function () {
       const testId = 'testId';
       const message = BASE_KEY + 'userId=' + testId;
       setStorageData(BASE_KEY + 'int_t', null);
-      acceptPostMessage({data: message});
+      acceptPostMessage({ data: message });
       const newKey = getStorageData(BASE_KEY + 'int_t');
       expect(newKey).to.equal(testId);
     });
@@ -399,7 +399,7 @@ describe('Trion adapter tests', function () {
       const badId = 'badId';
       const message = 'Not Trion: userId=' + testId;
       setStorageData(BASE_KEY + 'int_t', badId);
-      acceptPostMessage({data: message});
+      acceptPostMessage({ data: message });
       const newKey = getStorageData(BASE_KEY + 'int_t');
       expect(newKey).to.equal(badId);
     });

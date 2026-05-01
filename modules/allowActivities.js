@@ -1,5 +1,5 @@
-import {config} from '../src/config.js';
-import {registerActivityControl} from '../src/activities/rules.js';
+import { config } from '../src/config.js';
+import { registerActivityControl } from '../src/activities/rules.js';
 
 const CFG_NAME = 'allowActivities';
 const RULE_NAME = `${CFG_NAME} config`;
@@ -34,7 +34,7 @@ export function updateRulesFromConfig(registerRule) {
       handles.set(priority, registerRule(activity, RULE_NAME, function (params) {
         for (const rule of rulesByActivity.get(activity).get(priority)) {
           if (!rule.condition || rule.condition(cleanParams(params))) {
-            return {allow: rule.allow, reason: rule}
+            return { allow: rule.allow, reason: rule }
           }
         }
       }, priority));
@@ -44,7 +44,7 @@ export function updateRulesFromConfig(registerRule) {
   function setupDefaultRule(activity) {
     if (!defaultRuleHandles.has(activity)) {
       defaultRuleHandles.set(activity, registerRule(activity, RULE_NAME, function () {
-        return {allow: false, reason: 'activity denied by default'}
+        return { allow: false, reason: 'activity denied by default' }
       }, Number.POSITIVE_INFINITY))
     }
   }

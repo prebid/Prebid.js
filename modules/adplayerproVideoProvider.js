@@ -26,9 +26,9 @@ import {
   SETUP_FAILED,
   VOLUME
 } from '../libraries/video/constants/events.js';
-import {AD_PLAYER_PRO_VENDOR} from '../libraries/video/constants/vendorCodes.js';
-import {getEventHandler} from '../libraries/video/shared/eventHandler.js';
-import {submodule} from '../src/hook.js';
+import { AD_PLAYER_PRO_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { submodule } from '../src/hook.js';
 
 const setupFailMessage = 'Failed to instantiate the player';
 
@@ -350,14 +350,14 @@ export const utils = {
     }
   },
 
-  getPlaybackMethod: function ({autoplay, mute}) {
+  getPlaybackMethod: function ({ autoplay, mute }) {
     if (autoplay) {
       return mute ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     return PLAYBACK_METHODS.CLICK_TO_PLAY;
   },
 
-  getPlcmt: function ({type, autoplay, muted, file}) {
+  getPlcmt: function ({ type, autoplay, muted, file }) {
     type = type || 'inStream';
     if (!file) {
       // INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.

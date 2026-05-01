@@ -39,8 +39,8 @@ function template(strings, ...keys) {
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
 function formatBidRequest(bid, bidderRequest = {}) {
-  const {params} = bid;
-  const {referer} = (bidderRequest.refererInfo || {});
+  const { params } = bid;
+  const { referer } = (bidderRequest.refererInfo || {});
   let url = urlTemplate({
     adapter: 'prebid',
     slot: params.slot,
@@ -90,7 +90,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {
-    const {params = {}} = bid;
+    const { params = {} } = bid;
     return !!(params.slot && params.adkey && params.ad_size);
   },
 

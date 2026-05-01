@@ -101,7 +101,7 @@ export class GreedyPromise {
     return new this((resolve) => {
       const res = [];
       this.#collect(promises, (success, val, i) => {
-        res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val};
+        res[i] = success ? { status: 'fulfilled', value: val } : { status: 'rejected', reason: val };
       }, () => resolve(res))
     })
   }

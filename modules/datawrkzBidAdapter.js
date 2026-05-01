@@ -176,7 +176,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
     assets.push(generateNativeDataObj(body, 'desc', ++counter));
   }
 
-  const request = JSON.stringify({assets: assets});
+  const request = JSON.stringify({ assets: assets });
   const native = {
     request: request
   };
@@ -277,7 +277,7 @@ function getVideoAdUnitSize(bidRequest) {
       adH = parseInt(playerSize[0][1]);
     }
   }
-  return {adH: adH, adW: adW}
+  return { adH: adH, adW: adW }
 }
 
 /* Get mediatype of the adunit from request */
@@ -306,7 +306,7 @@ function generatePayload(imp, bidderRequest) {
     publisher: {}
   };
 
-  const regs = {ext: {}};
+  const regs = { ext: {} };
 
   if (bidderRequest.uspConsent) {
     regs.ext.us_privacy = bidderRequest.uspConsent;

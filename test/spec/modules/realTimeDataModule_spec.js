@@ -1,14 +1,14 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import * as sinon from 'sinon';
 import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
-import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
-import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
-import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
-import {registerActivityControl} from '../../../src/activities/rules.js';
-import {ACTIVITY_ENRICH_UFPD, ACTIVITY_TRANSMIT_EIDS} from '../../../src/activities/activities.js';
+import { attachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
+import { GDPR_GVLIDS } from '../../../src/consentHandler.js';
+import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_ENRICH_UFPD, ACTIVITY_TRANSMIT_EIDS } from '../../../src/activities/activities.js';
 
 describe('Real time module', function () {
   let eventHandlers;
@@ -42,7 +42,7 @@ describe('Real time module', function () {
       name: 'validSM',
       init: () => { return true },
       getTargetingData: (adUnitsCodes) => {
-        return {'ad2': {'key': 'validSM'}}
+        return { 'ad2': { 'key': 'validSM' } }
       },
       getBidRequestData: getBidRequestDataStub
     };
@@ -51,7 +51,7 @@ describe('Real time module', function () {
       name: 'validSMWait',
       init: () => { return true },
       getTargetingData: (adUnitsCodes) => {
-        return {'ad1': {'key': 'validSMWait'}}
+        return { 'ad1': { 'key': 'validSMWait' } }
       },
       getBidRequestData: getBidRequestDataStub
     };
@@ -104,7 +104,7 @@ describe('Real time module', function () {
     it('are registered when RTD module is registered', () => {
       let mod;
       try {
-        mod = attachRealTimeDataProvider({name: 'mockRtd', gvlid: 123});
+        mod = attachRealTimeDataProvider({ name: 'mockRtd', gvlid: 123 });
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
         if (mod) {
@@ -124,10 +124,10 @@ describe('Real time module', function () {
       config.setConfig(conf);
       rules = [
         registerActivityControl(ACTIVITY_TRANSMIT_EIDS, 'test', (params) => {
-          return {allow: false};
+          return { allow: false };
         }),
         registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => {
-          return {allow: false};
+          return { allow: false };
         })
       ]
     });
@@ -143,13 +143,13 @@ describe('Real time module', function () {
     });
 
     it('should be able to modify bid request', function (done) {
-      const request = {bidRequest: {}};
+      const request = { bidRequest: {} };
       getBidRequestDataStub.callsFake((req) => {
         req.foo = 'bar';
       });
       rtdModule.setBidRequestsData(() => {
         assert(getBidRequestDataStub.calledTwice);
-        assert(getBidRequestDataStub.calledWith(sinon.match({bidRequest: {}})));
+        assert(getBidRequestDataStub.calledWith(sinon.match({ bidRequest: {} })));
         expect(request.foo).to.eql('bar');
         done();
       }, request)
@@ -170,7 +170,7 @@ describe('Real time module', function () {
           }
         }
       };
-      const request = {ortb2Fragments};
+      const request = { ortb2Fragments };
       getBidRequestDataStub.callsFake((req) => {
         expect(req.ortb2Fragments.global.user.eids).to.not.exist;
         expect(req.ortb2Fragments.bidder.bidderA.eids).to.not.exist;
@@ -197,7 +197,7 @@ describe('Real time module', function () {
           },
           {
             code: 'ad2',
-            adserverTargeting: {preKey: 'preValue'}
+            adserverTargeting: { preKey: 'preValue' }
           }
         ]
       };
@@ -205,7 +205,7 @@ describe('Real time module', function () {
       const expectedAdUnits = [
         {
           code: 'ad1',
-          adserverTargeting: {key: 'validSMWait'}
+          adserverTargeting: { key: 'validSMWait' }
         },
         {
           code: 'ad2',
@@ -234,7 +234,7 @@ describe('Real time module', function () {
         ]
       };
       validSM.getTargetingData = (adUnits) => {
-        const targeting = {'module1': 'targeting'}
+        const targeting = { 'module1': 'targeting' }
         return {
           ad1: targeting,
           ad2: targeting
@@ -256,7 +256,7 @@ describe('Real time module', function () {
 
       function runSetBidRequestData() {
         return new Promise((resolve) => {
-          rtdModule.setBidRequestsData(resolve, {bidRequest: {}});
+          rtdModule.setBidRequestsData(resolve, { bidRequest: {} });
         });
       }
 
@@ -348,7 +348,7 @@ describe('Real time module', function () {
       providers.forEach(p => p.getTargetingData = sinon.spy());
       const auction = {
         adUnitCodes: ['a1'],
-        adUnits: [{code: 'a1'}]
+        adUnits: [{ code: 'a1' }]
       };
       mockEmitEvent(EVENTS.AUCTION_END, auction);
       providers.forEach(p => {
@@ -420,8 +420,8 @@ describe('Real time module', function () {
 
     it('calls onDataDeletionRequest on submodules', () => {
       const next = sinon.stub();
-      onDataDeletionRequest(next, {a: 0});
-      sinon.assert.calledWith(next, {a: 0});
+      onDataDeletionRequest(next, { a: 0 });
+      sinon.assert.calledWith(next, { a: 0 });
       sinon.assert.calledWith(sm1.onDataDeletionRequest, cfg1);
       sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
     });

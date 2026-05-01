@@ -9,7 +9,7 @@ export function fireEvents(events = [
   EVENTS.BID_WON
 ]) {
   return events.map((ev, i) => {
-    ev = Array.isArray(ev) ? ev : [ev, {i: i}];
+    ev = Array.isArray(ev) ? ev : [ev, { i: i }];
     pbEvents.emit.apply(null, ev)
     return ev;
   });
@@ -21,7 +21,7 @@ export function expectEvents(events) {
     to: {
       beTrackedBy(trackFn) {
         events.forEach(([eventType, args]) => {
-          sinon.assert.calledWithMatch(trackFn, sinon.match({eventType, args}));
+          sinon.assert.calledWithMatch(trackFn, sinon.match({ eventType, args }));
         });
       },
       beBundledTo(bundleFn) {
