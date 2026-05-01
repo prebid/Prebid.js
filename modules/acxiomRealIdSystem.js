@@ -9,7 +9,7 @@ import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { logError, logInfo } from '../src/utils.js';
+import { logError } from '../src/utils.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -21,8 +21,6 @@ import { logError, logInfo } from '../src/utils.js';
 const MODULE_NAME = 'acxiomRealId';
 const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/e/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
-const LOG_PREFIX = 'AcxiomRealId: ';
-
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function isConsentBlocked(consentData) {
@@ -33,14 +31,12 @@ function isConsentBlocked(consentData) {
   // EU/UK passive suppression: TCF string present → do not fire
   const gdpr = consentData.gdpr;
   if (gdpr && (gdpr.gdprApplies || gdpr.consentString)) {
-    logInfo(LOG_PREFIX + 'TCF consent string detected, suppressing.');
     return true;
   }
 
   // CCPA: us_privacy position 3 = Y → opted out of sale
   const usp = consentData.usp;
   if (usp && typeof usp === 'string' && usp.length >= 3 && usp.charAt(2) === 'Y') {
-    logInfo(LOG_PREFIX + 'CCPA opt-out detected, suppressing.');
     return true;
   }
 
@@ -55,7 +51,6 @@ function deleteStoredToken(config) {
   if (storage.cookiesAreEnabled()) {
     storage.setCookie(storageName, '', new Date(0).toUTCString());
   }
-  logInfo(LOG_PREFIX + 'Stored token deleted.');
 }
 
 function buildLookupUrl(apiUrl) {
@@ -81,7 +76,7 @@ export const acxiomRealIdSubmodule = {
     const { partnerId, apiUrl, sourceId, hem } = configParams;
 
     if (!partnerId) {
-      logError(LOG_PREFIX + 'partnerId is required.');
+      logError('AcxiomRealId: partnerId is required.');
       return undefined;
     }
 
@@ -119,12 +114,10 @@ export const acxiomRealIdSubmodule = {
                   cb();
                 }
               } catch (e) {
-                logError(LOG_PREFIX + 'Failed to parse response.', e);
                 cb();
               }
             },
             error: () => {
-              logError(LOG_PREFIX + 'Lookup request failed.');
               cb();
             }
           },
