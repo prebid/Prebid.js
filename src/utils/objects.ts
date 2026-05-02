@@ -28,10 +28,6 @@ const toString = Object.prototype.toString;
  * @param {String} _t type string (e.g., Array)
  * @return {Boolean} if object is of type _t
  */
-export function isA(object, _t) {
-  return toString.call(object) === '[object ' + _t + ']';
-}
-
 export function isFn(object): object is AnyFunction {
   return typeof object === 'function';
 }
