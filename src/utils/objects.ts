@@ -24,9 +24,6 @@ const toString = Object.prototype.toString;
 /**
  * Return if the object is of the
  * given type.
- * @param {*} object to test
- * @param {String} _t type string (e.g., Array)
- * @return {Boolean} if object is of type _t
  */
 export function isFn(object): object is AnyFunction {
   return typeof object === 'function';
