@@ -3,7 +3,7 @@ name: Build & Deploy Prebid.js
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 jobs:
