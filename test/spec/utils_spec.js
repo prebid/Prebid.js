@@ -331,53 +331,6 @@ describe('Utils', function () {
     });
   });
 
-  describe('isA', function () {
-    it('should return true with string object', function () {
-      var output = utils.isA(obj_string, type_string);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with object', function () {
-      var output = utils.isA(obj_object, type_string);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with object', function () {
-      var output = utils.isA(obj_object, type_object);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_object);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with array object', function () {
-      var output = utils.isA(obj_array, type_array);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_function);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with function', function () {
-      var output = utils.isA(obj_function, type_function);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with number', function () {
-      var output = utils.isA(obj_function, type_number);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with number', function () {
-      var output = utils.isA(obj_number, type_number);
-      assert.deepEqual(output, true);
-    });
-  });
-
   describe('isFn', function () {
     Object.entries({
       'vanilla function': () => null,
