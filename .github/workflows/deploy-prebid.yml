@@ -38,14 +38,14 @@ jobs:
         run: |
           # Upload the latest build (short-lived cache)
           aws s3 cp build/prebid.js \
-            s3://${{ secrets.S3_BUCKET }}/prebid/prebid.js \
+            s3://${{ secrets.S3_BUCKET }}/prod/prebid.js \
             --cache-control "public, max-age=3600, s-maxage=86400" \
             --content-type "application/javascript"
 
           # Upload a versioned copy (long-lived cache)
           VERSION=$(node -p "require('./package.json').version")
           aws s3 cp build/prebid.js \
-            s3://${{ secrets.S3_BUCKET }}/prebid/prebid-${VERSION}.js \
+            s3://${{ secrets.S3_BUCKET }}/prod/prebid-${VERSION}.js \
             --cache-control "public, max-age=31536000, immutable" \
             --content-type "application/javascript"
 
@@ -53,5 +53,5 @@ jobs:
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/prebid/prebid.js"
+            --paths "/prod/prebid.js"
 
