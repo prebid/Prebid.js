@@ -28,7 +28,7 @@ jobs:
 
       - name: Build Prebid.js
         run: |
-          npx gulp build --modules=consentManagementGpp,consentManagementTcf,consentManagementUsp,storageControl,tcfControl,gppControl_usnat,gppControl_usstates,allowActivities,bidResponseFilter,bidViewability,currency,priceFloors,debugging,geolocationRtdProvider,multibid,nativeRendering,prebidServerBidAdapter,previousAuctionInfo,s2sTesting,schain,rules,timeoutRtdProvider,videoModule,validationFpdModule,userId,sharedIdSystem,id5IdSystem,amxIdSystem,unifiedId,criteo,adfBidAdapter,tpcBidAdapter,magniteBidAdapter,pubmaticBidAdapter,ixBidAdapter
+          npx gulp build --modules=consentManagementGpp,consentManagementTcf,consentManagementUsp,storageControl,tcfControl,gppControl_usnat,gppControl_usstates,allowActivities,bidResponseFilter,bidViewability,currency,priceFloors,debugging,geolocationRtdProvider,multibid,nativeRendering,prebidServerBidAdapter,previousAuctionInfo,s2sTesting,schain,rules,timeoutRtdProvider,videoModule,validationFpdModule,userId,sharedIdSystem,id5IdSystem,amxIdSystem,unifiedId,criteoIdSystem,adfBidAdapter,tpcBidAdapter,magniteBidAdapter,pubmaticBidAdapter,ixBidAdapter
 
       - name: List build output
         run: find build/ -name "prebid.js" | head -20
