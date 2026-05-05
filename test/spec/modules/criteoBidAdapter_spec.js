@@ -2207,6 +2207,8 @@ describe('The Criteo bidding adapter', function () {
         expect(bids[0].renderer.url).to.equal('https://static.criteo.net/js/ld/publishertag.renderer.js');
         expect(typeof bids[0].renderer.config.documentResolver).to.equal('function');
         expect(typeof bids[0].renderer._render).to.equal('function');
+        const render = bids[0].renderer._render;
+        expect(() => render(bids[0])).to.not.throw();
       });
     }
 

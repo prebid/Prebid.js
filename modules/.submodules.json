@@ -74,7 +74,7 @@
       "adlooxRtdProvider",
       "adlaneRtdProvider",
       "adnuntiusRtdProvider",
-      "agenticAudienceAdapter",
+      "agenticAudienceRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "anonymisedRtdProvider",
@@ -132,7 +132,8 @@
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider",
-      "wurflRtdProvider"
+      "wurflRtdProvider",
+      "encypherRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",

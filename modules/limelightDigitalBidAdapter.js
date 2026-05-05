@@ -89,7 +89,8 @@ export const spec = {
     { code: 'performist' },
     { code: 'oveeo' },
     { code: 'embimedia' },
-    { code: 'pgamrtb' }
+    { code: 'pgamrtb' },
+    { code: 'nuclion' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 

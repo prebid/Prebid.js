@@ -96,7 +96,7 @@ jobs:
 
     - name: Generate PR comment
       if: env.filtered_report_exists == 'true'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const fs = require('fs');
