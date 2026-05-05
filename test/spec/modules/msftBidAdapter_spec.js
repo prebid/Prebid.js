@@ -231,6 +231,7 @@ describe('msftBidAdapter', function () {
               playerSize: [
                 [640, 480]
               ],
+              placement: 1,
               plcmt: 4,
               mimes: ['video/mp4'],
               protocols: [2, 3],
@@ -249,7 +250,8 @@ describe('msftBidAdapter', function () {
         expect(data).to.exist;
         expect(data.imp).to.have.lengthOf(1);
         expect(data.imp[0].video).to.exist;
-        expect(data.imp[0].video.placement).to.equal(4);
+        expect(data.imp[0].video.plcmt).to.equal(4);
+        expect(data.imp[0].video.placement).to.equal(1);
         expect(data.imp[0].video.w).to.equal(640);
         expect(data.imp[0].video.h).to.equal(480);
         expect(data.imp[0].ext.appnexus.require_asset_url).to.be.true;
@@ -546,6 +548,7 @@ describe('msftBidAdapter', function () {
             ],
             "w": 640,
             "h": 360,
+            "plcmt": 4,
             "placement": 1,
             "maxextended": -1,
             "boxingallowed": 1,
@@ -595,6 +598,7 @@ describe('msftBidAdapter', function () {
               ]
             ],
             "context": "instream",
+            "plcmt": 4,
             "placement": 1,
             "startdelay": 0
           }
@@ -826,7 +830,8 @@ describe('msftBidAdapter', function () {
             ],
             "w": 640,
             "h": 480,
-            "plcmt": 4
+            "plcmt": 4,
+            "placement": 1,
           },
           "ext": {
             "data": {
@@ -859,6 +864,7 @@ describe('msftBidAdapter', function () {
               8
             ],
             "plcmt": 4,
+            "placement": 1,
             "w": 640,
             "h": 480
           }
