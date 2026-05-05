@@ -69,6 +69,7 @@ jobs:
         if: ${{ fromJSON(steps.get-props.outputs.result).isCoreChange }}
         uses: actions/github-script@v8
         with:
+          github-token: ${{ steps.token.outputs.token }}
           script: |
             const ghRequester = require('.github/workflows/scripts/ghRequest.js');
             const request = ghRequester(github);
