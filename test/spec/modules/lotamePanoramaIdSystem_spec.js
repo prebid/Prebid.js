@@ -834,7 +834,8 @@ describe('LotameId', function() {
   describe('eid', () => {
     it('lotamePanoramaId', function () {
       const userId = lotamePanoramaIdSubmodule.decode('some-random-id-value');
-      const newEids = createEidsArray(userId);
+      const eidConfigs = new Map([['lotamePanoramaId', lotamePanoramaIdSubmodule.eids.lotamePanoramaId]]);
+      const newEids = createEidsArray(userId, eidConfigs);
       expect(newEids).to.deep.equal([{
         source: 'crwdcntrl.net',
         uids: [{ id: 'some-random-id-value', atype: 1 }],
