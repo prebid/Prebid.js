@@ -9,7 +9,7 @@ Maintainer: support@teqblaze.com
 # Description
 
 Connects to TeqBlaze Demo for bids.
-TeqBlaze Demo bid adapter supports Banner, Video (instream and outstream) and Native. \
+TeqBlaze Demo bid adapter supports Banner, Video (instream and outstream) and Native.
 This adapter is for internal testing only and should not be used for production integrations.
 
 # Test Parameters
