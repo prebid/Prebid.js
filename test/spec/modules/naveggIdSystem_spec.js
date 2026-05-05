@@ -41,15 +41,19 @@ function setLocalStorage() {
 }
 
 describe('getId', function () {
-  let ajaxStub, ajaxBuilderStub;
+  let ajaxStub, ajaxBuilderStub, cookiesEnabledStub, localStorageEnabledStub;
 
   beforeEach(function() {
     ajaxStub = sinon.stub();
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(ajaxStub);
+    cookiesEnabledStub = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+    localStorageEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
   });
 
   afterEach(function() {
     ajaxBuilderStub.restore();
+    cookiesEnabledStub.restore();
+    localStorageEnabledStub.restore();
     deleteAllCookies();
     storage.removeDataFromLocalStorage('nvggid');
   });

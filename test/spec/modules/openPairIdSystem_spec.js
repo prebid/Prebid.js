@@ -15,10 +15,14 @@ import { createEidsArray, getEids } from '../../../modules/userId/eids.js';
 describe('openPairId', function () {
   let sandbox;
   let logInfoStub;
+  let localStorageEnabledStub;
+  let cookiesEnabledStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     logInfoStub = sandbox.stub(utils, 'logInfo');
+    localStorageEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+    cookiesEnabledStub = sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
   });
   afterEach(() => {
     sandbox.restore();
@@ -116,8 +120,8 @@ describe('openPairId', function () {
   });
 
   it('should not get data from storage if local storage and cookies are disabled', function () {
-    sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
-    sandbox.stub(storage, 'cookiesAreEnabled').returns(false);
+    localStorageEnabledStub.returns(false);
+    cookiesEnabledStub.returns(false);
     const id = openPairIdSubmodule.getId({
       params: {
         liveramp: {
