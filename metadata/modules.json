@@ -1452,6 +1452,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "asterio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "astraone",
       "aliasOf": null,
       "gvlid": null,
@@ -1973,6 +1980,13 @@
       "componentName": "copper6ssp",
       "aliasOf": null,
       "gvlid": 1356,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "cortex",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3825,6 +3839,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pigeoon",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "pilotx",
       "aliasOf": "pilotx",
       "gvlid": null,
@@ -4100,7 +4121,7 @@
       "componentType": "bidder",
       "componentName": "relay",
       "aliasOf": null,
-      "gvlid": 631,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4149,7 +4170,7 @@
       "componentType": "bidder",
       "componentName": "revantage",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1588,
       "disclosureURL": null
     },
     {
