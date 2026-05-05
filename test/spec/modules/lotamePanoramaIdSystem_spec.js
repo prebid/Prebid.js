@@ -5,7 +5,6 @@ import {
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
@@ -833,19 +832,13 @@ describe('LotameId', function() {
     });
   });
   describe('eid', () => {
-    before(() => {
-      attachIdSystem(lotamePanoramaIdSubmodule);
-    });
     it('lotamePanoramaId', function () {
-      const userId = {
-        lotamePanoramaId: 'some-random-id-value',
-      };
+      const userId = lotamePanoramaIdSubmodule.decode('some-random-id-value');
       const newEids = createEidsArray(userId);
-      expect(newEids.length).to.equal(1);
-      expect(newEids[0]).to.deep.equal({
+      expect(newEids).to.deep.equal([{
         source: 'crwdcntrl.net',
         uids: [{ id: 'some-random-id-value', atype: 1 }],
-      });
+      }]);
     });
   })
 });

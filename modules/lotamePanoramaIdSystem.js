@@ -36,7 +36,6 @@ const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
 const ID_HOST = 'id.crwdcntrl.net';
 const ID_HOST_COOKIELESS = 'c.ltmsphrcl.net';
-const DO_NOT_HONOR_CONFIG = false;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 let cookieDomain;
@@ -72,10 +71,10 @@ function setProfileId(profileId, storageConfig) {
  */
 function getProfileId(storageConfig) {
   let profileId;
-  if (cookiesAreEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
+  if (cookiesAreEnabled(storageConfig)) {
     profileId = storage.getCookie(KEY_PROFILE, undefined);
   }
-  if (!profileId && localStorageIsEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
+  if (!profileId && localStorageIsEnabled(storageConfig)) {
     profileId = storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
   }
   return profileId;
@@ -87,10 +86,10 @@ function getProfileId(storageConfig) {
  */
 function getFromStorage(key, storageConfig) {
   let value = null;
-  if (cookiesAreEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
+  if (cookiesAreEnabled(storageConfig)) {
     value = storage.getCookie(key, undefined);
   }
-  if (value === null && localStorageIsEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
+  if (value === null && localStorageIsEnabled(storageConfig)) {
     value = storage.getDataFromLocalStorage(key, undefined);
   }
   return value;
@@ -163,7 +162,7 @@ function getLotameLocalCache(clientId = undefined, storageConfig) {
  */
 function clearLotameCache(key, storageConfig) {
   if (key) {
-    if (cookiesAreEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
+    if (cookiesAreEnabled(storageConfig)) {
       const expirationDate = new Date(0).toUTCString();
       storage.setCookie(
         key,
@@ -174,32 +173,24 @@ function clearLotameCache(key, storageConfig) {
         undefined
       );
     }
-    if (localStorageIsEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
+    if (localStorageIsEnabled(storageConfig)) {
       storage.removeDataFromLocalStorage(key, undefined);
     }
   }
 }
 /**
  * @param {SubmoduleConfig['storage']} storageConfig
- * @param {boolean} honorConfig - false to override for reading or deleting old cookies
- * @returns {boolean} for whether we can write the cookie
+ * @returns {boolean} for whether we can use cookies for this module
  */
-function cookiesAreEnabled(storageConfig, honorConfig = true) {
-  if (honorConfig) {
-    return storage.cookiesAreEnabled() && storageConfig.type.includes('cookie');
-  }
-  return storage.cookiesAreEnabled();
+function cookiesAreEnabled(storageConfig) {
+  return storage.cookiesAreEnabled() && storageConfig.type.includes('cookie');
 }
 /**
  * @param {SubmoduleConfig['storage']} storageConfig
- * @param {boolean} honorConfig - false to override for reading or deleting old stored items
- * @returns {boolean} for whether we can write the cookie
+ * @returns {boolean} for whether we can use local storage for this module
  */
-function localStorageIsEnabled(storageConfig, honorConfig = true) {
-  if (honorConfig) {
-    return storage.hasLocalStorage() && storageConfig.type.includes('html5');
-  }
-  return storage.hasLocalStorage();
+function localStorageIsEnabled(storageConfig) {
+  return storage.hasLocalStorage() && storageConfig.type.includes('html5');
 }
 /**
  * @param {SubmoduleConfig} config
