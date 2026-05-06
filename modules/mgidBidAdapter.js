@@ -6,6 +6,8 @@ import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { parseUserAgentDetailed } from '../libraries/userAgentUtils/detailed.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -99,8 +101,8 @@ const converter = ortbConverter({
     if (storageId && context.enhancedBidData && isViewabilityEnabled()) {
       const viewrate = mgidSession.getViewrate(storageId);
       if (isStr(viewrate) && viewrate.length > 0) {
-        deepSetValue(imp, 'ext.data.viewrate_1w', viewrate);
-        deepSetValue(imp, 'ext.data.viewrate_id_type', storageIdType);
+        deepSetValue(imp, 'ext.data.viewrate1w', viewrate);
+        deepSetValue(imp, 'ext.data.viewrateIdType', storageIdType);
       }
     }
 
@@ -301,15 +303,17 @@ export const spec = {
   },
 
   onAdRenderSucceeded: (bid) => {
-    if (isEnhancedBidDataEnabled() && isViewabilityEnabled()) {
-      mgidSession.trackRender(resolveTrackId(bid));
+    const trackId = bid && bid.mgVRID;
+    if (isStr(trackId) && trackId.length > 0 && isViewabilityEnabled()) {
+      mgidSession.trackRender(trackId);
       logInfo(LOG_INFO_PREFIX + `onAdRenderSucceeded`);
     }
   },
 
   onBidViewable: (bid) => {
-    if (isEnhancedBidDataEnabled() && isViewabilityEnabled()) {
-      mgidSession.trackView(resolveTrackId(bid));
+    const trackId = bid && bid.mgVRID;
+    if (isStr(trackId) && trackId.length > 0) {
+      mgidSession.trackView(trackId);
       logInfo(LOG_INFO_PREFIX + `onBidViewable`);
     }
   },
@@ -463,6 +467,7 @@ function populateRequest(request, context) {
     }
   }
 
+  deepSetValue(request, 'user.ext.mgid.enhanced', context.enhancedBidData ? 1 : 0);
   if (context.enhancedBidData) {
     populateMgidData(request);
   }
@@ -500,15 +505,15 @@ function populateMgidData(request) {
     deepSetValue(request, 'user.ext.mgid.sid', sessionInfo.sid);
   }
   if (isNumber(sessionInfo.sessionPage) && sessionInfo.sessionPage > 0) {
-    deepSetValue(request, 'user.ext.mgid.session_page', sessionInfo.sessionPage);
+    deepSetValue(request, 'user.ext.mgid.sessionPage', sessionInfo.sessionPage);
   }
   if (sessionInfo.sessionNum > 0) {
-    deepSetValue(request, 'user.ext.mgid.session_num', sessionInfo.sessionNum);
+    deepSetValue(request, 'user.ext.mgid.sessionNum', sessionInfo.sessionNum);
     if (sessionInfo.sessionsWeek > 0) {
-      deepSetValue(request, 'user.ext.mgid.sessions_1w', sessionInfo.sessionsWeek);
+      deepSetValue(request, 'user.ext.mgid.sessions1w', sessionInfo.sessionsWeek);
     }
     if (isNumber(sessionInfo.timeBetweenSessions)) {
-      deepSetValue(request, 'user.ext.mgid.time_between_sessions', sessionInfo.timeBetweenSessions);
+      deepSetValue(request, 'user.ext.mgid.timeBetweenSessions', sessionInfo.timeBetweenSessions);
     }
   }
 }
@@ -526,20 +531,21 @@ function populateConnectionInfo(request) {
 }
 
 /**
- * Publisher opt-out for MGID usage data: `pbjs.setConfig({mgid: {enhancedBidData: false}})`.
- * Enabled by default.
+ * Publisher opt-in for MGID usage data: `pbjs.bidderSettings.mgid = {enhancedBidData: true}`.
+ * Disabled by default.
  * @returns {boolean}
  */
 function isEnhancedBidDataEnabled() {
-  return config.getConfig('mgid.enhancedBidData') !== false;
+  return bidderSettings.get(BIDDER_CODE, 'enhancedBidData') === true;
 }
 
 /**
  * @returns {boolean}
  */
 function isViewabilityEnabled() {
-  return config.getConfig('bidViewability')?.enabled === true ||
-    config.getConfig('bidViewabilityIO')?.enabled === true;
+  const installedModules = getGlobal().installedModules;
+  return (installedModules.includes('bidViewability') && config.getConfig('bidViewability')?.enabled === true) ||
+    (installedModules.includes('bidViewabilityIO') && config.getConfig('bidViewabilityIO')?.enabled === true);
 }
 
 /**
@@ -560,19 +566,6 @@ function resolveStorageId(bidRequest) {
     return { id: tagId, type: 'tagId' };
   }
   return { id: '', type: '' };
-}
-
-/**
- * @param {Object} bid
- * @returns {string}
- */
-function resolveTrackId(bid) {
-  const viewrateId = bid && bid.mgVRID;
-  if (isStr(viewrateId) && viewrateId.length > 0) {
-    return viewrateId;
-  }
-
-  return (bid && bid.adUnitCode) || '';
 }
 
 function getLocalStorageSafely(key) {
