@@ -1,8 +1,8 @@
 import {
   getPageTargeting,
-  getPageTargetingKeys,
+  getPageTargetingKeys, getPageTargetingMap,
   getSlotTargeting,
-  getSlotTargetingKeys, setPageTargeting,
+  getSlotTargetingKeys, getSlotTargetingMap, setPageTargeting,
   setSlotTargeting,
 } from '../../../../src/utils/gptTargeting.js';
 
@@ -54,6 +54,21 @@ describe('gpt targeting shim', () => {
     });
 
     Object.entries({
+      getPageTargetingMap,
+      getSlotTargetingMap
+    }).forEach(([name, fn]) => {
+      describe(name, () => {
+        it('returns an empty map when no targeting config is found', () => {
+          expect(fn(mockGam)).to.eql({});
+        });
+        it('returns the value from config otherwise', () => {
+          targetingConfig = { key: 'value' };
+          expect(fn(mockGam)).to.eql({ key: 'value' });
+        })
+      })
+    })
+
+    Object.entries({
       setPageTargeting: (target, key, value) => setPageTargeting(key, value, target),
       setSlotTargeting,
     }).forEach(([name, fn]) => {
@@ -101,6 +116,41 @@ describe('gpt targeting shim', () => {
       mockSlot.setTargeting = sinon.stub();
       setSlotTargeting(mockSlot, 'key', 'value');
       sinon.assert.calledWith(mockSlot.setTargeting, 'key', 'value');
+    });
+
+    Object.entries({
+      getPageTargetingMap: {
+        fn: getPageTargetingMap,
+        arg: () => mockGam,
+        mock: () => pubads
+      },
+      getSlotTargetingMap: {
+        fn: getSlotTargetingMap,
+        arg: () => mockSlot,
+        mock: () => mockSlot
+      }
+    }).forEach(([name, { fn, arg, mock }]) => {
+      describe(name, () => {
+        it('calls getTargeting on each key from getTargetingkeys', () => {
+          Object.assign(mock(), {
+            getTargetingKeys: () => ['k1', 'k2'],
+            getTargeting: (key) => `${key}value`
+          });
+          expect(fn(arg())).to.eql({
+            k1: 'k1value',
+            k2: 'k2value'
+          });
+        });
+      });
+    })
+
+    it('getSlotTargetingMap calls slot.getTargeting on each key from slot.getTargetingKeys', () => {
+      mockSlot.getTargetingKeys = () => ['k1', 'k2'];
+      mockSlot.getTargeting = (key) => `${key}value`;
+      expect(getSlotTargetingMap(mockSlot)).to.eql({
+        k1: 'k1value',
+        k2: 'k2value'
+      });
     })
   });
 });

@@ -17,6 +17,21 @@ export function updateSlotTargetingFromMap(slot: googletag.Slot, map: Record<str
   return trySetConfig(slot, () => (slot as any).setConfig({ targeting: map }), () => slot.updateTargetingFromMap(map));
 }
 
+function getTargetingMap(configTarget, getTargetingTarget) {
+  return tryGetConfig(configTarget, (targeting) => targeting, () => {
+    const target = getTargetingTarget();
+    return Object.fromEntries(target.getTargetingKeys().map(key => [key, target.getTargeting(key)]));
+  })
+}
+
+export function getPageTargetingMap(gpt = googletag): Record<string, string[]> {
+  return getTargetingMap(gpt, () => gpt.pubads())
+}
+
+export function getSlotTargetingMap(slot: googletag.Slot): Record<string, string[]> {
+  return getTargetingMap(slot, () => slot);
+}
+
 export function getPageTargetingKeys(gpt = googletag): string[] {
   return tryGetConfig(gpt, (cfg) => Object.keys(cfg), () => gpt.pubads().getTargetingKeys())
 }

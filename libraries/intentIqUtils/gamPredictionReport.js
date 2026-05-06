@@ -1,6 +1,6 @@
 import { getEvents } from '../../src/events.js';
 import { logError } from '../../src/utils.js';
-import { getSlotTargetingKeys, getSlotTargeting as getGPTSlotTargeting } from '../../src/utils/gptTargeting.js';
+import { getSlotTargetingMap } from '../../src/utils/gptTargeting.js';
 
 export function gamPredictionReport (gamObjectReference, sendData) {
   try {
@@ -9,15 +9,12 @@ export function gamPredictionReport (gamObjectReference, sendData) {
       return
     }
     const getSlotTargeting = (slot) => {
-      const kvs = {};
       try {
-        (getSlotTargetingKeys(slot) || []).forEach((k) => {
-          kvs[k] = getGPTSlotTargeting(slot, k);
-        });
+        return getSlotTargetingMap(slot);
       } catch (e) {
         logError('Failed to get slot targeting: ' + e);
+        return {}
       }
-      return kvs;
     };
 
     const extractWinData = (gamEvent) => {
