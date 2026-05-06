@@ -16,7 +16,13 @@ import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import sha1 from 'crypto-js/sha1';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { getPageTargeting, getPageTargetingKeys, getSlotTargetingKeys, getSlotTargeting } from '../src/utils/gptTargeting.js';
+import {
+  getPageTargeting,
+  getPageTargetingKeys,
+  getSlotTargetingKeys,
+  getSlotTargeting,
+  getPageTargetingMap, getSlotTargetingMap
+} from '../src/utils/gptTargeting.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
@@ -370,19 +376,11 @@ function getTargeting(bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
-    const keys = getPageTargetingKeys();
-    for (const key of keys) {
-      const values = getPageTargeting(key);
-      targetings[key] = values;
-    }
+    Object.assign(targetings, getPageTargetingMap())
   }
   const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
   if (adUnitSlot) {
-    const keys = getSlotTargetingKeys(adUnitSlot);
-    for (const key of keys) {
-      const values = getSlotTargeting(adUnitSlot, key);
-      targetings[key] = values;
-    }
+    Object.assign(targetings, getSlotTargetingMap(adUnitSlot));
   }
   return targetings;
 }
