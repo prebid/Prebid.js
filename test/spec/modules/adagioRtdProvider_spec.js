@@ -152,7 +152,6 @@ describe('Adagio Rtd Provider', function () {
         const storageValue = JSON.stringify({ abTest: {} });
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
         clock.setSystemTime(1714116520710);
-
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
         adagioRtdSubmodule.init(config);
@@ -178,7 +177,6 @@ describe('Adagio Rtd Provider', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
         clock.setSystemTime(1714116520710);
-
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
         adagioRtdSubmodule.init(config);
