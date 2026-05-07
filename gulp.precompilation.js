@@ -26,6 +26,7 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
+    const sourceRoot = path.relative(helpers.getPrecompiledPath(), path.resolve('.'))
     return function () {
       return gulp.src(helpers.getSourcePatterns(), {
         base: '.',
@@ -33,6 +34,9 @@ const babelPrecomp = _.memoize(
         sourcemaps: true
       })
         .pipe(babel(babelConfig))
+        .pipe(tap(file => {
+          file.sourceMap.sources = file.sourceMap.sources.map(source => path.relative(path.dirname(helpers.getPrecompiledPath(source)), path.resolve('.', source)))
+        }))
         .pipe(gulp.dest(helpers.getPrecompiledPath(), {
           sourcemaps: '.'
         }));
