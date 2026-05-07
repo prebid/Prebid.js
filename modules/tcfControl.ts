@@ -205,7 +205,7 @@ export function getAcceptableFlags(consentData: TCFConsentData, purpose: number,
   //  0 - Not Allowed
   //  1 - Require Consent
   //  2 - Require Legitimate Interest
-  const restriction = consentData.vendorData.publisher?.restrictions?.[purpose]?.[gvlid];
+  const restriction = consentData.vendorData?.publisher?.restrictions?.[purpose]?.[gvlid];
   let acceptConsent = true;
   let acceptLI = LI_PURPOSES.includes(purpose);
   if (restriction === 0) {

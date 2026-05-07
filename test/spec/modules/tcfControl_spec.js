@@ -164,13 +164,13 @@ describe('gdpr enforcement', function () {
 
     describe('with no restrictions', () => {
       it('should allow both consent and LI for purpose 2', () => {
-        expect(getAcceptableFlags(consentData, 2, 123)).to.eql({
+        expect(getAcceptableFlags({}, 2, 123)).to.eql({
           acceptConsent: true,
           acceptLI: true
         })
       });
       it('should allow only consent for other purposes', () => {
-        expect(getAcceptableFlags(consentData, 4, 123)).to.eql({
+        expect(getAcceptableFlags({}, 4, 123)).to.eql({
           acceptConsent: true,
           acceptLI: false
         })
