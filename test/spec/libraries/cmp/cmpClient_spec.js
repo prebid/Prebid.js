@@ -192,7 +192,7 @@ describe('cmpClient', () => {
           });
           sinon.assert.calledWithMatch(messenger, sinon.match((arg) => {
             return arg.mockApiCall.command === 'cmd' &&
-              !arg.mockApiCall.hasOwnProperty('parameter');
+              !Object.prototype.hasOwnProperty.call(arg.mockApiCall, 'parameter');
           }))
         });
 
@@ -202,7 +202,7 @@ describe('cmpClient', () => {
             command: 'cmd',
             callback: cb
           });
-          sinon.assert.calledWithMatch(messenger, sinon.match(arg => !arg.mockApiCall.hasOwnProperty('callback')));
+          sinon.assert.calledWithMatch(messenger, sinon.match(arg => !Object.prototype.hasOwnProperty.call(arg.mockApiCall, 'callback')));
           sinon.assert.called(cb);
         });
 
