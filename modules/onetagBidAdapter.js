@@ -177,7 +177,11 @@ function interpretResponse(serverResponse, bidderRequest) {
       mediaType: (bid.mediaType === NATIVE + NATIVE_SUFFIX) ? NATIVE : bid.mediaType,
       meta: {
         mediaType: bid.mediaType,
-        advertiserDomains: bid.adomain
+        advertiserDomains: bid.adomain,
+        primaryCatId: bid.primaryCatId,
+        secondaryCatIds: bid.secondaryCatIds,
+        attr: bid.attr,
+        cattax: bid.cattax
       },
       ttl: bid.ttl || 300
     };
