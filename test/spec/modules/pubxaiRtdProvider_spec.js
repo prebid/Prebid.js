@@ -396,13 +396,10 @@ describe('pubxaiRtdProvider', () => {
     });
     it('dispatch event', () => {
       setFloorsApiStatus(FloorsApiStatus.SUCCESS);
-      assert(
-        window.dispatchEvent.calledOnceWith(
-          new CustomEvent(FLOORS_EVENT_HANDLE, {
-            detail: { status: FloorsApiStatus.SUCCESS },
-          })
-        )
-      );
+      assert(window.dispatchEvent.calledOnce);
+      const eventArg = window.dispatchEvent.firstCall.args[0];
+      expect(eventArg.type).to.equal(FLOORS_EVENT_HANDLE);
+      expect(eventArg.detail).to.deep.equal({ status: FloorsApiStatus.SUCCESS });
     });
   });
   describe('getUrl', () => {
