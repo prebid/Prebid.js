@@ -26,7 +26,6 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
-    const sourceRoot = path.relative(helpers.getPrecompiledPath(), path.resolve('.'))
     return function () {
       return gulp.src(helpers.getSourcePatterns(), {
         base: '.',
