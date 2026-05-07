@@ -54,7 +54,6 @@ const ALIASES = [
   { code: 'spm', gvlid: 965 },
   { code: 'bidstailamedia', gvlid: 965 },
   { code: 'scoremedia', gvlid: 965 },
-  { code: 'movingup' },
   { code: 'glomexbidder', gvlid: 967 },
   { code: 'pubxai', gvlid: 1485 },
   { code: 'ybidder', gvlid: 1253 },
