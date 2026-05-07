@@ -41,8 +41,8 @@ describe('Adagio Rtd Provider', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
-    if (typeof storage.hasOwnProperty !== 'function') {
-      storage.hasOwnProperty = Object.prototype.hasOwnProperty;
+    if (Object.getPrototypeOf(storage) == null) {
+      Object.setPrototypeOf(storage, Object.prototype);
     }
   });
 
