@@ -151,7 +151,7 @@ describe('Adagio Rtd Provider', function () {
       it('store new session data for further usage', function () {
         const storageValue = JSON.stringify({ abTest: {} });
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
@@ -179,7 +179,7 @@ describe('Adagio Rtd Provider', function () {
       it('store existing session data for further usage', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
@@ -202,7 +202,7 @@ describe('Adagio Rtd Provider', function () {
 
       it('store new session if old session has expired data for further usage', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
-        sandbox.stub(Date, 'now').returns(1715679344351);
+        clock.setSystemTime(1715679344351);
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-5678');
@@ -231,7 +231,7 @@ describe('Adagio Rtd Provider', function () {
       it('store new session data for further usage', function () {
         const storageValue = null;
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
@@ -268,7 +268,7 @@ describe('Adagio Rtd Provider', function () {
           }
         });
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
@@ -315,7 +315,7 @@ describe('Adagio Rtd Provider', function () {
           }
         });
         setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
@@ -706,7 +706,7 @@ describe('Adagio Rtd Provider', function () {
 
     it('store a copy of computed property', function() {
       const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
-      sandbox.stub(Date, 'now').returns(12345);
+      clock.setSystemTime(12345);
 
       _internal.getGuard().clear();
 
