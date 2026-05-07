@@ -4,7 +4,7 @@ on:
     outputs:
       coverage:
         description: Artifact name for coverage results
-        value: ${{ jobs.unit-tests-coverage.outputs.coverage }}
+        value: ${{ jobs.unit-tests.outputs.coverage }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -122,19 +122,9 @@ jobs:
       install-deb: ${{ matrix.browser.deb }}
       install-chrome: ${{ matrix.browser.chrome }}
       built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} --no-coverage
+      test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
       chunks: 8
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
-
-  unit-tests-coverage:
-    needs: build
-    name: "Unit coverage (browser: ChromeHeadless latest)"
-    uses:
-      ./.github/workflows/run-tests.yml
-    with:
-      built-key: ${{ needs.build.outputs.built-key }}
-      test-cmd: npx gulp test-only-nobuild --browsers ChromeHeadless --coverage
-      chunks: 8
 
   browserstack-tests:
     needs: setup
