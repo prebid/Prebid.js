@@ -9,43 +9,16 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 
-async function getAccessToken(clientId, clientSecret, refreshToken) {
-  try {
-    const response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-      }),
-    });
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
-      throw new Error(`OAuth token request failed: ${response.status} ${response.statusText} - ${errorBody}`);
-    }
-    const data = await response.json();
-    return data.access_token;
-  } catch (error) {
-    console.error('Failed to fetch access token:', error.message);
-    process.exit(1);
-  }
-}
-
 (async () => {
   const configFilePath = path.join(__dirname, 'codepath-notification');
   const repo = process.env.GITHUB_REPOSITORY;
   const prNumber = process.env.GITHUB_PR_NUMBER;
   const token = process.env.GITHUB_TOKEN;
-
-  // Generate OAuth2 access token
-  const clientId = process.env.OAUTH2_CLIENT_ID;
-  const clientSecret = process.env.OAUTH2_CLIENT_SECRET;
-  const refreshToken = process.env.OAUTH2_REFRESH_TOKEN;
+  const sender = process.env.NOTIFICATION_EMAIL;
+  const pass = process.env.NOTIFICATION_PASSWORD;
 
   // validate params
-  if (!repo || !prNumber || !token || !clientId || !clientSecret || !refreshToken) {
+  if (!repo || !prNumber || !token || !sender || !pass) {
     console.error('Missing required environment variables.');
     process.exit(1);
   }
@@ -107,22 +80,11 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
 
     console.log('Grouped matches by email:', matchesByEmail);
 
-    // get ready to email the changes
-    const accessToken = await getAccessToken(clientId, clientSecret, refreshToken);
-
-    // Configure Nodemailer with OAuth2
-    //  service: 'Gmail',
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
+      service: 'gmail',
       auth: {
-        type: 'OAuth2',
-        user: 'info@prebid.org',
-        clientId: clientId,
-        clientSecret: clientSecret,
-        refreshToken: refreshToken,
-        accessToken: accessToken
+        user: sender,
+        pass
       },
     });
 
@@ -139,7 +101,7 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
 
       try {
         await transporter.sendMail({
-          from: `"Prebid Info" <info@prebid.org>`,
+          from: `"Prebid Notifications" <${sender}>`,
           to: email,
           subject: `Files have been changed in open source ${repo}`,
           html: emailBody,
