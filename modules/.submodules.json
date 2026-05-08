@@ -133,7 +133,8 @@
       "timeoutRtdProvider",
       "weboramaRtdProvider",
       "wurflRtdProvider",
-      "encypherRtdProvider"
+      "encypherRtdProvider",
+      "mantisRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
