@@ -2,7 +2,6 @@
 
 const express = require('express');
 const morgan = require('morgan');
-const bodyParser = require('body-parser');
 const argv = require('yargs').argv;
 const fakeResponder = require('./fake-responder.js');
 const bundleMaker = require('./bundle.js');
@@ -13,9 +12,9 @@ const PORT = argv.port || '4444';
 const app = express();
 
 // Middlewares
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(bodyParser.text({ type: 'text/plain' }));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.text({ type: 'text/plain' }));
 app.use(morgan('dev')); // used to log incoming requests
 
 // Allow Cross Origin request from 'test.localhost:9999'

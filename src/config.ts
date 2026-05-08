@@ -135,9 +135,9 @@ function attachProperties(config, useDefaultValues = true) {
       set(val) {
         val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
           if (validatePriceGranularity(val[item])) {
-            if (typeof val === 'string') {
+            if (typeof val[item] === 'string') {
               aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
-            } else if (isPlainObject(val)) {
+            } else if (isPlainObject(val[item])) {
               aggregate[item] = val[item];
               logMessage(`Using custom price granularity for ${item}`);
             }
@@ -586,8 +586,14 @@ export function newConfig() {
     }
 
     const mergedConfig = mergeDeep(_getConfig(), config);
+    const updatedConfig = Object.keys(config).reduce((accumulator, topic) => {
+      if (Object.prototype.hasOwnProperty.call(mergedConfig, topic)) {
+        accumulator[topic] = mergedConfig[topic];
+      }
+      return accumulator;
+    }, {});
 
-    setConfig({ ...mergedConfig });
+    setConfig(updatedConfig);
     return mergedConfig;
   }
 

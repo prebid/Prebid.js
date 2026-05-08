@@ -23,7 +23,6 @@ var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const {minify} = require('terser');
 const Vinyl = require('vinyl');
-const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
 const merge = require('merge-stream');
 
