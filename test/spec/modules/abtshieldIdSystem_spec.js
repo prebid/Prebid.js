@@ -2,7 +2,9 @@ import { abtshieldIdSubmodule, parseMcrResponse } from 'modules/abtshieldIdSyste
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import { attachIdSystem } from '../../../modules/userId/index.js';
+import { config } from '../../../src/config.js';
 import { expect } from 'chai';
+import '../../../modules/allowActivities.js';
 
 const MODULE_NAME = 'abtshieldId';
 
@@ -101,6 +103,7 @@ describe('abtshieldIdSystem', function () {
 
     afterEach(function () {
       sinon.restore();
+      config.resetConfig();
     });
 
     it('skips the request and invokes callback with undefined when params.sid is absent', function () {
@@ -130,6 +133,28 @@ describe('abtshieldIdSystem', function () {
       expect(req.method).to.equal('GET');
       expect(req.url).to.equal('https://d1.abtshield.com/mcr?sid=pb.publisher-x');
       expect(req.withCredentials).to.be.true;
+    });
+
+    it('scopes credential access to the abtshieldId component', function () {
+      config.setConfig({
+        allowActivities: {
+          accessRequestCredentials: {
+            rules: [{
+              condition({ componentType, componentName }) {
+                return componentType === 'userId' && componentName === MODULE_NAME;
+              },
+              allow: false
+            }]
+          }
+        }
+      });
+
+      const cb = sinon.spy();
+      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      callback(cb);
+
+      const [req] = server.requests;
+      expect(req.withCredentials).to.be.false;
     });
 
     it('trims whitespace from sid before using it in the URL', function () {

@@ -7,7 +7,8 @@
 
 import { submodule } from '../src/hook.js';
 import { logError, logInfo, logWarn, deepClone } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { ajaxBuilder, processRequestOptions } from '../src/ajax.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'abtshieldId';
 const VENDOR_ID = 825;
@@ -15,6 +16,12 @@ const SOURCE = 'abtshield.com';
 const ENDPOINT = 'https://d1.abtshield.com/mcr';
 const AJAX_TIMEOUT_MS = 3000;
 const SIVT_SEGMENT = 'sivt';
+const ajax = ajaxBuilder(AJAX_TIMEOUT_MS, undefined, MODULE_TYPE_UID, MODULE_NAME);
+const AJAX_OPTIONS = {
+  method: 'GET',
+  withCredentials: true,
+  contentType: 'text/plain'
+};
 
 function buildEndpoint(sid) {
   return `${ENDPOINT}?sid=${encodeURIComponent(sid)}`;
@@ -85,12 +92,7 @@ export const abtshieldIdSubmodule = {
             }
           },
           undefined,
-          {
-            method: 'GET',
-            withCredentials: true,
-            contentType: 'text/plain',
-            timeout: AJAX_TIMEOUT_MS
-          }
+          processRequestOptions({ ...AJAX_OPTIONS }, MODULE_TYPE_UID, MODULE_NAME)
         );
       }
     };
