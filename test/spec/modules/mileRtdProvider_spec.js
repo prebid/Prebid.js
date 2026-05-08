@@ -6,7 +6,7 @@ import {
   mileRtdSubmodule,
   onAuctionInitEvent,
   onBidResponseEvent,
-  setSlotTargeting,
+  setAdUnitTargeting,
 } from "modules/mileRtdProvider.js";
 import { loadExternalScriptStub } from "test/mocks/adloaderStub.js";
 
@@ -17,11 +17,18 @@ describe("mile RTD provider", function () {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  function createMockSlot({ elementId, adUnitPath } = {}) {
+  function createMockAdUnit({ code, gpid, pbadslot, adserverTargeting } = {}) {
     return {
-      getSlotElementId: sandbox.stub().returns(elementId),
-      getAdUnitPath: sandbox.stub().returns(adUnitPath),
-      setTargeting: sandbox.spy(),
+      code,
+      ortb2Imp: {
+        ext: {
+          gpid,
+          data: {
+            pbadslot,
+          },
+        },
+      },
+      adserverTargeting,
     };
   }
 
@@ -31,7 +38,6 @@ describe("mile RTD provider", function () {
     delete window.mileRtdRuntime;
     delete window.customRuntimeGlobal;
     delete window.mileRtdRuntimeUtils;
-    delete window.googletag;
   });
 
   afterEach(function () {
@@ -40,7 +46,6 @@ describe("mile RTD provider", function () {
     delete window.mileRtdRuntime;
     delete window.customRuntimeGlobal;
     delete window.mileRtdRuntimeUtils;
-    delete window.googletag;
   });
 
   describe("mileRtdSubmodule", function () {
@@ -125,60 +130,57 @@ describe("mile RTD provider", function () {
     });
   });
 
-  describe("setSlotTargeting", function () {
-    it("returns false when GPT is unavailable", function () {
-      const result = setSlotTargeting({ "div-gpt-ad-1": "value-1" }, null);
+  describe("setAdUnitTargeting", function () {
+    it("returns false when ad units are unavailable", function () {
+      const result = setAdUnitTargeting({ "div-gpt-ad-1": "value-1" }, []);
       expect(result).to.equal(false);
     });
 
-    it("sets mile_rtd targeting by slot element id and ad unit path", function () {
-      const slotWithElementId = createMockSlot({
-        elementId: "div-gpt-ad-1",
-        adUnitPath: "/123/home/top",
+    it("merges mile_rtd targeting using code, gpid, and pbadslot", function () {
+      const adUnitWithCode = createMockAdUnit({
+        code: "div-gpt-ad-1",
+        gpid: "/123/home/top",
+        adserverTargeting: { existing: "targeting" },
       });
-      const slotWithPathFallback = createMockSlot({
-        elementId: "unknown-slot",
-        adUnitPath: "/123/home/path-only",
+      const adUnitWithGpid = createMockAdUnit({
+        code: "unknown-slot",
+        gpid: "/123/home/path-only",
       });
-      const slotWithoutMatch = createMockSlot({
-        elementId: "unknown-2",
-        adUnitPath: "/123/home/no-match",
+      const adUnitWithPbadslot = createMockAdUnit({
+        code: "unknown-2",
+        pbadslot: "/123/home/pbadslot-only",
+      });
+      const adUnitWithoutMatch = createMockAdUnit({
+        code: "unknown-3",
+        gpid: "/123/home/no-match",
       });
 
-      const googletag = {
-        cmd: {
-          push: (fn) => fn(),
-        },
-        pubads: sandbox.stub().returns({
-          getSlots: sandbox
-            .stub()
-            .returns([
-              slotWithElementId,
-              slotWithPathFallback,
-              slotWithoutMatch,
-            ]),
-        }),
-      };
-
-      const result = setSlotTargeting(
+      const result = setAdUnitTargeting(
         {
           "div-gpt-ad-1": "segment_a",
           "/123/home/path-only": "segment_b",
+          "/123/home/pbadslot-only": "segment_c",
         },
-        googletag,
+        [
+          adUnitWithCode,
+          adUnitWithGpid,
+          adUnitWithPbadslot,
+          adUnitWithoutMatch,
+        ],
       );
 
       expect(result).to.equal(true);
-      expect(
-        slotWithElementId.setTargeting.calledOnceWith("mile_rtd", "segment_a"),
-      ).to.equal(true);
-      expect(
-        slotWithPathFallback.setTargeting.calledOnceWith(
-          "mile_rtd",
-          "segment_b",
-        ),
-      ).to.equal(true);
-      expect(slotWithoutMatch.setTargeting.called).to.equal(false);
+      expect(adUnitWithCode.adserverTargeting).to.deep.equal({
+        existing: "targeting",
+        mile_rtd: "segment_a",
+      });
+      expect(adUnitWithGpid.adserverTargeting).to.deep.equal({
+        mile_rtd: "segment_b",
+      });
+      expect(adUnitWithPbadslot.adserverTargeting).to.deep.equal({
+        mile_rtd: "segment_c",
+      });
+      expect(adUnitWithoutMatch.adserverTargeting).to.equal(undefined);
     });
   });
 
@@ -204,9 +206,8 @@ describe("mile RTD provider", function () {
       const runtimeStub = sandbox
         .stub()
         .returns({ "div-gpt-ad-1": "segment_a" });
-      const slot = createMockSlot({
-        elementId: "div-gpt-ad-1",
-        adUnitPath: "/123/home/top",
+      const adUnit = createMockAdUnit({
+        code: "div-gpt-ad-1",
       });
       window.mileRtdRuntime = { getMileTargetingByAdUnit: runtimeStub };
       window.mileRtdRuntimeUtils = {
@@ -214,15 +215,9 @@ describe("mile RTD provider", function () {
           .stub()
           .returns({ adUnitCodes: ["ad-1"] }),
       };
-      window.googletag = {
-        cmd: { push: (fn) => fn() },
-        pubads: sandbox
-          .stub()
-          .returns({ getSlots: sandbox.stub().returns([slot]) }),
-      };
-
       onAuctionInitEvent({
         adUnitCodes: ["ad-1"],
+        adUnits: [adUnit],
         bidderRequests: [
           { bids: [{ floorData: { enforcements: { enforceJS: true } } }] },
         ],
@@ -236,9 +231,9 @@ describe("mile RTD provider", function () {
       expect(runtimeStub.firstCall.args[1]).to.deep.equal({
         mode: "auctionInit",
       });
-      expect(
-        slot.setTargeting.calledOnceWith("mile_rtd", "segment_a"),
-      ).to.equal(true);
+      expect(adUnit.adserverTargeting).to.deep.equal({
+        mile_rtd: "segment_a",
+      });
     });
   });
 

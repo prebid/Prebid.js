@@ -1,6 +1,7 @@
 /**
  * Thin Mile RTD client.
- * Pulls pre-hashed targeting values from runtime global and applies slot targeting.
+ * Pulls pre-hashed targeting values from runtime global and merges them into
+ * ad unit adserver targeting.
  */
 import { submodule } from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
@@ -49,6 +50,19 @@ type AuctionLike = {
   getBidsReceived?: () => unknown[];
 };
 
+type AdUnitLike = {
+  code?: string;
+  ortb2Imp?: {
+    ext?: {
+      gpid?: string;
+      data?: {
+        pbadslot?: string;
+      };
+    };
+  };
+  adserverTargeting?: Record<string, TargetingValue>;
+};
+
 type MileRuntimeEngine = {
   getMileTargetingByAdUnit: (
     auctionSnapshot: AuctionSnapshot,
@@ -68,16 +82,6 @@ type MileRtdProviderSpec = RtdProviderSpec<'mile'> & {
     config: RTDProviderConfig<'mile'>,
     userConsent: AllConsentData
   ) => void;
-};
-type GoogletagSlot = {
-  getSlotElementId?: () => string;
-  getAdUnitPath?: () => string;
-  setTargeting?: (key: string, value: TargetingValue) => void;
-};
-
-type Googletag = {
-  cmd?: { push?: (fn: () => void) => void };
-  pubads?: () => { getSlots?: () => GoogletagSlot[] };
 };
 
 const MODULE_NAME = 'realTimeData';
@@ -134,25 +138,43 @@ export function getTargetingFromRuntime(
   }
 }
 
-export function setSlotTargeting(
+function getAdUnitTargetingValue(adUnit: AdUnitLike, targetingByAdUnit: TargetingByAdUnit): TargetingValue | null {
+  const targetingIdentifiers = [
+    adUnit.code,
+    adUnit.ortb2Imp?.ext?.gpid,
+    adUnit.ortb2Imp?.ext?.data?.pbadslot,
+  ];
+
+  for (const identifier of targetingIdentifiers) {
+    if (identifier != null && targetingByAdUnit[identifier] != null) {
+      return targetingByAdUnit[identifier];
+    }
+  }
+
+  return null;
+}
+
+export function setAdUnitTargeting(
   targetingByAdUnit: TargetingByAdUnit,
-  googletag: Googletag | undefined = window.googletag as Googletag | undefined
+  adUnits: AdUnitLike[] = []
 ): boolean {
-  if (!googletag?.cmd?.push || typeof googletag.pubads !== 'function') {
-    logInfo(LOG_PREFIX, 'GPT is not available, skipping slot targeting');
+  if (!adUnits.length) {
+    logInfo(LOG_PREFIX, 'auction ad units are unavailable, skipping adserver targeting');
     return false;
   }
-  googletag.cmd.push(() => {
-    const slots = googletag.pubads?.()?.getSlots?.() || [];
-    slots.forEach((slot) => {
-      if (typeof slot?.setTargeting !== 'function') return;
-      const slotElementId = slot.getSlotElementId?.();
-      const adUnitPath = slot.getAdUnitPath?.();
-      const targetingValue = (slotElementId && targetingByAdUnit[slotElementId]) ?? (adUnitPath && targetingByAdUnit[adUnitPath]);
-      if (targetingValue != null) slot.setTargeting(TARGETING_KEY, targetingValue);
+
+  let appliedTargeting = false;
+  adUnits.forEach((adUnit) => {
+    const targetingValue = getAdUnitTargetingValue(adUnit, targetingByAdUnit);
+    if (targetingValue == null) return;
+
+    adUnit.adserverTargeting = Object.assign(adUnit.adserverTargeting || {}, {
+      [TARGETING_KEY]: targetingValue,
     });
+    appliedTargeting = true;
   });
-  return true;
+
+  return appliedTargeting;
 }
 
 function buildAuctionDetailsFromAuction(auction: AuctionLike | undefined): AuctionDetails {
@@ -172,10 +194,14 @@ function extractAuctionSnapshot(auctionDetails: AuctionDetails): AuctionSnapshot
   return { adUnitCodes: auctionDetails.adUnitCodes || [] };
 }
 
-function applyRuntimeTargeting(auctionSnapshot: AuctionSnapshot, context: RuntimeContext): Promise<void> {
+function applyRuntimeTargeting(
+  auctionSnapshot: AuctionSnapshot,
+  context: RuntimeContext,
+  adUnits: AdUnitLike[] = []
+): Promise<void> {
   return getTargetingFromRuntime(auctionSnapshot, context).then((targetingByAdUnit) => {
     if (targetingByAdUnit && Object.keys(targetingByAdUnit).length > 0) {
-      setSlotTargeting(targetingByAdUnit);
+      setAdUnitTargeting(targetingByAdUnit, adUnits);
     }
   });
 }
@@ -188,7 +214,7 @@ export function onAuctionInitEvent(auctionDetails: Partial<AuctionDetails> = {})
     );
   if (!snapshotDetails.adUnitCodes?.length) return;
   const auctionSnapshot = extractAuctionSnapshot(snapshotDetails);
-  applyRuntimeTargeting(auctionSnapshot, { mode: 'auctionInit' });
+  applyRuntimeTargeting(auctionSnapshot, { mode: 'auctionInit' }, snapshotDetails.adUnits as AdUnitLike[]);
 }
 
 export function onBidResponseEvent(
@@ -204,7 +230,11 @@ export function onBidResponseEvent(
   if (!auctionSnapshot.adUnitCodes?.includes(adUnitCode)) {
     auctionSnapshot.adUnitCodes = [...(auctionSnapshot.adUnitCodes || []), adUnitCode];
   }
-  applyRuntimeTargeting(auctionSnapshot, { mode: 'bidResponse', bidResponse: bidResponse as Bid });
+  applyRuntimeTargeting(
+    auctionSnapshot,
+    { mode: 'bidResponse', bidResponse: bidResponse as Bid },
+    auctionDetails.adUnits as AdUnitLike[]
+  );
 }
 
 export function init(moduleConfig: RTDProviderConfig<'mile'>): boolean {
