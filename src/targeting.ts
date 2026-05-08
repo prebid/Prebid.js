@@ -16,7 +16,6 @@ import {
   logInfo,
   logMessage,
   logWarn,
-  sortByHighestCpm,
   uniques,
 } from './utils.js';
 import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
@@ -25,6 +24,7 @@ import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
+import { sortByHighestDesirability } from './utils/desirability.ts'
 
 var pbTargetingKeys = [];
 
@@ -41,7 +41,7 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
 // If adUnitBidLimit is set above 0 return top N number of bids
-export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, winReducer, adUnitBidLimit = 0, hasModified = false, winSorter = sortByHighestCpm) {
+export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, winReducer, adUnitBidLimit = 0, hasModified = false, winSorter = sortByHighestDesirability) {
   if (!hasModified) {
     const bids = [];
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
@@ -236,10 +236,10 @@ export function newTargeting(auctionManager) {
      * @param bidLimit
      * @param bidsReceived - The received bids, defaulting to the result of getBidsReceived().
      * @param [winReducer = getHighestCpm] - reducer method
-     * @param [winSorter = sortByHighestCpm] - sorter method
+     * @param [winSorter = sortByHighestDesirability] - sorter method
      * @return targeting
      */
-    getAllTargeting(adUnitCode?: AdUnitCode | AdUnitCode[], bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestCpm): ByAdUnit<TargetingValues> {
+    getAllTargeting(adUnitCode?: AdUnitCode | AdUnitCode[], bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestDesirability): ByAdUnit<TargetingValues> {
       bidsReceived ||= getBidsReceived(winReducer, winSorter);
       const adUnitCodes = getAdUnitCodes(adUnitCode);
       const adUnitBidLimit = getAdUnitBidLimitMap(adUnitCodes, bidLimit);
@@ -331,10 +331,10 @@ export function newTargeting(auctionManager) {
      * @param  adUnitCode adUnitCode or array of adUnitCodes
      * @param  bids - The received bids, defaulting to the result of getBidsReceived().
      * @param  [winReducer = getHighestCpm] - reducer method
-     * @param  [winSorter = sortByHighestCpm] - sorter method
+     * @param  [winSorter = sortByHighestDesirability] - sorter method
      * @return An array of winning bids.
      */
-    getWinningBids(adUnitCode: AdUnitCode | AdUnitCode[], bids?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestCpm): Bid[] {
+    getWinningBids(adUnitCode: AdUnitCode | AdUnitCode[], bids?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestDesirability): Bid[] {
       const bidsReceived = bids || getBidsReceived(winReducer, winSorter);
       const adUnitCodes = getAdUnitCodes(adUnitCode);
 
