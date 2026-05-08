@@ -14,6 +14,7 @@ const VENDOR_ID = 825;
 const SOURCE = 'abtshield.com';
 const ENDPOINT = 'https://d1.abtshield.com/mcr';
 const AJAX_TIMEOUT_MS = 3000;
+const SIVT_SEGMENT = 'sivt';
 
 function buildEndpoint(sid) {
   return `${ENDPOINT}?sid=${encodeURIComponent(sid)}`;
@@ -33,10 +34,14 @@ export function parseMcrResponse(body) {
     return null;
   }
   const out = { uuid: id };
+  const segments = [];
   if (Array.isArray(parsed.t) && parsed.t.length) {
-    out.segments = parsed.t.filter((s) => typeof s === 'string' && s.length);
-    if (!out.segments.length) delete out.segments;
+    segments.push(...parsed.t.filter((s) => typeof s === 'string' && s.length));
   }
+  if (parsed.b === 1 && !segments.includes(SIVT_SEGMENT)) {
+    segments.push(SIVT_SEGMENT);
+  }
+  if (segments.length) out.segments = segments;
   return out;
 }
 

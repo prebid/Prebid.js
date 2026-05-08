@@ -60,6 +60,21 @@ describe('abtshieldIdSystem', function () {
       expect(result).to.deep.equal({ uuid: 'abc-123', segments: ['seg1', 'seg2'] });
     });
 
+    it('adds sivt segment when b is 1', function () {
+      const result = parseMcrResponse('{"uuid":"abc-123","b":1}');
+      expect(result).to.deep.equal({ uuid: 'abc-123', segments: ['sivt'] });
+    });
+
+    it('adds sivt segment to t segments when b is 1', function () {
+      const result = parseMcrResponse('{"uuid":"abc-123","b":1,"t":["foo"]}');
+      expect(result).to.deep.equal({ uuid: 'abc-123', segments: ['foo', 'sivt'] });
+    });
+
+    it('does not duplicate sivt when already present in t segments', function () {
+      const result = parseMcrResponse('{"uuid":"abc-123","b":1,"t":["foo","sivt"]}');
+      expect(result).to.deep.equal({ uuid: 'abc-123', segments: ['foo', 'sivt'] });
+    });
+
     it('omits segments when the t array is empty', function () {
       const result = parseMcrResponse('{"uuid":"abc-123","t":[]}');
       expect(result).to.deep.equal({ uuid: 'abc-123' });
@@ -139,6 +154,21 @@ describe('abtshieldIdSystem', function () {
 
       expect(cb.calledOnce).to.be.true;
       expect(cb.firstCall.args[0]).to.deep.equal({ uuid: 'test-uuid' });
+    });
+
+    it('invokes callback with sivt segment when b is 1', function () {
+      const cb = sinon.spy();
+      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      callback(cb);
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify({ scr: 8000, iuid: 'test-uuid', b: 1, t: ['foo'] })
+      );
+
+      expect(cb.calledOnce).to.be.true;
+      expect(cb.firstCall.args[0]).to.deep.equal({ uuid: 'test-uuid', segments: ['foo', 'sivt'] });
     });
 
     it('invokes callback with undefined when response has no uuid', function () {
