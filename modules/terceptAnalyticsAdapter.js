@@ -79,7 +79,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         const auction = pendingAuctions.get(args.auctionId);
         if (!auction) return;
         // configurable window (default 5s) to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
-        const timeout = (initOptions && initOptions.analyticsBatchTimeout) || DEFAULT_ANALYTICS_BATCH_TIMEOUT;
+        const timeout = initOptions?.analyticsBatchTimeout ?? DEFAULT_ANALYTICS_BATCH_TIMEOUT;
         auction.timer = setTimeout(() => flush(args.auctionId), timeout);
       } else if (eventType === EVENTS.BID_WON) {
         const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);

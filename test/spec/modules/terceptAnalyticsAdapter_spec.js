@@ -192,6 +192,15 @@ describe('tercept analytics adapter', function () {
       clock.tick(1);
       expect(server.requests.length).to.equal(1);
     });
+
+    it('treats analyticsBatchTimeout: 0 as immediate flush, not as missing', function () {
+      terceptAnalyticsAdapter.disableAnalytics();
+      adapterManager.enableAnalytics({ provider: 'tercept', options: { ...initOptions, analyticsBatchTimeout: 0 } });
+
+      emitFullAuction();
+      clock.tick(0);
+      expect(server.requests.length).to.equal(1);
+    });
   });
 
   // ─── Payload structure ────────────────────────────────────────────────────
