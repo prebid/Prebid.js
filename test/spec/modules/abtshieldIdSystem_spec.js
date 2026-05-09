@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import '../../../modules/allowActivities.js';
 
 const MODULE_NAME = 'abtshieldId';
+const STORAGE = { type: 'html5', name: 'abtshield_id', expires: 1 };
 
 describe('abtshieldIdSystem', function () {
   describe('name', function () {
@@ -106,27 +107,48 @@ describe('abtshieldIdSystem', function () {
       config.resetConfig();
     });
 
-    it('skips the request and invokes callback with undefined when params.sid is absent', function () {
-      const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({});
-      callback(cb);
-
+    it('returns undefined when storage.expires is below the 1-day floor', function () {
+      const result = abtshieldIdSubmodule.getId({
+        params: { sid: 'pb.publisher-x' },
+        storage: { type: 'html5', name: 'abtshield_id', expires: 0.5 }
+      });
+      expect(result).to.be.undefined;
       expect(server.requests).to.have.length(0);
-      expect(cb.calledOnceWith(undefined)).to.be.true;
     });
 
-    it('skips the request and invokes callback with undefined when params.sid is blank', function () {
-      const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: '   ' } });
-      callback(cb);
-
+    it('returns undefined when storage.expires is not a number', function () {
+      const result = abtshieldIdSubmodule.getId({
+        params: { sid: 'pb.publisher-x' },
+        storage: { type: 'html5', name: 'abtshield_id', expires: '1' }
+      });
+      expect(result).to.be.undefined;
       expect(server.requests).to.have.length(0);
-      expect(cb.calledOnceWith(undefined)).to.be.true;
+    });
+
+    it('returns undefined when storage.refreshInSeconds is below the 1-day floor', function () {
+      const result = abtshieldIdSubmodule.getId({
+        params: { sid: 'pb.publisher-x' },
+        storage: { type: 'html5', name: 'abtshield_id', expires: 1, refreshInSeconds: 1 }
+      });
+      expect(result).to.be.undefined;
+      expect(server.requests).to.have.length(0);
+    });
+
+    it('returns undefined and skips the request when params.sid is absent', function () {
+      const result = abtshieldIdSubmodule.getId({ storage: STORAGE });
+      expect(result).to.be.undefined;
+      expect(server.requests).to.have.length(0);
+    });
+
+    it('returns undefined and skips the request when params.sid is blank', function () {
+      const result = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: '   ' } });
+      expect(result).to.be.undefined;
+      expect(server.requests).to.have.length(0);
     });
 
     it('calls the default MCR endpoint with the provided sid', function () {
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: 'pb.publisher-x' } });
       callback(cb);
 
       const [req] = server.requests;
@@ -150,7 +172,7 @@ describe('abtshieldIdSystem', function () {
       });
 
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: 'pb.publisher-x' } });
       callback(cb);
 
       const [req] = server.requests;
@@ -159,7 +181,7 @@ describe('abtshieldIdSystem', function () {
 
     it('trims whitespace from sid before using it in the URL', function () {
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: '  pb.publisher-x  ' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: '  pb.publisher-x  ' } });
       callback(cb);
 
       const [req] = server.requests;
@@ -168,7 +190,7 @@ describe('abtshieldIdSystem', function () {
 
     it('invokes callback with the parsed value on success', function () {
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: 'pb.publisher-x' } });
       callback(cb);
 
       server.requests[0].respond(
@@ -183,7 +205,7 @@ describe('abtshieldIdSystem', function () {
 
     it('invokes callback with sivt segment when b is 1', function () {
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: 'pb.publisher-x' } });
       callback(cb);
 
       server.requests[0].respond(
@@ -198,7 +220,7 @@ describe('abtshieldIdSystem', function () {
 
     it('invokes callback with undefined when response has no uuid', function () {
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: 'pb.publisher-x' } });
       callback(cb);
 
       server.requests[0].respond(
@@ -213,7 +235,7 @@ describe('abtshieldIdSystem', function () {
 
     it('invokes callback with undefined on request error', function () {
       const cb = sinon.spy();
-      const { callback } = abtshieldIdSubmodule.getId({ params: { sid: 'pb.publisher-x' } });
+      const { callback } = abtshieldIdSubmodule.getId({ storage: STORAGE, params: { sid: 'pb.publisher-x' } });
       callback(cb);
 
       server.requests[0].error();

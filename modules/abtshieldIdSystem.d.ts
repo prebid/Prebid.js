@@ -11,10 +11,12 @@ export interface AbtshieldIdValue {
 export interface AbtshieldIdConfig {
   name: 'abtshieldId';
   params: AbtshieldIdParams;
-  storage?: {
+  storage: {
     type: 'cookie' | 'html5';
     name: string;
-    expires?: number;
+    /** TTL in days. Must be >= 1; the module rejects shorter TTLs to bound MCR request volume. */
+    expires: number;
+    /** Refresh interval in seconds. If set, must be >= 86400. */
     refreshInSeconds?: number;
   };
 }

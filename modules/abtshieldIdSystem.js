@@ -15,6 +15,7 @@ const VENDOR_ID = 825;
 const SOURCE = 'abtshield.com';
 const ENDPOINT = 'https://d1.abtshield.com/mcr';
 const AJAX_TIMEOUT_MS = 3000;
+const MIN_REFRESH_SECONDS = 86400;
 const SIVT_SEGMENT = 'sivt';
 const ajax = ajaxBuilder(AJAX_TIMEOUT_MS, undefined, MODULE_TYPE_UID, MODULE_NAME);
 const AJAX_OPTIONS = {
@@ -63,11 +64,23 @@ export const abtshieldIdSubmodule = {
   },
 
   getId(config) {
+    if (!config || !config.storage || !config.storage.type || !config.storage.name) {
+      logError(`${MODULE_NAME}: storage config is required. Set storage: { type: 'html5', name: 'abtshield_id', expires: 1 }.`);
+      return undefined;
+    }
+    if (typeof config.storage.expires !== 'number' || config.storage.expires < 1) {
+      logError(`${MODULE_NAME}: storage.expires must be a number >= 1 (days).`);
+      return undefined;
+    }
+    if (typeof config.storage.refreshInSeconds === 'number' && config.storage.refreshInSeconds < MIN_REFRESH_SECONDS) {
+      logError(`${MODULE_NAME}: storage.refreshInSeconds must be >= ${MIN_REFRESH_SECONDS} seconds.`);
+      return undefined;
+    }
     const params = (config && config.params) || {};
     const sid = typeof params.sid === 'string' ? params.sid.trim() : '';
     if (!sid) {
       logError(`${MODULE_NAME}: params.sid is required. Obtain a service ID at abtshield.com and set params: { sid: '<your-sid>' }.`);
-      return { callback: (done) => done(undefined) };
+      return undefined;
     }
     const url = buildEndpoint(sid);
 

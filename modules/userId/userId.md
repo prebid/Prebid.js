@@ -27,7 +27,8 @@ pbjs.setConfig({
             storage: {
                 type: "cookie",
                 name: "abtshieldId",
-                expires: 1
+                expires: 1,
+                refreshInSeconds: 86400
             }
         }, {
             name: "pubCommonId",
