@@ -1,25 +1,6 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 # Repo guidelines for Codex
 
 This file contains instructions for the Codex agent and its friends when working on tasks in this repository.
-
-## Architecture Overview
-
-Prebid.js is a header bidding library that coordinates real-time auctions between publishers and demand partners (bidders). The codebase is organized into three layers:
-
-- **`src/`** — Core auction engine. Migrating from JS to TypeScript. Key files: `prebid.ts` (public API / `pbjs` global), `auction.ts` (auction lifecycle), `adapterManager.ts` (bidder orchestration), `config.ts` (global config), `hook.ts` (extensibility system), `storageManager.ts` (all storage access), `userSync.ts` (pixel/iframe syncs), `fpd/` (First Party Data enrichment), `activities/` (privacy/consent permission framework).
-- **`modules/`** — ~1400 opt-in modules. Naming conventions: `*BidAdapter.js` (demand partners), `*IdSystem.js` (user ID modules), `*RtdProvider.js` (real-time data), `*AnalyticsAdapter.js` (event tracking). Each module self-registers on import; unused modules are tree-shaken from builds.
-- **`libraries/`** — Shared utility code imported by multiple adapters (e.g. `appnexusUtils/`, `chunk/`, `cmp/`). Prefer importing from here over duplicating logic in adapter files.
-
-### Key patterns
-
-- **Hook system** (`src/hook.ts`): modules extend core behavior by hooking into named functions rather than patching them directly. Use `module.exports.hook` or `wrapHook`.
-- **Activities framework** (`src/activities/`): privacy-aware permission checks. Call `isActivityAllowed()` before transmitting user data; never bypass this.
-- **StorageManager** (`src/storageManager.ts`): the only permitted way to access cookies and localStorage. Modules must not call `document.cookie` or `localStorage` directly.
-- **ORTB2 / FPD**: global first-party data lives on `bidderRequest.ortb2`; impression-level FPD on `bidRequest.ortb2imp`. Adapters should read from these rather than requiring publishers to duplicate data in bidder params.
 
 ## Programmatic checks
 - if you don't have an eslint cache, establish one early with `npx eslint --cache --cache-strategy content`. eslint can easily take two minutes to run.
@@ -29,22 +10,6 @@ Prebid.js is a header bidding library that coordinates real-time auctions betwee
 - If additional tests are added, ensure they pass in the environment.
 - `gulp review-start` can be used for manual testing; it opens coverage reports and integration examples such as `integrationExamples/gpt/hello_world.html`.
 
-## Commands
-
-| Task | Command |
-|------|---------|
-| Dev server + watch + test | `gulp serve-and-test --file <spec_file.js>` |
-| Build (production) | `gulp build` |
-| Build (dev, no precompile) | `gulp build-bundle-dev-no-precomp` |
-| Lint all | `gulp lint` |
-| Lint changed files only | `npx eslint '[files]' --cache --cache-strategy content` |
-| Test single spec | `gulp test --file test/spec/modules/myAdapter_spec.js` |
-| Test (no re-lint) | `gulp test --nolint --file <spec_file.js>` |
-| Manual review hub | `gulp review-start` |
-| Build with specific modules | `gulp build --modules=openxBidAdapter,rubiconBidAdapter` |
-
-Tests live in `test/spec/` (core) and `test/spec/modules/` (adapters). The test framework is Mocha + Chai + Sinon, run via Karma. Use the global XHR stub at `test/mocks/xhr` for Ajax tests; do not create your own `sinon.useFakeXMLHttpRequest()`.
-
 ## PR message guidelines
 - Summaries should describe the changes concisely and reference file lines using the citation format. Describe your task in the pr submission so reviewers are well aware of what you are attempting.
 - Document the results of `gulp lint` and `gulp test` in the PR description if the commands are successful.
@@ -52,7 +17,7 @@ Tests live in `test/spec/` (core) and `test/spec/modules/` (adapters). The test 
 - Keep PRs scoped to a single change type. Add release labels (`feature`, `maintenance`, `fix`, `bug`) and a SemVer label (`major`, `minor`, `patch`).
 
 ## Issue template
-- Fill out every section of `.github/ISSUE_TEMPLATE.md` when filing issues, including steps to reproduce and platform details. If there isn't an associated issue, include this template into any PR.
+- Fill out every section of `.github/ISSUE_TEMPLATE.md` when filing issues, including steps to reproduce and platform details. If there isn't an associated issue, include this template into any PR. 
 
 ## General guidance
 - Node.js `>=20` is required; dependencies are managed with `npm`.
@@ -87,9 +52,9 @@ Tests live in `test/spec/` (core) and `test/spec/modules/` (adapters). The test 
 
 ## Common adapter types
 - When bid adapter changes need shared type references, look in the core source modules first:
-- `src/adapters/bidderFactory.ts` for bidder registration/build and bidder-spec wiring concepts.
-- `src/userSync.ts` for user sync interfaces, sync option handling, and sync registration behavior.
-- `src/adapterManager.ts` for adapter manager orchestration and type usage patterns around bidder lifecycle.
+- `src/adapters/bidderFactory.js` for bidder registration/build and bidder-spec wiring concepts.
+- `src/userSync.js` for user sync interfaces, sync option handling, and sync registration behavior.
+- `src/adapterManager.js` for adapter manager orchestration and type usage patterns around bidder lifecycle.
 - Prefer importing or mirroring conventions from these modules instead of redefining local ad-hoc shapes.
 - Use imported types for id, analytics, and rtd modules as well whenever possible.
 - Always define types for public interface to an adapter, eg each bidder parameter.
