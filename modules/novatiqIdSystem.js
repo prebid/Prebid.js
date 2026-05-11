@@ -18,6 +18,12 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'novatiq';
 
+/** Ephemeral first-party key for the current page hyper ID (aligned with direct GAM integration). */
+const NVQ_HID_KEY = 'nvq_hid';
+const NVQ_HID_TTL_MS = 60 * 1000;
+
+export const novatiqStorage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
 
@@ -81,11 +87,13 @@ export const novatiqIdSubmodule = {
     const url = syncUrl.url;
     const novatiqId = syncUrl.novatiqId;
 
+    this.persistEphemeralHyperId(novatiqId);
+
     // for testing
     const sharedStatus = (sharedId !== null && sharedId !== undefined && sharedId !== false) ? 'Found' : 'Not Found';
 
     if (useCallbacks) {
-      const res = this.sendAsyncSyncRequest(novatiqId, url); ;
+      const res = this.sendAsyncSyncRequest(novatiqId, url);
       res.sharedStatus = sharedStatus;
 
       return res;
@@ -135,6 +143,30 @@ export const novatiqIdSubmodule = {
     ajax(url, undefined, undefined, { method: 'GET', withCredentials: false });
 
     logInfo('NOVATIQ snowflake: ' + novatiqId);
+  },
+
+  /**
+   * Store the generated hyper ID briefly for first-party use: cookie when allowed, else localStorage JSON with expiresAt.
+   * @param {string} hyperId
+   */
+  persistEphemeralHyperId(hyperId) {
+    const ttlMs = NVQ_HID_TTL_MS;
+    if (!novatiqStorage.cookiesAreEnabled()) {
+      if (novatiqStorage.hasLocalStorage()) {
+        novatiqStorage.setDataInLocalStorage(NVQ_HID_KEY, JSON.stringify({
+          hyperId: hyperId,
+          expiresAt: Date.now() + ttlMs
+        }));
+        logInfo('NOVATIQ ephemeral hyperId stored in localStorage (' + (ttlMs / 1000) + 's TTL, cookies unavailable)');
+      }
+      return;
+    }
+    if (novatiqStorage.hasLocalStorage()) {
+      novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
+    }
+    const expiry = new Date(Date.now() + ttlMs).toUTCString();
+    novatiqStorage.setCookie(NVQ_HID_KEY, hyperId, expiry, 'Lax');
+    logInfo('NOVATIQ ephemeral hyperId stored in cookie (' + (ttlMs / 1000) + 's TTL)');
   },
 
   getNovatiqId(urlParams) {
@@ -227,17 +259,16 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       const cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
       // first check local storage
-      if (storage.hasLocalStorage()) {
-        sharedId = storage.getDataFromLocalStorage(cookieOrStorageID);
+      if (novatiqStorage.hasLocalStorage()) {
+        sharedId = novatiqStorage.getDataFromLocalStorage(cookieOrStorageID);
         logInfo('NOVATIQ sharedID retrieved from local storage:' + sharedId);
       }
 
       // if nothing check the local cookies
       if (sharedId === null || sharedId === undefined) {
-        sharedId = storage.getCookie(cookieOrStorageID);
+        sharedId = novatiqStorage.getCookie(cookieOrStorageID);
         logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId);
       }
     }
