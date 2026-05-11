@@ -8,7 +8,7 @@ import {
   type TeqBlazeBidParams
 } from '../libraries/teqblazeUtils/bidderUtils.ts';
 
-const BIDDER_CODE = 'nativeagents';
+const BIDDER_CODE = 'ntvagents';
 const AD_URL = 'https://endpoint1.nativeagents.ai/pbjs';
 const SYNC_URL = 'https://sync.nativeagents.ai';
 

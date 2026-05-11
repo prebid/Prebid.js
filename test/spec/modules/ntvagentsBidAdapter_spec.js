@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/nativeagentsBidAdapter.ts';
+import { spec } from '../../../modules/ntvagentsBidAdapter.ts';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'nativeagents';
+const bidder = 'ntvagents';
 
 describe('NativeAgentsBidAdapter', function () {
   const userIdAsEids = [{

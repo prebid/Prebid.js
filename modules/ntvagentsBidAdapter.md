@@ -24,7 +24,7 @@ Native Agents bid adapter supports Banner, Video (instream and outstream) and Na
                     },
                     bids: [
                         {
-                            bidder: 'nativeagents',
+                            bidder: 'ntvagents',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ Native Agents bid adapter supports Banner, Video (instream and outstream) and Na
                     },
                     bids: [
                         {
-                            bidder: 'nativeagents',
+                            bidder: 'ntvagents',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ Native Agents bid adapter supports Banner, Video (instream and outstream) and Na
                     },
                     bids: [
                         {
-                            bidder: 'nativeagents',
+                            bidder: 'ntvagents',
                             params: {
                                 placementId: 'testNative',
                             }
