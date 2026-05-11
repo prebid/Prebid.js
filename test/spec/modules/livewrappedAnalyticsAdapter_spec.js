@@ -383,7 +383,7 @@ describe('Livewrapped analytics adapter', function () {
       performSecondAuction();
 
       expect(Object.keys(getAuctionCache()).length).to.equal(2);
-      
+
       getGlobal().clearAllAuctions();
 
       expect(Object.keys(getAuctionCache()).length).to.equal(0);
