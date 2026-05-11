@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { setConfig } from 'modules/currency.js';
 import * as adUnits from 'src/utils/adUnits';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const events = require('src/events');
 const utils = require('src/utils');
@@ -378,12 +379,34 @@ describe('Livewrapped analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
-    it('should clear auction cache after sending events', function () {
+    it('should clear auction cache when pbjs.clearAllAuctions is called', function () {
       performStandardAuction();
+      performSecondAuction();
 
-      clock.tick(BID_WON_TIMEOUT + CACHE_CLEANUP_DELAY + 100);
+      expect(Object.keys(getAuctionCache()).length).to.equal(2);
+
+      getGlobal().clearAllAuctions();
 
       expect(Object.keys(getAuctionCache()).length).to.equal(0);
+
+      function performSecondAuction() {
+        events.emit(AUCTION_INIT, {
+          'auctionId': '35c6d7f5-699a-4bfc-87c9-996f915341fa',
+        });
+        events.emit(BID_REQUESTED, {
+          'bidder': 'livewrapped',
+          'auctionId': '35c6d7f5-699a-4bfc-87c9-996f915341fa',
+          'bidderRequestId': '2be65d7958826a',
+          'bids': [
+            {
+              'bidder': 'livewrapped',
+              'adUnitCode': 'panorama_d_1',
+              'bidId': '3ecff0db240757',
+            }
+          ],
+          'start': 1519149562216
+        });
+      }
     });
 
     it('should send batched message without BID_WON AND AD_RENDER_FAILED if necessary and further BID_WON and AD_RENDER_FAILED events individually', function () {
