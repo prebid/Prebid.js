@@ -14,7 +14,10 @@ const AD_URL = 'https://#{REGION}#.zxyvrtd.com/pbjs';
 const GVLID = 775;
 const SYNC_URL = 'https://sync.zxyvrtd.com';
 
-type SelectmediaBidParams = TeqBlazeBidParams & { region: 'eu' | 'us-east' };
+type Region = 'eu' | 'us-east';
+type SelectmediaBidParams = TeqBlazeBidParams & { region: Region };
+
+const VALID_REGIONS = new Set<string>(['eu', 'us-east'] satisfies Region[]);
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -26,6 +29,8 @@ const regionMap: Record<string, string> = {
   eu: 'eu',
   'us-east': 'us-east'
 };
+
+const baseIsBidRequestValid = isBidRequestValid();
 
 const buildRequests = (
   validBidRequests: BidRequest<typeof BIDDER_CODE>[],
@@ -42,7 +47,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: isBidRequestValid(),
+  isBidRequestValid: (bid) => baseIsBidRequestValid(bid) && VALID_REGIONS.has(bid.params?.region),
   buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)

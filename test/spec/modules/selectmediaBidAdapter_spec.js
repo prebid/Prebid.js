@@ -27,6 +27,7 @@ describe('SelectmediaBidAdapter', function () {
       },
       params: {
         placementId: 'testBanner',
+        region: 'eu',
       },
       userIdAsEids
     },
@@ -42,6 +43,7 @@ describe('SelectmediaBidAdapter', function () {
       },
       params: {
         placementId: 'testVideo',
+        region: 'eu',
       },
       userIdAsEids
     },
@@ -65,7 +67,8 @@ describe('SelectmediaBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testNative'
+        placementId: 'testNative',
+        region: 'eu',
       },
       userIdAsEids
     }
@@ -110,6 +113,35 @@ describe('SelectmediaBidAdapter', function () {
     });
     it('Should return false if at least one of parameters is not present', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    });
+    it('Should return false if region param is missing', function () {
+      const bid = {
+        bidId: getUniqueIdentifierStr(),
+        bidder: bidder,
+        mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
+        params: { placementId: 'testBanner' }
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+    it('Should return false if region param is invalid', function () {
+      const bid = {
+        bidId: getUniqueIdentifierStr(),
+        bidder: bidder,
+        mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
+        params: { placementId: 'testBanner', region: 'ap-southeast' }
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+    it('Should return true for each valid region', function () {
+      ['eu', 'us-east'].forEach(region => {
+        const bid = {
+          bidId: getUniqueIdentifierStr(),
+          bidder: bidder,
+          mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
+          params: { placementId: 'testBanner', region }
+        };
+        expect(spec.isBidRequestValid(bid), `region "${region}" should be valid`).to.be.true;
+      });
     });
   });
 
@@ -252,7 +284,6 @@ describe('SelectmediaBidAdapter', function () {
         const request = spec.buildRequests([euBid], bidderRequest);
         expect(request.url).to.equal('https://eu.zxyvrtd.com/pbjs');
       });
-
       it('sets us-east region in URL when region param is "us-east"', function () {
         const usEastBid = {
           bidId: getUniqueIdentifierStr(),
@@ -263,18 +294,6 @@ describe('SelectmediaBidAdapter', function () {
         };
         const request = spec.buildRequests([usEastBid], bidderRequest);
         expect(request.url).to.equal('https://us-east.zxyvrtd.com/pbjs');
-      });
-
-      it('replaces region placeholder with empty string when region param is absent', function () {
-        const noRegionBid = {
-          bidId: getUniqueIdentifierStr(),
-          bidder: bidder,
-          mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
-          params: { placementId: 'testBanner' },
-          userIdAsEids
-        };
-        const request = spec.buildRequests([noRegionBid], bidderRequest);
-        expect(request.url).to.equal('https://.zxyvrtd.com/pbjs');
       });
     });
 
