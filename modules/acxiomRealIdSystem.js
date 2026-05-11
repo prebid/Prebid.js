@@ -19,7 +19,7 @@ import { logError } from '../src/utils.js';
  */
 
 const MODULE_NAME = 'acxiomRealId';
-const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/e/l';
+const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/v1/eid/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 

@@ -203,7 +203,7 @@ describe('acxiomRealIdSystem', () => {
         );
 
         result.callback((id) => {
-          expect(capturedUrl).to.equal('https://ids.api.gcprivacy.id/e/l');
+          expect(capturedUrl).to.equal('https://ids.api.gcprivacy.id/v1/eid/l');
           const payload = JSON.parse(capturedBody);
           expect(payload.partnerId).to.equal(PARTNER_ID);
           expect(payload.sourceId).to.equal('acxiom.id');
@@ -285,7 +285,7 @@ describe('acxiomRealIdSystem', () => {
 
       it('should use custom API URL when provided', (done) => {
         let capturedUrl;
-        const customUrl = 'https://custom.example.com/e/l';
+        const customUrl = 'https://custom.example.com/v1/eid/l';
         ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
           (url, callbacks) => {
             capturedUrl = url;
@@ -315,12 +315,12 @@ describe('acxiomRealIdSystem', () => {
         );
 
         const result = acxiomRealIdSubmodule.getId(
-          { params: { partnerId: PARTNER_ID, apiUrl: 'https://custom.example.com/e/l///' } },
+          { params: { partnerId: PARTNER_ID, apiUrl: 'https://custom.example.com/v1/eid/l///' } },
           {}
         );
 
         result.callback(() => {
-          expect(capturedUrl).to.equal('https://custom.example.com/e/l');
+          expect(capturedUrl).to.equal('https://custom.example.com/v1/eid/l');
           done();
         });
       });
