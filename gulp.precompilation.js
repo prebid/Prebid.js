@@ -32,6 +32,9 @@ const babelPrecomp = _.memoize(
         sourcemaps: true
       })
         .pipe(babel(babelConfig))
+        .pipe(tap(file => {
+          file.sourceMap.sources = file.sourceMap.sources.map(source => path.relative(path.dirname(helpers.getPrecompiledPath(source)), path.resolve('.', source)))
+        }))
         .pipe(gulp.dest(helpers.getPrecompiledPath(), {
           sourcemaps: '.'
         }));
