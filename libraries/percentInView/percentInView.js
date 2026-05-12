@@ -109,6 +109,11 @@ const percentInViewStatic = (element, { w, h } = {}) => {
   return 0;
 }
 
+export const dep = {
+  // for stubbing in tests, see test/mocks/percentInView.js
+  getElement: (element) => element
+};
+
 /**
  * A wrapper around an IntersectionObserver that keeps track of the latest IntersectionEntry that was observed
  * for each observed element.
@@ -147,7 +152,8 @@ export function intersections(mkObserver) {
    * Observe the given element; returns a promise to the first available intersection observed for it.
    */
   async function observe(element) {
-    if (obs != null && !intersections.has(element)) {
+    element = dep.getElement(element);
+    if (element != null && obs != null && !intersections.has(element)) {
       obs.observe(element);
       intersections.set(element, null);
       return waitFor(element);

@@ -68,7 +68,6 @@ function setIds_(clientId, sessionId) {
  */
 const defaultGenIds_ = [
   { id: '_jxtoko' },
-  { id: '_jxifo' },
   { id: '_jxtdid' },
   { id: '_jxcomp' }
 ];
@@ -174,6 +173,7 @@ export const internal = {
 
 export const spec = {
   code: BIDDER_CODE,
+  disclosureURL: 'local://modules/jixieBidAdapterDisclosure.json',
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (typeof bid.params === 'undefined') {

@@ -220,7 +220,7 @@ function _parseNativeResponse(bid, newBid) {
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
-      // logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      // logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native response for ad response: ' + newBid.adm);
       return;
     }
     if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
@@ -359,7 +359,7 @@ function _checkMediaType(adm, newBid) {
         newBid.mediaType = NATIVE;
       }
     } catch (e) {
-      logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+      logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native response for ad response: ' + adm);
     }
   }
 }

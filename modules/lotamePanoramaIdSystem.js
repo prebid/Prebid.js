@@ -40,20 +40,18 @@ const DO_NOT_HONOR_CONFIG = false;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 let cookieDomain;
-const appliedConfig = {
-  name: 'lotamePanoramaId',
-  storage: {
-    type: 'cookie&html5',
-    name: 'panoramaId'
-  }
+const defaultStorageConfig = {
+  type: 'cookie&html5',
+  name: 'panoramaId'
 };
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
  * @param {String} profileId
+ * @param {SubmoduleConfig['storage']} storageConfig
  */
-function setProfileId(profileId) {
-  if (cookiesAreEnabled()) {
+function setProfileId(profileId, storageConfig) {
+  if (cookiesAreEnabled(storageConfig)) {
     const expirationDate = new Date(timestamp() + NINE_MONTHS_MS).toUTCString();
     storage.setCookie(
       KEY_PROFILE,
@@ -64,7 +62,7 @@ function setProfileId(profileId) {
       undefined
     );
   }
-  if (localStorageIsEnabled()) {
+  if (localStorageIsEnabled(storageConfig)) {
     storage.setDataInLocalStorage(KEY_PROFILE, profileId, undefined);
   }
 }
@@ -72,12 +70,12 @@ function setProfileId(profileId) {
 /**
  * Get the Lotame profile id by checking cookies first and then local storage
  */
-function getProfileId() {
+function getProfileId(storageConfig) {
   let profileId;
-  if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
+  if (cookiesAreEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
     profileId = storage.getCookie(KEY_PROFILE, undefined);
   }
-  if (!profileId && localStorageIsEnabled(DO_NOT_HONOR_CONFIG)) {
+  if (!profileId && localStorageIsEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
     profileId = storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
   }
   return profileId;
@@ -87,12 +85,12 @@ function getProfileId() {
  * Get a value from browser storage by checking cookies first and then local storage
  * @param {String} key
  */
-function getFromStorage(key) {
+function getFromStorage(key, storageConfig) {
   let value = null;
-  if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
+  if (cookiesAreEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
     value = storage.getCookie(key, undefined);
   }
-  if (value === null && localStorageIsEnabled(DO_NOT_HONOR_CONFIG)) {
+  if (value === null && localStorageIsEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
     value = storage.getDataFromLocalStorage(key, undefined);
   }
   return value;
@@ -102,16 +100,18 @@ function getFromStorage(key) {
  * Save a key/value pair to the browser cache (cookies and local storage)
  * @param {String} key
  * @param {String} value
+ * @param {SubmoduleConfig['storage']} storageConfig
  * @param {Number} expirationTimestamp
  */
 function saveLotameCache(
   key,
   value,
+  storageConfig,
   expirationTimestamp = timestamp() + DAYS_TO_CACHE * DAY_MS
 ) {
   if (key && value) {
     const expirationDate = new Date(expirationTimestamp).toUTCString();
-    if (cookiesAreEnabled()) {
+    if (cookiesAreEnabled(storageConfig)) {
       storage.setCookie(
         key,
         value,
@@ -121,7 +121,7 @@ function saveLotameCache(
         undefined
       );
     }
-    if (localStorageIsEnabled()) {
+    if (localStorageIsEnabled(storageConfig)) {
       storage.setDataInLocalStorage(key, value, undefined);
     }
   }
@@ -131,22 +131,22 @@ function saveLotameCache(
  * Retrieve all the cached values from cookies and/or local storage
  * @param {Number} clientId
  */
-function getLotameLocalCache(clientId = undefined) {
+function getLotameLocalCache(clientId = undefined, storageConfig) {
   const cache = {
-    data: getFromStorage(KEY_ID),
+    data: getFromStorage(KEY_ID, storageConfig),
     expiryTimestampMs: 0,
     clientExpiryTimestampMs: 0,
   };
 
   try {
     if (clientId) {
-      const rawClientExpiry = getFromStorage(`${KEY_EXPIRY}_${clientId}`);
+      const rawClientExpiry = getFromStorage(`${KEY_EXPIRY}_${clientId}`, storageConfig);
       if (isStr(rawClientExpiry)) {
         cache.clientExpiryTimestampMs = parseInt(rawClientExpiry, 10);
       }
     }
 
-    const rawExpiry = getFromStorage(KEY_EXPIRY);
+    const rawExpiry = getFromStorage(KEY_EXPIRY, storageConfig);
     if (isStr(rawExpiry)) {
       cache.expiryTimestampMs = parseInt(rawExpiry, 10);
     }
@@ -161,9 +161,9 @@ function getLotameLocalCache(clientId = undefined) {
  * Clear a cached value from cookies and local storage
  * @param {String} key
  */
-function clearLotameCache(key) {
+function clearLotameCache(key, storageConfig) {
   if (key) {
-    if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
+    if (cookiesAreEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
       const expirationDate = new Date(0).toUTCString();
       storage.setCookie(
         key,
@@ -174,28 +174,30 @@ function clearLotameCache(key) {
         undefined
       );
     }
-    if (localStorageIsEnabled(DO_NOT_HONOR_CONFIG)) {
+    if (localStorageIsEnabled(storageConfig, DO_NOT_HONOR_CONFIG)) {
       storage.removeDataFromLocalStorage(key, undefined);
     }
   }
 }
 /**
+ * @param {SubmoduleConfig['storage']} storageConfig
  * @param {boolean} honorConfig - false to override for reading or deleting old cookies
  * @returns {boolean} for whether we can write the cookie
  */
-function cookiesAreEnabled(honorConfig = true) {
+function cookiesAreEnabled(storageConfig, honorConfig = true) {
   if (honorConfig) {
-    return storage.cookiesAreEnabled() && appliedConfig.storage.type.includes('cookie');
+    return storage.cookiesAreEnabled() && storageConfig.type.includes('cookie');
   }
   return storage.cookiesAreEnabled();
 }
 /**
+ * @param {SubmoduleConfig['storage']} storageConfig
  * @param {boolean} honorConfig - false to override for reading or deleting old stored items
  * @returns {boolean} for whether we can write the cookie
  */
-function localStorageIsEnabled(honorConfig = true) {
+function localStorageIsEnabled(storageConfig, honorConfig = true) {
   if (honorConfig) {
-    return storage.hasLocalStorage() && appliedConfig.storage.type.includes('html5');
+    return storage.hasLocalStorage() && storageConfig.type.includes('html5');
   }
   return storage.hasLocalStorage();
 }
@@ -205,8 +207,7 @@ function localStorageIsEnabled(honorConfig = true) {
  */
 function checkConfigHasErrorsAndReport(config) {
   let error = null;
-  if (typeof config.storage !== 'undefined') {
-    Object.assign(appliedConfig.storage, appliedConfig.storage, config.storage);
+  if (typeof config?.storage !== 'undefined') {
     const READABLE_MODULE_NAME = 'Lotame ID module';
     const PERMITTED_STORAGE_TYPES = ['cookie', 'html5', 'cookie&html5'];
     if (typeof config.storage.name !== 'undefined' && config.storage.name !== KEY_ID) {
@@ -252,6 +253,7 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
+    config = config || {};
     if (checkConfigHasErrorsAndReport(config)) {
       return;
     }
@@ -259,7 +261,8 @@ export const lotamePanoramaIdSubmodule = {
     const configParams = (config && config.params) || {};
     const clientId = configParams.clientId;
     const hasCustomClientId = !isEmpty(clientId);
-    const localCache = getLotameLocalCache(clientId);
+    const storageConfig = { ...defaultStorageConfig, ...config.storage };
+    const localCache = getLotameLocalCache(clientId, storageConfig);
 
     const hasExpiredPanoId = Date.now() > localCache.expiryTimestampMs;
 
@@ -280,7 +283,7 @@ export const lotamePanoramaIdSubmodule = {
       };
     }
 
-    const storedUserId = getProfileId();
+    const storedUserId = getProfileId(storageConfig);
 
     const getRequestHost = function() {
       if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
@@ -331,11 +334,12 @@ export const lotamePanoramaIdSubmodule = {
 
               if (hasCustomClientId) {
                 if (hasNoConsentErrors) {
-                  clearLotameCache(`${KEY_EXPIRY}_${clientId}`);
+                  clearLotameCache(`${KEY_EXPIRY}_${clientId}`, storageConfig);
                 } else if (isStr(responseObj.no_consent) && responseObj.no_consent === 'CLIENT') {
                   saveLotameCache(
                     `${KEY_EXPIRY}_${clientId}`,
                     responseObj.expiry_ts,
+                    storageConfig,
                     responseObj.expiry_ts
                   );
 
@@ -345,28 +349,29 @@ export const lotamePanoramaIdSubmodule = {
                 }
               }
 
-              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts, responseObj.expiry_ts);
+              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts, storageConfig, responseObj.expiry_ts);
 
               if (isStr(responseObj.profile_id)) {
                 if (hasNoConsentErrors) {
-                  setProfileId(responseObj.profile_id);
+                  setProfileId(responseObj.profile_id, storageConfig);
                 }
 
                 if (isStr(responseObj.core_id)) {
                   saveLotameCache(
                     KEY_ID,
                     responseObj.core_id,
+                    storageConfig,
                     responseObj.expiry_ts
                   );
                   coreId = responseObj.core_id;
                 } else {
-                  clearLotameCache(KEY_ID);
+                  clearLotameCache(KEY_ID, storageConfig);
                 }
               } else {
                 if (hasNoConsentErrors) {
-                  clearLotameCache(KEY_PROFILE);
+                  clearLotameCache(KEY_PROFILE, storageConfig);
                 }
-                clearLotameCache(KEY_ID);
+                clearLotameCache(KEY_ID, storageConfig);
               }
             } catch (error) {
               logError(error);

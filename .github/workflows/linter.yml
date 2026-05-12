@@ -13,16 +13,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20"
-
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
 
       - name: Fetch base and target branches
         run: |
@@ -51,7 +51,7 @@ jobs:
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __pr.json || true
 
       - name: Compare them and post comment if necessary
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: comment
         with:
           result-encoding: string
