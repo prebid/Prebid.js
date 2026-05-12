@@ -226,7 +226,8 @@ function precompile(options = {}) {
       generateCoreSummary,
       generateModuleSummary,
       generateGlobalDef(options),
-    ])
+    ]),
+    helpers.execaTask('tsc -p tsconfig-strict.json')
   ]);
 }
 

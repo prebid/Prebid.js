@@ -58,7 +58,7 @@ export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
 
 export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
-export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], (typeof ORTB_PARAMS)[number][0]> {
+export interface VideoMediaType extends BaseMediaType, Pick<NonNullable<ORTBImp['video']>, (typeof ORTB_PARAMS)[number][0]> {
   context: VideoContext;
   playerSize?: Size | Size[];
 }
