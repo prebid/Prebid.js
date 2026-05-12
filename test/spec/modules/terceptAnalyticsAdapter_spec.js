@@ -17,8 +17,8 @@ describe('tercept analytics adapter', function () {
 
   const initOptions = {
     pubId: '1',
-    pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT==',
-    hostName: 'us-central1-quikr-ebay.cloudfunctions.net',
+    pubKey: 243,
+    hostName: 'b-s.tercept.com',
     pathName: '/prebid-analytics'
   };
 

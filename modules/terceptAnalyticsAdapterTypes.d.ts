@@ -7,7 +7,7 @@ export interface TerceptAnalyticsAdapterOptions {
   /**
    * Publisher key assigned by Tercept.
    */
-  pubKey: string;
+  pubKey: number;
 
   /**
    * Hostname of the Tercept analytics endpoint.

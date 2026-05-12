@@ -11,7 +11,7 @@ import { EVENTS } from '../src/constants.js';
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const terceptAnalyticsVersion = 'v2.0.0';
-const defaultHostName = 'us-central1-quikr-ebay.cloudfunctions.net';
+const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 5000;
 
