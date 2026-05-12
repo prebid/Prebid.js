@@ -9,7 +9,8 @@ import {
   getTargetingKeysBidLandscape
 } from 'test/fixtures/fixtures.js';
 import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
-import { filters, newTargeting, targeting } from 'src/targeting.js';
+import { newTargeting, targeting } from 'src/targeting.js';
+import { bidFilters } from '../../../src/targeting/filters.js';
 import { config as configObj } from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
@@ -212,7 +213,7 @@ describe('Unit: Prebid Module', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     mockFpdEnrichments(sandbox);
-    bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
+    bidExpiryStub = sinon.stub(bidFilters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
     resetAuctionState();
   });
@@ -3801,7 +3802,7 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return _bidsReceived };
 
       bidExpiryStub.restore();
-      bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake((bid) => bid.cpm !== 13);
+      bidExpiryStub = sinon.stub(bidFilters, 'isBidNotExpired').callsFake((bid) => bid.cpm !== 13);
       const highestBid = pbjs.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
       expect(highestBid).to.deep.equal(_bidsReceived[2])
     })
@@ -3918,13 +3919,41 @@ describe('Unit: Prebid Module', function () {
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
         pbjs.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
-        const markedBid = pbjs.getBidResponsesForAdUnitCode(adUnitCode).bids.find(
-          bid => bid.adId === winningBid.adId);
-
         expect(markedBid.status).to.not.equal(BID_STATUS.RENDERED);
       });
     });
   }
+
+  describe('getBidResponseByAdId', () => {
+    let bidResponse;
+    beforeEach(() => {
+      bidResponse = {
+        adId: 'mock-adid'
+      };
+      auction.getBidsReceived = () => [
+        bidResponse
+      ];
+    });
+
+    it('should return null when adId does not exist', () => {
+      sandbox.stub(utils, 'logWarn');
+      expect(pbjs.getBidResponseByAdId('missing')).to.not.exist;
+      sinon.assert.called(utils.logWarn);
+    });
+
+    it('should return the matching bid', () => {
+      expect(pbjs.getBidResponseByAdId('mock-adid')).to.equal(bidResponse);
+    });
+
+    it('should mark as used when markAsUsed = true', () => {
+      pbjs.getBidResponseByAdId('mock-adid', { markAsUsed: true });
+      expect(bidResponse.status).to.eql(BID_STATUS.RENDERED);
+    });
+
+    it('should not choke when markAsUsed = true, but the bid cannot be found', () => {
+      expect(pbjs.getBidResponseByAdId('missing', { markAsUsed: true })).to.not.exist;
+    });
+  });
 
   describe('setTargetingForAst', function () {
     let targeting;

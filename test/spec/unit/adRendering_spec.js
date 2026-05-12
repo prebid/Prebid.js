@@ -16,7 +16,7 @@ import { config } from 'src/config.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
 import { auctionManager } from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
-import { filters } from 'src/targeting.js';
+import { bidFilters } from 'src/targeting/filters.js';
 import {
   EVENT_TYPE_IMPRESSION,
   EVENT_TYPE_WIN,
@@ -327,7 +327,7 @@ describe('adRendering', () => {
       });
 
       describe('when bid has already expired', () => {
-        const isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        const isBidNotExpiredStub = sinon.stub(bidFilters, 'isBidNotExpired');
         beforeEach(() => {
           isBidNotExpiredStub.returns(false);
         });

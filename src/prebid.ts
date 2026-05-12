@@ -28,7 +28,8 @@ import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
-import { isBidUsable, targeting } from './targeting.js';
+import { isBidUsable } from './targeting/filters.js';
+import { targeting } from './targeting.js';
 import { hook, wrapHook } from './hook.js';
 import { loadSession } from './debugging.js';
 import { storageCallbacks } from './storageManager.js';
@@ -50,7 +51,7 @@ import {
 import { getHighestCpm } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
-import { BANNER, VIDEO } from './mediaTypes.js';
+import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
 import { delayIfPrerendering } from './utils/prerendering.js';
 import { type BidAdapter, type BidderSpec, newBidder } from './adapters/bidderFactory.js';
 import { normalizeFPD } from './fpd/normalize.js';
@@ -62,6 +63,7 @@ import type { DeepPartial } from "./types/objects.d.ts";
 import type { AnyFunction, Wraps } from "./types/functions.d.ts";
 import type { BidderScopedSettings, BidderSettings } from "./bidderSettings.ts";
 import { fillAudioDefaults, ORTB_AUDIO_PARAMS } from './audio.ts';
+import { type WrapsInBids, wrapInBids } from "./utils/wrapsInBids.ts";
 
 import { getGlobalVarName } from "./buildOptions.ts";
 import { yieldAll } from "./utils/yield.ts";
@@ -241,18 +243,24 @@ export function validateOrtbFields(adUnit, type, onInvalidParam?) {
   const mediaTypes = adUnit?.mediaTypes || {};
   const params = mediaTypes[type];
 
-  const ORTB_PARAMS = {
-    banner: ORTB_BANNER_PARAMS,
-    audio: ORTB_AUDIO_PARAMS,
-    video: ORTB_VIDEO_PARAMS
-  }[type]
+  const ORTB_PARAMS = ((type) => {
+    if (type === BANNER) {
+      return ORTB_BANNER_PARAMS;
+    }
+    if (FEATURES.AUDIO && type === AUDIO) {
+      return ORTB_AUDIO_PARAMS;
+    }
+    if (FEATURES.VIDEO && type === VIDEO) {
+      return ORTB_VIDEO_PARAMS;
+    }
+  })(type);
 
   if (!isPlainObject(params)) {
     logWarn(`validateOrtb${type}Fields: ${type}Params must be an object.`);
     return;
   }
 
-  if (params != null) {
+  if (ORTB_PARAMS != null && params != null) {
     Object.entries(params)
       .forEach(([key, value]: any) => {
         if (!ORTB_PARAMS.has(key)) {
@@ -472,6 +480,7 @@ declare module './prebidGlobal' {
     getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
     getHighestCpmBids: typeof getHighestCpmBids;
     clearAllAuctions: typeof clearAllAuctions;
+    getBidResponseByAdId: typeof getBidResponseByAdId;
     markWinningBidAsUsed: typeof markWinningBidAsUsed;
     getConfig: typeof config.getConfig;
     readConfig: typeof config.readConfig;
@@ -541,16 +550,6 @@ function getConsentMetadata() {
   return allConsent.getConsentMeta()
 }
 addApiMethod('getConsentMetadata', getConsentMetadata);
-
-type WrapsInBids<T> = T[] & {
-  bids: T[]
-}
-
-function wrapInBids(arr) {
-  arr = arr.slice();
-  arr.bids = arr;
-  return arr;
-}
 
 function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
   const responses = auctionManager[type]()
@@ -1148,25 +1147,63 @@ type MarkWinningBidAsUsedOptions = ({
   analytics?: boolean
 }
 
+function findBidByAdId(adId) {
+  if (!adId) {
+    logError('adId is required');
+  } else {
+    const candidates = auctionManager.getBidsReceived().filter(bid => bid.adId === adId);
+    if (!candidates.length) {
+      logWarn(`Could not find ad matching adId '${adId}'`);
+    } else {
+      return candidates[0];
+    }
+  }
+  return null;
+}
+
+function markAsUsed(bid, fireEvents = true) {
+  if (fireEvents) {
+    markWinningBid(bid);
+  } else {
+    auctionManager.addWinningBid(bid);
+  }
+  markBidAsRendered(bid);
+}
+
+type GetBidResponseByAdIdOptions = {
+  /**
+   * If true, mark the bid as used - firing any win trackers and removing it from the bid pool for future auctions.
+   */
+  markAsUsed?: boolean;
+}
+
+/**
+ * @return the bid response matching the given adId, or null if no such bid exists.
+ */
+function getBidResponseByAdId(adId: string, options?: GetBidResponseByAdIdOptions): Bid {
+  const bid = findBidByAdId(adId);
+  if (bid != null && options?.markAsUsed) {
+    markAsUsed(bid, true);
+  }
+  return bid;
+}
+
+addApiMethod('getBidResponseByAdId', getBidResponseByAdId);
+
 /**
  * Mark the winning bid as used, should only be used in conjunction with video
  */
 function markWinningBidAsUsed({ adId, adUnitCode, analytics = false, events = false }: MarkWinningBidAsUsedOptions) {
-  let bids;
+  let bid;
   if (adUnitCode && adId == null) {
-    bids = targeting.getWinningBids(adUnitCode);
+    bid = targeting.getWinningBids(adUnitCode)[0];
   } else if (adId) {
-    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+    bid = findBidByAdId(adId);
   } else {
     logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
   }
-  if (bids.length > 0) {
-    if (analytics || events) {
-      markWinningBid(bids[0]);
-    } else {
-      auctionManager.addWinningBid(bids[0]);
-    }
-    markBidAsRendered(bids[0])
+  if (bid != null) {
+    markAsUsed(bid, analytics || events);
   }
 }
 

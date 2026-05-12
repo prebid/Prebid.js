@@ -10,6 +10,16 @@ userIdAsEids = [
         }]
     },
     {
+        source: 'abtshield.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: {
+                segments: ['seg-1', 'seg-2']
+            }
+        }]
+    },
+    {
         source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',
@@ -200,6 +210,14 @@ userIdAsEids = [
         source: 'merkleinc.com',
         uids: [{
             id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'rediads.com',
+        uids: [{
+            id: 'ruid_7b9c1d3f-1e2b-4e7b-9e5a-acde12345678',
             atype: 1
         }]
     },

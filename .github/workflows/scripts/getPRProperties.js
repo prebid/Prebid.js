@@ -11,8 +11,10 @@ const MODULE_PATTERNS = [
 
 const EXCLUDE_PATTERNS = [
   /^test\//,
-  /^integrationExamples\//
+  /^integrationExamples\//,
+  /^[^\/]+$/,
 ]
+
 const LIBRARY_PATTERN = /^libraries\/([^\/]+)\//;
 
 function extractVendor(chunkName) {
