@@ -97,7 +97,7 @@ export function setConfig(config: CurrencyConfig) {
     needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
-  if (config.defaultRates !== null && typeof config.defaultRates === 'object') {
+  if (!currencyRates.conversions && config.defaultRates !== null && typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
 
     // set up the default rates to be used if the rate file doesn't get loaded in time
