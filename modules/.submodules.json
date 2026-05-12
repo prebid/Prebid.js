@@ -2,6 +2,7 @@
   "parentModules": {
     "userId": [
       "33acrossIdSystem",
+      "abtshieldIdSystem",
       "admixerIdSystem",
       "adqueryIdSystem",
       "adplusIdSystem",
