@@ -126,6 +126,8 @@ jobs:
       - name: Combine coverage results
         shell: bash
         run: |
+          sudo apt-get update
+          sudo apt-get install lcov
           find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o build/coverage/combined.info
 
       - name: Coveralls
