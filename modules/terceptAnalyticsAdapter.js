@@ -4,6 +4,10 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 
+/**
+ * @typedef {import('./terceptAnalyticsAdapterTypes.d.ts').TerceptAnalyticsAdapterOptions} TerceptAnalyticsAdapterOptions
+ */
+
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const terceptAnalyticsVersion = 'v2.0.0';
@@ -11,6 +15,7 @@ const defaultHostName = 'us-central1-quikr-ebay.cloudfunctions.net';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 5000;
 
+/** @type {TerceptAnalyticsAdapterOptions} */
 let initOptions;
 
 // auctionId → { auctionInit, bids[], timer } — isolated per auction
