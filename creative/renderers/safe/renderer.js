@@ -1,14 +1,15 @@
 /**
  * SafeRenderer (creative): builds an empty same-origin iframe, injects
- * `<script src="bid.safeRendererUrl">`, then calls `iframe.contentWindow.pbSafeRenderInFrame(bid)`
+ * `<script src="bid.safeRenderer.url">`, then calls `iframe.contentWindow.pbRenderInFrame(bid)`
  * after that script loads.
  *
- * The remote script must assign `window.pbSafeRenderInFrame = function (bid) { ... }`.
+ * The remote script must assign `window.pbRenderInFrame = function (bid) { ... }`.
  * `bid` is the full rendering payload from the page (spread bid response + macro-replaced `ad` / `adUrl`, plus `adId`), same shape as passed to `render()`.
  *
  */
 export function render(data, { mkFrame }, win) {
-  const safeRendererUrl = data.safeRendererUrl;
+  const { safeRenderer, ...renderingData } = data;
+
   const width = data.width;
   const height = data.height;
   const instl = data.instl;
@@ -32,6 +33,10 @@ export function render(data, { mkFrame }, win) {
     style.height = height ? String(height) + 'px' : '100vh';
   }
 
+  if (typeof safeRenderer.url !== 'string' || safeRenderer.url === '') {
+    return Promise.reject(new Error('Prebid SafeRenderer: missing data.safeRenderer.url'));
+  }
+
   // Prebid will wait for it to resolve before firing AD_RENDER_SUCCEEDED.
   return new Promise(function (resolve, reject) {
     const frame = mkFrame(doc, {
@@ -43,16 +48,16 @@ export function render(data, { mkFrame }, win) {
         const cw = frame.contentWindow;
         const idoc = cw.document;
         const script = idoc.createElement('script');
-        script.src = safeRendererUrl;
+        script.src = safeRenderer.url;
         script.onload = function () {
           try {
-            const fn = cw.pbSafeRenderInFrame;
+            const fn = cw.pbRenderInFrame;
             if (typeof fn !== 'function') {
               throw new Error(
-                'Prebid SafeRenderer: safeRendererUrl script must define window.pbSafeRenderInFrame as a function.'
+                'Prebid SafeRenderer: safeRenderer.url script must define window.pbRenderInFrame as a function.'
               );
             }
-            fn.call(cw, data);
+            fn.call(cw, { config: safeRenderer.config, ...renderingData });
             resolve();
           } catch (e) {
             reject(e);
@@ -60,7 +65,7 @@ export function render(data, { mkFrame }, win) {
         };
         script.onerror = function () {
           reject(
-            new Error('Prebid SafeRenderer: failed to load script from safeRendererUrl')
+            new Error('Prebid SafeRenderer: failed to load script from safeRenderer.url')
           );
         };
         (idoc.head || idoc.body).appendChild(script);

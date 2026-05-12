@@ -133,17 +133,17 @@ describe('adRendering', () => {
         });
       });
 
-      describe('when the ad has a frame renderer', () => {
-        let bidWithFrameRenderer;
+      describe('when the ad has a safe renderer URL', () => {
+        let bidWithSafeRenderer;
         beforeEach(() => {
-          bidWithFrameRenderer = {
+          bidWithSafeRenderer = {
             adId: 'mock-ad-id',
-            frameRendererUrl: 'mock-url-frame-renderer'
+            safeRenderer: { url: 'mock-url-safe-renderer' }
           }
         });
 
         it('does not emit AD_RENDER_SUCCEDED immediately', () => {
-          doRender({ renderFn, bidResponse: bidWithFrameRenderer })
+          doRender({ renderFn, bidResponse: bidWithSafeRenderer })
           sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
         });
       });

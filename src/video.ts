@@ -56,6 +56,10 @@ const ORTB_PARAMS = [
  */
 export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
 
+function hasPublisherRenderer(subject: { renderer?: unknown; safeRenderer?: unknown } | null | undefined): boolean {
+  return !!(subject?.renderer || subject?.safeRenderer);
+}
+
 export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
 export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], (typeof ORTB_PARAMS)[number][0]> {
@@ -150,7 +154,7 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
   if (context === OUTSTREAM && !useCacheKey) {
-    return !!(bid.renderer || (adUnit && adUnit.renderer) || videoMediaType.renderer);
+    return hasPublisherRenderer(bid) || hasPublisherRenderer(adUnit) || hasPublisherRenderer(videoMediaType);
   }
 
   return true;

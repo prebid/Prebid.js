@@ -4,19 +4,23 @@ describe('Creative renderer - safe', () => {
   const sandbox = sinon.createSandbox();
   let doc, mkFrame, win;
   let appendChildFrame;
-  /** scriptStub + pbSafeRenderInFrame filled when mkFrame runs */
+  /** scriptStub + pbRenderInFrame filled when mkFrame runs */
   let pipelineRefs;
+
+  function sr(url) {
+    return { safeRenderer: { url } };
+  }
 
   /**
    * @param {object} [options]
-   * @param {boolean} [options.simulateMissingPbSafeRenderInFrame] — script "loads" but does not set pbSafeRenderInFrame
+   * @param {boolean} [options.simulateMissingPbRenderInFrame] — script "loads" but does not set pbRenderInFrame
    */
   function stubFrameWithScriptPipeline(options = {}) {
-    const simulateMissingPbSafeRenderInFrame = !!options.simulateMissingPbSafeRenderInFrame;
+    const simulateMissingPbRenderInFrame = !!options.simulateMissingPbRenderInFrame;
 
     const refs = {
       scriptStub: null,
-      pbSafeRenderInFrame: null
+      pbRenderInFrame: null
     };
 
     mkFrame = sandbox.stub().callsFake((d, attrs) => {
@@ -33,10 +37,10 @@ describe('Creative renderer - safe', () => {
       const cw = {};
 
       const appendScript = sandbox.stub().callsFake((script) => {
-        if (!simulateMissingPbSafeRenderInFrame) {
+        if (!simulateMissingPbRenderInFrame) {
           const fn = sandbox.stub();
-          cw.pbSafeRenderInFrame = fn;
-          refs.pbSafeRenderInFrame = fn;
+          cw.pbRenderInFrame = fn;
+          refs.pbRenderInFrame = fn;
         }
         if (typeof script.onload === 'function') {
           script.onload();
@@ -83,7 +87,7 @@ describe('Creative renderer - safe', () => {
 
   it('calls mkFrame with width and height from data', () => {
     const data = {
-      safeRendererUrl: 'https://example.com/r.js',
+      ...sr('https://example.com/r.js'),
       width: 123,
       height: 321
     };
@@ -96,7 +100,7 @@ describe('Creative renderer - safe', () => {
   });
 
   it('defaults width and height to 100%', () => {
-    return runRenderer({ safeRendererUrl: 'https://example.com/r.js' }).then(() => {
+    return runRenderer(sr('https://example.com/r.js')).then(() => {
       sinon.assert.calledWith(mkFrame, doc, {
         width: '100%',
         height: '100%'
@@ -111,33 +115,39 @@ describe('Creative renderer - safe', () => {
         style: {}
       }
     });
-    return runRenderer({ safeRendererUrl: 'https://example.com/r.js' }).then(() => {
+    return runRenderer(sr('https://example.com/r.js')).then(() => {
       expect(doc.body.style.height).to.eql('100%');
       expect(doc.body.parentElement.style.height).to.eql('100%');
     });
   });
 
-  it('injects script with src = safeRendererUrl and calls pbSafeRenderInFrame with data', () => {
+  it('injects script with src = safeRenderer.url and calls pbRenderInFrame with data', () => {
     const data = {
-      safeRendererUrl: 'https://cdn.example.com/safe.js',
+      safeRenderer: { url: 'https://cdn.example.com/safe.js' },
       adId: 'a1',
       width: 300,
       height: 250
     };
     return runRenderer(data).then(() => {
-      expect(pipelineRefs.scriptStub.src).to.eql(data.safeRendererUrl);
-      sinon.assert.calledWith(pipelineRefs.pbSafeRenderInFrame, data);
+      expect(pipelineRefs.scriptStub.src).to.eql(data.safeRenderer.url);
+      sinon.assert.calledOnce(pipelineRefs.pbRenderInFrame);
+      expect(pipelineRefs.pbRenderInFrame.firstCall.args[0]).to.eql({
+        config: undefined,
+        adId: data.adId,
+        width: data.width,
+        height: data.height
+      });
     });
   });
 
-  it('rejects when pbSafeRenderInFrame is not a function after script load', () => {
-    stubFrameWithScriptPipeline({ simulateMissingPbSafeRenderInFrame: true });
-    return runRenderer({ safeRendererUrl: 'https://example.com/r.js' }).then(
+  it('rejects when pbRenderInFrame is not a function after script load', () => {
+    stubFrameWithScriptPipeline({ simulateMissingPbRenderInFrame: true });
+    return runRenderer(sr('https://example.com/r.js')).then(
       () => {
         throw new Error('expected reject');
       },
       (err) => {
-        expect(err.message).to.include('pbSafeRenderInFrame');
+        expect(err.message).to.include('pbRenderInFrame');
       }
     );
   });

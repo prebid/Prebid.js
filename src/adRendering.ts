@@ -22,6 +22,7 @@ import { useMetrics } from './utils/perfMetrics.js';
 import { bidFilters } from './targeting/filters.ts';
 import { EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG } from './eventTrackers.js';
 import type { Bid } from "./bidfactory.ts";
+import type { SafeRendererConfig } from "./adUnits.ts";
 import { yieldsIf } from "./utils/yield.ts";
 import { PbPromise } from "./utils/promise.ts";
 
@@ -202,13 +203,20 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
+  const { ad, adUrl, width, height, instl, vastXml, vastUrl, safeRenderer, mediaType } = prepareBidForRendering(bidResponse, options);
   return {
     ad,
     adUrl,
     width,
     height,
-    instl
+    instl,
+    vastXml,
+    vastUrl,
+    mediaType,
+    safeRenderer: {
+      ...safeRenderer,
+      config: typeof safeRenderer.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer.config,
+    }
   };
 })
 
@@ -223,14 +231,13 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
     ...bidResponse,
     ad: replaceMacros(ad, repl),
     adUrl: replaceMacros(adUrl, repl),
-    frameRendererUrl: getFrameRendererUrl(bidResponse)
   };
 }
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
-  const frameRendererUrl = getFrameRendererUrl(bidResponse);
+  const safeRenderer = getSafeRenderer(bidResponse);
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
-  if ((isMainDocument || videoBid) && !frameRendererUrl) {
+  if ((isMainDocument || videoBid) && !safeRenderer?.url) {
     emitAdRenderFail({
       reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
       message: videoBid ? 'Cannot render video ad without a renderer' : `renderAd was prevented from writing to the main document.`,
@@ -239,7 +246,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = frameRendererUrl ? prepareBidForRendering(bidResponse, options) : getRenderingData(bidResponse, options);
+  const data = getRenderingData(bidResponse, options);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
@@ -250,7 +257,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer) && !getFrameRendererUrl(bidResponse)) {
+  if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
     next.bail();
@@ -428,7 +435,6 @@ export function insertLocatorFrame() {
   }
 }
 
-export function getFrameRendererUrl(bidResponse: Bid): string | undefined {
-  const adUnit = auctionManager.index.getAdUnit(bidResponse);
-  return adUnit?.frameRendererUrl ?? bidResponse.frameRendererUrl;
+export function getSafeRenderer(bidResponse: Bid): SafeRendererConfig | undefined {
+  return bidResponse.safeRenderer;
 }

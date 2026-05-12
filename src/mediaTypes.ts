@@ -5,7 +5,7 @@
  * register themselves with prebid-core.
  */
 import type { BannerMediaType } from "./banner.ts";
-import type { RendererConfig } from "./adUnits.ts";
+import type { RendererConfig, SafeRendererConfig } from "./adUnits.ts";
 import type { VideoMediaType } from "./video.ts";
 import type { NativeMediaType } from "./native.ts";
 import { AudioMediaType } from "./audio.ts";
@@ -17,6 +17,10 @@ export interface BaseMediaType {
    * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
    */
   renderer?: RendererConfig;
+  /**
+   * Safe iframe renderer for this media type (overrides ad unit-level when set).
+   */
+  safeRenderer?: SafeRendererConfig;
 }
 
 export interface MediaTypes {

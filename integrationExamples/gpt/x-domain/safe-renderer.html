@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SafeRenderer example (safeRendererUrl)</title>
+  <title>SafeRenderer example (safeRenderer)</title>
 
   <script src="../../../build/dev/prebid.js" async></script>
   <script
@@ -38,14 +38,22 @@
           video: {
             context: 'outstream',
             playerSize: [300, 250],
-            mimes: ['video/mp4']
+            mimes: ['video/mp4'],
+            safeRenderer: {
+              url: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
+              getConfig: (bidResponse) => {
+                return {
+                  configField: 'passed-from-adunit-config'
+                }
+              }
+            },
           }
         },
         code: adUnitCode,
         bids: [
           {
             bidder: 'testBidder',
-            params: {}
+            params: {},
           }
         ]
       }
@@ -66,10 +74,14 @@
                 bidder: 'testBidder'
               },
               then: {
+                mediaType: 'video',
                 creativeId: 'testCreativeIdV2',
                 ad: '<html><body><div style="display:inline-block;width:350px;height:60px;background:#f2f7ff;border:1px solid #7aa2ff;color:#1f3b74;font:14px/60px Arial,sans-serif;text-align:center;">Bid ad html content</div></body></html>',
                 // Hosted externally (e.g. GPT); repo file `safeRenderer.js` is a reference implementation only.
-                safeRendererUrl: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
+                safeRenderer: {
+                  // url: 'https://trafto.s3.eu-central-1.amazonaws.com/rendererV2.js',
+                  url: 'https://invalid-should-be-overwritten-with-adunit-config.js',
+                },
                 vastXml,
               }
             }
@@ -104,7 +116,7 @@
 
 <body>
   <h1>SafeRenderer example</h1>
-  <code>bid.safeRendererUrl</code>
+  <code>bid.safeRenderer.url</code>
 
   <div id="prebid-example" style="min-width: 300px; min-height: 250px;">
     <script>

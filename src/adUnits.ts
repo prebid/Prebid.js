@@ -4,6 +4,16 @@ import type { Bid } from "./bidfactory.ts";
 import type { MediaTypes } from "./mediaTypes.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 
+/**
+ * Configuration for the creative SafeRenderer (iframe script URL + optional config, resolved at render time).
+ */
+export interface SafeRendererConfig {
+  url: string;
+  config?: any;
+  getConfig?(bidResponse: Bid): any;
+  renderingData?: any;
+}
+
 export interface RendererConfig {
   /**
    * URL to the renderer script that will be loaded before invoking `render`.
@@ -122,9 +132,9 @@ export interface AdUnitDefinition {
   sizes?: Size | Size[];
 
   /**
-   * URL of a script loaded inside the creative iframe for FrameRenderer (`pbRenderInFrame`).
+   * Safe iframe renderer: script URL and optional publisher config for `pbRenderInFrame`.
    */
-  frameRendererUrl?: string;
+  safeRenderer?: SafeRendererConfig;
 }
 
 /**

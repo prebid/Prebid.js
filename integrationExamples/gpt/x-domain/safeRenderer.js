@@ -1,10 +1,10 @@
 /* global YVAP */
 /**
- * Reference implementation for `bid.safeRendererUrl` (SafeRenderer).
- * Prebid injects this script into the creative iframe and then calls `window.pbSafeRenderInFrame(bid)`.
+ * Reference implementation for `bid.safeRenderer.url` (SafeRenderer).
+ * Prebid injects this script into the creative iframe and then calls `window.pbRenderInFrame(bid)`.
  * `bid` is the full bid payload.
  */
-window.pbSafeRenderInFrame = function (bid) {
+window.pbRenderInFrame = function (bid) {
   function yvapPlayerRender(b) {
     var safeAdId =
       b.adId != null && String(b.adId).length

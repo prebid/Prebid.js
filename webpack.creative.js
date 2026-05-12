@@ -21,8 +21,8 @@ module.exports = {
     'renderers/native': {
       import: './creative/renderers/native/renderer.js'
     },
-    'renderers/frame': {
-      import: './creative/renderers/frame/renderer.js'
+    'renderers/safe': {
+      import: './creative/renderers/safe/renderer.js'
     }
   },
   output: {
