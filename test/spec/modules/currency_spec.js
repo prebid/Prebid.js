@@ -81,6 +81,22 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       setConfig(config);
       expect(currencyRates.conversions).to.eql(getCurrencyRates().conversions);
+    });
+
+    it('uses latest defaultRates when no other rates are available', () => {
+      setConfig({
+        defaultRates: {
+          'USD': { 'JPY': 1 }
+        }
+      });
+      setConfig({
+        defaultRates: {
+          'USD': { 'JPY': 2 }
+        }
+      });
+      expect(currencyRates.conversions).to.eql({
+        'USD': { 'JPY': 2 }
+      })
     })
 
     it('currency file is called even when default rates are specified', function() {
