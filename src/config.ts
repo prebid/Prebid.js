@@ -221,6 +221,21 @@ export interface Config {
    */
   useBidCache?: boolean;
   /**
+   * When Bid Caching is turned on, a custom Filter Function can be defined to gain more granular control over which “cached” bids can be used.
+   * This function will only be called for “cached” bids from previous auctions, not “current” bids from the most recent auction.
+   * The function should take a single bid object argument, and return true to use the cached bid, or false to not use the cached bid.
+   *
+   * For Example, to turn on Bid Caching, but exclude cached video bids, you could do this:
+   *
+   * ```
+   * pbjs.setConfig({
+   *   useBidCache: true,
+   *   bidCacheFilterFunction: bid => bid.mediaType !== 'video'
+   * });
+   * ```
+   */
+  bidCacheFilterFunction?: (bid: Bid) => boolean;
+  /**
    * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
    */
   deviceAccess?: boolean;
