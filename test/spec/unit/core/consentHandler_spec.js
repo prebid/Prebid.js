@@ -29,6 +29,41 @@ describe('Consent data handler', () => {
     } catch (e) {
       expect(e).to.equal(err);
     }
+  });
+
+  describe('onChange', () => {
+    let listener;
+    beforeEach(() => {
+      listener = sinon.stub();
+    });
+    it('should trigger on consent data changes', () => {
+      handler.onChange(listener);
+      handler.setConsentData(true);
+      sinon.assert.calledWith(listener, true);
+    });
+    it('should not trigger when consent data does not change', () => {
+      handler.setConsentData(true);
+      handler.onChange(listener);
+      handler.setConsentData(true);
+      sinon.assert.notCalled(listener);
+    });
+    describe('using hashFields', () => {
+      beforeEach(() => {
+        handler = consentHandler({ hashFields: ['tcString'] });
+      });
+      it('should trigger when hashFields change', () => {
+        handler.setConsentData({ tcString: 'initial' });
+        handler.onChange(listener);
+        handler.setConsentData({ tcString: 'updated' });
+        sinon.assert.calledWith(listener, { tcString: 'updated' });
+      });
+      it('should not trigger when non-hashFields change', () => {
+        handler.setConsentData({ tcString: 'constant' });
+        handler.onChange(listener);
+        handler.setConsentData({ tcString: 'constant', other: 'ignored' });
+        sinon.assert.notCalled(listener);
+      });
+    })
   })
 
   it('should return data after setConsentData', () => {
@@ -104,7 +139,14 @@ describe('Consent data handler', () => {
 describe('multiHandler', () => {
   let handlers, multi;
   beforeEach(() => {
-    handlers = { h1: {}, h2: {} };
+    handlers = {
+      h1: {
+        onChange: sinon.stub()
+      },
+      h2: {
+        onChange: sinon.stub()
+      }
+    };
     multi = multiHandler(handlers);
   });
 
@@ -151,7 +193,22 @@ describe('multiHandler', () => {
         expect(multi.hash).to.not.eql(first);
       })
     })
-  })
+  });
+  describe('onChange', () => {
+    ['h1', 'h2'].forEach((handler, i) => {
+      it(`triggers when handler #${i + 1} changes`, () => {
+        handlers.h1.getConsentData = () => 'one';
+        handlers.h2.getConsentData = () => 'two';
+        const listener = sinon.stub();
+        multi.onChange(listener);
+        handlers[handler].onChange.args[0][0]();
+        sinon.assert.calledWith(listener, {
+          h1: 'one',
+          h2: 'two'
+        })
+      })
+    })
+  });
 })
 
 describe('coppaDataHandler', () => {

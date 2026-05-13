@@ -1,4 +1,4 @@
-import { cyrb53Hash, isEmpty, isStr, timestamp } from './utils.js';
+import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp } from './utils.js';
 import { defer, PbPromise } from './utils/promise.js';
 import { config } from './config.js';
 import type { ModuleType } from "./activities/modules.ts";
@@ -52,6 +52,7 @@ interface ConsentHandler<T, M> {
   setConsentData(data: T): void;
   getConsentMeta(): M;
   error(err): void;
+  onChange(listener: (consentData: T) => void): void;
   /**
    * Enable this consent handler. This should be called by the relevant consent management module
    * on initialization.
@@ -90,6 +91,7 @@ export function consentHandler<T, M>(
   let hash;
   let error;
   let hasError;
+  let listeners;
   function reset() {
     df = defer();
     enabled = false;
@@ -100,22 +102,40 @@ export function consentHandler<T, M>(
     hash = null;
     error = null;
     hasError = false;
+    listeners = [];
   }
+
+  function getHashData(consentData) {
+    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData
+  }
+
+  function hasConsentChanged(newConsentData) {
+    return !deepEqual(getHashData(consentData), getHashData(newConsentData))
+  }
+
+  function notifyListeners() {
+    if (dirty) {
+      listeners.forEach(l => l(consentData));
+    }
+  }
+
   function resolve(data) {
-    dirty = true;
+    dirty = hasConsentChanged(data);
     consentData = data;
     hasError = false;
     error = null;
     ready = true;
     df.resolve(data);
+    notifyListeners();
   }
   function reject(err) {
+    dirty = hasConsentChanged(null);
     consentData = null;
     ready = true;
     error = err;
     hasError = true;
-    dirty = true;
     df.reject(err);
+    notifyListeners();
   }
   reset();
 
@@ -158,13 +178,14 @@ export function consentHandler<T, M>(
     get hash() {
       if (dirty) {
         hash = cyrb53Hash(
-          JSON.stringify(
-            consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData
-          )
+          JSON.stringify(getHashData(consentData))
         )
         dirty = false;
       }
       return hash;
+    },
+    onChange(listener) {
+      listeners.push(listener);
     }
   }
 }
@@ -291,27 +312,44 @@ export type AllConsentMeta = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>
 }
 
-type MultiHandler = Pick<ConsentHandler<AllConsentData, AllConsentMeta>, 'promise' | 'hash' | 'getConsentData' | 'reset' | 'getConsentMeta'>;
+type MultiHandler = Pick<ConsentHandler<AllConsentData, AllConsentMeta>, 'promise' | 'hash' | 'getConsentData' | 'reset' | 'getConsentMeta' | 'onChange'>;
 
 export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
   const entries = Object.entries(handlers);
-  function collector(method) {
+  function collector(method): any {
     return function () {
       return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]))
     }
   }
-  return Object.assign(
-    {
-      get promise() {
-        return PbPromise.all(entries.map(([name, handler]) => handler.promise.then(val => [name, val])))
-          .then(entries => Object.fromEntries(entries));
-      },
-      get hash() {
-        return cyrb53Hash(entries.map(([_, handler]) => handler.hash).join(':'));
-      }
+  const getConsentData = collector('getConsentData');
+  const resetAll = collector('reset');
+  let listeners;
+  function reset() {
+    listeners = [];
+    Object.values(handlers).forEach(handler => handler.onChange(() => {
+      listeners.forEach((listener) => listener(getConsentData()));
+    }))
+  }
+  reset();
+
+  return {
+    getConsentData,
+    onChange(listener) {
+      listeners.push(listener);
     },
-    Object.fromEntries(['getConsentData', 'getConsentMeta', 'reset'].map(n => [n, collector(n)])),
-  ) as any;
+    get promise() {
+      return PbPromise.all(entries.map(([name, handler]) => handler.promise.then(val => [name, val])))
+        .then(entries => Object.fromEntries(entries));
+    },
+    get hash() {
+      return cyrb53Hash(entries.map(([_, handler]) => handler.hash).join(':'));
+    },
+    getConsentMeta: collector('getConsentMeta'),
+    reset() {
+      resetAll();
+      reset();
+    }
+  };
 }
 
 export const allConsent = multiHandler();
