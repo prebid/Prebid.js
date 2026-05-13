@@ -20,6 +20,17 @@ pbjs.setConfig({
                 pid: "0010b00002GYU4eBAH" // Example ID
             }
         }, {
+            name: "abtshieldId",
+            params: {
+                sid: "pb.your-service-id"
+            },
+            storage: {
+                type: "cookie",
+                name: "abtshieldId",
+                expires: 1,
+                refreshInSeconds: 86400
+            }
+        }, {
             name: "pubCommonId",
             storage: {
                 type: "cookie",
