@@ -167,3 +167,29 @@ export function cmpClient(
     }
   })
 }
+
+export const CMP_POLL_INTERVAL = 100;
+
+/**
+ * Polls for a CMP API at a fixed interval until it is found or the deadline is reached.
+ *
+ * @param {Object} apiConfig - Config passed to cmpClient (apiName, apiVersion, apiArgs, etc.)
+ * @param {number} deadline - Timestamp (ms) after which polling stops and the promise resolves with null.
+ * @returns {Promise<CMPClient|null>} Resolves with the CMP client when found, or null on timeout.
+ */
+export function pollForCmp(apiConfig, deadline) {
+  return new Promise((resolve) => {
+    const handle = setInterval(() => {
+      if (Date.now() >= deadline) {
+        clearInterval(handle);
+        resolve(null);
+        return;
+      }
+      const cmp = cmpClient(apiConfig);
+      if (cmp) {
+        clearInterval(handle);
+        resolve(cmp);
+      }
+    }, CMP_POLL_INTERVAL);
+  });
+}

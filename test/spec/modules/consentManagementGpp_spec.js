@@ -41,8 +41,8 @@ describe('consentManagementGpp', function () {
         resetConsentData();
       });
 
-      it('should use system default values', async function () {
-        await setConsentConfig({
+      it('should use system default values', function () {
+        setConsentConfig({
           gpp: {}
         });
         expect(consentConfig.cmpHandler).to.be.equal('iab');
@@ -84,7 +84,7 @@ describe('consentManagementGpp', function () {
         config.resetConfig();
       });
 
-      it('results in all user settings overriding system defaults', async function () {
+      it('results in all user settings overriding system defaults', function () {
         const allConfig = {
           gpp: {
             cmpApi: 'iab',
@@ -92,13 +92,13 @@ describe('consentManagementGpp', function () {
           }
         };
 
-        await setConsentConfig(allConfig);
+        setConsentConfig(allConfig);
         expect(consentConfig.cmpHandler).to.be.equal('iab');
         expect(consentConfig.cmpTimeout).to.be.equal(7500);
       });
 
-      it('should recognize config.gpp, with default cmpApi and timeout', async function () {
-        await setConsentConfig({
+      it('should recognize config.gpp, with default cmpApi and timeout', function () {
+        setConsentConfig({
           gpp: {}
         });
 
@@ -106,8 +106,8 @@ describe('consentManagementGpp', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(10000);
       });
 
-      it('should enable gppDataHandler', async () => {
-        await setConsentConfig({
+      it('should enable gppDataHandler', () => {
+        setConsentConfig({
           gpp: {}
         });
         expect(gppDataHandler.enabled).to.be.true;
@@ -444,14 +444,14 @@ describe('consentManagementGpp', function () {
         expect(gppDataHandler.ready).to.be.true;
       })
 
-      it('should throw proper errors when CMP is not found', async function () {
-        await setConsentConfig(goodConfig);
-        expect(await runHook()).to.be.false;
+      it('should continue auction with null consent after timeout when CMP is not found', async function () {
+        config.setConfig({ consentManagement: { gpp: { cmpApi: 'iab', timeout: 10 } } });
+        await setConsentConfig({ gpp: { cmpApi: 'iab', timeout: 10 } });
+        expect(await runHook()).to.be.true;
         const consent = gppDataHandler.getConsentData();
-        // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
-        sinon.assert.calledTwice(utils.logError);
-        expect(consent).to.be.null;
-        expect(gppDataHandler.ready).to.be.true;
+        sinon.assert.called(utils.logWarn);
+        expect(consent.gppString).to.be.undefined;
+        expect(consent.applicableSections).to.deep.equal([]);
       });
 
       it('should not trip when adUnits have no size', async () => {
@@ -483,6 +483,34 @@ describe('consentManagementGpp', function () {
           expect(consent.gppString).to.be.undefined;
         } finally {
           delete window.__gpp;
+        }
+      });
+
+      it('should load consent data when GPP CMP appears during the polling window', async () => {
+        function mockGppCmp() {
+          const pingData = {
+            signalStatus: 'ready',
+            gppVersion: '1.1',
+            applicableSections: [7],
+            gppString: 'test-gpp-string',
+            parsedSections: {},
+          };
+          return function (command, callback) {
+            if (command === 'ping') { callback(pingData); }
+          };
+        }
+        try {
+          config.setConfig({ consentManagement: { gpp: { cmpApi: 'iab', timeout: 1000 } } });
+          const configPromise = setConsentConfig({ gpp: { cmpApi: 'iab', timeout: 1000 } });
+          setTimeout(() => { window.__gpp = mockGppCmp(); }, 50);
+          await configPromise;
+          expect(await runHook()).to.be.true;
+          const consent = gppDataHandler.getConsentData();
+          expect(consent.gppString).to.eql('test-gpp-string');
+          expect(consent.applicableSections).to.deep.equal([7]);
+        } finally {
+          delete window.__gpp;
+          resetConsentData();
         }
       });
     });
