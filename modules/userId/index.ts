@@ -484,6 +484,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
   const startInit = defer<void>();
   const startCallbacks = defer<void>();
   let cancel;
+  let initStarted = false;
   let initialized = false;
   let initMetrics;
 
@@ -520,6 +521,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     PbPromise.all([hooksReady, startInit.promise])
       .then(timeConsent)
       .then(checkRefs(() => {
+        initialized = true;
         initSubmodules(initModules, allModules);
       }))
       .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
@@ -536,8 +538,8 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
    * filtered by `submoduleNames`).
    */
   return function ({ refresh = false, submoduleNames = null, ready = false } = {}) {
-    if (ready && !initialized) {
-      initialized = true;
+    if (ready && !initStarted) {
+      initStarted = true;
       startInit.resolve();
       // submodule callbacks should run immediately if `auctionDelay` > 0, or `syncDelay` ms after the
       // auction ends otherwise
@@ -754,8 +756,13 @@ function registerSignalSources() {
 }
 
 function retryOnCancel(initParams?) {
-  return initIdSystem(initParams).then(
-    () => getUserIds(),
+  const ready = initIdSystem(initParams);
+  return ready.then(
+    () => {
+      // if something has changed, try again
+      const updated = initIdSystem();
+      return updated === ready ? getUserIds() : retryOnCancel();
+    },
     (e) => {
       if (e === INIT_CANCELED) {
         // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
@@ -1243,6 +1250,9 @@ export function init(config, { mkDelay = delay } = {}) {
   configRegistry = [];
   initializedSubmodules = mkPriorityMaps();
   initIdSystem = idSystemInitializer({ mkDelay });
+  allConsent.onChange(() => {
+    initIdSystem({ refresh: true });
+  })
   if (configListener != null) {
     configListener();
   }
