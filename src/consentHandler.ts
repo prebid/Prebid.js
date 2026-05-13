@@ -42,7 +42,7 @@ export interface DefaultConsentMeta {
   generatedAt?: number;
 }
 
-interface ConsentHandler<T, M> {
+export interface ConsentHandler<T, M> {
   readonly generatedTime: number,
   /**
    * reset this handler (mainly for tests)

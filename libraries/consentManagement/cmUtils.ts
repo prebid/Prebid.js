@@ -3,6 +3,7 @@ import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../.
 import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';
+import { type ConsentHandler } from "../../src/consentHandler.ts";
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
