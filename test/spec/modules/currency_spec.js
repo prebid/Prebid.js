@@ -69,6 +69,36 @@ describe('currency', function () {
       expect(currencySupportEnabled).to.equal(true);
     });
 
+    it('does not lose loaded rates when reconfigured', () => {
+      const config = {
+        adServerCurrency: 'USD',
+        defaultRates: {
+          'USD': { 'JPY': 1 }
+        }
+      }
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig(config);
+      fakeCurrencyFileServer.respond();
+      setConfig(config);
+      expect(currencyRates.conversions).to.eql(getCurrencyRates().conversions);
+    });
+
+    it('uses latest defaultRates when no other rates are available', () => {
+      setConfig({
+        defaultRates: {
+          'USD': { 'JPY': 1 }
+        }
+      });
+      setConfig({
+        defaultRates: {
+          'USD': { 'JPY': 2 }
+        }
+      });
+      expect(currencyRates.conversions).to.eql({
+        'USD': { 'JPY': 2 }
+      })
+    })
+
     it('currency file is called even when default rates are specified', function() {
       // RESET to request currency file (specifically url value for this test)
       setConfig({ 'adServerCurrency': undefined });
