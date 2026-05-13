@@ -213,15 +213,12 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
     vastXml,
     vastUrl,
     mediaType,
-    safeRenderer: {
-      ...safeRenderer,
-      config: typeof safeRenderer.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer.config,
-    }
+    safeRenderer
   };
 })
 
 function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
-  const { ad, adUrl, cpm, originalCpm } = bidResponse
+  const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -231,6 +228,10 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
     ...bidResponse,
     ad: replaceMacros(ad, repl),
     adUrl: replaceMacros(adUrl, repl),
+    safeRenderer: {
+      ...safeRenderer,
+      config: typeof safeRenderer?.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer?.config,
+    }
   };
 }
 
