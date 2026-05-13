@@ -51,6 +51,7 @@ interface ConsentHandler<T, M> {
   getConsentData(): T;
   setConsentData(data: T): void;
   getConsentMeta(): M;
+  error(err): void;
   /**
    * Enable this consent handler. This should be called by the relevant consent management module
    * on initialization.
@@ -87,6 +88,8 @@ export function consentHandler<T, M>(
   let consentData;
   let ready;
   let hash;
+  let error;
+  let hasError;
   function reset() {
     df = defer();
     enabled = false;
@@ -95,11 +98,24 @@ export function consentHandler<T, M>(
     generatedTime = null;
     dirty = true;
     hash = null;
+    error = null;
+    hasError = false;
   }
   function resolve(data) {
+    dirty = true;
     consentData = data;
+    hasError = false;
+    error = null;
     ready = true;
     df.resolve(data);
+  }
+  function reject(err) {
+    consentData = null;
+    ready = true;
+    error = err;
+    hasError = true;
+    dirty = true;
+    df.reject(err);
   }
   reset();
 
@@ -119,7 +135,7 @@ export function consentHandler<T, M>(
     },
     get promise() {
       if (ready) {
-        return PbPromise.resolve(consentData);
+        return hasError ? PbPromise.reject(error) : PbPromise.resolve(consentData);
       }
       if (!enabled) {
         resolve(null);
@@ -128,7 +144,6 @@ export function consentHandler<T, M>(
     },
     setConsentData(data: T, time = timestamp()) {
       generatedTime = time;
-      dirty = true;
       resolve(data);
     },
     getConsentData(): T {
@@ -139,6 +154,7 @@ export function consentHandler<T, M>(
         return getMeta(consentData, generatedTime);
       }
     },
+    error: reject,
     get hash() {
       if (dirty) {
         hash = cyrb53Hash(

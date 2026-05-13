@@ -18,6 +18,19 @@ describe('Consent data handler', () => {
     });
   });
 
+  it('should reject promise on reject', async () => {
+    const err = new Error();
+    handler.error(err);
+    expect(handler.getConsentData()).to.equal(null);
+    expect(handler.ready).to.be.true;
+    try {
+      await handler.promise;
+      sinon.assert.fail('promise did not reject');
+    } catch (e) {
+      expect(e).to.equal(err);
+    }
+  })
+
   it('should return data after setConsentData', () => {
     const data = { consent: 'string' };
     handler.enable();
