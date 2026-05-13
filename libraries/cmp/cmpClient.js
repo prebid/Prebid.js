@@ -179,6 +179,10 @@ export const CMP_POLL_INTERVAL = 100;
  */
 export function pollForCmp(apiConfig, deadline) {
   return new Promise((resolve) => {
+    // Probe immediately so timeouts shorter than CMP_POLL_INTERVAL still get at least one attempt.
+    const immediate = cmpClient(apiConfig);
+    if (immediate) { resolve(immediate); return; }
+
     const handle = setInterval(() => {
       if (Date.now() >= deadline) {
         clearInterval(handle);
