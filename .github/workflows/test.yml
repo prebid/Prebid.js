@@ -127,7 +127,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install lcov
+          sudo apt-get install lcov -y
           find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o build/coverage/combined.info
 
       - name: Coveralls
