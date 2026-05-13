@@ -124,12 +124,16 @@ export const generateSessionID = () => {
 };
 
 /**
- * Base64 encode a string
+ * Base64 encode a string using UTF-16LE encoding (compatible with SDK)
  * @param {string} str String to encode
  * @returns {string} Base64 encoded string
  */
 const encodeBase64 = (str) => {
-  return btoa(str);
+  const codeUnits = new Uint16Array(str.length);
+  for (let i = 0; i < codeUnits.length; i++) {
+    codeUnits[i] = str.charCodeAt(i);
+  }
+  return btoa(String.fromCharCode(...new Uint8Array(codeUnits.buffer)));
 };
 
 /**
@@ -163,6 +167,38 @@ export const getPassport = (host, node) => {
 export const setPassport = (host, node, passport) => {
   const key = generatePassportKey(host, node);
   storage.setDataInLocalStorage(key, passport);
+};
+
+/**
+ * Generate SDK-compatible targeting cache key
+ * @param {string} host DCN host
+ * @param {string} node Node identifier
+ * @returns {string} Storage key in format OPTABLE_TARGETING_<base64blob>
+ */
+const generateSDKTargetingKey = (host, node) => {
+  const base = `${host}/${node}`;
+  return `OPTABLE_TARGETING_${encodeBase64(base)}`;
+};
+
+/**
+ * Update SDK-compatible targeting cache in localStorage
+ * This ensures compatibility with SDK's targetingFromCache() method
+ * @param {string} host DCN host
+ * @param {string} node Node identifier
+ * @param {Object} targetingData Targeting response data
+ */
+const setSDKTargetingCache = (host, node, targetingData) => {
+  if (!targetingData) {
+    return;
+  }
+  // Cache if we have ortb2 data OR split_test_assignment
+  // Can have data witheld due to split test but still want to cache this response
+  if (!targetingData.ortb2 && !targetingData.split_test_assignment) {
+    return;
+  }
+  const key = generateSDKTargetingKey(host, node);
+  storage.setDataInLocalStorage(key, JSON.stringify(targetingData));
+  logMessage(`Updated SDK-compatible cache: ${key}`);
 };
 
 /**
@@ -200,7 +236,11 @@ const getCachedTargeting = () => {
  * @param {Object} targetingData Targeting response
  */
 const setCachedTargeting = (targetingData) => {
-  if (!targetingData || !targetingData.ortb2) {
+  if (!targetingData) {
+    return;
+  }
+  // Cache if we have ortb2 data OR split_test_assignment
+  if (!targetingData.ortb2 && !targetingData.split_test_assignment) {
     return;
   }
   storage.setDataInLocalStorage(OPTABLE_CACHE_KEY, JSON.stringify(targetingData));
@@ -614,6 +654,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
           if (data) {
             logMessage('Background API call completed, cache updated');
             setCachedTargeting(data);
+            setSDKTargetingCache(host, node, data);
             if (data.passport) {
               setPassport(host, node, data.passport);
             }
@@ -651,6 +692,7 @@ export const getBidRequestData = async (reqBidsConfigObj, callback, moduleConfig
     }
 
     setCachedTargeting(targetingData);
+    setSDKTargetingCache(host, node, targetingData);
     handleRtdFn(reqBidsConfigObj, targetingData, mergeDeep, rtdConfig);
 
     callback();

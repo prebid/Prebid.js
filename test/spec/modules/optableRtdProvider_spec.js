@@ -570,6 +570,96 @@ describe('Optable RTD Submodule', function () {
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(ajaxStub.calledOnce).to.be.true;
     });
+
+    it('updates SDK-compatible targeting cache after successful API call', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+
+      const targetingData = {
+        ortb2: {
+          user: {
+            eids: [{ source: 'test.com', uids: [{ id: 'test-id' }] }]
+          }
+        }
+      };
+
+      ajaxStub.callsFake((url, options) => {
+        options.success(JSON.stringify(targetingData));
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      // Verify SDK-compatible cache was updated
+      const sdkCacheCall = storage.setDataInLocalStorage.getCalls().find(call =>
+        call.args[0].includes('OPTABLE_TARGETING_')
+      );
+      expect(sdkCacheCall).to.exist;
+      expect(sdkCacheCall.args[1]).to.equal(JSON.stringify(targetingData));
+    });
+
+    it('updates SDK-compatible cache in background refresh', async function () {
+      const cachedData = {
+        ortb2: {
+          user: {
+            eids: [{ source: 'cached.com', uids: [{ id: 'cached-id' }] }]
+          }
+        }
+      };
+      storage.getDataFromLocalStorage.returns(JSON.stringify(cachedData));
+
+      const freshData = {
+        ortb2: {
+          user: {
+            eids: [{ source: 'fresh.com', uids: [{ id: 'fresh-id' }] }]
+          }
+        }
+      };
+
+      ajaxStub.callsFake((url, options) => {
+        // Simulate async response
+        setTimeout(() => {
+          options.success(JSON.stringify(freshData));
+        }, 10);
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      // Wait for background call to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Verify SDK-compatible cache was updated in background
+      const sdkCacheCalls = storage.setDataInLocalStorage.getCalls().filter(call =>
+        call.args[0].includes('OPTABLE_TARGETING_')
+      );
+      expect(sdkCacheCalls.length).to.be.greaterThan(0);
+    });
+
+    it('uses correct SDK cache key format with base64 encoding', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+
+      const targetingData = {
+        ortb2: {
+          user: {
+            eids: [{ source: 'test.com', uids: [{ id: 'test-id' }] }]
+          }
+        }
+      };
+
+      ajaxStub.callsFake((url, options) => {
+        options.success(JSON.stringify(targetingData));
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      // Verify the cache key format: OPTABLE_TARGETING_<base64blob>
+      const sdkCacheCall = storage.setDataInLocalStorage.getCalls().find(call =>
+        call.args[0].startsWith('OPTABLE_TARGETING_')
+      );
+      expect(sdkCacheCall).to.exist;
+      expect(sdkCacheCall.args[0]).to.match(/^OPTABLE_TARGETING_.+$/);
+
+      // Verify it's different from the regular cache key
+      expect(sdkCacheCall.args[0]).to.not.equal('optable-cache:targeting');
+    });
   });
 
   describe('getBidRequestData - SDK Mode', function () {
