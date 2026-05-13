@@ -123,9 +123,17 @@ jobs:
         with:
           name: ${{ needs.test.outputs.coverage }}
 
+      - name: Combine coverage results
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install lcov -y
+          find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o build/coverage/combined.info
+
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
+          file: build/coverage/combined.info
           git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ needs.checkout.outputs.base-branch }}
