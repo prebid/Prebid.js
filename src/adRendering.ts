@@ -224,15 +224,20 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
     CLICKTHROUGH: options?.clickUrl || ''
   }
 
-  return {
+  const result = {
     ...bidResponse,
     ad: replaceMacros(ad, repl),
-    adUrl: replaceMacros(adUrl, repl),
-    safeRenderer: {
+    adUrl: replaceMacros(adUrl, repl)
+  };
+
+  if (safeRenderer) {
+    result.safeRenderer = {
       ...safeRenderer,
       config: typeof safeRenderer?.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer?.config,
     }
-  };
+  }
+
+  return result;
 }
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {

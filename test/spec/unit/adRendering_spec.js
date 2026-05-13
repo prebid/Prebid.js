@@ -134,15 +134,12 @@ describe('adRendering', () => {
       });
 
       describe('when the ad has a safe renderer URL', () => {
-        let bidWithSafeRenderer;
-        beforeEach(() => {
-          bidWithSafeRenderer = {
+        it('does not emit AD_RENDER_SUCCEDED immediately', () => {
+          getRenderingDataStub.returns({ safeRenderer: { url: 'mock-url-safe-renderer' } });
+          let bidWithSafeRenderer = {
             adId: 'mock-ad-id',
             safeRenderer: { url: 'mock-url-safe-renderer' }
           }
-        });
-
-        it('does not emit AD_RENDER_SUCCEDED immediately', () => {
           doRender({ renderFn, bidResponse: bidWithSafeRenderer })
           sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
         });
