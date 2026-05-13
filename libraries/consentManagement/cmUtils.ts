@@ -94,7 +94,7 @@ export function lookupConsentData(
   }).finally(() => {
     timeoutHandle && clearTimeout(timeoutHandle);
   }).catch((e) => {
-    consentDataHandler.setConsentData(null);
+    consentDataHandler.error(e);
     throw e;
   });
 }

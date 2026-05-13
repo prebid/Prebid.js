@@ -1,4 +1,4 @@
-import { cyrb53Hash, isEmpty, isPlainObject, isStr, timestamp } from './utils.js';
+import { cyrb53Hash, isEmpty, isStr, timestamp } from './utils.js';
 import { defer, PbPromise } from './utils/promise.js';
 import { config } from './config.js';
 import type { ModuleType } from "./activities/modules.ts";
