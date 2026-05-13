@@ -1,6 +1,5 @@
 import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../../src/utils.js';
-import { ConsentHandler } from '../../src/consentHandler.js';
 import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';

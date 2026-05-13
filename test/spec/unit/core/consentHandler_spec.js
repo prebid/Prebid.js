@@ -1,9 +1,10 @@
-import { ConsentHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
+import { consentHandler, coppaDataHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
+import { config } from 'src/config.js';
 
 describe('Consent data handler', () => {
   let handler;
   beforeEach(() => {
-    handler = new ConsentHandler();
+    handler = consentHandler();
   })
 
   it('should be disabled, return null data on init', () => {
@@ -78,7 +79,7 @@ describe('Consent data handler', () => {
       expect(handler.hash).to.eql(h1);
     });
     it('does not change when non-hashFields are updated', () => {
-      handler.hashFields = ['field', 'enabled'];
+      handler = consentHandler({ hashFields: ['field', 'enabled'] });
       handler.setConsentData({ field: 'value', enabled: true });
       const h1 = handler.hash;
       handler.setConsentData({ field: 'value', enabled: true, other: 'data' });
@@ -137,6 +138,28 @@ describe('multiHandler', () => {
         expect(multi.hash).to.not.eql(first);
       })
     })
+  })
+})
+
+describe('coppaDataHandler', () => {
+  after(() => {
+    config.resetConfig();
+  })
+  it('should default to false', () => {
+    expect(coppaDataHandler.getCoppa()).to.be.false;
+  });
+
+  it('should reflect configuration updates', () => {
+    config.setConfig({ coppa: true });
+    expect(coppaDataHandler.getCoppa()).to.be.true;
+    config.setConfig({ coppa: false });
+    expect(coppaDataHandler.getCoppa()).to.be.false;
+  });
+  it('should be enabled and ready on reset', () => {
+    config.setConfig({ coppa: true });
+    coppaDataHandler.reset();
+    expect(coppaDataHandler.enabled).to.be.true;
+    expect(coppaDataHandler.getConsentData()).to.be.true;
   })
 })
 
