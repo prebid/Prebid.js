@@ -192,6 +192,18 @@ describe('fluctAdapter', function () {
       expect(request.data.regs).to.eql(undefined);
     });
 
+    it('does not include x-fluct-prebid-wrapper header by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.options.customHeaders['x-fluct-prebid-wrapper']).to.be.undefined;
+    });
+
+    it('includes x-fluct-prebid-wrapper header when fluct.wrapperName is configured', function () {
+      sb.stub(config, 'getConfig').withArgs('fluct').returns({ wrapperName: 'boost' });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.options.customHeaders['x-fluct-prebid-wrapper']).to.equal('boost');
+    });
+
     it('includes filtered user.eids if any exists', function () {
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign({}, bidReq, {

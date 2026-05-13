@@ -112,6 +112,15 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
     const page = bidderRequest.refererInfo.page;
+    const wrapperName = config.getConfig('fluct')?.wrapperName;
+    const customHeaders = {
+      'x-fluct-app': 'prebid/fluctBidAdapter',
+      'x-fluct-version': VERSION,
+      'x-openrtb-version': 2.5,
+    };
+    if (wrapperName) {
+      customHeaders['x-fluct-prebid-wrapper'] = wrapperName;
+    }
 
     _each(validBidRequests, (request) => {
       const impExt = request.ortb2Imp?.ext;
@@ -206,11 +215,7 @@ export const spec = {
         options: {
           contentType: 'application/json',
           withCredentials: true,
-          customHeaders: {
-            'x-fluct-app': 'prebid/fluctBidAdapter',
-            'x-fluct-version': VERSION,
-            'x-openrtb-version': 2.5
-          }
+          customHeaders,
         },
         data: data
       });
