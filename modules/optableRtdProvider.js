@@ -15,10 +15,11 @@ const optableLog = prefixLog(LOG_PREFIX);
 const { logMessage, logWarn, logError } = optableLog;
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
+// RTD module variant for debugging and tracking
+const RTD_MODULE_VARIANT = 'optable-rtd-1.0.0-pr14405';
+
 // localStorage key for targeting cache (direct API mode only)
 const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
-
-// Also look at
 
 // Storage key prefix for passport (visitor ID) - compatible with Web SDK format
 const PASSPORT_KEY_PREFIX = 'OPTABLE_PASSPORT_';
@@ -347,7 +348,7 @@ const buildTargetingURL = (params) => {
   searchParams.set('o', site);
   searchParams.set('t', node);
   searchParams.set('sid', sessionId);
-  searchParams.set('osdk', 'prebid-rtd-1.0.0');
+  searchParams.set('osdk', RTD_MODULE_VARIANT);
 
   if (consent.gpp) {
     searchParams.set('gpp', consent.gpp);
@@ -730,12 +731,23 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
 };
 
 /**
- * Dummy init function
+ * Init function - sets global variant tracking variables
  * @param {Object} config Module configuration
  * @param {boolean} userConsent User consent
  * @returns true
  */
 const init = (config, userConsent) => {
+  // Set variant on window.pbjs for debugging
+  if (typeof window !== 'undefined' && window.pbjs) {
+    window.pbjs._optableRtdVariant = RTD_MODULE_VARIANT;
+  }
+
+  // Set variant on window.optable for debugging
+  if (typeof window !== 'undefined' && window.optable) {
+    window.optable.optableRtdVariant = RTD_MODULE_VARIANT;
+  }
+
+  logMessage('Optable RTD module loaded', RTD_MODULE_VARIANT);
   return true;
 }
 
