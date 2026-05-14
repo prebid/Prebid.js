@@ -2,9 +2,8 @@
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
-import { deepAccess, logWarn } from '../../src/utils.js';
+import { deepAccess, isEmpty, logWarn } from '../../src/utils.js';
 import { isNumber } from '../../src/utils/objects.js';
-import { isEmpty } from '../../src/utils.js';
 import { ORTB_MAP } from './config.js';
 import { submodule } from '../../src/hook.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
