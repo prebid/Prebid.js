@@ -115,7 +115,6 @@ module.exports = [
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
-      'import/named': 'error',
       'no-restricted-syntax': [
         'error',
         {
