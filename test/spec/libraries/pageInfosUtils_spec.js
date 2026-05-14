@@ -38,7 +38,6 @@ describe('pageInfosUtils', () => {
       }
     });
 
-
     it('should return the title from the top-level document', () => {
       const result = getPageTitle(winMock);
       expect(result).to.equal('Top Document Title');
