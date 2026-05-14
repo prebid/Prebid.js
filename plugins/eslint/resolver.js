@@ -17,10 +17,11 @@ module.exports = {
   isInDirectory,
   CODE_EXT,
   resolve(source, file) {
-    const {name, dir} = path.parse(source);
+    const {name, dir, ext} = path.parse(source);
     const fileDir = path.dirname(file);
     const isTest = isInDirectory(file, TEST_DIR);
-    const fileNames = [''].concat(CODE_EXT).map((ext) => path.format({name, dir, ext}))
+    const fileNames = (!ext || CODE_EXT.includes(ext) ? [''].concat(CODE_EXT) : [ext])
+      .map((ext) => path.format({name, dir, ext}))
     const candidates = fileNames.map(fn => [fileDir, fn]);
     if (isTest && !source.startsWith('.')) {
       // tests can do import like 'src/auction.js'
