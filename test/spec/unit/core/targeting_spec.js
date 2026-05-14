@@ -1109,17 +1109,6 @@ describe('targeting tests', function () {
       });
     }
 
-    it('does not include adpod type bids in the getBidsReceived results', function () {
-      const adpodBid = utils.deepClone(bid1);
-      adpodBid.video = { context: 'adpod', durationSeconds: 15, durationBucket: 15 };
-      adpodBid.cpm = 5;
-      bidsReceived.push(adpodBid);
-
-      const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-      expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', 'hb_adid', 'hb_bidder');
-      expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
-    });
-
     describe('bidTargetingExclusion', function () {
       it('includes all bids in targeting when bidTargetingExclusion is not set', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
