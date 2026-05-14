@@ -261,9 +261,7 @@ module.exports = [
       }
     },
     rules: {
-      'import/named': 'off'
-    },
-    rules: {
+      'import/named': 'off',
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
