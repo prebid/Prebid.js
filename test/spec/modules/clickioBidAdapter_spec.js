@@ -35,6 +35,7 @@ describe('clickioBidAdapter', function () {
               id: '1bh7jku7-ko2g-8654-ab72-h268abcde271',
               impid: 'bid-123',
               price: 1.5,
+              exp: 120,
               adm: '<div>Test Ad</div>',
               adomain: ['example.com'],
               cid: '1242512',
@@ -112,7 +113,28 @@ describe('clickioBidAdapter', function () {
       expect(bid.ad).to.contain('<div>Test Ad</div>');
       expect(bid.creativeId).to.equal('535231');
       expect(bid.netRevenue).to.equal(true);
-      expect(bid.ttl).to.equal(30);
+      expect(bid.ttl).to.equal(120);
+    });
+
+    it('should use fallback ttl when exp is absent', () => {
+      const request = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST)[0];
+      const responseWithoutExp = {
+        body: {
+          ...SAMPLE_RESPONSE.body,
+          seatbid: [{
+            ...SAMPLE_RESPONSE.body.seatbid[0],
+            bid: SAMPLE_RESPONSE.body.seatbid[0].bid.map((bid) => {
+              const { exp, ...rest } = bid;
+              return rest;
+            })
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(responseWithoutExp, request);
+
+      expect(bids).to.be.an('array');
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].ttl).to.equal(30);
     });
 
     it('should return empty array if no bids in response', () => {
