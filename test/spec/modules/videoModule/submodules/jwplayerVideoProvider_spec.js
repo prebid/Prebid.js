@@ -1560,8 +1560,6 @@ describe('adStateFactory', function () {
     const clickThroughUrl = 'clickThroughUrl';
     const witem = 'witem';
     const wcount = 'wcount';
-    const podcount = 'podcount';
-    const sequence = 'sequence';
 
     adState.updateForEvent({
       tag,
@@ -1583,9 +1581,7 @@ describe('adStateFactory', function () {
       creativetype,
       clickThroughUrl,
       witem,
-      wcount,
-      podcount,
-      sequence
+      wcount
     });
 
     const state = adState.getState();
@@ -1610,8 +1606,6 @@ describe('adStateFactory', function () {
     expect(state.adPlacementType).to.be.undefined;
     expect(state.waterfallIndex).to.equal(witem);
     expect(state.waterfallCount).to.equal(wcount);
-    expect(state.adPodCount).to.equal(podcount);
-    expect(state.adPodIndex).to.equal(sequence);
   });
 
   it('should convert placement to oRTB value', function () {

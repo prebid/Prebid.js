@@ -101,7 +101,6 @@ function getMediaTypeAlias(mediaType) {
     banner: 'ban',
     outstream: 'vidout',
     instream: 'vidin',
-    adpod: 'vidadpod',
     native: 'nat'
   };
   return mediaTypesMap[mediaType] || mediaType;
