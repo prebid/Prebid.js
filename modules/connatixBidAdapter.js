@@ -13,12 +13,9 @@ import {
   deepSetValue,
   formatQS,
   getWindowTop,
-  isArray,
-  isFn,
-  isNumber,
-  isStr,
   logError
 } from '../src/utils.js';
+import { isArray, isFn, isNumber, isStr } from '../src/utils/objects.js';
 
 import {
   BANNER,
