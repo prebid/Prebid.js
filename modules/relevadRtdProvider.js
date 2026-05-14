@@ -7,7 +7,7 @@
  */
 
 import { deepSetValue, logError, mergeDeep } from '../src/utils.js';
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';

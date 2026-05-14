@@ -5,7 +5,8 @@
  * their system and for various other features/modules in Prebid.js.
  */
 import { deepSetValue, logInfo, logWarn } from '../src/utils.js';
-import { isEmpty, isPlainObject, isStr } from '../src/utils/objects.js';
+import { isPlainObject, isStr } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gppDataHandler } from '../src/adapterManager.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';

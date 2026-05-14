@@ -1,5 +1,6 @@
 import { deepAccess, deepSetValue, logError, logInfo } from '../src/utils.js';
-import { isEmpty, isNumber } from '../src/utils/objects.js';
+import { isNumber } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

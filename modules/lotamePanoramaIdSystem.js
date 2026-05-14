@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 import { timestamp, logError, buildUrl } from '../src/utils.js';
-import { isStr, isBoolean, isEmpty, isArray } from '../src/utils/objects.js';
+import { isStr, isBoolean, isArray } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';

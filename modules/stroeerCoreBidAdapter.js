@@ -1,5 +1,6 @@
 import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, logWarn } from '../src/utils.js';
-import { isEmpty, isStr } from '../src/utils/objects.js';
+import { isStr } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';

@@ -1,5 +1,5 @@
 import { parseSizesInput, isGptPubadsDefined, getWinDimensions } from '../src/utils.js';
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';

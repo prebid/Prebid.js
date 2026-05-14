@@ -1,5 +1,6 @@
 import { cleanObj, deepAccess, deepSetValue, inIframe, logError, logWarn, mergeDeep, triggerPixel } from '../src/utils.js';
-import { deepClone, isArray, isEmpty, isFn, isInteger, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
+import { deepClone, isArray, isFn, isInteger, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

@@ -1,5 +1,6 @@
 import { deepSetValue, deepAccess, triggerPixel, logError, shuffle } from '../src/utils.js';
-import { deepClone, isEmpty } from '../src/utils/objects.js';
+import { deepClone } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

@@ -1,5 +1,5 @@
 import { parseSizesInput } from '../src/utils.js';
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';

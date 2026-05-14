@@ -8,7 +8,8 @@ import { toOrtbNativeRequest } from '../src/native.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, getBidIdParameter, logInfo, logWarn, setOnAny, triggerNurlWithCpm, triggerPixel } from '../src/utils.js';
-import { isArray, isEmpty, isFn, isInteger, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
+import { isArray, isFn, isInteger, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapterManager.js').BidRequest} BidRequest

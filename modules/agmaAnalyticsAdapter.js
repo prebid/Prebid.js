@@ -1,6 +1,6 @@
 import { ajax } from '../src/ajax.js';
 import { generateUUID, logInfo, logError, getWindowSelf, getPerformanceNow, isEmptyStr } from '../src/utils.js';
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';

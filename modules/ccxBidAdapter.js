@@ -1,5 +1,6 @@
 import { _each, deepAccess, logWarn } from '../src/utils.js';
-import { isArray, isEmpty } from '../src/utils/objects.js';
+import { isArray } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 

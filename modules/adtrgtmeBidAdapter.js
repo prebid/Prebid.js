@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { generateUUID, logWarn } from '../src/utils.js';
-import { isFn, isStr, isNumber, isEmpty, isPlainObject } from '../src/utils/objects.js';
+import { isFn, isStr, isNumber, isPlainObject } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getDNT } from '../libraries/dnt/index.js';

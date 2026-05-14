@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, generateUUID } from '../src/utils.js';
-import { isArray, isNumber, isEmpty } from '../src/utils/objects.js';
+import { isArray, isNumber } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';

@@ -1,5 +1,5 @@
 import { logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize } from '../../../src/utils.js';
-import { isEmpty } from '../../../src/utils/objects.js';
+import { isEmpty } from '../../../src/utils.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
 
 import { ORTB_VIDEO_PARAMS } from '../../../src/video.js';

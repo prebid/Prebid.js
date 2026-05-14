@@ -101,7 +101,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     }
 
     return serverBody.bids.map((bidResponse: AsterioServerBid) => {
-      const bid = deepClone(bidResponse);
+      const bid: any = deepClone(bidResponse);
 
       bid.cpm = parseFloat(String(bidResponse.cpm));
       bid.requestId = bidResponse.requestId;

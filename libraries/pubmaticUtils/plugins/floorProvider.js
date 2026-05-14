@@ -1,6 +1,6 @@
 // plugins/floorProvider.js
 import { logInfo, logError, logMessage } from '../../../src/utils.js';
-import { isEmpty } from '../../../src/utils/objects.js';
+import { isEmpty } from '../../../src/utils.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../../userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue, getDayOfWeek, getHourOfDay } from '../pubmaticUtils.js';
 import { config as conf } from '../../../src/config.js';

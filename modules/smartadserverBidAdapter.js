@@ -1,5 +1,6 @@
 import { deepAccess, logError } from '../src/utils.js';
-import { deepClone, isArray, isArrayOfNums, isEmpty, isInteger } from '../src/utils/objects.js';
+import { deepClone, isArray, isArrayOfNums, isInteger } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'

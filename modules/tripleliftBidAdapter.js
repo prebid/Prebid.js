@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { logMessage, logError, logWarn } from '../src/utils.js';
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';

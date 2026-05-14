@@ -3,7 +3,8 @@
  * @module modules/firstPartyData
  */
 import { deepAccess, logWarn } from '../../src/utils.js';
-import { isEmpty, isNumber } from '../../src/utils/objects.js';
+import { isNumber } from '../../src/utils/objects.js';
+import { isEmpty } from '../../src/utils.js';
 import { ORTB_MAP } from './config.js';
 import { submodule } from '../../src/hook.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';

@@ -1,4 +1,4 @@
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 
 export const NATIVE_PARAMS = {
   title: {

@@ -13,7 +13,7 @@ import {
   getPublisherIdFromBids,
   packageOrtbRequest
 } from '../libraries/blueUtils/bidderUtils.js';
-import { isEmpty } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';

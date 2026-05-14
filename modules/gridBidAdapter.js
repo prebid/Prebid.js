@@ -1,5 +1,6 @@
 import { deepAccess, logError, parseGPTSingleSizeArrayToRtbSize, generateUUID, mergeDeep, logWarn } from '../src/utils.js';
-import { isEmpty, isNumber, isStr, isPlainObject } from '../src/utils/objects.js';
+import { isNumber, isStr, isPlainObject } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';

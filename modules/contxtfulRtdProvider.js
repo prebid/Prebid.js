@@ -7,7 +7,8 @@
 
 import { submodule } from '../src/hook.js';
 import { logInfo, logError, mergeDeep, isEmptyStr, buildUrl, generateUUID, getWinDimensions, canAccessWindowTop, deepAccess, getSafeframeGeometry, getWindowSelf, getWindowTop, inIframe, isSafeFrameWindow } from '../src/utils.js';
-import { isStr, isEmpty, isArray } from '../src/utils/objects.js';
+import { isStr, isArray } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

@@ -1,5 +1,6 @@
 import { contains, deepAccess, getBidIdParameter, logInfo, triggerPixel } from '../../src/utils.js';
-import { isArray, isEmpty, isFn, isInteger, isPlainObject } from '../../src/utils/objects.js';
+import { isArray, isFn, isInteger, isPlainObject } from '../../src/utils/objects.js';
+import { isEmpty } from '../../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { config } from '../../src/config.js';
 import { getDNT } from '../dnt/index.js';

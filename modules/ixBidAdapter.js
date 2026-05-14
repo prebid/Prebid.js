@@ -1,5 +1,6 @@
 import { contains, deepAccess, deepSetValue, inIframe, logError, logWarn, mergeDeep, safeJSONParse } from '../src/utils.js';
-import { deepClone, isArray, isEmpty, isFn, isInteger, isNumber, isStr, isPlainObject } from '../src/utils/objects.js';
+import { deepClone, isArray, isFn, isInteger, isNumber, isStr, isPlainObject } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';

@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { generateUUID, logError, logInfo, triggerPixel } from '../src/utils.js';
-import { isEmpty, isFn, isPlainObject } from '../src/utils/objects.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
+import { isEmpty } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
