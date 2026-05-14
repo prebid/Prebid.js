@@ -1,4 +1,4 @@
-import { isEmpty } from '../../src/utils.js';
+import { isEmpty } from '../../src/utils/objects.js';
 import { config } from '../../src/config.js';
 import { createNativeRequest, createBannerRequest, createVideoRequest, getFloor, prepareSite, prepareConsents, prepareEids } from './index.js';
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';

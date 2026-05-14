@@ -3,7 +3,8 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnit } from '../../../modules/ixBidAdapter.js';
-import { deepAccess, deepClone } from '../../../src/utils.js';
+import { deepAccess } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 

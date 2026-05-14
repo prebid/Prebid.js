@@ -1,15 +1,5 @@
-import {
-  buildUrl,
-  deepAccess,
-  getBidIdParameter,
-  isArray,
-  isFn,
-  isPlainObject,
-  isStr,
-  logWarn,
-  mergeDeep,
-  parseUrl,
-} from '../src/utils.js';
+import { buildUrl, deepAccess, getBidIdParameter, logWarn, mergeDeep, parseUrl } from '../src/utils.js';
+import { isArray, isFn, isPlainObject, isStr } from '../src/utils/objects.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

@@ -1,4 +1,5 @@
-import { _each, isStr, isArray, parseSizesInput } from '../src/utils.js';
+import { _each, parseSizesInput } from '../src/utils.js';
+import { isStr, isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 

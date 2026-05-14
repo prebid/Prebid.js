@@ -1,15 +1,5 @@
-import {
-  _each,
-  isArray,
-  getUniqueIdentifierStr,
-  deepSetValue,
-  logError,
-  deepAccess,
-  isInteger,
-  logWarn,
-  getBidIdParameter,
-  mergeDeep
-} from '../src/utils.js';
+import { _each, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, logWarn, getBidIdParameter, mergeDeep } from '../src/utils.js';
+import { isArray, isInteger } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
   BANNER,

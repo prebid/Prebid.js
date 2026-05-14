@@ -7,7 +7,7 @@
 
 import { expect } from 'chai';
 import { spec, storage } from 'modules/mediafuseBidAdapter.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 import sinon from 'sinon';

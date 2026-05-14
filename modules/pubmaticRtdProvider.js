@@ -1,5 +1,6 @@
 import { submodule } from '../src/hook.js';
-import { logError, mergeDeep, isPlainObject, isEmpty } from '../src/utils.js';
+import { logError, mergeDeep } from '../src/utils.js';
+import { isPlainObject, isEmpty } from '../src/utils/objects.js';
 
 import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js';
 import { FloorProvider } from '../libraries/pubmaticUtils/plugins/floorProvider.js';

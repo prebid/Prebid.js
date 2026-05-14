@@ -1,7 +1,8 @@
 import { spec, converter } from 'modules/scatteredBidAdapter.js';
 import { assert } from 'chai';
 import { config } from 'src/config.js';
-import { deepClone, mergeDeep } from '../../../src/utils.js';
+import { mergeDeep } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 describe('Scattered adapter', function () {
   describe('isBidRequestValid', function () {
     // A valid bid

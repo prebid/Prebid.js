@@ -6,7 +6,8 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { logError, logInfo, logWarn, deepClone } from '../src/utils.js';
+import { logError, logInfo, logWarn } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajaxBuilder, processRequestOptions } from '../src/ajax.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 

@@ -1,4 +1,5 @@
-import { isArray, deepAccess, isPlainObject } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
+import { isArray, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

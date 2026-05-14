@@ -1,23 +1,6 @@
 import Adapter from '../../src/adapter.js';
-import {
-  compressDataWithGZip,
-  debugTurnedOn,
-  deepClone,
-  flatten,
-  generateUUID,
-  getParameterByName,
-  insertUserSyncIframe,
-  isGzipCompressionSupported,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  triggerPixel,
-  uniques,
-} from '../../src/utils.js';
+import { compressDataWithGZip, debugTurnedOn, flatten, generateUUID, getParameterByName, insertUserSyncIframe, isGzipCompressionSupported, logError, logInfo, logMessage, logWarn, triggerPixel, uniques } from '../../src/utils.js';
+import { deepClone, isNumber, isPlainObject, isStr } from '../../src/utils/objects.js';
 import { DEBUG_MODE, EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
 import adapterManager, { s2sActivityParams } from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';

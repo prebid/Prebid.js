@@ -1,5 +1,6 @@
 import { config } from '../src/config.js';
-import { deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, getWindowTop, logInfo, logWarn } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { setupAdUnitMediaTypes } from '../src/adapterManager.js';

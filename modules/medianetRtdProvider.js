@@ -1,4 +1,5 @@
-import { isEmptyStr, isFn, isStr, logError, mergeDeep } from '../src/utils.js';
+import { isEmptyStr, logError, mergeDeep } from '../src/utils.js';
+import { isFn, isStr } from '../src/utils/objects.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';

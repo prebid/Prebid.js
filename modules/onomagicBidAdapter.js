@@ -1,12 +1,5 @@
-import {
-  _each,
-  createTrackPixelHtml, getBidIdParameter,
-  getUniqueIdentifierStr,
-  getWindowTop,
-  isArray,
-  logError,
-  logWarn
-} from '../src/utils.js';
+import { _each, createTrackPixelHtml, getBidIdParameter, getUniqueIdentifierStr, getWindowTop, logError, logWarn } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';

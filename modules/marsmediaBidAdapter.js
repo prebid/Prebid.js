@@ -1,5 +1,6 @@
 'use strict';
-import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
+import { deepAccess, parseSizesInput, getWindowTop, deepSetValue, triggerPixel, getWindowSelf } from '../src/utils.js';
+import { isArray, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

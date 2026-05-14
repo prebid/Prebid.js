@@ -1,17 +1,5 @@
-import {
-  _each,
-  deepAccess,
-  deepSetValue,
-  getBidIdParameter,
-  getDefinedParams,
-  getWinDimensions,
-  getWindowTop,
-  isArray,
-  isStr,
-  parseGPTSingleSizeArrayToRtbSize,
-  parseUrl,
-  triggerPixel,
-} from '../src/utils.js';
+import { _each, deepAccess, deepSetValue, getBidIdParameter, getWinDimensions, getWindowTop, parseGPTSingleSizeArrayToRtbSize, parseUrl, triggerPixel } from '../src/utils.js';
+import { getDefinedParams, isArray, isStr } from '../src/utils/objects.js';
 
 import { getAd } from '../libraries/targetVideoUtils/bidderUtils.js';
 

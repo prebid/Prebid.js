@@ -3,7 +3,8 @@ import { type AdapterRequest, type BidderSpec, registerBidder } from '../src/ada
 import { type Bid } from '../src/bidfactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isStr, logError, triggerPixel } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, triggerPixel } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 
 /**
  * Prebid.js adapter for goadserver — a self-hosted, multi-tenant ad

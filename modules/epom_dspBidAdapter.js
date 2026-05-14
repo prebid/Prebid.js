@@ -6,7 +6,8 @@
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { logError, logWarn, deepClone } from '../src/utils.js';
+import { logError, logWarn } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'epom_dsp';

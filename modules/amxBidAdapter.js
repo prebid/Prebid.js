@@ -1,17 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {
-  _each,
-  deepAccess,
-  formatQS,
-  getUniqueIdentifierStr,
-  isArray,
-  isFn,
-  logError,
-  parseUrl,
-  triggerPixel,
-  generateUUID,
-} from '../src/utils.js';
+import { _each, deepAccess, formatQS, getUniqueIdentifierStr, logError, parseUrl, triggerPixel, generateUUID } from '../src/utils.js';
+import { isArray, isFn } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';

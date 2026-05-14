@@ -12,22 +12,8 @@ import { isValidVideoBid } from '../video.js';
 import { EVENTS, REJECTION_REASON, DEBUG_MODE } from '../constants.js';
 import * as events from '../events.js';
 
-import {
-  delayExecution,
-  isArray,
-  isPlainObject,
-  logError,
-  logWarn,
-  memoize,
-  parseQueryStringParameters,
-  parseSizesInput,
-  pick,
-  uniques,
-  isGzipCompressionSupported,
-  compressDataWithGZip,
-  getParameterByName,
-  debugTurnedOn
-} from '../utils.js';
+import { delayExecution, logError, logWarn, memoize, parseQueryStringParameters, parseSizesInput, pick, uniques, isGzipCompressionSupported, compressDataWithGZip, getParameterByName, debugTurnedOn } from '../utils.js';
+import { isArray, isPlainObject } from '../utils/objects.js';
 import { hook } from '../hook.js';
 import { auctionManager } from '../auctionManager.js';
 import { bidderSettings } from '../bidderSettings.js';

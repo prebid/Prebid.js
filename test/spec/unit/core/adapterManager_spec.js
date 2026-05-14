@@ -25,7 +25,7 @@ import { GDPR_GVLIDS } from '../../../../src/consentHandler.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
 import { ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS } from '../../../../src/activities/activities.js';
 import { reset as resetAdUnitCounters } from '../../../../src/adUnits.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import {
   EVENT_TYPE_IMPRESSION,
   EVENT_TYPE_WIN,

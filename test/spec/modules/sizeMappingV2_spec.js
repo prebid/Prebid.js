@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-import { internal as utilInternal, deepClone } from '../../../src/utils.js';
+import { internal as utilInternal } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import {
   isUsingNewSizeMapping,
   checkAdUnitSetupHook,

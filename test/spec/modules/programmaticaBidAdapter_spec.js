@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/programmaticaBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('programmaticaBidAdapterTests', function () {
   const bidRequestData = {

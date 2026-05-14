@@ -1,6 +1,7 @@
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
+import { parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';

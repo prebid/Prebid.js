@@ -1,6 +1,7 @@
 import { submodule, getHook } from '../src/hook.js';
 import adapterManager from '../src/adapterManager.js';
-import { logInfo, deepClone, isArray, isStr, isPlainObject, logError } from '../src/utils.js';
+import { logInfo, logError } from '../src/utils.js';
+import { deepClone, isArray, isStr, isPlainObject } from '../src/utils/objects.js';
 
 // Constants
 const MODULE_NAME = 'raveltech';

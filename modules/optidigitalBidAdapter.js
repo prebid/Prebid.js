@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { deepAccess, parseSizesInput } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**

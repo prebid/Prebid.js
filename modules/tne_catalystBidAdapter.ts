@@ -1,6 +1,7 @@
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { generateUUID, deepAccess, isArray, isFn } from '../src/utils.js';
+import { generateUUID, deepAccess } from '../src/utils.js';
+import { isArray, isFn } from '../src/utils/objects.js';
 
 /**
  * TNE Catalyst Bid Adapter

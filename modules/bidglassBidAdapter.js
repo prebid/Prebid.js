@@ -1,4 +1,5 @@
-import { _each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter } from '../src/utils.js';
+import { _each, getUniqueIdentifierStr, getBidIdParameter } from '../src/utils.js';
+import { isArray, deepClone } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**

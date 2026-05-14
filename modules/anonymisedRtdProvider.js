@@ -7,7 +7,8 @@
  */
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
-import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 /**

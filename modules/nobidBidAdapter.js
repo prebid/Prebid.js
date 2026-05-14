@@ -1,4 +1,5 @@
-import { logInfo, deepAccess, logWarn, isArray, getParameterByName, getWinDimensions } from '../src/utils.js';
+import { logInfo, deepAccess, logWarn, getParameterByName, getWinDimensions } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';

@@ -1,4 +1,5 @@
-import { logError, logInfo, logWarn, logMessage, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
+import { logError, logInfo, logWarn, logMessage, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';

@@ -1,5 +1,6 @@
 import { NATIVE_ASSETS, NATIVE_ASSETS_IDS } from './nativeAssets.js';
-import { isPlainObject, isArray, isArrayOfNums, parseUrl, isFn } from '../../src/utils.js';
+import { parseUrl } from '../../src/utils.js';
+import { isPlainObject, isArray, isArrayOfNums, isFn } from '../../src/utils/objects.js';
 
 /**
  * Builds a native request object based on the bid request

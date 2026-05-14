@@ -3,12 +3,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
-import {
-  deepSetValue,
-  formatQS,
-  mergeDeep,
-  isPlainObject
-} from '../src/utils.js';
+import { deepSetValue, formatQS, mergeDeep } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import {
   outstreamRenderer,
   bidShouldUsePlayerWidthAndHeight

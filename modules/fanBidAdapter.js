@@ -1,7 +1,8 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isNumber, logInfo, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { deepAccess, deepSetValue, logInfo, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { isNumber } from '../src/utils/objects.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { Renderer } from '../src/Renderer.js';

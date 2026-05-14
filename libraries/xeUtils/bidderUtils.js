@@ -1,4 +1,5 @@
-import { deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject } from '../../src/utils.js';
+import { deepAccess, getBidIdParameter, logError, parseSizesInput } from '../../src/utils.js';
+import { isFn, isArray, isPlainObject } from '../../src/utils/objects.js';
 import { getAdUnitSizes } from '../sizeUtils/sizeUtils.js';
 
 export function getBidFloor(bid, currency = 'USD') {

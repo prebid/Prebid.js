@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/adrelevantisBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ssp.adrelevantis.com/prebid';

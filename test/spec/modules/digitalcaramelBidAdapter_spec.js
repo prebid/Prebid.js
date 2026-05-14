@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/digitalcaramelBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('digitalcaramelBidAdapterTests', function () {
   const bidRequestData = {

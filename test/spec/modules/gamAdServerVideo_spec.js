@@ -4,7 +4,7 @@ import parse from 'url-parse';
 import { buildGamVideoUrl as buildDfpVideoUrl, dep } from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { config } from 'src/config.js';
 import { targeting } from 'src/targeting.js';
 import { auctionManager } from 'src/auctionManager.js';

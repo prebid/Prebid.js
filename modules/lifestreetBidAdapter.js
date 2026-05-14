@@ -1,4 +1,4 @@
-import { isInteger } from '../src/utils.js';
+import { isInteger } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 

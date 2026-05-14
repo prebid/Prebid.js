@@ -1,15 +1,5 @@
-import {
-  deepAccess,
-  deepSetValue,
-  isArray,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logWarn,
-  mergeDeep
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
+import { isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';

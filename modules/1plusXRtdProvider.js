@@ -2,11 +2,8 @@ import { submodule } from '../src/hook.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
-import {
-  logMessage, logError,
-  deepAccess, deepSetValue, mergeDeep,
-  isNumber, isArray,
-} from '../src/utils.js';
+import { logMessage, logError, deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
+import { isNumber, isArray } from '../src/utils/objects.js';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';

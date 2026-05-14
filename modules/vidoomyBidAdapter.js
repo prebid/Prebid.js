@@ -1,4 +1,5 @@
-import { deepAccess, isPlainObject, logError, parseSizesInput } from '../src/utils.js';
+import { deepAccess, logError, parseSizesInput } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

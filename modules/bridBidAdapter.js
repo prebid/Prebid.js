@@ -1,4 +1,5 @@
-import { _each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { _each, deepAccess, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { getDefinedParams } from '../src/utils/objects.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getAd, getSiteObj, getSyncResponse } from '../libraries/targetVideoUtils/bidderUtils.js'

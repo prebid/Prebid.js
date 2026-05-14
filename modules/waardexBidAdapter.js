@@ -1,4 +1,5 @@
-import { deepAccess, getBidIdParameter, isArray, logError } from '../src/utils.js';
+import { deepAccess, getBidIdParameter, logError } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

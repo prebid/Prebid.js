@@ -1,4 +1,5 @@
-import { deepAccess, getWindowTop, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
+import { deepAccess, getWindowTop, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, mergeDeep, getWinDimensions } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

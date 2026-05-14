@@ -13,7 +13,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { version } from 'package.json';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import { hook } from '../../../src/hook.js';

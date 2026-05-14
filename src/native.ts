@@ -1,16 +1,5 @@
-import {
-  deepClone,
-  getDefinedParams,
-  insertHtmlIntoIframe,
-  isArray,
-  isBoolean,
-  isInteger,
-  isNumber,
-  isPlainObject,
-  logError,
-  pick,
-  triggerPixel
-} from './utils.js';
+import { insertHtmlIntoIframe, logError, pick, triggerPixel } from './utils.js';
+import { deepClone, getDefinedParams, isArray, isBoolean, isInteger, isNumber, isPlainObject } from './utils/objects.js';
 
 import { auctionManager } from './auctionManager.js';
 import {

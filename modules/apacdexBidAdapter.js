@@ -1,4 +1,5 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
+import { deepAccess, replaceAuctionPrice, logError } from '../src/utils.js';
+import { isPlainObject, isArray, isFn, deepClone } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';

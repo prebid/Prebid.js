@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
+import { generateUUID, getWinDimensions } from '../src/utils.js';
+import { isArray, isNumber } from '../src/utils/objects.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType } from '../libraries/userAgentUtils/index.js';

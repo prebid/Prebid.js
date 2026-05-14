@@ -10,23 +10,8 @@ import { loadExternalScript } from '../src/adloader.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {
-  canAccessWindowTop,
-  deepAccess,
-  deepSetValue,
-  generateUUID,
-  getDomLoadingDuration,
-  getSafeframeGeometry,
-  getUniqueIdentifierStr,
-  getWinDimensions,
-  getWindowSelf,
-  getWindowTop,
-  inIframe,
-  isNumber,
-  isSafeFrameWindow,
-  isStr,
-  prefixLog
-} from '../src/utils.js';
+import { canAccessWindowTop, deepAccess, deepSetValue, generateUUID, getDomLoadingDuration, getSafeframeGeometry, getUniqueIdentifierStr, getWinDimensions, getWindowSelf, getWindowTop, inIframe, isSafeFrameWindow, prefixLog } from '../src/utils.js';
+import { isNumber, isStr } from '../src/utils/objects.js';
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';

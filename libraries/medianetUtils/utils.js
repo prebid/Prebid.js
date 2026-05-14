@@ -1,4 +1,5 @@
-import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.js';
+import { _map, deepAccess, uniques } from '../../src/utils.js';
+import { isFn, isPlainObject } from '../../src/utils/objects.js';
 import { mnetGlobals } from './constants.js';
 import { getViewportSize } from '../viewport/viewport.js';
 

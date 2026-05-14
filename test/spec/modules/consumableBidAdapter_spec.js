@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/consumableBidAdapter.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';

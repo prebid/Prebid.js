@@ -1,4 +1,5 @@
-import { mergeDeep, deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js';
+import { mergeDeep, deepEqual, deepAccess, deepSetValue } from '../../src/utils.js';
+import { deepClone } from '../../src/utils/objects.js';
 import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js';
 
 /**

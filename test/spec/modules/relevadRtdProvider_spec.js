@@ -1,7 +1,8 @@
 import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
-import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js';
+import { deepAccess, deepSetValue } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 

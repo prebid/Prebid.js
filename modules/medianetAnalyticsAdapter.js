@@ -1,14 +1,5 @@
-import {
-  deepAccess,
-  deepSetValue,
-  groupBy,
-  isFn,
-  isPlainObject,
-  logError,
-  logInfo,
-  parseUrl,
-  safeJSONEncode,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, groupBy, logError, logInfo, parseUrl, safeJSONEncode } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';

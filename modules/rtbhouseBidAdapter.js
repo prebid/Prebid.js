@@ -1,4 +1,5 @@
-import { deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue } from '../src/utils.js';
+import { deepAccess, logError, mergeDeep, deepSetValue } from '../src/utils.js';
+import { deepClone, isArray, isEmpty, isPlainObject, isNumber, isStr } from '../src/utils/objects.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

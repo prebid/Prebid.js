@@ -1,4 +1,5 @@
-import { deepClone, logError, getParameterByName, logMessage } from '../src/utils.js';
+import { logError, getParameterByName, logMessage } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';

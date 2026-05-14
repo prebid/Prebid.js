@@ -1,6 +1,6 @@
 import { spec } from '../../../modules/targetVideoBidAdapter.js'
 import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 describe('TargetVideo Bid Adapter', function() {
   const bidder = 'targetVideo';

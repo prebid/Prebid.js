@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { _each, isEmpty, parseSizesInput } from '../src/utils.js';
+import { _each, parseSizesInput } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';

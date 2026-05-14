@@ -1,6 +1,7 @@
 'use strict';
 
-import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
+import { logWarn, deepAccess } from '../src/utils.js';
+import { isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

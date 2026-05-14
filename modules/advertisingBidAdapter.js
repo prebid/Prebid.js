@@ -1,6 +1,7 @@
 'use strict';
 
-import { deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, logWarn, mergeDeep } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 

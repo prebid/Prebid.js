@@ -3,7 +3,8 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { isNumber, isPlainObject, isStr, logError, logWarn } from '../src/utils.js';
+import { logError, logWarn } from '../src/utils.js';
+import { isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
 

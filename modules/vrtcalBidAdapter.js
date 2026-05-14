@@ -2,7 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 
 const GVLID = 706;
 const VRTCAL_USER_SYNC_URL_IFRAME = `https://usync.vrtcal.com/i?ssp=1804&synctype=iframe`;

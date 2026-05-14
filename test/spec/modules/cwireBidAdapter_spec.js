@@ -1,7 +1,8 @@
 import { expect } from "chai";
 import { newBidder } from "../../../src/adapters/bidderFactory.js";
 import { BID_ENDPOINT, spec, storage } from "../../../modules/cwireBidAdapter.js";
-import { deepClone, logInfo } from "../../../src/utils.js";
+import { logInfo } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import * as utils from "src/utils.js";
 import sinon, { stub } from "sinon";
 import { config } from "../../../src/config.js";

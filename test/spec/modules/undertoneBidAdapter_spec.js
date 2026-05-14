@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/undertoneBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import { deepClone, getWinDimensions } from '../../../src/utils.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import * as adUnits from 'src/utils/adUnits';
 import { getAdUnitElement } from 'src/utils/adUnits';
 

@@ -1,4 +1,5 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
+import { generateUUID, deepSetValue, deepAccess, logError, logWarn } from '../src/utils.js';
+import { isArray, isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';

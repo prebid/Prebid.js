@@ -3,7 +3,7 @@ import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidA
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)

@@ -1,4 +1,5 @@
-import { _each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn } from '../../src/utils.js';
+import { _each, deepAccess, mergeDeep, logWarn } from '../../src/utils.js';
+import { isArray, isNumber, isStr } from '../../src/utils/objects.js';
 import { getAllOrtbKeywords } from '../keywords/keywords.js';
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
 

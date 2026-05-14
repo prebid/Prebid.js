@@ -4,11 +4,8 @@
  * @module modules/adplusIdSystem
  * @requires module:modules/userId
  */
-import {
-  logError,
-  logWarn,
-  isPlainObject,
-} from '../src/utils.js';
+import { logError, logWarn } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import {
   ajax
 } from '../src/ajax.js'

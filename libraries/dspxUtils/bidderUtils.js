@@ -1,5 +1,6 @@
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isArray, isEmptyStr, isFn } from '../../src/utils.js';
+import { deepAccess, isEmptyStr } from '../../src/utils.js';
+import { isArray, isFn } from '../../src/utils/objects.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

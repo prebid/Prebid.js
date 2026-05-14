@@ -1,12 +1,5 @@
-import {
-  deepAccess,
-  getWindowSelf,
-  isArray,
-  isStr,
-  parseQueryStringParameters,
-  replaceAuctionPrice,
-  triggerPixel
-} from '../src/utils.js';
+import { deepAccess, getWindowSelf, parseQueryStringParameters, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { isArray, isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';

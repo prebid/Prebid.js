@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/stackadaptBidAdapter';
-import { deepClone, mergeDeep, deepSetValue } from 'src/utils.js';
+import { mergeDeep, deepSetValue } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { config } from 'src/config';
 
 describe('stackadaptBidAdapter', function () {

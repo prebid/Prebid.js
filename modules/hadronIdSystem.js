@@ -8,7 +8,8 @@
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
-import { isFn, isStr, isPlainObject, logError, logInfo } from '../src/utils.js';
+import { logError, logInfo } from '../src/utils.js';
+import { isFn, isStr, isPlainObject } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';

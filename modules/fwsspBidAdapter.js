@@ -1,4 +1,5 @@
-import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
+import { logInfo, logError, logWarn, deepAccess } from '../src/utils.js';
+import { isArray, isFn } from '../src/utils/objects.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';

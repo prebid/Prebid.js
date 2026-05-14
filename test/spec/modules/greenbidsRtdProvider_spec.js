@@ -1,8 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import {
-  deepClone,
-} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import {
   greenbidsSubmodule
 } from 'modules/greenbidsRtdProvider.js';

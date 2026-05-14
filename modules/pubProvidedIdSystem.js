@@ -6,7 +6,8 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { logInfo, isArray } from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 
 /**

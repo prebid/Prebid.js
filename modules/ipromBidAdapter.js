@@ -1,4 +1,5 @@
-import { deepClone, deepSetValue, logError, logWarn } from '../src/utils.js';
+import { deepSetValue, logError, logWarn } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 

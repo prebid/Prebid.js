@@ -1,4 +1,5 @@
-import { isFn, isPlainObject, deepSetValue, replaceAuctionPrice, triggerPixel } from '../../src/utils.js';
+import { deepSetValue, replaceAuctionPrice, triggerPixel } from '../../src/utils.js';
+import { isFn, isPlainObject } from '../../src/utils/objects.js';
 
 export function getBidFloor(bid, mediaType, defaultCurrency) {
   if (isFn(bid.getFloor)) {

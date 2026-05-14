@@ -3,7 +3,7 @@ import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { deepClone } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';

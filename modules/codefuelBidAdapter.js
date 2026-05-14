@@ -1,4 +1,5 @@
-import { isArray, setOnAny } from '../src/utils.js';
+import { setOnAny } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 

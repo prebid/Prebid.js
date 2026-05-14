@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { timestamp, logError, deepClone, generateUUID, isPlainObject } from '../src/utils.js';
+import { timestamp, logError, generateUUID } from '../src/utils.js';
+import { deepClone, isPlainObject } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';

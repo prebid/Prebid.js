@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec, acceptPostMessage, getStorageData, setStorageData } from 'modules/trionBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const CONSTANTS = require('src/constants.js');

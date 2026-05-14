@@ -1,5 +1,6 @@
 import { type AdapterRequest, type BidderSpec, type ServerResponse, registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepClone } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import type { BidRequest } from '../src/adapterManager.js';

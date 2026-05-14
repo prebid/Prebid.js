@@ -2,7 +2,8 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
+import { _map, getWinDimensions, triggerPixel } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';

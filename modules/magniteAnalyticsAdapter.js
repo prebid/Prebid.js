@@ -1,22 +1,5 @@
-import {
-  debugTurnedOn,
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  generateUUID,
-  getWindowLocation,
-  isAdUnitCodeMatchingSlot,
-  isEmpty,
-  isGptPubadsDefined,
-  isNumber,
-  logError,
-  logInfo,
-  logWarn,
-  mergeDeep,
-  parseQS,
-  parseUrl,
-  pick
-} from '../src/utils.js';
+import { debugTurnedOn, deepAccess, deepSetValue, generateUUID, getWindowLocation, isAdUnitCodeMatchingSlot, isGptPubadsDefined, logError, logInfo, logWarn, mergeDeep, parseQS, parseUrl, pick } from '../src/utils.js';
+import { deepClone, isEmpty, isNumber } from '../src/utils/objects.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';

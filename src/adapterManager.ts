@@ -1,27 +1,7 @@
 /** @module adaptermanger */
 
-import {
-  deepClone,
-  flatten,
-  generateUUID,
-  getBidderCodes,
-  getDefinedParams,
-  getUniqueIdentifierStr,
-  getUserConfiguredParams,
-  groupBy,
-  internal,
-  isArray,
-  isPlainObject,
-  isValidMediaTypes,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  mergeDeep,
-  shuffle,
-  timestamp,
-  uniques,
-} from './utils.js';
+import { flatten, generateUUID, getBidderCodes, getUniqueIdentifierStr, getUserConfiguredParams, groupBy, internal, isValidMediaTypes, logError, logInfo, logMessage, logWarn, mergeDeep, shuffle, timestamp, uniques } from './utils.js';
+import { deepClone, getDefinedParams, isArray, isPlainObject } from './utils/objects.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';

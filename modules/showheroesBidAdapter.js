@@ -1,8 +1,5 @@
-import {
-  deepAccess,
-  deepSetValue,
-  isFn,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
+import { isFn } from '../src/utils/objects.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

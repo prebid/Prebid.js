@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepSetValue, replaceAuctionPrice, deepClone, deepAccess } from '../src/utils.js';
+import { deepSetValue, replaceAuctionPrice, deepAccess } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getUserSyncs } from '../libraries/vizionikUtils/vizionikUtils.js';
 

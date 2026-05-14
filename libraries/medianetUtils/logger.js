@@ -1,5 +1,6 @@
 import { flattenObj, formatQS as mnFormatQS, pick } from './utils.js';
-import { formatQS, triggerPixel, isPlainObject } from '../../src/utils.js';
+import { formatQS, triggerPixel } from '../../src/utils.js';
+import { isPlainObject } from '../../src/utils/objects.js';
 import {
   ANALYTICS_VERSION, BID_SUCCESS,
   EVENT_PIXEL_URL, LOG_APPR,

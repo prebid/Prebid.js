@@ -4,17 +4,8 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
-import {
-  mergeDeep,
-  deepAccess,
-  deepSetValue,
-  logInfo,
-  logWarn,
-  insertUserSyncIframe,
-  logError,
-  isStr,
-  generateUUID,
-} from '../src/utils.js';
+import { mergeDeep, deepAccess, deepSetValue, logInfo, logWarn, insertUserSyncIframe, logError, generateUUID } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 
 export const SID = window.excoPid || generateUUID();
 export const ENDPOINT = 'https://v.ex.co/se/openrtb/hb/pbjs';

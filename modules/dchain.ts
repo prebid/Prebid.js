@@ -1,6 +1,7 @@
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import { _each, deepAccess, deepClone, isArray, isPlainObject, isStr, logError, logWarn } from '../src/utils.js';
+import { _each, deepAccess, logError, logWarn } from '../src/utils.js';
+import { deepClone, isArray, isPlainObject, isStr } from '../src/utils/objects.js';
 import { timedBidResponseHook } from '../src/utils/perfMetrics.js';
 import type { DemandChain } from "../src/types/ortb/ext/dchain.d.ts";
 

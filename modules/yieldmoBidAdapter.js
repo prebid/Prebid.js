@@ -1,19 +1,5 @@
-import {
-  deepAccess,
-  deepSetValue,
-  getWinDimensions,
-  getWindowTop,
-  isArray,
-  isArrayOfNums,
-  isBoolean,
-  isEmpty,
-  isInteger,
-  isNumber,
-  isStr,
-  logError,
-  parseQueryStringParameters,
-  parseUrl
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, getWinDimensions, getWindowTop, logError, parseQueryStringParameters, parseUrl } from '../src/utils.js';
+import { isArray, isArrayOfNums, isBoolean, isEmpty, isInteger, isNumber, isStr } from '../src/utils/objects.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';

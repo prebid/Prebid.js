@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, ENDPOINT_URL, BIDDER_CODE, DEFAULT_CURRENCY } from 'modules/bidtheatreBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 const VALID_PUBLISHER_ID = '73b20b3a-12a0-4869-b54e-8d42b55786ee';
 const STATIC_IMP_ID = '3263e5dec855c5';

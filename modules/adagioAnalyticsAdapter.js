@@ -3,7 +3,8 @@
  */
 
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
-import { deepAccess, logError, logInfo, logWarn, isPlainObject } from '../src/utils.js';
+import { deepAccess, logError, logInfo, logWarn } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';

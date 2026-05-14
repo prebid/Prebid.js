@@ -17,7 +17,8 @@
 
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
-import { generateUUID, createInvisibleIframe, insertElement, isEmpty, logError } from '../src/utils.js';
+import { generateUUID, createInvisibleIframe, insertElement, logError } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { loadExternalScript } from '../src/adloader.js';

@@ -1,4 +1,5 @@
-import { deepAccess, isFn, isPlainObject } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';

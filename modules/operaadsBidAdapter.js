@@ -1,15 +1,5 @@
-import {
-  deepAccess,
-  deepSetValue,
-  generateUUID,
-  isArray,
-  isFn,
-  isPlainObject,
-  isStr,
-  logError,
-  logWarn,
-  triggerPixel
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, logError, logWarn, triggerPixel } from '../src/utils.js';
+import { isArray, isFn, isPlainObject, isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

@@ -17,24 +17,8 @@ import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import {
-  _each,
-  _map,
-  buildUrl,
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  isArray,
-  isBoolean,
-  isInteger,
-  isPlainObject,
-  logError,
-  logInfo,
-  logWarn,
-  mergeDeep,
-  parseUrl,
-  safeJSONParse
-} from '../src/utils.js';
+import { _each, _map, buildUrl, deepAccess, deepSetValue, logError, logInfo, logWarn, mergeDeep, parseUrl, safeJSONParse } from '../src/utils.js';
+import { deepClone, isArray, isBoolean, isInteger, isPlainObject } from '../src/utils/objects.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { viewportIntersections } from '../libraries/percentInView/percentInView.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';

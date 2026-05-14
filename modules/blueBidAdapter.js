@@ -13,10 +13,8 @@ import {
   getPublisherIdFromBids,
   packageOrtbRequest
 } from '../libraries/blueUtils/bidderUtils.js';
-import {
-  replaceAuctionPrice,
-  isEmpty
-} from '../src/utils.js';
+import { replaceAuctionPrice } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
 const GVLID = 620;

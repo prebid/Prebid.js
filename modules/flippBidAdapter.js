@@ -1,4 +1,5 @@
-import { isEmpty, parseUrl } from '../src/utils.js';
+import { parseUrl } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';

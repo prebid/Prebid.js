@@ -1,10 +1,6 @@
 import { config } from '../../src/config.js';
-import {
-  isFn,
-  isStr,
-  getWindowTop,
-  triggerPixel
-} from '../../src/utils.js';
+import { getWindowTop, triggerPixel } from '../../src/utils.js';
+import { isFn, isStr } from '../../src/utils/objects.js';
 import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.js';
 
 function isBidResponseValid(bid) {

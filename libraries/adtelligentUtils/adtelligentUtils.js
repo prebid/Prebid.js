@@ -1,4 +1,5 @@
-import { deepAccess, isArray } from '../../src/utils.js';
+import { deepAccess } from '../../src/utils.js';
+import { isArray } from '../../src/utils/objects.js';
 import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import { getPlacementPositionUtils } from "../placementPositionInfo/placementPositionInfo.js";

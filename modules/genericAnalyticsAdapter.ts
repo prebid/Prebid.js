@@ -1,5 +1,6 @@
 import AnalyticsAdapter, { type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { prefixLog, isPlainObject } from '../src/utils.js';
+import { prefixLog } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajaxBuilder } from '../src/ajax.js';

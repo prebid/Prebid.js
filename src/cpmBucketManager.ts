@@ -1,5 +1,6 @@
 /* eslint-disable array-callback-return */
-import { isEmpty, logWarn } from './utils.js';
+import { logWarn } from './utils.js';
+import { isEmpty } from './utils/objects.js';
 import { config } from './config.js';
 
 const _defaultPrecision = 2;

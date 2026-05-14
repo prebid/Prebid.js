@@ -1,4 +1,5 @@
-import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { deepAccess, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

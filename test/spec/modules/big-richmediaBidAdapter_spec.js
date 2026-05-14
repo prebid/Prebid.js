@@ -3,7 +3,7 @@ import { spec } from 'modules/big-richmediaBidAdapter.js';
 import { auctionManager } from 'src/auctionManager.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('bigRichMediaAdapterTests', function () {
   before(function () {

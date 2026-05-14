@@ -1,4 +1,4 @@
-import { isArray, deepClone } from '../src/utils.js';
+import { isArray, deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';

@@ -2,19 +2,8 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
-import {
-  logInfo,
-  logWarn,
-  logError,
-  _each,
-  pick,
-  triggerPixel,
-  debugTurnedOn,
-  mergeDeep,
-  isEmpty,
-  deepClone,
-  deepAccess,
-} from '../src/utils.js';
+import { logInfo, logWarn, logError, _each, pick, triggerPixel, debugTurnedOn, mergeDeep, deepAccess } from '../src/utils.js';
+import { isEmpty, deepClone } from '../src/utils/objects.js';
 
 const BIDDER_CODE = 'mobkoi';
 const analyticsType = 'endpoint';

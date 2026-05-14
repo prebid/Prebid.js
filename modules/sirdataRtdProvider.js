@@ -9,10 +9,8 @@
  */
 import adapterManager from '../src/adapterManager.js';
 import { ajax, sendBeacon } from '../src/ajax.js';
-import {
-  deepAccess, checkCookieSupport, deepSetValue, hasDeviceAccess, inIframe, isEmpty,
-  logError, logInfo, mergeDeep
-} from '../src/utils.js';
+import { deepAccess, checkCookieSupport, deepSetValue, hasDeviceAccess, inIframe, logError, logInfo, mergeDeep } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';

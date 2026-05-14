@@ -1,9 +1,4 @@
-import {
-  isPlainObject,
-  isArray,
-  isStr,
-  isNumber,
-} from '../../src/utils.js';
+import { isPlainObject, isArray, isStr, isNumber } from '../../src/utils/objects.js';
 import { config } from '../../src/config.js';
 import { USERSYNC_DEFAULT_CONFIG } from '../../src/userSync.js';
 

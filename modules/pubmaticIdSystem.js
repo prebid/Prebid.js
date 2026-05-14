@@ -1,4 +1,5 @@
-import { logInfo, logError, isStr, isEmptyStr } from '../src/utils.js';
+import { logInfo, logError, isEmptyStr } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';

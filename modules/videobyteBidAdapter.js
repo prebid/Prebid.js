@@ -1,4 +1,5 @@
-import { logMessage, logError, deepAccess, isFn, isPlainObject, isStr, isNumber, isArray, deepSetValue } from '../src/utils.js';
+import { logMessage, logError, deepAccess, deepSetValue } from '../src/utils.js';
+import { isFn, isPlainObject, isStr, isNumber, isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 

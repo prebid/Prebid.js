@@ -4,7 +4,8 @@
  * @module modules/naveggId
  * @requires module:modules/userId
  */
-import { isStr, isPlainObject, logError } from '../src/utils.js';
+import { logError } from '../src/utils.js';
+import { isStr, isPlainObject } from '../src/utils/objects.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';

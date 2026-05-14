@@ -3,15 +3,8 @@ import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.j
 import { Bid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import {
-  deepSetValue,
-  isBoolean,
-  isNumber,
-  isStr,
-  logError,
-  replaceAuctionPrice,
-  triggerPixel,
-} from '../src/utils.js';
+import { deepSetValue, logError, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { isBoolean, isNumber, isStr } from '../src/utils/objects.js';
 
 const ENV = {
   BIDDER_CODE: 'michao',

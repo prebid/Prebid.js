@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/cpmstarBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { config } from 'src/config.js';
 
 const valid_bid_requests = [{

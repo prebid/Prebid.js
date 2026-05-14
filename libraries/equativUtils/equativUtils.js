@@ -1,5 +1,6 @@
 import { VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isFn } from '../../src/utils.js';
+import { deepAccess } from '../../src/utils.js';
+import { isFn } from '../../src/utils/objects.js';
 import { tryAppendQueryString } from '../urlUtils/urlUtils.js';
 
 const DEFAULT_FLOOR = 0.0;

@@ -1,7 +1,8 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { isArray, isInteger, triggerPixel } from '../src/utils.js';
+import { triggerPixel } from '../src/utils.js';
+import { isArray, isInteger } from '../src/utils/objects.js';
 
 const BIDDER_CODE = 'adbro';
 const GVLID = 1316;

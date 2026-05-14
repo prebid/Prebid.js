@@ -1,4 +1,5 @@
-import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
+import { logWarn, deepAccess, deepSetValue, logInfo, logError, uniques, generateUUID, getWindowTop } from '../src/utils.js';
+import { isStr, isArray, isBoolean, isInteger, deepClone, isPlainObject, isFn } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

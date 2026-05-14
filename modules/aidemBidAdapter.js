@@ -1,4 +1,5 @@
-import { deepAccess, deepClone, deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo } from '../src/utils.js';
+import { deepAccess, deepSetValue, getWinDimensions, logError, logInfo } from '../src/utils.js';
+import { deepClone, isBoolean, isNumber, isStr } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

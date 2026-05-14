@@ -7,7 +7,8 @@
 
 import { submodule } from '../src/hook.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
-import { cyrb53Hash, generateUUID, isPlainObject, isStr } from '../src/utils.js';
+import { cyrb53Hash, generateUUID } from '../src/utils.js';
+import { isPlainObject, isStr } from '../src/utils/objects.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule

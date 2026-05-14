@@ -2,18 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {
-  deepAccess,
-  deepSetValue,
-  inIframe,
-  isArrayOfNums,
-  isFn,
-  isInteger,
-  isStr,
-  logError,
-  parseQueryStringParameters,
-  pick,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, inIframe, logError, parseQueryStringParameters, pick } from '../src/utils.js';
+import { isArrayOfNums, isFn, isInteger, isStr } from '../src/utils/objects.js';
 
 const BIDDER_VERSION = '1.1.0';
 const BASE_URL = 'https://auction.adpearl.io';

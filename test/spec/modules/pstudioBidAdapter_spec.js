@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/pstudioBidAdapter.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 describe('PStudioAdapter', function () {
   let sandbox;

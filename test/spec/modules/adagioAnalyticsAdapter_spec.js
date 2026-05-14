@@ -4,7 +4,7 @@ import adagioAnalyticsAdapter, { _internal } from 'modules/adagioAnalyticsAdapte
 import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');

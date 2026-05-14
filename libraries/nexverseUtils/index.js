@@ -1,4 +1,5 @@
-import { logError, logInfo, logWarn, generateUUID, isEmpty, isArray, isPlainObject, isFn } from '../../src/utils.js';
+import { logError, logInfo, logWarn, generateUUID } from '../../src/utils.js';
+import { isEmpty, isArray, isPlainObject, isFn } from '../../src/utils/objects.js';
 
 const LOG_WARN_PREFIX = '[Nexverse warn]: ';
 const LOG_ERROR_PREFIX = '[Nexverse error]: ';

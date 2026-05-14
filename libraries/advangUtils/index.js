@@ -1,4 +1,5 @@
-import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
+import { generateUUID, parseSizesInput, parseUrl } from '../../src/utils.js';
+import { isFn } from '../../src/utils/objects.js';
 import { config } from '../../src/config.js';
 import { getDNT } from '../dnt/index.js';
 

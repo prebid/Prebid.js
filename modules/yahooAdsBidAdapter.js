@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, generateUUID, logInfo, logWarn } from '../src/utils.js';
+import { isFn, isStr, isNumber, isArray, isEmpty, isPlainObject } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';

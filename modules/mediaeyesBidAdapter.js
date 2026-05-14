@@ -5,7 +5,8 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepSetValue, generateUUID, isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
+import { isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 
 const ENDPOINT_URL = 'https://rtb.upremium.asia/ortb/open/auction';
 

@@ -1,6 +1,7 @@
 'use strict';
 
-import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
+import { deepAccess, parseSizesInput } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getDNT } from '../libraries/dnt/index.js';

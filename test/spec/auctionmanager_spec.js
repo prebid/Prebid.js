@@ -20,7 +20,7 @@ import { auctionManager } from '../../src/auctionManager.js';
 import 'modules/debugging/index.js' // some tests look for debugging side effects
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import { expect } from 'chai';
-import { deepClone } from '../../src/utils.js';
+import { deepClone } from '../../src/utils/objects.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js'

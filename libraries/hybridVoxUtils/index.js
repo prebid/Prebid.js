@@ -1,6 +1,7 @@
 // Utility functions extracted by codex bot
 import { Renderer } from '../../src/Renderer.js';
-import { logWarn, deepAccess, isArray } from '../../src/utils.js';
+import { logWarn, deepAccess } from '../../src/utils.js';
+import { isArray } from '../../src/utils/objects.js';
 
 export const outstreamRender = bid => {
   bid.renderer.push(() => {

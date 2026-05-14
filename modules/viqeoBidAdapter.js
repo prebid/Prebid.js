@@ -1,13 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  logError,
-  logInfo,
-  _each,
-  mergeDeep,
-  isFn,
-  isNumber,
-  isPlainObject,
-} from '../src/utils.js';
+import { logError, logInfo, _each, mergeDeep } from '../src/utils.js';
+import { isFn, isNumber, isPlainObject } from '../src/utils/objects.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 

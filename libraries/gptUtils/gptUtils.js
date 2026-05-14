@@ -1,5 +1,6 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+import { deepAccess, isGptPubadsDefined, uniques, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+import { isEmpty } from '../../src/utils/objects.js';
 
 const slotInfoCache = new Map();
 

@@ -1,4 +1,4 @@
-import { isFn, isPlainObject } from '../../src/utils.js';
+import { isFn, isPlainObject } from '../../src/utils/objects.js';
 
 export function hasUserInfo(bid) {
   return !!(bid.params && bid.params.user);

@@ -1,4 +1,5 @@
-import { deepAccess, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions } from '../src/utils.js';
+import { deepAccess, logWarn, logError, logInfo, getWinDimensions } from '../src/utils.js';
+import { isArray, isFn, isPlainObject } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';

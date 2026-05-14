@@ -1,17 +1,8 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {
-  _each,
-  _map,
-  createTrackPixelHtml,
-  deepAccess,
-  isFn,
-  isNumber,
-  logError,
-  logWarn,
-  setOnAny
-} from '../src/utils.js';
+import { _each, _map, createTrackPixelHtml, deepAccess, logError, logWarn, setOnAny } from '../src/utils.js';
+import { isFn, isNumber } from '../src/utils/objects.js';
 
 export const BIDDER_CODE = 'deltaprojects';
 const GVLID = 209;

@@ -1,5 +1,6 @@
 'use strict';
-import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
+import { deepAccess, deepSetValue, getWinDimensions, getWindowTop } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';

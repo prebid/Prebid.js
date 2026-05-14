@@ -2,14 +2,8 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import {
-  deepAccess,
-  mergeDeep,
-  isFn,
-  isStr,
-  isPlainObject,
-  getUniqueIdentifierStr
-} from '../src/utils.js';
+import { deepAccess, mergeDeep, getUniqueIdentifierStr } from '../src/utils.js';
+import { isFn, isStr, isPlainObject } from '../src/utils/objects.js';
 
 const BIDDER_CODE = 'aniview';
 const GVLID = 780;

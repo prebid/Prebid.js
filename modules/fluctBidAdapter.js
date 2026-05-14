@@ -1,4 +1,5 @@
-import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '../src/utils.js';
+import { _each, deepAccess, deepSetValue } from '../src/utils.js';
+import { isEmpty, isFn, isPlainObject } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 

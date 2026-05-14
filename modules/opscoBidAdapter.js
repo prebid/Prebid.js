@@ -1,4 +1,5 @@
-import { deepAccess, deepSetValue, isArray, logInfo } from '../src/utils.js';
+import { deepAccess, deepSetValue, logInfo } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'

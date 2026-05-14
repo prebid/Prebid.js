@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { tripleliftAdapterSpec, storage } from 'modules/tripleliftBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { config } from 'src/config.js';
 import prebid from 'package.json';
 import * as utils from 'src/utils.js';

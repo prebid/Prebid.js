@@ -1,4 +1,5 @@
-import { isStr, isArray, logWarn } from '../../src/utils.js';
+import { logWarn } from '../../src/utils.js';
+import { isStr, isArray } from '../../src/utils/objects.js';
 
 export const addDealCustomTargetings = (imp, dctr, logPrefix = "") => {
   if (isStr(dctr) && dctr.length > 0) {

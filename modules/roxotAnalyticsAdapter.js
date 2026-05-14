@@ -1,4 +1,5 @@
-import { deepClone, getParameterByName, logError, logInfo } from '../src/utils.js';
+import { getParameterByName, logError, logInfo } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';

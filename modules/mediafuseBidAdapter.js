@@ -4,23 +4,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import {
-  createTrackPixelHtml,
-  deepAccess,
-  deepSetValue,
-  getParameterByName,
-  isArray,
-  isArrayOfNums,
-  isEmpty,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn
-} from '../src/utils.js';
+import { createTrackPixelHtml, deepAccess, deepSetValue, getParameterByName, logError, logInfo, logMessage, logWarn } from '../src/utils.js';
+import { isArray, isArrayOfNums, isEmpty, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import {
   getANKewyordParamFromMaps,

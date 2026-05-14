@@ -11,7 +11,7 @@ import {
   setTargetingDataToConfig,
   updateBidderConfig,
 } from 'modules/1plusXRtdProvider';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from 'src/storageManager.js';
 import { server } from 'test/mocks/xhr.js';
 

@@ -1,4 +1,5 @@
-import { logError, deepClone, isFn, isStr } from '../../src/utils.js';
+import { logError } from '../../src/utils.js';
+import { deepClone, isFn, isStr } from '../../src/utils/objects.js';
 
 export const EID_CONFIG = new Map();
 

@@ -101,20 +101,8 @@
  */
 
 import { getGlobal } from '../src/prebidGlobal.js';
-import {
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  isArray,
-  isBoolean,
-  isEmpty,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  mergeDeep,
-  prefixLog,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, mergeDeep, prefixLog } from '../src/utils.js';
+import { deepClone, isArray, isBoolean, isEmpty, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';

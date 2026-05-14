@@ -3,7 +3,8 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepClone, deepSetValue, getWinDimensions, parseSizesInput, setOnAny } from '../src/utils.js';
+import { deepAccess, deepSetValue, getWinDimensions, parseSizesInput, setOnAny } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 

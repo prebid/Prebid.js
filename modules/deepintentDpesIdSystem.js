@@ -8,7 +8,7 @@
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { isPlainObject } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule

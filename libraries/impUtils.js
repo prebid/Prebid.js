@@ -1,4 +1,4 @@
-import { isArray } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 
 export function slotUnknownParams(slot, knownParams) {
   const ext = {};

@@ -1,4 +1,4 @@
-import { isInteger } from '../../src/utils.js';
+import { isInteger } from '../../src/utils/objects.js';
 
 export const COMMON_ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),

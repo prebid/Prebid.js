@@ -1,6 +1,7 @@
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isArray, parseSizesInput } from '../../src/utils.js';
+import { deepAccess, parseSizesInput } from '../../src/utils.js';
+import { isArray } from '../../src/utils/objects.js';
 
 export function getUserSyncs(syncEndpoint, paramNames) {
   return function(syncOptions, serverResponses, gdprConsent, uspConsent) {

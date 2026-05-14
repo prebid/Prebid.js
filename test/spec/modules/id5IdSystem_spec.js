@@ -11,7 +11,7 @@ import { config } from '../../../src/config.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 import * as utils from '../../../src/utils.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import '../../../src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';

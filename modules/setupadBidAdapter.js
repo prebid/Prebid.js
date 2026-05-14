@@ -1,11 +1,5 @@
-import {
-  _each,
-  isStr,
-  getBidIdParameter,
-  triggerPixel,
-  logWarn,
-  deepSetValue,
-} from '../src/utils.js';
+import { _each, getBidIdParameter, triggerPixel, logWarn, deepSetValue } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

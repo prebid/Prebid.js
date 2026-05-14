@@ -1,12 +1,5 @@
-import {
-  deepAccess,
-  getBidRequest,
-  getParameterByName,
-  isArray,
-  isNumber,
-  isPlainObject,
-  logError
-} from '../src/utils.js';
+import { deepAccess, getBidRequest, getParameterByName, logError } from '../src/utils.js';
+import { isArray, isNumber, isPlainObject } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';

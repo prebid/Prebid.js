@@ -9,7 +9,8 @@ import {
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
 import { config } from 'src/config.js';
-import { deepClone, safeJSONParse } from '../../../src/utils.js';
+import { safeJSONParse } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { getCoreStorageManager } from 'src/storageManager.js';
 import * as activities from '../../../src/activities/rules.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';

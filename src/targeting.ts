@@ -4,21 +4,8 @@ import { config } from './config.js';
 import { BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS } from './constants.js';
 import * as events from './events.js';
 import { hook } from './hook.js';
-import {
-  deepAccess,
-  deepClone,
-  groupBy,
-  isAdUnitCodeMatchingSlot,
-  isArray,
-  isFn,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  sortByHighestCpm,
-  uniques,
-} from './utils.js';
+import { deepAccess, groupBy, isAdUnitCodeMatchingSlot, logError, logInfo, logMessage, logWarn, sortByHighestCpm, uniques } from './utils.js';
+import { deepClone, isArray, isFn, isStr } from './utils/objects.js';
 import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';

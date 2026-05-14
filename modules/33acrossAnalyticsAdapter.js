@@ -1,4 +1,5 @@
-import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
+import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 /**

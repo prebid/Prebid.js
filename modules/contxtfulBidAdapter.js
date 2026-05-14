@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError, safeJSONEncode } from '../src/utils.js';
+import { _each, buildUrl, isEmptyStr, logInfo, logError, safeJSONEncode } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { sendBeacon, ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import {

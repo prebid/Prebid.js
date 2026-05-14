@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { logError, isPlainObject, isStr, isNumber } from '../src/utils.js';
+import { logError } from '../src/utils.js';
+import { isPlainObject, isStr, isNumber } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';

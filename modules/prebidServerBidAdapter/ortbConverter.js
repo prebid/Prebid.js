@@ -1,5 +1,6 @@
 import { ortbConverter } from '../../libraries/ortbConverter/converter.js';
-import { deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp } from '../../src/utils.js';
+import { deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp } from '../../src/utils.js';
+import { deepClone } from '../../src/utils/objects.js';
 import { config } from '../../src/config.js';
 import { S2S } from '../../src/constants.js';
 import { createBid } from '../../src/bidfactory.js';

@@ -1,15 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  logInfo,
-  logError,
-  _each,
-  getValue,
-  isFn,
-  isPlainObject,
-  isArray,
-  isStr,
-  isNumber, getBidIdParameter,
-} from '../src/utils.js';
+import { logInfo, logError, _each, getValue, getBidIdParameter } from '../src/utils.js';
+import { isFn, isPlainObject, isArray, isStr, isNumber } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'otm';

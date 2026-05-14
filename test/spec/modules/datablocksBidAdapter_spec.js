@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, BotClientTests } from '../../../modules/datablocksBidAdapter.js';
 
 import { getStorageManager } from '../../../src/storageManager.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 const bid = {
   bidId: '2dd581a2b6281d',

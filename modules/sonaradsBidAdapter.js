@@ -1,4 +1,5 @@
-import { deepSetValue, isFn, logWarn } from '../src/utils.js';
+import { deepSetValue, logWarn } from '../src/utils.js';
+import { isFn } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

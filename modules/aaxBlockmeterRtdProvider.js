@@ -1,4 +1,5 @@
-import { isEmptyStr, isStr, logError, isFn, logWarn } from '../src/utils.js';
+import { isEmptyStr, logError, logWarn } from '../src/utils.js';
+import { isStr, isFn } from '../src/utils/objects.js';
 import { submodule } from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

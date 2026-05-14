@@ -1,4 +1,5 @@
-import { deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { deepAccess, logWarn, triggerPixel } from '../src/utils.js';
+import { isArray, isBoolean, isNumber, isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 

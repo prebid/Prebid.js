@@ -18,19 +18,8 @@ import {
 import {
   hasPurpose1Consent
 } from "../src/utils/gdpr.js";
-import {
-  deepAccess,
-  deepSetValue,
-  getParameterByName,
-  isArray,
-  isArrayOfNums,
-  isNumber,
-  isStr,
-  logError,
-  logMessage,
-  logWarn,
-  mergeDeep
-} from "../src/utils.js";
+import { deepAccess, deepSetValue, getParameterByName, logError, logMessage, logWarn, mergeDeep } from '../src/utils.js';
+import { isArray, isArrayOfNums, isNumber, isStr } from '../src/utils/objects.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = "msft";

@@ -1,7 +1,8 @@
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions } from '../src/utils.js';
+import { deepAccess, generateUUID, logError, deepSetValue, logWarn, getWinDimensions } from '../src/utils.js';
+import { isArray, isInteger, isArrayOfNums, isFn } from '../src/utils/objects.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'insticator';

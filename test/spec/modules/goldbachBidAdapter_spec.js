@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { OUTSTREAM } from 'src/video.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';

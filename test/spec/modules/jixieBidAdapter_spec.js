@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, internal as jixieaux, storage } from 'modules/jixieBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('jixie Adapter', function () {
   const pageurl_ = 'https://testdomain.com/testpage.html';

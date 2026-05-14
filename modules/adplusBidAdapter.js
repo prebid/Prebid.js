@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { cleanObj, isArray, isArrayOfNums, logError, logInfo, } from '../src/utils.js';
+import { cleanObj, logError, logInfo } from '../src/utils.js';
+import { isArray, isArrayOfNums } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 // #region Constants

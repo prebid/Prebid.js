@@ -10,7 +10,8 @@ import { submodule } from '../src/hook.js';
 
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
-import { formatQS, isNumber, isPlainObject, logError, parseUrl } from '../src/utils.js';
+import { formatQS, logError, parseUrl } from '../src/utils.js';
+import { isNumber, isPlainObject } from '../src/utils/objects.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**

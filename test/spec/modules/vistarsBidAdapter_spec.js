@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vistarsBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('vistarsBidAdapterTests', function () {
   const bidRequestData = {

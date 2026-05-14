@@ -3,19 +3,8 @@
 */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import {
-  deepAccess,
-  deepClone,
-  getParameterByName,
-  isArray,
-  isBoolean,
-  isPlainObject,
-  isStr,
-  logError,
-  logMessage,
-  logWarn,
-  mergeDeep
-} from './utils.js';
+import { deepAccess, getParameterByName, logError, logMessage, logWarn, mergeDeep } from './utils.js';
+import { deepClone, isArray, isBoolean, isPlainObject, isStr } from './utils/objects.js';
 import { DEBUG_MODE } from './constants.js';
 import type { UserSyncConfig } from "./userSync.ts";
 import type { DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty } from "./types/objects.d.ts";

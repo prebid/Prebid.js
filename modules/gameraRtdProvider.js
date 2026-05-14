@@ -1,11 +1,7 @@
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {
-  isPlainObject,
-  logError,
-  mergeDeep,
-  deepClone,
-} from '../src/utils.js';
+import { logError, mergeDeep } from '../src/utils.js';
+import { isPlainObject, deepClone } from '../src/utils/objects.js';
 
 const MODULE_NAME = 'gamera';
 const MODULE = `${MODULE_NAME}RtdProvider`;

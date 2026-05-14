@@ -2,14 +2,8 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {
-  createTrackPixelHtml,
-  deepAccess,
-  deepSetValue, getBidIdParameter,
-  getWindowTop,
-  isEmpty,
-  logError
-} from '../src/utils.js';
+import { createTrackPixelHtml, deepAccess, deepSetValue, getBidIdParameter, getWindowTop, logError } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

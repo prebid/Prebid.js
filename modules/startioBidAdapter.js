@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { logError, isFn, isPlainObject, formatQS } from '../src/utils.js';
+import { logError, formatQS } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';

@@ -2,16 +2,8 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {
-  _each,
-  deepAccess,
-  formatQS, getBidIdParameter,
-  getValue,
-  isArray,
-  isFn,
-  logError,
-  triggerPixel,
-} from '../src/utils.js';
+import { _each, deepAccess, formatQS, getBidIdParameter, getValue, logError, triggerPixel } from '../src/utils.js';
+import { isArray, isFn } from '../src/utils/objects.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

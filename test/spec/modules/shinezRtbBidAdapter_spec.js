@@ -14,7 +14,8 @@ import {
   tryParseJSON,
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
-import { parseUrl, deepClone, getWinDimensions } from 'src/utils.js';
+import { parseUrl, getWinDimensions } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';

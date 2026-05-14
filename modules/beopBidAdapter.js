@@ -2,17 +2,8 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import {
-  buildUrl,
-  deepAccess,
-  getBidIdParameter,
-  getValue,
-  isArray,
-  isPlainObject,
-  logInfo,
-  logWarn,
-  triggerPixel
-} from '../src/utils.js';
+import { buildUrl, deepAccess, getBidIdParameter, getValue, logInfo, logWarn, triggerPixel } from '../src/utils.js';
+import { isArray, isPlainObject } from '../src/utils/objects.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 /**

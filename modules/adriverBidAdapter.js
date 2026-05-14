@@ -1,5 +1,6 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
-import { logInfo, getWindowLocation, _each, getBidIdParameter, isPlainObject } from '../src/utils.js';
+import { logInfo, getWindowLocation, _each, getBidIdParameter } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 

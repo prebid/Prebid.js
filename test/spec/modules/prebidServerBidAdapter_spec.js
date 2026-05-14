@@ -7,7 +7,8 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import { deepAccess, deepClone, getWinDimensions, mergeDeep } from 'src/utils.js';
+import { deepAccess, getWinDimensions, mergeDeep } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';

@@ -1,4 +1,5 @@
-import { _each, isBoolean, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
+import { _each, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError } from '../src/utils.js';
+import { isBoolean, isNumber, isStr, deepClone, isArray, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

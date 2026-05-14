@@ -3,7 +3,7 @@ import { spec } from 'modules/pixfutureBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { config } from 'src/config.js';
 
 describe('PixFutureAdapter', function () {

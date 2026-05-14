@@ -1,4 +1,5 @@
-import { deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js';
+import { deepClone, isArray, isFn, isPlainObject } from '../src/utils/objects.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

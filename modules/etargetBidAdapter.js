@@ -1,4 +1,5 @@
-import { deepClone, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
+import { deepSetValue } from '../src/utils.js';
+import { deepClone, isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 

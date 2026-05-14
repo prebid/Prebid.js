@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';

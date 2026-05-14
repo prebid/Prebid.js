@@ -3,7 +3,8 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { _map, deepAccess, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel } from '../src/utils.js';
+import { _map, deepAccess, parseGPTSingleSizeArrayToRtbSize, triggerPixel } from '../src/utils.js';
+import { isFn } from '../src/utils/objects.js';
 import { parseDomain } from '../src/refererDetection.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';

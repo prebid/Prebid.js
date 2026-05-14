@@ -1,23 +1,5 @@
-import {
-  createTrackPixelHtml,
-  deepAccess,
-  deepClone,
-  getBidRequest,
-  getParameterByName,
-  getUniqueIdentifierStr,
-  isArray,
-  isArrayOfNums,
-  isEmpty,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  mergeDeep
-} from '../src/utils.js';
+import { createTrackPixelHtml, deepAccess, getBidRequest, getParameterByName, getUniqueIdentifierStr, logError, logInfo, logMessage, logWarn, mergeDeep } from '../src/utils.js';
+import { deepClone, isArray, isArrayOfNums, isEmpty, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

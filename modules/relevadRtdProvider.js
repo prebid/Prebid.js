@@ -6,7 +6,8 @@
  * @requires module:modules/realTimeData
  */
 
-import { deepSetValue, isEmpty, logError, mergeDeep } from '../src/utils.js';
+import { deepSetValue, logError, mergeDeep } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';

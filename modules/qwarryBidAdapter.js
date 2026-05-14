@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 

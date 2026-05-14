@@ -5,7 +5,8 @@ import {
   splitPath,
   toOrtb25, toOrtb26
 } from '../../../libraries/ortb2.5Translator/translator.js';
-import { deepAccess, deepClone, deepSetValue } from '../../../src/utils.js';
+import { deepAccess, deepSetValue } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 describe('ORTB 2.5 translation', () => {
   describe('moveRule', () => {

@@ -1,20 +1,6 @@
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import {
-  canAccessWindowTop,
-  cleanObj,
-  deepAccess,
-  deepClone,
-  generateUUID,
-  getWindowSelf,
-  isArray,
-  isFn,
-  isNumber,
-  isStr,
-  logError,
-  logInfo,
-  logWarn,
-  mergeDeep,
-} from '../src/utils.js';
+import { canAccessWindowTop, cleanObj, deepAccess, generateUUID, getWindowSelf, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { deepClone, isArray, isFn, isNumber, isStr } from '../src/utils/objects.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';

@@ -1,4 +1,5 @@
-import { isPlainObject, logError, logInfo } from '../src/utils.js';
+import { logError, logInfo } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';

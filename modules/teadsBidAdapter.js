@@ -1,4 +1,5 @@
-import { logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { logError, parseSizesInput, getBidIdParameter, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';

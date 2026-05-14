@@ -16,7 +16,8 @@
  * @property {?string} splitKey
  */
 
-import { deepClone, deepSetValue, isFn, isNumber, logError, logInfo, generateUUID, timestamp } from '../src/utils.js';
+import { deepSetValue, logError, logInfo, generateUUID, timestamp } from '../src/utils.js';
+import { deepClone, isFn, isNumber } from '../src/utils/objects.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';

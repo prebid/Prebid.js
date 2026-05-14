@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/waardexBidAdapter.js';
 import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('waardexBidAdapter', () => {
   describe('isBidRequestValid', () => {

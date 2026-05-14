@@ -5,7 +5,8 @@ import {
   getUserSyncs,
   interpretResponse,
 } from '../libraries/xeUtils/bidderUtils.js';
-import { deepAccess, getBidIdParameter, isArray, logError } from '../src/utils.js';
+import { deepAccess, getBidIdParameter, logError } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 
 const BIDDER_CODE = 'anyclip';
 const ENDPOINT = 'https://prebid.anyclip.com';

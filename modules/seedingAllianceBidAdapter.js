@@ -3,7 +3,8 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { generateUUID, deepSetValue, isEmpty, replaceAuctionPrice } from '../src/utils.js';
+import { generateUUID, deepSetValue, replaceAuctionPrice } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

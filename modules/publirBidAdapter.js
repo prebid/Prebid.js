@@ -1,11 +1,5 @@
-import {
-  logWarn,
-  logInfo,
-  isArray,
-  deepAccess,
-  timestamp,
-  triggerPixel,
-} from '../src/utils.js';
+import { logWarn, logInfo, deepAccess, timestamp, triggerPixel } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';

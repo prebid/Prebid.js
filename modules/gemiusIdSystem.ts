@@ -1,4 +1,5 @@
-import { logInfo, logError, isStr, getWindowTop, canAccessWindowTop, getWindowSelf } from '../src/utils.js';
+import { logInfo, logError, getWindowTop, canAccessWindowTop, getWindowSelf } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { submodule } from '../src/hook.js';
 import { AllConsentData } from "../src/consentHandler.ts";
 

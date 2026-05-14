@@ -1,16 +1,5 @@
-import {
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  generateUUID,
-  getBidIdParameter,
-  isArray,
-  logError,
-  logInfo,
-  logWarn,
-  mergeDeep,
-  parseUrl
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getBidIdParameter, logError, logInfo, logWarn, mergeDeep, parseUrl } from '../src/utils.js';
+import { deepClone, isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

@@ -1,15 +1,5 @@
-import {
-  isArray,
-  getWindowTop,
-  deepSetValue,
-  logError,
-  logWarn,
-  createTrackPixelHtml,
-  getBidIdParameter,
-  getUniqueIdentifierStr,
-  formatQS,
-  deepAccess,
-} from '../src/utils.js';
+import { getWindowTop, deepSetValue, logError, logWarn, createTrackPixelHtml, getBidIdParameter, getUniqueIdentifierStr, formatQS, deepAccess } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';

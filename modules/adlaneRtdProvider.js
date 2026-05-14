@@ -1,5 +1,6 @@
 import { submodule } from '../src/hook.js';
-import { cleanObj, getWindowTop, isFn, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { cleanObj, getWindowTop, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { isFn } from '../src/utils/objects.js';
 import { getStorageManager } from "../src/storageManager.js";
 import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
 

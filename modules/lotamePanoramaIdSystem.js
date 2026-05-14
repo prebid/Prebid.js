@@ -4,15 +4,8 @@
  * @module modules/lotamePanoramaId
  * @requires module:modules/userId
  */
-import {
-  timestamp,
-  isStr,
-  logError,
-  isBoolean,
-  buildUrl,
-  isEmpty,
-  isArray
-} from '../src/utils.js';
+import { timestamp, logError, buildUrl } from '../src/utils.js';
+import { isStr, isBoolean, isEmpty, isArray } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';

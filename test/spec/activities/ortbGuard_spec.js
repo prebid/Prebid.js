@@ -6,7 +6,8 @@ import {
   ACTIVITY_TRANSMIT_UFPD
 } from '../../../src/activities/activities.js';
 import { activityParams } from '../../../src/activities/activityParams.js';
-import { deepAccess, deepClone, deepSetValue, mergeDeep } from '../../../src/utils.js';
+import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { ORTB_EIDS_PATHS, ORTB_UFPD_PATHS } from '../../../src/activities/redactor.js';
 import { objectGuard, writeProtectRule } from '../../../libraries/objectGuard/objectGuard.js';
 

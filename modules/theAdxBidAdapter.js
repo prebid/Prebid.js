@@ -1,4 +1,5 @@
-import { logInfo, isEmpty, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
+import { logInfo, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import {
   BANNER,
   NATIVE,

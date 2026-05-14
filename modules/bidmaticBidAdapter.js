@@ -1,14 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {
-  _map,
-  cleanObj,
-  deepAccess,
-  flatten,
-  isArray,
-  isNumber,
-  logWarn,
-  parseSizesInput
-} from '../src/utils.js';
+import { _map, cleanObj, deepAccess, flatten, logWarn, parseSizesInput } from '../src/utils.js';
+import { isArray, isNumber } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';

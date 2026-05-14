@@ -1,5 +1,5 @@
 import { Arr, ERR_ENUM, ERR_TYPE, ERR_UNKNOWN_FIELD, IntEnum, Obj } from '../../../libraries/ortb2.5StrictTranslator/dsl.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 describe('DSL', () => {
   const spec = (() => {

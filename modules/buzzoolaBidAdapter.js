@@ -1,4 +1,5 @@
-import { deepAccess, deepClone } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';

@@ -1,11 +1,5 @@
-import {
-  deepAccess,
-  deepSetValue,
-  getBidIdParameter,
-  isStr,
-  logMessage,
-  triggerPixel,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, getBidIdParameter, logMessage, triggerPixel } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 

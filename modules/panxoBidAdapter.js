@@ -6,7 +6,8 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, logWarn, isFn, isPlainObject } from '../src/utils.js';
+import { deepAccess, logWarn } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getDNT } from '../libraries/dnt/index.js';
 

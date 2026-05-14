@@ -8,7 +8,8 @@
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-import { parseUrl, buildUrl, isPlainObject, timestamp } from '../src/utils.js';
+import { parseUrl, buildUrl, timestamp } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**

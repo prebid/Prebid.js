@@ -2,7 +2,8 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import { deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName } from '../src/utils.js';
+import { generateUUID, logError, logInfo, logWarn, getParameterByName } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid

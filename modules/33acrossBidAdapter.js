@@ -1,16 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {
-  deepAccess,
-  getWindowSelf,
-  getWindowTop,
-  isArray,
-  isGptPubadsDefined,
-  logInfo,
-  logWarn,
-  mergeDeep,
-  uniques
-} from '../src/utils.js';
+import { deepAccess, getWindowSelf, getWindowTop, isGptPubadsDefined, logInfo, logWarn, mergeDeep, uniques } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

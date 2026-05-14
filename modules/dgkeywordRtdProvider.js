@@ -6,7 +6,8 @@
  * @module modules/dgkeywordProvider
  * @requires module:modules/realTimeData
  */
-import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../src/utils.js';
+import { logMessage, deepSetValue, logError, logInfo } from '../src/utils.js';
+import { isStr, isArray } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';

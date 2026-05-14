@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepSetValue, isPlainObject, logWarn } from '../src/utils.js';
+import { deepSetValue, logWarn } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 

@@ -1,4 +1,5 @@
-import { isNumber, logMessage } from '../src/utils.js';
+import { logMessage } from '../src/utils.js';
+import { isNumber } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';

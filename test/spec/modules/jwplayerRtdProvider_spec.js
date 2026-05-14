@@ -16,7 +16,7 @@ import {
   jwplayerSubmodule
 } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 describe('jwplayerRtdProvider', function() {
   const testIdForSuccess = 'test_id_for_success';

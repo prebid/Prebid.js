@@ -5,18 +5,8 @@
  * @requires module:modules/userId
  */
 
-import {
-  deepAccess,
-  deepClone,
-  deepEqual,
-  deepSetValue,
-  isEmpty,
-  isEmptyStr,
-  isPlainObject,
-  logError,
-  logInfo,
-  logWarn
-} from '../src/utils.js';
+import { deepAccess, deepEqual, deepSetValue, isEmptyStr, logError, logInfo, logWarn } from '../src/utils.js';
+import { deepClone, isEmpty, isPlainObject } from '../src/utils/objects.js';
 import { fetch } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';

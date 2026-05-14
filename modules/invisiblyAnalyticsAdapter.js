@@ -5,7 +5,8 @@ import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-import { deepClone, hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
+import { hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { EVENTS } from '../src/constants.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 

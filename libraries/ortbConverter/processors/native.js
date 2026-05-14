@@ -1,4 +1,5 @@
-import { isPlainObject, logWarn, mergeDeep } from '../../../src/utils.js';
+import { logWarn, mergeDeep } from '../../../src/utils.js';
+import { isPlainObject } from '../../../src/utils/objects.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
 
 export function fillNativeImp(imp, bidRequest, context) {

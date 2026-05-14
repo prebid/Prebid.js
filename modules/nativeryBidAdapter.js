@@ -1,13 +1,7 @@
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
-import {
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  logError,
-  logWarn,
-  safeJSONEncode,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, logWarn, safeJSONEncode } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

@@ -17,7 +17,7 @@ import 'modules/priceFloors.js';
 import 'modules/multibid/index.js';
 import adapterManager from 'src/adapterManager.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid

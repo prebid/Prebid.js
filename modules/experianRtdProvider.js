@@ -1,15 +1,8 @@
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import {
-  deepAccess,
-  isArray,
-  isPlainObject,
-  isStr,
-  mergeDeep,
-  safeJSONParse,
-  timestamp
-} from '../src/utils.js';
+import { deepAccess, mergeDeep, safeJSONParse, timestamp } from '../src/utils.js';
+import { isArray, isPlainObject, isStr } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 
 /**

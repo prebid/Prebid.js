@@ -1,6 +1,7 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { _each, isArray } from '../src/utils.js';
+import { _each } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 
 const BEDIGITECH_CODE = 'bedigitech';
 const BEDIGITECH_ENDPOINT = 'https://bid.bedigitech.com/bid/pub_bid.php';

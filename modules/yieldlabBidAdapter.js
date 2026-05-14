@@ -1,4 +1,5 @@
-import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
+import { _each, deepAccess, isEmptyStr, timestamp } from '../src/utils.js';
+import { isArray, isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';

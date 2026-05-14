@@ -9,9 +9,7 @@ import {
   VIDEO,
   NATIVE
 } from '../../../src/mediaTypes.js';
-import {
-  deepClone
-} from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 const ENDPOINT_URL_NORMAL = 'https://ib.adnxs.com/openrtb2/prebidjs';
 

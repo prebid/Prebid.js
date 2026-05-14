@@ -1,4 +1,4 @@
-import { deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject } from '../src/utils.js';
+import { deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

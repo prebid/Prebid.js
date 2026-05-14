@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, deepAccess, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { deepAccess, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'revantage';

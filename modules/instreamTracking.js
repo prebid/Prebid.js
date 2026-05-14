@@ -1,4 +1,5 @@
-import { deepClone, getBidRequest, deepAccess } from '../src/utils.js';
+import { getBidRequest, deepAccess } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';

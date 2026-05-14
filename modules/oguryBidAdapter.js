@@ -1,7 +1,8 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
+import { getWindowSelf, getWindowTop, deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';

@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject, parseQueryStringParameters, getWinDimensions } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, deepAccess, logWarn, logMessage, parseQueryStringParameters, getWinDimensions } from '../src/utils.js';
+import { isEmpty, isFn, isPlainObject } from '../src/utils/objects.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';

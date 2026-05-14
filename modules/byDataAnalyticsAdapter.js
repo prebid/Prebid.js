@@ -1,4 +1,5 @@
-import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
+import { logInfo, logError, getWinDimensions } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
 import enc from 'crypto-js/enc-utf8';

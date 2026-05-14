@@ -1,14 +1,5 @@
-import {
-  _each,
-  formatQS,
-  isArray,
-  isFn,
-  parseSizesInput,
-  parseUrl,
-  triggerPixel,
-  uniques,
-  getWinDimensions
-} from '../../src/utils.js';
+import { _each, formatQS, parseSizesInput, parseUrl, triggerPixel, uniques, getWinDimensions } from '../../src/utils.js';
+import { isArray, isFn } from '../../src/utils/objects.js';
 import { chunk } from '../chunk/chunk.js';
 import {
   CURRENCY,

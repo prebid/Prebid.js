@@ -4,16 +4,8 @@
  * rendering. Read full API documentation on Prebid.org, http://prebid.org/dev-docs/modules/sizeMappingV2.html
  */
 
-import {
-  deepClone,
-  getWinDimensions,
-  isArray,
-  isArrayOfNums,
-  isValidMediaTypes,
-  logError,
-  logInfo,
-  logWarn
-} from '../src/utils.js';
+import { getWinDimensions, isValidMediaTypes, logError, logInfo, logWarn } from '../src/utils.js';
+import { deepClone, isArray, isArrayOfNums } from '../src/utils/objects.js';
 
 import { getHook } from '../src/hook.js';
 import { adUnitSetupChecks } from '../src/prebid.js';

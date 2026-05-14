@@ -11,7 +11,8 @@ import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.j
 import { ajax } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { targeting } from '../src/targeting.js';
-import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
+import { logInfo, logError, deepSetValue, timestamp, logWarn } from '../src/utils.js';
+import { isFn, isPlainObject, isStr, isBoolean, deepClone } from '../src/utils/objects.js';
 
 const MODULE = 'adlooxAdserverVideo';
 

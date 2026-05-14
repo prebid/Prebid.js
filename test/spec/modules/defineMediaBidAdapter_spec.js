@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 import { assert } from 'chai';
 import { spec } from 'modules/defineMediaBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('Define Media Bid Adapter', function () {
   const mockValidBids = [

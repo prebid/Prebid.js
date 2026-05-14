@@ -1,4 +1,5 @@
-import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, getWinDimensions, getWindowTop, logInfo, logWarn } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

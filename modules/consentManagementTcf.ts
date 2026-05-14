@@ -4,7 +4,8 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import { deepSetValue, isStr, logInfo } from '../src/utils.js';
+import { deepSetValue, logInfo } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
 import { registerOrtbProcessor, REQUEST } from '../src/pbjsORTB.js';

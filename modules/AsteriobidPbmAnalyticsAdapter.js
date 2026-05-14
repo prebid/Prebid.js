@@ -1,4 +1,5 @@
-import { deepClone, generateUUID, getParameterByName, hasNonSerializableProperty, logError, parseUrl, logInfo } from '../src/utils.js';
+import { generateUUID, getParameterByName, hasNonSerializableProperty, logError, parseUrl, logInfo } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';

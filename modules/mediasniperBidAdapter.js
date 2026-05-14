@@ -1,19 +1,5 @@
-import {
-  deepAccess,
-  deepClone,
-  deepSetValue, getBidIdParameter,
-  inIframe,
-  isArray,
-  isEmpty,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logMessage,
-  logWarn,
-  triggerPixel,
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, getBidIdParameter, inIframe, logError, logMessage, logWarn, triggerPixel } from '../src/utils.js';
+import { deepClone, isArray, isEmpty, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';

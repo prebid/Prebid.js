@@ -1,4 +1,5 @@
-import { isArrayOfNums, isInteger, logError } from './utils.js';
+import { logError } from './utils.js';
+import { isArrayOfNums, isInteger } from './utils/objects.js';
 import { config } from './config.js';
 import { hook } from './hook.js';
 import { auctionManager } from './auctionManager.js';

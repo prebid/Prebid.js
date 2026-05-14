@@ -10,7 +10,8 @@ import { loadExternalScript } from "../src/adloader.js";
 import { submodule } from "../src/hook.js";
 import { config as prebidConfig } from "../src/config.js";
 import { getStorageManager } from "../src/storageManager.js";
-import { prefixLog, mergeDeep, isStr } from "../src/utils.js";
+import { prefixLog, mergeDeep } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import {
   getDeviceType,
   getOS,

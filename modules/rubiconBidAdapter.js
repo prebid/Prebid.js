@@ -4,22 +4,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {
-  deepAccess,
-  deepSetValue,
-  formatQS,
-  isArray,
-  isNumber,
-  isStr,
-  logError,
-  logMessage,
-  logWarn,
-  mergeDeep,
-  parseSizesInput,
-  pick,
-  _each,
-  isPlainObject
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, formatQS, logError, logMessage, logWarn, mergeDeep, parseSizesInput, pick, _each } from '../src/utils.js';
+import { isArray, isNumber, isStr, isPlainObject } from '../src/utils/objects.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 import { outstreamRenderer } from '../libraries/magniteUtils/outstream.js';

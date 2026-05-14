@@ -8,7 +8,8 @@
 import { getGlobal } from '../src/prebidGlobal.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, mergeDeep, safeJSONParse, prefixLog } from '../src/utils.js';
+import { isFn, isPlainObject } from '../src/utils/objects.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 import { hasPurposeConsent } from '../libraries/permutiveUtils/index.js';
 

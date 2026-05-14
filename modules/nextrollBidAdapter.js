@@ -1,13 +1,5 @@
-import {
-  deepAccess, getBidIdParameter,
-  isArray,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  parseUrl,
-  replaceAuctionPrice
-} from '../src/utils.js';
+import { deepAccess, getBidIdParameter, parseUrl, replaceAuctionPrice } from '../src/utils.js';
+import { isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

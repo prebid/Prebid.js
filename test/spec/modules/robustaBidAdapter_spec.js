@@ -1,6 +1,6 @@
 import { spec } from 'modules/robustaBidAdapter.js';
 import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 
 describe('robustaBidAdapter', function () {
   const validBidRequest = {

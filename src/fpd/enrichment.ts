@@ -1,17 +1,8 @@
 import { hook } from '../hook.js';
 import { getRefererInfo, parseDomain } from '../refererDetection.js';
 import { findRootDomain } from './rootDomain.js';
-import {
-  deepSetValue,
-  deepAccess,
-  getDefinedParams,
-  getWinDimensions,
-  getDocument,
-  getWindowSelf,
-  getWindowTop,
-  mergeDeep,
-  memoize
-} from '../utils.js';
+import { deepSetValue, deepAccess, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep, memoize } from '../utils.js';
+import { getDefinedParams } from '../utils/objects.js';
 import { config } from '../config.js';
 import { getHighEntropySUA, getLowEntropySUA } from './sua.js';
 import { PbPromise } from '../utils/promise.js';

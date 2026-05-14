@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { deepAccess, deepClone, replaceAuctionPrice } from '../src/utils.js';
+import { deepAccess, replaceAuctionPrice } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'dvgroup';

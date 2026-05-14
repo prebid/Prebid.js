@@ -4,7 +4,8 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import { deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../src/utils.js';
+import { deepSetValue, logError, logInfo, logWarn } from '../src/utils.js';
+import { isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';

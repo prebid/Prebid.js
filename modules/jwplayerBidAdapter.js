@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
-import { isArray, isFn, deepAccess, deepSetValue, logError, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, logWarn } from '../src/utils.js';
+import { isArray, isFn } from '../src/utils/objects.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getDNT } from '../libraries/dnt/index.js';

@@ -1,16 +1,5 @@
-import {
-  buildUrl,
-  deepAccess,
-  formatQS,
-  generateUUID,
-  getWinDimensions,
-  isEmpty,
-  isFn,
-  isStr,
-  logInfo,
-  safeJSONParse,
-  triggerPixel,
-} from '../src/utils.js';
+import { buildUrl, deepAccess, formatQS, generateUUID, getWinDimensions, logInfo, safeJSONParse, triggerPixel } from '../src/utils.js';
+import { isEmpty, isFn, isStr } from '../src/utils/objects.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';

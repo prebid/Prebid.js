@@ -1,4 +1,5 @@
-import { isStr, logError, isFn, deepAccess } from '../src/utils.js';
+import { logError, deepAccess } from '../src/utils.js';
+import { isStr, isFn } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';

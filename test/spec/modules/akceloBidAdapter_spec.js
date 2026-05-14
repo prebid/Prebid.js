@@ -1,6 +1,6 @@
 import { converter, spec } from 'modules/akceloBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import sinon from 'sinon';
 
 describe('Akcelo bid adapter tests', () => {

@@ -1,14 +1,5 @@
-import {
-  deepAccess,
-  mergeDeep,
-  logError,
-  replaceMacros,
-  triggerPixel,
-  deepSetValue,
-  isStr,
-  isArray,
-  getWinDimensions,
-} from "../src/utils.js";
+import { deepAccess, mergeDeep, logError, replaceMacros, triggerPixel, deepSetValue, getWinDimensions } from '../src/utils.js';
+import { isStr, isArray } from '../src/utils/objects.js';
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { config } from "../src/config.js";
 import { VIDEO, BANNER } from "../src/mediaTypes.js";

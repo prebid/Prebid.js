@@ -1,4 +1,5 @@
-import { _each, deepClone, pick, deepSetValue, logError, logInfo } from '../src/utils.js';
+import { _each, pick, deepSetValue, logError, logInfo } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'

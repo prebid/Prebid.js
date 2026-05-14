@@ -1,4 +1,5 @@
-import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
+import { parseSizesInput, logError } from '../src/utils.js';
+import { isEmpty } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'

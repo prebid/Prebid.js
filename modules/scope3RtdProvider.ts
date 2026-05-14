@@ -7,7 +7,8 @@
 
 import { auctionManager } from '../src/auctionManager.js';
 import { submodule } from '../src/hook.js';
-import { logMessage, logError, logWarn, deepClone, isEmpty, getBidderCodes, mergeDeep } from '../src/utils.js';
+import { logMessage, logError, logWarn, getBidderCodes, mergeDeep } from '../src/utils.js';
+import { deepClone, isEmpty } from '../src/utils/objects.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

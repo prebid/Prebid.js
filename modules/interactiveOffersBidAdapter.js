@@ -1,4 +1,5 @@
-import { deepClone, isNumber, logWarn } from '../src/utils.js';
+import { logWarn } from '../src/utils.js';
+import { deepClone, isNumber } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 

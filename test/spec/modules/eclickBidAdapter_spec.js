@@ -5,7 +5,7 @@ import {
   BIDDER_CODE,
 } from '../../../modules/eclickBidAdapter.js';
 import { NATIVE, BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { config } from '../../../src/config.js';
 
 describe('eclickBidAdapter', () => {

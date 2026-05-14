@@ -1,4 +1,5 @@
-import { createTrackPixelHtml, getWindowSelf, getWindowTop, isArray, isFn, isPlainObject } from '../../src/utils.js';
+import { createTrackPixelHtml, getWindowSelf, getWindowTop } from '../../src/utils.js';
+import { isArray, isFn, isPlainObject } from '../../src/utils/objects.js';
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

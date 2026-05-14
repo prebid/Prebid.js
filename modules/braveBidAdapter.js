@@ -1,4 +1,5 @@
-import { isStr, triggerPixel } from '../src/utils.js';
+import { triggerPixel } from '../src/utils.js';
+import { isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { parseNative } from '../libraries/braveUtils/index.js';

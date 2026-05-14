@@ -11,21 +11,8 @@ import { auctionManager } from '../src/auctionManager.js';
 import { AUCTION_COMPLETED } from '../src/auction.js';
 import { EVENTS } from '../src/constants.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import {
-  deepAccess,
-  getUniqueIdentifierStr,
-  insertElement,
-  isFn,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  mergeDeep,
-  parseUrl
-} from '../src/utils.js';
+import { deepAccess, getUniqueIdentifierStr, insertElement, logError, logInfo, logMessage, logWarn, mergeDeep, parseUrl } from '../src/utils.js';
+import { isFn, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 

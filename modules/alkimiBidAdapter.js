@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
+import { deepAccess, generateUUID, replaceAuctionPrice } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';

@@ -7,7 +7,8 @@ import * as events from '../../../src/events.js';
 import * as utils from 'src/utils.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
 import Sinon from 'sinon';
-import { deepClone, getWinDimensions } from '../../../src/utils.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 
 const MODULE_NAME = 'contxtful';
 

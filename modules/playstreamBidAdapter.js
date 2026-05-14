@@ -2,15 +2,8 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
-import {
-  groupBy,
-  logMessage,
-  deepAccess,
-  mergeDeep,
-  isFn,
-  isStr,
-  isPlainObject,
-} from '../src/utils.js';
+import { groupBy, logMessage, deepAccess, mergeDeep } from '../src/utils.js';
+import { isFn, isStr, isPlainObject } from '../src/utils/objects.js';
 
 const BIDDER_CODE = 'playstream';
 const TTL = 300;

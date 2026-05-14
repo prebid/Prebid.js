@@ -1,4 +1,5 @@
-import { deepAccess, isEmpty, isStr, logWarn, parseSizesInput } from '../src/utils.js';
+import { deepAccess, logWarn, parseSizesInput } from '../src/utils.js';
+import { isEmpty, isStr } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';

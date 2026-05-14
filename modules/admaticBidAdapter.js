@@ -3,7 +3,8 @@ import { Renderer } from '../src/Renderer.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
+import { deepAccess, getBidIdParameter, getValue, logError } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';

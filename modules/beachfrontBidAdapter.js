@@ -1,12 +1,5 @@
-import {
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  getUniqueIdentifierStr,
-  isArray,
-  logWarn,
-  formatQS
-} from '../src/utils.js';
+import { deepAccess, deepSetValue, getUniqueIdentifierStr, logWarn, formatQS } from '../src/utils.js';
+import { deepClone, isArray } from '../src/utils/objects.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';

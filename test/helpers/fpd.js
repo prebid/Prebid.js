@@ -1,6 +1,6 @@
 import { dep, enrichFPD } from 'src/fpd/enrichment.js';
 import { PbPromise } from '../../src/utils/promise.js';
-import { deepClone } from '../../src/utils.js';
+import { deepClone } from '../../src/utils/objects.js';
 import { gdprDataHandler, uspDataHandler } from '../../src/adapterManager.js';
 
 export function mockFpdEnrichments(sandbox, overrides = {}) {

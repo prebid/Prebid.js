@@ -1,5 +1,6 @@
 import { getEvents } from '../../src/events.js';
-import { isPlainObject, logError } from '../../src/utils.js';
+import { logError } from '../../src/utils.js';
+import { isPlainObject } from '../../src/utils/objects.js';
 
 export function gamPredictionReport (gamObjectReference, sendData) {
   try {

@@ -1,6 +1,6 @@
 import { spec } from 'modules/newspassidBidAdapter.js';
 import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { resolveNewpassidPublisherId } from '../../../modules/newspassidBidAdapter.js';
 
 describe('newspassidBidAdapter', function () {

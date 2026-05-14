@@ -1,20 +1,5 @@
-import {
-  debugTurnedOn,
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  getParameterByName,
-  isNumber,
-  logError,
-  logInfo,
-  logWarn,
-  mergeDeep,
-  parseGPTSingleSizeArray,
-  parseUrl,
-  pick,
-  deepEqual,
-  generateUUID
-} from '../src/utils.js';
+import { debugTurnedOn, deepAccess, deepSetValue, getParameterByName, logError, logInfo, logWarn, mergeDeep, parseGPTSingleSizeArray, parseUrl, pick, deepEqual, generateUUID } from '../src/utils.js';
+import { deepClone, isNumber } from '../src/utils/objects.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';

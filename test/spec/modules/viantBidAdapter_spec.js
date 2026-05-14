@@ -1,6 +1,6 @@
 import { spec, converter } from 'modules/viantBidAdapter.js';
 import { assert, expect } from 'chai';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils/objects.js';
 import { buildWindowTree } from '../../helpers/refererDetectionHelper.js';
 import { detectReferer } from '../../../src/refererDetection.js';
 

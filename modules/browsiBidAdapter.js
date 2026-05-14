@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { VIDEO } from '../src/mediaTypes.js';
-import { logError, logInfo, isArray, isStr } from '../src/utils.js';
+import { logError, logInfo } from '../src/utils.js';
+import { isArray, isStr } from '../src/utils/objects.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid

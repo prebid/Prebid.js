@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepSetValue, deepAccess, isFn } from '../src/utils.js';
+import { deepSetValue, deepAccess } from '../src/utils.js';
+import { isFn } from '../src/utils/objects.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 

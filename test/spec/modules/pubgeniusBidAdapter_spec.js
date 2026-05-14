@@ -3,7 +3,8 @@ import { expect } from 'chai';
 import { spec } from 'modules/pubgeniusBidAdapter.js';
 import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
-import { deepClone, parseQueryStringParameters } from 'src/utils.js';
+import { parseQueryStringParameters } from 'src/utils.js';
+import { deepClone } from 'src/utils/objects.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 
