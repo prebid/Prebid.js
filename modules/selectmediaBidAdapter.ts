@@ -8,37 +8,51 @@ import {
   type TeqBlazeBidParams,
 } from '../libraries/teqblazeUtils/bidderUtils.ts';
 import type { BidRequest, BaseBidderRequest } from '../src/adapterManager.ts';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const BIDDER_CODE = 'selectmedia';
-const AD_URL = 'https://#{REGION}#.zxyvrtd.com/pbjs';
+const AD_URL = 'https://#{SUBDOMAIN}#.zxyvrtd.com/pbjs';
 const GVLID = 775;
 const SYNC_URL = 'https://sync.zxyvrtd.com';
 
-type Region = 'eu' | 'us-east';
-type SelectmediaBidParams = TeqBlazeBidParams & { region: Region };
-
-const VALID_REGIONS = new Set<string>(['eu', 'us-east'] satisfies Region[]);
-
 declare module '../src/adUnits' {
   interface BidderParams {
-    [BIDDER_CODE]: SelectmediaBidParams;
+    [BIDDER_CODE]: TeqBlazeBidParams;
   }
 }
 
-const regionMap: Record<string, string> = {
-  eu: 'eu',
-  'us-east': 'us-east'
+enum Subdomain {
+  EU = 'eu',
+  US_EAST = 'us-east'
+}
+
+const timezoneSubdomainMap: Record<string, Subdomain> = {
+  'Europe': Subdomain.EU,
+  'Africa': Subdomain.EU,
+  'Atlantic': Subdomain.EU,
+  'Arctic': Subdomain.EU,
+  'Asia': Subdomain.EU,
+  'Australia': Subdomain.US_EAST,
+  'Antarctica': Subdomain.US_EAST,
+  'Pacific': Subdomain.US_EAST,
+  'Indian': Subdomain.US_EAST,
+  'America': Subdomain.US_EAST
 };
 
-const baseIsBidRequestValid = isBidRequestValid();
+function getSubdomain(): string {
+  try {
+    const region = getTimeZone().split('/')[0];
+    return timezoneSubdomainMap[region] || Subdomain.US_EAST;
+  } catch (err) {
+    return Subdomain.US_EAST;
+  }
+}
 
 const buildRequests = (
   validBidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: BaseBidderRequest<typeof BIDDER_CODE>
 ): AdapterRequest => {
-  const region = validBidRequests[0]?.params?.region;
-  const adUrl = AD_URL.replace('#{REGION}#', region != null ? (regionMap[region] ?? region) : '');
-
+  const adUrl = AD_URL.replace('#{SUBDOMAIN}#', getSubdomain());
   return buildRequestsBase({ adUrl, validBidRequests, bidderRequest });
 };
 
@@ -47,7 +61,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: (bid) => baseIsBidRequestValid(bid) && VALID_REGIONS.has(bid.params?.region),
+  isBidRequestValid: isBidRequestValid(),
   buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)
