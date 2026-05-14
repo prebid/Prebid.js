@@ -1,21 +1,25 @@
 import {
+  adUnitEidsHook,
   attachIdSystem,
   auctionDelay,
+  COOKIE_SUFFIXES,
   coreStorage,
-  dep, enrichEids,
+  dep,
+  enrichEids,
   findRootDomain,
-  getConsentHash, getValidSubmoduleConfigs,
+  getConsentHash,
+  getValidSubmoduleConfigs,
+  HTML5_SUFFIXES,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
-  startAuctionHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
-  COOKIE_SUFFIXES, HTML5_SUFFIXES,
-  syncDelay, adUnitEidsHook,
+  startAuctionHook,
+  syncDelay,
 } from 'modules/userId/index.js';
 import { UID1_EIDS } from 'libraries/uid1Eids/uid1Eids.js';
-import { createEidsArray, EID_CONFIG, getEids } from 'modules/userId/eids.js';
+import { createEidsArray, EID_CONFIG } from 'modules/userId/eids.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import * as events from 'src/events.js';
@@ -35,15 +39,14 @@ import { allConsent, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHa
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
-import { extractEids } from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
-import { generateSubmoduleContainers, addIdData } from '../../../modules/userId/index.js';
+import { addIdData, generateSubmoduleContainers } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import {
   discloseStorageUse,
-  STORAGE_TYPE_COOKIES,
-  STORAGE_TYPE_LOCALSTORAGE,
+  getCoreStorageManager,
   getStorageManager,
-  getCoreStorageManager
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE
 } from '../../../src/storageManager.js';
 
 const assert = require('chai').assert;
@@ -128,7 +131,7 @@ describe('User ID', function () {
     return cfg;
   }
 
-  let sandbox, consentData, startDelay, callbackDelay;
+  let sandbox, consentSandbox, consentData, startDelay, callbackDelay;
 
   function clearStack() {
     return new Promise((resolve) => setTimeout(resolve));
@@ -173,13 +176,15 @@ describe('User ID', function () {
   beforeEach(function () {
     resetConsentData();
     sandbox = sinon.createSandbox();
+    consentSandbox = sinon.createSandbox();
     consentData = null;
-    mockGdprConsent(sandbox, () => consentData);
+    mockGdprConsent(consentSandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
   });
 
   afterEach(() => {
     sandbox.restore();
+    consentSandbox.restore();
     config.resetConfig();
     startAuction.getHooks({ hook: startAuctionHook }).remove();
   });
@@ -1143,30 +1148,35 @@ describe('User ID', function () {
       const MOCK_ID = { 'MOCKID': '1111' };
       let mockIdCallback;
       let startInit;
+      let mockIdSystem;
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
-        const mockIdSystem = {
+        mockIdSystem = {
           name: 'mockId',
           decode: function(value) {
             return {
               'mid': value['MOCKID']
             };
           },
-          getId: sinon.stub().returns({ callback: mockIdCallback })
+          getId: sinon.stub().callsFake(() => {
+            return { callback: mockIdCallback }
+          })
         };
-        init(config);
-        setSubmoduleRegistry([mockIdSystem]);
-        startInit = () => config.setConfig({
-          userSync: {
-            auctionDelay: 10,
-            userIds: [{
-              name: 'mockId',
-              storage: { name: 'MOCKID', type: 'cookie' }
-            }]
-          }
-        });
+        startInit = () => {
+          init(config);
+          setSubmoduleRegistry([mockIdSystem]);
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'mockId',
+                storage: { name: 'MOCKID', type: 'cookie' }
+              }]
+            }
+          });
+        }
       });
 
       ['refreshUserIds', 'getUserIdsAsync'].forEach(method => {
@@ -1182,6 +1192,50 @@ describe('User ID', function () {
             expect(result).to.deep.equal(getGlobal().getUserIds()) // auction still not over, but refresh was explicitly forced
           });
         });
+      });
+
+      describe('consent changes', () => {
+        beforeEach(() => {
+          consentSandbox.restore();
+          allConsent.reset();
+          gdprDataHandler.enable();
+        });
+        it('should not trigger if consent changes before first init', async () => {
+          gdprDataHandler.setConsentData({ 'consentString': 'first' });
+          startInit();
+          gdprDataHandler.setConsentData({ 'consentString': 'second' });
+          await clearStack();
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: {
+              consentString: 'second'
+            }
+          }));
+          sinon.assert.calledOnce(mockIdSystem.getId);
+        });
+
+        it('should trigger if consent changes after first init', async () => {
+          startInit();
+          mockIdCallback.callsFake((cb) => cb({ 'MOCKID': gdprDataHandler.getConsentData().consentString }));
+          gdprDataHandler.setConsentData({ 'consentString': 'first' });
+          await clearStack();
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: {
+              consentString: 'first'
+            }
+          }));
+          const userIds = getGlobal().getUserIdsAsync();
+          gdprDataHandler.setConsentData({ 'consentString': 'second' });
+          await clearStack();
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: {
+              consentString: 'second'
+            }
+          }));
+          const resolvedUserIds = await userIds;
+          expect(resolvedUserIds).to.eql({
+            mid: 'second'
+          });
+        })
       })
 
       it('should not stop auctions', (done) => {
@@ -1373,7 +1427,7 @@ describe('User ID', function () {
       });
     });
 
-    it('pbjs.refreshUserIds refreshes single', function() {
+    it('pbjs.refreshUserIds refreshes single', async function () {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('refreshedid', '', EXPIRED_COOKIE_DATE);
 
@@ -1383,7 +1437,7 @@ describe('User ID', function () {
 
       const mockIdSystem = {
         name: 'mockId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'mid': value['MOCKID']
           };
@@ -1395,7 +1449,7 @@ describe('User ID', function () {
 
       const refreshedIdSystem = {
         name: 'refreshedId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'refresh': value['REFRESH']
           };
@@ -1421,6 +1475,8 @@ describe('User ID', function () {
           ]
         }
       });
+
+      await clearStack();
 
       return getGlobal().refreshUserIds({ submoduleNames: 'refreshedId' }, refreshUserIdsCallback).then(() => {
         expect(refreshedIdCallback.callCount).to.equal(2);
