@@ -462,7 +462,7 @@ function handlerPbsAnalytics(event) {
  */
 
 /**
- * @param {SlotRenderEndedEvent} event
+ * @param {Object} event
  * @returns {void}
  */
 function gamSlotCallback(event) {
