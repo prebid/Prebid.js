@@ -3,7 +3,7 @@
 ```
 Module Name:  PGAM Direct Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   [email protected]
+Maintainer:   info@pgammedia.com
 ```
 
 # Description
