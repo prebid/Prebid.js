@@ -43,7 +43,7 @@ var adUnits = [{
 
 # Privacy + Consent
 
-- TCF v2.2 — adapter forwards consent strings; PGAM Media LLC is registered
+- TCF v2.3 — adapter forwards consent strings; PGAM Media LLC is registered
   as GVL Vendor ID 1353.
 - GPP — supported for `tcfeu`, `usnat`, `usstate_all`.
 - US Privacy / CCPA — passed through unchanged.
