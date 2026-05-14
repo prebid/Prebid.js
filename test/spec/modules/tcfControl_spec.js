@@ -13,6 +13,7 @@ import {
   transmitPreciseGeoRule,
   ufpdRule,
   validateRules
+  , checkIfCredentialsAllowed
 } from 'modules/tcfControl.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
@@ -29,7 +30,6 @@ import { requestBids } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { GDPR_GVLIDS, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
 import { activityParams } from '../../../src/activities/activityParams.js';
-import { checkIfCredentialsAllowed } from '../../../modules/tcfControl.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;

@@ -4,6 +4,7 @@ import {
   getHighestCpmBidsFromBidPool,
   sortByDealAndPriceBucketOrCpm,
   targeting as targetingInstance
+  , getAdUnitBidLimitMap
 } from 'src/targeting.js';
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
@@ -16,7 +17,6 @@ import { createBid } from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import { getHighestCpm } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
-import { getAdUnitBidLimitMap } from '../../../../src/targeting.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
