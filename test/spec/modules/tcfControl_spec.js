@@ -2,7 +2,7 @@ import {
   accessDeviceRule,
   ACTIVE_RULES,
   enrichEidsRule,
-  fetchBidsRule,
+  fetchBidsRule, getAcceptableFlags,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
   reportAnalyticsRule,
@@ -110,8 +110,11 @@ describe('gdpr enforcement', function () {
   };
   let gvlids, sandbox;
 
-  function setupConsentData({ gdprApplies = true, apiVersion = 2 } = {}) {
+  function setupConsentData({ gdprApplies = true, apiVersion = 2, tcDataMutator } = {}) {
     const cd = utils.deepClone(staticConfig);
+    if (typeof tcDataMutator === 'function') {
+      tcDataMutator(cd.consentData.getTCData);
+    }
     const consent = {
       vendorData: cd.consentData.getTCData,
       gdprApplies,
@@ -146,6 +149,80 @@ describe('gdpr enforcement', function () {
   afterEach(() => {
     sandbox.restore();
   })
+
+  describe('getAcceptableFlags', () => {
+    let consentData;
+    beforeEach(() => {
+      consentData = {
+        vendorData: {
+          publisher: {
+            restrictions: {}
+          }
+        }
+      };
+    });
+
+    describe('with no restrictions', () => {
+      it('should allow both consent and LI for purpose 2', () => {
+        expect(getAcceptableFlags({}, 2, 123)).to.eql({
+          acceptConsent: true,
+          acceptLI: true
+        })
+      });
+      it('should allow only consent for other purposes', () => {
+        expect(getAcceptableFlags({}, 4, 123)).to.eql({
+          acceptConsent: true,
+          acceptLI: false
+        })
+      })
+    });
+    describe('with restrictions', () => {
+      [
+        {
+          purpose: 2,
+          restriction: 0,
+          expectation: {
+            acceptConsent: false,
+            acceptLI: false
+          }
+        },
+        {
+          purpose: 2,
+          restriction: 1,
+          expectation: {
+            acceptConsent: true,
+            acceptLI: false
+          }
+        },
+        {
+          purpose: 2,
+          restriction: 2,
+          expectation: {
+            acceptConsent: false,
+            acceptLI: true
+          }
+        },
+        {
+          // require LI for a purpose where we don't allow LI
+          purpose: 4,
+          restriction: 2,
+          expectation: {
+            acceptConsent: false,
+            acceptLI: false
+          }
+        }
+      ].forEach(({ purpose, restriction, expectation }) => {
+        it(`shold return ${JSON.stringify(expectation)} for purpose ${purpose} when restriction is ${restriction}`, () => {
+          consentData.vendorData.publisher.restrictions = {
+            [purpose]: {
+              123: restriction
+            }
+          };
+          expect(getAcceptableFlags(consentData, purpose, 123)).to.eql(expectation);
+        })
+      })
+    })
+  });
 
   describe('deviceAccessRule', () => {
     afterEach(() => {
@@ -207,6 +284,27 @@ describe('gdpr enforcement', function () {
         }
       });
       setupConsentData();
+      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
+    });
+
+    it('should support TCF 2.3 tcData using disclosedVendors', function () {
+      gvlids.appnexus = 1;
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      setupConsentData({
+        tcDataMutator: (tcData) => {
+          tcData.tcfPolicyVersion = 3;
+          tcData.disclosedVendors = { '1': true, '2': true };
+        }
+      });
       expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
     });
 

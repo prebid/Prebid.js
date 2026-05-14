@@ -175,7 +175,6 @@ describe('', function () {
     bidderCode: 'adapter',
     width: 300,
     height: 250,
-    statusMessage: 'Bid available',
     adId: '208750227436c1',
     mediaType: 'banner',
     cpm: 0.015,

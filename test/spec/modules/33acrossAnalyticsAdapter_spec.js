@@ -1151,7 +1151,6 @@ function getMockEvents() {
         height: 250,
         source: 'client',
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
-        statusMessage: 'Bid available',
         rejectionReason: 'Bid does not meet price floor',
       }],
       AUCTION_END: {

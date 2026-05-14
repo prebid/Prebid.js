@@ -3,10 +3,27 @@ import {
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
   ACTIVITY_SYNC_USER,
-  ACTIVITY_TRANSMIT_PRECISE_GEO
+  ACTIVITY_TRANSMIT_PRECISE_GEO,
+  ACTIVITY_TRANSMIT_UFPD
 } from '../../src/activities/activities.js';
 import { gppDataHandler } from '../../src/adapterManager.js';
 import { logInfo } from '../../src/utils.js';
+
+export interface MSPAConfig {
+  /**
+   * An optional list of additional activities to restrict when US national or state strings
+   * indicate that the user opted out.
+   * When specified, the listed activities are treated in the same way as 'syncUser', cfr.
+   * https://docs.prebid.org/features/mspa-usnat.html#interpreting-usnat-strings
+   */
+  restrictActivities?: string[]
+}
+
+declare module '../../modules/consentManagementGpp' {
+  interface GPPConfig {
+    mspa?: MSPAConfig;
+  }
+}
 
 // default interpretation for MSPA consent(s):
 // https://docs.prebid.org/features/mspa-usnat.html
@@ -105,7 +122,8 @@ export function isTransmitGeoConsentDenied(cd) {
 const CONSENT_RULES = {
   [ACTIVITY_SYNC_USER]: isConsentDenied,
   [ACTIVITY_ENRICH_EIDS]: isConsentDenied,
-  [ACTIVITY_ENRICH_UFPD]: isTransmitUfpdConsentDenied,
+  [ACTIVITY_ENRICH_UFPD]: isConsentDenied,
+  [ACTIVITY_TRANSMIT_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
 };
 
@@ -133,7 +151,11 @@ function flatSection(subsections) {
   }, {});
 }
 
-export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
+export function getRules(restrictActivities) {
+  return Object.assign(Object.fromEntries((restrictActivities ?? []).map(activity => [activity, isConsentDenied])), CONSENT_RULES);
+}
+
+export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = (c) => c, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
   const unreg = [];
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
   logInfo(`Enabling activity controls for ${ruleName}`)

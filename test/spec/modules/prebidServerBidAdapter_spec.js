@@ -2258,10 +2258,53 @@ describe('S2S Adapter', function () {
         expect(payload.ext.prebid.data.eidpermissions).to.eql([{
           bidders: ['appnexus'],
           source: 'idC'
-        }, {
-          bidders: [],
-          source: 'idD'
         }]);
+      });
+
+      it('should not include eidpermissions entries with empty bidder arrays when the only allowed bidder is not in s2s', () => {
+        const s2sConfig = {
+          ...CONFIG,
+          bidders: ['appnexus', 'rubicon']
+        };
+        config.setConfig({ s2sConfig });
+        BID_REQUESTS.push({
+          ...BID_REQUESTS[0],
+          bidderCode: 'rubicon',
+          bids: [{
+            bidder: 'rubicon',
+            params: {}
+          }]
+        });
+        req = {
+          ...REQUEST,
+          s2sConfig,
+          ortb2Fragments: {
+            global: {
+              user: {
+                ext: {
+                  eids: [{ source: 'idA', id: 1 }, { source: 'idB', id: 2 }]
+                }
+              }
+            },
+            bidder: {
+              bidderA: {
+                user: {
+                  ext: {
+                    eids: [{ source: 'idC', id: 3 }]
+                  }
+                }
+              }
+            }
+          }
+        };
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        const permissions = payload.ext.prebid?.data?.eidpermissions;
+        if (permissions) {
+          permissions.forEach(p => {
+            expect(p.bidders).to.be.an('array').that.is.not.empty;
+          });
+        }
       });
 
       it('should repeat global EIDs when bidder-specific EIDs conflict', () => {
@@ -4591,6 +4634,19 @@ describe('S2S Adapter', function () {
           }
         });
       });
+
+      it('does not include restricted IDs that are not for any requested bidder', () => {
+        expect(consolidateEids({
+          eids: [
+            eidEntry('idA', 'idA1'),
+            eidEntry('idB', 'idB1', ['bidderA'])
+          ]
+        }, ['bidderB'])).to.eql({
+          global: [mkEid('idA', 'idA1')],
+          permissions: [],
+          bidder: {}
+        })
+      })
     })
   });
 });

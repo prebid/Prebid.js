@@ -9,7 +9,7 @@ import {
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
-
+import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js";
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
@@ -169,11 +169,13 @@ function prepareBidRequests(bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
+  const placementInfo = getPlacementPositionUtils().getPlacementInfo(bidReq)
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
     'AdType': mediaType,
-    'Sizes': parseSizesInput(sizes).join(',')
+    'Sizes': parseSizesInput(sizes).join(','),
+    ...placementInfo
   };
 
   bidReqParams.PlacementId = bidReq.adUnitCode;

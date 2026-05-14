@@ -31,7 +31,8 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn, mergeDeep
+  logWarn,
+  mergeDeep
 } from '../../src/utils.js';
 import { getPPID as coreGetPPID } from '../../src/adserver.js';
 import { defer, delay, PbPromise } from '../../src/utils/promise.js';
@@ -43,9 +44,16 @@ import { isActivityAllowed, registerActivityControl } from '../../src/activities
 import { ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS } from '../../src/activities/activities.js';
 import { activityParams } from '../../src/activities/activityParams.js';
 import { USERSYNC_DEFAULT_CONFIG, type UserSyncConfig } from '../../src/userSync.js';
-import type { ORTBRequest } from "../../src/types/ortb/request.d.ts";
 import type { AnyFunction, Wraps } from "../../src/types/functions.d.ts";
-import type { ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse } from "./spec.ts";
+import type {
+  EID,
+  IdProviderSpec,
+  ProviderParams,
+  ProviderResponse,
+  UserId,
+  UserIdConfig,
+  UserIdProvider
+} from "./spec.ts";
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE,
@@ -368,6 +376,10 @@ function mkPriorityMaps() {
       const refreshing = new Set(addtlModules.map(mod => mod.submodule));
       map.submodules = map.submodules.filter((mod) => !refreshing.has(mod.submodule)).concat(addtlModules);
       update();
+    },
+    reset() {
+      map.submodules = [];
+      update();
     }
   }
   function update() {
@@ -465,7 +477,7 @@ export function enrichEids(ortb2Fragments) {
 
 declare module '../../src/adapterManager' {
   interface BaseBidRequest {
-    userIdAsEids: ORTBRequest['user']['eids'];
+    userIdAsEids?: EID[];
   }
 }
 
@@ -672,7 +684,7 @@ function getUserIds() {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIdsAsEids(): ORTBRequest['user']['eids'] {
+function getUserIdsAsEids(): EID[] {
   return getEids(initializedSubmodules.combined)
 }
 
@@ -681,7 +693,7 @@ function getUserIdsAsEids(): ORTBRequest['user']['eids'] {
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
 
-function getUserIdsAsEidBySource(sourceName: string): ORTBRequest['user']['eids'][0] | undefined {
+function getUserIdsAsEidBySource(sourceName: string): EID | undefined {
   return getUserIdsAsEids().filter(eid => eid.source === sourceName)[0];
 }
 
@@ -892,8 +904,24 @@ function updatePPID(priorityMaps) {
   }
 }
 
+function hasOptedOut() {
+  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out localStorage found, userId disabled`);
+    return true;
+  }
+  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out cookie found, userId disabled`);
+    return true;
+  }
+  return false;
+}
+
 function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
+    if (hasOptedOut()) {
+      priorityMaps.reset();
+      return [];
+    }
     if (!submodules.length) return []; // to simplify log messages from here on
     submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
@@ -987,12 +1015,6 @@ function canUseLocalStorage(submodule) {
   if (!submodule.storageMgr.localStorageIsEnabled()) {
     return false;
   }
-
-  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
-    return false
-  }
-
   return true;
 }
 
@@ -1000,12 +1022,6 @@ function canUseCookies(submodule) {
   if (!submodule.storageMgr.cookiesAreEnabled()) {
     return false;
   }
-
-  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-    logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
-    return false;
-  }
-
   return true
 }
 

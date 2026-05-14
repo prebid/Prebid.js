@@ -15,7 +15,8 @@ const BID = {
   },
   mediaTypes: {
     banner: {
-      sizes: [[300, 250], [300, 600]]
+      sizes: [[300, 250], [300, 600]],
+      battr: [1, 3]
     }
   },
   ortb2Imp: {
@@ -46,7 +47,8 @@ const VIDEO_BID = {
       startdelay: 0,
       linearity: 1,
       api: [2],
-      placement: 1
+      placement: 1,
+      battr: [1, 3]
     }
   },
   ortb2Imp: {
@@ -232,6 +234,7 @@ describe('screencore bid adapter', function () {
       expect(requests.data.placements).to.be.an('array');
       expect(requests.data.placements[0].bidId).to.equal(BID.bidId);
       expect(requests.data.placements[0].adFormat).to.equal(BANNER);
+      expect(requests.data.placements[0].battr).to.deep.equal([1, 3]);
     });
 
     it('should build video request', function () {
@@ -241,6 +244,7 @@ describe('screencore bid adapter', function () {
       expect(requests.data.placements).to.be.an('array');
       expect(requests.data.placements[0].bidId).to.equal(VIDEO_BID.bidId);
       expect(requests.data.placements[0].adFormat).to.equal(VIDEO);
+      expect(requests.data.placements[0].battr).to.deep.equal([1, 3]);
     });
 
     it('should build native request', function () {

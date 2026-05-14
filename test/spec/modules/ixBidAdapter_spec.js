@@ -4137,7 +4137,7 @@ describe('IndexexchangeAdapter', function () {
       expect(videoResult[0].ttl).to.equal(200);
     });
 
-    it('should default bid[].ttl if seat[].bid[].exp is not in the resposne', function () {
+    it('should default bid[].ttl if seat[].bid[].exp is not in the response', function () {
       const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, bannerBidderRequest);
       const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, videoBidderRequest);
 

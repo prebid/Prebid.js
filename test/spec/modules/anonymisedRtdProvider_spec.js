@@ -32,6 +32,15 @@ describe('anonymisedRtdProvider', function() {
   });
 
   describe('anonymisedRtdSubmodule', function() {
+    let logWarnStub;
+    beforeEach(function () {
+      logWarnStub = sinon.stub(require('src/utils.js'), 'logWarn');
+    });
+    afterEach(function () {
+      logWarnStub.restore();
+      document.querySelectorAll('script[src*="static.anonymised.io"], script[src*="example.io"]').forEach(s => s.parentNode.removeChild(s));
+    });
+
     it('successfully instantiates', function () {
       expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
@@ -93,7 +102,7 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      const expected = 'https://static.anonymised.io/light/loader.js?ref=prebid';
+      const expected = `https://static.anonymised.io/light/loader.js?ref=prebid&d=${window.location.hostname}`;
       const expectedTagConfig = {
         idw_client_id: 'testId'
       };
@@ -115,7 +124,35 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScriptStub.called).to.be.false;
     });
-    it('should load external script from tagUrl when it is set', function () {
+    it('should not load external script when it is already loaded via http://', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = 'http://static.anonymised.io/light/loader.js';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScriptStub.called).to.be.false;
+    });
+    it('should not load external script when it is already loaded via protocol-relative URL', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = '//static.anonymised.io/light/loader.js';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScriptStub.called).to.be.false;
+    });
+    it('should load external script from tagUrl when set and log a deprecation warning', function () {
       const rtdConfig = {
         params: {
           tagUrl: 'https://example.io/loader.js',
@@ -125,9 +162,10 @@ describe('anonymisedRtdProvider', function() {
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
-      const expected = 'https://example.io/loader.js';
+      const expected = `https://example.io/loader.js?ref=prebid&d=${window.location.hostname}`;
 
       expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
+      expect(logWarnStub.calledWithMatch('params.tagUrl is deprecated')).to.be.true;
     });
     it('should not load external script from tagUrl when it is already loaded', function () {
       const rtdConfig = {
