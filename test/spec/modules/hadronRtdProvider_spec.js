@@ -1,7 +1,5 @@
 import { config } from 'src/config.js';
 import {
-  HADRONID_LOCAL_NAME,
-  RTD_LOCAL_NAME,
   addRealTimeData,
   getRealTimeData,
   hadronSubmodule,

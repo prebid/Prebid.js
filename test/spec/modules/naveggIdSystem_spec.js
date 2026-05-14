@@ -1,5 +1,4 @@
-import { naveggIdSubmodule, storage, getIdFromAPI } from 'modules/naveggIdSystem.js';
-import { server } from 'test/mocks/xhr.js';
+import { naveggIdSubmodule, storage } from 'modules/naveggIdSystem.js';
 import * as ajaxLib from 'src/ajax.js';
 
 const NAVEGGID_CONFIG_COOKIE_HTML5 = {

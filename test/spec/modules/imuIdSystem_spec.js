@@ -1,15 +1,14 @@
 import {
+  apiSuccessProcess,
+  callImuidApi,
+  cookieKey,
+  getApiCallback,
+  getApiUrl,
+  getLocalData,
   imuIdSubmodule,
   storage,
-  getApiUrl,
-  apiSuccessProcess,
-  getLocalData,
-  callImuidApi,
-  getApiCallback,
   storageKey,
-  storagePpKey,
-  cookieKey,
-  apiUrl
+  storagePpKey
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
