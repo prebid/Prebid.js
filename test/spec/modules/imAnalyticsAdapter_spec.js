@@ -203,7 +203,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests[0].url).to.include('/won');
       });
 
-      it('should drop BID_WON for an auction whose cache entry has been cleaned up', function() {
+      it('should send subsequent BID_WON immediately after initial batch', function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -222,17 +222,16 @@ describe('imAnalyticsAdapter', function() {
           args: { auctionId: 'auc-1' }
         });
 
-        // initial batch sends and deletes cache entry
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(1);
 
-        // BID_WON after cache cleanup is dropped
+        // subsequent BID_WON sent immediately via lightweight cache state
         imAnalyticsAdapter.track({
           eventType: EVENTS.BID_WON,
           args: { ...bidWonArgs, requestId: 'req-2' }
         });
 
-        expect(requests.length).to.equal(1);
+        expect(requests.length).to.equal(2);
       });
 
       it('should deduplicate won bids with same requestId', function() {
@@ -347,7 +346,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests.length).to.equal(0);
       });
 
-      it('should drop BID_WON that arrives after timer fired with no bids', function() {
+      it('should send BID_WON immediately when it arrives after timer fired with no bids', function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -361,17 +360,18 @@ describe('imAnalyticsAdapter', function() {
           args: { auctionId: 'auc-1' }
         });
 
-        // timer fires with no bids, cache entry is deleted
+        // timer fires with no bids, lightweight cache state is kept
         clock.tick(BID_WON_TIMEOUT + 10);
         expect(requests.length).to.equal(0);
 
-        // late BID_WON is dropped after cache cleanup
+        // late BID_WON sent immediately via lightweight cache state
         imAnalyticsAdapter.track({
           eventType: EVENTS.BID_WON,
           args: { ...bidWonArgs, requestId: 'req-1' }
         });
 
-        expect(requests.length).to.equal(0);
+        expect(requests.length).to.equal(1);
+        expect(requests[0].url).to.include('/won');
       });
     });
   });

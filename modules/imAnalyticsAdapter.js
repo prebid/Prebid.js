@@ -256,7 +256,6 @@ const imAnalyticsAdapter = Object.assign(
       auction.wonBidsTimer = null;
 
       if (auction.wonBids.length === 0) {
-        delete cache.auctions[auctionId];
         return;
       }
 
@@ -264,7 +263,7 @@ const imAnalyticsAdapter = Object.assign(
       const ts = auction.auctionInitTimestamp || Date.now();
       const bids = auction.wonBids;
       const uid = auction.imUid;
-      delete cache.auctions[auctionId];
+      auction.wonBids = [];
       sendToApi(buildApiUrlWithOptions(this.options, 'won', auctionId), {
         bids,
         ts,
