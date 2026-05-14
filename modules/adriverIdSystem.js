@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { logError, isPlainObject } from '../src/utils.js'
+import { logError } from '../src/utils.js';
+import { isPlainObject } from '../src/utils/objects.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';

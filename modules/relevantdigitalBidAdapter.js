@@ -3,9 +3,8 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
-import { deepSetValue, shuffle, triggerPixel, deepAccess } from '../src/utils.js';
+import { deepSetValue, shuffle, triggerPixel, deepAccess, isEmpty } from '../src/utils.js';
 import { deepClone } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 
 const BIDDER_CODE = 'relevantdigital';
 

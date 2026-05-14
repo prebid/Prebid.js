@@ -1,6 +1,5 @@
-import { deepAccess } from '../src/utils.js';
+import { deepAccess, isEmpty } from '../src/utils.js';
 import { isArray, isStr } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

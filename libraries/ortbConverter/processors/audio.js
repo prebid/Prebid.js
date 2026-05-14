@@ -1,6 +1,5 @@
 import { AUDIO } from '../../../src/mediaTypes.js';
-import { mergeDeep } from '../../../src/utils.js';
-import { isEmpty } from '../../../src/utils.js';
+import { mergeDeep, isEmpty } from '../../../src/utils.js';
 
 import { ORTB_AUDIO_PARAMS } from '../../../src/audio.js';
 

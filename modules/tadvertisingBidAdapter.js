@@ -1,6 +1,5 @@
-import { deepAccess, deepSetValue, logWarn, replaceAuctionPrice, triggerPixel, logError } from '../src/utils.js';
+import { deepAccess, deepSetValue, logWarn, replaceAuctionPrice, triggerPixel, logError, isEmpty } from '../src/utils.js';
 import { isFn, isPlainObject, isInteger } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from "../src/mediaTypes.js";
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

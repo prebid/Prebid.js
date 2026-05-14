@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
-import { isArray, isNumber } from '../src/utils.js'
+import { isArray, isNumber } from '../src/utils/objects.js'
 import { interpretResponse } from '../libraries/precisoUtils/bidUtils.js';
 
 const BIDDER_CODE = 'idx'

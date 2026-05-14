@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { isStr, isNumber, logError, logInfo, isEmpty, timestamp } from '../src/utils.js'
+import { logError, logInfo, isEmpty, timestamp } from '../src/utils.js';
+import { isStr, isNumber } from '../src/utils/objects.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';

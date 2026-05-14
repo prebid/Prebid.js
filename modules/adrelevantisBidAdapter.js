@@ -1,7 +1,6 @@
 import { Renderer } from '../src/Renderer.js';
-import { createTrackPixelHtml, deepAccess, getBidRequest, logError, logMessage, logWarn } from '../src/utils.js';
+import { createTrackPixelHtml, deepAccess, getBidRequest, logError, logMessage, logWarn, isEmpty } from '../src/utils.js';
 import { deepClone, isArray, isArrayOfNums, isStr } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

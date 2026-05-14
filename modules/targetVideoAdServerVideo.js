@@ -1,8 +1,7 @@
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
-import { buildUrl, logError, parseUrl } from '../src/utils.js';
+import { buildUrl, logError, parseUrl, isEmpty } from '../src/utils.js';
 import { isPlainObject } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.

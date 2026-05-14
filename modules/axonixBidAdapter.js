@@ -1,6 +1,5 @@
-import { deepAccess, logError, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { deepAccess, logError, replaceAuctionPrice, triggerPixel, isEmpty } from '../src/utils.js';
 import { isArray } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';

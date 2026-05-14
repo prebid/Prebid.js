@@ -1,6 +1,5 @@
-import { generateUUID, isEmptyStr, logError, logInfo, logMessage, logWarn, parseUrl, timestamp } from './utils.js';
+import { generateUUID, isEmptyStr, logError, logInfo, logMessage, logWarn, parseUrl, timestamp, isEmpty } from './utils.js';
 import { isFn } from './utils/objects.js';
-import { isEmpty } from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { isNativeResponse, setNativeResponseProperties } from './native.js';
 import { handleVideoBidCaching } from './videoCache.js';

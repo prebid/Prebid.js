@@ -1,12 +1,12 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
-  generateUUID, isPlainObject, isArray, isStr,
-  isFn,
+  generateUUID,
   logInfo,
   logWarn,
-  logError, deepClone
+  logError
 } from '../src/utils.js'
+import { deepClone, isArray, isFn, isPlainObject, isStr } from '../src/utils/objects.js'
 import { Renderer } from '../src/Renderer.js'
 import { OUTSTREAM } from '../src/video.js'
 import { config } from '../src/config.js'

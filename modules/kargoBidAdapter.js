@@ -1,6 +1,5 @@
-import { _each, buildUrl, deepAccess, pick, logError, generateUUID } from '../src/utils.js';
+import { _each, buildUrl, deepAccess, pick, logError, generateUUID, isEmpty } from '../src/utils.js';
 import { isPlainObject, deepClone } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';

@@ -1,8 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { convertObjectToArray, deepAccess, getUnixTimestampFromNow, getWinDimensions } from '../src/utils.js';
+import { convertObjectToArray, deepAccess, getUnixTimestampFromNow, getWinDimensions, isEmpty } from '../src/utils.js';
 import { deepClone, isArray, isPlainObject, isStr } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { toLegacyResponse, toOrtbNativeRequest } from '../src/native.js';

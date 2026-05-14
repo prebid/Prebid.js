@@ -3,8 +3,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE } from '../src/mediaTypes.js';
-import { _map, deepSetValue, setOnAny } from '../src/utils.js';
-import { isEmpty } from '../src/utils.js';
+import { _map, deepSetValue, setOnAny, isEmpty } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 

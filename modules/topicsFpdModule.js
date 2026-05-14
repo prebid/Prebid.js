@@ -1,5 +1,4 @@
-import { logError, logWarn, mergeDeep, safeJSONParse } from '../src/utils.js';
-import { isEmpty } from '../src/utils.js';
+import { logError, logWarn, mergeDeep, safeJSONParse, isEmpty } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { submodule } from '../src/hook.js';
 import { PbPromise } from '../src/utils/promise.js';

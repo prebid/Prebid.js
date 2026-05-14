@@ -1,6 +1,5 @@
-import { _each, contains, createTrackPixelHtml, deepAccess, deepSetValue, mergeDeep, parseGPTSingleSizeArrayToRtbSize, triggerPixel } from '../src/utils.js';
+import { _each, contains, createTrackPixelHtml, deepAccess, deepSetValue, mergeDeep, parseGPTSingleSizeArrayToRtbSize, triggerPixel, isEmpty } from '../src/utils.js';
 import { getDefinedParams, isArray, isArrayOfNums, isNumber, isPlainObject, isStr } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';

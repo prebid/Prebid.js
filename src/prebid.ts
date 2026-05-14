@@ -1,9 +1,8 @@
 /** @module pbjs */
 
 import { getGlobal, type PrebidJS } from './prebidGlobal.js';
-import { deepAccess, deepEqual, deepSetValue, flatten, generateUUID, isGptPubadsDefined, logError, logInfo, logMessage, logWarn, mergeDeep, transformAdServerTargetingObj, uniques, unsupportedBidderMessage } from './utils.js';
+import { deepAccess, deepEqual, deepSetValue, flatten, generateUUID, isGptPubadsDefined, logError, logInfo, logMessage, logWarn, mergeDeep, transformAdServerTargetingObj, uniques, unsupportedBidderMessage, isEmpty } from './utils.js';
 import { deepClone, isArray, isArrayOfNums, isFn, isNumber, isPlainObject } from './utils/objects.js';
-import { isEmpty } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';

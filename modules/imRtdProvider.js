@@ -14,9 +14,9 @@ import {
   timestamp,
   mergeDeep,
   logError,
-  logInfo,
-  isFn
+  logInfo
 } from '../src/utils.js'
+import { isFn } from '../src/utils/objects.js'
 import { submodule } from '../src/hook.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 

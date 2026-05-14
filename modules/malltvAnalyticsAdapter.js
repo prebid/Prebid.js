@@ -3,7 +3,8 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import { EVENTS } from '../src/constants.js'
 import adapterManager from '../src/adapterManager.js'
 import { getGlobal } from '../src/prebidGlobal.js'
-import { logInfo, logError, deepClone } from '../src/utils.js'
+import { logInfo, logError } from '../src/utils.js';
+import { deepClone } from '../src/utils/objects.js'
 
 const analyticsType = 'endpoint'
 export const ANALYTICS_VERSION = '1.0.0'

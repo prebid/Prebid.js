@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { getBidIdParameter } from '../src/utils.js';
-import { isEmpty } from '../src/utils.js';
+import { getBidIdParameter, isEmpty } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

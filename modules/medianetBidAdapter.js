@@ -1,6 +1,5 @@
-import { deepAccess, isEmptyStr, logError, logInfo, safeJSONEncode, deepSetValue, getWindowTop } from '../src/utils.js';
+import { deepAccess, isEmptyStr, logError, logInfo, safeJSONEncode, deepSetValue, getWindowTop, isEmpty } from '../src/utils.js';
 import { isArray, isStr, deepClone } from '../src/utils/objects.js';
-import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';

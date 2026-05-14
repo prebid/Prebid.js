@@ -19,9 +19,8 @@ import {
   type StorageManager,
   type StorageType
 } from '../../src/storageManager.js';
-import { deepEqual, deepSetValue, delayExecution, isGptPubadsDefined, logError, logInfo, logWarn, mergeDeep } from '../../src/utils.js';
+import { deepEqual, deepSetValue, delayExecution, isGptPubadsDefined, logError, logInfo, logWarn, mergeDeep, isEmpty } from '../../src/utils.js';
 import { isArray, isFn, isNumber, isPlainObject } from '../../src/utils/objects.js';
-import { isEmpty } from '../../src/utils.js';
 import { getPPID as coreGetPPID } from '../../src/adserver.js';
 import { defer, delay, PbPromise } from '../../src/utils/promise.js';
 import { newMetrics, timedAuctionHook, useMetrics } from '../../src/utils/perfMetrics.js';

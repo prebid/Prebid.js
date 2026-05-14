@@ -1,4 +1,5 @@
-import { buildUrl, deepAccess, isArray, generateUUID } from '../src/utils.js'
+import { buildUrl, deepAccess, generateUUID } from '../src/utils.js';
+import { isArray } from '../src/utils/objects.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';

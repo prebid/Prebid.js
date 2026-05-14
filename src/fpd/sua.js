@@ -1,6 +1,5 @@
-import { isEmptyStr } from '../utils.js';
+import { isEmptyStr, isEmpty } from '../utils.js';
 import { isStr } from '../utils/objects.js';
-import { isEmpty } from '../utils.js';
 import { PbPromise } from '../utils/promise.js';
 
 export const SUA_SOURCE_UNKNOWN = 0;

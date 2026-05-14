@@ -1,7 +1,7 @@
 import { UID1_EIDS } from '../uid1Eids/uid1Eids.js';
 import { UID2_EIDS } from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
-import { isNumber } from '../../src/utils.js'
+import { isNumber } from '../../src/utils/objects.js'
 
 export const PRIMARY_IDS = ['libp'];
 export const GVLID = 148;

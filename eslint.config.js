@@ -261,6 +261,9 @@ module.exports = [
       }
     },
     rules: {
+      'import/named': 'off'
+    },
+    rules: {
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
@@ -307,5 +310,11 @@ module.exports = [
         }
       ],
       }
+  },
+  {
+    files: ['test/**/*.js', 'test/**/*.ts'],
+    rules: {
+      'import/named': 'off'
+    }
   },
   ]
