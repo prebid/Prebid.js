@@ -47,5 +47,7 @@ var adUnits = [{
   as GVL Vendor ID 1353.
 - GPP — supported for `tcfeu`, `usnat`, `usstate_all`.
 - US Privacy / CCPA — passed through unchanged.
-- COPPA — honoured; suppresses the request when the COPPA flag is set on a
-  publisher's inventory.
+- COPPA — the COPPA flag from `regs.coppa` is forwarded unchanged on every
+  outbound bid request. Downstream DSPs are responsible for filtering
+  child-directed inventory under their own contracts; the adapter does not
+  short-circuit on the publisher side.
