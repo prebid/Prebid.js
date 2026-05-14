@@ -801,10 +801,16 @@ function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.in
     bid.safeRenderer = safeRenderer;
   }
 
-  if (renderer && (config.getConfig('allowTopWindowRenderers') ?? true)) {
-    // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-    bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
-    bid.renderer.setRender(renderer.render);
+  const allowTopWindowRenderers = config.getConfig('allowTopWindowRenderers') ?? true;
+
+  if (allowTopWindowRenderers) {
+    if (renderer) {
+      // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer.setRender(renderer.render);
+    }
+  } else {
+    bid.renderer = null;
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'

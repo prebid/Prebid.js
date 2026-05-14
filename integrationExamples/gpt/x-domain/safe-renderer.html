@@ -66,6 +66,7 @@
       });
 
       pbjs.setConfig({
+        allowTopWindowRenderers: false,
         debugging: {
           enabled: true,
           intercept: [
@@ -83,6 +84,9 @@
                   url: 'https://invalid-should-be-overwritten-with-adunit-config.js',
                 },
                 vastXml,
+                renderer: {
+                  url: 'should-be-overwritten-with-safe-renderer-config.js',
+                }
               }
             }
           ]
