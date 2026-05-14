@@ -70,7 +70,7 @@ describe('pxyzBidAdapter', function () {
 
       expect(Object.keys(data.imp[0].ext)).to.have.members(['appnexus', 'pxyz']);
       expect([banner.w, banner.h]).to.deep.equal([300, 250]);
-      expect(banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
       expect(request.url).to.equal(URL);
       expect(request.method).to.equal('POST');
     });
@@ -145,7 +145,7 @@ describe('pxyzBidAdapter', function () {
   describe('interpretResponse', function () {
     const response = {
       'id': 'bidd_id',
-      'seatbid': [ {
+      'seatbid': [{
         'bid': [
           {
             'id': '4434762738980910431',
@@ -153,7 +153,7 @@ describe('pxyzBidAdapter', function () {
             'price': 1,
             'adid': '91673066',
             'adm': '<script src=\'pgxyz\'></script>',
-            'adomain': [ 'pg.xyz' ],
+            'adomain': ['pg.xyz'],
             'iurl': 'http://pgxyz.com/cr?id=91673066',
             'cid': 'c_id',
             'crid': 'c_rid',
@@ -197,14 +197,14 @@ describe('pxyzBidAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
     });
 
     it('handles nobid response', function () {
       const response = undefined;
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

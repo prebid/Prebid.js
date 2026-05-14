@@ -9,6 +9,7 @@ import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -145,7 +146,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = getConnectionInfo();
   payload.networkConnectionType = connection?.type || null;
   payload.networkEffectiveConnectionType = connection?.effectiveType || null;
-  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
+  payload.fledgeEnabled = false;
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -160,7 +161,7 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
+  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
     return bids;
   }
   Array.isArray(body.bids) && body.bids.forEach(bid => {
@@ -206,15 +207,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     bids.push(responseBid);
   });
 
-  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
-    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
-    return {
-      bids,
-      paapi: fledgeAuctionConfigs
-    }
-  } else {
-    return bids;
-  }
+  return bids;
 }
 
 function createRenderer(bid, rendererOptions = {}) {
@@ -366,14 +359,14 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
-  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  const coords = getSpaceCoords(bidRequest);
   if (coords) {
     this['coords'] = coords;
   }
 }
 
-function getSpaceCoords(id) {
-  const space = document.getElementById(id);
+function getSpaceCoords(bidRequest) {
+  const space = getAdUnitElement(bidRequest);
   try {
     const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;

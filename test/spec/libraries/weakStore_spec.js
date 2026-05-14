@@ -1,4 +1,4 @@
-import {weakStore} from '../../../libraries/weakStore/weakStore.js';
+import { weakStore } from '../../../libraries/weakStore/weakStore.js';
 
 describe('weakStore', () => {
   let targets, store;
@@ -18,7 +18,7 @@ describe('weakStore', () => {
   });
 
   it('inits to given value', () => {
-    expect(store('id', {initial: 'value'})).to.eql({'initial': 'value'});
+    expect(store('id', { initial: 'value' })).to.eql({ 'initial': 'value' });
   });
 
   it('returns the same object as long as the target does not change', () => {
@@ -26,7 +26,7 @@ describe('weakStore', () => {
   });
 
   it('ignores init value if already initialized', () => {
-    store('id', {initial: 'value'});
-    expect(store('id', {second: 'value'})).to.eql({initial: 'value'});
+    store('id', { initial: 'value' });
+    expect(store('id', { second: 'value' })).to.eql({ initial: 'value' });
   })
 });

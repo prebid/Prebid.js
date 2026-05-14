@@ -9,6 +9,7 @@ const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
 const {getSourceFolders} = require('./gulpHelpers.js');
+const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = require('./plugins/eslint/approvedLoadExternalScriptPaths.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -106,10 +107,13 @@ module.exports = [
     },
     rules: {
       'comma-dangle': 'off',
+      '@stylistic/comma-dangle': 'off',
       semi: 'off',
+      '@stylistic/semi': 'off',
       'no-undef': 2,
       'no-console': 'error',
       'space-before-function-paren': 'off',
+      '@stylistic/space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
       'no-restricted-syntax': [
         'error',
@@ -121,6 +125,13 @@ module.exports = [
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
           message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
+      ],
+      'no-restricted-imports': [
+        'error', {
+          patterns: [
+            '**/src/adloader.js'
+          ]
+        }
       ],
 
       // Exceptions below this line are temporary (TM), so that eslint can be added into the CI process.
@@ -156,19 +167,9 @@ module.exports = [
       'object-shorthand': 'off',
       'prefer-regex-literals': 'off',
       'no-case-declarations': 'off',
-      'no-useless-catch': 'off',
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
-      '@stylistic/array-bracket-spacing': 'off',
-      '@stylistic/object-curly-spacing': 'off',
-      '@stylistic/semi': 'off',
-      '@stylistic/space-before-function-paren': 'off',
       '@stylistic/multiline-ternary': 'off',
-      '@stylistic/computed-property-spacing': 'off',
-      '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/comma-dangle': 'off',
-      '@stylistic/object-curly-newline': 'off',
-      '@stylistic/object-property-newline': 'off',
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
@@ -200,6 +201,21 @@ module.exports = [
             property: 'sendBeacon',
             object: 'navigator',
             message: 'use ajax.js instead'
+          },
+          {
+            property: 'doNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'msDoNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'doNotTrack',
+            object: 'window',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
           },
           ...['outerText', 'innerText'].map(property => ({
             property,
@@ -273,4 +289,22 @@ module.exports = [
       '@typescript-eslint/no-require-imports': 'off'
     }
   },
-]
+  // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
+  {
+    files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.filter(p => !p.includes('BidAdapter')).map(p => {
+      // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs)$/)) {
+        return `${p}/**/*.{js,ts,mjs}`;
+      }
+      return p;
+    }),
+      rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: []
+        }
+      ],
+      }
+  },
+  ]

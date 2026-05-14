@@ -1,6 +1,6 @@
-import {klona} from "klona/json";
-import type {AnyFunction} from "../types/functions.d.ts";
-import type {Repeat} from "../types/tuples.d.ts";
+import { klona } from "klona/json";
+import type { AnyFunction } from "../types/functions.d.ts";
+import type { Repeat } from "../types/tuples.d.ts";
 
 export function deepClone<T>(obj: T): T {
   return (klona(obj) || {}) as T;
@@ -19,44 +19,32 @@ export function getDefinedParams<T extends object, K extends readonly (keyof T)[
     .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
 }
 
-const tStr = 'String';
-const tFn = 'Function';
-const tNumb = 'Number';
-const tObject = 'Object';
-const tBoolean = 'Boolean';
 const toString = Object.prototype.toString;
 
 /**
  * Return if the object is of the
  * given type.
- * @param {*} object to test
- * @param {String} _t type string (e.g., Array)
- * @return {Boolean} if object is of type _t
  */
-export function isA(object, _t) {
-  return toString.call(object) === '[object ' + _t + ']';
-}
-
 export function isFn(object): object is AnyFunction {
-  return isA(object, tFn);
+  return typeof object === 'function';
 }
 
 export function isStr(object): object is string {
-  return isA(object, tStr);
+  return typeof object === 'string';
 }
 
 export const isArray: (object) => object is any[] = Array.isArray.bind(Array);
 
 export function isNumber(object): object is number {
-  return isA(object, tNumb);
+  return typeof object === 'number';
 }
 
 export function isPlainObject(object): object is Record<any, unknown> {
-  return isA(object, tObject);
+  return toString.call(object) === '[object Object]'
 }
 
 export function isBoolean(object): object is boolean {
-  return isA(object, tBoolean);
+  return typeof object === 'boolean';
 }
 
 /**

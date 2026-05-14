@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import {ruleRegistry} from '../../src/activities/rules.js';
-import {ACTIVITY_SYNC_USER} from '../../src/activities/activities.js';
+import { ruleRegistry } from '../../src/activities/rules.js';
+import { ACTIVITY_SYNC_USER } from '../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT,
   ACTIVITY_PARAM_SYNC_TYPE,
   ACTIVITY_PARAM_SYNC_URL
 } from '../../src/activities/params.js';
-import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
+import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils.js');
 const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js');
@@ -81,7 +81,7 @@ describe('user sync', function () {
         params[ACTIVITY_PARAM_SYNC_TYPE] === 'image' &&
         params[ACTIVITY_PARAM_SYNC_URL] === 'http://example.com'
       ) {
-        return {allow: false}
+        return { allow: false }
       }
     })
     userSync.registerSync('image', 'testBidder', 'http://example.com');
@@ -117,24 +117,28 @@ describe('user sync', function () {
   });
 
   it('should not register pixel URL since it is not supported', function () {
-    const userSync = newTestUserSync({filterSettings: {
-      image: {
-        bidders: '*',
-        filter: 'exclude'
+    const userSync = newTestUserSync({
+      filterSettings: {
+        image: {
+          bidders: '*',
+          filter: 'exclude'
+        }
       }
-    }});
+    });
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', function () {
-    const userSync = newTestUserSync({filterSettings: {
-      iframe: {
-        bidders: '*',
-        filter: 'include'
+    const userSync = newTestUserSync({
+      filterSettings: {
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
       }
-    }});
+    });
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
@@ -233,12 +237,14 @@ describe('user sync', function () {
   });
 
   it('should only sync enabled bidders', function () {
-    const userSync = newTestUserSync({filterSettings: {
-      image: {
-        bidders: ['testBidderA'],
-        filter: 'include'
+    const userSync = newTestUserSync({
+      filterSettings: {
+        image: {
+          bidders: ['testBidderA'],
+          filter: 'include'
+        }
       }
-    }});
+    });
     userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
     userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
     userSync.syncUsers();

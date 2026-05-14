@@ -7,9 +7,9 @@
 
 import { logInfo, logError, logWarn } from '../src/utils.js';
 import * as ajaxLib from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -23,7 +23,7 @@ const ID_URL = 'https://prebid.sv.rkdms.com/identity/';
 const DEFAULT_REFRESH = 7 * 3600;
 const SESSION_COOKIE_NAME = '_svsid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function getSession(configParams) {
   let session = null;
@@ -85,7 +85,7 @@ function generateId(configParams, configStorage) {
         logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
         callback();
       },
-      {method: 'GET', withCredentials: true}
+      { method: 'GET', withCredentials: true }
     );
   };
   return resp;
@@ -111,14 +111,14 @@ export const merkleIdSubmodule = {
     logInfo('Merkle id ' + JSON.stringify(id));
 
     if (id) {
-      return {'merkleId': id}
+      return { 'merkleId': id }
     }
 
     // Supports multiple IDs for different SSPs
     const merkleIds = (value && value?.merkleId && Array.isArray(value.merkleId)) ? value.merkleId : undefined;
     logInfo('merkleIds: ' + JSON.stringify(merkleIds));
 
-    return merkleIds ? {'merkleId': merkleIds} : undefined;
+    return merkleIds ? { 'merkleId': merkleIds } : undefined;
   },
 
   /**
@@ -159,7 +159,7 @@ export const merkleIdSubmodule = {
 
     const configStorage = (config && config.storage) || {};
     const resp = generateId(configParams, configStorage)
-    return {callback: resp};
+    return { callback: resp };
   },
   extendId: function (config = {}, consentData, storedId) {
     logInfo('User ID - stored id ' + storedId);
@@ -181,7 +181,7 @@ export const merkleIdSubmodule = {
 
     const configStorage = (config && config.storage) || {};
     if (configStorage && configStorage.refreshInSeconds && typeof configParams.refreshInSeconds === 'number') {
-      return {id: storedId};
+      return { id: storedId };
     }
 
     let refreshInSeconds = DEFAULT_REFRESH;
@@ -197,12 +197,12 @@ export const merkleIdSubmodule = {
       if (refreshNeeded) {
         logInfo('User ID - merkleId needs refreshing id');
         const resp = generateId(configParams, configStorage);
-        return {callback: resp};
+        return { callback: resp };
       }
     }
 
     logInfo('User ID - merkleId not refreshed');
-    return {id: storedId};
+    return { id: storedId };
   },
   eids: {
     'merkleId': {

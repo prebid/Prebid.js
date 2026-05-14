@@ -1,16 +1,16 @@
-import {expect} from 'chai';
-import {spec} from 'modules/allegroBidAdapter.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/allegroBidAdapter.js';
+import { config } from 'src/config.js';
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
 
-function buildBidRequest({bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes} = {}) {
+function buildBidRequest({ bidId = 'bid1', adUnitCode = 'div-1', sizes = [[300, 250]], params = {}, mediaTypes } = {}) {
   return {
     bidId,
     adUnitCode,
     bidder: 'allegro',
     params,
-    mediaTypes: mediaTypes || {banner: {sizes}},
+    mediaTypes: mediaTypes || { banner: { sizes } },
   };
 }
 
@@ -20,11 +20,11 @@ function buildBidderRequest(bidRequests, ortb2Overrides = {}) {
     bids: bidRequests,
     auctionId: 'auc-1',
     timeout: 1000,
-    refererInfo: {page: 'https://example.com', domain: 'example.com', ref: '', stack: ['https://example.com']},
+    refererInfo: { page: 'https://example.com', domain: 'example.com', ref: '', stack: ['https://example.com'] },
     ortb2: Object.assign({
       device: {
         dnt: 0,
-        sua: {mobile: 0}
+        sua: { mobile: 0 }
       }
     }, ortb2Overrides)
   };
@@ -79,12 +79,12 @@ describe('Allegro Bid Adapter', () => {
       configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({})];
       const ortb2 = {
-        site: {ext: {siteCustom: 'val'}, publisher: {ext: {pubCustom: 'pub'}}},
-        user: {ext: {userCustom: 'usr'}, data: [{ext: {dataCustom: 'd1'}}]},
-        device: {ext: {deviceCustom: 'dev'}, sua: {mobile: 1}, dnt: 1},
-        regs: {ext: {gdpr: 1, other: 'x'}},
-        source: {ext: {sourceCustom: 'src'}},
-        ext: {requestCustom: 'req'}
+        site: { ext: { siteCustom: 'val' }, publisher: { ext: { pubCustom: 'pub' } } },
+        user: { ext: { userCustom: 'usr' }, data: [{ ext: { dataCustom: 'd1' } }] },
+        device: { ext: { deviceCustom: 'dev' }, sua: { mobile: 1 }, dnt: 1 },
+        regs: { ext: { gdpr: 1, other: 'x' } },
+        source: { ext: { sourceCustom: 'src' } },
+        ext: { requestCustom: 'req' }
       };
       const bidderRequest = buildBidderRequest(bidRequests, ortb2);
       const req = spec.buildRequests(bidRequests, bidderRequest);
@@ -109,7 +109,7 @@ describe('Allegro Bid Adapter', () => {
         return undefined;
       });
       const bidRequests = [buildBidRequest({})];
-      const ortb2 = {site: {ext: {siteCustom: 'val'}}};
+      const ortb2 = { site: { ext: { siteCustom: 'val' } } };
       const req = spec.buildRequests(bidRequests, buildBidderRequest(bidRequests, ortb2));
       expect(req.data.site.ext.siteCustom).to.equal('val');
       expect(req.data.site['[com.google.doubleclick.site]']).to.equal(undefined);
@@ -117,7 +117,7 @@ describe('Allegro Bid Adapter', () => {
 
     it('converts numeric flags to booleans (topframe, secure, test) when present', () => {
       configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
-      const bidRequests = [buildBidRequest({mediaTypes: {banner: {sizes: [[300, 250]], topframe: 1}}, params: {secure: 1}})];
+      const bidRequests = [buildBidRequest({ mediaTypes: { banner: { sizes: [[300, 250]], topframe: 1 } }, params: { secure: 1 } })];
       const bidderRequest = buildBidderRequest(bidRequests);
       // add test flag via ortb2 without clobbering existing device object
       bidderRequest.ortb2.test = 1;
@@ -134,13 +134,13 @@ describe('Allegro Bid Adapter', () => {
 
   describe('interpretResponse', () => {
     it('returns undefined for empty body', () => {
-      const result = spec.interpretResponse({}, {data: {}});
+      const result = spec.interpretResponse({}, { data: {} });
       expect(result).to.equal(undefined);
     });
 
     it('returns converted bids for a valid ORTB response', () => {
       configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
-      const bidRequests = [buildBidRequest({bidId: 'imp-1'})];
+      const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
       const bidderRequest = buildBidderRequest(bidRequests);
       const built = spec.buildRequests(bidRequests, bidderRequest);
       const impId = built.data.imp[0].id; // use actual id from converter
@@ -148,10 +148,10 @@ describe('Allegro Bid Adapter', () => {
         id: 'resp1',
         seatbid: [{
           seat: 'seat1',
-          bid: [{impid: impId, price: 1.23, crid: 'creative1', w: 300, h: 250}]
+          bid: [{ impid: impId, price: 1.23, crid: 'creative1', w: 300, h: 250 }]
         }]
       };
-      const result = spec.interpretResponse({body: ortbResponse}, built);
+      const result = spec.interpretResponse({ body: ortbResponse }, built);
       expect(result).to.be.an('array').with.lengthOf(1);
       const bid = result[0];
       expect(bid.cpm).to.equal(1.23);
@@ -162,13 +162,13 @@ describe('Allegro Bid Adapter', () => {
 
     it('ignores bids with impid not present in original request', () => {
       configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
-      const bidRequests = [buildBidRequest({bidId: 'imp-1'})];
+      const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
       const bidderRequest = buildBidderRequest(bidRequests);
       const built = spec.buildRequests(bidRequests, bidderRequest);
       const ortbResponse = {
-        seatbid: [{seat: 'seat1', bid: [{impid: 'unknown', price: 0.5, crid: 'x'}]}]
+        seatbid: [{ seat: 'seat1', bid: [{ impid: 'unknown', price: 0.5, crid: 'x' }] }]
       };
-      const result = spec.interpretResponse({body: ortbResponse}, built);
+      const result = spec.interpretResponse({ body: ortbResponse }, built);
       expect(result).to.be.an('array').that.is.empty;
     });
   });
@@ -179,7 +179,7 @@ describe('Allegro Bid Adapter', () => {
         if (key === 'allegro.triggerImpressionPixel') return false;
         return undefined;
       });
-      const bid = {burl: 'https://example.com/win?price=${AUCTION_PRICE}', cpm: 1.2};
+      const bid = { burl: 'https://example.com/win?price=${AUCTION_PRICE}', cpm: 1.2 };
       expect(spec.onBidWon(bid)).to.equal(undefined);
     });
 

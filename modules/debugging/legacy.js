@@ -1,17 +1,17 @@
 export let addBidResponseBound;
 export let addBidderRequestsBound;
 
-export function addHooks(overrides, {hook, logger}) {
-  addBidResponseBound = addBidResponseHook.bind({overrides, logger});
+export function addHooks(overrides, { hook, logger }) {
+  addBidResponseBound = addBidResponseHook.bind({ overrides, logger });
   hook.get('addBidResponse').before(addBidResponseBound, 5);
 
-  addBidderRequestsBound = addBidderRequestsHook.bind({overrides, logger});
+  addBidderRequestsBound = addBidderRequestsHook.bind({ overrides, logger });
   hook.get('addBidderRequests').before(addBidderRequestsBound, 5);
 }
 
-export function removeHooks({hook}) {
-  hook.get('addBidResponse').getHooks({hook: addBidResponseBound}).remove();
-  hook.get('addBidderRequests').getHooks({hook: addBidderRequestsBound}).remove();
+export function removeHooks({ hook }) {
+  hook.get('addBidResponse').getHooks({ hook: addBidResponseBound }).remove();
+  hook.get('addBidderRequests').getHooks({ hook: addBidderRequestsBound }).remove();
 }
 
 /**
@@ -55,7 +55,7 @@ export function applyBidOverrides(overrideObj, bidObj, bidType, logger) {
 }
 
 export function addBidResponseHook(next, adUnitCode, bid, reject) {
-  const {overrides, logger} = this;
+  const { overrides, logger } = this;
 
   if (bidderExcluded(overrides.bidders, bid.bidderCode)) {
     logger.logWarn(`bidder '${bid.bidderCode}' excluded from auction by bidder overrides`);
@@ -74,7 +74,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject) {
 }
 
 export function addBidderRequestsHook(next, bidderRequests) {
-  const {overrides, logger} = this;
+  const { overrides, logger } = this;
 
   const includedBidderRequests = bidderRequests.filter(function (bidderRequest) {
     if (bidderExcluded(overrides.bidders, bidderRequest.bidderCode)) {

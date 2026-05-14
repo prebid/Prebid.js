@@ -22,7 +22,7 @@
   "domains": [
     {
       "domain": "*",
-      "use": "Temporary 'probing' cookies are written (and deleted) to determine the top-level domain; likewise, probes are temporarily written to local and sessionStorage to determine their availability"
+      "use": "Temporary 'probing' cookies are written (and deleted) to determine the top-level domain and availability of cookies; likewise, probes are temporarily written to local and sessionStorage to determine their availability"
     }
   ]
 }

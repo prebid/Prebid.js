@@ -98,7 +98,7 @@ describe('Yandex adapter', function () {
     });
 
     it('should preserve existing site.content.language if it is set', function () {
-      mockBidderRequest.ortb2.site.content = {language: 'es'};
+      mockBidderRequest.ortb2.site.content = { language: 'es' };
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.site.content.language).to.equal('es');
     });
@@ -424,8 +424,8 @@ describe('Yandex adapter', function () {
           linearity: 1,
           battr: [1, 2, 3],
           format: [
-            {w: 640, h: 480},
-            {w: 800, h: 600}
+            { w: 640, h: 480 },
+            { w: 800, h: 600 }
           ]
         });
       });

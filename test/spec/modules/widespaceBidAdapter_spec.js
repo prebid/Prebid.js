@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec, storage} from 'modules/widespaceBidAdapter.js';
+import { expect } from 'chai';
+import { spec, storage } from 'modules/widespaceBidAdapter.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -102,7 +102,7 @@ describe('+widespaceAdatperTest', function () {
   const theDate = new Date();
   const expDate = new Date(theDate.setMonth(theDate.getMonth() + 1)).toGMTString();
   window.document.cookie = `wsCustomData1={id: test};path=/;expires=${expDate};`;
-  const PERF_DATA = JSON.stringify({perf_status: 'OK', perf_reqid: '226920425154', perf_ms: '747'});
+  const PERF_DATA = JSON.stringify({ perf_status: 'OK', perf_reqid: '226920425154', perf_ms: '747' });
   window.document.cookie = `wsPerfData123=${PERF_DATA};path=/;expires=${expDate};`;
 
   // Connect dummy data test

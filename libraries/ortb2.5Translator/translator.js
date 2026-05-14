@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, logError} from '../../src/utils.js';
+import { deepAccess, deepSetValue, logError } from '../../src/utils.js';
 
 export const EXT_PROMOTIONS = [
   'device.sua',

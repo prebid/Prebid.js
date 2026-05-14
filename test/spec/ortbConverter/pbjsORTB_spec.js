@@ -9,7 +9,7 @@ import {
 describe('pbjsORTB register / get processors', () => {
   let registerOrtbProcessor, getProcessors;
   beforeEach(() => {
-    ({registerOrtbProcessor, getProcessors} = processorRegistry());
+    ({ registerOrtbProcessor, getProcessors } = processorRegistry());
   })
   PROCESSOR_TYPES.forEach(type => {
     it(`can get and set ${type} processors`, () => {
@@ -40,7 +40,7 @@ describe('pbjsORTB register / get processors', () => {
 
   it('can set priority', () => {
     const proc = function () {};
-    registerOrtbProcessor({type: REQUEST, name: 'test', fn: proc, priority: 10});
+    registerOrtbProcessor({ type: REQUEST, name: 'test', fn: proc, priority: 10 });
     expect(getProcessors(DEFAULT)).to.eql({
       [REQUEST]: {
         test: {
@@ -53,7 +53,7 @@ describe('pbjsORTB register / get processors', () => {
 
   it('can assign processors to specific dialects', () => {
     const proc = function () {};
-    registerOrtbProcessor({type: REQUEST, name: 'test', fn: proc, dialects: [PBS]});
+    registerOrtbProcessor({ type: REQUEST, name: 'test', fn: proc, dialects: [PBS] });
     expect(getProcessors(DEFAULT)).to.eql({});
     expect(getProcessors(PBS)).to.eql({
       [REQUEST]: {

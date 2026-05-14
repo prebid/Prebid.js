@@ -7,6 +7,7 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -20,6 +21,7 @@ import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
  * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
  * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
  * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ * @typedef {import('./yandexBidAdapterTypes.d.ts').YandexBidRequestParams} YandexBidRequestParams
  */
 
 /**
@@ -29,15 +31,6 @@ import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 
 /**
  * @typedef {ServerRequest & CustomServerRequestFields} YandexServerRequest
- */
-
-/**
- * Yandex bidder-specific params which the publisher used in their bid request.
- *
- * @typedef {Object} YandexBidRequestParams
- * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
- * @property {number} [pageId] Deprecated. Please use `placementId` instead.
- * @property {number} [impId] Deprecated. Please use `placementId` instead.
  */
 
 /**
@@ -183,7 +176,7 @@ export const spec = {
         queryParams['tcf-consent'] = consentString;
       }
 
-      const adUnitElement = document.getElementById(bidRequest.params.pubcontainerid || bidRequest.adUnitCode);
+      const adUnitElement = bidRequest.params.pubcontainerid ? document.getElementById(bidRequest.params.pubcontainerid) : getAdUnitElement(bidRequest);
       const windowContext = getContext(adUnitElement);
       const isIframe = inIframe();
       const coords = isIframe ? getFramePosition() : {

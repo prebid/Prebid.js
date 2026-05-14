@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/prismaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/prismaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { requestBidsHook } from 'modules/consentManagementTcf.js';
 
@@ -51,25 +51,27 @@ describe('Prisma bid adapter tests', function () {
     'bidderWinsCount': 0
   }];
 
-  const DISPLAY_BID_RESPONSE = {'body': {
-    'responses': [
-      {
-        'bidId': '4d9e29504f8af6',
-        'cpm': 0.437245,
-        'width': 300,
-        'height': 250,
-        'creativeId': '98493581',
-        'currency': 'EUR',
-        'netRevenue': true,
-        'type': 'banner',
-        'ttl': 360,
-        'uuid': 'ce6d1ee3-2a05-4d7c-b97a-9e62097798ec',
-        'bidder': 'appnexus',
-        'consent': 1,
-        'tagId': 'luvxjvgn'
-      }
-    ],
-  }};
+  const DISPLAY_BID_RESPONSE = {
+    'body': {
+      'responses': [
+        {
+          'bidId': '4d9e29504f8af6',
+          'cpm': 0.437245,
+          'width': 300,
+          'height': 250,
+          'creativeId': '98493581',
+          'currency': 'EUR',
+          'netRevenue': true,
+          'type': 'banner',
+          'ttl': 360,
+          'uuid': 'ce6d1ee3-2a05-4d7c-b97a-9e62097798ec',
+          'bidder': 'appnexus',
+          'consent': 1,
+          'tagId': 'luvxjvgn'
+        }
+      ],
+    }
+  };
 
   const VIDEO_BID_REQUEST = [
     {
@@ -101,25 +103,27 @@ describe('Prisma bid adapter tests', function () {
     }
   ]
 
-  const VIDEO_BID_RESPONSE = {'body': {
-    'responses': [
-      {
-        'bidId': '2c129e8e01859a',
-        'type': 'video',
-        'uuid': 'b8e7b2f0-c378-479f-aa4f-4f55d5d7d1d5',
-        'cpm': 4.5421,
-        'width': 1,
-        'height': 1,
-        'creativeId': '97517771',
-        'currency': 'EUR',
-        'netRevenue': true,
-        'ttl': 360,
-        'bidder': 'appnexus',
-        'consent': 1,
-        'tagId': 'yqsc1tfj'
-      }
-    ]
-  }};
+  const VIDEO_BID_RESPONSE = {
+    'body': {
+      'responses': [
+        {
+          'bidId': '2c129e8e01859a',
+          'type': 'video',
+          'uuid': 'b8e7b2f0-c378-479f-aa4f-4f55d5d7d1d5',
+          'cpm': 4.5421,
+          'width': 1,
+          'height': 1,
+          'creativeId': '97517771',
+          'currency': 'EUR',
+          'netRevenue': true,
+          'ttl': 360,
+          'bidder': 'appnexus',
+          'consent': 1,
+          'tagId': 'yqsc1tfj'
+        }
+      ]
+    }
+  };
 
   const DEFAULT_OPTIONS = {
     gdprConsent: {
@@ -208,7 +212,8 @@ describe('Prisma bid adapter tests', function () {
     const bid = response[0];
     expect(bid.cpm).to.equal(4.5421);
     expect(bid.vastUrl).to.equal('https://prisma.nexx360.io/cache?uuid=b8e7b2f0-c378-479f-aa4f-4f55d5d7d1d5');
-    expect(bid.vastImpUrl).to.equal('https://prisma.nexx360.io/track-imp?type=prebid&mediatype=video&ssp=appnexus&tag_id=yqsc1tfj&consent=1&price=4.5421');
+    expect(bid.vastTrackers).to.have.property('impression').that.is.an('array');
+    expect(bid.vastTrackers.impression[0]).to.equal('https://prisma.nexx360.io/track-imp?type=prebid&mediatype=video&ssp=appnexus&tag_id=yqsc1tfj&consent=1&price=4.5421');
     expect(bid.width).to.equal(1);
     expect(bid.height).to.equal(1);
     expect(bid.creativeId).to.equal('97517771');
@@ -242,7 +247,7 @@ describe('Prisma bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with cookies in bid response', function () {
-    DISPLAY_BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
+    DISPLAY_BID_RESPONSE.body.cookies = [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }];
     var syncs = spec.getUserSyncs({}, [DISPLAY_BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');

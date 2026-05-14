@@ -1,7 +1,7 @@
-import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {deepClone} from '../../../src/utils.js';
-import {expect} from 'chai';
+import { spec } from '../../../modules/zeta_global_sspBidAdapter.js'
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { deepClone } from '../../../src/utils.js';
+import { expect } from 'chai';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -460,31 +460,31 @@ describe('Zeta Ssp Bid Adapter', function () {
     const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 
     it('execute as per config', function() {
-      expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.deep.equal([{
         type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
       }]);
-      expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: false })).to.deep.equal([{
         type: 'image', url: `${USER_SYNC_URL_IMAGE}`
       }]);
     });
 
     it('GDPR', function() {
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: 'foo'})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' })).to.deep.equal([{
         type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gdpr=1&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: false, consentString: 'foo'})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' })).to.deep.equal([{
         type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gdpr=0&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: undefined})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined })).to.deep.equal([{
         type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gdpr=1&gdpr_consent=`
       }]);
-      expect(spec.getUserSyncs({iframeEnabled: false}, {}, {gdprApplies: true, consentString: 'foo'})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: true, consentString: 'foo' })).to.deep.equal([{
         type: 'image', url: `${USER_SYNC_URL_IMAGE}&gdpr=1&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({iframeEnabled: false}, {}, {gdprApplies: false, consentString: 'foo'})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: false, consentString: 'foo' })).to.deep.equal([{
         type: 'image', url: `${USER_SYNC_URL_IMAGE}&gdpr=0&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({iframeEnabled: false}, {}, {gdprApplies: true, consentString: undefined})).to.deep.equal([{
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, { gdprApplies: true, consentString: undefined })).to.deep.equal([{
         type: 'image', url: `${USER_SYNC_URL_IMAGE}&gdpr=1&gdpr_consent=`
       }]);
     });
@@ -500,7 +500,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
     describe('GPP', function() {
       it('should return userSync url without GPP consent if gppConsent is undefined', () => {
-        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, undefined);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, undefined);
         expect(result).to.deep.equal([{
           type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
         }]);
@@ -508,7 +508,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
       it('should return userSync url without GPP consent if gppConsent.gppString is undefined', () => {
         const gppConsent = { applicableSections: ['5'] };
-        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, gppConsent);
         expect(result).to.deep.equal([{
           type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
         }]);
@@ -516,7 +516,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
       it('should return userSync url without GPP consent if gppConsent.applicableSections is undefined', () => {
         const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN' };
-        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, gppConsent);
         expect(result).to.deep.equal([{
           type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
         }]);
@@ -524,7 +524,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
       it('should return userSync url without GPP consent if gppConsent.applicableSections is an empty array', () => {
         const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [] };
-        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, gppConsent);
         expect(result).to.deep.equal([{
           type: 'iframe', url: `${USER_SYNC_URL_IFRAME}`
         }]);
@@ -532,7 +532,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
       it('should concatenate gppString and applicableSections values in the returned userSync iframe url', () => {
         const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
-        const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, gppConsent);
         expect(result).to.deep.equal([{
           type: 'iframe', url: `${USER_SYNC_URL_IFRAME}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
         }]);
@@ -540,7 +540,7 @@ describe('Zeta Ssp Bid Adapter', function () {
 
       it('should concatenate gppString and applicableSections values in the returned userSync image url', () => {
         const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
-        const result = spec.getUserSyncs({iframeEnabled: false}, undefined, undefined, undefined, gppConsent);
+        const result = spec.getUserSyncs({ iframeEnabled: false }, undefined, undefined, undefined, gppConsent);
         expect(result).to.deep.equal([{
           type: 'image', url: `${USER_SYNC_URL_IMAGE}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
         }]);

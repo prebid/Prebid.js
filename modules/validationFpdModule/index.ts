@@ -2,10 +2,10 @@
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
-import {deepAccess, isEmpty, isNumber, logWarn} from '../../src/utils.js';
-import {ORTB_MAP} from './config.js';
-import {submodule} from '../../src/hook.js';
-import {getCoreStorageManager} from '../../src/storageManager.js';
+import { deepAccess, isEmpty, isNumber, logWarn } from '../../src/utils.js';
+import { ORTB_MAP } from './config.js';
+import { submodule } from '../../src/hook.js';
+import { getCoreStorageManager } from '../../src/storageManager.js';
 
 // TODO: do FPD modules need their own namespace?
 const STORAGE = getCoreStorageManager('FPDValidation');
@@ -85,7 +85,7 @@ function typeValidation(data, mapping) {
  */
 export function filterArrayData(arr, child, path, parent) {
   arr = arr.filter((index, i) => {
-    const check = typeValidation(index, {type: child.type, isArray: child.isArray});
+    const check = typeValidation(index, { type: child.type, isArray: child.isArray });
 
     if (check && Array.isArray(index) === Boolean(child.isArray)) {
       return true;
@@ -157,7 +157,7 @@ export function validateFpd(fpd, path = '', parent = '') {
   }).filter(key => {
     const mapping = deepAccess(ORTB_MAP, path + key);
     // let typeBool = false;
-    const typeBool = (mapping) ? typeValidation(fpd[key], {type: mapping.type, isArray: mapping.isArray}) : true;
+    const typeBool = (mapping) ? typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray }) : true;
 
     if (typeBool || !mapping) return key;
 

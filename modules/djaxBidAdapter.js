@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'djax';
@@ -30,7 +30,7 @@ function createRenderer(bidAd, rendererParams, adUnitCode) {
     id: rendererParams.id,
     url: rendererParams.url,
     loaded: false,
-    config: {'player_height': bidAd.height, 'player_width': bidAd.width},
+    config: { 'player_height': bidAd.height, 'player_width': bidAd.width },
     adUnitCode
   });
   try {

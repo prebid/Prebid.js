@@ -83,7 +83,7 @@ describe('adhashBidAdapter', function () {
     };
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { topmostLocation: 'https://example.com/path.html' } }
       );
       expect(result.length).to.equal(1);
@@ -101,7 +101,7 @@ describe('adhashBidAdapter', function () {
       expect(result[0].data).to.have.property('recentAds');
     });
     it('should build the request correctly without referer', function () {
-      const result = spec.buildRequests([ bidRequest ], { gdprConsent: { gdprApplies: true, consentString: 'example' } });
+      const result = spec.buildRequests([bidRequest], { gdprConsent: { gdprApplies: true, consentString: 'example' } });
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=3.6&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
@@ -285,11 +285,11 @@ describe('adhashBidAdapter', function () {
     });
 
     it('should return empty array when there are no creatives returned', function () {
-      expect(spec.interpretResponse({body: {creatives: []}}, request).length).to.equal(0);
+      expect(spec.interpretResponse({ body: { creatives: [] } }, request).length).to.equal(0);
     });
 
     it('should return empty array when there is no creatives key in the response', function () {
-      expect(spec.interpretResponse({body: {}}, request).length).to.equal(0);
+      expect(spec.interpretResponse({ body: {} }, request).length).to.equal(0);
     });
 
     it('should return empty array when something is not right', function () {

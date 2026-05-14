@@ -1,20 +1,20 @@
-import {expect} from 'chai';
-import {spec} from 'modules/buzzoolaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/buzzoolaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import '../../../src/prebid.js';
-import {executeRenderer, Renderer} from '../../../src/Renderer.js';
-import {deepClone} from '../../../src/utils.js';
+import { executeRenderer, Renderer } from '../../../src/Renderer.js';
+import { deepClone } from '../../../src/utils.js';
 
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
 const RENDERER_SRC = 'https://tube.buzzoola.com/new/build/buzzlibrary.js';
 
 const INVALID_BIDS = [{
   'bidder': 'buzzoola',
-  'mediaTypes': {'banner': {'sizes': [[240, 400], [300, 600]]}},
+  'mediaTypes': { 'banner': { 'sizes': [[240, 400], [300, 600]] } },
   'sizes': [[240, 400], [300, 600]]
 }, {
   'bidder': 'buzzoola',
-  'params': {'placementId': 417846},
+  'params': { 'placementId': 417846 },
   'sizes': [[240, 400], [300, 600]]
 }, {
   'bidder': 'buzzoola',
@@ -28,13 +28,13 @@ const INVALID_BIDS = [{
   }
 }, {
   'bidder': 'buzzoola',
-  'params': {'placementId': 417845}
+  'params': { 'placementId': 417845 }
 }];
 
 const BANNER_BID = {
   'bidder': 'buzzoola',
-  'params': {'placementId': 417846},
-  'mediaTypes': {'banner': {'sizes': [[240, 400], [300, 600]]}},
+  'params': { 'placementId': 417846 },
+  'mediaTypes': { 'banner': { 'sizes': [[240, 400], [300, 600]] } },
   'sizes': [[240, 400], [300, 600]],
   'bidId': '2a11641ada3c6a'
 };
@@ -79,7 +79,7 @@ const REQUIRED_BANNER_FIELDS = [
 
 const VIDEO_BID = {
   'bidder': 'buzzoola',
-  'params': {'placementId': 417845},
+  'params': { 'placementId': 417845 },
   'mediaTypes': {
     'video': {
       'context': 'instream',
@@ -140,7 +140,7 @@ const REQUIRED_VIDEO_FIELDS = [
 
 const NATIVE_BID = {
   'bidder': 'buzzoola',
-  'params': {'placementId': 417845},
+  'params': { 'placementId': 417845 },
   'mediaTypes': {
     'native': {
       'image': {
@@ -296,13 +296,13 @@ describe('buzzoolaBidAdapter', () => {
     const emptyResponse = '';
 
     function nobidServerResponseCheck(request, response = noBidServerResponse) {
-      const noBidResult = spec.interpretResponse({body: response}, {data: request});
+      const noBidResult = spec.interpretResponse({ body: response }, { data: request });
 
       expect(noBidResult.length).to.equal(0);
     }
 
     function bidServerResponseCheck(response, request, fields) {
-      const result = spec.interpretResponse({body: response}, {data: request});
+      const result = spec.interpretResponse({ body: response }, { data: request });
 
       expect(result).to.deep.equal(response);
       result.forEach(bid => {
@@ -369,7 +369,7 @@ describe('buzzoolaBidAdapter', () => {
       const scriptStub = sinon.stub(document, 'createElement');
       scriptStub.withArgs('script').returns(scriptElement);
 
-      result = spec.interpretResponse({body: VIDEO_RESPONSE}, {data: outstreamVideoRequest})[0];
+      result = spec.interpretResponse({ body: VIDEO_RESPONSE }, { data: outstreamVideoRequest })[0];
       renderer = result.renderer;
 
       result.adUnitCode = 'adUnitCode';

@@ -25,7 +25,6 @@ const {
   BID_WON,
   BID_TIMEOUT,
   BILLABLE_EVENT,
-  SEAT_NON_BID,
   PBS_ANALYTICS,
   BID_REJECTED
 } = EVENTS;
@@ -169,7 +168,7 @@ const MOCK = {
     getStatusCode: () => 1,
     metrics
   },
-  SEAT_NON_BID: {
+  PBS_ANALYTICS: {
     auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
     seatnonbid: [{
       seat: 'rubicon',
@@ -1854,67 +1853,6 @@ describe('magnite analytics adapter', function () {
           rule: 'desktop-magnite.com',
         });
       })
-      it('should add sufix _cookieless to the wrapper.rule if ortb2.device.ext.cdep start with "treatment" or  "control_2"', () => {
-        // Set the confs
-        config.setConfig({
-          rubicon: {
-            wrapperName: '1001_general',
-            wrapperFamily: 'general',
-            rule_name: 'desktop-magnite.com',
-          }
-        });
-        const auctionId = MOCK.AUCTION_INIT.auctionId;
-
-        const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
-        auctionInit.bidderRequests[0].ortb2.device.ext = { cdep: 'treatment' };
-        // Run auction
-        events.emit(AUCTION_INIT, auctionInit);
-        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
-        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-        events.emit(AUCTION_END, MOCK.AUCTION_END);
-        [gptSlotRenderEnded0].forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
-        events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
-        clock.tick(rubiConf.analyticsEventDelay);
-        expect(server.requests.length).to.equal(1);
-        const request = server.requests[0];
-        const message = JSON.parse(request.requestBody);
-        expect(message.wrapper).to.deep.equal({
-          name: '1001_general',
-          family: 'general',
-          rule: 'desktop-magnite.com_cookieless',
-        });
-      })
-      it('should add cookieless to the wrapper.rule if ortb2.device.ext.cdep start with "treatment" or  "control_2"', () => {
-        // Set the confs
-        config.setConfig({
-          rubicon: {
-            wrapperName: '1001_general',
-            wrapperFamily: 'general',
-          }
-        });
-        const auctionId = MOCK.AUCTION_INIT.auctionId;
-
-        const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
-        auctionInit.bidderRequests[0].ortb2.device.ext = { cdep: 'control_2' };
-        // Run auction
-        events.emit(AUCTION_INIT, auctionInit);
-        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
-        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-        events.emit(AUCTION_END, MOCK.AUCTION_END);
-        [gptSlotRenderEnded0].forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
-        events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
-        clock.tick(rubiConf.analyticsEventDelay);
-        expect(server.requests.length).to.equal(1);
-        const request = server.requests[0];
-        const message = JSON.parse(request.requestBody);
-        expect(message.wrapper).to.deep.equal({
-          family: 'general',
-          name: '1001_general',
-          rule: 'cookieless',
-        });
-      });
     });
   });
 
@@ -2359,7 +2297,7 @@ describe('magnite analytics adapter', function () {
           accountId: 1001
         }
       });
-      seatnonbid = utils.deepClone(MOCK.SEAT_NON_BID);
+      seatnonbid = utils.deepClone(MOCK.PBS_ANALYTICS);
     });
 
     it('adds seatnonbid info to bids array', () => {
@@ -2379,12 +2317,12 @@ describe('magnite analytics adapter', function () {
 
     it('adjusts the status according to the status map', () => {
       const statuses = [
-        {code: 0, status: 'no-bid'},
-        {code: 100, status: 'error', error: {code: 'request-error', description: 'general error'}},
-        {code: 101, status: 'error', error: {code: 'timeout-error', description: 'prebid server timeout'}},
-        {code: 200, status: 'rejected'},
-        {code: 202, status: 'rejected'},
-        {code: 301, status: 'rejected-ipf'}
+        { code: 0, status: 'no-bid' },
+        { code: 100, status: 'error', error: { code: 'request-error', description: 'general error' } },
+        { code: 101, status: 'error', error: { code: 'timeout-error', description: 'prebid server timeout' } },
+        { code: 200, status: 'rejected' },
+        { code: 202, status: 'rejected' },
+        { code: 301, status: 'rejected-ipf' }
       ];
       statuses.forEach((info, index) => {
         checkStatusAgainstCode(info.status, info.code, info.error, index);

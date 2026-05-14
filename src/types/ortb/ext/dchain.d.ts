@@ -1,6 +1,6 @@
 // https://iabtechlab.com/wp-content/uploads/2021/03/DemandChainObject-1-0.pdf
 
-import type {BooleanInt, Extensible} from "../common.d.ts";
+import type { BooleanInt, Extensible } from "../common.d.ts";
 
 export type DemandChainNode = Extensible & {
   /**

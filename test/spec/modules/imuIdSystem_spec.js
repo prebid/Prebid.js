@@ -13,9 +13,9 @@ import {
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 describe('imuId module', function () {
   // let setLocalStorageStub;
@@ -54,10 +54,12 @@ describe('imuId module', function () {
       getLocalStorageStub.withArgs(storageKey).returns('testUid');
       getLocalStorageStub.withArgs(storagePpKey).returns('testPpid');
       const id = imuIdSubmodule.getId(configParamTestCase);
-      expect(id).to.be.deep.equal({id: {
-        imuid: 'testUid',
-        imppid: 'testPpid'
-      }});
+      expect(id).to.be.deep.equal({
+        id: {
+          imuid: 'testUid',
+          imppid: 'testPpid'
+        }
+      });
     });
 
     storageTestCasesForEmpty.forEach(testCase => it('should return the callback when it not exists in local storages', function () {

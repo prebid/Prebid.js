@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {spec} from '../../../modules/silvermobBidAdapter.js';
+import { spec } from '../../../modules/silvermobBidAdapter.js';
 import 'modules/priceFloors.js';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
@@ -181,7 +181,7 @@ describe('silvermobAdapter', function () {
     });
 
     it('should send the CCPA data in the request', async function () {
-      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], await addFPDToBidderRequest({...bidderRequest, ...{uspConsent: '1YYY'}}));
+      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], await addFPDToBidderRequest({ ...bidderRequest, ...{ uspConsent: '1YYY' } }));
       expect(serverRequest.data.regs.ext.us_privacy).to.equal('1YYY');
     });
   });

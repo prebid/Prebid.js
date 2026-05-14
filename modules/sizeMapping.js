@@ -1,8 +1,8 @@
-import {config} from '../src/config.js';
-import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
+import { config } from '../src/config.js';
+import { deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn } from '../src/utils.js';
 
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { setupAdUnitMediaTypes } from '../src/adapterManager.js';
 
 let sizeConfig = [];
 
@@ -36,9 +36,9 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
  */
 export function getLabels(bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
-    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
+    return { labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels };
   }
-  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
+  return { labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels };
 }
 
 /**
@@ -76,12 +76,12 @@ if (FEATURES.VIDEO) {
  * @returns {Object} return.mediaTypes - The media types object.
  * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
-export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
+export function resolveStatus({ labels = [], labelAll = false, activeLabels = [] } = {}, mediaTypes, configs = sizeConfig) {
   const maps = evaluateSizeConfig(configs);
 
   let filtered = false;
   let hasSize = false;
-  const filterResults = {before: {}, after: {}};
+  const filterResults = { before: {}, after: {} };
 
   if (maps.shouldFilter) {
     Object.entries(SIZE_PROPS).forEach(([mediaType, sizeProp]) => {

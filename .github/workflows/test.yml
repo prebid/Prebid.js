@@ -8,6 +8,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  actions: read
+
 concurrency:
   group: test-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -25,32 +29,43 @@ jobs:
       base-branch: ${{ steps.info.outputs.base-branch }}
       base-commit: ${{ steps.info.outputs.base-commit }}
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-
       - name: Checkout code (PR)
         id: checkout-pr
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
+          fetch-depth: 0
 
       - name: Checkout code (push)
         id: checkout-push
         if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
 
       - name: Commit info
         id: info
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+            git fetch origin "$BASE_BRANCH"
+            BASE_COMMIT="$(git merge-base HEAD "origin/$BASE_BRANCH")"
+          else
+            BASE_BRANCH="${{ github.ref }}"
+            BASE_COMMIT="${{ github.event.before }}"
+          fi
           echo ref="${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}" >> $GITHUB_OUTPUT
           echo commit="${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}" >> $GITHUB_OUTPUT
           echo branch="${{ github.head_ref || github.ref }}" >> $GITHUB_OUTPUT
           echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
-          echo base-branch="${{ github.event.pull_request.base.ref || github.ref }}" >> $GITHUB_OUTPUT
-          echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
+          echo base-branch="$BASE_BRANCH" >> $GITHUB_OUTPUT
+          echo base-commit="$BASE_COMMIT" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         uses: ./.github/actions/npm-ci
@@ -108,9 +123,17 @@ jobs:
         with:
           name: ${{ needs.test.outputs.coverage }}
 
+      - name: Combine coverage results
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install lcov -y
+          find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o build/coverage/combined.info
+
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
+          file: build/coverage/combined.info
           git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ needs.checkout.outputs.base-branch }}

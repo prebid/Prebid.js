@@ -1,5 +1,5 @@
-import {enrichFPDHook} from '../../../modules/consentManagementUsp.js';
-import {uspDataHandler} from '../../../src/adapterManager.js';
+import { enrichFPDHook } from '../../../modules/consentManagementUsp.js';
+import { uspDataHandler } from '../../../src/adapterManager.js';
 
 describe('FPD enrichment USP', () => {
   let sandbox, consent;

@@ -1,8 +1,8 @@
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {EVENTS} from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {ajax} from '../src/ajax.js';
-import {compressDataWithGZip, isGzipCompressionSupported, logError, logInfo} from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { compressDataWithGZip, isGzipCompressionSupported, logError, logInfo } from '../src/utils.js';
 import * as events from '../src/events.js';
 
 const {
@@ -26,7 +26,7 @@ const PBJS_VERSION = 'v' + '$prebid.version$';
 const ID5_REDACTED = '__ID5_REDACTED__';
 const isArray = Array.isArray;
 
-const id5Analytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
+const id5Analytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), {
   eventsToTrack: STANDARD_EVENTS_TO_TRACK,
 
   track: (event) => {

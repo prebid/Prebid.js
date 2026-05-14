@@ -36,7 +36,7 @@ describe('vuukleBidAdapterTests', function() {
   });
 
   it('validate_generated_params_tmax', function() {
-    request = spec.buildRequests(bidRequestData.bids, {timeout: 1234});
+    request = spec.buildRequests(bidRequestData.bids, { timeout: 1234 });
     const req_data = request[0].data;
 
     expect(req_data.tmax).to.equal(1234);
@@ -120,7 +120,7 @@ describe('vuukleBidAdapterTests', function() {
   })
 
   it('must handle usp consent', function() {
-    request = spec.buildRequests(bidRequestData.bids, {uspConsent: '1YNN'});
+    request = spec.buildRequests(bidRequestData.bids, { uspConsent: '1YNN' });
     const req_data = request[0].data;
 
     expect(req_data.uspConsent).to.equal('1YNN');

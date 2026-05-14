@@ -542,6 +542,7 @@ export class BidRequestDataSource {
   constructor() {
     this.type = 'BidRequestDataSource'
   }
+
   processBidRequestData(bidRequest, bidderRequest) {}
   getRequestQueryString() {
     return ''

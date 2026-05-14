@@ -1,5 +1,5 @@
 import { getBidFromResponse } from '../../../libraries/processResponse/index.js';
-import {expect} from 'chai/index.js';
+import { expect } from 'chai/index.js';
 
 describe('processResponse', function () {
   const respItem = {

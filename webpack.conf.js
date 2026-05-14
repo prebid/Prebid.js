@@ -65,14 +65,13 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'),
-        enforce: "pre",
-        use: ["source-map-loader"],
+        extractSourceMap: true,
       },
       ...(() => {
         if (!isES5Mode) {
           return [];
         } else {
-          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase, ES5: true});
+          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), ES5: true});
           return [
             {
               test: /\.node_modules\/.*\.js$/,

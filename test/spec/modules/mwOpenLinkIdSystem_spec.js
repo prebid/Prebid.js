@@ -13,8 +13,8 @@ describe('mwOpenLinkId module', function () {
   });
 
   it('getId() should return a MediaWallah openLink Id when the MediaWallah openLink first party cookie exists', function () {
-    writeCookie({eid: 'XX-YY-ZZ-123'});
+    writeCookie({ eid: 'XX-YY-ZZ-123' });
     const id = mwOpenLinkIdSubModule.getId(P_CONFIG_MOCK);
-    expect(id).to.be.deep.equal({id: {eid: 'XX-YY-ZZ-123'}});
+    expect(id).to.be.deep.equal({ id: { eid: 'XX-YY-ZZ-123' } });
   });
 });

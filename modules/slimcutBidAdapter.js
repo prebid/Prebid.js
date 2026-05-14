@@ -1,4 +1,4 @@
-import {getBidIdParameter, getValue, parseSizesInput} from '../src/utils.js';
+import { getBidIdParameter, getValue, parseSizesInput } from '../src/utils.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -16,7 +16,7 @@ const BIDDER_CODE = 'slimcut';
 const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [{ code: 'scm'}],
+  aliases: [{ code: 'scm' }],
   supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.

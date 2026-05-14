@@ -1,5 +1,5 @@
-import {ortbConverter} from '../../../libraries/ortbConverter/converter.js';
-import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
+import { ortbConverter } from '../../../libraries/ortbConverter/converter.js';
+import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js';
 
 describe('pbjs-ortb converter', () => {
   const MOCK_BIDDER_REQUEST = {
@@ -106,15 +106,15 @@ describe('pbjs-ortb converter', () => {
 
   it('runs each processor', () => {
     const cvt = makeConverter();
-    const request = cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST});
+    const request = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST });
     expect(request).to.eql({
       id: 'req0',
       imp: [
-        {id: 'imp0', bidId: 111},
-        {id: 'imp1', bidId: 112}
+        { id: 'imp0', bidId: 111 },
+        { id: 'imp1', bidId: 112 }
       ]
     });
-    const response = cvt.fromORTB({request, response: MOCK_ORTB_RESPONSE});
+    const response = cvt.fromORTB({ request, response: MOCK_ORTB_RESPONSE });
     expect(response.bids).to.eql([{
       impid: 'imp0',
       bidId: 111,
@@ -152,8 +152,8 @@ describe('pbjs-ortb converter', () => {
   }).forEach(([t, resp]) => {
     it(`returns no bids when response is ${t}`, () => {
       const converter = makeConverter();
-      const {bids} = converter.fromORTB({
-        request: converter.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}),
+      const { bids } = converter.fromORTB({
+        request: converter.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }),
         response: resp
       });
       expect(bids).to.eql([]);
@@ -161,7 +161,7 @@ describe('pbjs-ortb converter', () => {
   })
 
   it('gives precedence to the bidRequests argument over bidderRequest.bids', () => {
-    expect(makeConverter().toORTB({bidderRequest: MOCK_BIDDER_REQUEST, bidRequests: [MOCK_BIDDER_REQUEST.bids[0]]})).to.eql({
+    expect(makeConverter().toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, bidRequests: [MOCK_BIDDER_REQUEST.bids[0]] })).to.eql({
       id: 'req0',
       imp: [
         {
@@ -174,19 +174,19 @@ describe('pbjs-ortb converter', () => {
 
   it('passes context to every processor', () => {
     const cvt = makeConverter();
-    const request = cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}});
+    const request = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } });
     expect(request.ctx).to.equal('context');
     request.imp.forEach(imp => expect(imp.ctx).to.equal('context'));
-    const response = cvt.fromORTB({request, response: MOCK_ORTB_RESPONSE});
+    const response = cvt.fromORTB({ request, response: MOCK_ORTB_RESPONSE });
     expect(response.ctx).to.eql('context');
     response.bids.forEach(bidResponse => expect(bidResponse.ctx).to.equal('context'));
   });
 
   it('passes request context to imp and bidResponse processors', () => {
     const cvt = makeConverter();
-    const request = cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}});
+    const request = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } });
     expect(request.imp[0].reqCtx).to.eql('context');
-    const response = cvt.fromORTB({request, response: MOCK_ORTB_RESPONSE});
+    const response = cvt.fromORTB({ request, response: MOCK_ORTB_RESPONSE });
     expect(response.bids[0].reqCtx).to.eql('context');
   });
 
@@ -199,7 +199,7 @@ describe('pbjs-ortb converter', () => {
         }, buildImp(bidRequest, context));
       }
     });
-    const request = cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}});
+    const request = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } });
     expect(request.imp.length).to.eql(2);
     request.imp.forEach(imp => {
       expect(imp.extraArg).to.eql(imp.bidId);
@@ -215,7 +215,7 @@ describe('pbjs-ortb converter', () => {
         }
       }
     });
-    expect(cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}).imp.length).to.eql(1);
+    expect(cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }).imp.length).to.eql(1);
   });
 
   it('does not include imps that have no id', () => {
@@ -226,7 +226,7 @@ describe('pbjs-ortb converter', () => {
         return imp;
       }
     });
-    expect(cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}).imp.length).to.eql(0);
+    expect(cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }).imp.length).to.eql(0);
   })
 
   it('allows overriding of response building with bidResponse', () => {
@@ -240,7 +240,7 @@ describe('pbjs-ortb converter', () => {
     });
     const response = cvt.fromORTB({
       response: MOCK_ORTB_RESPONSE,
-      request: cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}})
+      request: cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } })
     });
 
     expect(response.bids.length).to.equal(3);
@@ -259,7 +259,7 @@ describe('pbjs-ortb converter', () => {
       }
     });
     expect(cvt.fromORTB({
-      request: cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST}),
+      request: cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST }),
       response: MOCK_ORTB_RESPONSE
     }).bids.length).to.equal(1);
   });
@@ -274,7 +274,7 @@ describe('pbjs-ortb converter', () => {
         }
       }
     });
-    const req = cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}});
+    const req = cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } });
     expect(req.extraArg).to.equal(MOCK_BIDDER_REQUEST.id);
     expect(req.extraCtx).to.equal('context');
     expect(req.request.imp.length).to.equal(2);
@@ -291,7 +291,7 @@ describe('pbjs-ortb converter', () => {
       }
     });
     const resp = cvt.fromORTB({
-      request: cvt.toORTB({bidderRequest: MOCK_BIDDER_REQUEST, context: {ctx: 'context'}}),
+      request: cvt.toORTB({ bidderRequest: MOCK_BIDDER_REQUEST, context: { ctx: 'context' } }),
       response: MOCK_ORTB_RESPONSE,
     });
     expect(resp.extraArg).to.equal(MOCK_ORTB_RESPONSE.id);

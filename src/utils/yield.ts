@@ -1,4 +1,4 @@
-import {PbPromise} from "./promise.ts";
+import { PbPromise } from "./promise.ts";
 
 declare module '../prebidGlobal' {
   interface PrebidJS {

@@ -1,4 +1,4 @@
-import {ttlCollection} from '../../../../src/utils/ttlCollection.js';
+import { ttlCollection } from '../../../../src/utils/ttlCollection.js';
 
 describe('ttlCollection', () => {
   it('can add & retrieve items', () => {
@@ -61,22 +61,22 @@ describe('ttlCollection', () => {
         });
 
         it('should clear items after enough time has passed', () => {
-          coll.add({no: 'ttl'});
-          coll.add({ttl: 1000});
-          coll.add({ttl: 4000});
+          coll.add({ no: 'ttl' });
+          coll.add({ ttl: 1000 });
+          coll.add({ ttl: 4000 });
           return waitForPromises().then(() => {
             clock.tick(500);
-            expect(coll.toArray()).to.eql([{no: 'ttl'}, {ttl: 1000}, {ttl: 4000}]);
+            expect(coll.toArray()).to.eql([{ no: 'ttl' }, { ttl: 1000 }, { ttl: 4000 }]);
             clock.tick(SLACK + 500);
-            expect(coll.toArray()).to.eql([{no: 'ttl'}, {ttl: 4000}]);
+            expect(coll.toArray()).to.eql([{ no: 'ttl' }, { ttl: 4000 }]);
             clock.tick(3000);
-            expect(coll.toArray()).to.eql([{no: 'ttl'}]);
+            expect(coll.toArray()).to.eql([{ no: 'ttl' }]);
           });
         });
 
         it('should run onExpiry when items are cleared', () => {
-          const i1 = {ttl: 1000, some: 'data'};
-          const i2 = {ttl: 2000, some: 'data'};
+          const i1 = { ttl: 1000, some: 'data' };
+          const i2 = { ttl: 2000, some: 'data' };
           coll.add(i1);
           coll.add(i2);
           const cb = sinon.stub();
@@ -92,7 +92,7 @@ describe('ttlCollection', () => {
         });
 
         it('should not fire onExpiry for items that are deleted', () => {
-          const i = {ttl: 1000, foo: 'bar'};
+          const i = { ttl: 1000, foo: 'bar' };
           coll.add(i);
           const cb = sinon.stub();
           coll.onExpiry(cb);
@@ -106,7 +106,7 @@ describe('ttlCollection', () => {
 
         it('should allow unregistration of onExpiry callbacks', () => {
           const cb = sinon.stub();
-          coll.add({ttl: 500});
+          coll.add({ ttl: 500 });
           coll.onExpiry(cb)();
           return waitForPromises().then(() => {
             clock.tick(500 + SLACK);
@@ -115,21 +115,21 @@ describe('ttlCollection', () => {
         })
 
         it('should not wait too long if a shorter ttl shows up', () => {
-          coll.add({ttl: 4000});
-          coll.add({ttl: 1000});
+          coll.add({ ttl: 4000 });
+          coll.add({ ttl: 1000 });
           return waitForPromises().then(() => {
             clock.tick(1000 + SLACK);
             expect(coll.toArray()).to.eql([
-              {ttl: 4000}
+              { ttl: 4000 }
             ]);
           });
         });
 
         it('should not wait more if later ttls are within slack', () => {
-          coll.add({start: 0, ttl: 4000});
+          coll.add({ start: 0, ttl: 4000 });
           return waitForPromises().then(() => {
             clock.tick(4000);
-            coll.add({start: 0, ttl: 5000});
+            coll.add({ start: 0, ttl: 5000 });
             return waitForPromises().then(() => {
               clock.tick(SLACK);
               expect(coll.toArray()).to.eql([]);
@@ -139,7 +139,7 @@ describe('ttlCollection', () => {
 
         it('should clear items ASAP if they expire in the past', () => {
           clock.tick(10000);
-          coll.add({start: 0, ttl: 1000});
+          coll.add({ start: 0, ttl: 1000 });
           return waitForPromises().then(() => {
             clock.tick(SLACK);
             expect(coll.toArray()).to.eql([]);
@@ -147,7 +147,7 @@ describe('ttlCollection', () => {
         });
 
         it('should clear items ASAP if they have ttl = 0', () => {
-          coll.add({ttl: 0});
+          coll.add({ ttl: 0 });
           return waitForPromises().then(() => {
             clock.tick(SLACK);
             expect(coll.toArray()).to.eql([]);

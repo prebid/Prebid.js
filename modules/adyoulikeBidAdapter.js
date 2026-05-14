@@ -1,7 +1,7 @@
-import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -253,7 +253,7 @@ function getFloor(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.width, size.height ]
+    size: [size.width, size.height]
   });
 
   if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {

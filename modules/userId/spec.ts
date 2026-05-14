@@ -1,10 +1,12 @@
-import type {BidderCode, StorageDisclosure} from "../../src/types/common";
-import {STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType} from "../../src/storageManager.ts";
-import type {AllConsentData} from "../../src/consentHandler.ts";
-import type {Ext} from '../../src/types/ortb/common';
-import type {ORTBRequest} from "../../src/types/ortb/request";
+import type { BidderCode, StorageDisclosure } from "../../src/types/common";
+import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
+import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { Ext } from '../../src/types/ortb/common';
+import type { ORTBRequest } from "../../src/types/ortb/request";
 
 export type UserIdProvider = string;
+
+export type EID = NonNullable<NonNullable<ORTBRequest['user']>['eids']>[number];
 
 export interface UserId {
   [idName: string]: unknown;
@@ -125,7 +127,7 @@ type EIDConfig<K extends keyof UserId> = {
   getUidExt?: (id: IdValue<K>) => Ext;
 }
 
-type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => ORTBRequest['user']['eids'] | ORTBRequest['user']['eids'][number];
+type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
 
 export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**

@@ -1,17 +1,17 @@
-import {getBidRequest} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {interpretResponseUtil} from '../libraries/interpretResponseUtils/index.js';
+import { getBidRequest } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { interpretResponseUtil } from '../libraries/interpretResponseUtils/index.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -54,7 +54,8 @@ export const spec = {
           // TODO: this collects everything it finds, except for the canonical URL
           rd_ref: bidderRequest.refererInfo.topmostLocation,
           rd_top: bidderRequest.refererInfo.reachedTop,
-          rd_ifs: bidderRequest.refererInfo.numIframes};
+          rd_ifs: bidderRequest.refererInfo.numIframes
+        };
         if (bidderRequest.refererInfo.stack) {
           refererinfo.rd_stk = bidderRequest.refererInfo.stack.join(',');
         }
@@ -68,9 +69,9 @@ export const spec = {
     return request;
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     try {
-      const bids = interpretResponseUtil(serverResponse, {bidderRequest}, serverBid => {
+      const bids = interpretResponseUtil(serverResponse, { bidderRequest }, serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid && rtbBid.cpm !== 0 && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
           const bid = newBid(serverBid, rtbBid, bidderRequest);

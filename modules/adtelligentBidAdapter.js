@@ -1,15 +1,15 @@
-import {_map, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
-import {chunk} from '../libraries/chunk/chunk.js';
+import { _map, deepAccess, flatten, isArray, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { chunk } from '../libraries/chunk/chunk.js';
 import {
   createTag, getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
-
+import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js";
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
@@ -30,7 +30,8 @@ const HOST_GETTERS = {
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
   indicue: () => 'ghb.console.indicue.com',
-  stellormedia: () => 'ghb.ads.stellormedia.com'}
+  stellormedia: () => 'ghb.ads.stellormedia.com'
+}
 const getUri = function (bidderCode) {
   const bidderWithoutSuffix = bidderCode.split('_')[0];
   const getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
@@ -168,11 +169,13 @@ function prepareBidRequests(bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
+  const placementInfo = getPlacementPositionUtils().getPlacementInfo(bidReq)
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
     'AdType': mediaType,
-    'Sizes': parseSizesInput(sizes).join(',')
+    'Sizes': parseSizesInput(sizes).join(','),
+    ...placementInfo
   };
 
   bidReqParams.PlacementId = bidReq.adUnitCode;
@@ -185,14 +188,6 @@ function prepareBidRequests(bidReq) {
 
   if (gpid) {
     bidReqParams.GPID = gpid;
-  }
-
-  if (mediaType === VIDEO) {
-    const context = deepAccess(bidReq, 'mediaTypes.video.context');
-
-    if (context === ADPOD) {
-      bidReqParams.Adpod = deepAccess(bidReq, 'mediaTypes.video');
-    }
   }
 
   return bidReqParams;
@@ -237,18 +232,6 @@ function createBid(bidResponse, bidRequest) {
       adUrl: bidResponse.adUrl,
     });
   }
-  if (context === ADPOD) {
-    Object.assign(bid, {
-      meta: {
-        primaryCatId: bidResponse.primaryCatId,
-      },
-      video: {
-        context: ADPOD,
-        durationSeconds: bidResponse.durationSeconds
-      }
-    });
-  }
-
   Object.assign(bid, {
     vastUrl: bidResponse.vastUrl
   });

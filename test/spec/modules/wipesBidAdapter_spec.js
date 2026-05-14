@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/wipesBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/wipesBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
@@ -142,7 +142,6 @@ describe('wipesBidAdapter', function () {
           'uid': 'a42947f8-f8fd-4cf7-bb72-31a87ab1f6ff',
           'height': 0,
           'crid': '',
-          'statusMessage': '',
           'width': 0,
           'cpm': 0
         }

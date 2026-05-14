@@ -23,7 +23,7 @@ describe('banner', () => {
         otherOne: 'test'
       };
 
-      const expected = {...mt};
+      const expected = { ...mt };
       delete expected.api;
 
       const adUnit = {
@@ -80,7 +80,7 @@ describe('banner', () => {
       const adUnit = {
         mediaTypes: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [1, 2, 34], // should be overwritten with value from ortb2Imp
             battr: [3, 4],
             maxduration: 'omitted_value' // should be omitted during copying - not part of banner obj spec
@@ -100,7 +100,7 @@ describe('banner', () => {
       const expected = {
         mediaTypes: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],
@@ -110,7 +110,7 @@ describe('banner', () => {
         },
         ortb2Imp: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             request: '{payload: true}',
             pos: 5,
             btype: [999, 999],
@@ -131,12 +131,12 @@ describe('banner', () => {
       const adUnit = {
         mediaTypes: {
           banner: {
-            format: [{wratio: 1, hratio: 1}]
+            format: [{ wratio: 1, hratio: 1 }]
           }
         },
         ortb2Imp: {
           banner: {
-            format: [{wratio: 1, hratio: 1}]
+            format: [{ wratio: 1, hratio: 1 }]
           }
         }
       }
@@ -168,7 +168,7 @@ describe('banner', () => {
       const adUnit = {
         mediaTypes: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],
@@ -181,7 +181,7 @@ describe('banner', () => {
       const expected1 = {
         mediaTypes: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],
@@ -191,7 +191,7 @@ describe('banner', () => {
         },
         ortb2Imp: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],
@@ -207,7 +207,7 @@ describe('banner', () => {
         mediaTypes: {},
         ortb2Imp: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],
@@ -220,7 +220,7 @@ describe('banner', () => {
       const expected2 = {
         mediaTypes: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],
@@ -229,7 +229,7 @@ describe('banner', () => {
         },
         ortb2Imp: {
           banner: {
-            format: [{w: 100, h: 100}],
+            format: [{ w: 100, h: 100 }],
             btype: [999, 999],
             pos: 5,
             battr: [3, 4],

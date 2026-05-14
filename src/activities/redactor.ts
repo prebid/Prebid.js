@@ -1,6 +1,6 @@
-import {deepAccess} from '../utils.js';
-import {config} from '../config.js';
-import {isActivityAllowed, registerActivityControl} from './rules.js';
+import { deepAccess } from '../utils.js';
+import { config } from '../config.js';
+import { isActivityAllowed, registerActivityControl } from './rules.js';
 import {
   ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
@@ -19,7 +19,7 @@ export const ORTB_UFPD_PATHS = [
   'id',
   'buyeruid',
   'customdata'
-].map(f => `user.${f}`).concat('device.ext.cdep');
+].map(f => `user.${f}`).concat('device.ifa');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
 export const ORTB_IPV4_PATHS = ['device.ip']
@@ -224,6 +224,6 @@ declare module '../config' {
 // by default, TIDs are off since version 8
 registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {
   if (!config.getConfig('enableTIDs')) {
-    return {allow: false, reason: 'TIDs are disabled'}
+    return { allow: false, reason: 'TIDs are disabled' }
   }
 });

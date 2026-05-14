@@ -6,10 +6,10 @@
  */
 
 import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -24,7 +24,7 @@ const LOCAL_STORAGE_EXP_DAYS = 30;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 const consentInfo = {
   gdpr: {
@@ -191,7 +191,7 @@ export const ftrackIdSubmodule = {
 
   isThereConsent: function(consentData) {
     let consentValue = true;
-    const {gdpr, usp} = consentData ?? {};
+    const { gdpr, usp } = consentData ?? {};
     /*
      * Scenario 1: GDPR
      *   if GDPR Applies is true|1, we do not have consent

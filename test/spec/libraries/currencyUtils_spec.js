@@ -1,5 +1,5 @@
-import {getGlobal} from 'src/prebidGlobal.js';
-import {convertCurrency, currencyCompare, currencyNormalizer} from 'libraries/currencyUtils/currency.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import { convertCurrency, currencyCompare, currencyNormalizer } from 'libraries/currencyUtils/currency.js';
 
 describe('currency utils', () => {
   let sandbox;
@@ -99,9 +99,9 @@ describe('currency utils', () => {
         compare = currencyCompare((val) => [val.amount, val.cur], currencyNormalizer(null, false, mockConvert))
       });
       [
-        [{amount: 1, cur: 1}, {amount: 1, cur: 10}, 1],
-        [{amount: 10, cur: 1}, {amount: 0.1, cur: 100}, 1],
-        [{amount: 1, cur: 1}, {amount: 10, cur: 10}, 0],
+        [{ amount: 1, cur: 1 }, { amount: 1, cur: 10 }, 1],
+        [{ amount: 10, cur: 1 }, { amount: 0.1, cur: 100 }, 1],
+        [{ amount: 1, cur: 1 }, { amount: 10, cur: 10 }, 0],
       ].forEach(([a, b, expected]) => {
         it(`should compare ${a.amount}/${a.cur} and ${b.amount}/${b.cur}`, () => {
           expect(compare(a, b)).to.equal(expected);

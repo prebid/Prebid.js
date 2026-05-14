@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/operaadsBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec } from 'modules/operaadsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -274,7 +274,7 @@ describe('Opera Ads Bid Adapter', function () {
         bidder: 'operaads',
         bidderRequestId: '15246a574e859f',
         mediaTypes: {
-          banner: {sizes: [[300, 250]]}
+          banner: { sizes: [[300, 250]] }
         },
         params: {
           placementId: 's12345678',
@@ -814,7 +814,7 @@ describe('Opera Ads Bid Adapter', function () {
 
   describe('Test onBidWon', function () {
     it('onBidWon should not throw', function () {
-      expect(spec.onBidWon({nurl: '#', originalCpm: '1.04', currency: 'USD'})).to.not.throw;
+      expect(spec.onBidWon({ nurl: '#', originalCpm: '1.04', currency: 'USD' })).to.not.throw;
     });
   });
 

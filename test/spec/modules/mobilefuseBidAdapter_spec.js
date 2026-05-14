@@ -60,7 +60,7 @@ const serverResponse = {
 describe('mobilefuseBidAdapter', function () {
   it('should validate bids', function () {
     expect(spec.isBidRequestValid(bidRequest)).to.be.true;
-    expect(spec.isBidRequestValid({params: {}})).to.be.false;
+    expect(spec.isBidRequestValid({ params: {} })).to.be.false;
   });
 
   it('should build a valid request payload', function () {
@@ -139,7 +139,7 @@ describe('mobilefuseBidAdapter', function () {
 
   it('should return user syncs with proper query params when iframe sync is enabled', function () {
     const syncs = spec.getUserSyncs(
-      {iframeEnabled: true},
+      { iframeEnabled: true },
       [],
       null,
       bidderRequest.uspConsent,
@@ -168,7 +168,7 @@ describe('mobilefuseBidAdapter', function () {
     };
 
     const syncs = spec.getUserSyncs(
-      {iframeEnabled: false},
+      { iframeEnabled: false },
       [response],
       null,
       bidderRequest.uspConsent,

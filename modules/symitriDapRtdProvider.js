@@ -5,12 +5,12 @@
  * @module modules/symitriDapRtdProvider
  * @requires module:modules/realTimeData
  */
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isPlainObject, mergeDeep, logMessage, logInfo, logError } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -28,7 +28,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   const DAP_MAX_RETRY_TOKENIZE = 1;
   const DAP_CLIENT_ENTROPY = 'dap_client_entropy'
 
-  const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
+  const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
   let dapRetryTokenize = 0;
 
   /**
@@ -186,7 +186,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           api_version: rtdConfig.params.apiVersion,
           domain: rtdConfig.params.domain,
           segtax: rtdConfig.params.segtax,
-          identity: {type: rtdConfig.params.identityType, value: rtdConfig.params.identityValue},
+          identity: { type: rtdConfig.params.identityType, value: rtdConfig.params.identityValue },
         };
         let refreshMembership = true;
         const token = dapUtils.dapGetTokenFromLocalStorage();
@@ -229,7 +229,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       // Trigger a refresh
       const now = Math.round(Date.now() / 1000.0); // in seconds
       const item = {}
-      const configAsync = {...config};
+      const configAsync = { ...config };
       dapUtils.dapTokenize(configAsync, config.identity, onDone,
         function(token, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
@@ -284,7 +284,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     dapRefreshMembership: function(ortb2, config, token, onDone) {
       const now = Math.round(Date.now() / 1000.0); // in seconds
       const item = {}
-      const configAsync = {...config};
+      const configAsync = { ...config };
       dapUtils.dapMembership(configAsync, token, onDone,
         function(membership, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
@@ -332,7 +332,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     dapRefreshEncryptedMembership: function(ortb2, config, token, onDone) {
       const now = Math.round(Date.now() / 1000.0); // in seconds
       const item = {};
-      const configAsync = {...config};
+      const configAsync = { ...config };
       dapUtils.dapEncryptedMembership(configAsync, token, onDone,
         function(encToken, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
@@ -528,7 +528,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       if (config === null || config === undefined) {
         onError(null, 'Invalid config object', 'ClientError', onDone);
-        return [ config, true ];
+        return [config, true];
       }
 
       if (!('api_version' in config) || (typeof (config.api_version) === 'string' && config.api_version.length === 0)) {
@@ -537,22 +537,22 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       if (typeof (config.api_version) !== 'string') {
         onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return [ config, true ];
+        return [config, true];
       }
 
       if (!(('api_hostname') in config) || typeof (config.api_hostname) !== 'string' || config.api_hostname.length === 0) {
         onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
-        return [ config, true ];
+        return [config, true];
       }
 
       if (token) {
         if (typeof (token) !== 'string') {
           onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
-          return [ config, true ];
+          return [config, true];
         }
       }
 
-      return [ config, false ];
+      return [config, false];
     },
 
     addIdentifier: async function(identity, apiParams) {
@@ -606,7 +606,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      */
     dapTokenize: function(config, identity, onDone, onSuccess = null, onError = null) {
       let hasTokenizeError;
-      [ config, hasTokenizeError ] = this.dapValidationHelper(config, onDone, null, onError);
+      [config, hasTokenizeError] = this.dapValidationHelper(config, onDone, null, onError);
       if (hasTokenizeError) { return; }
 
       if (typeof (config.domain) !== 'string') {
@@ -739,7 +739,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      */
     dapMembership: function(config, token, onDone, onSuccess = null, onError = null) {
       let hasMembershipError;
-      [ config, hasMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
+      [config, hasMembershipError] = this.dapValidationHelper(config, onDone, token, onError);
       if (hasMembershipError) { return; }
 
       if (typeof (config.domain) !== 'string') {
@@ -803,7 +803,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      */
     dapEncryptedMembership: function(config, token, onDone, onSuccess = null, onError = null) {
       let hasEncryptedMembershipError;
-      [ config, hasEncryptedMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
+      [config, hasEncryptedMembershipError] = this.dapValidationHelper(config, onDone, token, onError);
       if (hasEncryptedMembershipError) { return; }
 
       const cb = {

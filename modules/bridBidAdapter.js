@@ -1,8 +1,8 @@
-import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
-import {VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getAd, getSiteObj, getSyncResponse} from '../libraries/targetVideoUtils/bidderUtils.js'
-import {GVLID, SOURCE, TIME_TO_LIVE, VIDEO_ENDPOINT_URL, VIDEO_PARAMS} from '../libraries/targetVideoUtils/constants.js';
+import { _each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import { VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getAd, getSiteObj, getSyncResponse } from '../libraries/targetVideoUtils/bidderUtils.js'
+import { GVLID, SOURCE, TIME_TO_LIVE, VIDEO_ENDPOINT_URL, VIDEO_PARAMS } from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -56,7 +56,7 @@ export const spec = {
       const imp = {
         ext: {
           prebid: {
-            storedrequest: {'id': placementId}
+            storedrequest: { 'id': placementId }
           }
         }
       };
@@ -139,7 +139,7 @@ export const spec = {
           const requestId = bidRequest.bidId;
           const params = bidRequest.params;
 
-          const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
+          const { ad, adUrl, vastUrl, vastXml } = getAd(bid);
 
           const bidResponse = {
             requestId,

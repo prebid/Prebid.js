@@ -10,6 +10,7 @@ import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 // import { config } from '../src/config.js';
@@ -31,7 +32,7 @@ export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const globals = {};
 
 /* ----- mguid:start ------ */
@@ -42,8 +43,7 @@ const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 let reqTimes = 0;
 
 /**
- * get pmg uid
- * 获取并生成用户的id
+ * Get or generate pmg uid
  *
  * @return {string}
  */
@@ -63,10 +63,10 @@ export const getPmgUID = () => {
 /* ----- pmguid:end ------ */
 
 /**
- * 获取一个对象的某个值，如果没有则返回空字符串
+ * Get a nested property value from object, return empty string if not found
  *
- * @param  {Object}    obj  对象
- * @param  {...string} keys 键名
+ * @param  {Object}    obj  object
+ * @param  {...string} keys key path
  * @return {any}
  */
 function getProperty(obj, ...keys) {
@@ -84,7 +84,21 @@ function getProperty(obj, ...keys) {
 }
 
 /**
- * 获取底价
+ * Retrieve device platform/OS, priority order: userAgentData.platform > navigator.platform > UA parsing
+ * @returns {string}
+ */
+function getDeviceOs() {
+  if (navigator.userAgentData?.platform) {
+    return navigator.userAgentData.platform;
+  }
+  if (navigator.platform) {
+    return navigator.platform;
+  }
+  return getOsInfo().os || '';
+}
+
+/**
+ * Get bid floor
  * @param {*} bid
  * @param {*} mediaType
  * @param {*} sizes
@@ -106,11 +120,11 @@ function getProperty(obj, ...keys) {
 //   return floor;
 // }
 
-// 支持的广告尺寸
+// Supported ad sizes
 const mediagoAdSize = normalAdSize;
 
 /**
- * 获取广告位配置
+ * Get ad slot config
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
@@ -124,7 +138,7 @@ function getItems(validBidRequests, bidderRequest) {
     const sizes = transformSizes(getProperty(req, 'sizes'));
     let matchSize;
 
-    // 确认尺寸是否符合我们要求
+    // Validate size meets requirements
     for (const size of sizes) {
       matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
@@ -153,7 +167,7 @@ function getItems(validBidRequests, bidderRequest) {
     }
 
     // if (mediaTypes.native) {}
-    // banner广告类型
+    // Banner ad type
     if (mediaTypes.banner) {
       // fix id is not unique where there are multiple requests in the same page
       const id = getProperty(req, 'bidId') || ('' + (i + 1) + Math.random().toString(36).substring(2, 15));
@@ -169,10 +183,11 @@ function getItems(validBidRequests, bidderRequest) {
         ext: {
           adUnitCode: req.adUnitCode,
           referrer: getReferrer(req, bidderRequest),
-          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
-          gpid: gpid, // 加入后无法返回广告
+          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'),
+          gpid: gpid,
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
           publisher: req.params.publisher || '',
+          transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
@@ -195,7 +210,7 @@ export function getCurrentTimeToUTCString() {
 }
 
 /**
- * 获取rtb请求参数
+ * Get RTB request params
  *
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
@@ -240,11 +255,12 @@ function getParam(validBidRequests, bidderRequest) {
         // language: 'en',
         // os: 'Microsoft Windows',
         // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
-        os: navigator.platform || '',
+        os: getDeviceOs(),
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language
       },
       ext: {
+        pbjsversion: '$prebid.version$',
         eids,
         bidsUserIdAsEids,
         firstPartyData,

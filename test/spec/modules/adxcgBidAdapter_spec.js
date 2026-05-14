@@ -1,10 +1,10 @@
 // jshint esversion: 6, es3: false, node: true
 /* eslint dot-notation:0, quote-props:0 */
-import {assert, expect} from 'chai';
-import {spec} from 'modules/adxcgBidAdapter.js';
-import {config} from 'src/config.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/adxcgBidAdapter.js';
+import { config } from 'src/config.js';
 
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 const utils = require('src/utils');
 

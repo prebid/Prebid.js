@@ -1,6 +1,6 @@
-import {config} from '../src/config.js';
-import {setupRules} from '../libraries/mspa/activityControls.js';
-import {deepSetValue, prefixLog} from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getRules, setupRules } from '../libraries/mspa/activityControls.js';
+import { deepSetValue, prefixLog } from '../src/utils.js';
 
 const FIELDS = {
   Version: 0,
@@ -29,7 +29,7 @@ const FIELDS = {
  * List fields are also copied, but forced to the "correct" length (by truncating or padding with nulls);
  * additionally, elements within them can be moved around using the `move` argument.
  */
-export function normalizer({nullify = [], move = {}, fn}: {
+export function normalizer({ nullify = [], move = {}, fn }: {
   /**
    * list of fields to force to null
    */
@@ -108,8 +108,8 @@ export const NORMALIZATIONS = {
       }
     }
   }),
-  9: normalizer({fn: scalarMinorsAreChildren}),
-  10: normalizer({fn: scalarMinorsAreChildren}),
+  9: normalizer({ fn: scalarMinorsAreChildren }),
+  10: normalizer({ fn: scalarMinorsAreChildren }),
   11: normalizer({
     move: {
       SensitiveDataProcessing: {
@@ -146,7 +146,7 @@ export const DEFAULT_SID_MAPPING = {
 
 export const getSections = (() => {
   const allSIDs = Object.keys(DEFAULT_SID_MAPPING).map(Number);
-  return function ({sections = {}, sids = allSIDs} = {}) {
+  return function ({ sections = {}, sids = allSIDs } = {}) {
     return sids.map(sid => {
       const logger = prefixLog(`Cannot set up MSPA controls for SID ${sid}:`);
       const ov = sections[sid] || {};
@@ -171,31 +171,29 @@ export const getSections = (() => {
 
 const handles = [];
 
-declare module './consentManagementGpp' {
-  interface GPPConfig {
-    mspa?: {
-      /**
-       * GPP SIDs that should be covered by activity restrictions. Defaults to all US state SIDs.
-       */
-      sids?: number[];
-      /**
-       * Map from section ID to per-section configuration options
-       */
-      sections?: {
-        [sid: number]: {
-          /**
-           * GPP API name to use for the section. Defaults to the names listed in the GPP spec:
-           * https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Sections/Section%20Information.md#section-ids
-           * This option would only be used if your CMP has named their sections in a non-standard way.y
-           */
-          name?: string;
-          /**
-           * Normalize the flags for this section as if it were the number provided.
-           * Cfr https://docs.prebid.org/features/mspa-usnat.html#interpreting-usnat-strings
-           * Each section defaults to its own ID.
-           */
-          normalizeAs?: number;
-        }
+declare module '../libraries/mspa/activityControls' {
+  interface MSPAConfig {
+    /**
+     * GPP SIDs that should be covered by activity restrictions. Defaults to all US state SIDs.
+     */
+    sids?: number[];
+    /**
+     * Map from section ID to per-section configuration options
+     */
+    sections?: {
+      [sid: number]: {
+        /**
+         * GPP API name to use for the section. Defaults to the names listed in the GPP spec:
+         * https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Sections/Section%20Information.md#section-ids
+         * This option would only be used if your CMP has named their sections in a non-standard way.y
+         */
+        name?: string;
+        /**
+         * Normalize the flags for this section as if it were the number provided.
+         * Cfr https://docs.prebid.org/features/mspa-usnat.html#interpreting-usnat-strings
+         * Each section defaults to its own ID.
+         */
+        normalizeAs?: number;
       }
     }
   }
@@ -208,6 +206,6 @@ config.getConfig('consentManagement', (cfg) => {
       handles.pop()();
     }
     getSections(gppConf?.mspa || {})
-      .forEach(([api, sids, normalize]) => handles.push(setupRules(api, sids, normalize)));
+      .forEach(([api, sids, normalize]) => handles.push(setupRules(api, sids, getRules(gppConf.mspa?.restrictActivities), normalize)));
   }
 });

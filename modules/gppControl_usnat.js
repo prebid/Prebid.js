@@ -1,11 +1,11 @@
-import {config} from '../src/config.js';
-import {setupRules} from '../libraries/mspa/activityControls.js';
+import { config } from '../src/config.js';
+import { getRules, setupRules } from '../libraries/mspa/activityControls.js';
 
-let setupDone = false;
+let unregister = null;
 
 config.getConfig('consentManagement', (cfg) => {
-  if (cfg?.consentManagement?.gpp != null && !setupDone) {
-    setupRules('usnat', [7]);
-    setupDone = true;
+  if (cfg?.consentManagement?.gpp != null) {
+    if (unregister != null) unregister();
+    unregister = setupRules('usnat', [7], getRules(cfg.consentManagement.gpp.mspa?.restrictActivities));
   }
 })

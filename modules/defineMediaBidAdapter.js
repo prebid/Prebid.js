@@ -9,10 +9,10 @@
  * @version 1.0.0
  */
 
-import {logInfo, logError, logWarn } from "../src/utils.js";
+import { logInfo, logError, logWarn } from "../src/utils.js";
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { ajax } from '../src/ajax.js';
 
 // Bidder identification and compliance constants
@@ -181,7 +181,7 @@ export const spec = {
     try {
       // Use the converter from the request if available (with custom TTL), otherwise use default
       const responseConverter = request.converter || converter;
-      const bids = responseConverter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+      const bids = responseConverter.fromORTB({ response: serverResponse.body, request: request.data }).bids;
       logInfo(`[${BIDDER_CODE}] Successfully parsed ${bids.length} bids`);
       return bids;
     } catch (error) {

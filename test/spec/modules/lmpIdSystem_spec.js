@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {lmpIdSubmodule, storage} from 'modules/lmpIdSystem.js';
+import { expect } from 'chai';
+import { lmpIdSubmodule, storage } from 'modules/lmpIdSystem.js';
 
 describe('LMPID System', () => {
   let getDataFromLocalStorageStub, localStorageIsEnabledStub;

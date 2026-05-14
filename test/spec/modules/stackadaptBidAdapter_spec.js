@@ -242,7 +242,7 @@ describe('stackadaptBidAdapter', function () {
         bids: [bidderRequest]
       })
 
-      const result = spec.interpretResponse(ortbResponse, {data: ortbRequest.data});
+      const result = spec.interpretResponse(ortbResponse, { data: ortbRequest.data });
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(expectedBid);
     });
@@ -398,7 +398,7 @@ describe('stackadaptBidAdapter', function () {
       const ortbRequest = spec.buildRequests([bidderRequest1, bidderRequest2], {
         bids: [bidderRequest1, bidderRequest2]
       })
-      const result = spec.interpretResponse(ortbResponse, {data: ortbRequest.data});
+      const result = spec.interpretResponse(ortbResponse, { data: ortbRequest.data });
       expect(result.length).to.equal(2);
       expect(result).to.deep.equal(expectedBids);
     });
@@ -472,7 +472,7 @@ describe('stackadaptBidAdapter', function () {
           bids: [bidderRequest]
         })
 
-        const result = spec.interpretResponse(ortbResponse, {data: ortbRequest.data});
+        const result = spec.interpretResponse(ortbResponse, { data: ortbRequest.data });
         expect(result.length).to.equal(1);
         expect(result[0]).to.deep.equal(expectedBid);
       });
@@ -794,8 +794,8 @@ describe('stackadaptBidAdapter', function () {
         }
       }
 
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequestWithoutRefererDomain, ortb2}).data;
-      expect(ortbRequest.site.publisher).to.deep.equal({domain: 'https://publisher.com', id: '11111'});
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequestWithoutRefererDomain, ortb2 }).data;
+      expect(ortbRequest.site.publisher).to.deep.equal({ domain: 'https://publisher.com', id: '11111' });
     });
 
     it('should set first party side data publisher domain taking precedence over referer domain', function () {
@@ -804,7 +804,7 @@ describe('stackadaptBidAdapter', function () {
           domain: 'https://publisher.com',
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequest, ortb2}).data;
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 }).data;
       expect(ortbRequest.site.domain).to.equal('https://publisher.com');
     });
 
@@ -812,7 +812,7 @@ describe('stackadaptBidAdapter', function () {
       const ortb2 = {
         bcat: ['IAB1', 'IAB2']
       };
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequest, ortb2}).data;
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 }).data;
       expect(ortbRequest.bcat).to.deep.equal(['IAB1', 'IAB2']);
     });
 
@@ -820,7 +820,7 @@ describe('stackadaptBidAdapter', function () {
       const ortb2 = {
         badv: ['chargers.com', 'house.com']
       };
-      const ortbRequest = spec.buildRequests(bidRequests, {...bidderRequest, ortb2}).data;
+      const ortbRequest = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 }).data;
       expect(ortbRequest.badv).to.deep.equal(['chargers.com', 'house.com']);
     });
 
@@ -853,7 +853,7 @@ describe('stackadaptBidAdapter', function () {
           }
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.user.ext.consent).to.equal(consentString);
       expect(ortbRequest.regs.ext.gdpr).to.equal(1);
@@ -868,7 +868,7 @@ describe('stackadaptBidAdapter', function () {
           }
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.ext.us_privacy).to.equal(consentString);
     });
@@ -879,7 +879,7 @@ describe('stackadaptBidAdapter', function () {
           coppa: 1
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
     });
@@ -891,7 +891,7 @@ describe('stackadaptBidAdapter', function () {
           gpp_sid: [9]
         }
       };
-      const clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
+      const clonedBidderRequest = { ...deepClone(bidderRequest), ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.gpp).to.equal('DCACTA~1YAA');
       expect(ortbRequest.regs.gpp_sid).to.eql([9]);
@@ -916,7 +916,7 @@ describe('stackadaptBidAdapter', function () {
 
       clonedBidRequests[0].ortb2 = {
         source: {
-          ext: {schain: schain}
+          ext: { schain: schain }
         }
       };
       clonedBidderRequest.bids = clonedBidRequests;
@@ -924,7 +924,7 @@ describe('stackadaptBidAdapter', function () {
       // Add schain to bidderRequest as well
       clonedBidderRequest.ortb2 = {
         source: {
-          ext: {schain: schain}
+          ext: { schain: schain }
         }
       };
 
@@ -946,7 +946,7 @@ describe('stackadaptBidAdapter', function () {
           keywords: 'device={}'
         }
       };
-      const mergedBidderRequest = {...bidderRequest, ortb2};
+      const mergedBidderRequest = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, mergedBidderRequest).data;
       expect(ortbRequest.site.id).to.equal('144da00b-8309-4b2e-9482-4b3829c0b54a');
       expect(ortbRequest.site.name).to.equal('game');
@@ -1017,7 +1017,7 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
       validateExtFirstPartyData(ortbRequest.site.ext)
@@ -1032,7 +1032,7 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
       validateExtFirstPartyData(ortbRequest.user.ext)
@@ -1066,7 +1066,7 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
       validateExtFirstPartyData(ortbRequest.app.ext)
@@ -1081,7 +1081,7 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
       validateExtFirstPartyData(ortbRequest.device.ext)
@@ -1096,7 +1096,7 @@ describe('stackadaptBidAdapter', function () {
         }
       };
 
-      const bidderRequestMerged = {...bidderRequest, ortb2};
+      const bidderRequestMerged = { ...bidderRequest, ortb2 };
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequestMerged).data;
 
       validateExtFirstPartyData(ortbRequest.pmp.ext)

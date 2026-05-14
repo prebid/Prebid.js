@@ -2,9 +2,6 @@ import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
-import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 import { config } from '../src/config.js';
 
 /**
@@ -16,12 +13,10 @@ const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
 export const USER_SYNC_ENDPOINT_IMAGE = 'https://cs.gssprt.jp/yie/ld/mcs';
 export const USER_SYNC_ENDPOINT_IFRAME = 'https://aladdin.genieesspv.jp/yie/ld';
-const SUPPORTED_MEDIA_TYPES = [ BANNER ];
+const SUPPORTED_MEDIA_TYPES = [BANNER];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
 const NET_REVENUE = true;
-const MODULE_NAME = `ssp_geniee`;
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
 
 /**
  * List of keys for geparams (parameters we use)
@@ -124,7 +119,7 @@ function hasParamsNotBlankString(params, key) {
   );
 }
 
-export const buildExtuidQuery = ({id5, imuId}) => {
+export const buildExtuidQuery = ({ id5, imuId }) => {
   const params = [
     ...(id5 ? [`id5:${id5}`] : []),
     ...(imuId ? [`im:${imuId}`] : []),
@@ -136,12 +131,31 @@ export const buildExtuidQuery = ({id5, imuId}) => {
 }
 
 /**
+ * Get Floor Price from Prebid Price Floors Module
+ * @param {Object} bid - Object bid request
+ * @param {string} currency - currency unit
+ * @returns {number|null}
+ */
+function getFloorPrice(bid, currency) {
+  if (typeof bid.getFloor === 'function') {
+    const floorSize = (bid.sizes && bid.sizes.length === 1) ? bid.sizes[0] : '*';
+    const floorInfo = bid.getFloor({ currency: currency, mediaType: BANNER, size: floorSize });
+    if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
+      return parseFloat(floorInfo.floor);
+    }
+  }
+  return null;
+}
+
+/**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
-function makeCommonRequestData(bid, geparameter, refererInfo) {
+function makeCommonRequestData(bid, geparameter, refererInfo, sua) {
   const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
-
+  const schain = utils.deepAccess(bid, 'ortb2.source.ext.schain');
+  const currency = bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY;
+  const floorPrice = getFloorPrice(bid, currency);
   const data = {
     zoneid: bid.params.zoneId,
     cb: Math.floor(Math.random() * 99999999999),
@@ -152,12 +166,14 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       : '',
     referer: refererInfo?.ref || encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.REFERRER]) || '',
     topframe: window.parent === window.self ? 1 : 0,
-    cur: bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
+    cur: currency,
     requestid: bid.bidId,
     ua: navigator.userAgent,
     tpaf: 1,
     cks: 1,
+    schain: schain ? JSON.stringify(schain) : '',
     ...(gpid ? { gpid } : {}),
+    ...(floorPrice !== undefined && floorPrice !== null ? { fl_pr: floorPrice } : {}),
   };
 
   const pageTitle = document.title;
@@ -233,27 +249,26 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
   // imuid, id5
   const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
   const imuId = utils.deepAccess(bid, 'userId.imuid');
-  const extuidQuery = buildExtuidQuery({id5, imuId});
+  const extuidQuery = buildExtuidQuery({ id5, imuId });
   if (extuidQuery) data.extuid = extuidQuery;
 
   // makeUAQuery
   // To avoid double encoding, not using encodeURIComponent here
-  const ua = JSON.parse(getUserAgent());
-  if (ua && ua.fullVersionList) {
-    const fullVersionList = ua.fullVersionList.reduce((acc, cur) => {
+  if (Array.isArray(sua?.browsers)) {
+    const fullVersionList = sua.browsers.reduce((acc, cur) => {
       let str = acc;
       if (str) str += ',';
-      str += '"' + cur.brand + '";v="' + cur.version + '"';
+      str += '"' + cur.brand + '";v="' + (cur?.version || []).join('.') + '"';
       return str;
     }, '');
     data.ucfvl = fullVersionList;
   }
-  if (ua && ua.platform) data.ucp = '"' + ua.platform + '"';
-  if (ua && ua.architecture) data.ucarch = '"' + ua.architecture + '"';
-  if (ua && ua.platformVersion) data.ucpv = '"' + ua.platformVersion + '"';
-  if (ua && ua.bitness) data.ucbit = '"' + ua.bitness + '"';
-  data.ucmbl = '?' + (ua && ua.mobile ? '1' : '0');
-  if (ua && ua.model) data.ucmdl = '"' + ua.model + '"';
+  if (sua?.platform?.brand) data.ucp = '"' + sua.platform.brand + '"';
+  if (sua?.architecture) data.ucarch = '"' + sua.architecture + '"';
+  if (sua?.platform?.version) data.ucpv = '"' + sua.platform.version.join('.') + '"';
+  if (sua?.bitness) data.ucbit = '"' + sua.bitness + '"';
+  data.ucmbl = '?' + (sua?.mobile ? '1' : '0');
+  if (sua?.model) data.ucmdl = '"' + sua.model + '"';
 
   return data;
 }
@@ -261,8 +276,8 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
 /**
  * making request data for banner
  */
-function makeBannerRequestData(bid, geparameter, refererInfo) {
-  const data = makeCommonRequestData(bid, geparameter, refererInfo);
+function makeBannerRequestData(bid, geparameter, refererInfo, sua) {
+  const data = makeCommonRequestData(bid, geparameter, refererInfo, sua);
 
   // this query is not used in nad endpoint but used in ad_call endpoint
   if (hasParamsNotBlankString(geparameter, GEPARAMS_KEY.BUNDLE)) {
@@ -328,10 +343,6 @@ function makeBidResponseAd(innerHTML) {
   return '<body marginwidth="0" marginheight="0">' + innerHTML + '</body>';
 }
 
-function getUserAgent() {
-  return storage.getDataFromLocalStorage('key') || null;
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
@@ -369,34 +380,15 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const serverRequests = [];
 
-    const HIGH_ENTROPY_HINTS = [
-      'architecture',
-      'model',
-      'mobile',
-      'platform',
-      'bitness',
-      'platformVersion',
-      'fullVersionList',
-    ];
-
-    const uaData = window.navigator?.userAgentData;
-    if (uaData && uaData.getHighEntropyValues) {
-      const getHighEntropySUA = highEntropySUAAccessor(uaData);
-      getHighEntropySUA(HIGH_ENTROPY_HINTS).then((ua) => {
-        if (ua) {
-          storage.setDataInLocalStorage('ua', JSON.stringify(ua));
-        }
-      });
-    }
-
     validBidRequests.forEach((bid) => {
       // const isNative = bid.mediaTypes?.native;
       const geparameter = window.geparams || {};
+      const sua = bid.ortb2?.device?.sua || bidderRequest?.ortb2?.device?.sua;
 
       serverRequests.push({
         method: 'GET',
         url: BANNER_ENDPOINT,
-        data: makeBannerRequestData(bid, geparameter, bidderRequest?.refererInfo),
+        data: makeBannerRequestData(bid, geparameter, bidderRequest?.refererInfo, sua),
         bid: bid,
       });
     });

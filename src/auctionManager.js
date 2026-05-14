@@ -27,11 +27,11 @@
 
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import {AuctionIndex} from './auctionIndex.js';
+import { AuctionIndex } from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
-import {useMetrics} from './utils/perfMetrics.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
+import { useMetrics } from './utils/perfMetrics.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -42,8 +42,19 @@ import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 export function newAuctionManager() {
   const _auctions = ttlCollection({
     startTime: (au) => au.end.then(() => au.getAuctionEnd()),
-    ttl: (au) => getMinBidCacheTTL() == null ? null : au.end.then(() => {
-      return Math.max(getMinBidCacheTTL(), ...au.getBidsReceived().map(bid => bid.ttl)) * 1000
+    ttl: (au) => au.end.then(() => {
+      const bids = au.getBidsReceived();
+      if (bids.length === 0) {
+        const minTTL = getMinBidCacheTTL();
+        return minTTL == null ? null : minTTL * 1000;
+      }
+      const ttls = bids.map(bid => {
+        const minTTL = getEffectiveMinBidCacheTTL(bid);
+        if (minTTL == null) return null;
+        return Math.max(minTTL, bid.ttl);
+      });
+      if (ttls.some(t => t == null)) return null;
+      return Math.max(...ttls) * 1000;
     }),
   });
 
@@ -89,7 +100,7 @@ export function newAuctionManager() {
     getAdUnitCodes: {
       post: uniques,
     }
-  }).forEach(([mgrMethod, {name = mgrMethod, pre, post}]) => {
+  }).forEach(([mgrMethod, { name = mgrMethod, pre, post }]) => {
     const mapper = pre == null
       ? (auction) => auction[name]()
       : (auction) => pre(auction) ? auction[name]() : [];
@@ -131,7 +142,10 @@ export function newAuctionManager() {
 
     if (bid && status === BID_STATUS.BID_TARGETING_SET) {
       const auction = getAuction(bid.auctionId);
-      if (auction) auction.setBidTargeting(bid);
+      if (auction) {
+        auction.setBidTargeting(bid);
+        _auctions.refresh();
+      }
     }
   }
 

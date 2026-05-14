@@ -71,19 +71,19 @@ describe('jwplayerBidAdapter', function() {
     });
 
     it('should be invalid when the bid request only includes a publisher ID', function() {
-      assert(spec.isBidRequestValid({params: {publisherId: 'foo'}}) === false);
+      assert(spec.isBidRequestValid({ params: { publisherId: 'foo' } }) === false);
     });
 
     it('should be invalid when the bid request only includes a placement ID', function() {
-      assert(spec.isBidRequestValid({params: {placementId: 'foo'}}) === false);
+      assert(spec.isBidRequestValid({ params: { placementId: 'foo' } }) === false);
     });
 
     it('should be invalid when the bid request only includes a site ID', function() {
-      assert(spec.isBidRequestValid({params: {siteId: 'foo'}}) === false);
+      assert(spec.isBidRequestValid({ params: { siteId: 'foo' } }) === false);
     });
 
     it('should be valid when the bid includes a placement ID, a publisher ID and a site ID', function() {
-      assert(spec.isBidRequestValid({params: {placementId: 'foo', publisherId: 'bar', siteId: 'siteId '}}) === true);
+      assert(spec.isBidRequestValid({ params: { placementId: 'foo', publisherId: 'bar', siteId: 'siteId ' } }) === true);
     });
   });
 

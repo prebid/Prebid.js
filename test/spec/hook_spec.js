@@ -1,4 +1,4 @@
-import {hook as makeHook, ignoreCallbackArg} from '../../src/hook.js';
+import { hook as makeHook, ignoreCallbackArg } from '../../src/hook.js';
 
 describe('hooks', () => {
   describe('ignoreCallbackArg', () => {

@@ -33,7 +33,7 @@ jobs:
         with:
           name: ${{ needs.build.outputs.built-key }}
       - name: "Define testing strategy"
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: define
         env:
           browserstack: ${{ secrets.BROWSERSTACK_USER_NAME }}

@@ -9,7 +9,7 @@
  */
 
 import { config } from './config.js';
-import {logWarn} from './utils.js';
+import { logWarn } from './utils.js';
 
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
@@ -40,7 +40,7 @@ export function ensureProtocol(url, win = window) {
  * @param options.noPort - If true, do not include the ':[port]' portion.
  * @return The extracted domain or undefined if the URL is invalid.
  */
-export function parseDomain(url: string, {noLeadingWww = false, noPort = false} = {}): string | null {
+export function parseDomain(url: string, { noLeadingWww = false, noPort = false } = {}): string | null {
   let target;
   try {
     target = new URL(ensureProtocol(url));

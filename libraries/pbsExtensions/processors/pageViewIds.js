@@ -1,4 +1,4 @@
-import {deepSetValue} from '../../../src/utils.js';
+import { deepSetValue } from '../../../src/utils.js';
 
 export function setRequestExtPrebidPageViewIds(ortbRequest, bidderRequest) {
   deepSetValue(

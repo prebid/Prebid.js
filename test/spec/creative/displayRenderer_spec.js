@@ -1,10 +1,10 @@
-import {render} from 'creative/renderers/display/renderer.js';
-import {ERROR_NO_AD} from '../../../creative/renderers/display/constants.js';
+import { render } from 'creative/renderers/display/renderer.js';
+import { ERROR_NO_AD } from '../../../creative/renderers/display/constants.js';
 
 describe('Creative renderer - display', () => {
   let doc, mkFrame, sendMessage, win;
   beforeEach(() => {
-    mkFrame = sinon.stub().callsFake((doc, attrs) => Object.assign({doc}, attrs));
+    mkFrame = sinon.stub().callsFake((doc, attrs) => Object.assign({ doc }, attrs));
     sendMessage = sinon.stub();
     doc = {
       body: {
@@ -17,7 +17,7 @@ describe('Creative renderer - display', () => {
   });
 
   function runRenderer(data) {
-    return render(data, {sendMessage, mkFrame}, win);
+    return render(data, { sendMessage, mkFrame }, win);
   }
 
   it('throws when both ad and adUrl are missing', () => {
@@ -57,7 +57,7 @@ describe('Creative renderer - display', () => {
   })
 
   it('defaults width and height to 100%', () => {
-    runRenderer({ad: 'mock'});
+    runRenderer({ ad: 'mock' });
     sinon.assert.calledWith(doc.body.appendChild, sinon.match({
       doc,
       width: '100%',
@@ -72,13 +72,13 @@ describe('Creative renderer - display', () => {
         style: {}
       }
     })
-    runRenderer({ad: 'mock'});
+    runRenderer({ ad: 'mock' });
     expect(doc.body.style.height).to.eql('100%');
     expect(doc.body.parentElement.style.height).to.eql('100%');
   });
 
   it('sizes frame element if instl = true', () => {
-    win.frameElement = { style: {}};
+    win.frameElement = { style: {} };
     runRenderer({
       ad: 'mock',
       width: 123,

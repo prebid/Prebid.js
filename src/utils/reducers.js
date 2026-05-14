@@ -35,10 +35,10 @@ const timestampCompare = keyCompare((bid) => bid.responseTimestamp);
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
 export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))))
 
-// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
+// This function will get the oldest highest cpm value bid, in case of tie it will return the bid which came in first
 // Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
 export const getOldestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, reverseCompare(timestampCompare)))
 
-// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
+// This function will get the latest highest cpm value bid, in case of tie it will return the bid which came in last
 // Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
 export const getLatestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, timestampCompare))

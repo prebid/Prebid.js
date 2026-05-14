@@ -2,7 +2,7 @@ import adnAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/adnuntiusAnalytics
 import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
-import { setConfig } from 'modules/currency.js';
+import * as adUnits from 'src/utils/adUnits';
 
 const events = require('src/events');
 const utils = require('src/utils');
@@ -301,7 +301,7 @@ describe('Adnuntius analytics adapter', function () {
     }
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(utils, 'timestamp').returns(1519149562416);
-    sandbox.stub(document, 'getElementById').returns(element);
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
 
     clock = sandbox.useFakeTimers(1519767013781);
   });

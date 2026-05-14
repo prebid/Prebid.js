@@ -28,7 +28,7 @@ let rules = [];
 
 export function init(storageManager = getStorageManager({ moduleType: MODULE_TYPE, moduleName: MODULE_NAME })) {
   moduleConfig = config.getConfig(MODULE_NAME) || {};
-  const {suppression, testRun, storeSplits} = moduleConfig;
+  const { suppression, testRun, storeSplits } = moduleConfig;
   let modules;
 
   if (testRun && storeSplits && storeSplits !== storeSplitsMethod.MEMORY) {
@@ -43,14 +43,14 @@ export function init(storageManager = getStorageManager({ moduleType: MODULE_TYP
 
   modules = modules ?? internals.getCalculatedSubmodules();
 
-  const bannedModules = new Set(modules.filter(({enabled}) => !enabled).map(({name}) => name));
+  const bannedModules = new Set(modules.filter(({ enabled }) => !enabled).map(({ name }) => name));
   if (bannedModules.size) {
     const init = suppression === suppressionMethod.SUBMODULES;
     rules.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, MODULE_NAME, userIdSystemBlockRule(bannedModules, init)));
   }
 
   if (testRun) {
-    setAnalyticLabels({[testRun]: modules});
+    setAnalyticLabels({ [testRun]: modules });
   }
 }
 
@@ -61,10 +61,10 @@ export function reset() {
 }
 
 export function compareConfigs(old, current) {
-  const {modules: newModules, testRun: newTestRun} = current;
-  const {modules: oldModules, testRun: oldTestRun} = old;
+  const { modules: newModules, testRun: newTestRun } = current;
+  const { modules: oldModules, testRun: oldTestRun } = old;
 
-  const getModulesObject = (modules) => modules.reduce((acc, curr) => ({...acc, [curr.name]: curr.percentage}), {});
+  const getModulesObject = (modules) => modules.reduce((acc, curr) => ({ ...acc, [curr.name]: curr.percentage }), {});
 
   const percentageEqual = deepEqual(
     getModulesObject(oldModules),
@@ -78,16 +78,16 @@ export function compareConfigs(old, current) {
 function userIdSystemBlockRule(bannedModules, init) {
   return (params) => {
     if ((params.init ?? true) === init && params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID && bannedModules.has(params[ACTIVITY_PARAM_COMPONENT_NAME])) {
-      return {allow: false, reason: 'disabled due to AB testing'};
+      return { allow: false, reason: 'disabled due to AB testing' };
     }
   }
 };
 
 export function getCalculatedSubmodules(modules = moduleConfig.modules) {
   return (modules || [])
-    .map(({name, percentage}) => {
+    .map(({ name, percentage }) => {
       const enabled = Math.random() < percentage;
-      return {name, percentage, enabled}
+      return { name, percentage, enabled }
     });
 };
 
@@ -120,7 +120,7 @@ export function storeTestConfig(testRun, modules, storeSplits, storageManager) {
     return;
   }
 
-  const configToStore = {testRun, modules};
+  const configToStore = { testRun, modules };
   storeMethod(STORAGE_KEY, JSON.stringify(configToStore));
   logInfo(`${MODULE_NAME}: AB test config successfully saved to ${storeSplits} storage`);
 };

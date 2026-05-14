@@ -13,9 +13,7 @@ import {
   pick,
   uniques
 } from '../src/utils.js';
-import type {SlotMatchingFn} from '../src/targeting.ts';
-import type {AdUnitCode} from '../src/types/common.d.ts';
-import type {AdUnit} from '../src/adUnits.ts';
+import type { AdUnit } from '../src/adUnits.ts';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig: any = {};
@@ -66,8 +64,6 @@ export function getAuctionsIdsFromTargeting(targeting, am = auctionManager) {
 }
 
 export const appendGptSlots = adUnits => {
-  const { customGptSlotMatching } = _currentConfig;
-
   if (!isGptPubadsDefined()) {
     return;
   }
@@ -81,9 +77,7 @@ export const appendGptSlots = adUnits => {
   const adUnitPaths = {};
 
   window.googletag.pubads().getSlots().forEach((slot: googletag.Slot) => {
-    const matchingAdUnitCode = Object.keys(adUnitMap).find(customGptSlotMatching
-      ? customGptSlotMatching(slot)
-      : isAdUnitCodeMatchingSlot(slot));
+    const matchingAdUnitCode = Object.keys(adUnitMap).find(isAdUnitCodeMatchingSlot(slot));
 
     if (matchingAdUnitCode) {
       const path = adUnitPaths[matchingAdUnitCode] = slot.getAdUnitPath();
@@ -164,7 +158,7 @@ const setPpsConfigFromTargetingSet = (next, targetingSet) => {
   // set gpt config
   const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
   const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
-  window.googletag.setConfig && window.googletag.setConfig({pps: { taxonomies: signals }});
+  window.googletag.setConfig && window.googletag.setConfig({ pps: { taxonomies: signals } });
   next(targetingSet);
 };
 
@@ -174,16 +168,9 @@ type GPTPreAuctionConfig = {
    */
   enabled?: boolean;
   /**
-   * If true, use default behavior for determining GPID and PbAdSlot. Defaults to false.
+   * If true, use default behavior for determining GPID. Defaults to false.
    */
   useDefaultPreAuction?: boolean;
-  customGptSlotMatching?: SlotMatchingFn;
-  /**
-   * @param adUnitCode Ad unit code
-   * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
-   * @returns pbadslot for the ad unit
-   */
-  customPbAdSlot?: (adUnitCode: AdUnitCode, adServerAdSlot: string) => string;
   /**
    * @param adUnit An ad unit object
    * @param adServerAdSlot The value of that ad unit's `ortb2Imp.ext.data.adserver.adslot`
@@ -206,8 +193,6 @@ declare module '../src/config' {
 const handleSetGptConfig = moduleConfig => {
   _currentConfig = pick(moduleConfig, [
     'enabled', enabled => enabled !== false,
-    'customGptSlotMatching', customGptSlotMatching =>
-      typeof customGptSlotMatching === 'function' && customGptSlotMatching,
     'customPreAuction', customPreAuction => typeof customPreAuction === 'function' && customPreAuction,
     'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction ?? true,
   ]);
@@ -221,8 +206,8 @@ const handleSetGptConfig = moduleConfig => {
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
-    getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}).remove();
-    getHook('targetingDone').getHooks({hook: setPpsConfigFromTargetingSet}).remove();
+    getHook('makeBidRequests').getHooks({ hook: makeBidRequestsHook }).remove();
+    getHook('targetingDone').getHooks({ hook: setPpsConfigFromTargetingSet }).remove();
     hooksAdded = false;
   }
 };

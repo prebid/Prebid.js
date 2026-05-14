@@ -120,7 +120,7 @@ describe('Prebid Video', function () {
         pbVideoFactory(videoCore, getConfig);
         getConfigCallback({ video: { providers } });
         const expectedType = 'test_event';
-        const expectedPayload = {'test': 'data'};
+        const expectedPayload = { 'test': 'data' };
         eventHandler(expectedType, expectedPayload);
         expect(pbEventsMock.emit.calledOnce).to.be.true;
         expect(pbEventsMock.emit.getCall(0).args[0]).to.be.equal('video' + expectedType.replace(/^./, expectedType[0].toUpperCase()));
@@ -252,7 +252,7 @@ describe('Prebid Video', function () {
       gamSubmoduleMock.getAdTagUrl.resetHistory();
       videoCoreMock.setAdTagUrl.resetHistory();
       adQueueCoordinatorMock.queueAd.resetHistory();
-      auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+      auctionResults = { adUnits: [expectedAdUnit, {}] };
     });
 
     let beforeBidRequestCallback;
@@ -283,7 +283,7 @@ describe('Prebid Video', function () {
         requestBids,
         getHighestCpmBids: () => []
       });
-      auctionResults.adUnits[1].video = {divId: 'other-div'};
+      auctionResults.adUnits[1].video = { divId: 'other-div' };
       pbVideoFactory(null, getConfig, pbGlobal, requestBids, pbEvents);
       beforeBidRequestCallback(() => {}, {});
       return auctionEndCallback(auctionResults)
@@ -327,7 +327,7 @@ describe('Prebid Video', function () {
         code: expectedAdUnitCode,
         video: { divId: expectedDivId }
       };
-      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+      const auctionResults = { adUnits: [expectedAdUnit, {}] };
 
       pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, requestBids, pbEvents);
       beforeBidRequestCallback(() => {}, {});

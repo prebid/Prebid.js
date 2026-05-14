@@ -1,14 +1,14 @@
-import {CONFIG_TOGGLE, metricsFactory, newMetrics, useMetrics} from '../../../../src/utils/perfMetrics.js';
-import {defer} from '../../../../src/utils/promise.js';
-import {hook} from '../../../../src/hook.js';
-import {config} from 'src/config.js';
+import { CONFIG_TOGGLE, metricsFactory, newMetrics, useMetrics } from '../../../../src/utils/perfMetrics.js';
+import { defer } from '../../../../src/utils/promise.js';
+import { hook } from '../../../../src/hook.js';
+import { config } from 'src/config.js';
 
 describe('metricsFactory', () => {
   let metrics, now, enabled, newMetrics;
 
   beforeEach(() => {
     now = 0;
-    newMetrics = metricsFactory({now: () => now});
+    newMetrics = metricsFactory({ now: () => now });
     metrics = newMetrics();
   });
 
@@ -99,7 +99,7 @@ describe('metricsFactory', () => {
       metrics.checkpoint('A');
       now = 15;
       metrics.timeSince('A', 'test');
-      expect(metrics.getMetrics()).to.eql({test: 5});
+      expect(metrics.getMetrics()).to.eql({ test: 5 });
     });
 
     it('can measure time between checkpoints with timeBetween', () => {
@@ -133,14 +133,14 @@ describe('metricsFactory', () => {
       now = 15;
       metrics.checkpoint('B');
       metrics.timeBetween('A', 'B', 'test');
-      expect(metrics.getMetrics()).to.eql({test: 5});
+      expect(metrics.getMetrics()).to.eql({ test: 5 });
     });
   });
 
   describe('setMetrics', () => {
     it('sets metric', () => {
       metrics.setMetric('test', 1);
-      expect(metrics.getMetrics()).to.eql({test: 1});
+      expect(metrics.getMetrics()).to.eql({ test: 1 });
     });
   });
 
@@ -195,19 +195,19 @@ describe('metricsFactory', () => {
 
     it('does not propagate further if stopPropagation = true', () => {
       const c1 = metrics.fork();
-      const c2 = c1.fork({stopPropagation: true});
+      const c2 = c1.fork({ stopPropagation: true });
       c2.setMetric('test', 1);
       expect(c1.getMetrics().test).to.eql([1]);
       expect(metrics.getMetrics().test).to.not.exist;
     });
 
     it('does not propagate at all if propagate = false', () => {
-      metrics.fork({propagate: false}).setMetric('test', 1);
+      metrics.fork({ propagate: false }).setMetric('test', 1);
       expect(metrics.getMetrics()).to.eql({});
     });
 
     it('replicates grouped metrics if includeGroups = true', () => {
-      const child = metrics.fork({includeGroups: true});
+      const child = metrics.fork({ includeGroups: true });
       metrics.fork().setMetric('test', 1);
       expect(child.getMetrics()).to.eql({
         test: [1]
@@ -268,21 +268,21 @@ describe('metricsFactory', () => {
 
     it('does not propagate further if stopPropagation = true', () => {
       const m2 = metrics.fork();
-      m2.join(other, {stopPropagation: true});
+      m2.join(other, { stopPropagation: true });
       other.setMetric('test', 1);
       expect(m2.getMetrics().test).to.eql([1]);
       expect(metrics.getMetrics()).to.eql({});
     });
 
     it('does not propagate at all if propagate = false', () => {
-      metrics.join(other, {propagate: false});
+      metrics.join(other, { propagate: false });
       other.setMetric('test', 1);
       expect(metrics.getMetrics()).to.eql({});
     });
 
     it('replicates grouped metrics if includeGroups = true', () => {
       const m2 = metrics.fork();
-      metrics.join(other, {includeGroups: true});
+      metrics.join(other, { includeGroups: true });
       m2.setMetric('test', 1);
       expect(other.getMetrics()).to.eql({
         test: [1]
@@ -297,7 +297,7 @@ describe('metricsFactory', () => {
         const [m1, m2] = makePair();
         m1.join(m2);
         m1.setMetric('test', 1);
-        const expected = {'test': 1};
+        const expected = { 'test': 1 };
         expect(m1.getMetrics()).to.eql(expected);
         expect(m2.getMetrics()).to.eql(expected);
       })
@@ -380,7 +380,7 @@ describe('configuration toggle', () => {
     'newMetrics': newMetrics
   }).forEach(([t, mkMetrics]) => {
     it(`${t} returns no-op metrics when disabled`, () => {
-      config.setConfig({[CONFIG_TOGGLE]: false});
+      config.setConfig({ [CONFIG_TOGGLE]: false });
       const metrics = mkMetrics();
       metrics.setMetric('test', 'value');
       expect(metrics.getMetrics()).to.eql({});
@@ -388,7 +388,7 @@ describe('configuration toggle', () => {
     it(`returns actual metrics by default`, () => {
       const metrics = mkMetrics();
       metrics.setMetric('test', 'value');
-      expect(metrics.getMetrics()).to.eql({test: 'value'});
+      expect(metrics.getMetrics()).to.eql({ test: 'value' });
     });
   });
 });

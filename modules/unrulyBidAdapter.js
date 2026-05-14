@@ -1,7 +1,7 @@
 import { deepAccess, logError } from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {VIDEO, BANNER} from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
 function configureUniversalTag(exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
@@ -56,14 +56,8 @@ const RemoveDuplicateSizes = (validBid) => {
   }
 };
 
-const ConfigureProtectedAudience = (validBid, protectedAudienceEnabled) => {
-  if (!protectedAudienceEnabled && validBid.ortb2Imp && validBid.ortb2Imp.ext) {
-    delete validBid.ortb2Imp.ext.ae;
-  }
-}
-
 const getRequests = (conf, validBidRequests, bidderRequest) => {
-  const {bids, bidderRequestId, bidderCode, ...bidderRequestData} = bidderRequest;
+  const { bids, bidderRequestId, bidderCode, ...bidderRequestData } = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
   const requestBySiteId = {};
 
@@ -71,7 +65,6 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
     const currSiteId = validBid.params.siteId;
     addBidFloorInfo(validBid);
     RemoveDuplicateSizes(validBid);
-    ConfigureProtectedAudience(validBid, conf.protectedAudienceEnabled);
     requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || [];
     requestBySiteId[currSiteId].push(validBid);
   });
@@ -90,7 +83,7 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
       )
     };
 
-    request.push(Object.assign({}, {data, ...conf}));
+    request.push(Object.assign({}, { data, ...conf }));
   });
 
   return request;
@@ -226,43 +219,18 @@ export const adapter = {
       'options': {
         'contentType': 'application/json'
       },
-      'protectedAudienceEnabled': bidderRequest.paapi?.enabled
     }, validBidRequests, bidderRequest);
   },
 
   interpretResponse: function (serverResponse) {
-    if (!(serverResponse && serverResponse.body && (serverResponse.body.auctionConfigs || serverResponse.body.bids))) {
+    if (!(serverResponse && serverResponse.body && serverResponse.body.bids)) {
       return [];
     }
 
     const serverResponseBody = serverResponse.body;
-    let bids = [];
-    let fledgeAuctionConfigs = null;
-    if (serverResponseBody.bids.length) {
-      bids = handleBidResponseByMediaType(serverResponseBody.bids);
-    }
+    const bids = handleBidResponseByMediaType(serverResponseBody.bids);
 
-    if (serverResponseBody.auctionConfigs) {
-      const auctionConfigs = serverResponseBody.auctionConfigs;
-      const bidIdList = Object.keys(auctionConfigs);
-      if (bidIdList.length) {
-        bidIdList.forEach((bidId) => {
-          fledgeAuctionConfigs = [{
-            'bidId': bidId,
-            'config': auctionConfigs[bidId]
-          }];
-        })
-      }
-    }
-
-    if (!fledgeAuctionConfigs) {
-      return bids;
-    }
-
-    return {
-      bids,
-      paapi: fledgeAuctionConfigs
-    };
+    return bids;
   }
 };
 

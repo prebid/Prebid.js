@@ -1,6 +1,6 @@
-import {setConsentConfig} from 'modules/consentManagementTcf.js';
-import {server} from 'test/mocks/xhr.js';
-import {coreStorage, startAuctionHook} from 'modules/userId/index.js';
+import { setConsentConfig } from 'modules/consentManagementTcf.js';
+import { server } from 'test/mocks/xhr.js';
+import { coreStorage, startAuctionHook } from 'modules/userId/index.js';
 
 const msIn12Hours = 60 * 60 * 12 * 1000;
 const expireCookieDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -17,17 +17,17 @@ export const runAuction = async () => {
 
   const adUnits = [{
     code: 'adUnit-code',
-    mediaTypes: {banner: {}, native: {}},
+    mediaTypes: { banner: {}, native: {} },
     sizes: [[300, 200], [300, 600]],
-    bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
+    bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }]
   }];
-  const ortb2Fragments = {global: {}, bidder: {}};
+  const ortb2Fragments = { global: {}, bidder: {} };
   return new Promise(function(resolve) {
     startAuctionHook(function() {
       const bid = Object.assign({}, adUnits[0].bids[0]);
       bid.userIdAsEids = (ortb2Fragments.global.user?.ext?.eids ?? []).concat(ortb2Fragments.bidder[bid.bidder]?.user?.ext?.eids ?? []);
       resolve(bid);
-    }, {adUnits, ortb2Fragments});
+    }, { adUnits, ortb2Fragments });
   });
 }
 

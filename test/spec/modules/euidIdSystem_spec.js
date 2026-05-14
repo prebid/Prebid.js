@@ -1,13 +1,13 @@
-import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
-import {config} from 'src/config.js';
-import {euidIdSubmodule} from 'modules/euidIdSystem.js';
+import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { config } from 'src/config.js';
+import { euidIdSubmodule } from 'modules/euidIdSystem.js';
 import 'modules/consentManagementTcf.js';
-import {requestBids} from '../../../src/prebid.js';
-import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
-import {hook} from 'src/hook.js';
-import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
-import {server} from 'test/mocks/xhr';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { requestBids } from '../../../src/prebid.js';
+import { apiHelpers, cookieHelpers, runAuction, setGdprApplies } from './uid2IdSystem_helpers.js';
+import { hook } from 'src/hook.js';
+import { uninstall as uninstallTcfControl } from 'modules/tcfControl.js';
+import { server } from 'test/mocks/xhr';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const expect = require('chai').expect;
 
@@ -21,12 +21,12 @@ const legacyToken = 'legacy-advertising-token';
 const refreshedToken = 'refreshed-advertising-token';
 const auctionDelayMs = 10;
 
-const makeEuidIdentityContainer = (token) => ({euid: {id: token}});
-const makeEuidOptoutContainer = (token) => ({euid: {optout: true}});
+const makeEuidIdentityContainer = (token) => ({ euid: { id: token } });
+const makeEuidOptoutContainer = (token) => ({ euid: { optout: true } });
 const useLocalStorage = true;
 
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
-  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'euid', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}, ...extraSettings}] }, debug
+  userSync: { auctionDelay: auctionDelayMs, userIds: [{ name: 'euid', params: { storage: useLocalStorage ? 'localStorage' : 'cookie', ...params }, ...extraSettings }] }, debug
 });
 
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
@@ -90,7 +90,7 @@ describe('EUID module', function() {
 
   it('When a server-only token value is provided in config, it is available to the auction.', async function() {
     setGdprApplies(true);
-    config.setConfig(makePrebidConfig(null, {value: makeEuidIdentityContainer(initialToken)}));
+    config.setConfig(makePrebidConfig(null, { value: makeEuidIdentityContainer(initialToken) }));
     const bid = await runAuction();
     expectToken(bid, initialToken);
   });
@@ -98,7 +98,7 @@ describe('EUID module', function() {
   it('When a server-only token is provided in the module storage cookie but consent is not available, it is not available to the auction.', async function() {
     setGdprApplies();
     coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
-    config.setConfig({userSync: {auctionDelay: auctionDelayMs, userIds: [{name: 'euid'}]}});
+    config.setConfig({ userSync: { auctionDelay: auctionDelayMs, userIds: [{ name: 'euid' }] } });
     const bid = await runAuction();
     expectNoIdentity(bid);
   });
@@ -106,7 +106,7 @@ describe('EUID module', function() {
   it('When a server-only token is provided in the module storage cookie, it is available to the auction.', async function() {
     setGdprApplies(true);
     coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
-    config.setConfig({userSync: {auctionDelay: auctionDelayMs, userIds: [{name: 'euid'}]}});
+    config.setConfig({ userSync: { auctionDelay: auctionDelayMs, userIds: [{ name: 'euid' }] } });
     const bid = await runAuction();
     expectToken(bid, legacyToken);
   })
@@ -114,7 +114,7 @@ describe('EUID module', function() {
   it('When a valid response body is provided in config, it is available to the auction', async function() {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, false, false);
-    config.setConfig(makePrebidConfig({euidToken}));
+    config.setConfig(makePrebidConfig({ euidToken }));
     const bid = await runAuction();
     expectToken(bid, initialToken);
   })
@@ -123,7 +123,7 @@ describe('EUID module', function() {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, false, false);
     cookieHelpers.setPublisherCookie(publisherCookieName, euidToken);
-    config.setConfig(makePrebidConfig({euidCookie: publisherCookieName}));
+    config.setConfig(makePrebidConfig({ euidCookie: publisherCookieName }));
     const bid = await runAuction();
     expectToken(bid, initialToken);
   })
@@ -131,7 +131,7 @@ describe('EUID module', function() {
   it('When an expired token is provided in config, it calls the API.', async function () {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
-    config.setConfig(makePrebidConfig({euidToken}));
+    config.setConfig(makePrebidConfig({ euidToken }));
     await runAuction();
     expect(server.requests[0]?.url).to.have.string('https://prod.euid.eu/');
   });
@@ -140,7 +140,7 @@ describe('EUID module', function() {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
     configureEuidResponse(200, makeSuccessResponseBody(refreshedToken));
-    config.setConfig(makePrebidConfig({euidToken}));
+    config.setConfig(makePrebidConfig({ euidToken }));
     apiHelpers.respondAfterDelay(1, server);
     const bid = await runAuction();
     expectToken(bid, refreshedToken);
@@ -175,7 +175,7 @@ describe('EUID module', function() {
     });
     it('euid', function() {
       const userId = {
-        euid: {'id': 'Sample_AD_Token'}
+        euid: { 'id': 'Sample_AD_Token' }
       };
       const newEids = createEidsArray(userId);
       expect(newEids.length).to.equal(1);

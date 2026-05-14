@@ -1,5 +1,5 @@
 import { parseSizesInput, _each } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -65,7 +65,7 @@ export const spec = {
       return {
         method: 'GET',
         url: MADVERTISE_ENDPOINT + src,
-        options: {withCredentials: false},
+        options: { withCredentials: false },
         bidId: bidRequest.bidId
       };
     });

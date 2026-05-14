@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
   generateUUID,
   isEmpty,
@@ -9,8 +9,8 @@ import {
   logInfo,
   triggerPixel
 } from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'bitmedia';
 export const ENDPOINT_URL = 'https://cdn.bmcdn7.com/prebid/';
@@ -30,7 +30,7 @@ const ALLOWED_CURRENCIES = [
 const DEFAULT_NET_REVENUE = true;
 const PREBID_VERSION = '$prebid.version$';
 const ADAPTER_VERSION = '1.0';
-export const STORAGE = getStorageManager({bidderCode: BIDDER_CODE});
+export const STORAGE = getStorageManager({ bidderCode: BIDDER_CODE });
 const USER_FINGERPRINT_KEY = 'bitmedia_fid';
 
 const _handleOnBidWon = (endpoint) => {
@@ -104,7 +104,7 @@ const CONVERTER = ortbConverter({
     });
     logInfo(BIDDER_CODE, 'Result imp objects for bidRequest', imps);
     // Should hasOwnProperty id.
-    return {id: bidRequest.bidId, imps};
+    return { id: bidRequest.bidId, imps };
   },
 
   request(buildRequest, imps, bidderRequest, context) {
@@ -174,8 +174,8 @@ const CONVERTER = ortbConverter({
 
 const isBidRequestValid = (bid) => {
   logInfo(BIDDER_CODE, 'Validating bid request', bid);
-  const {banner} = bid.mediaTypes || {};
-  const {adUnitID, currency} = bid.params || {};
+  const { banner } = bid.mediaTypes || {};
+  const { adUnitID, currency } = bid.params || {};
 
   if (!banner || !Array.isArray(banner.sizes)) {
     logError(BIDDER_CODE, 'Invalid bid: missing or malformed banner sizes', banner);
@@ -204,7 +204,7 @@ const isBidRequestValid = (bid) => {
 };
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
-  logInfo(BIDDER_CODE, 'Building OpenRTB request', {validBidRequests, bidderRequest});
+  logInfo(BIDDER_CODE, 'Building OpenRTB request', { validBidRequests, bidderRequest });
   const requests = validBidRequests.map(bidRequest => {
     const data = CONVERTER.toORTB({
       bidRequests: [bidRequest],
@@ -230,7 +230,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 };
 
 const interpretResponse = (serverResponse, bidRequest) => {
-  logInfo(BIDDER_CODE, 'Interpreting server response', {serverResponse, bidRequest});
+  logInfo(BIDDER_CODE, 'Interpreting server response', { serverResponse, bidRequest });
 
   if (isEmpty(serverResponse.body)) {
     logInfo(BIDDER_CODE, 'Empty response');
@@ -249,7 +249,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
 
 const onBidWon = (bid) => {
   const cpm = bid.adserverTargeting?.hb_pb || '';
-  logInfo(BIDDER_CODE, `-----Bid won-----`, {bid, cpm: cpm});
+  logInfo(BIDDER_CODE, `-----Bid won-----`, { bid, cpm: cpm });
   _handleOnBidWon(bid.nurl);
 }
 

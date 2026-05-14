@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, SSMAS_CODE, SSMAS_ENDPOINT, SSMAS_REQUEST_METHOD } from 'modules/ssmasBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('ssmasBidAdapter', function () {
@@ -68,7 +68,7 @@ describe('ssmasBidAdapter', function () {
 
     it('test bad bid request', function () {
       // empty bid
-      expect(spec.isBidRequestValid({bidId: '', params: {}})).to.be.false;
+      expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false;
 
       // empty bidId
       bid.bidId = '';

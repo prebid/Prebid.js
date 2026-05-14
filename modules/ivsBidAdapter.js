@@ -1,5 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import {deepAccess, deepSetValue, getBidIdParameter, logError} from '../src/utils.js';
+import { deepAccess, deepSetValue, getBidIdParameter, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM } from '../src/video.js';
@@ -64,7 +64,7 @@ export const spec = {
    * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidderRequest, validBidRequests, context: {mediaType: 'video'} });
+    const data = converter.toORTB({ bidderRequest, validBidRequests, context: { mediaType: 'video' } });
     deepSetValue(data.site, 'publisher.id', validBidRequests[0].params.publisherId);
 
     return {

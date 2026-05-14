@@ -524,7 +524,7 @@ const eventHandlers = {
 
 /// /////////// ADAPTER DEFINITION //////////////
 
-const baseAdapter = adapter({analyticsType: 'endpoint'});
+const baseAdapter = adapter({ analyticsType: 'endpoint' });
 const pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(conf = {}) {

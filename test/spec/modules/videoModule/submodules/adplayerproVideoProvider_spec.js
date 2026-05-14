@@ -16,11 +16,11 @@ import {
   SETUP_FAILED,
   VOLUME
 } from 'libraries/video/constants/events.js';
-import adPlayerProSubmoduleFactory, {callbackStorageFactory} from '../../../../../modules/adplayerproVideoProvider.js';
-import {PLACEMENT} from '../../../../../libraries/video/constants/ortb.js';
+import adPlayerProSubmoduleFactory, { callbackStorageFactory } from '../../../../../modules/adplayerproVideoProvider.js';
+import { PLACEMENT } from '../../../../../libraries/video/constants/ortb.js';
 import sinon from 'sinon';
 
-const {AdPlayerProProvider, utils} = require('modules/adplayerproVideoProvider.js');
+const { AdPlayerProProvider, utils } = require('modules/adplayerproVideoProvider.js');
 
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE, PLCMT
@@ -93,7 +93,7 @@ describe('AdPlayerProProvider', function () {
 
   beforeEach(() => {
     addDiv();
-    config = {divId: 'test', playerConfig: {placementId: 'testId'}};
+    config = { divId: 'test', playerConfig: { placementId: 'testId' } };
     callbackStorage = callbackStorageFactory();
     utilsMock = getUtilsMock();
     player = getPlayerMock();
@@ -264,7 +264,7 @@ describe('AdPlayerProProvider', function () {
       const setupSpy = player.setup = sinon.spy(player.setup);
       const provider = AdPlayerProProvider(config, makePlayerFactoryMock(player), callbackStorage, utils);
       provider.init();
-      provider.setAdTagUrl('', {adXml: 'https://test.com'});
+      provider.setAdTagUrl('', { adXml: 'https://test.com' });
       expect(setupSpy.calledOnce).to.be.true;
     });
 
@@ -398,15 +398,15 @@ describe('AdPlayerProProvider utils', function () {
 
     test(false, PLACEMENT.BANNER);
     test({}, PLACEMENT.BANNER);
-    test({type: 'test'}, PLACEMENT.BANNER);
-    test({type: 'inPage'}, PLACEMENT.ARTICLE);
-    test({type: 'rewarded'}, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
-    test({type: 'inView'}, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
+    test({ type: 'test' }, PLACEMENT.BANNER);
+    test({ type: 'inPage' }, PLACEMENT.ARTICLE);
+    test({ type: 'rewarded' }, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
+    test({ type: 'inView' }, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
   });
 
   it('getPlaybackMethod', function () {
     function test(autoplay, mute, expected) {
-      expect(utils.getPlaybackMethod({autoplay, mute})).to.be.equal(expected);
+      expect(utils.getPlaybackMethod({ autoplay, mute })).to.be.equal(expected);
     }
 
     test(false, false, PLAYBACK_METHODS.CLICK_TO_PLAY);
@@ -417,7 +417,7 @@ describe('AdPlayerProProvider utils', function () {
 
   it('getPlcmt', function () {
     function test(type, autoplay, muted, file, expected) {
-      expect(utils.getPlcmt({type, autoplay, muted, file})).to.be.equal(expected);
+      expect(utils.getPlcmt({ type, autoplay, muted, file })).to.be.equal(expected);
     }
 
     test('inStream', false, false, 'f', PLCMT.INSTREAM);

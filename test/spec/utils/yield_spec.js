@@ -1,5 +1,5 @@
-import {pbYield, serialize} from '../../../src/utils/yield.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { pbYield, serialize } from '../../../src/utils/yield.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('main thread yielding', () => {
   let shouldYield, ran;

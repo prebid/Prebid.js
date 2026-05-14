@@ -378,7 +378,7 @@ For ease of use, the conversion logic gives special meaning to some context prop
 
 ## Prebid Server extensions
 
-If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params (with `transformBidParams`), bidder aliases, targeting keys, and others.
+If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params, bidder aliases, targeting keys, and others.
 
 ```javascript
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js'

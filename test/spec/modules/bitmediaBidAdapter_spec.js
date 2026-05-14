@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec, STORAGE, ENDPOINT_URL} from 'modules/bitmediaBidAdapter.js';
+import { expect } from 'chai';
+import { spec, STORAGE, ENDPOINT_URL } from 'modules/bitmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
-import {BANNER} from '../../../src/mediaTypes.js';
+import { config } from 'src/config.js';
+import { BANNER } from '../../../src/mediaTypes.js';
 
 describe('Bitmedia Bid Adapter', function () {
   const createBidRequest = (sandbox, overrides = {}) => {
@@ -331,11 +331,11 @@ describe('Bitmedia Bid Adapter', function () {
 
       beforeEach(function () {
         const getFloorStub = sinon.stub();
-        getFloorStub.withArgs({currency: 'USD', mediaType: 'banner', size: [300, 250]}).returns({
+        getFloorStub.withArgs({ currency: 'USD', mediaType: 'banner', size: [300, 250] }).returns({
           currency: 'USD',
           floor: 0.5
         });
-        getFloorStub.withArgs({currency: 'USD', mediaType: 'banner', size: [300, 600]}).returns({
+        getFloorStub.withArgs({ currency: 'USD', mediaType: 'banner', size: [300, 600] }).returns({
           currency: 'USD',
           floor: 0.7
         });
@@ -351,9 +351,9 @@ describe('Bitmedia Bid Adapter', function () {
 
       it('should include the correct bidfloor per impression', function () {
         expect(imp[0].bidfloor).to.equal(0.5);
-        expect(imp[0].banner).to.deep.equal({w: 300, h: 250});
+        expect(imp[0].banner).to.deep.equal({ w: 300, h: 250 });
         expect(imp[1].bidfloor).to.equal(0.7);
-        expect(imp[1].banner).to.deep.equal({w: 300, h: 600});
+        expect(imp[1].banner).to.deep.equal({ w: 300, h: 600 });
       });
     });
 
@@ -456,7 +456,7 @@ describe('Bitmedia Bid Adapter', function () {
     });
 
     it('should return an empty array when server response is empty', function () {
-      const serverResponse = {body: {}};
+      const serverResponse = { body: {} };
       const bidRequest = {};
 
       const bids = spec.interpretResponse(serverResponse, bidRequest);

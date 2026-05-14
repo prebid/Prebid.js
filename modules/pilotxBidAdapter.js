@@ -74,15 +74,25 @@ export const spec = {
       }
       let consentTemp = ''
       let consentRequiredTemp = false
-      if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest?.gdprConsent) {
         consentTemp = bidderRequest.gdprConsent.consentString
         // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
         consentRequiredTemp = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       }
-
+      let gppString = ''
+      let applicablesections = []
+      if (bidderRequest?.gppConsent) {
+        gppString = bidderRequest.gppConsent.gppString
+        applicablesections = bidderRequest.gppConsent.applicableSections
+      }
       payloadItems[placementId]['gdprConsentString'] = consentTemp
       payloadItems[placementId]['gdprConsentRequired'] = consentRequiredTemp
       payloadItems[placementId]['bidId'] = bidRequest.bidId
+      payloadItems[placementId]['gppString'] = gppString
+      payloadItems[placementId]['gppApplicableSections'] = applicablesections
+      if (bidderRequest?.uspConsent) {
+        payloadItems[placementId]['uspConsent'] = bidderRequest.uspConsent
+      }
     });
     const payload = payloadItems;
     const payloadString = JSON.stringify(payload);

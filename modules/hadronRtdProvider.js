@@ -5,13 +5,13 @@
  * @module modules/hadronRtdProvider
  * @requires module:modules/realTimeData
  */
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isFn, isStr, isArray, deepEqual, isPlainObject, logInfo} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isFn, isStr, isArray, deepEqual, isPlainObject, logInfo } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -24,7 +24,7 @@ const AU_GVLID = 561;
 const HADRON_JS_URL = 'https://cdn.hadronid.net/hadron.js';
 const LS_TAM_KEY = 'auHadronId';
 const RTD_LOCAL_NAME = 'auHadronRtd';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 /**
  * @param {string} url
@@ -47,11 +47,11 @@ function mergeDeep(target, ...sources) {
   if (isPlainObject(target) && isPlainObject(source)) {
     for (const key in source) {
       if (isPlainObject(source[key])) {
-        if (!target[key]) Object.assign(target, {[key]: {}});
+        if (!target[key]) Object.assign(target, { [key]: {} });
         mergeDeep(target[key], source[key]);
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, {[key]: source[key]});
+          Object.assign(target, { [key]: source[key] });
         } else if (isArray(target[key])) {
           source[key].forEach(obj => {
             let e = 1;
@@ -67,7 +67,7 @@ function mergeDeep(target, ...sources) {
           });
         }
       } else {
-        Object.assign(target, {[key]: source[key]});
+        Object.assign(target, { [key]: source[key] });
       }
     }
   }

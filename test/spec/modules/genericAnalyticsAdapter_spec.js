@@ -1,8 +1,8 @@
-import {defaultHandler, GenericAnalytics} from '../../../modules/genericAnalyticsAdapter.js';
+import { defaultHandler, GenericAnalytics } from '../../../modules/genericAnalyticsAdapter.js';
 import * as events from 'src/events.js';
-import {EVENTS} from 'src/constants.js';
+import { EVENTS } from 'src/constants.js';
 
-const {AUCTION_INIT, BID_RESPONSE} = EVENTS;
+const { AUCTION_INIT, BID_RESPONSE } = EVENTS;
 
 describe('Generic analytics', () => {
   describe('adapter', () => {
@@ -98,12 +98,12 @@ describe('Generic analytics', () => {
             batchSize: 2
           }
         });
-        events.emit(AUCTION_INIT, {i: 0});
+        events.emit(AUCTION_INIT, { i: 0 });
         sinon.assert.notCalled(handler);
-        events.emit(BID_RESPONSE, {i: 0});
+        events.emit(BID_RESPONSE, { i: 0 });
         sinon.assert.calledWith(handler, sinon.match((arg) => {
-          return sinon.match({eventType: AUCTION_INIT, args: {i: 0}}).test(arg[0]) &&
-            sinon.match({eventType: BID_RESPONSE, args: {i: 0}}).test(arg[1]);
+          return sinon.match({ eventType: AUCTION_INIT, args: { i: 0 } }).test(arg[0]) &&
+            sinon.match({ eventType: BID_RESPONSE, args: { i: 0 } }).test(arg[1]);
         }));
       });
 
@@ -115,15 +115,15 @@ describe('Generic analytics', () => {
           }
         });
         handler.throws(new Error());
-        events.emit(AUCTION_INIT, {i: 0});
+        events.emit(AUCTION_INIT, { i: 0 });
         let recv;
         handler.resetHistory();
         handler.resetBehavior();
         handler.callsFake((arg) => {
           recv = arg;
         });
-        events.emit(BID_RESPONSE, {i: 1});
-        sinon.assert.match(recv, [sinon.match({eventType: BID_RESPONSE, args: {i: 1}})])
+        events.emit(BID_RESPONSE, { i: 1 });
+        sinon.assert.match(recv, [sinon.match({ eventType: BID_RESPONSE, args: { i: 1 } })])
       });
 
       it('should not cause infinite recursion, if handler triggers more events', () => {
@@ -151,7 +151,7 @@ describe('Generic analytics', () => {
             handler
           }
         });
-        [0, 1, 2].forEach(i => events.emit(BID_RESPONSE, {i}));
+        [0, 1, 2].forEach(i => events.emit(BID_RESPONSE, { i }));
         sinon.assert.calledOnce(handler);
         clock.tick(100);
         sinon.assert.calledTwice(handler);
@@ -165,10 +165,10 @@ describe('Generic analytics', () => {
             handler
           }
         });
-        [0, 1, 2].forEach(i => events.emit(BID_RESPONSE, {i}));
+        [0, 1, 2].forEach(i => events.emit(BID_RESPONSE, { i }));
         sinon.assert.calledOnce(handler);
         clock.tick(50);
-        events.emit(BID_RESPONSE, {i: 3});
+        events.emit(BID_RESPONSE, { i: 3 });
         sinon.assert.calledTwice(handler);
         clock.tick(100);
         sinon.assert.calledTwice(handler);
@@ -204,8 +204,8 @@ describe('Generic analytics', () => {
               }
             }
           });
-          events.emit(BID_RESPONSE, {prop: 'value', i: 0});
-          sinon.assert.calledWith(handler, sinon.match(data => sinon.match({extra: 'data', prop: 'value'}).test(data[0])));
+          events.emit(BID_RESPONSE, { prop: 'value', i: 0 });
+          sinon.assert.calledWith(handler, sinon.match(data => sinon.match({ extra: 'data', prop: 'value' }).test(data[0])));
         });
 
         it('does not choke if an event handler throws', () => {
@@ -223,9 +223,9 @@ describe('Generic analytics', () => {
             }
           });
           events.emit(AUCTION_INIT, {});
-          events.emit(BID_RESPONSE, {i: 0});
+          events.emit(BID_RESPONSE, { i: 0 });
           sinon.assert.calledOnce(handler);
-          sinon.assert.calledWith(handler, sinon.match(data => sinon.match({i: 0}).test(data[0])));
+          sinon.assert.calledWith(handler, sinon.match(data => sinon.match({ i: 0 }).test(data[0])));
         });
 
         it('filters out events when their handler returns undefined', () => {
@@ -240,10 +240,10 @@ describe('Generic analytics', () => {
               }
             }
           });
-          events.emit(AUCTION_INIT, {i: 0});
-          events.emit(BID_RESPONSE, {i: 1});
+          events.emit(AUCTION_INIT, { i: 0 });
+          events.emit(BID_RESPONSE, { i: 1 });
           sinon.assert.calledOnce(handler);
-          sinon.assert.calledWith(handler, sinon.match(data => sinon.match({i: 0}).test(data[0])));
+          sinon.assert.calledWith(handler, sinon.match(data => sinon.match({ i: 0 }).test(data[0])));
         });
       });
     });
@@ -263,22 +263,22 @@ describe('Generic analytics', () => {
     }).forEach(([method, parse]) => {
       describe(`when HTTP method is ${method}`, () => {
         it('should send single event when batchSize is 1', () => {
-          const handler = defaultHandler({url, method, batchSize: 1, ajax});
-          const payload = {i: 0};
+          const handler = defaultHandler({ url, method, batchSize: 1, ajax });
+          const payload = { i: 0 };
           handler([payload, {}]);
           sinon.assert.calledWith(ajax, url, sinon.match.any,
             sinon.match(data => sinon.match(payload).test(parse(data))),
-            {method, keepalive: true}
+            { method, keepalive: true }
           );
         });
 
         it('should send multiple events when batchSize is greater than 1', () => {
-          const handler = defaultHandler({url, method, batchSize: 10, ajax});
-          const payload = [{i: 0}, {i: 1}];
+          const handler = defaultHandler({ url, method, batchSize: 10, ajax });
+          const payload = [{ i: 0 }, { i: 1 }];
           handler(payload);
           sinon.assert.calledWith(ajax, url, sinon.match.any,
             sinon.match(data => sinon.match(payload).test(parse(data))),
-            {method, keepalive: true}
+            { method, keepalive: true }
           );
         });
       });

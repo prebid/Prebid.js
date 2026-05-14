@@ -1,7 +1,7 @@
-import {isEmpty, logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize} from '../../../src/utils.js';
-import {VIDEO} from '../../../src/mediaTypes.js';
+import { isEmpty, logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize } from '../../../src/utils.js';
+import { VIDEO } from '../../../src/mediaTypes.js';
 
-import {ORTB_VIDEO_PARAMS} from '../../../src/video.js';
+import { ORTB_VIDEO_PARAMS } from '../../../src/video.js';
 
 export function fillVideoImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== VIDEO) return;

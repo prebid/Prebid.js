@@ -1,5 +1,5 @@
 import { pbjsTestOnly } from 'test/helpers/pbjs-test-only.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 describe('Publisher API _ Alias Bidder', function () {
   var assert = require('chai').assert;

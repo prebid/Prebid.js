@@ -9,7 +9,7 @@ import {
 } from '../src/utils.js';
 import * as ajax from '../src/ajax.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 const MODULE_NAME = 'growthCodeRtd';
 const LOG_PREFIX = 'GrowthCodeRtd: ';
@@ -99,7 +99,7 @@ function callServer(configParams, items, expiresAt, userConsent) {
       error: error => {
         logError(LOG_PREFIX + 'ID fetch encountered an error', error);
       }
-    }, undefined, {method: 'GET', withCredentials: true})
+    }, undefined, { method: 'GET', withCredentials: true })
   }
 
   return true;

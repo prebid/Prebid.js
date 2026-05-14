@@ -1,5 +1,5 @@
-import {targetingLock} from '../../../../src/targeting/lock.js';
-import {config} from 'src/config.js';
+import { targetingLock } from '../../../../src/targeting/lock.js';
+import { config } from 'src/config.js';
 
 describe('Targeting lock', () => {
   let lock, clock, targeting, sandbox;

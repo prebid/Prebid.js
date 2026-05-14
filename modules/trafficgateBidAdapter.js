@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {deepAccess, mergeDeep} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { deepAccess, mergeDeep } from '../src/utils.js';
 
 const BIDDER_CODE = 'trafficgate';
 const URL = 'https://[HOST].bc-plugin.com/prebidjs'
@@ -64,7 +64,7 @@ const converter = ortbConverter({
     imp: {
       bidfloor(setBidFloor, imp, bidRequest, context) {
         const floor = {};
-        setBidFloor(floor, bidRequest, {...context, currency: 'USD'});
+        setBidFloor(floor, bidRequest, { ...context, currency: 'USD' });
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }
@@ -74,7 +74,7 @@ const converter = ortbConverter({
           let videoParams = bidRequest.mediaTypes[VIDEO];
           if (videoParams) {
             videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-            bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
           }
           orig(imp, bidRequest, context);
           if (imp.video && videoParams?.context === 'outstream') {
@@ -111,7 +111,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: URL.replace('[HOST]', bidRequests[0].params.host),
-    data: converter.toORTB({bidRequests, bidderRequest, context: {mediaType}})
+    data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
   }
 }
 
@@ -125,9 +125,9 @@ function isBannerBid(bid) {
 
 function interpretResponse(resp, req) {
   if (!resp.body) {
-    resp.body = {nbr: 0};
+    resp.body = { nbr: 0 };
   }
-  return converter.fromORTB({request: req.data, response: resp.body});
+  return converter.fromORTB({ request: req.data, response: resp.body });
 }
 
 export const spec2 = {

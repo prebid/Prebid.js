@@ -17,7 +17,7 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const { getConfig } = config;
 

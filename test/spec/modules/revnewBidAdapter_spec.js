@@ -605,7 +605,7 @@ describe('Revnew bid adapter tests', () => {
     });
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
-        cookies: [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}]
+        cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
       };
       const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
       const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];

@@ -65,25 +65,26 @@ const bidRequest = {
 
 const request_video = {
   code: 'brave-video-prebid',
-  mediaTypes: { video: {
-    minduration: 1,
-    maxduration: 999,
-    boxingallowed: 1,
-    skip: 0,
-    mimes: [
-      'application/javascript',
-      'video/mp4'
-    ],
-    playerSize: [[768, 1024]],
-    protocols: [
-      2, 3
-    ],
-    linearity: 1,
-    api: [
-      1,
-      2
-    ]
-  }
+  mediaTypes: {
+    video: {
+      minduration: 1,
+      maxduration: 999,
+      boxingallowed: 1,
+      skip: 0,
+      mimes: [
+        'application/javascript',
+        'video/mp4'
+      ],
+      playerSize: [[768, 1024]],
+      protocols: [
+        2, 3
+      ],
+      linearity: 1,
+      api: [
+        1,
+        2
+      ]
+    }
   },
 
   bidder: 'brave',
@@ -144,17 +145,18 @@ const response_native = {
       impid: 'request_imp_id',
       price: 5,
       adomain: ['example.com'],
-      adm: { native:
+      adm: {
+        native:
           {
             assets: [
-              {id: 1, title: 'dummyText'},
-              {id: 3, image: imgData},
+              { id: 1, title: 'dummyText' },
+              { id: 3, image: imgData },
               {
                 id: 5,
-                data: {value: 'organization.name'}
+                data: { value: 'organization.name' }
               }
             ],
-            link: {url: 'example.com'},
+            link: { url: 'example.com' },
             imptrackers: ['tracker1.com', 'tracker2.com', 'tracker3.com'],
             jstracker: 'tracker1.com'
           }
@@ -340,7 +342,7 @@ describe('BraveBidAdapter', function() {
         creativeId: response_native.seatbid[0].bid[0].crid,
         dealId: response_native.seatbid[0].bid[0].dealid,
         mediaType: 'native',
-        native: {clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url}
+        native: { clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url }
       }
 
       const nativeResponses = spec.interpretResponse(nativeResponse);

@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {config} from 'src/config.js';
-import {filterBidData, init} from 'modules/dataControllerModule/index.js';
-import {startAuction} from 'src/prebid.js';
+import { expect } from 'chai';
+import { config } from 'src/config.js';
+import { filterBidData, init } from 'modules/dataControllerModule/index.js';
+import { startAuction } from 'src/prebid.js';
 
 describe('data controller', function () {
   let spyFn;
@@ -85,7 +85,7 @@ describe('data controller', function () {
 
     afterEach(function () {
       config.resetConfig();
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({ hook: filterBidData }).remove();
     });
 
     it('filterEIDwhenSDA for All SDA ', function () {

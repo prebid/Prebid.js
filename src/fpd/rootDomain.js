@@ -1,5 +1,5 @@
-import {memoize} from '../utils.js';
-import {canSetCookie, getCoreStorageManager} from '../storageManager.js';
+import { memoize } from '../utils.js';
+import { canSetCookie, getCoreStorageManager } from '../storageManager.js';
 
 export const coreStorage = getCoreStorageManager('fpdEnrichment');
 

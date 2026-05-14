@@ -82,7 +82,7 @@ describe('resetdigitalBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    const req = spec.buildRequests([ bannerRequest ], { refererInfo: { } })
+    const req = spec.buildRequests([bannerRequest], { refererInfo: { } })
     let rdata
 
     it('should return request object', function () {

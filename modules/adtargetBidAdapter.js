@@ -1,8 +1,8 @@
-import {_map, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {chunk} from '../libraries/chunk/chunk.js';
+import { _map, deepAccess, flatten, isArray, logError, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { chunk } from '../libraries/chunk/chunk.js';
 import {
   createTag, getUserSyncsFn,
   isBidRequestValid,

@@ -21,9 +21,9 @@ describe('event trackers', () => {
       },
       'unsupported methods and events': {
         eventtrackers: [
-          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'u1'},
-          {event: 999, method: TRACKER_METHOD_IMG, url: 'u2'},
-          {event: EVENT_TYPE_IMPRESSION, method: 999, url: 'u3'},
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'u1' },
+          { event: 999, method: TRACKER_METHOD_IMG, url: 'u2' },
+          { event: EVENT_TYPE_IMPRESSION, method: 999, url: 'u3' },
         ],
         expected: {
           [EVENT_TYPE_IMPRESSION]: {
@@ -37,10 +37,10 @@ describe('event trackers', () => {
       },
       'mixed methods and events': {
         eventtrackers: [
-          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'u1'},
-          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'u2'},
-          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'u3'},
-          {event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'u4'}
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'u1' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'u2' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'u3' },
+          { event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'u4' }
         ],
         expected: {
           [EVENT_TYPE_IMPRESSION]: {
@@ -52,7 +52,7 @@ describe('event trackers', () => {
           }
         }
       },
-    }).forEach(([t, {eventtrackers, expected}]) => {
+    }).forEach(([t, { eventtrackers, expected }]) => {
       it(`can parse ${t}`, () => {
         expect(parseEventTrackers(eventtrackers)).to.eql(expected);
       })

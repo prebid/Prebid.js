@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   logError,
   deepAccess,
@@ -21,6 +20,7 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -328,6 +328,7 @@ export const spec = {
             const renderer = Renderer.install({
               id: 0,
               url: 'https://dco.smartclip.net/?plc=7777779',
+              adUnitCode: currentBidRequest.adUnitCode,
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],

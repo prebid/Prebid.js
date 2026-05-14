@@ -1,4 +1,4 @@
-import {serializeSupplyChain} from '../../../libraries/schainSerializer/schainSerializer.js'
+import { serializeSupplyChain } from '../../../libraries/schainSerializer/schainSerializer.js'
 describe('serializeSupplyChain', () => {
   describe('Single Hop - Chain Complete', () => {
     it('should serialize a single hop chain with complete information', () => {

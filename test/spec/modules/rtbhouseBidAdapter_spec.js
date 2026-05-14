@@ -346,7 +346,7 @@ describe('RTBHouseAdapter', () => {
 
     it('should include bidfloor from floor module if available', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].getFloor = () => ({floor: 1.22, currency: 'USD'});
+      bidRequest[0].getFloor = () => ({ floor: 1.22, currency: 'USD' });
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(1.22)
@@ -354,7 +354,7 @@ describe('RTBHouseAdapter', () => {
 
     it('should use bidfloor from floor module if both floor module and bid floor available', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].getFloor = () => ({floor: 1.22, currency: 'USD'});
+      bidRequest[0].getFloor = () => ({ floor: 1.22, currency: 'USD' });
       bidRequest[0].params.bidfloor = 0.01;
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
@@ -448,9 +448,9 @@ describe('RTBHouseAdapter', () => {
       const data = JSON.parse(request.data);
       expect(data.bcat).to.deep.equal(localBidderRequest.ortb2.bcat);
       expect(data.badv).to.deep.equal(localBidderRequest.ortb2.badv);
-      expect(data.site).to.nested.include({'ext.data': 'some site data'});
-      expect(data.device).to.nested.include({'ext.data': 'some device data'});
-      expect(data.user).to.nested.include({'ext.data': 'some user data'});
+      expect(data.site).to.nested.include({ 'ext.data': 'some site data' });
+      expect(data.device).to.nested.include({ 'ext.data': 'some device data' });
+      expect(data.user).to.nested.include({ 'ext.data': 'some user data' });
     });
 
     context('DSA', () => {
@@ -816,14 +816,14 @@ describe('RTBHouseAdapter', () => {
         }
       ];
       let bidderRequest;
-      const result = spec.interpretResponse({body: response}, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
       const response = '';
       let bidderRequest;
-      const result = spec.interpretResponse({body: response}, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -862,7 +862,7 @@ describe('RTBHouseAdapter', () => {
           }
         ];
         let bidderRequest;
-        const result = spec.interpretResponse({body: response}, {bidderRequest});
+        const result = spec.interpretResponse({ body: response }, { bidderRequest });
 
         expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
         expect(result[0]).to.have.nested.property('meta.dsa');
@@ -918,7 +918,7 @@ describe('RTBHouseAdapter', () => {
       }];
 
       it('should contain native assets in valid format', () => {
-        const bids = spec.interpretResponse({body: response}, {});
+        const bids = spec.interpretResponse({ body: response }, {});
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',

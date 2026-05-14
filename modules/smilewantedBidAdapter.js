@@ -1,10 +1,10 @@
-import {deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn} from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js'
-import {convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse} from '../src/native.js';
+import { deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { serializeSupplyChain } from '../libraries/schainSerializer/schainSerializer.js'
+import { convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'smilewanted';

@@ -114,7 +114,7 @@ const converter = ortbConverter({
       context.mediaType = VIDEO;
       bidResponse = buildBidResponse(bid, context);
       if (bidRequest.mediaTypes.video?.context === 'outstream') {
-        const renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+        const renderer = Renderer.install({ id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode });
         renderer.setRender(renderOutstream);
         bidResponse.renderer = renderer;
       }

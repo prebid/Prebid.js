@@ -8,7 +8,7 @@
     "rootDir": "./",
     "outDir": "./dist/src/",
     "noImplicitAny": false,
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false,
     "types": [],
     "lib": ["es2019", "DOM"],

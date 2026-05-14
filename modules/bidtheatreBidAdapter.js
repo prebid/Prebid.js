@@ -11,7 +11,7 @@ const METHOD = 'POST';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 export const DEFAULT_CURRENCY = 'USD';
 const BIDTHEATRE_COOKIE_NAME = '__kuid';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {
@@ -68,7 +68,7 @@ export const spec = {
     return syncs;
   },
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({bidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests, bidderRequest });
 
     const cookieValue = storage.getCookie(BIDTHEATRE_COOKIE_NAME);
     if (cookieValue) {
@@ -104,7 +104,7 @@ export const spec = {
     });
 
     const macroReplacedResponseBody = { ...response.body, seatbid: macroReplacedSeatbid };
-    const bids = converter.fromORTB({response: macroReplacedResponseBody, request: request.data}).bids;
+    const bids = converter.fromORTB({ response: macroReplacedResponseBody, request: request.data }).bids;
     return bids;
   },
   onTimeout: function(timeoutData) {},

@@ -1,9 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec, ortbConverterProps } from 'modules/oguryBidAdapter';
+import { ortbConverterProps, spec } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
 import { server } from '../../mocks/xhr.js';
-import {getDevicePixelRatio} from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -114,8 +113,8 @@ describe('OguryBidAdapter', () => {
     bids: bidRequests,
     bidderRequestId: 'mock-uuid',
     auctionId: bidRequests[0].auctionId,
-    gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
-    gppConsent: {gppString: 'myGppString', gppData: {}, applicableSections: [7], parsedSections: {}},
+    gdprConsent: { consentString: 'myConsentString', vendorData: {}, gdprApplies: true },
+    gppConsent: { gppString: 'myGppString', gppData: {}, applicableSections: [7], parsedSections: {} },
     timeout: 1000,
     ortb2
   };
@@ -184,7 +183,7 @@ describe('OguryBidAdapter', () => {
   });
 
   describe('getUserSyncs', () => {
-    let syncOptions, gdprConsent, gppConsent;
+    let syncOptions, gdprConsent, gppConsent, uspConsent;
 
     beforeEach(() => {
       gdprConsent = {
@@ -195,6 +194,7 @@ describe('OguryBidAdapter', () => {
         gppString: 'DBABLA~BAAAAAAAAQA.QA',
         applicableSections: [7]
       }
+      uspConsent = '1YNY'
     });
 
     describe('pixel', () => {
@@ -203,7 +203,7 @@ describe('OguryBidAdapter', () => {
       });
 
       it('should return syncs array with one element of type image', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
 
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
@@ -211,28 +211,33 @@ describe('OguryBidAdapter', () => {
       });
 
       it('should set the source as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('source')).to.equal('prebid')
       });
 
       it('should set the tcString as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal(gdprConsent.consentString)
       });
 
       it('should set the gppString as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('gpp')).to.equal(gppConsent.gppString)
       });
 
       it('should set the gpp_sid as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString())
+      });
+
+      it('should set the us privacy consentString as query param', () => {
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
+        expect(new URL(userSyncs[0].url).searchParams.get('us_privacy')).to.equal(uspConsent)
       });
 
       it('should return an empty array when pixel is disable', () => {
         syncOptions.pixelEnabled = false;
-        expect(spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent)).to.have.lengthOf(0);
+        expect(spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent)).to.have.lengthOf(0);
       });
 
       it('should return syncs array with three elements of type image when consentString is undefined', () => {
@@ -241,7 +246,7 @@ describe('OguryBidAdapter', () => {
           consentString: undefined
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
@@ -253,7 +258,7 @@ describe('OguryBidAdapter', () => {
           consentString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
@@ -262,7 +267,7 @@ describe('OguryBidAdapter', () => {
       it('should return syncs array with three elements of type image when gdprConsent is undefined', () => {
         gdprConsent = undefined;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
@@ -271,7 +276,7 @@ describe('OguryBidAdapter', () => {
       it('should return syncs array with three elements of type image when gdprConsent is null', () => {
         gdprConsent = null;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
@@ -283,7 +288,7 @@ describe('OguryBidAdapter', () => {
           consentString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
@@ -295,7 +300,7 @@ describe('OguryBidAdapter', () => {
           consentString: ''
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
@@ -307,7 +312,7 @@ describe('OguryBidAdapter', () => {
           gppString: undefined
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
@@ -322,7 +327,7 @@ describe('OguryBidAdapter', () => {
           gppString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
@@ -334,7 +339,7 @@ describe('OguryBidAdapter', () => {
       it('should return syncs array with three elements of type image when gppConsent is undefined', () => {
         gppConsent = undefined;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
@@ -343,16 +348,38 @@ describe('OguryBidAdapter', () => {
         expect(firstUrlSync.get('gpp_sid')).to.equal('')
       });
 
+      it('should return syncs array with three elements of type image when uspConsent is undefined', () => {
+        uspConsent = undefined;
+
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
+        expect(userSyncs).to.have.lengthOf(1);
+        expect(userSyncs[0].type).to.equal('image');
+
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams
+        expect(firstUrlSync.get('us_privacy')).to.equal('')
+      });
+
       it('should return syncs array with three elements of type image when gppConsent is null', () => {
         gppConsent = null;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
         const firstUrlSync = new URL(userSyncs[0].url).searchParams
         expect(firstUrlSync.get('gpp')).to.equal('')
         expect(firstUrlSync.get('gpp_sid')).to.equal('')
+      });
+
+      it('should return syncs array with three elements of type image when uspConsent is null', () => {
+        uspConsent = null;
+
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
+        expect(userSyncs).to.have.lengthOf(1);
+        expect(userSyncs[0].type).to.equal('image');
+
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams
+        expect(firstUrlSync.get('us_privacy')).to.equal('')
       });
 
       it('should return syncs array with three elements of type image when gppConsent is null and applicableSections is empty', () => {
@@ -361,7 +388,7 @@ describe('OguryBidAdapter', () => {
           gppString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
@@ -392,7 +419,7 @@ describe('OguryBidAdapter', () => {
       });
 
       it('should return syncs array with one element of type iframe', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
 
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
@@ -400,23 +427,28 @@ describe('OguryBidAdapter', () => {
       });
 
       it('should set the source as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('source')).to.equal('prebid');
       });
 
       it('should set the tcString as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal(gdprConsent.consentString);
       });
 
       it('should set the gppString as query param', () => {
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(new URL(userSyncs[0].url).searchParams.get('gpp')).to.equal(gppConsent.gppString);
+      });
+
+      it('should set the us privacy consentString as query param', () => {
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
+        expect(new URL(userSyncs[0].url).searchParams.get('us_privacy')).to.equal(uspConsent);
       });
 
       it('should return an empty array when iframe is disable', () => {
         syncOptions.iframeEnabled = false;
-        expect(spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent)).to.have.lengthOf(0);
+        expect(spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent)).to.have.lengthOf(0);
       });
 
       it('should return syncs array with one element of type iframe when consentString is undefined', () => {
@@ -425,7 +457,7 @@ describe('OguryBidAdapter', () => {
           consentString: undefined
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
@@ -437,7 +469,7 @@ describe('OguryBidAdapter', () => {
           consentString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
@@ -446,7 +478,7 @@ describe('OguryBidAdapter', () => {
       it('should return syncs array with one element of type iframe when gdprConsent is undefined', () => {
         gdprConsent = undefined;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
@@ -455,7 +487,7 @@ describe('OguryBidAdapter', () => {
       it('should return syncs array with one element of type iframe when gdprConsent is null', () => {
         gdprConsent = null;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
@@ -467,7 +499,7 @@ describe('OguryBidAdapter', () => {
           consentString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
@@ -479,7 +511,7 @@ describe('OguryBidAdapter', () => {
           consentString: ''
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
         expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
@@ -490,7 +522,7 @@ describe('OguryBidAdapter', () => {
           applicableSections: [],
           gppString: ''
         };
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
@@ -505,7 +537,7 @@ describe('OguryBidAdapter', () => {
           gppString: undefined
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
@@ -520,7 +552,7 @@ describe('OguryBidAdapter', () => {
           gppString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
@@ -532,7 +564,7 @@ describe('OguryBidAdapter', () => {
       it('should return syncs array with one element of type iframe when gppConsent is undefined', () => {
         gppConsent = undefined;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
@@ -541,16 +573,38 @@ describe('OguryBidAdapter', () => {
         expect(urlParams.get('gpp_sid')).to.equal('')
       });
 
+      it('should return syncs array with one element of type iframe when uspConsent is undefined', () => {
+        uspConsent = undefined;
+
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
+        expect(userSyncs).to.have.lengthOf(1);
+        expect(userSyncs[0].type).to.equal('iframe');
+
+        const urlParams = new URL(userSyncs[0].url).searchParams
+        expect(urlParams.get('us_privacy')).to.equal('')
+      });
+
       it('should return syncs array with one element of type iframe when gppConsent is null', () => {
         gppConsent = null;
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
         const urlParams = new URL(userSyncs[0].url).searchParams
         expect(urlParams.get('gpp')).to.equal('')
         expect(urlParams.get('gpp_sid')).to.equal('')
+      });
+
+      it('should return syncs array with one element of type iframe when uspConsent is null', () => {
+        uspConsent = null;
+
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
+        expect(userSyncs).to.have.lengthOf(1);
+        expect(userSyncs[0].type).to.equal('iframe');
+
+        const urlParams = new URL(userSyncs[0].url).searchParams
+        expect(urlParams.get('us_privacy')).to.equal('')
       });
 
       it('should return syncs array with one element of type iframe when gppConsent is null and applicableSections is empty', () => {
@@ -559,7 +613,7 @@ describe('OguryBidAdapter', () => {
           gppString: null
         };
 
-        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, [], gppConsent);
+        const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
@@ -622,7 +676,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.0.5'
+        adapterversion: '2.0.6'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -636,7 +690,7 @@ describe('OguryBidAdapter', () => {
 
     beforeEach(() => {
       windowTopStub = sinon.stub(utils, 'getWindowTop');
-      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: stubbedDevicePixelRatio});
+      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: stubbedDevicePixelRatio });
     });
 
     afterEach(() => {

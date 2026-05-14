@@ -3,10 +3,10 @@
  * Cfr. `gulp extract-metadata`
  */
 
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
-import {hook} from '../src/hook.js';
-import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
+import { hook } from '../src/hook.js';
+import { GDPR_GVLIDS, VENDORLESS_GVLID } from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
@@ -85,7 +85,7 @@ function uidMetadata() {
 function analyticsMetadata() {
   return Object.fromEntries(
     Object.entries(adapterManager.analyticsRegistry)
-      .map(([provider, {gvlid, adapter}]) => {
+      .map(([provider, { gvlid, adapter }]) => {
         return [
           provider,
           {

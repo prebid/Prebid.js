@@ -1,4 +1,4 @@
-import {PbPromise} from '../../src/utils/promise.js';
+import { PbPromise } from '../../src/utils/promise.js';
 
 /**
  * @typedef {function} CMPClient
@@ -109,7 +109,7 @@ export function cmpClient(
   }
 
   function resolveParams(params) {
-    params = Object.assign({version: apiVersion}, params);
+    params = Object.assign({ version: apiVersion }, params);
     return apiArgs.map(arg => [arg, params[arg]])
   }
 

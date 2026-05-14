@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/yieldliftBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/yieldliftBidAdapter.js';
 
 const REQUEST = {
   'bidderCode': 'yieldlift',
@@ -11,7 +11,7 @@ const REQUEST = {
       'unitId': 123456,
     },
     'placementCode': 'div-gpt-dummy-placement-code',
-    'mediaTypes': {'banner': {'sizes': [[300, 250]]}},
+    'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
     'bidId': 'bidId1',
     'bidderRequestId': 'bidderRequestId',
     'auctionId': 'auctionId-56a2-4f71-9098-720a68f2f708'
@@ -22,7 +22,7 @@ const REQUEST = {
       'unitId': 123456,
     },
     'placementCode': 'div-gpt-dummy-placement-code',
-    'mediaTypes': {'banner': {'sizes': [[300, 250]]}},
+    'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
     'bidId': 'bidId2',
     'bidderRequestId': 'bidderRequestId',
     'auctionId': 'auctionId-56a2-4f71-9098-720a68f2f708'
@@ -235,7 +235,7 @@ describe('YieldLift', function () {
     });
 
     it('handles empty response', function () {
-      const EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {}});
+      const EMPTY_RESP = Object.assign({}, RESPONSE, { 'body': {} });
       const bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
@@ -248,13 +248,13 @@ describe('YieldLift', function () {
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -262,7 +262,7 @@ describe('YieldLift', function () {
     });
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -270,7 +270,7 @@ describe('YieldLift', function () {
     });
 
     it('all sync enabled should return all results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [RESPONSE]);
 
       expect(opts.length).to.equal(2);
     });

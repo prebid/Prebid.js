@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec, getFirstPartyData, storage} from 'modules/scaliburBidAdapter.js';
+import { expect } from 'chai';
+import { spec, getFirstPartyData, storage } from 'modules/scaliburBidAdapter.js';
 
 describe('Scalibur Adapter', function () {
   const BID = {
@@ -62,7 +62,7 @@ describe('Scalibur Adapter', function () {
         ref: 'https://example-referrer.com',
       },
       user: {
-        data: [{name: 'segments', segment: ['sports', 'entertainment']}],
+        data: [{ name: 'segments', segment: ['sports', 'entertainment'] }],
       },
       regs: {
         ext: {
@@ -118,7 +118,7 @@ describe('Scalibur Adapter', function () {
     });
 
     it('should return false for missing placementId', function () {
-      const invalidBid = {...BID, params: {}};
+      const invalidBid = { ...BID, params: {} };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -136,8 +136,8 @@ describe('Scalibur Adapter', function () {
       expect(imp.ext.placementId).to.equal('test-scl-placement');
       expect(imp.ext.gpid).to.equal('/1234/5678/homepage');
       expect(imp.banner.format).to.deep.equal([
-        {w: 300, h: 250},
-        {w: 728, h: 90},
+        { w: 300, h: 250 },
+        { w: 728, h: 90 },
       ]);
 
       const video = imp.video;
@@ -165,8 +165,8 @@ describe('Scalibur Adapter', function () {
       expect(imp.ext.placementId).to.equal('test-scl-placement');
       expect(imp.ext.gpid).to.equal('/1234/5678/homepage');
       expect(imp.banner.format).to.deep.equal([
-        {w: 300, h: 250},
-        {w: 728, h: 90},
+        { w: 300, h: 250 },
+        { w: 728, h: 90 },
       ]);
 
       const video = imp.video;
@@ -230,7 +230,7 @@ describe('Scalibur Adapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return iframe and pixel sync URLs with correct params', function () {
-      const syncOptions = {iframeEnabled: true, pixelEnabled: true};
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',

@@ -30,7 +30,7 @@ export function findUtiqService(storage: any, refreshUserIds: () => void, logPre
   logInfo(`${logPrefix}: frame found: `, Boolean(utiqFrame));
   if (utiqFrame) {
     window.addEventListener('message', (event) => {
-      const {action, idGraphData, description} = event.data;
+      const { action, idGraphData, description } = event.data;
       if (action === 'returnIdGraphEntry' && description.moduleName === moduleName) {
         // Use the IDs received from the parent website
         if (event.origin !== window.origin) {

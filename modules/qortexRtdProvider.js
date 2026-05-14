@@ -83,7 +83,7 @@ export function addContextToRequests (reqBidsConfig) {
     if (checkPercentageOutcome(qortexSessionInfo.groupConfig?.prebidBidEnrichmentPercentage)) {
       const fragment = qortexSessionInfo.currentSiteContext
       if (qortexSessionInfo.bidderArray?.length > 0) {
-        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}));
+        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, { [bidder]: fragment }));
       } else if (!qortexSessionInfo.bidderArray) {
         mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
       } else {
@@ -101,7 +101,7 @@ export function loadScriptTag(config) {
   const code = 'qortex';
   const groupId = config.params.groupId;
   const src = 'https://tags.qortex.ai/bootstrapper'
-  const attr = {'data-group-id': groupId}
+  const attr = { 'data-group-id': groupId }
   const tc = config.params.tagConfig
 
   Object.keys(tc).forEach(p => {
@@ -117,7 +117,7 @@ export function loadScriptTag(config) {
     }
     switch (e?.detail?.type) {
       case 'qx-impression':
-        const {uid} = e.detail;
+        const { uid } = e.detail;
         if (!uid || qortexSessionInfo.impressionIds.has(uid)) {
           logWarn(`Received invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
           return;
@@ -162,7 +162,7 @@ export function requestContextData() {
  * @param {Object} config module config obtained during init
  */
 export function initializeModuleData(config) {
-  const {groupId, bidders, enableBidEnrichment} = config.params;
+  const { groupId, bidders, enableBidEnrichment } = config.params;
   qortexSessionInfo.bidEnrichmentDisabled = enableBidEnrichment !== null ? !enableBidEnrichment : true;
   qortexSessionInfo.bidderArray = bidders;
   qortexSessionInfo.impressionIds = new Set();

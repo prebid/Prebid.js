@@ -2,13 +2,13 @@ import { logError, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adaptermanager from '../src/adapterManager.js';
-import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 const MODULE_CODE = 'atsAnalytics';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 /**
  * Analytics adapter for - https://liveramp.com
@@ -275,12 +275,12 @@ export function parseBrowser() {
 function sendDataToAnalytic (events) {
   // send data to ats analytic endpoint
   try {
-    const dataToSend = {'Data': events};
+    const dataToSend = { 'Data': events };
     const strJSON = JSON.stringify(dataToSend);
     logInfo('ATS Analytics - tried to send analytics data!');
     ajax(analyticsUrl, function () {
       logInfo('ATS Analytics - events sent successfully!');
-    }, strJSON, {method: 'POST', contentType: 'application/json'});
+    }, strJSON, { method: 'POST', contentType: 'application/json' });
   } catch (err) {
     logError('ATS Analytics - request encounter an error: ', err);
   }
@@ -306,7 +306,7 @@ function preflightRequest (events) {
         atsAnalyticsAdapter.setSamplingCookie(0);
         logInfo('ATS Analytics - Sampling Rate Request Error!');
       }
-    }, undefined, {method: 'GET', crossOrigin: true});
+    }, undefined, { method: 'GET', crossOrigin: true });
 }
 
 const atsAnalyticsAdapter = Object.assign(adapter(
@@ -314,7 +314,7 @@ const atsAnalyticsAdapter = Object.assign(adapter(
     analyticsType
   }),
 {
-  track({eventType, args}) {
+  track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       atsAnalyticsAdapter.callHandler(eventType, args);
     }

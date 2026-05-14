@@ -1,5 +1,5 @@
-import {oneKeyDataSubmodule} from 'modules/oneKeyRtdProvider.js';
-import {getAdUnits} from '../../fixtures/fixtures.js';
+import { oneKeyDataSubmodule } from 'modules/oneKeyRtdProvider.js';
+import { getAdUnits } from '../../fixtures/fixtures.js';
 
 const defaultSeed = {
   version: '0.1',
@@ -91,7 +91,7 @@ describe('oneKeyDataSubmodule', () => {
       rtdConfig: {
         params: {
           proxyHostName: 'host',
-          bidders: [ 'bidder42', 'bidder24' ]
+          bidders: ['bidder42', 'bidder24']
         }
       },
       expectedFragment: {

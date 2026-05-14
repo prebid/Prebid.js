@@ -70,7 +70,7 @@ describe('Ad Queue Coordinator', function () {
       };
       const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
       coordinator.registerProvider(testId);
-      coordinator.queueAd('testAdTag', testId, {prefetchedVastXml: '<VAST></VAST>'});
+      coordinator.queueAd('testAdTag', testId, { prefetchedVastXml: '<VAST></VAST>' });
 
       setupComplete('', { divId: testId });
       expect(mockVideoCore.setAdXml.calledOnce).to.be.true;

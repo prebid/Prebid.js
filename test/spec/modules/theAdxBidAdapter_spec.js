@@ -416,7 +416,7 @@ describe('TheAdxAdapter', function () {
       expect(result).to.eql([]);
     });
 
-    it('returns a valid bid response on sucessful banner request', function () {
+    it('returns a valid bid response on successful banner request', function () {
       const incomingRequestId = 'XXtestingXX';
       const responsePrice = 3.14
 
@@ -484,7 +484,7 @@ describe('TheAdxAdapter', function () {
       expect(processedBid.currency).to.equal(responseCurrency);
     });
 
-    it('returns a valid deal bid response on sucessful banner request with deal', function () {
+    it('returns a valid deal bid response on successful banner request with deal', function () {
       const incomingRequestId = 'XXtestingXX';
       const responsePrice = 3.14
 
@@ -556,7 +556,7 @@ describe('TheAdxAdapter', function () {
       expect(processedBid.dealId).to.equal(dealId);
     });
 
-    it('returns an valid bid response on sucessful video request', function () {
+    it('returns an valid bid response on successful video request', function () {
       const incomingRequestId = 'XXtesting-275XX';
       const responsePrice = 6
       const vast_url = 'https://theadx.com/vast?rid=a8ae0b48-a8db-4220-ba0c-7458f452b1f5&{FOR_COVARAGE}'
@@ -622,7 +622,7 @@ describe('TheAdxAdapter', function () {
       expect(processedBid.vastUrl).to.equal(vast_url);
     });
 
-    it('returns an valid bid response on sucessful native request', function () {
+    it('returns an valid bid response on successful native request', function () {
       const incomingRequestId = 'XXtesting-275XX';
       const responsePrice = 6
       const nurl = 'https://app.theadx.com/ixc?rid=02aefd80-2df9-11e9-896d-d33384d77f5c&time=v-1549888312715&sp=1WzMjcRpeyk%3D';

@@ -1,6 +1,6 @@
-import {fillBannerImp, bannerResponseProcessor} from '../../../libraries/ortbConverter/processors/banner.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {inIframe} from '../../../src/utils.js';
+import { fillBannerImp, bannerResponseProcessor } from '../../../libraries/ortbConverter/processors/banner.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { inIframe } from '../../../src/utils.js';
 
 const topframe = inIframe() ? 0 : 1;
 
@@ -43,7 +43,7 @@ describe('pbjs -> ortb banner conversion', () => {
       imp: {
         banner: {
           format: [
-            {w: 1, h: 2}
+            { w: 1, h: 2 }
           ],
           topframe,
         }
@@ -59,7 +59,7 @@ describe('pbjs -> ortb banner conversion', () => {
         },
         ortb2Imp: {
           banner: {
-            format: [{w: 123, h: 321}, {wratio: 2, hratio: 1}]
+            format: [{ w: 123, h: 321 }, { wratio: 2, hratio: 1 }]
           }
         },
       },
@@ -81,8 +81,8 @@ describe('pbjs -> ortb banner conversion', () => {
       imp: {
         banner: {
           format: [
-            {w: 1, h: 2},
-            {w: 3, h: 4}
+            { w: 1, h: 2 },
+            { w: 3, h: 4 }
           ],
           topframe,
         }
@@ -101,7 +101,7 @@ describe('pbjs -> ortb banner conversion', () => {
       imp: {
         banner: {
           format: [
-            {w: 1, h: 2}
+            { w: 1, h: 2 }
           ],
           pos: 'pos',
           topframe,
@@ -121,14 +121,14 @@ describe('pbjs -> ortb banner conversion', () => {
       imp: {
         banner: {
           format: [
-            {w: 1, h: 2}
+            { w: 1, h: 2 }
           ],
           pos: 0,
           topframe,
         }
       }
     }
-  ].forEach(({t, request, imp}) => {
+  ].forEach(({ t, request, imp }) => {
     it(`can convert ${t}`, () => {
       const actual = {};
       fillBannerImp(actual, request, {});
@@ -142,7 +142,7 @@ describe('pbjs -> ortb banner conversion', () => {
         someParam: 'someValue'
       }
     };
-    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {});
+    fillBannerImp(imp, { mediaTypes: { banner: { sizes: [1, 2] } } }, {});
     expect(imp.banner.someParam).to.eql('someValue');
   });
 
@@ -152,13 +152,13 @@ describe('pbjs -> ortb banner conversion', () => {
         battr: 'battr'
       }
     };
-    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {});
+    fillBannerImp(imp, { mediaTypes: { banner: { sizes: [1, 2] } } }, {});
     expect(imp.banner.battr).to.eql('battr');
   });
 
   it('does nothing if context.mediaType is set but is not BANNER', () => {
     const imp = {};
-    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {mediaType: VIDEO});
+    fillBannerImp(imp, { mediaTypes: { banner: { sizes: [1, 2] } } }, { mediaType: VIDEO });
     expect(imp).to.eql({});
   })
 });
@@ -167,7 +167,7 @@ describe('ortb -> pbjs banner conversion', () => {
   let createPixel, seatbid2Banner;
   beforeEach(() => {
     createPixel = sinon.stub().callsFake((url) => `${url}Pixel`);
-    seatbid2Banner = bannerResponseProcessor({createPixel});
+    seatbid2Banner = bannerResponseProcessor({ createPixel });
   });
 
   [
@@ -224,7 +224,7 @@ describe('ortb -> pbjs banner conversion', () => {
         adUrl: 'mockNurl'
       }
     }
-  ].forEach(({t, seatbid, response, expected}) => {
+  ].forEach(({ t, seatbid, response, expected }) => {
     it(`can handle ${t}`, () => {
       seatbid2Banner(response, seatbid, context);
       expect(response).to.eql(expected)

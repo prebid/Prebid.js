@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/viewdeosDXBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {cloneDeep} from 'lodash';
+import { expect } from 'chai';
+import { spec } from 'modules/viewdeosDXBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { cloneDeep } from 'lodash';
 
 const ENDPOINT = 'https://ghb.sync.viewdeos.com/auction/';
 
@@ -14,7 +14,7 @@ const DISPLAY_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'mediaTypes': {'banner': {'sizes': [[300, 250], [300, 600]]}}
+  'mediaTypes': { 'banner': { 'sizes': [[300, 250], [300, 600]] } }
 };
 
 const VIDEO_REQUEST = {
@@ -26,11 +26,11 @@ const VIDEO_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'mediaTypes': {'video': {'playerSize': [480, 360], 'context': 'instream'}}
+  'mediaTypes': { 'video': { 'playerSize': [480, 360], 'context': 'instream' } }
 };
 
 const SERVER_VIDEO_RESPONSE = {
-  'source': {'aid': 12345, 'pubId': 54321},
+  'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
     'vastUrl': 'http://rtb.sync.viewdeos.com/vast/?adid=44F2AEB9BFC881B3',
     'requestId': '2e41f65424c87c',
@@ -47,7 +47,7 @@ const SERVER_VIDEO_RESPONSE = {
 const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 
 const SERVER_DISPLAY_RESPONSE = {
-  'source': {'aid': 12345, 'pubId': 54321},
+  'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
     'ad': '<!-- Creative -->',
     'requestId': '2e41f65424c87c',
@@ -61,7 +61,7 @@ const SERVER_DISPLAY_RESPONSE = {
   'cookieURLs': ['link1', 'link2']
 };
 const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
-  'source': {'aid': 12345, 'pubId': 54321},
+  'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
     'ad': '<!-- Creative -->',
     'requestId': '2e41f65424c87c',
@@ -97,17 +97,17 @@ const outstreamVideoBidderRequest = {
 
 const videoBidderRequest = {
   bidderCode: 'bidderCode',
-  bids: [{mediaTypes: {video: {}}, bidId: '2e41f65424c87c'}]
+  bids: [{ mediaTypes: { video: {} }, bidId: '2e41f65424c87c' }]
 };
 
 const displayBidderRequest = {
   bidderCode: 'bidderCode',
-  bids: [{bidId: '2e41f65424c87c'}]
+  bids: [{ bidId: '2e41f65424c87c' }]
 };
 
 const displayBidderRequestWithGdpr = {
   bidderCode: 'bidderCode',
-  bids: [{bidId: '2e41f65424c87c'}],
+  bids: [{ bidId: '2e41f65424c87c' }],
   gdprConsent: {
     gdprApplies: true,
     consentString: 'test'
@@ -150,7 +150,7 @@ describe('viewdeosDXBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('when outstream params are passing properly', function() {
-    const videoBids = spec.interpretResponse({body: SERVER_OUSTREAM_VIDEO_RESPONSE}, {bidderRequest: outstreamVideoBidderRequest});
+    const videoBids = spec.interpretResponse({ body: SERVER_OUSTREAM_VIDEO_RESPONSE }, { bidderRequest: outstreamVideoBidderRequest });
     it('should return renderer with expected outstream params config', function() {
       expect(!!videoBids[0].renderer).to.equal(true);
       expect(videoBids[0].renderer.getConfig().video_controls).to.equal('show');
@@ -159,7 +159,7 @@ describe('viewdeosDXBidAdapter', function () {
 
   describe('user syncs as image', function () {
     it('should be returned if pixel enabled', function () {
-      const syncs = spec.getUserSyncs({pixelEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
 
       expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]]);
       expect(syncs.map(s => s.type)).to.deep.equal(['image']);
@@ -168,7 +168,7 @@ describe('viewdeosDXBidAdapter', function () {
 
   describe('user syncs as iframe', function () {
     it('should be returned if iframe enabled', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
 
       expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
       expect(syncs.map(s => s.type)).to.deep.equal(['iframe']);
@@ -182,7 +182,7 @@ describe('viewdeosDXBidAdapter', function () {
       const syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true,
-      }, [{body: mockedServerResponse}]);
+      }, [{ body: mockedServerResponse }]);
 
       expect(syncs.map(s => s.url)).to.deep.equal(mockedServerResponse.cookieURLs);
       expect(syncs.map(s => s.type)).to.deep.equal(mockedServerResponse.cookieURLSTypes);
@@ -191,7 +191,7 @@ describe('viewdeosDXBidAdapter', function () {
 
   describe('user syncs', function () {
     it('should not be returned if pixel not set', function () {
-      const syncs = spec.getUserSyncs({}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+      const syncs = spec.getUserSyncs({}, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
 
       expect(syncs).to.be.empty;
     })
@@ -318,14 +318,14 @@ describe('viewdeosDXBidAdapter', function () {
     });
 
     function bidServerResponseCheck() {
-      const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
+      const result = spec.interpretResponse({ body: serverResponse }, { bidderRequest });
 
       expect(result).to.deep.equal(eqResponse);
     }
 
     function nobidServerResponseCheck() {
-      const noBidServerResponse = {bids: []};
-      const noBidResult = spec.interpretResponse({body: noBidServerResponse}, {bidderRequest});
+      const noBidServerResponse = { bids: [] };
+      const noBidResult = spec.interpretResponse({ body: noBidServerResponse }, { bidderRequest });
 
       expect(noBidResult.length).to.equal(0);
     }

@@ -303,7 +303,7 @@ describe('mediakeysBidAdapter', function () {
       it('should log errors and ignore misformated assets', function() {
         const bidRequests = [utils.deepClone(bidNative)];
         delete bidRequests[0].nativeParams.title.len;
-        bidRequests[0].nativeParams.unregistred = {required: true};
+        bidRequests[0].nativeParams.unregistred = { required: true };
 
         const bidderRequestCopy = utils.deepClone(bidderRequest);
         bidderRequestCopy.bids = bidRequests;
@@ -593,7 +593,7 @@ describe('mediakeysBidAdapter', function () {
         };
 
         const bidRequests = [utils.deepClone(bid)];
-        const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+        const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
         const data = request.data;
         expect(data.site.domain).to.equal('domain.example');
         expect(data.site.cat[0]).to.equal('IAB12');

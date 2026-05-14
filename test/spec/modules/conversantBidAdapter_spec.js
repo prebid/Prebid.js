@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {deepAccess} from 'src/utils';
+import { deepAccess } from 'src/utils';
 // load modules that register ORTB processors
 import 'src/prebid.js'
 import 'modules/currency.js';
@@ -9,8 +9,8 @@ import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import {hook} from '../../../src/hook.js'
-import {BANNER} from '../../../src/mediaTypes.js';
+import { hook } from '../../../src/hook.js'
+import { BANNER } from '../../../src/mediaTypes.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -233,8 +233,8 @@ describe('Conversant adapter tests', function() {
 
   it('Verify isBidRequestValid', function() {
     expect(spec.isBidRequestValid({})).to.be.false;
-    expect(spec.isBidRequestValid({params: {}})).to.be.false;
-    expect(spec.isBidRequestValid({params: {site_id: '123'}})).to.be.true;
+    expect(spec.isBidRequestValid({ params: {} })).to.be.false;
+    expect(spec.isBidRequestValid({ params: { site_id: '123' } })).to.be.true;
     bidRequests.forEach((bid) => {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
@@ -316,7 +316,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('banner');
       expect(payload.imp[0].banner).to.have.property('pos', 1);
       expect(payload.imp[0].banner).to.have.property('format');
-      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
       expect(payload.imp[0]).to.not.have.property('video');
     });
 
@@ -330,7 +330,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[1]).to.have.property('banner');
       expect(payload.imp[1].banner).to.not.have.property('pos');
       expect(payload.imp[1].banner).to.have.property('format');
-      expect(payload.imp[1].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
+      expect(payload.imp[1].banner.format).to.deep.equal([{ w: 728, h: 90 }, { w: 468, h: 60 }]);
     });
 
     it('Banner with tagid and position', () => {
@@ -342,7 +342,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[2]).to.have.property('banner');
       expect(payload.imp[2].banner).to.have.property('pos', 2);
       expect(payload.imp[2].banner).to.have.property('format');
-      expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 600}, {w: 160, h: 600}]);
+      expect(payload.imp[2].banner.format).to.deep.equal([{ w: 300, h: 600 }, { w: 160, h: 600 }]);
     });
 
     if (FEATURES.VIDEO) {
@@ -427,8 +427,8 @@ describe('Conversant adapter tests', function() {
 
   it('Verify first party data', () => {
     const bidderRequest = {
-      refererInfo: {page: 'http://test.com?a=b&c=123'},
-      ortb2: {site: {content: {series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle'}}}
+      refererInfo: { page: 'http://test.com?a=b&c=123' },
+      ortb2: { site: { content: { series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle' } } }
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     const payload = request.data;
@@ -440,20 +440,20 @@ describe('Conversant adapter tests', function() {
   });
 
   it('Verify currency', () => {
-    const bidderRequest = { timeout: 9999, ortb2: {cur: ['EUR']} };
+    const bidderRequest = { timeout: 9999, ortb2: { cur: ['EUR'] } };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     const payload = request.data;
     expect(payload.cur).deep.equal(['USD']);
   })
 
   it('Verify supply chain data', () => {
-    const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
-    const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
+    const bidderRequest = { refererInfo: { page: 'http://test.com?a=b&c=123' } };
+    const schain = { complete: 1, ver: '1.0', nodes: [{ asi: 'bidderA.com', sid: '00001', hp: 1 }] };
 
     // Add schain to bidderRequest
     bidderRequest.ortb2 = {
       source: {
-        ext: {schain: schain}
+        ext: { schain: schain }
       }
     };
 
@@ -461,7 +461,7 @@ describe('Conversant adapter tests', function() {
       return Object.assign({
         ortb2: {
           source: {
-            ext: {schain: schain}
+            ext: { schain: schain }
           }
         }
       }, bid);
@@ -474,7 +474,7 @@ describe('Conversant adapter tests', function() {
 
   it('Verify override url', function() {
     const testUrl = 'https://someurl?name=value';
-    const request = spec.buildRequests([{params: {white_label_url: testUrl}}], {});
+    const request = spec.buildRequests([{ params: { white_label_url: testUrl } }], {});
     expect(request.url).to.equal(testUrl);
   });
 
@@ -564,10 +564,11 @@ describe('Conversant adapter tests', function() {
     const nativeMarkup = JSON.stringify({
       native: {
         assets: [
-          {id: 1, title: {text: 'TextValue!'}},
-          {id: 5, data: {value: 'Epsilon'}},
+          { id: 1, title: { text: 'TextValue!' } },
+          { id: 5, data: { value: 'Epsilon' } },
         ],
-        link: { url: 'https://www.epsilon.com/us', }, }
+        link: { url: 'https://www.epsilon.com/us', },
+      }
     });
 
     const nativeBidResponse = {
@@ -607,13 +608,13 @@ describe('Conversant adapter tests', function() {
       // clone bidRequests
       const requests = utils.deepClone(bidRequests);
 
-      const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
+      const eidArray = [{ 'source': 'pubcid.org', 'uids': [{ 'id': '112233', 'atype': 1 }] }, { 'source': 'liveramp.com', 'uids': [{ 'id': '334455', 'atype': 3 }] }];
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests, {ortb2: {user: {ext: {eids: eidArray}}}}).data;
+      const payload = spec.buildRequests(requests, { ortb2: { user: { ext: { eids: eidArray } } } }).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'pubcid.org', uids: [{id: '112233', atype: 1}]},
-        {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
+        { source: 'pubcid.org', uids: [{ id: '112233', atype: 1 }] },
+        { source: 'liveramp.com', uids: [{ id: '334455', atype: 3 }] }
       ]);
     });
   });
@@ -694,7 +695,7 @@ describe('Conversant adapter tests', function() {
   describe('getUserSyncs', function() {
     const syncurl_iframe = 'https://sync.dotomi.com:8080/iframe';
     const syncurl_image = 'https://sync.dotomi.com:8080/pixel';
-    const cnvrResponse = {ext: {psyncs: [syncurl_image], fsyncs: [syncurl_iframe]}};
+    const cnvrResponse = { ext: { psyncs: [syncurl_image], fsyncs: [syncurl_iframe] } };
     let sandbox;
     beforeEach(function () {
       sandbox = sinon.createSandbox();
@@ -706,43 +707,43 @@ describe('Conversant adapter tests', function() {
     it('empty params', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [], undefined, undefined))
         .to.deep.equal([]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: {ext: {}}}], undefined, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: { ext: {} } }], undefined, undefined))
         .to.deep.equal([]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], undefined, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: cnvrResponse }], undefined, undefined))
         .to.deep.equal([{ type: 'iframe', url: syncurl_iframe }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], undefined, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: cnvrResponse }], undefined, undefined))
         .to.deep.equal([{ type: 'image', url: syncurl_image }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [{body: cnvrResponse}], undefined, undefined))
-        .to.deep.equal([{type: 'iframe', url: syncurl_iframe}, {type: 'image', url: syncurl_image}]);
+      expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [{ body: cnvrResponse }], undefined, undefined))
+        .to.deep.equal([{ type: 'iframe', url: syncurl_iframe }, { type: 'image', url: syncurl_image }]);
     });
 
     it('URL building', function() {
-      expect(spec.getUserSyncs({pixelEnabled: true}, [{body: {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}}], undefined, undefined))
-        .to.deep.equal([{type: 'image', url: `${syncurl_image}?sid=1234`}]);
-      expect(spec.getUserSyncs({pixelEnabled: true}, [{body: {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}}], undefined, '1NYN'))
-        .to.deep.equal([{type: 'image', url: `${syncurl_image}?sid=1234&us_privacy=1NYN`}]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: { ext: { psyncs: [`${syncurl_image}?sid=1234`] } } }], undefined, undefined))
+        .to.deep.equal([{ type: 'image', url: `${syncurl_image}?sid=1234` }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: { ext: { psyncs: [`${syncurl_image}?sid=1234`] } } }], undefined, '1NYN'))
+        .to.deep.equal([{ type: 'image', url: `${syncurl_image}?sid=1234&us_privacy=1NYN` }]);
     });
 
     it('GDPR', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: cnvrResponse }], { gdprApplies: true, consentString: 'consentstring' }, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=1&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], {gdprApplies: false, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: cnvrResponse }], { gdprApplies: false, consentString: 'consentstring' }, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=0&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: undefined}, undefined))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: cnvrResponse }], { gdprApplies: true, consentString: undefined }, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=1&gdpr_consent=` }]);
 
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: cnvrResponse }], { gdprApplies: true, consentString: 'consentstring' }, undefined))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=1&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], {gdprApplies: false, consentString: 'consentstring'}, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: cnvrResponse }], { gdprApplies: false, consentString: 'consentstring' }, undefined))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=0&gdpr_consent=consentstring` }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], {gdprApplies: true, consentString: undefined}, undefined))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: cnvrResponse }], { gdprApplies: true, consentString: undefined }, undefined))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=1&gdpr_consent=` }]);
     });
 
     it('US_Privacy', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{body: cnvrResponse}], undefined, '1NYN'))
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: cnvrResponse }], undefined, '1NYN'))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?us_privacy=1NYN` }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [{body: cnvrResponse}], undefined, '1NYN'))
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [{ body: cnvrResponse }], undefined, '1NYN'))
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?us_privacy=1NYN` }]);
     });
   });

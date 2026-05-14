@@ -45,7 +45,7 @@ export class AdapterHelpers {
   createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
       const url = new URL(SYNC_URL);
-      const networks = [ '368531133' ];
+      const networks = ['368531133'];
 
       if (network) {
         networks.push(network);
@@ -392,7 +392,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const body = response?.body?.Result || response?.body || {};
-    const converted = converter.fromORTB({response: body, request: request?.data});
+    const converted = converter.fromORTB({ response: body, request: request?.data });
     const bids = converted.bids || [];
 
     if (bids.length && !EVENTS.subscribed) {

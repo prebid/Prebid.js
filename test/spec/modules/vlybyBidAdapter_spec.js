@@ -92,12 +92,12 @@ describe('vlybyBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('nobid responses', function () {
-      expect(spec.interpretResponse({body: {}}).length).to.equal(0)
-      expect(spec.interpretResponse({body: []}).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: [] }).length).to.equal(0)
     })
 
     it('handles the response', function () {
-      const response = spec.interpretResponse({body: bids});
+      const response = spec.interpretResponse({ body: bids });
 
       expect(response, 'response is not an Array').to.be.an('array')
       expect(response[0].cpm, 'cpm does not match').to.equal(5.2)

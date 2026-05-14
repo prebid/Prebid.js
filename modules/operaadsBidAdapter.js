@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import {
   deepAccess,
   deepSetValue,
@@ -11,12 +10,13 @@ import {
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -709,7 +709,7 @@ function getUserId(bidRequest) {
  * @param {*} params.size
  * @returns {Object} floor price
  */
-function getBidFloor(bid, {mediaType = '*', size = '*'}) {
+function getBidFloor(bid, { mediaType = '*', size = '*' }) {
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,

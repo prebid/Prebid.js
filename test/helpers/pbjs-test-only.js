@@ -1,4 +1,4 @@
-import {getGlobal} from '../../src/prebidGlobal.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 export const pbjsTestOnly = {
 

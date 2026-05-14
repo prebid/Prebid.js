@@ -171,7 +171,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.site.domain).to.equal(SITE_DOMAIN_NAME);
       expect(ortbRequest.site.publisher.domain).to.equal('sonarads.com');
       expect(ortbRequest.site.page).to.equal(SITE_PAGE);
@@ -220,7 +220,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.device.dnt).to.equal(1);
       expect(ortbRequest.device.lmt).to.equal(0);
       expect(ortbRequest.device.js).to.equal(0);
@@ -238,7 +238,7 @@ describe('bridgeuppBidAdapter_spec', function () {
     });
 
     it('should properly build a request with source object', async function () {
-      const expectedSchain = {id: 'prebid'};
+      const expectedSchain = { id: 'prebid' };
       const ortb2 = {
         source: {
           pchain: 'sonarads',
@@ -262,7 +262,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           },
         },
       ];
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.source.ext.schain).to.deep.equal(expectedSchain);
       expect(ortbRequest.source.pchain).to.equal('sonarads');
     });
@@ -351,7 +351,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
       expect(ortbRequest.regs.gpp).to.equal('consent_string');
       expect(ortbRequest.regs.gpp_sid).to.deep.equal([0, 1, 2]);
@@ -565,7 +565,7 @@ describe('bridgeuppBidAdapter_spec', function () {
     it('should properly build a request when coppa is true', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({coppa: true});
+      config.setConfig({ coppa: true });
 
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
@@ -574,7 +574,7 @@ describe('bridgeuppBidAdapter_spec', function () {
     it('should properly build a request when coppa is false', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({coppa: false});
+      config.setConfig({ coppa: false });
       const buildRequests = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = buildRequests.data;
       expect(ortbRequest.regs.coppa).to.equal(0);
@@ -623,7 +623,7 @@ describe('bridgeuppBidAdapter_spec', function () {
             siteId: 'site-id-12'
           },
           getFloor: () => {
-            return {currency: 'USD', floor: 1.23, size: '*', mediaType: '*'};
+            return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
           }
         }
       ];
@@ -721,7 +721,7 @@ describe('bridgeuppBidAdapter_spec', function () {
             return undefined
           }
         },
-        body: {seatbid: []}
+        body: { seatbid: [] }
       };
 
       const interpretedBids = spec.interpretResponse(serverResponse, request);

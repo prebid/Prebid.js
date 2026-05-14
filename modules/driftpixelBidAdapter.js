@@ -1,6 +1,6 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {buildRequests, getUserSyncs, interpretResponse, isBidRequestValid} from '../libraries/xeUtils/bidderUtils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { buildRequests, getUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'driftpixel';
 const ENDPOINT = 'https://pbjs.driftpixel.live';

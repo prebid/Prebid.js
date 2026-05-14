@@ -1,6 +1,6 @@
-import {_each, deepSetValue, inIframe} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { _each, deepSetValue, inIframe } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -107,7 +107,7 @@ export const spec = {
         const mediaType = bid.mediaTypes?.banner ? BANNER : (bid.mediaTypes?.native ? NATIVE : '*');
         const sizes = bid.mediaTypes?.banner?.sizes || bid.sizes || [];
         const size = sizes.length === 1 ? sizes[0] : '*';
-        floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+        floorInfo = bid.getFloor({ currency: 'USD', mediaType: mediaType, size: size }) || {};
       }
       adUnit.floor = floorInfo.floor;
       adUnit.currency = floorInfo.currency;

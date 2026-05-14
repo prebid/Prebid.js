@@ -1,9 +1,9 @@
-import {generateUUID, logInfo} from '../src/utils.js'
-import {ajaxBuilder} from '../src/ajax.js'
+import { generateUUID, logInfo } from '../src/utils.js'
+import { ajaxBuilder } from '../src/ajax.js'
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'
-import {EVENTS} from '../src/constants.js'
-import {getRefererInfo} from '../src/refererDetection.js';
+import { EVENTS } from '../src/constants.js'
+import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
  * advRedAnalyticsAdapter.js - analytics adapter for AdvRed
@@ -16,8 +16,8 @@ let initOptions
 let flushInterval
 let queue = []
 
-const advRedAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType: 'endpoint'}), {
-  track({eventType, args}) {
+const advRedAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType: 'endpoint' }), {
+  track({ eventType, args }) {
     handleEvent(eventType, args)
   }
 })

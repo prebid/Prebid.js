@@ -27,7 +27,7 @@ module.exports = {
   },
   module: {
     rules: [{
-      use: 'source-map-loader'
+      extractSourceMap: true
     }]
   }
 }

@@ -1,6 +1,6 @@
-import {logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {makeBaseSpec} from '../libraries/riseUtils/index.js';
+import { logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { makeBaseSpec } from '../libraries/riseUtils/index.js';
 
 const BIDDER_CODE = 'openweb';
 const BASE_URL = 'https://hb.openwebmp.com/';

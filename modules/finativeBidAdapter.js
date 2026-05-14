@@ -1,17 +1,17 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {NATIVE} from '../src/mediaTypes.js';
-import {_map, deepSetValue, isEmpty, setOnAny} from '../src/utils.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { NATIVE } from '../src/mediaTypes.js';
+import { _map, deepSetValue, isEmpty, setOnAny } from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'finative';
 const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.finative.cloud/cds/rtb/bid?format=openrtb2.5&ssp=pb';
 
-const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon'};
+const NATIVE_ASSET_IDS = { 0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon' };
 
 const NATIVE_PARAMS = {
   title: {
@@ -190,7 +190,7 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
-  const {assets, link, imptrackers} = bid.adm.native;
+  const { assets, link, imptrackers } = bid.adm.native;
 
   const clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
 

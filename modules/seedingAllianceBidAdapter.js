@@ -1,12 +1,12 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {generateUUID, deepSetValue, isEmpty, replaceAuctionPrice} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { generateUUID, deepSetValue, isEmpty, replaceAuctionPrice } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
@@ -14,7 +14,7 @@ const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
 const NATIVENDO_KEY = 'nativendo_id';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {
@@ -52,7 +52,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const oRtbRequest = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    const oRtbRequest = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     const eids = getEids(validBidRequests[0]);
 
     // check for url in params and set in site object
@@ -186,60 +186,34 @@ function parseNative(bid, nativeParams) {
     native = bid.adm.native;
   }
 
-  const { assets, link, imptrackers } = native;
+  if (native.link.url) {
+    native.link.url = native.link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  }
 
-  const clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
-
-  if (link.clicktrackers) {
-    link.clicktrackers.forEach(function (clicktracker, index) {
-      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  if (native.link.clicktrackers) {
+    native.link.clicktrackers.forEach(function (clicktracker, index) {
+      native.link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
 
-  if (imptrackers) {
-    imptrackers.forEach(function (imptracker, index) {
-      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  if (native.imptrackers) {
+    native.imptrackers.forEach(function (imptracker, index) {
+      native.imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
 
-  const result = {
-    url: clickUrl,
-    clickUrl: clickUrl,
-    clickTrackers: link.clicktrackers || undefined,
-    impressionTrackers: imptrackers || undefined
+  if (native.eventtrackers) {
+    native.eventtrackers.forEach(function(eventtracker, index) {
+      native.eventtrackers[index].url = eventtracker.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+    })
+  }
+
+  return {
+    ortb: native,
+    clickUrl: native.link.url,
+    clickTrackers: native.link.clicktrackers || [],
+    impressionTrackers: native.imptrackers || []
   };
-
-  const nativeParamKeys = Object.keys(nativeParams);
-  let id = 0;
-
-  nativeParamKeys.forEach(nativeParam => {
-    assets.forEach(asset => {
-      if (asset.id === id) {
-        switch (nativeParam) {
-          case 'title':
-            result.title = asset.title.text;
-            break;
-          case 'body':
-          case 'cta':
-          case 'sponsoredBy':
-            result[nativeParam] = asset.data.value;
-            break;
-          case 'image':
-          case 'icon':
-            result[nativeParam] = {
-              url: asset.img.url,
-              width: asset.img.w,
-              height: asset.img.h
-            };
-            break;
-        }
-      }
-    });
-
-    id++;
-  });
-
-  return result;
 }
 
 registerBidder(spec);
