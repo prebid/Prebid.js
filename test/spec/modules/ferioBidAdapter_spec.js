@@ -885,6 +885,46 @@ describe("ferioBidAdapter", function () {
       }
     });
 
+    it("does not leak fallback media type across bids with the same impid", function () {
+      const request = buildRequest([
+        bidRequest({
+          bidId: "banner-bid",
+        }),
+      ]);
+
+      const bids = spec.interpretResponse(
+        serverResponse([
+          {
+            id: "seat-banner",
+            impid: "banner-bid",
+            price: 1.1,
+            adm: "<div>ad</div>",
+            crid: "creative-banner",
+          },
+          {
+            id: "seat-video",
+            impid: "banner-bid",
+            price: 2.1,
+            adm: "<VAST></VAST>",
+            crid: "creative-video",
+            ext: {
+              prebid: {
+                type: VIDEO,
+              },
+            },
+          },
+        ]),
+        request
+      );
+
+      expect(bids).to.have.lengthOf(2);
+      expect(bids[0].mediaType).to.equal(BANNER);
+      expect(bids[1].mediaType).to.equal(VIDEO);
+      if (FEATURES.VIDEO) {
+        expect(bids[1].vastXml).to.equal("<VAST></VAST>");
+      }
+    });
+
     it("skips multi-format responses without an ORTB media type", function () {
       const request = buildRequest([
         bidRequest({
