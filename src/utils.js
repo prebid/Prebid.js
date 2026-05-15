@@ -489,6 +489,41 @@ export function insertUserSyncIframe(url, done, timeout) {
   internal.insertElement(iframe, document, 'html', true);
 }
 
+function runBackgroundTask(task) {
+  const scheduler = window.scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => task(), { timeout: 2000 });
+    return;
+  }
+  task();
+}
+
+export function politeTriggerPixel(url, makeRequest = (u, o) => new Request(u, o), fetchImpl = window.fetch.bind(window)) {
+  runBackgroundTask(() => {
+    if (window.fetch && window.Request) {
+      try {
+        const request = makeRequest(url, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials: 'include',
+          keepalive: true
+        });
+        fetchImpl(request).catch(() => triggerPixel(url));
+        return;
+      } catch (e) {}
+    }
+    triggerPixel(url);
+  });
+}
+
+export function politeInsertUserSyncIframe(url) {
+  runBackgroundTask(() => insertUserSyncIframe(url));
+}
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested

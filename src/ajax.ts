@@ -226,6 +226,10 @@ export function sendBeacon(url, data) {
   return window.navigator.sendBeacon(url, data);
 }
 
+/**
+ * Trigger a tracking pixel in a way that is less disruptive to the main thread when modern fetch APIs are available.
+ * Falls back to image-based loading when fetch or keepalive requests are unavailable.
+ */
 export const ajax = ajaxBuilder();
 export const fetch = fetcherFactory();
 
