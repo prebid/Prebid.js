@@ -10,7 +10,6 @@ import {
 import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils.js');
-const ajax = require('../../src/ajax.js');
 const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js');
 
 describe('user sync', function () {
@@ -57,10 +56,10 @@ describe('user sync', function () {
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
-    politeTriggerPixelStub = sinon.stub(ajax, 'politeTriggerPixel').callsFake((url) => {
+    politeTriggerPixelStub = sinon.stub(utils, 'politeTriggerPixel').callsFake((url) => {
       utils.triggerPixel(url);
     });
-    politeInsertUserSyncIframeStub = sinon.stub(ajax, 'politeInsertUserSyncIframe').callsFake((url) => {
+    politeInsertUserSyncIframeStub = sinon.stub(utils, 'politeInsertUserSyncIframe').callsFake((url) => {
       utils.insertUserSyncIframe(url);
     });
   });
