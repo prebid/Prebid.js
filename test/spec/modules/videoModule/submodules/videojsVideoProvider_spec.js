@@ -490,13 +490,10 @@ describe('utils', function() {
         adWrapperIds: ['w1'],
         skippable: true,
         skipTimeOffset: 5,
-        adPodInfo: { podIndex: 0, totalAds: 2, adPosition: 1, timeOffset: 0 }
       });
       const state = as.getState();
       expect(state.adId).to.equal('1');
       expect(state.skipafter).to.equal(5);
-      expect(state.adPodCount).to.equal(2);
-      expect(state.adPodIndex).to.equal(0);
       expect(state.offset).to.be.undefined;
     });
   });

@@ -28,6 +28,7 @@ export var currencySupportEnabled = false;
 export var currencyRates = {} as any;
 let bidderCurrencyDefault = {};
 let defaultRates;
+let shouldUseDefaults = true;
 
 export let responseReady = defer<void>();
 
@@ -93,11 +94,12 @@ export function setConfig(config: CurrencyConfig) {
 
   if (config.rates !== null && typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
+    shouldUseDefaults = false;
     currencyRatesLoaded = true;
     needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
-  if (config.defaultRates !== null && typeof config.defaultRates === 'object') {
+  if (shouldUseDefaults && config.defaultRates !== null && typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
 
     // set up the default rates to be used if the rate file doesn't get loaded in time
@@ -167,6 +169,7 @@ function loadRates() {
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
             conversionCache = {};
             currencyRatesLoaded = true;
+            shouldUseDefaults = false;
             processBidResponseQueue();
             delayedAuctions.resume();
           } catch (e) {
@@ -231,6 +234,7 @@ export function resetCurrency() {
     currencySupportEnabled = false;
     currencyRatesLoaded = false;
     needToCallForCurrencyFile = true;
+    shouldUseDefaults = true;
     currencyRates = {};
     bidderCurrencyDefault = {};
     responseReady = defer();

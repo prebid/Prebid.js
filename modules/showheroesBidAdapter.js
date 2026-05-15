@@ -1,18 +1,18 @@
 import {
   deepAccess,
   deepSetValue,
-  triggerPixel,
   isFn,
-  logInfo
 } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction/';
 const BIDDER_CODE = 'showheroes';
 const TTL = 300;
+const DEFAULT_GZIP_ENABLED = true;
 
 const converter = ortbConverter({
   context: {
@@ -64,7 +64,6 @@ const converter = ortbConverter({
         bidResponse.renderer = createRenderer(bidResponse, renderConfig);
       }
     }
-    bidResponse.callbacks = bid.ext?.callbacks;
     bidResponse.extra = bid.ext?.extra;
     return bidResponse;
   },
@@ -89,6 +88,9 @@ export const spec = {
       url: QA?.endpoint || ENDPOINT,
       method: 'POST',
       data: ortbData,
+      options: {
+        endpointCompression: getGzipSetting(),
+      }
     };
   },
   interpretResponse: (response, request) => {
@@ -127,15 +129,6 @@ export const spec = {
 
     return syncs;
   },
-
-  onBidWon(bid) {
-    if (bid.callbacks) {
-      triggerPixel(bid.callbacks.won);
-    }
-    logInfo(
-      `Showheroes adapter won the auction. Bid id: ${bid.bidId || bid.requestId}`
-    );
-  },
 };
 
 function outstreamRender(response, renderConfig) {
@@ -165,6 +158,19 @@ function createRenderer(bid, renderConfig) {
     return outstreamRender(render, renderConfig);
   });
   return renderer;
+}
+
+function getGzipSetting() {
+  const gzipSetting = deepAccess(config.getBidderConfig(), 'showheroes.gzipEnabled');
+
+  if (gzipSetting === true || gzipSetting === "true") {
+    return true;
+  }
+  if (gzipSetting === false || gzipSetting === "false") {
+    return false;
+  }
+
+  return DEFAULT_GZIP_ENABLED;
 }
 
 registerBidder(spec);

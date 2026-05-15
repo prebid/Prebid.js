@@ -15,6 +15,10 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 import { OPT_CACHE_KEY, OPT_TIME_KEY, ALIASES } from '../libraries/vidazooUtils/constants.js';
 
+/**
+ * @typedef {import('./vidazooBidAdapterTypes.d.ts').VidazooBidRequestParams} VidazooBidRequestParams
+ */
+
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
 const DEFAULT_BASE_ULR = 'cootlogix.com'
