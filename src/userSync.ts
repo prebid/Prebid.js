@@ -1,8 +1,7 @@
 import {
   deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
-  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser
+  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel
 } from './utils.js';
-import { politeInsertUserSyncIframe, politeTriggerPixel } from './ajax.js';
 import { config } from './config.js';
 
 import { getCoreStorageManager } from './storageManager.js';
