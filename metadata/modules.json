@@ -1452,6 +1452,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "asterio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "astraone",
       "aliasOf": null,
       "gvlid": null,
@@ -1977,6 +1984,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "cortex",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "cpmstar",
       "aliasOf": null,
       "gvlid": 1317,
@@ -2482,6 +2496,13 @@
     {
       "componentType": "bidder",
       "componentName": "gnet",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "goadserver",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -3006,6 +3027,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "nuclion",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3342,6 +3370,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mtc",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "my6sense",
       "aliasOf": null,
       "gvlid": null,
@@ -3554,6 +3589,13 @@
       "componentType": "bidder",
       "componentName": "duration",
       "aliasOf": "nobid",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ntvagents",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -3790,7 +3832,21 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "pgamdirect",
+      "aliasOf": null,
+      "gvlid": 1353,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "pgamssp",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pigeoon",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -4072,7 +4128,7 @@
       "componentType": "bidder",
       "componentName": "relay",
       "aliasOf": null,
-      "gvlid": 631,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4121,7 +4177,7 @@
       "componentType": "bidder",
       "componentName": "revantage",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1588,
       "disclosureURL": null
     },
     {
@@ -4343,7 +4399,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "showheroes-bs",
+      "componentName": "showheroes",
       "aliasOf": null,
       "gvlid": 111,
       "disclosureURL": null
@@ -4353,6 +4409,13 @@
       "componentName": "showheroesBs",
       "aliasOf": "showheroes-bs",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "showheroes-bs",
+      "aliasOf": null,
+      "gvlid": 111,
       "disclosureURL": null
     },
     {
@@ -4742,6 +4805,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "tqblz_demo",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "teqBlazeSalesAgent",
       "aliasOf": null,
       "gvlid": null,
@@ -4766,6 +4836,13 @@
       "componentName": "themoneytizer",
       "aliasOf": "themoneytizer",
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "tne_catalyst",
+      "aliasOf": null,
+      "gvlid": 1494,
       "disclosureURL": null
     },
     {
@@ -5404,6 +5481,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "encypher",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "experian_rtid",
       "gvlid": null,
       "disclosureURL": null
@@ -5502,6 +5585,12 @@
       "componentType": "rtd",
       "componentName": "mgid",
       "gvlid": 358,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "mile",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5658,6 +5747,13 @@
       "componentType": "userId",
       "componentName": "33acrossId",
       "gvlid": 58,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "abtshieldId",
+      "gvlid": 825,
       "disclosureURL": null,
       "aliasOf": null
     },
@@ -6251,6 +6347,11 @@
     },
     {
       "componentType": "analytics",
+      "componentName": "imAnalytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
       "componentName": "iiqAnalytics",
       "gvlid": null
     },
@@ -6312,6 +6413,11 @@
     {
       "componentType": "analytics",
       "componentName": "oxxion",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "pgamdirect",
       "gvlid": null
     },
     {

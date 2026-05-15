@@ -53,6 +53,13 @@ describe('adLoader', function () {
       sinon.assert.called(callback);
     });
 
+    it('cleans up script listeners once loaded', () => {
+      adLoader.loadExternalScript('test-cleanup', MODULE_TYPE_PREBID, 'debugging', sinon.stub());
+      scriptEl.onload();
+      expect(scriptEl.onload).to.equal(null);
+      expect(scriptEl.onreadystatechange).to.equal(null);
+    });
+
     it('should run callback as an object', () => {
       const callback = {
         success: sinon.stub()

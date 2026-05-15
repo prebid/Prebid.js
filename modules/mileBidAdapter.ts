@@ -266,6 +266,14 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         return;
       }
 
+      const adserverTargeting : {
+        upstream_partner?: string;
+      } = {};
+
+      if (bid.upstreamBidder) {
+        adserverTargeting.upstream_partner = bid.upstreamBidder;
+      }
+
       const bidResponse = {
         requestId: bid.requestId,
         cpm: parseFloat(bid.cpm),
@@ -278,6 +286,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         ttl: bid.ttl || 300,
         ad: bid.ad,
         mediaType: BANNER,
+        adserverTargeting: adserverTargeting,
         meta: {
           advertiserDomains: bid.adomain || [],
           upstreamBidder: bid.upstreamBidder || '',

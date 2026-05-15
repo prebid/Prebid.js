@@ -21,6 +21,7 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
  * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
  * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ * @typedef {import('./yandexBidAdapterTypes.d.ts').YandexBidRequestParams} YandexBidRequestParams
  */
 
 /**
@@ -30,15 +31,6 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {ServerRequest & CustomServerRequestFields} YandexServerRequest
- */
-
-/**
- * Yandex bidder-specific params which the publisher used in their bid request.
- *
- * @typedef {Object} YandexBidRequestParams
- * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
- * @property {number} [pageId] Deprecated. Please use `placementId` instead.
- * @property {number} [impId] Deprecated. Please use `placementId` instead.
  */
 
 /**
