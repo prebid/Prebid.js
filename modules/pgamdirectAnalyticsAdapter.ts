@@ -43,13 +43,12 @@ const ANALYTICS_CODE = 'pgamdirect';
 const GVLID = 1353;
 const DEFAULT_ENDPOINT =
   'https://app.pgammedia.com/api/analytics-events';
-// Shading ingestion endpoint on the bidder-edge. Distinct from the
-// main analytics POST because it carries auction-specific competitive
-// intelligence (runner-up price per cell) that the bidder-edge uses
-// directly, rather than the web-side analytics sink. Fire-and-forget
-// with keepalive; a failed POST just means that auction's sample is
-// skipped — the next one carries the same cell tuple.
-const SHADING_ENDPOINT = 'https://rtb.pgammedia.com/rtb/v1/shading/record';
+// Auction-context endpoint. Receives per-(publisher × placement × geo ×
+// device) summaries so the bidder-edge can calibrate per-cell floors
+// against observed market clearing. Separate from the main analytics
+// POST so the bidder-edge consumes it directly.
+const AUCTION_CONTEXT_ENDPOINT =
+  'https://rtb.pgammedia.com/rtb/v1/auction-context';
 
 // Which events we forward. Deliberately narrow: the four that carry
 // reconciliation-grade signal. Adding more here increases the
@@ -103,12 +102,10 @@ const pgamdirectAnalytics = Object.assign(
           contentType: 'text/plain',
           keepalive: true,
         });
-        // Phase 4.2 side-effect: on AUCTION_END where we won, POST
-        // the runner-up CPM to the bidder-edge's shading ingestion
-        // endpoint. Parallel fire-and-forget; the main analytics
-        // POST above is unaffected if this throws.
+        // On AUCTION_END, also POST per-cell context to the bidder-edge
+        // (parallel, fire-and-forget). Used for floor calibration.
         if (eventType === EVENTS.AUCTION_END) {
-          maybePostShading(args);
+          maybePostAuctionContext(args);
         }
       } catch (err) {
         logError('[pgamdirectAnalytics] track failed', err);
@@ -118,22 +115,12 @@ const pgamdirectAnalytics = Object.assign(
 );
 
 /**
- * maybePostShading — scan an AUCTION_END payload for a winning
- * pgamdirect bid; if found, compute the runner-up CPM across all
- * other bidders in the auction and POST it to the bidder-edge's
- * /rtb/v1/shading/record alongside the cell signature we emitted
- * in bid.ext.pgam.shade.
- *
- * "Runner-up" here is the highest non-pgam CPM in bidsReceived for
- * the same adUnitCode as our win. If there are no other bidders,
- * nothing is posted (one-bidder auctions have no runner-up signal
- * for us to learn from).
- *
- * Best-effort: swallow any error. The shading Store is observational
- * for now (Part A) and a few dropped samples don't affect live
- * auctions; they just slow the warm-up of that cell.
+ * Forward per-cell auction context (publisher × placement × geo ×
+ * device) plus the auction's competitive-high CPM to the bidder-edge
+ * so it can calibrate per-cell floors. Best-effort; errors are
+ * intentionally swallowed.
  */
-export function maybePostShading(args: unknown): void {
+export function maybePostAuctionContext(args: unknown): void {
   try {
     const a = (args ?? {}) as {
       bidsReceived?: Array<Record<string, unknown>>;
@@ -141,14 +128,8 @@ export function maybePostShading(args: unknown): void {
     const bids = Array.isArray(a.bidsReceived) ? a.bidsReceived : [];
     if (bids.length < 2) return;
 
-    // Find OUR winning bid. We only care about auctions we actually
-    // won — the shading Store is about "what did competitors bid
-    // when WE won" — losses contain no signal for outbound shading.
-    // Prebid attaches status='rendered' or 'winning-bid' on the
-    // winner; the simplest robust check is to trust the bidderCode
-    // and pick the highest pgam cpm. If multiple pgam bids appear
-    // in the same auction (multi-imp), group by adUnitCode so we
-    // match per-imp winners.
+    // Group bids per ad unit; multi-imp auctions can have several pgam
+    // seatbids that we score independently.
     const byAdUnit = new Map<string, { ours?: Record<string, unknown>; others: Array<Record<string, unknown>> }>();
     for (const b of bids) {
       const adUnit = typeof b.adUnitCode === 'string' ? b.adUnitCode : '';
@@ -159,8 +140,6 @@ export function maybePostShading(args: unknown): void {
         byAdUnit.set(adUnit, row);
       }
       if (b.bidderCode === 'pgamdirect') {
-        // Keep the highest-cpm pgam bid as "ours" — multi-imp auctions
-        // can have several pgam seatbids per adUnit.
         const cpm = typeof b.cpm === 'number' ? b.cpm : 0;
         const bestCpm = row.ours && typeof row.ours.cpm === 'number' ? row.ours.cpm : -1;
         if (cpm > bestCpm) row.ours = b;
@@ -171,30 +150,28 @@ export function maybePostShading(args: unknown): void {
 
     for (const [, row] of byAdUnit) {
       if (!row.ours) continue;
-      // Shade cell signature comes from the winning bid's ext.pgam.shade.
-      // The bidder-edge populates this on every winning pgam bid.
-      const ours = row.ours as { ext?: { pgam?: { shade?: ShadeCell } } };
-      const shade = ours.ext?.pgam?.shade;
-      if (!shade || !shade.publisher_id) continue;
-      // Runner-up = highest CPM among non-pgam bidders on this adUnit.
-      let runnerUp = 0;
+      // Cell signature is set by the bidder-edge on every winning pgam bid.
+      const ours = row.ours as { ext?: { pgam?: { cell?: AuctionCellContext } } };
+      const cell = ours.ext?.pgam?.cell;
+      if (!cell || !cell.publisher_id) continue;
+      // Competitive-high CPM = highest CPM among non-pgam bidders.
+      let competitorHigh = 0;
       for (const o of row.others) {
         const cpm = typeof o.cpm === 'number' ? o.cpm : 0;
-        if (cpm > runnerUp) runnerUp = cpm;
+        if (cpm > competitorHigh) competitorHigh = cpm;
       }
-      if (runnerUp <= 0) continue; // no competitor bid = no signal
+      if (competitorHigh <= 0) continue;
 
-      const shadingBody = JSON.stringify({
-        publisher_id: shade.publisher_id,
-        placement_ref: shade.placement_ref,
-        geo_country: shade.geo_country,
-        device_type: shade.device_type,
-        attention_bucket: shade.attention_bucket,
-        runner_up_cpm_usd: runnerUp,
+      const body = JSON.stringify({
+        publisher_id: cell.publisher_id,
+        placement_ref: cell.placement_ref,
+        geo_country: cell.geo_country,
+        device_type: cell.device_type,
+        attention_bucket: cell.attention_bucket,
+        competitor_high_cpm_usd: competitorHigh,
       });
-      // text/plain keeps the POST CORS-simple (no preflight). Server
-      // handler decodes body as JSON regardless of content-type.
-      ajax(SHADING_ENDPOINT, undefined, shadingBody, {
+      // text/plain keeps the POST CORS-simple.
+      ajax(AUCTION_CONTEXT_ENDPOINT, undefined, body, {
         method: 'POST',
         withCredentials: false,
         contentType: 'text/plain',
@@ -202,19 +179,15 @@ export function maybePostShading(args: unknown): void {
       });
     }
   } catch (err) {
-    // Intentionally silent — shading is observational, any error
-    // here just skips one sample.
-    logMessage('[pgamdirectAnalytics] shading post skipped', err);
+    logMessage('[pgamdirectAnalytics] auction-context post skipped', err);
   }
 }
 
 /**
- * ShadeCell — mirror of the bidder-side outbound.ShadeCell struct.
- * Fields match the JSON tags the bidder emits in bid.ext.pgam.shade.
- * Changes here must track changes on the bidder (both sides land in
- * the same PR to avoid drift).
+ * Per-cell auction signature attached by the bidder-edge to every
+ * winning pgam bid via bid.ext.pgam.cell.
  */
-interface ShadeCell {
+interface AuctionCellContext {
   publisher_id: number;
   placement_ref: string;
   geo_country: string;

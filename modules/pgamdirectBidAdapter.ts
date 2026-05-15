@@ -1,49 +1,12 @@
 /**
- * PGAM Direct — Prebid.js bid adapter.
+ * PGAM Direct — Prebid.js bid adapter. Speaks OpenRTB 2.6 to
+ * https://rtb.pgammedia.com/rtb/v1/auction via libraries/ortbConverter,
+ * adding imp.ext.pgam.orgId routing, displaymanager fields, bidResponse
+ * meta enrichment, consent-aware cookie syncs, ext.paapi passthrough,
+ * and the standard lifecycle telemetry hooks.
  *
- * Speaks canonical OpenRTB 2.6 directly to our bidder at
- *   https://rtb.pgammedia.com/rtb/v1/auction
- *
- * Intentionally NOT a fork of pgamsspBidAdapter — that adapter uses a
- * custom TeqBlaze envelope shape, while our bidder speaks real OpenRTB.
- * Sharing code would mean adding compat paths on both sides; cleaner to
- * have a purpose-built adapter that's 1:1 with our server contract.
- *
- * Publisher-facing params shape:
- *
- *   pbjs.addAdUnits([{
- *     code: 'ad-slot-1',
- *     mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
- *     bids: [{
- *       bidder: 'pgamdirect',
- *       params: {
- *         orgId: 'pgam-acme-publisher',       // REQUIRED — we issue this to the publisher
- *         placementId: 'leaderboard-728x90',  // optional — maps to imp.tagid
- *       }
- *     }]
- *   }]);
- *
- * Built on top of libraries/ortbConverter so we inherit Prebid's
- * standard handling of media types, floors (priceFloors module),
- * schain (FPD normalisation → source.ext.schain), user.eids, GDPR/
- * USP/GPP/COPPA, site/device enrichment, and bidResponse mapping.
- * All we layer in is our distinctive shape:
- *
- *   - imp.ext.pgam.orgId      (publisher tenant, required)
- *   - imp.tagid from params.placementId
- *   - imp.displaymanager / displaymanagerver (ORTB spec compliance)
- *   - bidResponse.meta enrichment (advertiserDomains, brandId,
- *     primaryCatId, secondaryCatIds, dsa, networkName)
- *   - getUserSyncs with GDPR/USP/GPP/COPPA passthrough
- *   - interpretResponse surfaces response.ext.paapi when present so
- *     the Chrome Privacy Sandbox / Protected Audience API flow lights
- *     up when the publisher enables PAAPI in their wrapper config
- *   - onBidWon / onTimeout adapter-side telemetry
- *   - onBidBillable / onAdRenderSucceeded — fill-rate + viewability
- *     reconciliation pixels, keyed on bid.adId so the backend can
- *     disambiguate refresh-heavy pages that share ad_unit_code
- *
- * GVL ID 1353 = PGAM Media LLC (registered with IAB Europe).
+ * Publisher params: { orgId, placementId? }.
+ * GVL ID 1353 = PGAM Media LLC.
  */
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -55,32 +18,14 @@ import type { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
 import type { BidResponse } from '../src/bidfactory.js';
 
 /**
- * sendBeacon — fire-and-forget fetch() with keepalive for low-priority
- * telemetry. Per Prebid AGENTS.md §Review guidelines: "Low priority
- * calls should be import ajax method and use fetch keepalive; they
- * shouldn't use trigger pixel when it can be avoided or fail to
- * specify keepalive."
- *
- * Why not triggerPixel: pixel requests are first-to-be-dropped by
- * browsers during navigation / unload, which is exactly when billable
- * + render telemetry fires. Keepalive fetches survive the unload
- * window (up to 64KB per origin budget), so we actually record the
- * events we care about for reconciliation.
- *
- * Pattern matches kargoBidAdapter.sendTimeoutData + amxBidAdapter
- * onTimeout + startioBidAdapter. Catch-all swallows errors so a
- * network hiccup never propagates into the renderer chain.
+ * Low-priority telemetry. Uses fetch with keepalive (per Prebid
+ * AGENTS.md) so events emitted near unload don't drop.
  */
 function sendBeacon(url: string): void {
   try {
-    // Prebid's compat shim makes fetch available everywhere we run.
-    // `keepalive: true` is the essential bit — without it we lose
-    // events on unload.
-    fetch(url, { method: 'GET', keepalive: true }).catch(() => {
-      /* telemetry never throws */
-    });
+    fetch(url, { method: 'GET', keepalive: true }).catch(() => {});
   } catch {
-    /* older browsers without fetch — silently skip, not worth a fallback */
+    /* no-fetch environment — skip silently */
   }
 }
 
@@ -88,30 +33,18 @@ const BIDDER_CODE = 'pgamdirect';
 const ENDPOINT_URL = 'https://rtb.pgammedia.com/rtb/v1/auction';
 const USERSYNC_URL = 'https://rtb.pgammedia.com/rtb/v1/usersync';
 const TIMEOUT_METRIC_URL = 'https://rtb.pgammedia.com/rtb/v1/metrics/timeout';
-// Billable impression + render pixel endpoints. Separate from
-// the generic onBidWon path so the bidder-edge can keep distinct
-// counters (wins ≠ billable imps ≠ rendered imps); conflating them
-// breaks fill-rate / viewability reconciliation.
 const BILLABLE_METRIC_URL = 'https://rtb.pgammedia.com/rtb/v1/metrics/billable';
 const RENDER_METRIC_URL = 'https://rtb.pgammedia.com/rtb/v1/metrics/render';
 const GVLID = 1353;
 const DEFAULT_TTL = 300;
 
-// Prebid.js build-time version token — replaced at bundle time by
-// the build. Surfaced as imp.displaymanagerver so DSPs can
-// distinguish client wrapping versions. Some DSPs filter bids
-// without displaymanager/ver set, so this is spec-compliance.
-// We use the same '$prebid.version$' token as PubMatic / Conversant /
-// OMS / Showheroes / Yandex / GumGum — it's the idiomatic build-time
-// replacement across the codebase.
+// Replaced at bundle time. Surfaced as imp.displaymanagerver.
 const PREBID_VERSION = '$prebid.version$';
 
 /**
- * Public params interface — contracted with publishers.
- * Only orgId is required; placementId and bidfloor are optional
- * conveniences. Floors module is the preferred path for dynamic
- * bidfloor; params.bidfloor remains as a fallback for publishers on
- * the legacy per-bidder floor shape.
+ * Public params. orgId required; placementId / bidfloor optional.
+ * Prefer the Floors module for dynamic floors; params.bidfloor is a
+ * fallback for publishers still on the per-bidder shape.
  */
 type PgamDirectBidParams = {
   orgId: string;
@@ -131,10 +64,7 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL,
   },
   /**
-   * Imp hook — layer our pgam-specific fields on top of the stock imp.
-   * The stock converter already populates id, secure, banner/video/
-   * native, bidfloor (via priceFloors when enabled), and the ortb2Imp
-   * FPD merge (gpid, etc.).
+   * Layer pgam-specific fields onto the stock imp.
    */
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
     const imp: ORTBImp = buildImp(bidRequest, context);
@@ -155,19 +85,13 @@ const converter = ortbConverter({
       imp.bidfloor = bidRequest.params.bidfloor;
       imp.bidfloorcur = imp.bidfloorcur || 'USD';
     }
-    // ORTB spec compliance. Some DSPs filter bids where
-    // imp.displaymanager is missing (the field distinguishes
-    // server-side integrations from header bidding, so DSPs use it
-    // for shaping). PubMatic + IX both set these; we match.
+    // Some DSPs filter bids missing displaymanager / displaymanagerver.
     if (!imp.displaymanager) imp.displaymanager = 'Prebid.js';
     if (!imp.displaymanagerver) imp.displaymanagerver = PREBID_VERSION;
     return imp;
   },
   /**
-   * Request hook — first-price auction (at: 1) and USD currency
-   * passthrough. Everything else (tmax, source.tid, schain,
-   * user.eids, site, device, regs) is handled by the stock
-   * converter + FPD/ortb2 pipeline.
+   * Set first-price + USD default on the OpenRTB request.
    */
   request(buildRequest, imps, bidderRequest, context) {
     const request: ORTBRequest = buildRequest(imps, bidderRequest, context);
@@ -178,24 +102,8 @@ const converter = ortbConverter({
     return request;
   },
   /**
-   * bidResponse hook — enrich bidResponse.meta with every field the
-   * bidder returned. Rich meta is what keeps us from getting rejected
-   * by downstream ad servers (AdX, Amazon Publisher Services) that
-   * require advertiserDomains for brand-safety gating.
-   *
-   * Fields populated:
-   *   - advertiserDomains  from bid.adomain (ORTB 2.x standard)
-   *   - primaryCatId       from bid.cat[0]
-   *   - secondaryCatIds    from bid.cat[1..]
-   *   - networkName        from seatbid.seat
-   *   - networkId          from seatbid.seat (numeric form)
-   *   - brandId / brandName / agencyId / buyerId / demandSource
-   *                        from bid.ext.meta.*
-   *   - dsa                from bid.ext.dsa (ORTB 2.6 DSA transparency)
-   *   - dchain             from bid.ext.dchain
-   *
-   * Stock converter already sets mediaType + cpm + size + creativeId;
-   * we augment rather than replace.
+   * Populate bidResponse.meta from bid.adomain, bid.cat, seatbid.seat,
+   * bid.ext.meta.*, bid.ext.dsa, bid.ext.dchain.
    */
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse: BidResponse = buildBidResponse(bid, context);
@@ -263,11 +171,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  /**
-   * Minimum validation: orgId must be a non-empty string. That's the
-   * identifier we use to route the request to a publisher/tenant on
-   * our side; without it the bidder returns publisher_not_found.
-   */
   isBidRequestValid(bid) {
     const orgId = bid?.params?.orgId;
     return typeof orgId === 'string' && orgId.length > 0;
@@ -305,18 +208,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     }) as { bids?: BidResponse[] };
     const bids = result.bids || [];
 
-    // PAAPI / Protected Audience API passthrough. If the bidder
-    // returned `ext.igi` (Interest Group Info) or `ext.paapi` auction
-    // configs, surface them to Prebid. When PAAPI is enabled in the
-    // wrapper config, Prebid kicks off a parallel Chrome Privacy
-    // Sandbox auction using those configs; when disabled, Prebid
-    // silently ignores the `paapi` key (see bidderFactory.ts
-    // RESPONSE_PROPS). Either way we don't break.
-    //
-    // Format the bidder returns:
-    //   response.ext.paapi = [{ impid, config: AuctionConfig }, ...]
-    // We map impid → bidRequest.bidId so Prebid can associate the
-    // Privacy Sandbox auction with the right ad unit.
+    // PAAPI passthrough — surface response.ext.paapi[] when present.
     const body = serverResponse.body as {
       ext?: { paapi?: Array<{ impid?: string; config?: unknown; bidId?: string }> };
     };
@@ -325,9 +217,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       const paapi = paapiRaw
         .filter((e) => e && e.config)
         .map((e) => ({
-          // Prebid expects `bidId` as the correlation key. Bidder may
-          // send either `bidId` (already-resolved) or `impid` (ORTB
-          // convention); accept both.
+          // bidder may send bidId (resolved) or impid (ORTB).
           bidId: e.bidId ?? e.impid,
           config: e.config,
         }));
@@ -339,27 +229,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   /**
-   * getUserSyncs — plant a first-party cookie on .pgammedia.com so
-   * cross-DSP cookie-match paths work. Without this, buyers can't
-   * match users to their identity graphs and our CPMs are
-   * systematically lower than bidders who sync.
-   *
-   * Consent passthrough (server-side /rtb/v1/usersync applies them):
-   *   - GDPR:   gdpr + gdpr_consent
-   *   - USP:    us_privacy
-   *   - GPP:    gpp + gpp_sid
-   *   - COPPA:  coppa — honored server-side (we NEVER plant a cookie
-   *             on child-directed traffic regardless of other signals)
-   *
-   * The bidder's /rtb/v1/usersync endpoint reads these params and
-   * skips the Set-Cookie response when any of them say "don't
-   * store". The GIF/HTML response is still served so Prebid's retry
-   * logic doesn't misclassify this as a network failure.
+   * Server-side cookie sync at /rtb/v1/usersync. Forwards GDPR / USP /
+   * GPP / COPPA params so the server can decide whether to Set-Cookie.
    */
   getUserSyncs(syncOptions, _serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs: Array<{ type: 'iframe' | 'image'; url: string }> = [];
-    // If the publisher disabled BOTH iframe and image in config, we
-    // can't do anything useful.
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return syncs;
     }
@@ -382,9 +256,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     }
     const qs = params.length > 0 ? `&${params.join('&')}` : '';
 
-    // iframe is preferred — better UX for publishers (no visible
-    // pixel, ad-server-friendly). Fall back to pixel if the publisher
-    // config disabled iframes.
     if (syncOptions.iframeEnabled) {
       syncs.push({ type: 'iframe', url: `${USERSYNC_URL}?t=i${qs}` });
     } else if (syncOptions.pixelEnabled) {
@@ -394,21 +265,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   /**
-   * Win notice. Our bidder fires burl + nurl server-side on every
-   * winning auction, so strictly speaking Prebid doesn't need to do
-   * anything here. We ALSO fire an adapter-side win pixel as defense-
-   * in-depth:
-   *
-   *   - Some ad-server setups block nurl (CSP, ad blockers on
-   *     publisher pages) but can still load our win pixel from the
-   *     post-Prebid renderer context.
-   *   - Adapter-side fire gives us a cross-check — if the server-side
-   *     count diverges from adapter wins, that signals an ad-server
-   *     integration issue.
-   *
-   * Pixel URL is opportunistically pulled from bid.ext.pgam.winurl if
-   * the bidder provided one; falls back to bid.nurl. Best-effort;
-   * never throws.
+   * Adapter-side win pixel. Pulls from bid.ext.pgam.winurl with a
+   * nurl fallback, expanding ${AUCTION_PRICE} and ${AUCTION_ID}.
    */
   onBidWon(bid) {
     try {
@@ -420,17 +278,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           .replace(/\$\{AUCTION_ID\}/g, String((bid as { auctionId?: string }).auctionId ?? ''));
         triggerPixel(resolved);
       }
-    } catch {
-      // Swallow — win telemetry must never break rendering.
-    }
+    } catch {}
   },
 
-  /**
-   * Timeout notice. If Prebid's tmax fires before we responded, post
-   * timing details to a server-side metric sink so ops can correlate
-   * publisher-side timeouts with our p95 latency per region.
-   * Fire-and-forget; no retry, no user-visible effect.
-   */
   onTimeout(timeoutData) {
     try {
       if (!Array.isArray(timeoutData) || timeoutData.length === 0) return;
@@ -439,25 +289,14 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         `?tmax=${encodeURIComponent(String(first.timeout ?? ''))}` +
         `&auction=${encodeURIComponent(String(first.auctionId ?? ''))}`;
       sendBeacon(url);
-    } catch {
-      // Ditto — telemetry never blocks.
-    }
+    } catch {}
   },
 
   /**
-   * onBidBillable — Prebid fires this when the bid crosses the
-   * "counted as billable impression" threshold (after targeting is
-   * set and the ad-server confirms delivery, not just BID_WON). This
-   * is the number we reconcile on for revenue; keeping it separate
-   * from onBidWon is important because:
-   *
-   *   - BID_WON fires whenever Prebid *thinks* we won the auction,
-   *     even if the ad-server ultimately picks a house ad.
-   *   - onBidBillable fires only when we actually bill.
-   *
-   * Few adapters wire this today (Yandex, APS, Michao, Vidazoo,
-   * ProgrammaticX, OpaMarketplace). Adding it puts us in that top
-   * tier for billing accuracy.
+   * Billable-impression notification. Distinct from BID_WON (which
+   * fires whenever Prebid thinks we won) — this only fires after the
+   * ad-server confirms delivery, so it's the number we reconcile
+   * revenue against.
    */
   onBidBillable(bid) {
     try {
@@ -469,24 +308,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         `&auction=${encodeURIComponent(String(auctionId ?? ''))}` +
         `&adid=${encodeURIComponent(String(adId ?? ''))}`;
       sendBeacon(url);
-    } catch {
-      // Billing telemetry must never break rendering.
-    }
+    } catch {}
   },
 
   /**
-   * onAdRenderSucceeded — fired after the creative successfully
-   * renders in the page. Sits between onBidBillable (Prebid thinks
-   * we won) and the user actually viewing the ad; without this we
-   * conflate "billed" with "rendered" and can't subtract render
-   * failures from inventory KPIs.
-   *
-   * Render failures are captured on the analytics-adapter side via
-   * EVENTS.AD_RENDER_FAILED (which is NOT part of BidderSpec), so
-   * the bidder-edge sees both halves: a render-success pixel here
-   * and a render-fail record from the analytics stream. The two
-   * streams are keyed on `bid.adId`, matching the Codex-flagged
-   * reconciliation pattern.
+   * Render-success notification. Pairs with EVENTS.AD_RENDER_FAILED
+   * on the analytics adapter so the bidder-edge sees both halves of
+   * the render outcome, keyed on bid.adId.
    */
   onAdRenderSucceeded(bid) {
     try {
@@ -497,59 +325,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         `&adid=${encodeURIComponent(String(adId ?? ''))}` +
         `&auction=${encodeURIComponent(String(auctionId ?? ''))}`;
       sendBeacon(url);
-    } catch {
-      // Telemetry never blocks.
-    }
+    } catch {}
   },
 
-  /**
-   * Cookie-sync pixels. Prebid calls this after the auction with the
-   * consent state + server responses; we return any sync URLs the
-   * bidder chose to include on the OpenRTB response at
-   * `ext.cookies[]`. Shape per pixel:
-   *
-   *   { type: 'image' | 'iframe', url: string }
-   *
-   * The actual URLs are decided server-side (one per DSP that does
-   * cookie-based retargeting), passed through our bidder, and then
-   * fired by Prebid in sequence. This keeps the sync list driven
-   * by our `dsp_configs` table — operators adding a new DSP with a
-   * sync URL see it flow to publishers on the next auction without
-   * re-deploying this adapter.
-   *
-   * Consent: Prebid hands us the parsed GDPR / USP / GPP state. We
-   * don't currently filter server-side; the per-DSP sync URLs
-   * already encode their own consent-handling (appending
-   * `?gdpr=1&gdpr_consent=...` as each DSP requires). A future
-   * revision can add server-side suppression for DSPs that fail
-   * to declare handling of the caller's consent framework.
-   *
-   * `syncOptions` tells us which sync types the publisher allows;
-   * we filter accordingly so an iframe-only publisher doesn't fire
-   * image pixels (rare, but harmless to respect).
-   */
-  getUserSyncs(syncOptions, serverResponses, _gdprConsent, _uspConsent, _gppConsent) {
-    if (!serverResponses || serverResponses.length === 0) return [];
-    const resp = serverResponses[0] as { body?: { ext?: { cookies?: Array<{ type: string; url: string }> } } };
-    const cookies = resp?.body?.ext?.cookies;
-    if (!Array.isArray(cookies) || cookies.length === 0) return [];
-    const out: Array<{ type: 'image' | 'iframe'; url: string }> = [];
-    for (const c of cookies) {
-      if (!c || typeof c.url !== 'string' || !c.url) continue;
-      if (c.type === 'iframe' && syncOptions.iframeEnabled) {
-        out.push({ type: 'iframe', url: c.url });
-      } else if (c.type === 'image' && syncOptions.pixelEnabled) {
-        out.push({ type: 'image', url: c.url });
-      }
-    }
-    // Per-bidder sync cap is enforced by Prebid's core via
-    // userSync.syncsPerBidder (see src/userSync.ts). We return the
-    // full filtered list and let core clamp it to the publisher's
-    // configured limit. An earlier revision hard-capped at 5 here,
-    // but that silently overrode publishers who raised the limit
-    // (or set 0 = unlimited) — flagged by Codex review and removed.
-    return out;
-  },
 };
 
 registerBidder(spec);

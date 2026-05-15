@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS } from 'src/constants.js';
 import * as ajaxLib from 'src/ajax.js';
-import pgamdirectAnalytics, { normalise, maybePostShading } from 'modules/pgamdirectAnalyticsAdapter.js';
+import pgamdirectAnalytics, { normalise, maybePostAuctionContext } from 'modules/pgamdirectAnalyticsAdapter.js';
 
 /**
  * Spec for modules/pgamdirectAnalyticsAdapter.ts.
@@ -202,9 +202,9 @@ describe('pgamdirect Analytics Adapter', () => {
     });
   });
 
-  // ---------- Phase 4.2 — maybePostShading (runner-up ingestion) -----------
+  // ---------- maybePostAuctionContext (competitor-high ingestion) -----------
 
-  describe('maybePostShading', () => {
+  describe('maybePostAuctionContext', () => {
     let ajaxStub;
     beforeEach(() => {
       ajaxStub = sinon.stub(ajaxLib, 'ajax');
@@ -213,9 +213,8 @@ describe('pgamdirect Analytics Adapter', () => {
       ajaxStub.restore();
     });
 
-    // Canonical Prebid AUCTION_END payload carrying 1 pgam winner + 2
-    // competitor bids on the same adUnit. ext.pgam.shade is populated
-    // per the bidder-side Phase 4.2 change (response_builder.go).
+    // AUCTION_END payload: 1 pgam winner + 2 competitors on the same
+    // adUnit. ext.pgam.cell is set server-side on winning pgam bids.
     function auctionWithCompetitors() {
       return {
         bidsReceived: [
@@ -225,7 +224,7 @@ describe('pgamdirect Analytics Adapter', () => {
             cpm: 5.0,
             ext: {
               pgam: {
-                shade: {
+                cell: {
                   publisher_id: 42,
                   placement_ref: 'slot-a',
                   geo_country: 'US',
@@ -241,22 +240,22 @@ describe('pgamdirect Analytics Adapter', () => {
       };
     }
 
-    it('POSTs the highest non-pgam cpm as runner-up', () => {
-      maybePostShading(auctionWithCompetitors());
+    it('POSTs the highest non-pgam cpm as competitor_high', () => {
+      maybePostAuctionContext(auctionWithCompetitors());
       expect(ajaxStub.calledOnce).to.equal(true);
       const [url, , body, opts] = ajaxStub.firstCall.args;
-      expect(url).to.include('/rtb/v1/shading/record');
+      expect(url).to.include('/rtb/v1/auction-context');
       expect(opts).to.include({ keepalive: true });
       const payload = JSON.parse(body);
       expect(payload.publisher_id).to.equal(42);
       expect(payload.placement_ref).to.equal('slot-a');
       expect(payload.attention_bucket).to.equal('high');
-      // Runner-up is max(magnite=3.2, pubmatic=2.8) = 3.2.
-      expect(payload.runner_up_cpm_usd).to.equal(3.2);
+      // Competitor high = max(magnite=3.2, pubmatic=2.8) = 3.2.
+      expect(payload.competitor_high_cpm_usd).to.equal(3.2);
     });
 
     it('skips when we have no winning pgam bid on the adUnit', () => {
-      maybePostShading({
+      maybePostAuctionContext({
         bidsReceived: [
           { bidderCode: 'magnite', adUnitCode: 'div-1', cpm: 3.0 },
           { bidderCode: 'pubmatic', adUnitCode: 'div-1', cpm: 2.0 },
@@ -266,13 +265,13 @@ describe('pgamdirect Analytics Adapter', () => {
     });
 
     it('skips when pgam has no competitors (one-bidder auction)', () => {
-      maybePostShading({
+      maybePostAuctionContext({
         bidsReceived: [
           {
             bidderCode: 'pgamdirect',
             adUnitCode: 'div-1',
             cpm: 5.0,
-            ext: { pgam: { shade: { publisher_id: 42, placement_ref: 'slot', geo_country: 'US', device_type: 2, attention_bucket: 'mid' } } },
+            ext: { pgam: { cell: { publisher_id: 42, placement_ref: 'slot', geo_country: 'US', device_type: 2, attention_bucket: 'mid' } } },
           },
         ],
       });
@@ -280,8 +279,8 @@ describe('pgamdirect Analytics Adapter', () => {
       expect(ajaxStub.notCalled).to.equal(true);
     });
 
-    it('skips when bid.ext.pgam.shade is missing', () => {
-      maybePostShading({
+    it('skips when bid.ext.pgam.cell is missing', () => {
+      maybePostAuctionContext({
         bidsReceived: [
           { bidderCode: 'pgamdirect', adUnitCode: 'div-1', cpm: 5.0 },
           { bidderCode: 'magnite', adUnitCode: 'div-1', cpm: 3.0 },
@@ -291,14 +290,14 @@ describe('pgamdirect Analytics Adapter', () => {
     });
 
     it('handles multi-adUnit auctions by POSTing each independently', () => {
-      maybePostShading({
+      maybePostAuctionContext({
         bidsReceived: [
           // Unit 1: pgam wins
           {
             bidderCode: 'pgamdirect',
             adUnitCode: 'u1',
             cpm: 5.0,
-            ext: { pgam: { shade: { publisher_id: 42, placement_ref: 'p1', geo_country: 'US', device_type: 2, attention_bucket: 'high' } } },
+            ext: { pgam: { cell: { publisher_id: 42, placement_ref: 'p1', geo_country: 'US', device_type: 2, attention_bucket: 'high' } } },
           },
           { bidderCode: 'magnite', adUnitCode: 'u1', cpm: 3.0 },
           // Unit 2: pgam wins too
@@ -306,7 +305,7 @@ describe('pgamdirect Analytics Adapter', () => {
             bidderCode: 'pgamdirect',
             adUnitCode: 'u2',
             cpm: 4.0,
-            ext: { pgam: { shade: { publisher_id: 42, placement_ref: 'p2', geo_country: 'US', device_type: 2, attention_bucket: 'low' } } },
+            ext: { pgam: { cell: { publisher_id: 42, placement_ref: 'p2', geo_country: 'US', device_type: 2, attention_bucket: 'low' } } },
           },
           { bidderCode: 'pubmatic', adUnitCode: 'u2', cpm: 2.0 },
         ],
@@ -315,10 +314,10 @@ describe('pgamdirect Analytics Adapter', () => {
     });
 
     it('tolerates malformed input without throwing', () => {
-      expect(() => maybePostShading(null)).to.not.throw();
-      expect(() => maybePostShading(undefined)).to.not.throw();
-      expect(() => maybePostShading({})).to.not.throw();
-      expect(() => maybePostShading({ bidsReceived: 'not-array' })).to.not.throw();
+      expect(() => maybePostAuctionContext(null)).to.not.throw();
+      expect(() => maybePostAuctionContext(undefined)).to.not.throw();
+      expect(() => maybePostAuctionContext({})).to.not.throw();
+      expect(() => maybePostAuctionContext({ bidsReceived: 'not-array' })).to.not.throw();
     });
   });
 });
