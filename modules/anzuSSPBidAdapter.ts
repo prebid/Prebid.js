@@ -2,7 +2,7 @@ import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.j
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.ts';
 
-const BIDDER_CODE = 'anzu';
+const BIDDER_CODE = 'anzuSSP';
 const AD_URL = 'https://endpoint.anzumarketplace.com/pbjs';
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
