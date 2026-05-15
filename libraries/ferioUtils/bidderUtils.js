@@ -189,13 +189,18 @@ function createFerioConverter(paramBidderCode) {
       return request;
     },
     bidResponse(buildBidResponse, bid, context) {
+      let responseContext = context;
       if (!hasResponseMediaType(bid)) {
-        context.mediaType = getSingleMediaType(context.bidRequest);
-        if (!context.mediaType) {
+        const fallbackMediaType = getSingleMediaType(context.bidRequest);
+        if (!fallbackMediaType) {
           return;
         }
+        responseContext = { ...context, mediaType: fallbackMediaType };
       }
-      return buildBidResponse(normalizeNativeAdm(bid, context), context);
+      return buildBidResponse(
+        normalizeNativeAdm(bid, responseContext),
+        responseContext
+      );
     },
     overrides: {
       [BID_RESPONSE]: {
