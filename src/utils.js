@@ -47,6 +47,7 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
+  runBackgroundTask,
 };
 
 const prebidInternal = {};
@@ -451,6 +452,23 @@ export function triggerPixel(url, done, timeout) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
+}
+
+/**
+ * Run a task at low priority when supported by the browser, or immediately as fallback.
+ * @param {function} task
+ */
+export function runBackgroundTask(task) {
+  const scheduler = window.scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => task(), { timeout: 2000 });
+    return;
+  }
+  task();
 }
 
 /**
