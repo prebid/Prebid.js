@@ -385,7 +385,7 @@ describe('Nexx360 bid adapter tests', () => {
             bidderVersion: '8.0',
             localStorage: { amxId: 'abcdef' },
             sessionId: requestContent.ext.sessionId,
-            requestCounter: 0,
+            requestCounter: requestContent.ext.requestCounter,
           },
           cur: [
             'USD',

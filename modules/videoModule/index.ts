@@ -147,7 +147,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     return videoCore.getOrtbVideo(divId);
   }
 
-  function getOrtbContent(divId: string): DeepPartial<ORTBRequest['site']['content']> {
+  function getOrtbContent(divId: string): DeepPartial<NonNullable<ORTBRequest['site']>['content']> {
     return videoCore.getOrtbContent(divId);
   }
 

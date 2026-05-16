@@ -4,12 +4,18 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 
+/**
+ * @typedef {import('./terceptAnalyticsAdapterTypes.d.ts').TerceptAnalyticsAdapterOptions} TerceptAnalyticsAdapterOptions
+ */
+
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v1.0.0';
-const defaultHostName = 'us-central1-quikr-ebay.cloudfunctions.net';
+const terceptAnalyticsVersion = 'v2.0.0';
+const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
+const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 5000;
 
+/** @type {TerceptAnalyticsAdapterOptions} */
 let initOptions;
 
 // auctionId → { auctionInit, bids[], timer } — isolated per auction
@@ -77,8 +83,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
       } else if (eventType === EVENTS.AUCTION_END) {
         const auction = pendingAuctions.get(args.auctionId);
         if (!auction) return;
-        // 1.5s window to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
-        auction.timer = setTimeout(() => flush(args.auctionId), 1500);
+        // configurable window (default 5s) to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
+        const timeout = initOptions?.analyticsBatchTimeout ?? DEFAULT_ANALYTICS_BATCH_TIMEOUT;
+        auction.timer = setTimeout(() => flush(args.auctionId), timeout);
       } else if (eventType === EVENTS.BID_WON) {
         const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);
         updateBid(args.auctionId, args.requestId, {

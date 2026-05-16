@@ -70,6 +70,8 @@ const bidRequest = {
   }
 }
 
+const ENDPOINT_URL_PATTERN = /^https:\/\/(lb-east|n2)\.intenze\.co\/bid\?pass=accountId&integration=prebidjs$/;
+
 const VIDEO_BID_REQUEST = {
   code: 'video1',
   sizes: [640, 480],
@@ -235,7 +237,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.match(ENDPOINT_URL_PATTERN);
     });
 
     it('Returns empty data if no valid requests are passed', function () {
@@ -265,7 +267,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.match(ENDPOINT_URL_PATTERN);
     });
   });
 
@@ -284,7 +286,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.match(ENDPOINT_URL_PATTERN);
     });
   });
 

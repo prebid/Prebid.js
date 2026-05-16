@@ -16,5 +16,6 @@ export default {
   operaadsIdSystem: 'operaId',
   relevadRtdProvider: 'RelevadRTDModule',
   sirdataRtdProvider: 'SirdataRTDModule',
-  fanBidAdapter: 'freedomadnetwork'
+  fanBidAdapter: 'freedomadnetwork',
+  teqBlazeDemoBidAdapter: 'tqblz_demo'
 }

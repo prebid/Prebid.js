@@ -1,0 +1,10 @@
+{
+  "README": "This is used to run the type checker on strict mode on the compiled output, to make sure that it can be consumed in strict mode",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+  },
+  "include": ["src/types/local/**/*.ts", "./dist/src/**/*.ts"],
+  "exclude": []
+}
