@@ -5,7 +5,6 @@ import { triggerPixel, deepAccess } from '../src/utils.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import type { BidRequest } from '../src/adapterManager.js';
 
-
 const BIDDER_CODE = 'haloads';
 const ENDPOINT = 'https://ads.haloads.io/bid';
 const SYNC_URL = 'https://ads.haloads.io/cookie_sync';
@@ -166,8 +165,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
 
     if (errorData) {
       if (errorData.error) {
-        query = tryAppendQueryString(query, 'error', String(errorData.error.status) || 'unknown');
-        query = tryAppendQueryString(query, 'status', String(errorData.error.status));
+        const status = errorData.error.status != null ? String(errorData.error.status) : 'unknown';
+        query = tryAppendQueryString(query, 'error', status);
+        query = tryAppendQueryString(query, 'status', status);
       }
       if (errorData.bidderRequest) {
         query = tryAppendQueryString(query, 'auctionId', errorData.bidderRequest.auctionId || '');
@@ -181,19 +181,20 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   onTimeout: function (timeoutData) {
-    let query = 'eventType=timeout';
+    if (!timeoutData || timeoutData.length === 0) {
+      return;
+    }
 
-    if (timeoutData && timeoutData.length > 0) {
-      const firstTimeout = timeoutData[0];
-      query = tryAppendQueryString(query, 'auctionId', firstTimeout.auctionId || '');
-      query = tryAppendQueryString(query, 'timeout', String(firstTimeout.timeout));
-      query = tryAppendQueryString(query, 'adUnitCode', firstTimeout.adUnitCode || '');
+    timeoutData.forEach(function (entry) {
+      let query = 'eventType=timeout';
+      query = tryAppendQueryString(query, 'auctionId', entry.auctionId || '');
+      query = tryAppendQueryString(query, 'timeout', String(entry.timeout));
+      query = tryAppendQueryString(query, 'adUnitCode', entry.adUnitCode || '');
       if (query.slice(-1) === '&') {
         query = query.slice(0, -1);
       }
-    }
-
-    triggerPixel(`${EVENT_TRACKING_URL}?${query}`);
+      triggerPixel(`${EVENT_TRACKING_URL}?${query}`);
+    });
   }
 };
 
