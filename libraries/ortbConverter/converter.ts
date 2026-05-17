@@ -65,9 +65,9 @@ type Params<B extends BidderCode> = {
     }
   ) => ORTBRequest;
   [BID_RESPONSE]: (
-    bid: ORTBResponse['seatbid'][number]['bid'][number],
+    bid: NonNullable<ORTBResponse['seatbid']>[number]['bid'][number],
     context: Context & {
-      seatbid: ORTBResponse['seatbid'][number];
+      seatbid: NonNullable<ORTBResponse['seatbid']>[number];
       imp: ORTBImp;
       bidRequest: BidRequest<B>;
       ortbRequest: ORTBRequest;
@@ -97,7 +97,7 @@ type Customizers<B extends BidderCode> = {
 
 type Overrides<B extends BidderCode> = {
   [M in keyof Params<B>]?: {
-    [name: string]: (orig: Processors<B>[M][string], ...args: Parameters<Processors<B>[M][string]>) => void;
+    [name: string]: (orig: NonNullable<Processors<B>[M]>[string], ...args: Parameters<NonNullable<Processors<B>[M]>[string]>) => void;
   }
 }
 
