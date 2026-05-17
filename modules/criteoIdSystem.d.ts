@@ -2,11 +2,11 @@ export type CriteoIdSystemModuleName = 'criteo';
 
 declare module './userId/spec' {
   interface UserId {
-    criteo: string;
+    criteoId: string;
   }
 
   interface ProvidersToId {
-    criteo: 'criteo';
+    criteoId: 'criteoId';
   }
 
   interface ProviderParams {
