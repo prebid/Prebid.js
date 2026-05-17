@@ -17,9 +17,14 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./criteoIdSystem.d.ts').CriteoIdSystemModuleName} CriteoIdSystemModuleName
  */
 
 const gvlid = 91;
+/**
+ * @typedef CriteoIdSystemModuleName
+ */
 const bidderCode = 'criteo';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode });
 
@@ -205,11 +210,11 @@ function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
   ajax(url, callbacks, undefined, { method: 'GET', contentType: 'application/json', withCredentials: true });
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<CriteoIdSystemModuleName>} */
 export const criteoIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {CriteoIdSystemModuleName}
    */
   name: bidderCode,
   gvlid: gvlid,
