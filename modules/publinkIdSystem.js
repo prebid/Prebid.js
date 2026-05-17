@@ -13,9 +13,10 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {{e?: string, api_key?: string, site_id?: string}} PublinkIdParams
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig & {params?: PublinkIdParams}} PublinkIdSubmoduleConfig
  */
 
 const MODULE_NAME = 'publinkId';
@@ -31,6 +32,11 @@ function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
 }
 
+/**
+ * @param {PublinkIdParams|undefined} params
+ * @param {ConsentData|undefined} consentData
+ * @param {Object|undefined} storedId
+ */
 function publinkIdUrl(params, consentData, storedId) {
   const url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
@@ -67,6 +73,11 @@ function publinkIdUrl(params, consentData, storedId) {
   return buildUrl(url);
 }
 
+/**
+ * @param {PublinkIdSubmoduleConfig|undefined} [config]
+ * @param {ConsentData|undefined} consentData
+ * @param {Object|undefined} storedId
+ */
 function makeCallback(config = {}, consentData, storedId) {
   return function(prebidCallback) {
     const options = { method: 'GET', withCredentials: true };
@@ -143,7 +154,7 @@ export const publinkIdSubmodule = {
    * performs action to obtain id
    * Use a publink cookie first if it is present, otherwise use prebids copy, if neither are available callout to get a new id
    * @function
-   * @param {SubmoduleConfig} [config] Config object with params and storage properties
+   * @param {PublinkIdSubmoduleConfig} [config] Config object with params and storage properties
    * @param {ConsentData|undefined} consentData GDPR consent
    * @param {(Object|undefined)} storedId Previously cached id
    * @returns {IdResponse}
