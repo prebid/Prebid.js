@@ -89,7 +89,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       url: ENDPOINT,
       data: data,
       options: {
-        contentType: 'application/json',
         withCredentials: true
       }
     };
