@@ -13,10 +13,10 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 
 /**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').EuidSubmodule} Submodule
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').EuidSubmoduleConfig} SubmoduleConfig
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').ConsentData} ConsentData
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').IdResponse} IdResponse
  */
 
 const MODULE_NAME = 'euid';
