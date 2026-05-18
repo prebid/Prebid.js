@@ -14,10 +14,10 @@ import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../librar
 import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js';
 
 /**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').uid2Id} uid2Id
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').Uid2Submodule} Submodule
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').Uid2SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').ConsentData} ConsentData
+ * @typedef {import('./uid2EuidIdSystemTypes.d.ts').uid2Id} uid2Id
  */
 
 const MODULE_NAME = 'uid2';
