@@ -85,7 +85,7 @@ function removeDuplicates(arr, getKey) {
   const seen = {};
   return arr.filter(item => {
     const key = getKey(item);
-    return seen.hasOwnProperty(key) ? false : (seen[key] = true);
+    return Object.prototype.hasOwnProperty.call(seen, key) ? false : (seen[key] = true);
   });
 };
 
@@ -230,7 +230,7 @@ function handlerAuctionInit(event) {
       mediaTypeKey => mediaTypeKey
     ).map(mediaType => getMediaTypeAlias(mediaType)).sort();
     const bannerSizes = removeDuplicates(
-      mediaTypes.filter(mediaType => mediaType.hasOwnProperty(BANNER) && mediaType[BANNER].hasOwnProperty('sizes'))
+      mediaTypes.filter(mediaType => Object.prototype.hasOwnProperty.call(mediaType, BANNER) && Object.prototype.hasOwnProperty.call(mediaType[BANNER], 'sizes'))
         .map(mediaType => mediaType[BANNER].sizes.map(size => size.join('x')))
         .flat(),
       bannerSize => bannerSize

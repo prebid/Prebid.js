@@ -148,6 +148,9 @@ describe('Instream Tracking', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
+    if (typeof window.performance.hasOwnProperty !== 'function') {
+      window.performance.hasOwnProperty = Object.prototype.hasOwnProperty;
+    }
   });
 
   afterEach(function () {

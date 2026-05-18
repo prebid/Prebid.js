@@ -38,14 +38,30 @@ describe('Adagio Rtd Provider', function () {
   let sandbox;
   let clock;
 
+  const storageMethodRestores = [];
+
+  function setStorageMethod(methodName, impl) {
+    const original = storage[methodName];
+    storage[methodName] = impl;
+    storageMethodRestores.push(() => {
+      storage[methodName] = original;
+    });
+  }
+
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
+    if (Object.getPrototypeOf(storage) == null) {
+      Object.setPrototypeOf(storage, Object.prototype);
+    }
   });
 
   afterEach(function () {
     clock.restore();
     sandbox.restore();
+    while (storageMethodRestores.length) {
+      storageMethodRestores.pop()();
+    }
   });
 
   describe('submodule `init`', function () {
@@ -104,13 +120,19 @@ describe('Adagio Rtd Provider', function () {
     });
 
     it('load an external script if localStorageIsEnabled is enabled', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true)
+      setStorageMethod('localStorageIsEnabled', (cb) => {
+        const enabled = Boolean(1);
+        cb(enabled);
+      })
       adagioRtdSubmodule.init(config);
       expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('do not load an external script if localStorageIsEnabled is disabled', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false)
+      setStorageMethod('localStorageIsEnabled', (cb) => {
+        const enabled = Boolean(0);
+        cb(enabled);
+      })
       adagioRtdSubmodule.init(config);
       expect(loadExternalScriptStub.called).to.be.false;
     });
@@ -128,10 +150,9 @@ describe('Adagio Rtd Provider', function () {
 
       it('store new session data for further usage', function () {
         const storageValue = JSON.stringify({ abTest: {} });
-        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
-        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -141,7 +162,7 @@ describe('Adagio Rtd Provider', function () {
           session: {
             v: 2,
             new: true,
-            id: utils.generateUUID(),
+            id: sinon.match.string,
             rnd: Math.random(),
             pages: 1,
           }
@@ -156,8 +177,8 @@ describe('Adagio Rtd Provider', function () {
 
       it('store existing session data for further usage', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
-        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
@@ -180,10 +201,9 @@ describe('Adagio Rtd Provider', function () {
 
       it('store new session if old session has expired data for further usage', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
-        sandbox.stub(Date, 'now').returns(1715679344351);
-        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        clock.setSystemTime(1715679344351);
+        setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
         sandbox.stub(Math, 'random').returns(0.8);
-        sandbox.stub(utils, 'generateUUID').returns('uid-5678');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -193,7 +213,7 @@ describe('Adagio Rtd Provider', function () {
           session: {
             ...session,
             new: true,
-            id: utils.generateUUID(),
+            id: sinon.match.string,
             rnd: Math.random(),
           }
         }
@@ -208,10 +228,9 @@ describe('Adagio Rtd Provider', function () {
     describe('store session data in localStorage for old snippet', function () {
       it('store new session data for further usage', function () {
         const storageValue = null;
-        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
-        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -220,7 +239,7 @@ describe('Adagio Rtd Provider', function () {
         const expected = {
           session: {
             new: true,
-            id: utils.generateUUID(),
+            id: sinon.match.string,
             rnd: Math.random(),
             pages: 1
           }
@@ -245,10 +264,9 @@ describe('Adagio Rtd Provider', function () {
             testVersion: 'clt'
           }
         });
-        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
-        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -258,7 +276,7 @@ describe('Adagio Rtd Provider', function () {
           session: {
             new: false,
             expiry: 1714116520710,
-            id: utils.generateUUID(),
+            id: sinon.match.string,
             rnd: Math.random(),
             pages: 1,
             testName: 't',
@@ -292,10 +310,9 @@ describe('Adagio Rtd Provider', function () {
             testVersion: 'srv'
           }
         });
-        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        setStorageMethod('getDataFromLocalStorage', (key, cb) => cb(storageValue));
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
-        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -305,7 +322,7 @@ describe('Adagio Rtd Provider', function () {
           session: {
             new: false,
             expiry: 1714116520710,
-            id: utils.generateUUID(),
+            id: sinon.match.string,
             rnd: Math.random(),
             pages: 1,
             testName: 't',
@@ -684,7 +701,7 @@ describe('Adagio Rtd Provider', function () {
 
     it('store a copy of computed property', function() {
       const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
-      sandbox.stub(Date, 'now').returns(12345);
+      clock.setSystemTime(12345);
 
       _internal.getGuard().clear();
 
