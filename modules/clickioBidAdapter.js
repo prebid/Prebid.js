@@ -4,7 +4,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'clickio';
-const IAB_GVL_ID = 1500;
 
 export const converter = ortbConverter({
   context: {
@@ -20,7 +19,6 @@ export const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: IAB_GVL_ID,
   supportedMediaTypes: [BANNER],
   buildRequests(bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest })
@@ -35,7 +33,28 @@ export const spec = {
   },
   interpretResponse(response, request) {
     const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
-    return bids;
+    const expByImpid = {};
+
+    (response?.body?.seatbid || []).forEach(seatBid => {
+      (seatBid.bid || []).forEach(serverBid => {
+        if (!serverBid || !serverBid.impid || !Number.isFinite(serverBid.exp) || serverBid.exp <= 0) {
+          return;
+        }
+        const current = expByImpid[serverBid.impid];
+        expByImpid[serverBid.impid] = current == null ? serverBid.exp : Math.min(current, serverBid.exp);
+      });
+    });
+
+    return bids.map((bid) => {
+      const exp = expByImpid[bid.requestId];
+      if (Number.isFinite(exp) && exp > 0) {
+        return {
+          ...bid,
+          ttl: exp
+        };
+      }
+      return bid;
+    });
   },
   getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
     const { gppString = '', applicableSections = [] } = gppConsent;
