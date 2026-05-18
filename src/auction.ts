@@ -32,7 +32,7 @@ import { getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js'
 import type { Bid, BidResponse } from "./bidfactory.ts";
 import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
 import type { TargetingMap } from "./targeting.ts";
-import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
+import type { AdUnit, AdUnitDefinition, SafeRendererConfig } from "./adUnits.ts";
 import type { MediaType } from "./mediaTypes.ts";
 import type { VideoContext } from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
@@ -770,15 +770,17 @@ function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.in
 
   // a publisher-defined renderer can be used to render bids
   const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;
+  const bidSafeRenderer = index.getBidRequest(bid)?.safeRenderer || adUnit.safeRenderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
   const mediaTypes = index.getMediaTypes(bid);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
-  var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+  const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+  const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
 
-  var renderer = null;
+  let renderer = null;
 
   // the renderer for the mediaType takes precendence
   if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
@@ -787,10 +789,28 @@ function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.in
     renderer = bidRenderer;
   }
 
-  if (renderer) {
-    // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-    bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
-    bid.renderer.setRender(renderer.render);
+  let safeRenderer: SafeRendererConfig | undefined = null;
+
+  if (mediaTypeSafeRenderer && mediaTypeSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
+    safeRenderer = mediaTypeSafeRenderer;
+  } else if (bidSafeRenderer && bidSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
+    safeRenderer = bidSafeRenderer;
+  }
+
+  if (safeRenderer != null) {
+    bid.safeRenderer = safeRenderer;
+  }
+
+  const allowTopWindowRenderers = config.getConfig('allowTopWindowRenderers') ?? true;
+
+  if (allowTopWindowRenderers) {
+    if (renderer) {
+      // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer.setRender(renderer.render);
+    }
+  } else {
+    bid.renderer = null;
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'

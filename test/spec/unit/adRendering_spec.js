@@ -133,6 +133,18 @@ describe('adRendering', () => {
         });
       });
 
+      describe('when the ad has a safe renderer URL', () => {
+        it('does not emit AD_RENDER_SUCCEDED immediately', () => {
+          getRenderingDataStub.returns({ safeRenderer: { url: 'mock-url-safe-renderer' } });
+          let bidWithSafeRenderer = {
+            adId: 'mock-ad-id',
+            safeRenderer: { url: 'mock-url-safe-renderer' }
+          }
+          doRender({ renderFn, bidResponse: bidWithSafeRenderer })
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
+        });
+      });
+
       if (FEATURES.VIDEO) {
         it('should emit AD_RENDER_FAILED on video bids', () => {
           bidResponse.mediaType = VIDEO;
