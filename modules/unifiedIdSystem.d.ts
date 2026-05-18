@@ -1,8 +1,13 @@
+import type { Ext } from '../src/types/ortb/common';
+
 export type UnifiedIdSystemModuleName = 'unifiedId';
 
-export interface UnifiedId {
+export interface UnifiedIdObject {
   id: string;
+  ext?: Ext;
 }
+
+export type UnifiedId = string | UnifiedIdObject;
 
 export interface UnifiedIdConfig {
   partner?: string;
