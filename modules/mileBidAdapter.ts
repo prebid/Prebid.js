@@ -32,8 +32,8 @@ declare module '../src/adUnits' {
   }
 }
 
-export let siteIdTracker: string | undefined;
-export let publisherIdTracker: string | undefined;
+export let siteIdTracker : string | undefined;
+export let publisherIdTracker : string | undefined;
 
 export function getLowestFloorPrice(bid) {
   let floorPrice: number;
@@ -266,7 +266,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         return;
       }
 
-      const adserverTargeting: {
+      const adserverTargeting : {
         upstream_partner?: string;
       } = {};
 
