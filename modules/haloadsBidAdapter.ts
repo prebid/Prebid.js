@@ -25,12 +25,10 @@ declare module '../src/adUnits' {
 declare module '../src/bidfactory' {
   interface BannerBidProperties {
     pbsWurl?: string;
-    nurl?: string;
     ext?: Record<string, unknown>;
   }
   interface VideoBidProperties {
     pbsWurl?: string;
-    nurl?: string;
     ext?: Record<string, unknown>;
   }
   interface NativeBidProperties {
@@ -146,9 +144,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   onBidWon: function (bid) {
     if (bid.pbsWurl) {
       triggerPixel(bid.pbsWurl);
-    }
-    if (bid.nurl) {
-      triggerPixel(bid.nurl);
     }
   },
 
