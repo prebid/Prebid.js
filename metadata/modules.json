@@ -3594,6 +3594,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "ntvagents",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "nuba",
       "aliasOf": null,
       "gvlid": null,
@@ -5582,6 +5589,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "mile",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "mobianBrandSafety",
       "gvlid": 1348,
       "disclosureURL": null
@@ -5734,6 +5747,13 @@
       "componentType": "userId",
       "componentName": "33acrossId",
       "gvlid": 58,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "abtshieldId",
+      "gvlid": 825,
       "disclosureURL": null,
       "aliasOf": null
     },

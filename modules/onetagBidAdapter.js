@@ -301,7 +301,7 @@ function requestsToBids(bidRequests) {
     const videoObj = {};
     setGeneralInfo.call(videoObj, bidRequest);
     // Pass parameters
-    // Context: instream - outstream - adpod
+    // Context: instream - outstream
     videoObj['context'] = bidRequest.mediaTypes.video.context;
     // Sizes
     videoObj['playerSize'] = parseVideoSize(bidRequest);

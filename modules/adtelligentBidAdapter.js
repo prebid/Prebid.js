@@ -49,7 +49,6 @@ export const spec = {
   aliases: [
     'streamkey',
     'janet',
-    { code: 'selectmedia', gvlid: 775 },
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
     'indicue',
