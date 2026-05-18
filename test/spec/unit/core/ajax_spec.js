@@ -168,6 +168,41 @@ describe('toFetchRequest', () => {
           'content-type': 'text/plain'
         }
       }
+    },
+    'POST with keepalive and small payload': {
+      url: EXAMPLE_URL,
+      data: 'x'.repeat(1024),
+      options: {
+        keepalive: true
+      },
+      expect: {
+        request: {
+          url: EXAMPLE_URL + '/',
+          method: 'POST',
+          keepalive: true
+        },
+        text: 'x'.repeat(1024),
+        headers: {
+          'content-type': 'text/plain'
+        }
+      }
+    },
+    'POST with keepalive and large payload': {
+      url: EXAMPLE_URL,
+      data: 'x'.repeat(65537),
+      options: {
+        keepalive: true
+      },
+      expect: {
+        request: {
+          url: EXAMPLE_URL + '/',
+          method: 'POST'
+        },
+        text: 'x'.repeat(65537),
+        headers: {
+          'content-type': 'text/plain'
+        }
+      }
     }
   }).forEach(([t, { url, data, options, expect: { request, text, headers } }]) => {
     it(`can build ${t}`, () => {
@@ -212,6 +247,14 @@ describe('toFetchRequest', () => {
       })
     })
   })
+
+  it('logs a warning when keepalive payload exceeds the max size', () => {
+    const logWarnStub = sinon.stub(utils, 'logWarn');
+    toFetchRequest(EXAMPLE_URL, 'x'.repeat(65537), { keepalive: true });
+    sinon.assert.calledOnce(logWarnStub);
+    sinon.assert.calledWithMatch(logWarnStub, 'Ignoring keepalive: request body exceeds');
+    logWarnStub.restore();
+  });
 });
 
 describe('attachCallbacks', () => {

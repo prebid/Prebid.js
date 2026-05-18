@@ -3,7 +3,7 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
 import { hook } from './hook.js';
-import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
+import { buildUrl, hasDeviceAccess, logError, logWarn, parseUrl } from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -27,6 +27,7 @@ export const dep = {
 const GET = 'GET';
 const POST = 'POST';
 const CTYPE = 'Content-Type';
+const KEEPALIVE_MAX_BODY_SIZE = 64 * 1024;
 export interface AjaxOptions {
   /**
    * HTTP method.
@@ -102,9 +103,25 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
     }
   }
   if (options.keepalive) {
-    rqOpts.keepalive = true;
+    if (isKeepalivePayloadTooLarge(rqOpts.body)) {
+      logWarn(`Ignoring keepalive: request body exceeds ${KEEPALIVE_MAX_BODY_SIZE} bytes`);
+    } else {
+      rqOpts.keepalive = true;
+    }
   }
   return dep.makeRequest(url, rqOpts);
+}
+
+function isKeepalivePayloadTooLarge(body) {
+  if (body == null) return false;
+  if (typeof body === 'string') {
+    return body.length > KEEPALIVE_MAX_BODY_SIZE;
+  }
+  try {
+    return JSON.stringify(body)?.length > KEEPALIVE_MAX_BODY_SIZE;
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
