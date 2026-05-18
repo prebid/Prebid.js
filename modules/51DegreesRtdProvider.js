@@ -400,10 +400,10 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
 
   const uids = [];
   if (fodid.idproblic) {
-    uids.push(fodid.idproblic);
+    uids.push({ id: fodid.idproblic, atype: 1 });
   }
   if (fodid.idprobglobal) {
-    uids.push(fodid.idprobglobal);
+    uids.push({ id: fodid.idprobglobal, atype: 1 });
   }
   if (uids.length === 0) {
     return {};

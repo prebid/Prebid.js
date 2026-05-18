@@ -414,7 +414,7 @@ describe('51DegreesRtdProvider', function() {
       };
       const result = convert51DegreesDataToOrtb2(data51, { tdlUrl: 'https://tdl.example/x' });
       expect(result.user.eids).to.have.lengthOf(1);
-      expect(result.user.eids[0].uids).to.deep.equal(['lic-uid', 'global-uid']);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
       expect(result.user.eids[0].ext.tdl).to.deep.equal(['https://tdl.example/x']);
     });
 
@@ -681,7 +681,7 @@ describe('51DegreesRtdProvider', function() {
             inserter: '51degrees.com',
             source: '51d.es',
             mm: 5,
-            uids: ['lic-uid-base64', 'global-uid-base64'],
+            uids: [{ id: 'lic-uid-base64', atype: 1 }, { id: 'global-uid-base64', atype: 1 }],
             ext: { tdl: [TDL_URL] },
           }],
         },
@@ -691,17 +691,17 @@ describe('51DegreesRtdProvider', function() {
     it('omits ext.tdl when tdlUrl is falsy', function() {
       const result = convert51DegreesFoDiDToOrtb2(fullFodid, undefined);
       expect(result.user.eids[0].ext).to.be.undefined;
-      expect(result.user.eids[0].uids).to.deep.equal(['lic-uid-base64', 'global-uid-base64']);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-uid-base64', atype: 1 }, { id: 'global-uid-base64', atype: 1 }]);
     });
 
     it('emits entry with only idproblic when idprobglobal is absent', function() {
       const result = convert51DegreesFoDiDToOrtb2({ idproblic: 'lic-only' }, TDL_URL);
-      expect(result.user.eids[0].uids).to.deep.equal(['lic-only']);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-only', atype: 1 }]);
     });
 
     it('emits entry with only idprobglobal when idproblic is absent', function() {
       const result = convert51DegreesFoDiDToOrtb2({ idprobglobal: 'global-only' }, TDL_URL);
-      expect(result.user.eids[0].uids).to.deep.equal(['global-only']);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'global-only', atype: 1 }]);
     });
 
     it('uses constant inserter, source, and mm', function() {
@@ -904,7 +904,7 @@ describe('51DegreesRtdProvider', function() {
         expect(reqBidsConfigObj.ortb2Fragments.global.device.geo.country).to.equal('USA');
         expect(reqBidsConfigObj.ortb2Fragments.global.user.eids).to.have.lengthOf(1);
         expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].uids)
-          .to.deep.equal(['lic-uid', 'global-uid']);
+          .to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
         expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].ext.tdl)
           .to.deep.equal(['https://tdl.example/x']);
       } finally {
