@@ -200,6 +200,8 @@ export const converter = ortbConverter({
 
     imp.secure = 1;
     imp.tagid = bidRequest.adUnitCode;
+    imp.displaymanager ||= 'Prebid.js';
+    imp.displaymanagerver ||= '$prebid.version$';
 
     if (!deepAccess(bidRequest, 'ortb2Imp.rwdd') && deepAccess(bidRequest, 'mediaTypes.video.ext.rewarded')) {
       mergeDeep(imp, { rwdd: bidRequest.mediaTypes.video.ext.rewarded });

@@ -1,6 +1,5 @@
 import { assert } from 'chai';
-import { spec } from 'modules/tappxBidAdapter.js';
-import { _checkParamDataType, _getHostInfo, _extractPageUrl } from '../../../modules/tappxBidAdapter.js';
+import { spec, _checkParamDataType, _getHostInfo, _extractPageUrl } from 'modules/tappxBidAdapter.js';
 
 const c_BIDREQUEST = {
   data: {

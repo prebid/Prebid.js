@@ -51,7 +51,6 @@ describe('adWMG Analytics', function () {
     'netRevenue': true,
     'ttl': 302,
     'auctionId': '914bedad-b145-4e46-ba58-51365faea6cb',
-    'statusMessage': 'Bid available',
     'responseTimestamp': 1530628534437,
     'requestTimestamp': 1530628534219,
     'bidder': 'bidderB',

@@ -41,7 +41,6 @@ export interface MediaTypes {
 export const NATIVE = 'native';
 export const VIDEO = 'video';
 export const BANNER = 'banner';
-export const ADPOD = 'adpod';
 export const AUDIO = 'audio';
 
 export const ALL_MEDIATYPES: MediaType[] = [NATIVE, VIDEO, BANNER, AUDIO];

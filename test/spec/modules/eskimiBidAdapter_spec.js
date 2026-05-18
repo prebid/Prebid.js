@@ -208,7 +208,7 @@ describe('Eskimi bid adapter', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('should reutrn false if player size is not set', () => {
+      it('should return false if player size is not set', () => {
         const bid = utils.deepClone(VIDEO_BID);
         delete bid.mediaTypes.video.playerSize;
 
