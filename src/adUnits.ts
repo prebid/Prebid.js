@@ -9,9 +9,8 @@ import type { DeepPartial } from "./types/objects.d.ts";
  */
 export interface SafeRendererConfig {
   url: string;
-  config?: any;
-  getConfig?(bidResponse: Bid): any;
-  renderingData?: any;
+  config?: any; // set by the bidder adapter
+  getConfig?(bidResponse: Bid): any; // set by the publisher
 }
 
 export interface RendererConfig {

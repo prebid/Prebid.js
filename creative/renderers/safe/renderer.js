@@ -1,10 +1,13 @@
 /**
  * SafeRenderer (creative): builds an empty same-origin iframe, injects
- * `<script src="bid.safeRenderer.url">`, then calls `iframe.contentWindow.pbRenderInFrame(bid)`
+ * `<script src="safeRenderer.url">`, then calls `iframe.contentWindow.pbRenderInFrame(payload)`
  * after that script loads.
  *
- * The remote script must assign `window.pbRenderInFrame = function (bid) { ... }`.
- * `bid` is the full rendering payload from the page (spread bid response + macro-replaced `ad` / `adUrl`, plus `adId`), same shape as passed to `render()`.
+ * The remote script must assign `window.pbRenderInFrame` as a function.
+ * `payload` is `{ config: safeRenderer.config, ...renderingData }`: `renderingData` carries bid-oriented fields passed through the creative pipeline
+ * that may matter to an external renderer—for example `ad`, `adId`, `adUrl`, `vastXml`, `vastUrl`, `mediaType`, sizes, `instl`.
+ * `payload.config` mirrors `safeRenderer.config` from that payload; before the creative runs, Core may populate it from a static
+ * `safeRenderer.config` (e.g. set on the bid by the bidder adapter) or by calling the publisher’s `safeRenderer.getConfig(bidResponse)` once at render preparation.
  *
  */
 export function render(data, { mkFrame }, win) {
