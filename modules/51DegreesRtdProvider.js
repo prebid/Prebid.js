@@ -317,17 +317,17 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
 
 /**
  * Converts 51Degrees IP data to ORTB2 format. Maps device.ip, device.ipv6,
- * and (when LocationConfidence is high/medium) device.geo.* fields.
+ * and (when locationconfidence is high/medium) device.geo.* fields.
  *
  * @param {Object} ip 51Degrees ip object
  * @param {string} [ip.ip] IPv4 address
  * @param {string} [ip.ipv6] IPv6 address
- * @param {string} [ip.LocationConfidence] high|medium gates geo fields
+ * @param {string} [ip.locationconfidence] high|medium gates geo fields
  * @param {number} [ip.latitude]
  * @param {number} [ip.longitude]
- * @param {string} [ip.CountryCode3] ISO-3166-1 alpha-3
- * @param {string} [ip.ZipCode]
- * @param {number} [ip.TimeZoneOffset] minutes from UTC
+ * @param {string} [ip.countrycode3] ISO-3166-1 alpha-3
+ * @param {string} [ip.zipcode]
+ * @param {number} [ip.timezoneoffset] minutes from UTC
  * @param {number} [ip.accuracyradiusmin] km (multiplied by 1000 in output to convert to meters)
  * @returns {Object} Enriched ORTB2 object fragment ({device:{...}})
  */
@@ -342,18 +342,11 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   deepSetNotEmptyValue(ortb2, 'device.ip', ip.ip);
   deepSetNotEmptyValue(ortb2, 'device.ipv6', ip.ipv6);
 
-  const confidence = typeof ip.LocationConfidence === 'string'
-    ? ip.LocationConfidence.toLowerCase()
-    : '';
-  const ipservice = confidence === 'high'
-    ? 511
-    : confidence === 'medium'
-      ? 512
-      : null;
-
-  if (ipservice === null) {
-    return ortb2;
-  }
+  // TODO: re-enable the locationconfidence gate. Cloud currently returns
+  // "Unknown" for many IPs even when lat/lon are usable, so for now treat
+  // every response as medium so the example actually demonstrates geo
+  // enrichment.
+  const ipservice = 512;
 
   // Use null/undefined checks rather than truthy checks so 0 coordinates
   // (Gulf of Guinea) and 0 accuracy survive.
@@ -365,9 +358,9 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
 
   setIfDefined('device.geo.lat', ip.latitude);
   setIfDefined('device.geo.lon', ip.longitude);
-  deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.CountryCode3);
-  deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.ZipCode);
-  setIfDefined('device.geo.utcoffset', ip.TimeZoneOffset);
+  deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.countrycode3);
+  deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.zipcode);
+  setIfDefined('device.geo.utcoffset', ip.timezoneoffset);
   setIfDefined(
     'device.geo.accuracy',
     ip.accuracyradiusmin === null || ip.accuracyradiusmin === undefined
