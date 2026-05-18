@@ -9,7 +9,7 @@ declare module './userId/spec' {
   }
 
   interface ProvidersToId {
-    ftrackId: 'ftrackId';
+    ftrack: 'ftrackId';
   }
 
   interface ProviderParams {
