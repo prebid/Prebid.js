@@ -1,4 +1,4 @@
-export type Id5IdSystemModuleName = 'id5';
+export type Id5IdSystemModuleName = 'id5Id';
 
 export interface Id5AbTestingConfig {
   enabled?: boolean;
@@ -19,7 +19,7 @@ export interface Id5SubmoduleParams {
 
 declare module './userId/spec' {
   interface UserId {
-    id5Id: {
+    id5id: {
       uid?: string;
       ext?: Record<string, unknown>;
     };
@@ -30,7 +30,7 @@ declare module './userId/spec' {
   }
 
   interface ProviderParams {
-    id5: Id5SubmoduleParams;
+    id5Id: Id5SubmoduleParams;
   }
 }
 
