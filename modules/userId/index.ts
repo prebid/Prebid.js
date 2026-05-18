@@ -62,6 +62,9 @@ import {
 } from '../../src/activities/params.js';
 import { beforeInitAuction } from '../../src/auction.js';
 
+// export so that consumers can `import {type UserIdConfig} from 'prebid.js/modules/userId'`
+export { type UserIdConfig } from './spec.ts';
+
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
 const LOCAL_STORAGE = STORAGE_TYPE_LOCALSTORAGE;
