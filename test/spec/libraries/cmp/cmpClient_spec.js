@@ -1,4 +1,4 @@
-import { cmpClient, MODE_CALLBACK, MODE_RETURN } from '../../../../libraries/cmp/cmpClient.js';
+import { cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp, CMP_POLL_INTERVAL } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
   function mockWindow(props = {}) {
@@ -296,6 +296,37 @@ describe('cmpClient', () => {
             sinon.assert.calledOnce(callback);
           })
         });
+      });
+    });
+  });
+
+  describe('pollForCmp', () => {
+    const TEST_API = '__pollTestCmp';
+
+    afterEach(() => {
+      delete window[TEST_API];
+    });
+
+    it('should resolve with null when deadline has already passed', () => {
+      return pollForCmp({ apiName: TEST_API }, Date.now() - 1)
+        .then(cmp => { expect(cmp).to.be.null; });
+    });
+
+    it('should resolve with a cmp when the CMP is already present', () => {
+      window[TEST_API] = sinon.stub();
+      return pollForCmp({ apiName: TEST_API }, Date.now() + 1000)
+        .then(cmp => {
+          expect(cmp).to.exist;
+          expect(cmp.isDirect).to.be.true;
+        });
+    });
+
+    it('should find CMP when it appears between polls', () => {
+      const promise = pollForCmp({ apiName: TEST_API }, Date.now() + CMP_POLL_INTERVAL * 5);
+      setTimeout(() => { window[TEST_API] = sinon.stub(); }, Math.round(CMP_POLL_INTERVAL / 2));
+      return promise.then(cmp => {
+        expect(cmp).to.exist;
+        expect(cmp.isDirect).to.be.true;
       });
     });
   });

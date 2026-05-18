@@ -8,7 +8,7 @@ import { deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn } from '.
 import { config } from '../src/config.js';
 import { gppDataHandler } from '../src/adapterManager.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, MODE_CALLBACK } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, MODE_CALLBACK, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import { PbPromise, defer } from '../src/utils/promise.js';
 import { type CMConfig, configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
@@ -191,7 +191,23 @@ export class GPPClient {
 }
 
 function lookupIabConsent() {
-  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()))
+  return new PbPromise<void>((resolve, reject) => {
+    try {
+      resolve(GPPClient.get().refresh());
+    } catch (e) {
+      if (!(e instanceof GPPError)) { reject(e); return; }
+      const timeout = config.getConfig('consentManagement.gpp.timeout') ?? 10000;
+      pollForCmp(
+        { apiName: '__gpp', apiArgs: ['command', 'callback', 'parameter'], mode: MODE_CALLBACK },
+        Date.now() + timeout
+      ).then((cmp: any) => {
+        if (!cmp) { resolve(); return; }
+        try {
+          resolve(GPPClient.get(() => cmp).refresh());
+        } catch (err) { reject(err); }
+      });
+    }
+  });
 }
 
 // add new CMPs here, with their dedicated lookup function
