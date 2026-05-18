@@ -11,7 +11,7 @@ declare module './userId/spec' {
 
   interface ProviderParams {
     lotamePanoramaId: {
-      clientId: number;
+      clientId?: number | string;
     }
   }
 }

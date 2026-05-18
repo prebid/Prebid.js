@@ -11,7 +11,7 @@ declare module './userId/spec' {
 
   interface ProviderParams {
     teadsId: {
-      pubId: number;
+      pubId: number | string;
     }
   }
 }

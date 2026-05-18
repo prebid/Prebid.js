@@ -6,12 +6,13 @@ declare module './userId/spec' {
   }
 
   interface ProvidersToId {
-    idl_env: 'idl_env';
+    identityLink: 'idl_env';
   }
 
   interface ProviderParams {
     identityLink: {
       pid: string;
+      notUse3P?: boolean;
     }
   }
 }
