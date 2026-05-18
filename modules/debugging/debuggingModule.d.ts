@@ -39,9 +39,10 @@ export type InterceptRule = {
 
   type ReplaceRule =
     /**
-     * The replace rule can be provided as a function that takes the bid request as its only argument and returns an object with the desired response properties
+     * The replace rule can be provided as a function that takes the bid request as its only argument and returns an object with the desired response properties.
+     * The function can return `null` to indicate that there is no bid.
      */
-    | ((bidRequest: BidRequest<BidderCode | null>) => Partial<Bid>)
+    | ((bidRequest: BidRequest<BidderCode | null>) => Partial<Bid> | null)
     /**
      * Alternatively, the rule can be expressed as an `object`, and its key-value pairs will appear in the response as follows:
      * - if `value` is a function, then `bidResponse[key]` will be set to `value(bidRequest)`;
@@ -49,7 +50,11 @@ export type InterceptRule = {
      */
     | {
       [K in keyof Bid]?: Bid[K] | ((request: BidRequest<BidderCode | null>) => Bid[K]);
-    };
+    }
+    /**
+     * Indicates no bid.
+     */
+    | null;
 
   type RuleOptions = {
     /**
