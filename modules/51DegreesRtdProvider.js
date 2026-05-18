@@ -511,10 +511,15 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
         // Convert and merge device data in the callback
         fod.complete((data) => {
           logMessage('51Degrees raw data: ', data);
-          mergeDeep(
-            reqBidsConfigObj.ortb2Fragments.global,
-            convert51DegreesDataToOrtb2(data, { tdlUrl }),
-          );
+          const global = reqBidsConfigObj.ortb2Fragments.global;
+          const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
+          // Don't clobber a publisher-observed device.ip / device.ipv6 with
+          // our IP-derived value. Publisher signal wins.
+          if (enrichment.device) {
+            if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
+            if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+          }
+          mergeDeep(global, enrichment);
           logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
           callback();
         });

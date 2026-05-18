@@ -911,6 +911,25 @@ describe('51DegreesRtdProvider', function() {
         window.fod = originalFod;
       }
     });
+
+    it('does not overwrite a publisher-set device.ip / device.ipv6', async function() {
+      const originalFod = window.fod;
+      window.fod = {
+        complete: (cb) => cb({ ip: { ip: '5.6.7.8', ipv6: 'fe80::51d', locationconfidence: 'high' } }),
+      };
+      reqBidsConfigObj.ortb2Fragments.global.device = { ip: '10.0.0.1', ipv6: 'fe80::pub' };
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('10.0.0.1');
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ipv6).to.equal('fe80::pub');
+      } finally {
+        window.fod = originalFod;
+      }
+    });
   });
 
   describe('init', function() {
