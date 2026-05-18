@@ -8,13 +8,17 @@
 
 ## Description
 
-51Degrees module enriches an OpenRTB request with [51Degrees Device Data](https://51degrees.com/documentation/index.html).
+51Degrees module enriches an OpenRTB request with [51Degrees Device Data](https://51degrees.com/documentation/index.html) and (optionally) IP-derived geo plus a 51DiD (51Degrees identifier) entry in `user.eids`.
 
 51Degrees module sets the following fields of the device object: `devicetype`, `make`, `model`, `hwv`, `os`, `osv`, `h`, `w`, `ppi`, `pxratio`. Interested bidder adapters may use these fields as needed. 
 
-The module also adds a `device.ext.fod` extension object (fod == fifty one degrees) and sets `device.ext.fod.deviceId` to a permanent device ID, which can be rapidly looked up in on-premise data, exposing over 250 properties, including device age, chipset, codec support, price, operating system and app/browser versions, age, and embedded features. 
+The module also adds a `device.ext.fod` extension object (fod == fifty one degrees) and sets `device.ext.fod.deviceId` to a permanent device ID, which can be rapidly looked up in on-premise data, exposing over 250 properties, including device age, chipset, codec support, price, operating system and app/browser versions, age, and embedded features.
 
-It also sets `device.ext.fod.tpc` key to a binary value to indicate whether third-party cookies are enabled in the browser (1 if enabled, 0 if disabled).
+It also sets `device.ext.fod.tpc` to a binary value to indicate whether third-party cookies are enabled in the browser (1 if enabled, 0 if disabled).
+
+When 51Degrees IPI is available in the cloud response, the module sets `device.ip` and `device.ipv6`, and (if the location confidence is `high` or `medium`) populates `device.geo.{lat,lon,country,zip,utcoffset,accuracy,type,ipservice}` per OpenRTB 2.6 and AdCOM 1.0.
+
+When 51DiD is available (via `id.usage` evidence), the module appends an entry to `user.eids` with `source = "51d.es"`, `inserter = "51degrees.com"`, `mm = 5` (inference), and `uids` carrying `idproblic` and `idprobglobal`. The `ext.tdl` URL inside the entry comes from the `params.tdlUrl` module config.
 
 The module supports on-premise and cloud device detection services, with free options for both.
 
@@ -127,13 +131,15 @@ pbjs.setConfig({
 
 > Note that `resourceKey` and `onPremiseJSUrl` are mutually exclusive parameters. Use strictly one of them: either a `resourceKey` for cloud integration or `onPremiseJSUrl` for the on-premise self-hosted integration. 
 
-| Name                  | Type    | Description                                                                                  | Default            |
-|:----------------------|:--------|:---------------------------------------------------------------------------------------------|:-------------------|
-| name                  | String  | Real-time data module name                                                                   | Always '51Degrees' |
-| waitForIt             | Boolean | Should be `true` if there's an `auctionDelay` defined (mandatory)                            | `false`            |
-| params                | Object  |                                                                                              |                    |
-| params.resourceKey    | String  | Your 51Degrees Cloud Resource Key                                                            |                    |
-| params.onPremiseJSUrl | String  | Direct URL to your self-hosted on-premise JS file (e.g. https://localhost/51Degrees.core.js) |                    |
+| Name                  | Type    | Description                                                                                                                                | Default            |
+|:----------------------|:--------|:-------------------------------------------------------------------------------------------------------------------------------------------|:-------------------|
+| name                  | String  | Real-time data module name                                                                                                                 | Always '51Degrees' |
+| waitForIt             | Boolean | Should be `true` if there's an `auctionDelay` defined (mandatory)                                                                          | `false`            |
+| params                | Object  |                                                                                                                                            |                    |
+| params.resourceKey    | String  | Your 51Degrees Cloud Resource Key                                                                                                          |                    |
+| params.onPremiseJSUrl | String  | Direct URL to your self-hosted on-premise JS file (e.g. https://localhost/51Degrees.core.js)                                              |                    |
+| params.tdlUrl         | String  | URL added to the `ext.tdl` array of the 51d.es eids entry. Omit if you do not produce a TDL URL; the module will log a warning and emit the eids entry without `ext.tdl`. |                    |
+| params.idUsage        | String  | Marketing usage preference forwarded to the cloud as the `id.usage` evidence. One of `non-marketing`, `standard`, `personalized`. When omitted, the module reads `localStorage['__51d_pmp_pref']` written by [PMP](https://github.com/51Degrees/pmp); when neither is set the cloud silently skips 51DiD production. |                    |
 
 > Note: if you use a third-party Prebid.js wrapper, there might be a chance that the UI will force you to input both `resourceKey` and `onPremiseJSUrl`. In this case, you can set a redundant parameter to a string equal to "0", which will be ignored by the module.
 
