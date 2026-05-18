@@ -1,7 +1,9 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS } from 'src/constants.js';
-import pgamdirectAnalytics, { normalise } from 'modules/pgamdirectAnalyticsAdapter.js';
+import * as ajaxLib from 'src/ajax.js';
+import pgamdirectAnalytics, { normalise, maybePostAuctionContext } from 'modules/pgamdirectAnalyticsAdapter.js';
 
 /**
  * Spec for modules/pgamdirectAnalyticsAdapter.ts.
@@ -72,6 +74,7 @@ describe('pgamdirect Analytics Adapter', () => {
         creativeId: 'cr-1',
         mediaType: 'banner',
         size: '300x250',
+        adId: 'pbid-1',
         // noise we should ignore:
         userIdAsEids: [{ source: 'example.com', uids: [{ id: 'leaky' }] }],
         ortb2: { user: { yob: 1990 } },
@@ -81,6 +84,11 @@ describe('pgamdirect Analytics Adapter', () => {
       expect(n.bidder).to.equal('pgamdirect');
       expect(n.cpm).to.equal(1.23);
       expect(n.size).to.equal('300x250');
+      // ad_id is the join key to AD_RENDER_*. Emitted on BID_WON so
+      // backend discrepancy analysis can reconcile by a single
+      // per-bid identifier on refresh-heavy pages (flagged by Codex
+      // review on #14796).
+      expect(n.ad_id).to.equal('pbid-1');
       // Noise fields are NOT forwarded.
       expect(n).to.not.have.property('userIdAsEids');
       expect(n).to.not.have.property('ortb2');
@@ -90,6 +98,7 @@ describe('pgamdirect Analytics Adapter', () => {
       const n = normalise(EVENTS.BID_WON, {});
       expect(n.t).to.equal(EVENTS.BID_WON);
       expect(n.bidder).to.be.undefined;
+      expect(n.ad_id).to.be.undefined;
     });
   });
 
@@ -190,6 +199,125 @@ describe('pgamdirect Analytics Adapter', () => {
       const n = normalise('someOtherEvent', { auctionId: 'x' });
       expect(n.t).to.equal('someOtherEvent');
       expect(n.auction_id).to.equal('x');
+    });
+  });
+
+  // ---------- maybePostAuctionContext (competitor-high ingestion) -----------
+
+  describe('maybePostAuctionContext', () => {
+    let ajaxStub;
+    beforeEach(() => {
+      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+    });
+    afterEach(() => {
+      ajaxStub.restore();
+    });
+
+    // AUCTION_END payload: 1 pgam winner + 2 competitors on the same
+    // adUnit. ext.pgam.cell is set server-side on winning pgam bids.
+    function auctionWithCompetitors() {
+      return {
+        bidsReceived: [
+          {
+            bidderCode: 'pgamdirect',
+            adUnitCode: 'div-1',
+            cpm: 5.0,
+            ext: {
+              pgam: {
+                cell: {
+                  publisher_id: 42,
+                  placement_ref: 'slot-a',
+                  geo_country: 'US',
+                  device_type: 2,
+                  attention_bucket: 'high',
+                },
+              },
+            },
+          },
+          { bidderCode: 'magnite', adUnitCode: 'div-1', cpm: 3.2 },
+          { bidderCode: 'pubmatic', adUnitCode: 'div-1', cpm: 2.8 },
+        ],
+      };
+    }
+
+    it('POSTs the highest non-pgam cpm as competitor_high', () => {
+      maybePostAuctionContext(auctionWithCompetitors());
+      expect(ajaxStub.calledOnce).to.equal(true);
+      const [url, , body, opts] = ajaxStub.firstCall.args;
+      expect(url).to.include('/rtb/v1/auction-context');
+      expect(opts).to.include({ keepalive: true });
+      const payload = JSON.parse(body);
+      expect(payload.publisher_id).to.equal(42);
+      expect(payload.placement_ref).to.equal('slot-a');
+      expect(payload.attention_bucket).to.equal('high');
+      // Competitor high = max(magnite=3.2, pubmatic=2.8) = 3.2.
+      expect(payload.competitor_high_cpm_usd).to.equal(3.2);
+    });
+
+    it('skips when we have no winning pgam bid on the adUnit', () => {
+      maybePostAuctionContext({
+        bidsReceived: [
+          { bidderCode: 'magnite', adUnitCode: 'div-1', cpm: 3.0 },
+          { bidderCode: 'pubmatic', adUnitCode: 'div-1', cpm: 2.0 },
+        ],
+      });
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+
+    it('skips when pgam has no competitors (one-bidder auction)', () => {
+      maybePostAuctionContext({
+        bidsReceived: [
+          {
+            bidderCode: 'pgamdirect',
+            adUnitCode: 'div-1',
+            cpm: 5.0,
+            ext: { pgam: { cell: { publisher_id: 42, placement_ref: 'slot', geo_country: 'US', device_type: 2, attention_bucket: 'mid' } } },
+          },
+        ],
+      });
+      // <2 bids shortcuts before we look at ext.pgam.
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+
+    it('skips when bid.ext.pgam.cell is missing', () => {
+      maybePostAuctionContext({
+        bidsReceived: [
+          { bidderCode: 'pgamdirect', adUnitCode: 'div-1', cpm: 5.0 },
+          { bidderCode: 'magnite', adUnitCode: 'div-1', cpm: 3.0 },
+        ],
+      });
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+
+    it('handles multi-adUnit auctions by POSTing each independently', () => {
+      maybePostAuctionContext({
+        bidsReceived: [
+          // Unit 1: pgam wins
+          {
+            bidderCode: 'pgamdirect',
+            adUnitCode: 'u1',
+            cpm: 5.0,
+            ext: { pgam: { cell: { publisher_id: 42, placement_ref: 'p1', geo_country: 'US', device_type: 2, attention_bucket: 'high' } } },
+          },
+          { bidderCode: 'magnite', adUnitCode: 'u1', cpm: 3.0 },
+          // Unit 2: pgam wins too
+          {
+            bidderCode: 'pgamdirect',
+            adUnitCode: 'u2',
+            cpm: 4.0,
+            ext: { pgam: { cell: { publisher_id: 42, placement_ref: 'p2', geo_country: 'US', device_type: 2, attention_bucket: 'low' } } },
+          },
+          { bidderCode: 'pubmatic', adUnitCode: 'u2', cpm: 2.0 },
+        ],
+      });
+      expect(ajaxStub.callCount).to.equal(2);
+    });
+
+    it('tolerates malformed input without throwing', () => {
+      expect(() => maybePostAuctionContext(null)).to.not.throw();
+      expect(() => maybePostAuctionContext(undefined)).to.not.throw();
+      expect(() => maybePostAuctionContext({})).to.not.throw();
+      expect(() => maybePostAuctionContext({ bidsReceived: 'not-array' })).to.not.throw();
     });
   });
 });

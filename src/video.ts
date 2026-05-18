@@ -3,7 +3,7 @@ import { config } from './config.js';
 import { hook } from './hook.js';
 import { auctionManager } from './auctionManager.js';
 import type { VideoBid } from "./bidfactory.ts";
-import { ADPOD, type BaseMediaType } from "./mediaTypes.ts";
+import { type BaseMediaType } from "./mediaTypes.ts";
 import type { ORTBImp } from "./types/ortb/request.d.ts";
 import type { Size } from "./types/common.d.ts";
 import type { AdUnitDefinition } from "./adUnits.ts";
@@ -60,10 +60,10 @@ function hasRenderer(subject: { renderer?: unknown; safeRenderer?: unknown } | n
   return !!(subject?.renderer || subject?.safeRenderer);
 }
 
-export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
+export type VideoContext = typeof INSTREAM | typeof OUTSTREAM;
 
-export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], (typeof ORTB_PARAMS)[number][0]> {
-  context: VideoContext;
+export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['video']>, (typeof ORTB_PARAMS)[number][0]>> {
+  context?: VideoContext;
   playerSize?: Size | Size[];
 }
 

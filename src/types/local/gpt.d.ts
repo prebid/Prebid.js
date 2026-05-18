@@ -3,5 +3,5 @@
 // Using these types from our public API works as intended if the consumer
 // also includes the GPT typedefs, otherwise the ts compiler appears to swap in "any".
 
-// eslint-disable-next-line prebid/validate-imports
+// eslint-disable-next-line prebid/validate-imports, import/no-unresolved
 import 'google-publisher-tag';
