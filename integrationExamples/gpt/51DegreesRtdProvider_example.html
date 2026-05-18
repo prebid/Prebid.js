@@ -212,6 +212,7 @@
             <input type="text" id="rk-input" size="40" placeholder="paste your 51Degrees resource key">
         </label>
         <button type="submit">Apply &amp; reload</button>
+        <button type="button" onclick="localStorage.removeItem('__51d_pmp_pref'); location.reload();">Clear PMP preference &amp; reload</button>
         <small> &mdash; or pass <code>?resourceKey=...</code> in the URL.</small>
     </form>
     <script>
