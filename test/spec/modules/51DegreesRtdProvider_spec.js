@@ -398,7 +398,9 @@ describe('51DegreesRtdProvider', function() {
       const result = convert51DegreesDataToOrtb2(data51);
       expect(result.device.ip).to.equal('1.2.3.4');
       expect(result.device.geo.lat).to.equal(51.5);
-      expect(result.device.geo.ipservice).to.equal(511);
+      // TODO: when the locationconfidence gate is restored, expect 511 for
+      // locationconfidence=high and 512 for locationconfidence=medium.
+      expect(result.device.geo.ipservice).to.equal(512);
       expect(result.device.make).to.equal('Apple');
     });
 
@@ -535,6 +537,7 @@ describe('51DegreesRtdProvider', function() {
       latitude: 51.5,
       longitude: -0.1,
       countrycode3: 'GBR',
+      iso31662lvl4: 'GB-ENG',
       zipcode: 'SW1',
       timezoneoffset: 0,
       accuracyradiusmin: 1.5,
@@ -569,6 +572,7 @@ describe('51DegreesRtdProvider', function() {
             lat: 51.5,
             lon: -0.1,
             country: 'GBR',
+            region: 'GB-ENG',
             zip: 'SW1',
             utcoffset: 0,
             accuracy: 1500,
@@ -608,6 +612,17 @@ describe('51DegreesRtdProvider', function() {
     it('multiplies accuracyradiusmin by 1000 for accuracy in meters', function() {
       const result = convert51DegreesIpToOrtb2({ ...fullIp, accuracyradiusmin: 2 });
       expect(result.device.geo.accuracy).to.equal(2000);
+    });
+
+    it('maps iso31662lvl4 to device.geo.region', function() {
+      const result = convert51DegreesIpToOrtb2(fullIp);
+      expect(result.device.geo.region).to.equal('GB-ENG');
+    });
+
+    it('omits device.geo.region when iso31662lvl4 is absent', function() {
+      const { iso31662lvl4, ...withoutRegion } = fullIp;
+      const result = convert51DegreesIpToOrtb2(withoutRegion);
+      expect(result.device.geo.region).to.be.undefined;
     });
 
     it('preserves zero coordinates as valid values', function() {

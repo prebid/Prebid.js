@@ -326,6 +326,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
  * @param {number} [ip.latitude]
  * @param {number} [ip.longitude]
  * @param {string} [ip.countrycode3] ISO-3166-1 alpha-3
+ * @param {string} [ip.iso31662lvl4] ISO-3166-2 subdivision code (e.g. GB-ENG)
  * @param {string} [ip.zipcode]
  * @param {number} [ip.timezoneoffset] minutes from UTC
  * @param {number} [ip.accuracyradiusmin] km (multiplied by 1000 in output to convert to meters)
@@ -359,6 +360,7 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   setIfDefined('device.geo.lat', ip.latitude);
   setIfDefined('device.geo.lon', ip.longitude);
   deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.countrycode3);
+  deepSetNotEmptyValue(ortb2, 'device.geo.region', ip.iso31662lvl4);
   deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.zipcode);
   setIfDefined('device.geo.utcoffset', ip.timezoneoffset);
   setIfDefined(
