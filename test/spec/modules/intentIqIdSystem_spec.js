@@ -226,6 +226,7 @@ describe('IntentIQ tests', function () {
     const pubadsSetTargetingSpy = sinon.spy();
     const mockGAM = {
       cmd: [],
+      getConfig: sinon.stub(),
       setConfig: setConfigSpy,
       pubads: () => ({
         setTargeting: pubadsSetTargetingSpy
