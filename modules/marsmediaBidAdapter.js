@@ -99,10 +99,9 @@ function MarsmediaAdapter() {
   }
 
   function getValidSizeSet(dimensionList) {
-    const w = parseInt(dimensionList[0]);
-    const h = parseInt(dimensionList[1]);
-    // clever check for NaN
-    if (! (w !== w || h !== h)) {  // eslint-disable-line
+    const w = parseInt(dimensionList[0], 10);
+    const h = parseInt(dimensionList[1], 10);
+    if (!Number.isNaN(w) && !Number.isNaN(h)) {
       return [w, h];
     }
     return false;
