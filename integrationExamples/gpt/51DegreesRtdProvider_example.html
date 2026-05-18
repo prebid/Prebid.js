@@ -113,8 +113,9 @@
                 ];
 
                 pbjs.setConfig({
-                    debug: {
-                        enabled: true, // verbose logging + activates the debugging-module intercept below
+                    debug: true, // verbose logging
+                    debugging: {
+                        enabled: true, // activates the debugging-module bid interceptor
                         intercept: [{
                             when: { bidder: 'appnexus' },
                             then: {
@@ -138,7 +139,7 @@
                                 waitForIt: true,
                                 params: {
                                     resourceKey: RESOURCE_KEY,
-                                    // tdlUrl populates user.eids[].ext.tdl per the 51d.es spec.
+                                    // tdlUrl populates user.eids[].ext.tdl per data labels spec.
                                     // Replace with your real TDL endpoint.
                                     tdlUrl: 'https://tdl.example/replace-me',
                                     // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen end point
