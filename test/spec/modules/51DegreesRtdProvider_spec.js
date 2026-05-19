@@ -398,9 +398,7 @@ describe('51DegreesRtdProvider', function() {
       const result = convert51DegreesDataToOrtb2(data51);
       expect(result.device.ip).to.equal('1.2.3.4');
       expect(result.device.geo.lat).to.equal(51.5);
-      // TODO: when the locationconfidence gate is restored, expect 511 for
-      // locationconfidence=high and 512 for locationconfidence=medium.
-      expect(result.device.geo.ipservice).to.equal(512);
+      expect(result.device.geo.ipservice).to.equal(511);
       expect(result.device.make).to.equal('Apple');
     });
 
@@ -559,10 +557,7 @@ describe('51DegreesRtdProvider', function() {
       });
     });
 
-    // TODO: re-enable once the locationconfidence gate is restored in
-    // convert51DegreesIpToOrtb2. The module currently hardcodes
-    // ipservice=512 so any assertion that depends on the gate is invalid.
-    xit('maps full ip data with locationconfidence=high → ipservice=511', function() {
+    it('maps full ip data with locationconfidence=high → ipservice=511', function() {
       const result = convert51DegreesIpToOrtb2(fullIp);
       expect(result).to.deep.equal({
         device: {
@@ -588,22 +583,26 @@ describe('51DegreesRtdProvider', function() {
       expect(result.device.geo.ipservice).to.equal(512);
     });
 
-    // TODO: re-enable once the locationconfidence gate is restored.
-    xit('compares locationconfidence case-insensitively', function() {
+    it('compares locationconfidence case-insensitively', function() {
       const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'HIGH' });
       expect(result.device.geo.ipservice).to.equal(511);
     });
 
-    // TODO: re-enable once the locationconfidence gate is restored.
-    xit('skips all geo fields when locationconfidence=low', function() {
+    it('skips all geo fields when locationconfidence=low', function() {
       const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'low' });
       expect(result.device.geo).to.be.undefined;
       expect(result.device.ip).to.equal('1.2.3.4');
       expect(result.device.ipv6).to.equal('2001:db8::1');
     });
 
-    // TODO: re-enable once the locationconfidence gate is restored.
-    xit('skips all geo fields when locationconfidence is absent', function() {
+    it('skips all geo fields when locationconfidence=unknown', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'Unknown' });
+      expect(result.device.geo).to.be.undefined;
+      expect(result.device.ip).to.equal('1.2.3.4');
+      expect(result.device.ipv6).to.equal('2001:db8::1');
+    });
+
+    it('skips all geo fields when locationconfidence is absent', function() {
       const { locationconfidence, ...withoutConfidence } = fullIp;
       const result = convert51DegreesIpToOrtb2(withoutConfidence);
       expect(result.device.geo).to.be.undefined;

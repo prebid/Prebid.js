@@ -363,11 +363,17 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   deepSetNotEmptyValue(ortb2, 'device.ip', ip.ip);
   deepSetNotEmptyValue(ortb2, 'device.ipv6', ip.ipv6);
 
-  // TODO: re-enable the locationconfidence gate. Cloud currently returns
-  // "Unknown" for many IPs even when lat/lon are usable, so for now treat
-  // every response as medium so the example actually demonstrates geo
-  // enrichment.
-  const ipservice = 512;
+  const confidence = typeof ip.locationconfidence === 'string'
+    ? ip.locationconfidence.toLowerCase()
+    : undefined;
+  let ipservice;
+  if (confidence === 'high') {
+    ipservice = 511;
+  } else if (confidence === 'medium') {
+    ipservice = 512;
+  } else {
+    return ortb2;
+  }
 
   // Use null/undefined checks rather than truthy checks so 0 coordinates
   // (Gulf of Guinea) and 0 accuracy survive.
