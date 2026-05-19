@@ -3,7 +3,7 @@ import { registerBidder, type AdapterRequest, type BidderSpec, type ServerRespon
 import { buildRequests as xeBuildRequests, getUserSyncs, interpretResponse as xeInterpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'matterfull';
-const ENDPOINT = 'pbjs.bematterfull.com';
+const ENDPOINT = 'https://pbjs.bematterfull.com';
 
 export type MatterfullBidParams = {
   pid: string;

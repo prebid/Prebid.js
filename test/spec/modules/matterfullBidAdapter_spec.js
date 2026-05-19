@@ -4,7 +4,7 @@ import { spec } from 'modules/matterfullBidAdapter.ts';
 import { deepClone } from 'src/utils';
 import { getBidFloor } from '../../../libraries/xeUtils/bidderUtils.js';
 
-const ENDPOINT = 'pbjs.bematterfull.com';
+const ENDPOINT = 'https://pbjs.bematterfull.com';
 
 const defaultRequest = {
   tmax: 0,
