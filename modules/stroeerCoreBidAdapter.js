@@ -79,7 +79,7 @@ export const spec = {
       };
     }
 
-    const ORTB2_PATHS = ['regs.ext.dsa', 'device.ext.cdep', 'site.ext', 'source.tid'];
+    const ORTB2_PATHS = ['regs.ext.dsa', 'site.ext', 'source.tid'];
     copyDeepPaths(basePayload, bidderRequest.ortb2, ORTB2_PATHS, 'ortb2');
 
     const bannerBids = validBidRequests

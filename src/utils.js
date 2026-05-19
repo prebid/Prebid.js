@@ -47,6 +47,7 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
+  runBackgroundTask,
 };
 
 const prebidInternal = {};
@@ -89,7 +90,7 @@ export function generateUUID(placeholder) {
  */
 function _getRandomData() {
   if (window && window.crypto && window.crypto.getRandomValues) {
-    return crypto.getRandomValues(new Uint8Array(1))[0] % 16;
+    return window.crypto.getRandomValues(new Uint8Array(1))[0] % 16;
   } else {
     return Math.random() * 16;
   }
@@ -445,12 +446,54 @@ export function waitForElementToLoad(element, timeout) {
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
  */
+
+export function politeTriggerPixel(url) {
+  const triggerSync = () => {
+    if (window.fetch && window.Request) {
+      try {
+        const request = new Request(url, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials: 'include',
+          keepalive: true
+        });
+        window.fetch(request).catch(() => triggerPixel(url));
+        return;
+      } catch (e) {}
+    }
+    triggerPixel(url);
+  };
+
+  runBackgroundTask(triggerSync);
+}
+
+export function politeInsertUserSyncIframe(url) {
+  runBackgroundTask(() => insertUserSyncIframe(url));
+}
+
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
+}
+
+/**
+ * Run a task at low priority when supported by the browser, or immediately as fallback.
+ * @param {function} task
+ */
+export function runBackgroundTask(task) {
+  const scheduler = window.scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => task(), { timeout: 2000 });
+    return;
+  }
+  task();
 }
 
 /**
@@ -652,6 +695,14 @@ export function getSafeframeGeometry() {
 
 export function isSafariBrowser() {
   return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+}
+
+export function isFirefoxBrowser() {
+  return /firefox|fxios/i.test(navigator.userAgent);
+}
+
+export function isChromeIOSBrowser() {
+  return /crios|crmo/i.test(navigator.userAgent);
 }
 
 export function replaceMacros(str, subs) {
@@ -1014,7 +1065,7 @@ function mergeDeepHelper(target, source) {
     const val = source[key];
 
     if (isPlainObject(val)) {
-      if (!target[key]) {
+      if (!isPlainObject(target[key])) {
         target[key] = {};
       }
       mergeDeepHelper(target[key], val);

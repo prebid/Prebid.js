@@ -1,10 +1,9 @@
-import ooloAnalytics, { PAGEVIEW_ID } from 'modules/ooloAnalyticsAdapter.js';
+import ooloAnalytics, { PAGEVIEW_ID, buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js'
 import * as events from 'src/events'
 import { config } from 'src/config';
-import { buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter';
 
 const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
 const auctionStart = 1598513385415
@@ -102,7 +101,6 @@ const bidResponse = {
   mediaType: 'banner',
   width: 0,
   height: 0,
-  statusMessage: 'Bid available',
   adId: '222bb26f9e8bd',
   cpm: 0.112256,
   responseTimestamp: 1598513485254,
@@ -548,7 +546,7 @@ describe('oolo Prebid Analytic', () => {
           },
           'bidResponse': {
             'sendRaw': 0,
-            'pickFields': ['adUrl', 'statusMessage']
+            'pickFields': ['adUrl']
           },
           'auctionEnd': {
             'sendRaw': 0,
@@ -562,7 +560,7 @@ describe('oolo Prebid Analytic', () => {
       events.emit(EVENTS.NO_BID, { ...noBid, src: 'client' });
       events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, adUrl: '...' });
       events.emit(EVENTS.AUCTION_END, { ...auctionEnd, winningBids: [] });
-      events.emit(EVENTS.BID_WON, { ...bidWon, statusMessage: 'msg2' });
+      events.emit(EVENTS.BID_WON, { ...bidWon });
 
       clock.tick(1500)
 
@@ -570,7 +568,6 @@ describe('oolo Prebid Analytic', () => {
 
       expect(request.adUnits[0].bids[0].transactionId).to.equal('123')
       expect(request.adUnits[0].bids[0].adUrl).to.equal('...')
-      expect(request.adUnits[0].bids[0].statusMessage).to.equal('msg2')
       expect(request.adUnits[1].bids[0].src).to.equal('client')
     })
 

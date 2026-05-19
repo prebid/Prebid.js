@@ -2,9 +2,16 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import { binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad } from 'src/utils.js';
+import {
+  binarySearch,
+  deepEqual,
+  encodeMacroURI,
+  getWinDimensions,
+  memoize,
+  sizesToSizeTuples,
+  waitForElementToLoad
+} from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
-import { getWinDimensions, internal } from '../../src/utils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
@@ -331,58 +338,18 @@ describe('Utils', function () {
     });
   });
 
-  describe('isA', function () {
-    it('should return true with string object', function () {
-      var output = utils.isA(obj_string, type_string);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with object', function () {
-      var output = utils.isA(obj_object, type_string);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with object', function () {
-      var output = utils.isA(obj_object, type_object);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_object);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with array object', function () {
-      var output = utils.isA(obj_array, type_array);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_function);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with function', function () {
-      var output = utils.isA(obj_function, type_function);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with number', function () {
-      var output = utils.isA(obj_function, type_number);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with number', function () {
-      var output = utils.isA(obj_number, type_number);
-      assert.deepEqual(output, true);
-    });
-  });
-
   describe('isFn', function () {
-    it('should return true with input function', function () {
-      var output = utils.isFn(obj_function);
-      assert.deepEqual(output, true);
-    });
+    Object.entries({
+      'vanilla function': () => null,
+      'async function': async () => null,
+      'generator function': function * () {},
+      'async generator function': async function * () {}
+    }).forEach(([t, fn]) => {
+      it(`should return true with input ${t}`, function () {
+        var output = utils.isFn(fn);
+        assert.deepEqual(output, true);
+      });
+    })
 
     it('should return false with input string', function () {
       var output = utils.isFn(obj_string);
@@ -947,6 +914,66 @@ describe('Utils', function () {
     });
   });
 
+  describe('isFirefoxBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Firefox on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('properly detects Firefox on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/125.0 Mobile/15E148 Safari/605.1.15';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('does not flag Safari', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
+      expect(utils.isFirefoxBrowser()).to.equal(false);
+    });
+  });
+
+  describe('isChromeIOSBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Chrome on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
+      expect(utils.isChromeIOSBrowser()).to.equal(true);
+    });
+
+    it('does not flag Chrome on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
+    });
+
+    it('does not flag Opera on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 OPR/130.0.0.0';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
+    });
+  });
+
   describe('mergeDeep', function() {
     it('properly merge objects that share same property names', function() {
       const object1 = {
@@ -1458,5 +1485,62 @@ describe('getWinDimensions', () => {
     clock.tick(18);
     expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
+  });
+});
+
+describe('polite sync helpers', () => {
+  let originalScheduler;
+  let originalRequestIdleCallback;
+  let originalFetch;
+  let originalRequest;
+
+  beforeEach(() => {
+    originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
+    originalFetch = window.fetch;
+    originalRequest = window.Request;
+    window.scheduler = undefined;
+    window.requestIdleCallback = undefined;
+    window.fetch = sinon.stub().returns(Promise.resolve());
+    window.Request = function (url, opts) {
+      this.url = url;
+      this.opts = opts;
+    };
+  });
+
+  afterEach(() => {
+    window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
+    window.fetch = originalFetch;
+    window.Request = originalRequest;
+  });
+
+  it('uses keepalive fetch for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'include',
+      keepalive: true
+    });
+  });
+
+  it('does not attempt fetch when Request is unavailable', () => {
+    window.Request = undefined;
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.called).to.equal(false);
+  });
+
+  it('uses background scheduling for politeInsertUserSyncIframe', () => {
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+
+    utils.politeInsertUserSyncIframe('http://example.com/iframe');
+    expect(window.scheduler.postTask.calledOnce).to.equal(true);
   });
 });

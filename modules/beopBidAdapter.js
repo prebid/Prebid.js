@@ -4,7 +4,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import {
   buildUrl,
-  deepAccess, generateUUID, getBidIdParameter,
+  deepAccess,
+  getBidIdParameter,
   getValue,
   isArray,
   isPlainObject,
@@ -23,11 +24,32 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.collectiveaudience.co/bid';
-const COOKIE_NAME = 'beopid';
+const COOKIE_NAME = 'caudid';
+const COOKIE_DATE_NAME = 'caudid_date';
 const TCF_VENDOR_ID = 666;
+const COOKIE_MAX_AGE_MS = 86400 * 365 * 1000; // 1 year
 
-const validIdRegExp = /^[0-9a-fA-F]{24}$/
+const validIdRegExp = /^[0-9a-fA-F]{24}$/;
+
+/**
+ * Generates a 24-char hex string compatible with MongoDB ObjectId semantics
+ * (4-byte timestamp + 16 random hex chars). Used for first-party user id (caudid).
+ * Timestamp is padded to 8 hex chars so that a client clock in the past (or mocked Date)
+ * cannot produce a shorter string that would fail the 24-char validation on later requests.
+ * @see https://www.mongodb.com/docs/manual/reference/method/objectid/
+ * @return {string}
+ */
+function generateObjectId() {
+  const timestamp = (Math.floor(Date.now() / 1000)).toString(16).padStart(8, '0');
+  const randomPart = Array.from({ length: 16 }, () =>
+    (Math.floor(Math.random() * 16)).toString(16)
+  ).join('');
+  return (timestamp + randomPart).toLowerCase();
+}
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+/** Exported for unit tests (caudid / caudid_date cookie behavior). */
+export const __storage = storage;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -68,17 +90,20 @@ export const spec = {
     const kwdsFromRequest = firstSlot.kwds;
     const keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
-    let beopid = '';
-    if (storage.cookiesAreEnabled) {
-      beopid = storage.getCookie(COOKIE_NAME, undefined);
-      if (!beopid) {
-        beopid = generateUUID();
+    let caudid = '';
+    if (storage.cookiesAreEnabled()) {
+      caudid = storage.getCookie(COOKIE_NAME, undefined);
+      if (!caudid || !validIdRegExp.test(caudid)) {
+        caudid = generateObjectId();
         const expirationDate = new Date();
-        expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
-        storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
+        expirationDate.setTime(expirationDate.getTime() + COOKIE_MAX_AGE_MS);
+        storage.setCookie(COOKIE_NAME, caudid, expirationDate.toUTCString());
+        const dateValue = String(Date.now());
+        storage.setCookie(COOKIE_DATE_NAME, dateValue, expirationDate.toUTCString());
       }
     } else {
       storage.setCookie(COOKIE_NAME, '', 0);
+      storage.setCookie(COOKIE_DATE_NAME, '', 0);
     }
 
     const payloadObject = {
@@ -91,7 +116,7 @@ export const spec = {
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
       dbg: false,
-      fg: beopid,
+      fg: caudid,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,

@@ -126,34 +126,16 @@ describe('wurflRtdProvider', function () {
         bitness: '64'
       };
 
-      it('should read SUA from ortb2Fragments and send it in WURFL.js URL', (done) => {
-        reqBidsConfigObj.ortb2Fragments.global.device = { sua: mockSUA };
-        reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-        // Empty cache to trigger async load
-        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-        sandbox.stub(storage, 'hasLocalStorage').returns(true);
-
-        const callback = () => {
-          // Verify WURFL.js was loaded with SUA in URL
-          expect(loadExternalScriptStub.called).to.be.true;
-          const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
-
-          const url = new URL(scriptUrl);
-          const suaParam = url.searchParams.get('sua');
-          expect(suaParam).to.not.be.null;
-
-          const parsedSUA = JSON.parse(suaParam);
-          expect(parsedSUA).to.deep.equal(mockSUA);
-
-          done();
-        };
-
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      afterEach(() => {
+        __testing__.setSuaPromise(null);
+        __testing__.setResolvedSUA(null);
       });
 
-      it('should load WURFL.js without SUA when not available in ortb2Fragments', (done) => {
+      it('should collect SUA via sua.js and send it in WURFL.js URL', (done) => {
+        // Pre-seed suaPromise to simulate getHighEntropySUA() having resolved.
+        // This bypasses the real navigator.userAgentData call path.
+        __testing__.setSuaPromise(Promise.resolve(mockSUA));
+
         reqBidsConfigObj.ortb2Fragments.global.device = {};
         reqBidsConfigObj.ortb2Fragments.bidder = {};
 
@@ -162,19 +144,65 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const callback = () => {
-          // Verify WURFL.js was loaded without sua parameter
-          expect(loadExternalScriptStub.calledOnce).to.be.true;
-          const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+          // loadWurflJsAsync chains on suaPromise, so fire assertions after microtasks flush.
+          setTimeout(() => {
+            expect(loadExternalScriptStub.called).to.be.true;
+            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            const url = new URL(scriptUrl);
+            const suaParam = url.searchParams.get('sua');
+            expect(suaParam).to.not.be.null;
+            expect(JSON.parse(suaParam)).to.deep.equal(mockSUA);
+            done();
+          }, 0);
+        }, { params: {} }, {});
+      });
 
-          const url = new URL(scriptUrl);
-          const suaParam = url.searchParams.get('sua');
-          expect(suaParam).to.be.null;
+      it('should load WURFL.js without SUA when sua.js resolves null', (done) => {
+        __testing__.setSuaPromise(Promise.resolve(null));
 
-          done();
-        };
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
 
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+          setTimeout(() => {
+            expect(loadExternalScriptStub.calledOnce).to.be.true;
+            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            const url = new URL(scriptUrl);
+            expect(url.searchParams.get('sua')).to.be.null;
+            done();
+          }, 0);
+        }, { params: {} }, {});
+      });
+
+      it('should NOT modify ortb2Fragments.global.device.sua (tier-2 guard)', (done) => {
+        // Whatever the publisher / Prebid enrichment put in the bid request
+        // must remain untouched: the bid-request SUA is gated by firstPartyData.uaHints
+        // and we don't override publisher policy for bidder-facing data.
+        const publisherSUA = { source: 1, platform: { brand: 'Windows' } };
+        reqBidsConfigObj.ortb2Fragments.global.device = { sua: publisherSUA };
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        __testing__.setSuaPromise(Promise.resolve(mockSUA));
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+          setTimeout(() => {
+            // Tier 2: bid-request SUA unchanged
+            expect(reqBidsConfigObj.ortb2Fragments.global.device.sua).to.deep.equal(publisherSUA);
+            // Tier 1: wurfl.js URL carries our own high-entropy SUA
+            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            const url = new URL(scriptUrl);
+            expect(JSON.parse(url.searchParams.get('sua'))).to.deep.equal(mockSUA);
+            done();
+          }, 0);
+        }, { params: {} }, {});
       });
     });
 
@@ -238,10 +266,12 @@ describe('wurflRtdProvider', function () {
           expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1).to.exist;
           expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder2).to.exist;
 
-          // Verify async load WAS triggered for refresh (cache expired)
-          expect(loadExternalScriptStub.calledOnce).to.be.true;
-
-          done();
+          // loadWurflJsAsync chains on suaPromise; wait for microtasks to flush.
+          setTimeout(() => {
+            // Verify async load WAS triggered for refresh (cache expired)
+            expect(loadExternalScriptStub.calledOnce).to.be.true;
+            done();
+          }, 0);
         };
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
@@ -772,6 +802,11 @@ describe('wurflRtdProvider', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
+      // Force SUA to null for this test so the URL assertion stays deterministic.
+      // (Chrome Headless exposes navigator.userAgentData, which would otherwise append
+      // a ?sua= param to the expected URL.)
+      __testing__.setSuaPromise(Promise.resolve(null));
+
       // Set global debug flag
       config.setConfig({ debug: true });
 
@@ -793,7 +828,14 @@ describe('wurflRtdProvider', function () {
         // No bidder enrichment should occur without cached WURFL data
         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({});
 
-        done();
+        // loadWurflJsAsync chains on suaPromise; wait for microtasks.
+        setTimeout(() => {
+          expect(loadExternalScriptStub.calledOnce).to.be.true;
+          const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
+          expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
+          expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
+          done();
+        }, 0);
       };
 
       const moduleConfig = {
@@ -804,12 +846,6 @@ describe('wurflRtdProvider', function () {
       const userConsent = {};
 
       wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
-
-      // Verify WURFL.js is loaded async for future requests
-      expect(loadExternalScriptStub.calledOnce).to.be.true;
-      const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
-      expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
-      expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
     });
 
     it('should not include device.w and device.h in LCE enrichment (removed in v2.3.0 - fingerprinting APIs)', (done) => {
@@ -2397,12 +2433,15 @@ describe('wurflRtdProvider', function () {
       });
 
       afterEach(() => {
-        __testing__.setCachedSUA(null);
+        __testing__.setResolvedSUA(null);
+        __testing__.setSuaPromise(null);
       });
 
-      it('should include SUA data in beacon payload when available in ortb2Fragments', (done) => {
-        // Set SUA in ortb2Fragments so getBidRequestData picks it up
-        reqBidsConfigObj.ortb2Fragments.global.device.sua = mockSUA;
+      it('should include SUA in beacon payload when resolvedSUA is populated', () => {
+        // The beacon path is synchronous: it reads resolvedSUA, which is primed by
+        // the suaPromise chain started in getBidRequestData. For this unit test we
+        // seed it directly to exercise the beacon code path without timing concerns.
+        __testing__.setResolvedSUA(mockSUA);
 
         const cachedData = { WURFL, wurfl_pbjs };
         sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
@@ -2411,30 +2450,22 @@ describe('wurflRtdProvider', function () {
 
         const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
 
-        const callback = () => {
-          const auctionDetails = {
-            bidsReceived: [],
-            adUnits: [{
-              code: 'ad1',
-              bids: [{ bidder: 'bidder1' }]
-            }]
-          };
-
-          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
-
-          expect(sendBeaconStub.calledOnce).to.be.true;
-          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-          expect(payload).to.have.property('sua');
-          expect(payload.sua).to.deep.equal(mockSUA);
-
-          done();
+        const auctionDetails = {
+          bidsReceived: [],
+          adUnits: [{ code: 'ad1', bids: [{ bidder: 'bidder1' }] }]
         };
 
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+        wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+        expect(sendBeaconStub.calledOnce).to.be.true;
+        const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+        expect(payload).to.have.property('sua');
+        expect(payload.sua).to.deep.equal(mockSUA);
       });
 
-      it('should set sua to null in beacon payload when SUA is not available', (done) => {
-        // No SUA in ortb2Fragments
+      it('should set sua to null in beacon payload when resolvedSUA is unavailable', () => {
+        // resolvedSUA is null by default (reset by init()). This also covers the
+        // pathological case where the suaPromise has not resolved before auction end.
 
         const cachedData = { WURFL, wurfl_pbjs };
         sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
@@ -2443,25 +2474,16 @@ describe('wurflRtdProvider', function () {
 
         const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
 
-        const callback = () => {
-          const auctionDetails = {
-            bidsReceived: [],
-            adUnits: [{
-              code: 'ad1',
-              bids: [{ bidder: 'bidder1' }]
-            }]
-          };
-
-          wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
-
-          expect(sendBeaconStub.calledOnce).to.be.true;
-          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
-          expect(payload).to.have.property('sua', null);
-
-          done();
+        const auctionDetails = {
+          bidsReceived: [],
+          adUnits: [{ code: 'ad1', bids: [{ bidder: 'bidder1' }] }]
         };
 
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+        wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+        expect(sendBeaconStub.calledOnce).to.be.true;
+        const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+        expect(payload).to.have.property('sua', null);
       });
     });
   });

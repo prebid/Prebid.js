@@ -144,7 +144,6 @@ describe('colombiaBidAdapter', function () {
           'uid': '23beaa6af6cdde',
           'height': 0,
           'creativeId': '',
-          'statusMessage': 'Bid returned empty or error response',
           'width': 0,
           'cpm': 0
         }

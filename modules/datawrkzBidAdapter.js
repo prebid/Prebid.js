@@ -27,6 +27,7 @@ const RENDERER_URL = 'https://js.datawrkz.com/prebid/osRenderer.min.js';
 const OUTSTREAM_TYPES = ['inline', 'slider_top_left', 'slider_top_right', 'slider_bottom_left', 'slider_bottom_right', 'interstitial_close', 'listicle']
 const OUTSTREAM_MIMES = ['video/mp4']
 const SUPPORTED_AD_TYPES = [BANNER, NATIVE, VIDEO];
+const SUPPORTED_VIDEO_CONTEXTS = [INSTREAM, OUTSTREAM];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -39,7 +40,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.site_id && (deepAccess(bid, 'mediaTypes.video.context') !== 'adpod'));
+    return !!(bid.params && bid.params.site_id && isValidVideoMediaTypeContext(deepAccess(bid, 'mediaTypes.video.context')));
   },
 
   /**
@@ -94,6 +95,11 @@ export const spec = {
     }
     return bidResponses;
   },
+}
+
+/* Checks whether the video media type context is supported */
+function isValidVideoMediaTypeContext(context) {
+  return context == null || SUPPORTED_VIDEO_CONTEXTS.some(c => context === c);
 }
 
 /* Generate bid request for banner adunit */
@@ -241,7 +247,7 @@ function buildVideoRequest(bidRequest, bidderRequest) {
     deals = bidRequest.params.deals;
   }
 
-  if (context !== 'adpod') {
+  if (isValidVideoMediaTypeContext(context)) {
     imp.push({
       id: bidRequest.bidId,
       video: video,

@@ -24,7 +24,12 @@ export interface Events extends AllEvents {
 }
 
 export type EventIDs = {
-  [K in Event]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
+  [K in Event]:
+  K extends keyof typeof EVENT_ID_PATHS
+    ? Events[K][0] extends { [P in (typeof EVENT_ID_PATHS)[K]]: infer V }
+      ? V
+      : unknown
+    : undefined;
 };
 
 export type Event = keyof Events;
