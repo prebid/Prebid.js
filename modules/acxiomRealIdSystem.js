@@ -62,16 +62,16 @@ export const acxiomRealIdSubmodule = {
   name: MODULE_NAME,
 
   decode(value) {
-    if (value && typeof value === 'object' && value.id) {
-      return { acxiomRealId: value };
-    }
     if (value && typeof value === 'string') {
       return { acxiomRealId: { id: value, atype: 1 } };
+    }
+    if (value && typeof value === 'object' && value.id) {
+      return { acxiomRealId: { id: value.id, atype: value.atype || 1 } };
     }
     return undefined;
   },
 
-  getId(config, consentData) {
+  getId(config, consentData, storedId) {
     const configParams = (config && config.params) || {};
     const { partnerId, apiUrl, sourceId, hem } = configParams;
 
@@ -83,6 +83,10 @@ export const acxiomRealIdSubmodule = {
     if (isConsentBlocked(consentData)) {
       deleteStoredToken(config);
       return undefined;
+    }
+
+    if (storedId) {
+      return { id: storedId };
     }
 
     const url = buildLookupUrl(apiUrl);
@@ -109,7 +113,7 @@ export const acxiomRealIdSubmodule = {
                 const eids = parsed && parsed.user && parsed.user.eids;
                 const uid = eids && eids[0] && eids[0].uids && eids[0].uids[0];
                 if (uid && uid.id) {
-                  cb({ id: uid.id, atype: uid.atype });
+                  cb(uid.id);
                 } else {
                   cb();
                 }
