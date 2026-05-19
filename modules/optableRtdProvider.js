@@ -534,13 +534,23 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, confi
     const targetORTB2 = reqBidsConfigObj.ortb2Fragments.global;
     targetORTB2.user = targetORTB2.user ?? {};
     targetORTB2.user.ext = targetORTB2.user.ext ?? {};
-    targetORTB2.user.ext.eids = targetORTB2.user.ext.eids ?? [];
+
+    // Use Object.getOwnPropertyDescriptor to bypass Prebid's Proxy traps
+    // Prebid wraps ortb2Fragments in Proxy objects that intercept eids access
+    const eidsDesc = Object.getOwnPropertyDescriptor(targetORTB2.user.ext, 'eids');
+    let currentEids = Array.isArray(eidsDesc?.value) ? eidsDesc.value : [];
 
     logMessage('Also merging Optable EIDs into ortb2.user.ext.eids...');
 
-    // Merge EIDs into user.ext.eids
-    filteredTargetingData.ortb2.user.eids.forEach(eid => {
-      targetORTB2.user.ext.eids.push(eid);
+    // Merge EIDs into a new array
+    const newEids = [...currentEids, ...filteredTargetingData.ortb2.user.eids];
+
+    // Use Object.defineProperty to bypass Proxy traps and write the merged array
+    Object.defineProperty(targetORTB2.user.ext, 'eids', {
+      value: newEids,
+      writable: true,
+      enumerable: true,
+      configurable: true,
     });
 
     logMessage(`EIDs also available in ortb2.user.ext.eids (${finalEidCount} EIDs)`);
