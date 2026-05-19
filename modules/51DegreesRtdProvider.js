@@ -16,6 +16,23 @@ const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
 const { logMessage, logWarn, logError } = prefixLog(LOG_PREFIX);
 
+// Fires a one-shot deprecation warning the first time the module writes
+// the legacy `ortb2.device.ext.fiftyonedegrees_deviceId` field. The field
+// is kept in addition to `ext.fod.deviceId` for downstream bid adapters
+// that have not migrated to the canonical path yet (e.g. gumgum reads
+// the legacy field to build its `bidRequest.data.foddid`). Surfacing the
+// warning lets adapter authors notice the duplication and migrate.
+let _legacyDeviceIdWarned = false;
+function warnLegacyDeviceIdOnce() {
+  if (_legacyDeviceIdWarned) return;
+  _legacyDeviceIdWarned = true;
+  logWarn(
+    'ortb2.device.ext.fiftyonedegrees_deviceId is deprecated and will be ' +
+    'removed in a future release; bid adapters should read ' +
+    'ortb2.device.ext.fod.deviceId instead.'
+  );
+}
+
 // ORTB device types
 const ORTB_DEVICE_TYPE = {
   UNKNOWN: 0,
@@ -305,7 +322,10 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth);
   deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio);
   deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
-  // kept for backward compatibility
+  // kept for backward compatibility; consumers should migrate to ext.fod.deviceId
+  if (device.deviceid) {
+    warnLegacyDeviceIdOnce();
+  }
   deepSetNotEmptyValue(ortb2Device, 'ext.fiftyonedegrees_deviceId', device.deviceid);
   deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid);
   if (['True', 'False'].includes(device.thirdpartycookiesenabled)) {
