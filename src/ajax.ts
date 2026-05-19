@@ -59,11 +59,17 @@ export interface AjaxOptions {
   suppressTopicsEnrollmentWarning?: boolean;
 }
 
-export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
-  if (options.withCredentials) {
-    options.withCredentials = (moduleType && moduleName) ? isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)) : hasDeviceAccess();
+export const processRequest = hook('async', function (request, moduleType, moduleName) {
+  if (
+    request.credentials === 'include' && (
+      !hasDeviceAccess() || (
+        moduleType && moduleName && !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName))
+      )
+    )
+  ) {
+    return dep.makeRequest(request, { credentials: 'same-origin' });
   }
-  return options;
+  return request;
 }, 'processRequestOptions');
 
 /**
@@ -121,10 +127,18 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
       to = dep.timeout(timeout, resource);
       options = Object.assign({ signal: to.signal }, options);
     }
+    let request = dep.makeRequest(resource, options);
 
-    processRequestOptions(options, moduleType, moduleName);
-
-    let pm = dep.fetch(resource, options);
+    if (
+      request.credentials === 'include' && (
+        !hasDeviceAccess() || (
+          moduleType && moduleName && !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName))
+        )
+      )
+    ) {
+      request = dep.makeRequest(request, { credentials: 'same-origin' });
+    }
+    let pm = dep.fetch(request);
     if (to?.done != null) pm = pm.finally(to.done);
     return pm;
   };
