@@ -556,18 +556,26 @@ export const defaultHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, confi
     logMessage(`EIDs also available in ortb2.user.ext.eids (${finalEidCount} EIDs)`);
   }
 
-  // Add split_test_assignment to adUnits ortb2Imp.ext.optable if present
-  if (targetingData.split_test_assignment) {
-    logMessage(`Split test assignment detected: ${targetingData.split_test_assignment}`);
+  // Add split_test_assignment and variant to adUnits ortb2Imp.ext.optable
+  if (reqBidsConfigObj.adUnits && Array.isArray(reqBidsConfigObj.adUnits)) {
+    reqBidsConfigObj.adUnits.forEach(adUnit => {
+      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+      adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+      adUnit.ortb2Imp.ext.optable = adUnit.ortb2Imp.ext.optable || {};
 
-    if (reqBidsConfigObj.adUnits && Array.isArray(reqBidsConfigObj.adUnits)) {
-      reqBidsConfigObj.adUnits.forEach(adUnit => {
-        adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-        adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
-        adUnit.ortb2Imp.ext.optable = adUnit.ortb2Imp.ext.optable || {};
+      // Add variant
+      adUnit.ortb2Imp.ext.optable.variant = RTD_MODULE_VARIANT;
+
+      // Add split test assignment if present
+      if (targetingData.split_test_assignment) {
         adUnit.ortb2Imp.ext.optable.splitTestAssignment = targetingData.split_test_assignment;
-      });
-      logMessage(`Split test assignment added to ${reqBidsConfigObj.adUnits.length} ad units`);
+      }
+    });
+
+    if (targetingData.split_test_assignment) {
+      logMessage(`Split test assignment "${targetingData.split_test_assignment}" and variant "${RTD_MODULE_VARIANT}" added to ${reqBidsConfigObj.adUnits.length} ad units`);
+    } else {
+      logMessage(`Variant "${RTD_MODULE_VARIANT}" added to ${reqBidsConfigObj.adUnits.length} ad units`);
     }
   }
 
