@@ -32,7 +32,9 @@ export function _setEventEmitter(emitFn) {
 }
 
 const emitEvent: typeof emit = (event, ...args) => {
-  eventEmitter(event, ...args);
+  if (eventEmitter != null) {
+    eventEmitter(event, ...args);
+  }
 }
 
 function makeLogger<L extends keyof typeof LEVELS>(level: L, emit = false): (typeof console)[L] {
