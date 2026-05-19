@@ -59,19 +59,6 @@ export interface AjaxOptions {
   suppressTopicsEnrollmentWarning?: boolean;
 }
 
-export const processRequest = hook('async', function (request, moduleType, moduleName) {
-  if (
-    request.credentials === 'include' && (
-      !hasDeviceAccess() || (
-        moduleType && moduleName && !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName))
-      )
-    )
-  ) {
-    return dep.makeRequest(request, { credentials: 'same-origin' });
-  }
-  return request;
-}, 'processRequestOptions');
-
 /**
  * transform legacy `ajax` parameters into a fetch request.
  * @returns {Request}
