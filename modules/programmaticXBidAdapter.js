@@ -8,6 +8,10 @@ import {
   isBidRequestValid, onBidBillable, onBidWon
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./programmaticXBidAdapterTypes.d.ts').ProgrammaticXBidRequestParams} ProgrammaticXBidRequestParams
+ */
+
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'programmaticX';
 const BIDDER_VERSION = '1.0.0';

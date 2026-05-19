@@ -92,8 +92,6 @@ function imp(buildImp, bidRequest, context) {
       context: bidRequest.mediaTypes.video.context,
       playersizes: parseSizes(bidRequest?.mediaTypes?.video?.playerSize, parseSize),
       plcmt: bidRequest.mediaTypes.video.plcmt,
-      poddur: bidRequest.mediaTypes.video.adPodDurationSec,
-      rqddurs: bidRequest.mediaTypes.video.durationRangeSec,
     })
   }
 
@@ -671,7 +669,9 @@ function createOutstreamVideoRenderer(bid) {
   };
 
   const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });
-  renderer.setRender(render);
+  renderer.setRender(
+    (renderBid, renderDocument) => renderBid.renderer.push(() => render(renderBid, renderDocument))
+  );
   return renderer;
 }
 

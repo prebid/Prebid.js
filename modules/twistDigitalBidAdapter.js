@@ -5,6 +5,10 @@ import {
   isBidRequestValid, createInterpretResponseFn, createUserSyncGetter, createBuildRequestsFn, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./twistDigitalBidAdapterTypes.d.ts').TwistDigitalBidRequestParams} TwistDigitalBidRequestParams
+ */
+
 const GVLID = 1292;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'twistdigital';

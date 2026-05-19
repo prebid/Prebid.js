@@ -198,7 +198,8 @@ function _getVidParams(attributes) {
     api,
     mimes,
     playbackmethod,
-    playbackend: pbe
+    playbackend: pbe,
+    pos
   } = attributes;
   const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
@@ -221,6 +222,9 @@ function _getVidParams(attributes) {
     pbe
   };
 
+  if (pos !== undefined && pos !== null) {
+    result.vpos = pos;
+  }
   if (plcmt !== undefined && plcmt !== null) {
     result.vplcmt = plcmt;
   }
@@ -288,6 +292,7 @@ function _getDeviceData(ortb2Data) {
     lang: _device.language,
     make: _device.make,
     model: _device.model,
+    hwv: _device.hwv,
     ppi: _device.ppi,
     pxratio: _device.pxratio,
     lmt: _device.lmt,

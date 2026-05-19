@@ -1,9 +1,9 @@
 import {
   malltvAnalyticsAdapter, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS, DEFAULT_SERVER
+  , getCpmInEur
 } from 'modules/malltvAnalyticsAdapter.js'
 import { expect } from 'chai'
-import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter.js'
 import * as events from 'src/events'
 import { EVENTS } from 'src/constants.js'
 

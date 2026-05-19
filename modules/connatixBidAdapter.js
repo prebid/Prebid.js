@@ -21,11 +21,11 @@ import {
 } from '../src/utils.js';
 
 import {
-  ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -81,7 +81,7 @@ export function validateVideo(mediaTypes) {
     return true;
   }
 
-  return video.context !== ADPOD;
+  return video.context === INSTREAM || video.context === OUTSTREAM;
 }
 
 export function _getMinSize(sizes) {

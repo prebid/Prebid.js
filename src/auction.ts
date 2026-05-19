@@ -947,7 +947,7 @@ export interface DefaultTargeting {
   /**
    * Advertiser domain.
    */
-  [TARGETING_KEYS.ADOMAIN]: Bid['meta']['advertiserDomains'][0];
+  [TARGETING_KEYS.ADOMAIN]: NonNullable<NonNullable<Bid['meta']>['advertiserDomains']>[0];
   /**
    * Primary category ID.
    */
