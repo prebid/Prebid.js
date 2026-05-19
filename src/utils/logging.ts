@@ -1,6 +1,7 @@
 import { config } from "../config.ts";
 import { debugTurnedOn } from "./debug.ts";
 import { EVENTS } from "../constants.ts";
+import type { emit } from '../events.ts';
 
 const LEVELS = {
   'log': 'MESSAGE',
@@ -9,6 +10,20 @@ const LEVELS = {
   'error': 'ERROR'
 } as const;
 
+export type LogEvent = {
+  type: 'WARNING' | 'ERROR',
+  arguments: any[]
+}
+
+declare module '../events' {
+  interface Events {
+    /**
+     * Fired when a warning or error message is logged.
+     */
+    [EVENTS.AUCTION_DEBUG]: [LogEvent]
+  }
+}
+
 let eventEmitter;
 
 export function _setEventEmitter(emitFn) {
@@ -16,10 +31,8 @@ export function _setEventEmitter(emitFn) {
   eventEmitter = emitFn;
 }
 
-function emitEvent(...args) {
-  if (eventEmitter != null) {
-    eventEmitter(...args);
-  }
+const emitEvent: typeof emit = (event, ...args) => {
+  eventEmitter(event, ...args);
 }
 
 function makeLogger<L extends keyof typeof LEVELS>(level: L, emit = false): (typeof console)[L] {
@@ -30,7 +43,7 @@ function makeLogger<L extends keyof typeof LEVELS>(level: L, emit = false): (typ
       logFn.apply(console, decorateLog(args, prefix))
     }
     if (emit) {
-      emitEvent(EVENTS.AUCTION_DEBUG, { type: LEVELS[level], arguments: args });
+      emitEvent(EVENTS.AUCTION_DEBUG, { type: LEVELS[level] as LogEvent['type'], arguments: args });
     }
   }
 }
