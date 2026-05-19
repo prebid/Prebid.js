@@ -32,6 +32,7 @@ const defaultRequest = {
   bidder: 'matterfull',
   params: {
     pid: 'aa8217e20131c095fe9dba67981040b0',
+    env: 'matterfull',
     ext: {}
   },
   bidRequestsCount: 1
@@ -110,7 +111,8 @@ describe('matterfullBidAdapter', () => {
       expect(request).to.have.property('sizes').and.to.deep.equal(['300x250', '300x200']);
       expect(request).to.have.property('ext').and.to.deep.equal({});
       expect(request).to.have.property('env').and.to.deep.equal({
-        pid: 'aa8217e20131c095fe9dba67981040b0'
+        pid: 'aa8217e20131c095fe9dba67981040b0',
+        env: 'matterfull',
       });
       expect(request).to.have.property('device').and.to.deep.equal({
         ua: navigator.userAgent,
