@@ -122,7 +122,10 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
         )
       )
     ) {
-      request = dep.makeRequest(request, { credentials: 'same-origin' });
+      request = dep.makeRequest(request, {
+        keepalive: request.keepalive, // According to MDN this should be unnecessary, but Firefox will lose `keepalive` without itt
+        credentials: 'same-origin'
+      });
     }
     let pm = dep.fetch(request);
     if (to?.done != null) pm = pm.finally(to.done);
