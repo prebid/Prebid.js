@@ -16,7 +16,7 @@ const { logMessage, logWarn, logError } = optableLog;
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
 // RTD module variant for debugging and tracking
-const RTD_MODULE_VARIANT = 'optable-rtd-1.0.0-pr14405';
+const RTD_MODULE_VARIANT = 'optable-rtd-1.0.0-pr14405-v1';
 
 // localStorage key for targeting cache (direct API mode only)
 const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
