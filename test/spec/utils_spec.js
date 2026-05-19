@@ -2,9 +2,16 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import { binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad } from 'src/utils.js';
+import {
+  binarySearch,
+  deepEqual,
+  encodeMacroURI,
+  getWinDimensions,
+  memoize,
+  sizesToSizeTuples,
+  waitForElementToLoad
+} from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
-import { getWinDimensions, internal } from '../../src/utils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');

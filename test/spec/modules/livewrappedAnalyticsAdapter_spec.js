@@ -1,4 +1,4 @@
-import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT, getAuctionCache, CACHE_CLEANUP_DELAY } from 'modules/livewrappedAnalyticsAdapter.js';
+import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT, getAuctionCache } from 'modules/livewrappedAnalyticsAdapter.js';
 import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';

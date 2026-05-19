@@ -1,5 +1,10 @@
-import { getAdMarkup, getReplacements, getReplacer } from '../../../creative/renderers/native/renderer.js';
-import { ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE } from '../../../creative/renderers/native/constants.js';
+import { getAdMarkup, getReplacer } from '../../../creative/renderers/native/renderer.js';
+import {
+  ACTION_CLICK,
+  ACTION_IMP,
+  ACTION_RESIZE,
+  MESSAGE_NATIVE
+} from '../../../creative/renderers/native/constants.js';
 
 describe('Native creative renderer', () => {
   let win;
