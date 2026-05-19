@@ -18,7 +18,7 @@ import {
   logWarn,
   uniques,
 } from './utils.js';
-import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
+import { getHighestCpm, getHighestDesirability, getOldestHighestCpmBid } from './utils/reducers.js';
 import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
@@ -235,11 +235,11 @@ export function newTargeting(auctionManager) {
      * @param adUnitCode
      * @param bidLimit
      * @param bidsReceived - The received bids, defaulting to the result of getBidsReceived().
-     * @param [winReducer = getHighestCpm] - reducer method
+     * @param [winReducer = getHighestDesirability] - reducer method
      * @param [winSorter = sortByHighestDesirability] - sorter method
      * @return targeting
      */
-    getAllTargeting(adUnitCode?: AdUnitCode | AdUnitCode[], bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestDesirability): ByAdUnit<TargetingValues> {
+    getAllTargeting(adUnitCode?: AdUnitCode | AdUnitCode[], bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestDesirability, winSorter = sortByHighestDesirability): ByAdUnit<TargetingValues> {
       bidsReceived ||= getBidsReceived(winReducer, winSorter);
       const adUnitCodes = getAdUnitCodes(adUnitCode);
       const adUnitBidLimit = getAdUnitBidLimitMap(adUnitCodes, bidLimit);

@@ -5,8 +5,12 @@ import {
   minimum,
   maximum,
   getHighestCpm,
+  getHighestDesirability,
   getOldestHighestCpmBid, getLatestHighestCpmBid, reverseCompare
 } from '../../../../src/utils/reducers.js';
+import { auctionManager } from '../../../../src/auctionManager.js';
+import { bidderSettings } from '../../../../src/bidderSettings.js';
+
 import assert from 'assert';
 
 describe('reducers', () => {
@@ -90,6 +94,75 @@ describe('reducers', () => {
       };
       expect(getHighestCpm(a, b)).to.eql(b);
       expect(getHighestCpm(b, a)).to.eql(b);
+    });
+  });
+
+  describe('getHighestDesirability', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(auctionManager.index, 'getBidRequest').returns(null);
+      sandbox.stub(bidderSettings, 'get').returns(undefined);
+      sandbox.stub(bidderSettings, 'getOwn').returns(undefined);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('matches getHighestCpm when bidDesirabilityAdjustment is absent', function () {
+      const hi = {
+        cpm: 2,
+        timeToRespond: 100,
+        bidderCode: 'x'
+      };
+      const lo = {
+        cpm: 1,
+        timeToRespond: 100,
+        bidderCode: 'y'
+      };
+      expect(getHighestDesirability(hi, lo)).to.eql(hi);
+      expect(getHighestDesirability(lo, hi)).to.eql(hi);
+
+      const slow = {
+        cpm: 1,
+        timeToRespond: 100,
+        bidderCode: 'x'
+      };
+      const fast = {
+        cpm: 1,
+        timeToRespond: 50,
+        bidderCode: 'y'
+      };
+      expect(getHighestDesirability(slow, fast)).to.eql(fast);
+      expect(getHighestDesirability(fast, slow)).to.eql(fast);
+    });
+
+    it('prefers adjusted desirability over raw CPM when bidDesirabilityAdjustment is configured', function () {
+      bidderSettings.getOwn.callsFake((bidder, path) => {
+        if (path !== 'bidDesirabilityAdjustment') return undefined;
+        if (bidder === 'boosted') {
+          return (cpm, bid) => cpm + (bid.bonus || 0);
+        }
+        return undefined;
+      });
+
+      const boosted = {
+        cpm: 2,
+        bonus: 20,
+        timeToRespond: 100,
+        bidderCode: 'boosted',
+        bidder: 'boosted'
+      };
+      const plain = {
+        cpm: 10,
+        timeToRespond: 100,
+        bidderCode: 'plain',
+        bidder: 'plain'
+      };
+      expect(getHighestDesirability(boosted, plain)).to.eql(boosted);
+      expect(getHighestDesirability(plain, boosted)).to.eql(boosted);
     });
   });
 
