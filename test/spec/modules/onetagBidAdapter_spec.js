@@ -1,9 +1,8 @@
-import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
+import { spec, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
-import { hasTypeNative } from '../../../modules/onetagBidAdapter.js';
 
 const NATIVE_SUFFIX = 'Ad';
 

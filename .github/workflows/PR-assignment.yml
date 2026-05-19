@@ -65,3 +65,18 @@ jobs:
             const assignReviewers = require('./.github/workflows/scripts/assignReviewers.js')
             const reviewers = await assignReviewers({github, context, prData: ${{ steps.get-props.outputs.result }} });
             console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
+      - name: Auto-label core PR
+        if: ${{ fromJSON(steps.get-props.outputs.result).isCoreChange }}
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const ghRequester = require('.github/workflows/scripts/ghRequest.js');
+            const request = ghRequester(github);
+            const prData = ${{ steps.get-props.outputs.result }};
+            await request('POST /repos/{owner}/{repo}/issues/{issue_number}/labels', {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prData.pr,
+              labels: ['core'],
+            });

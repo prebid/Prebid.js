@@ -129,6 +129,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adelerate",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adf",
       "aliasOf": null,
       "gvlid": 50,
@@ -892,13 +899,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "selectmedia",
-      "aliasOf": "adtelligent",
-      "gvlid": 775,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "ocm",
       "aliasOf": "adtelligent",
       "gvlid": 1148,
@@ -1195,6 +1195,13 @@
       "componentType": "bidder",
       "componentName": "anyclip",
       "aliasOf": "anyclip",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "anzuSSP",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -2593,6 +2600,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "haloads",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "harion",
       "aliasOf": null,
       "gvlid": 1406,
@@ -3363,6 +3377,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "movingup",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "msft",
       "aliasOf": null,
       "gvlid": 32,
@@ -3545,13 +3566,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "movingup",
-      "aliasOf": "nexx360",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "glomexbidder",
       "aliasOf": "nexx360",
       "gvlid": 967,
@@ -3589,6 +3603,13 @@
       "componentType": "bidder",
       "componentName": "duration",
       "aliasOf": "nobid",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ntvagents",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -4357,6 +4378,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "selectmedia",
+      "aliasOf": null,
+      "gvlid": 775,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "setupad",
       "aliasOf": null,
       "gvlid": 1241,
@@ -4511,7 +4539,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adinify",
+      "componentName": "adlywise",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
@@ -4792,6 +4820,13 @@
     {
       "componentType": "bidder",
       "componentName": "temedya",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "tqblz_demo",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
@@ -5575,6 +5610,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "mile",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "mobianBrandSafety",
       "gvlid": 1348,
       "disclosureURL": null
@@ -5727,6 +5768,13 @@
       "componentType": "userId",
       "componentName": "33acrossId",
       "gvlid": 58,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "abtshieldId",
+      "gvlid": 825,
       "disclosureURL": null,
       "aliasOf": null
     },
