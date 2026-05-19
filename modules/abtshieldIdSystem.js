@@ -105,7 +105,7 @@ export const abtshieldIdSubmodule = {
             }
           },
           undefined,
-          AJAX_OPTIONS
+          { ...AJAX_OPTIONS }
         );
       }
     };
