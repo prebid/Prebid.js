@@ -10,7 +10,7 @@ const LEVELS = {
   'error': 'ERROR'
 } as const;
 
-export type LogEvent = {
+export type DebugEvent = {
   type: 'WARNING' | 'ERROR',
   arguments: any[]
 }
@@ -20,7 +20,7 @@ declare module '../events' {
     /**
      * Fired when a warning or error message is logged.
      */
-    [EVENTS.AUCTION_DEBUG]: [LogEvent]
+    [EVENTS.AUCTION_DEBUG]: [DebugEvent]
   }
 }
 
@@ -43,7 +43,7 @@ function makeLogger<L extends keyof typeof LEVELS>(level: L, emit = false): (typ
       logFn.apply(console, decorateLog(args, prefix))
     }
     if (emit) {
-      emitEvent(EVENTS.AUCTION_DEBUG, { type: LEVELS[level] as LogEvent['type'], arguments: args });
+      emitEvent(EVENTS.AUCTION_DEBUG, { type: LEVELS[level] as DebugEvent['type'], arguments: args });
     }
   }
 }
