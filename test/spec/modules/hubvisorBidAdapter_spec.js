@@ -293,10 +293,27 @@ describe('Hubvisor Bid Adapter', () => {
   });
 
   describe('getUserSyncs()', () => {
-    it('should return empty array when serverResponses does not have exactly 2 entries', () => {
+    it('should return empty array when no response has a bidders array', () => {
       expect(spec.getUserSyncs({}, [])).to.eql([]);
       expect(spec.getUserSyncs({}, [{ body: {} }])).to.eql([]);
-      expect(spec.getUserSyncs({}, [{ body: {} }, { body: {} }, { body: {} }])).to.eql([]);
+      expect(spec.getUserSyncs({}, [{ body: {} }, { body: {} }])).to.eql([]);
+    });
+
+    it('should find the sync response by shape regardless of position', () => {
+      const responses = [
+        { body: { id: 'ortb-auction-resp', seatbid: [] } },
+        { body: { bidders: [{ type: 'image', url: 'https://sync.example.com/pixel' }] } },
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }]);
+    });
+
+    it('should work with only the sync response present (e.g. auction failed)', () => {
+      const responses = [
+        { body: { bidders: [{ type: 'image', url: 'https://sync.example.com/pixel' }] } },
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }]);
     });
 
     it('should return empty array when sync response has no bidders', () => {

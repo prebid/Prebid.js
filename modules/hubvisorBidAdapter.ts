@@ -58,7 +58,7 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const req = request as any;
-    if (req.site) {
+    if (req.site && req.publisher) {
       req.site.publisher = req.publisher;
     }
     delete req.publisher;
@@ -231,12 +231,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     _syncOptions: { iframeEnabled: boolean; pixelEnabled: boolean },
     serverResponses: ServerResponse[]
   ): { type: SyncType; url: string }[] {
-    if (serverResponses.length !== 2) {
+    const syncResponse = serverResponses.find(r => Array.isArray((r.body as SyncResponseBody)?.bidders));
+    if (!syncResponse) {
       return [];
     }
-    const [syncResponse] = serverResponses;
-    const body = syncResponse.body as SyncResponseBody | undefined;
-    return (body?.bidders ?? []).reduce<{ type: SyncType; url: string }[]>((acc, { type, url }) => {
+    const body = syncResponse.body as SyncResponseBody;
+    return (body.bidders ?? []).reduce<{ type: SyncType; url: string }[]>((acc, { type, url }) => {
       const syncType = SYNC_TYPE_MAP[type];
       if (!syncType || !url) {
         return acc;
