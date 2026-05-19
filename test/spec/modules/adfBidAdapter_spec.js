@@ -705,7 +705,8 @@ describe('Adf adapter', function () {
       const serverResponse = {};
       const bidRequest = { data: {} };
 
-      assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.deepEqual(result, []);
     });
 
     it('should set ad content on banner response', function () {

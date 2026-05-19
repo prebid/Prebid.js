@@ -1,21 +1,22 @@
-'use strict';
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, setOnAny } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import type { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse } from '../src/adapters/bidderFactory.js';
+import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
+import type { Bid } from '../src/bidfactory.js';
 
 const BIDDER_CODE = 'adf';
 const GVLID = 50;
 const BIDDER_ALIAS = [
-  { code: 'adformOpenRTB', gvlid: GVLID },
-  { code: 'adform', gvlid: GVLID }
+  { code: 'adformOpenRTB' as const, gvlid: GVLID },
+  { code: 'adform' as const, gvlid: GVLID }
 ];
 
 const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
-const converter = ortbConverter({
+const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     ttl: 360,
   },
@@ -24,7 +25,7 @@ const converter = ortbConverter({
     const { mid, inv, mname } = bidRequest.params;
 
     if (mid) {
-      imp.tagid = mid;
+      imp.tagid = String(mid);
     } else {
       deepSetValue(imp, 'ext.bidder', { inv, mname });
     }
@@ -61,45 +62,53 @@ const converter = ortbConverter({
   }
 });
 
-export const spec = {
+const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
+  const { mid, inv, mname } = bid.params || {};
+  return !!(mid || (inv && mname));
+};
+
+const buildRequests = (
+  validBidRequests: BidRequest<typeof BIDDER_CODE>[],
+  bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
+): AdapterRequest => {
+  const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
+  const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
+
+  const data = converter.toORTB({
+    bidRequests: validBidRequests,
+    bidderRequest,
+    context: { netRevenue: pt === 'net', pt }
+  });
+
+  return {
+    method: 'POST',
+    url: 'https://' + adxDomain + '/adx/openrtb',
+    data
+  };
+};
+
+const interpretResponse = (serverResponse: ServerResponse, request: AdapterRequest): AdapterResponse => {
+  if (!serverResponse.body) {
+    return [];
+  }
+  const response = converter.fromORTB({ request: request.data, response: serverResponse.body }) as ExtendedResponse;
+  return response.bids || [];
+};
+
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
   supportedMediaTypes: [NATIVE, BANNER, VIDEO],
-  isBidRequestValid: (bid) => {
-    const params = bid.params || {};
-    const { mid, inv, mname } = params;
-    return !!(mid || (inv && mname));
-  },
-  buildRequests: (validBidRequests, bidderRequest) => {
-    const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
-    const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-
-    const data = converter.toORTB({
-      bidRequests: validBidRequests,
-      bidderRequest,
-      context: { netRevenue: pt === 'net', pt }
-    });
-
-    return {
-      method: 'POST',
-      url: 'https://' + adxDomain + '/adx/openrtb',
-      data
-    };
-  },
-  interpretResponse: (serverResponse, request) => {
-    if (!serverResponse.body) {
-      return;
-    }
-    const response = converter.fromORTB({ request: request.data, response: serverResponse.body });
-    return response.bids;
-  }
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
 };
 
 registerBidder(spec);
 
-function outstreamRenderer(bid) {
-  bid.renderer.push(() => {
+function outstreamRenderer(bid: Bid) {
+  bid.renderer!.push(() => {
     window.Adform.renderOutstream(bid);
   });
 }
