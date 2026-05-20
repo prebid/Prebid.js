@@ -1345,6 +1345,103 @@ describe('IntentIQ tests', function () {
     expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
   });
 
+  it('should return true when null and empty string are compared (both invalid)', function () {
+    const fpData = { gdprString: null, gppString: null, uspString: null };
+    const cmpData = { gdprString: '', gppString: '', uspString: '' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.true;
+  });
+
+  it('should return true when null and undefined are compared (both invalid)', function () {
+    const fpData = { gdprString: null, gppString: null, uspString: null };
+    const cmpData = { gdprString: undefined, gppString: undefined, uspString: undefined };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.true;
+  });
+
+  it('should return true when "undefined" string and null are compared (both invalid)', function () {
+    const fpData = { gdprString: 'undefined', gppString: 'undefined', uspString: 'undefined' };
+    const cmpData = { gdprString: null, gppString: null, uspString: null };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.true;
+  });
+
+  it('should return false when a valid value is compared against null', function () {
+    const fpData = { gdprString: 'consent123', gppString: null, uspString: null };
+    const cmpData = { gdprString: null, gppString: null, uspString: null };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should return false when null is compared against a valid value', function () {
+    const fpData = { gdprString: null, gppString: null, uspString: null };
+    const cmpData = { gdprString: 'consent123', gppString: null, uspString: null };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  describe('appendCMPData via createPixelUrl', function () {
+    const baseParams = { partner: 'testPartner', domainName: 'example.com' };
+
+    it('should not include us_privacy in URL when uspString is null', function () {
+      const cmpData = { uspString: null, gppString: null, gdprApplies: false, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.not.include('us_privacy');
+    });
+
+    it('should not include us_privacy in URL when uspString is the string "undefined"', function () {
+      const cmpData = { uspString: 'undefined', gppString: null, gdprApplies: false, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.not.include('us_privacy');
+    });
+
+    it('should include us_privacy in URL when uspString is a valid string', function () {
+      const cmpData = { uspString: '1NYN', gppString: null, gdprApplies: false, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.include(`&us_privacy=${encodeURIComponent('1NYN')}`);
+    });
+
+    it('should not include gpp in URL when gppString is null', function () {
+      const cmpData = { uspString: null, gppString: null, gdprApplies: false, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.not.include('&gpp=');
+    });
+
+    it('should not include gpp in URL when gppString is the string "undefined"', function () {
+      const cmpData = { uspString: null, gppString: 'undefined', gdprApplies: false, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.not.include('&gpp=');
+    });
+
+    it('should include gdpr=1 without gdpr_consent when gdprApplies is true and gdprString is null', function () {
+      const cmpData = { uspString: null, gppString: null, gdprApplies: true, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.include('&gdpr=1');
+      expect(url).to.not.include('gdpr_consent');
+    });
+
+    it('should include gdpr=1 without gdpr_consent when gdprApplies is true and gdprString is "undefined"', function () {
+      const cmpData = { uspString: null, gppString: null, gdprApplies: true, gdprString: 'undefined' };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.include('&gdpr=1');
+      expect(url).to.not.include('gdpr_consent');
+    });
+
+    it('should include gdpr=1 and gdpr_consent when gdprApplies is true and gdprString is valid', function () {
+      const cmpData = { uspString: null, gppString: null, gdprApplies: true, gdprString: 'validConsent' };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.include('&gdpr=1');
+      expect(url).to.include(`&gdpr_consent=${encodeURIComponent('validConsent')}`);
+    });
+
+    it('should include gdpr=0 and no gdpr_consent when gdprApplies is false', function () {
+      const cmpData = { uspString: null, gppString: null, gdprApplies: false, gdprString: null };
+      const url = createPixelUrl({}, undefined, baseParams, {}, cmpData);
+      expect(url).to.include('&gdpr=0');
+      expect(url).to.not.include('gdpr_consent');
+    });
+  });
+
   it('should run callback from params', async () => {
     let wasCallbackCalled = false
     const callbackConfigParams = {

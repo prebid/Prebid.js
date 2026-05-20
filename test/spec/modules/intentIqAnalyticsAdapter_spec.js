@@ -1096,4 +1096,164 @@ describe("IntentIQ tests all", function () {
     expect(decoded.abPercentage).to.equal(95);
     expect(decoded).to.not.have.property('userPercentage');
   });
+
+  describe('BID_REQUESTED CMP mismatch detection', function () {
+    let refreshUserIdsStub;
+    let gppStub, uspStub, gdprStub;
+
+    beforeEach(function () {
+      getGlobal().refreshUserIds = sinon.stub();
+      refreshUserIdsStub = getGlobal().refreshUserIds;
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(null);
+    });
+
+    afterEach(function () {
+      delete getGlobal().refreshUserIds;
+      gppStub.restore();
+      uspStub.restore();
+      gdprStub.restore();
+    });
+
+    it('should call refreshUserIds with intentIqId when gdprString changes', function () {
+      window[identityName].firstPartyData.gdprString = 'oldConsent';
+      gdprStub.returns({ consentString: 'newConsent', gdprApplies: true });
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.calledOnce).to.be.true;
+      expect(refreshUserIdsStub.calledWith({ submoduleNames: ['intentIqId'] })).to.be.true;
+    });
+
+    it('should call refreshUserIds when uspString changes from valid to another valid value', function () {
+      window[identityName].firstPartyData.uspString = '1YNN';
+      uspStub.returns('1NNN');
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.calledOnce).to.be.true;
+    });
+
+    it('should not call refreshUserIds when CMP data matches stored firstPartyData', function () {
+      window[identityName].firstPartyData.gdprString = 'sameConsent';
+      window[identityName].firstPartyData.gppString = null;
+      window[identityName].firstPartyData.uspString = null;
+      gdprStub.returns({ consentString: 'sameConsent', gdprApplies: true });
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.called).to.be.false;
+    });
+
+    it('should not call refreshUserIds when null and empty string are compared (both invalid)', function () {
+      window[identityName].firstPartyData.gdprString = null;
+      window[identityName].firstPartyData.gppString = null;
+      window[identityName].firstPartyData.uspString = null;
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.called).to.be.false;
+    });
+
+    it('should not call refreshUserIds when stored value is "undefined" string and current is null (both invalid)', function () {
+      window[identityName].firstPartyData.gdprString = '';
+      window[identityName].firstPartyData.gppString = 'undefined';
+      window[identityName].firstPartyData.uspString = 'undefined';
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.called).to.be.false;
+    });
+
+    it('should call refreshUserIds when valid gdprString is replaced by null (invalid)', function () {
+      window[identityName].firstPartyData.gdprString = 'validConsent';
+      window[identityName].firstPartyData.gppString = null;
+      window[identityName].firstPartyData.uspString = null;
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.calledOnce).to.be.true;
+    });
+
+    it('should not call refreshUserIds when firstPartyData is absent in global object', function () {
+      delete window[identityName].firstPartyData;
+
+      events.emit(EVENTS.BID_REQUESTED);
+
+      expect(refreshUserIdsStub.called).to.be.false;
+    });
+  });
+
+  describe('constructFullUrl CMP isValidValue filtering', function () {
+    let gppStub, uspStub, gdprStub;
+
+    afterEach(function () {
+      if (gppStub) gppStub.restore();
+      if (uspStub) uspStub.restore();
+      if (gdprStub) gdprStub.restore();
+    });
+
+    it('should not include us_privacy when uspString is null', function () {
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(null);
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests[0].url).to.not.include('us_privacy');
+    });
+
+    it('should not include us_privacy when uspString is the string "undefined"', function () {
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns('undefined');
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(null);
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests[0].url).to.not.include('us_privacy');
+    });
+
+    it('should not include gpp when gppString is null', function () {
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(null);
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests[0].url).to.not.include('&gpp=');
+    });
+
+    it('should not include gdpr_consent when gdprString is null', function () {
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(null);
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests[0].url).to.not.include('gdpr_consent');
+    });
+
+    it('should not include gdpr_consent when gdprString is the string "undefined"', function () {
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns({ consentString: 'undefined', gdprApplies: false });
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests[0].url).to.not.include('gdpr_consent');
+    });
+
+    it('should include gdpr_consent and gdpr=1 when gdprString is valid', function () {
+      const consentString = 'validConsent';
+      uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(null);
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(null);
+      gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns({ consentString, gdprApplies: true });
+
+      events.emit(EVENTS.BID_WON, getWonRequest());
+
+      expect(server.requests[0].url).to.include(`gdpr_consent=${encodeURIComponent(consentString)}`);
+      expect(server.requests[0].url).to.include('gdpr=1');
+    });
+  });
 });

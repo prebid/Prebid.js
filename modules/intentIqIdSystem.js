@@ -12,7 +12,7 @@ import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js'
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js'
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.js';
-import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
+import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.js';
 import { readData, storeData, defineStorageType, removeDataByKey, tryParse } from '../libraries/intentIqUtils/storageUtils.js';
 import {
   FIRST_PARTY_KEY,
@@ -112,11 +112,14 @@ function appendPartnersFirstParty(url, configParams) {
 }
 
 function appendCMPData(url, cmpData) {
-  url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
-  url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
-  url += cmpData.gdprApplies
-    ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
-    : '&gdpr=0';
+  url += isValidValue(cmpData.uspString) ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
+  url += isValidValue(cmpData.gppString) ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
+  if (cmpData.gdprApplies) {
+    url += isValidValue(cmpData.gdprString) ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
+    url += '&gdpr=1';
+  } else {
+    url += '&gdpr=0';
+  }
   return url
 }
 
@@ -260,9 +263,9 @@ export function handleClientHints(clientHints) {
 }
 
 export function isCMPStringTheSame(fpData, cmpData) {
-  const firstPartyDataCPString = `${fpData.gdprString}${fpData.gppString}${fpData.uspString}`;
-  const cmpDataString = `${cmpData.gdprString}${cmpData.gppString}${cmpData.uspString}`;
-  return firstPartyDataCPString === cmpDataString;
+  return ['gdprString', 'gppString', 'uspString'].every(field =>
+    areCmpValuesEqual(fpData[field], cmpData[field])
+  );
 }
 
 function updateCountersAndStore(runtimeEids, allowedStorage, partnerData) {
