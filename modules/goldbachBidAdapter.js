@@ -49,6 +49,7 @@ const getRendererForBid = (bidRequest, bidResponse) => {
     renderer.setRender((bid, doc) => {
       const videoParams = bidRequest?.mediaTypes?.video || {};
       const playerSize = videoParams.playerSize;
+      const playerSizeTuple = Array.isArray(playerSize?.[0]) ? playerSize[0] : playerSize;
       const playbackmethod = videoParams.playbackmethod;
       const isMuted = typeof playbackmethod === 'number' ? [2, 6].includes(playbackmethod) : false;
       const isAutoplay = typeof playbackmethod === 'number' ? [1, 2].includes(playbackmethod) : false;
@@ -64,8 +65,8 @@ const getRendererForBid = (bidRequest, bidResponse) => {
             controls: true,
             resizeMode: 'auto',
             styling: { progressbarColor: '#000' },
-            publisherProvidedWidth: playerSize?.[0]?.[0],
-            publisherProvidedHeight: playerSize?.[0]?.[1],
+            publisherProvidedWidth: playerSizeTuple?.[0],
+            publisherProvidedHeight: playerSizeTuple?.[1],
             divContainerElement: container,
           };
           const GP = doc.defaultView.GoldPlayer;
@@ -200,13 +201,13 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
-    if (!gdprConsent || !hasPurpose1Consent(gdprConsent)) return syncs;
+    if (!hasPurpose1Consent(gdprConsent)) return syncs;
 
     const serverSyncs = deepAccess(serverResponses, '0.body.ext.goldbach.syncs');
     if (!Array.isArray(serverSyncs)) return syncs;
 
-    const gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
-    const gdprConsentEncoded = encodeURIComponent(gdprConsent.consentString || '');
+    const gdprApplies = gdprConsent?.gdprApplies ? 1 : 0;
+    const gdprConsentEncoded = encodeURIComponent(gdprConsent?.consentString || '');
     const usPrivacy = uspConsent ? encodeURIComponent(uspConsent) : '';
     const gppString = encodeURIComponent(gppConsent?.gppString || '');
     const gppSid = encodeURIComponent((gppConsent?.applicableSections || []).join(','));

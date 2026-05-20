@@ -601,6 +601,23 @@ describe('GoldbachBidAdapter', function () {
         expect(goldPlayerOptions.publisherProvidedHeight).to.equal(360);
       });
 
+      it('reads width/height from a flat playerSize tuple [w, h]', function () {
+        const doc = buildFakeDoc({});
+        runRenderer({ playerSize: [640, 360], doc });
+
+        expect(goldPlayerOptions.publisherProvidedWidth).to.equal(640);
+        expect(goldPlayerOptions.publisherProvidedHeight).to.equal(360);
+      });
+
+      it('leaves width/height undefined when playerSize is missing/invalid', function () {
+        const doc = buildFakeDoc({});
+        // null bypasses runRenderer's default-arg fallback so the renderer sees a falsy playerSize.
+        runRenderer({ playerSize: null, doc });
+
+        expect(goldPlayerOptions.publisherProvidedWidth).to.be.undefined;
+        expect(goldPlayerOptions.publisherProvidedHeight).to.be.undefined;
+      });
+
       it('resolves a GAM-style adUnitCode (slashes and dots) via getElementById without throwing', function () {
         const gamId = '/123/site.com/slot';
         const slotDiv = { id: gamId, tagName: 'DIV' };
@@ -614,10 +631,32 @@ describe('GoldbachBidAdapter', function () {
   }
 
   describe('getUserSyncs', function () {
-    it('should return empty array when gdprConsent is missing', function () {
+    it('should return empty array when there is no auction response', function () {
       const syncOptions = { pixelEnabled: true, iframeEnabled: true };
       const userSyncs = spec.getUserSyncs(syncOptions, {}, undefined, {});
       expect(userSyncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should proceed when gdprConsent is undefined (no CMP / GDPR not in scope) and substitute GDPR macros with safe defaults', function () {
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
+      const serverResponses = [{
+        body: {
+          ext: {
+            goldbach: {
+              syncs: [
+                { type: 'image', url: 'https://partner.example/sync?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}' },
+              ]
+            }
+          }
+        }
+      }];
+      const userSyncs = spec.getUserSyncs(syncOptions, serverResponses, undefined, undefined);
+
+      expect(userSyncs).to.have.length(1);
+      expect(userSyncs[0]).to.deep.equal({
+        type: 'image',
+        url: 'https://partner.example/sync?gdpr=0&gdpr_consent=',
+      });
     });
 
     it('should return empty array when ext.goldbach.syncs is absent from the auction response', function () {
