@@ -10,7 +10,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
- * @typedef {import('./apsBidAdapterTypes.d.ts').ApsAdapterConfig} ApsAdapterConfig
+ * @typedef {import('./apsBidAdapter.d.ts').ApsAdapterConfig} ApsAdapterConfig
  */
 
 const GVLID = 793;
