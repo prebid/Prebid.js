@@ -203,17 +203,13 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const { ad, adUrl, width, height, instl, vastXml, vastUrl, safeRenderer, mediaType } = prepareBidForRendering(bidResponse, options);
+  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
   return {
     ad,
     adUrl,
     width,
     height,
     instl,
-    vastXml,
-    vastUrl,
-    mediaType,
-    safeRenderer
   };
 })
 
@@ -240,6 +236,38 @@ function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid 
   return result;
 }
 
+function prepareRenderingData(
+  bidResponse: Bid,
+  options: RenderOptions | undefined,
+  safeRenderer: SafeRendererConfig | undefined
+): Record<string, any> {
+  if (safeRenderer) {
+    const {
+      ad,
+      adUrl,
+      width,
+      height,
+      instl,
+      vastXml,
+      vastUrl,
+      mediaType,
+      safeRenderer: preparedSafeRenderer,
+    } = prepareBidForRendering(bidResponse, options);
+    return {
+      ad,
+      adUrl,
+      width,
+      height,
+      instl,
+      vastXml,
+      vastUrl,
+      mediaType,
+      safeRenderer: preparedSafeRenderer,
+    };
+  }
+  return getRenderingData(bidResponse, options);
+}
+
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
   const safeRenderer = getSafeRenderer(bidResponse);
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
@@ -252,7 +280,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = getRenderingData(bidResponse, options);
+  const data = prepareRenderingData(bidResponse, options, safeRenderer);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
