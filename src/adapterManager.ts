@@ -745,7 +745,7 @@ const adapterManager = {
         const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
           request: requestCallbacks.request.bind(null, 's2s'),
           done: requestCallbacks.done
-        } : undefined);
+        } : undefined, MODULE_TYPE_PREBID, PBS_ADAPTER_NAME);
         const adaptersServerSide = s2sConfig.bidders;
         const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
         const uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
@@ -802,7 +802,7 @@ const adapterManager = {
       const ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
         done: requestCallbacks.done
-      } : undefined);
+      } : undefined, MODULE_TYPE_BIDDER, bidderRequest.bidderCode);
       const adapterDone = doneCb.bind(bidderRequest);
       try {
         config.runWithBidder(
