@@ -39,7 +39,7 @@ module.exports = {
     return SOURCE_FOLDERS
   },
   getSourcePatterns() {
-    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`])
+    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`, `!./${dir}/**/*.d.ts`])
   },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
