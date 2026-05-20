@@ -12,7 +12,7 @@ export function checkDeclarationFilename(context, node) {
       context.report(node, `Declaration file does not have a corresponding .js file`);
     }
     if (fs.existsSync(tsFile)) {
-      context.report(node, `Declaration file hast the same name as a .ts file`)
+      context.report(node, `Declaration file has the same name as a .ts file`)
     }
   }
 }
