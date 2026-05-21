@@ -311,7 +311,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       }];
-      delete bidRequests[0].params;
+      bidRequests[0].params = {};
       const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.site.publisher.id).to.equal(98);
@@ -342,7 +342,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       }];
-      delete bidRequests[0].params;
+      bidRequests[0].params = {};
       const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.app.publisher.id).to.equal(27);
@@ -373,7 +373,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       }];
-      delete bidRequests[0].params;
+      bidRequests[0].params = {};
       const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.dooh.publisher.id).to.equal(35);
@@ -620,23 +620,25 @@ describe('Equativ bid adapter tests', () => {
     });
 
     it('should warn about missing required properties for video requests', () => {
-      // ASSEMBLE
-      const missingRequiredVideoRequest = DEFAULT_VIDEO_BID_REQUESTS[0];
+      if (FEATURES.VIDEO) {
+        // ASSEMBLE
+        const missingRequiredVideoRequest = DEFAULT_VIDEO_BID_REQUESTS[0];
 
-      // removing required properties
-      delete missingRequiredVideoRequest.mediaTypes.video.mimes;
-      delete missingRequiredVideoRequest.mediaTypes.video.placement;
+        // removing required properties
+        delete missingRequiredVideoRequest.mediaTypes.video.mimes;
+        delete missingRequiredVideoRequest.mediaTypes.video.placement;
 
-      const bidRequests = [missingRequiredVideoRequest];
-      const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
+        const bidRequests = [missingRequiredVideoRequest];
+        const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
-      // ACT
-      spec.buildRequests(bidRequests, bidderRequest);
+        // ACT
+        spec.buildRequests(bidRequests, bidderRequest);
 
-      // ASSERT
-      expect(utils.logWarn.callCount).to.equal(2);
-      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.mimes" is missing'));
-      expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.placement" is missing'));
+        // ASSERT
+        expect(utils.logWarn.callCount).to.equal(2);
+        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.mimes" is missing'));
+        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.placement" is missing'));
+      }
     });
 
     it('should not send a video request when it has an empty body and no other impressions with any media types are defined', () => {
@@ -741,11 +743,14 @@ describe('Equativ bid adapter tests', () => {
         spec.buildRequests(bidRequests, bidderRequest);
 
         // ASSERT
-        expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
+        // 4 warnings from the request itself + 1 from the adapter guard (no valid impressions,
+        // since the native processor skips imps with no assets)
+        expect(utils.logWarn.callCount).to.equal(5);
         expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
         expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.privacy" is missing'));
         expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.plcmttype" is missing'));
         expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.eventtrackers" is missing'));
+        expect(utils.logWarn.getCall(4).args[0]).to.satisfy(arg => arg.includes('no valid impressions'));
       }
     });
 
@@ -931,6 +936,81 @@ describe('Equativ bid adapter tests', () => {
         loss: 0,
         price: cpm
       });
+    });
+
+    it('should skip bid and log warning when converter returns null data', () => {
+      // ASSEMBLE
+      const toORTBStub = sinon.stub(converter, 'toORTB').returns(null);
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('empty data'));
+
+      toORTBStub.restore();
+    });
+
+    it('should skip bid and log warning when request id is missing', () => {
+      // ASSEMBLE
+      const toORTBStub = sinon.stub(converter, 'toORTB').returns({ imp: [{ id: 'abc' }] });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('missing required id'));
+
+      toORTBStub.restore();
+    });
+
+    it('should skip bid and log warning when request id is empty string', () => {
+      // ASSEMBLE
+      const toORTBStub = sinon.stub(converter, 'toORTB').returns({ id: '', imp: [{ id: 'abc' }] });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('missing required id'));
+
+      toORTBStub.restore();
+    });
+
+    it('should skip bid and log warning when imp array is empty', () => {
+      // ASSEMBLE
+      const toORTBStub = sinon.stub(converter, 'toORTB').returns({ id: 'req-id-123', imp: [] });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('no valid impressions'));
+
+      toORTBStub.restore();
+    });
+
+    it('should skip bid and log warning when imp array is absent', () => {
+      // ASSEMBLE
+      const toORTBStub = sinon.stub(converter, 'toORTB').returns({ id: 'req-id-123' });
+
+      // ACT
+      const requests = spec.buildRequests(DEFAULT_BANNER_BID_REQUESTS, DEFAULT_BANNER_BIDDER_REQUEST);
+
+      // ASSERT
+      expect(requests).to.be.an('array').that.is.empty;
+      expect(utils.logWarn.calledOnce).to.equal(true);
+      expect(utils.logWarn.args[0][0]).to.satisfy(arg => arg.includes('no valid impressions'));
+
+      toORTBStub.restore();
     });
   });
 
