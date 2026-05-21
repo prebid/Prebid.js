@@ -6,7 +6,7 @@
  */
 
 import { logInfo, logError, logWarn } from '../src/utils.js';
-import {qualifiedAjaxBuilder} from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
