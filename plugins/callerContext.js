@@ -18,12 +18,15 @@ const getCallers = (() => {
       const metadataFile = osPath.resolve(__dirname, `../metadata/modules/${moduleName}.json`);
       if (moduleName != null && fs.existsSync(metadataFile)) {
         const metadata = JSON.parse(fs.readFileSync(metadataFile).toString());
-        const callers = metadata.components.map(({componentType, componentName}) => [componentType, componentName]);
-        if (!callers.length) {
+        const callers = metadata.components.reduce((summary, {gvlid, componentName, componentType}) => {
+          summary.gvlids.add(gvlid)
+          summary.callers.push([componentType, componentName])
+        }, {gvlids: new Set(), callers: []});
+        if (!callers.callers.length) {
           throw new Error(`Unexpected empty component list from metadata file ${metadataFile}`);
         }
-        if (callers.length > 1) {
-          console.warn(`WARNING: more than one moduleType/moduleName is associated with '${filename}'. ${message}`)
+        if (callers.gvlids.size > 1) {
+          console.warn(`WARNING: more than one GVL ID is associated with '${filename}'. ${message}`)
         }
         cache[filename] = callers;
       } else {
