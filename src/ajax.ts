@@ -109,7 +109,7 @@ function callerContext(callers = []) {
         try {
           return fn(...args);
         } finally {
-          callers.pop();
+          stack.pop();
         }
       }
     },
@@ -136,6 +136,7 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
   return fetcherFactoryImpl(callerContext(), timeout, { request, done }, moduleType, moduleName);
 }
 (fetcherFactory as any).withCallers = (callers) => {
+  // this is not intended to be used directly; see plugins/callerContext.js
   return (...args) => {
     return fetcherFactoryImpl(callerContext(callers), ...args);
   }
@@ -251,8 +252,9 @@ export function ajaxBuilder(timeout = 3000, { request, done } = {} as any, modul
   return ajaxBuilderImpl(callerContext(), timeout, { request, done }, moduleType, moduleName);
 }
 (ajaxBuilder as any).withCallers = (callers) => {
+  // this is not intended to be used directly; see plugins/callerContext.js
   return (...args) => {
-    return (ajaxBuilderImpl as any)(callerContext(callers), ...args);
+    return ajaxBuilderImpl(callerContext(callers), ...args);
   }
 }
 

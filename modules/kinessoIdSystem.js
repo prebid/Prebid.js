@@ -26,6 +26,10 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
 
+export const dep = {
+  ajax
+};
+
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
  * @param {string} currPrng the current pseudorandom number generator
