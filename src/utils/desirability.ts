@@ -4,45 +4,48 @@ import { bidderSettings } from '../bidderSettings.js';
 import type { Bid } from '../bidfactory.ts';
 import type { BidderCode } from '../types/common';
 import { logError } from '../utils.js';
+import { getBidAdjustmentFn } from './cpm.js';
 
 export type SortByHighestDesirabilityDeps = {
   index?: { getBidRequest(bid: Bid): BidRequest<BidderCode> | undefined };
   bs?: typeof bidderSettings;
 };
 
-/**
- * Numeric score for targeting sort (higher wins). Uses publisher `bidDesirabilityAdjustment` when configured;
- * otherwise returns `bid.cpm`. The hook is assumed to return a number.
- */
-export function bidDesirabilityScore(bid: Bid, deps: SortByHighestDesirabilityDeps = {}): number {
+type BidAdjustmentFn = (
+  cpm: number,
+  bid: Bid,
+  bidRequest: BidRequest<BidderCode> | undefined | null
+) => number;
+
+export function adjustDesirability(
+  bid: Bid,
+  bidRequest: BidRequest<BidderCode> | undefined | null,
+  deps: SortByHighestDesirabilityDeps = {},
+): number {
   const index = deps.index ?? auctionManager.index;
   const bs = deps.bs ?? bidderSettings;
-  const bidRequest = index.getBidRequest(bid);
-  const adapterCode = bid.adapterCode;
-  const bidderCode = bid.bidderCode ?? bidRequest?.bidder;
-  const useAdapterScope = Boolean(bs.get(adapterCode, 'adjustAlternateBids'));
-  const adjust =
-    bs.getOwn(bidderCode, 'bidDesirabilityAdjustment') ??
-    bs.get(useAdapterScope ? adapterCode : bidderCode, 'bidDesirabilityAdjustment');
+  bidRequest = bidRequest ?? index.getBidRequest(bid);
+  const bidCopy = Object.assign({}, bid) as Bid;
 
-  if (typeof adjust !== 'function') {
-    return bid.cpm;
+  const adjustedCpm = bid.cpm;
+
+  const bidDesirabilityAdjustment = getBidAdjustmentFn(bid, bs, 'bidDesirabilityAdjustment', bidRequest) as BidAdjustmentFn | undefined;
+  if (typeof bidDesirabilityAdjustment !== 'function') {
+    return adjustedCpm;
   }
 
   try {
-    return adjust(bid.cpm, Object.assign({}, bid) as Bid, bidRequest);
+    return bidDesirabilityAdjustment(adjustedCpm, bidCopy, bidRequest);
   } catch (e) {
     logError('Error during bid desirability adjustment', e);
-    return bid.cpm;
+    return adjustedCpm;
   }
 }
 
-/** Sort comparator: descending by {@link bidDesirabilityScore}. Same order as raw CPM when no adjustment is set. */
-export function sortByHighestDesirability(a: Bid, b: Bid, deps: SortByHighestDesirabilityDeps = {}): number {
-  const resolved: SortByHighestDesirabilityDeps = {
-    index: auctionManager.index,
-    bs: bidderSettings,
-    ...deps,
-  };
-  return bidDesirabilityScore(b, resolved) - bidDesirabilityScore(a, resolved);
+/** Compare bids that already carry `.desirability` (e.g. after `adjustBids` in the auction). Higher wins. */
+export function sortByHighestDesirability(a: Bid, b: Bid): number {
+  if (b.desirability && a.desirability) {
+    return b.desirability - a.desirability;
+  }
+  return b.cpm - a.cpm;
 }

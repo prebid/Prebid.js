@@ -95,6 +95,8 @@ export interface BaseBidResponse {
    * Billing tracker URL.
    */
   burl?: string;
+
+  desirability: number;
 }
 
 // <format>BidResponesProperties - adapter interpretResponse properties specific to the format.

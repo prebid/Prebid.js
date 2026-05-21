@@ -1,5 +1,3 @@
-import { bidDesirabilityScore } from './desirability.ts';
-
 export function simpleCompare(a, b) {
   if (a === b) return 0;
   return a < b ? -1 : 1;
@@ -37,12 +35,12 @@ const timestampCompare = keyCompare((bid) => bid.responseTimestamp);
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
 export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))))
 
-const bidDesirabilityOrCpmCompare = keyCompare((bid) => bidDesirabilityScore(bid));
+const bidDesirabilityCompare = keyCompare((bid) => bid.desirability);
 
-// This function will get highest bid by {@link bidDesirabilityScore} (publisher `bidDesirabilityAdjustment` when set, else raw CPM);
+// This function will get highest bid by `.desirability` (publisher `bidDesirabilityAdjustment` when set, else mirrors cpm via `adjustBids`);
 // ties use lowest `timeToRespond`, matching {@link getHighestCpm}.
 export const getHighestDesirability = maximum(
-  tiebreakCompare(bidDesirabilityOrCpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond)))
+  tiebreakCompare(bidDesirabilityCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond)))
 );
 
 // This function will get the oldest highest cpm value bid, in case of tie it will return the bid which came in first

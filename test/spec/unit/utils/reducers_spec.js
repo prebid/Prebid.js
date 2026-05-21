@@ -8,8 +8,6 @@ import {
   getHighestDesirability,
   getOldestHighestCpmBid, getLatestHighestCpmBid, reverseCompare
 } from '../../../../src/utils/reducers.js';
-import { auctionManager } from '../../../../src/auctionManager.js';
-import { bidderSettings } from '../../../../src/bidderSettings.js';
 
 import assert from 'assert';
 
@@ -98,27 +96,16 @@ describe('reducers', () => {
   });
 
   describe('getHighestDesirability', function () {
-    let sandbox;
-
-    beforeEach(function () {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(auctionManager.index, 'getBidRequest').returns(null);
-      sandbox.stub(bidderSettings, 'get').returns(undefined);
-      sandbox.stub(bidderSettings, 'getOwn').returns(undefined);
-    });
-
-    afterEach(function () {
-      sandbox.restore();
-    });
-
-    it('matches getHighestCpm when bidDesirabilityAdjustment is absent', function () {
+    it('matches getHighestCpm when `.desirability` mirrors cpm ranking', function () {
       const hi = {
         cpm: 2,
+        desirability: 2,
         timeToRespond: 100,
         bidderCode: 'x'
       };
       const lo = {
         cpm: 1,
+        desirability: 1,
         timeToRespond: 100,
         bidderCode: 'y'
       };
@@ -127,11 +114,13 @@ describe('reducers', () => {
 
       const slow = {
         cpm: 1,
+        desirability: 1,
         timeToRespond: 100,
         bidderCode: 'x'
       };
       const fast = {
         cpm: 1,
+        desirability: 1,
         timeToRespond: 50,
         bidderCode: 'y'
       };
@@ -139,24 +128,18 @@ describe('reducers', () => {
       expect(getHighestDesirability(fast, slow)).to.eql(fast);
     });
 
-    it('prefers adjusted desirability over raw CPM when bidDesirabilityAdjustment is configured', function () {
-      bidderSettings.getOwn.callsFake((bidder, path) => {
-        if (path !== 'bidDesirabilityAdjustment') return undefined;
-        if (bidder === 'boosted') {
-          return (cpm, bid) => cpm + (bid.bonus || 0);
-        }
-        return undefined;
-      });
-
+    it('prefers higher `.desirability` over raw cpm tie-break ranking', function () {
       const boosted = {
         cpm: 2,
         bonus: 20,
+        desirability: 22,
         timeToRespond: 100,
         bidderCode: 'boosted',
         bidder: 'boosted'
       };
       const plain = {
         cpm: 10,
+        desirability: 10,
         timeToRespond: 100,
         bidderCode: 'plain',
         bidder: 'plain'

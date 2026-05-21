@@ -39,6 +39,7 @@ import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
 import { wrapInBids } from "./utils/wrapsInBids.ts";
+import { adjustDesirability } from './utils/desirability.ts';
 
 const { syncUsers } = userSync;
 
@@ -1105,11 +1106,16 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  const bidPriceAdjusted = adjustCpm(bid.cpm, bid);
+  const bidRequest = auctionManager.index.getBidRequest(bid);
+  const bidPriceAdjusted = adjustCpm(bid.cpm, bid, bidRequest);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
   }
+
+  // defaults to  cpm
+  const bidDesirabilityAdjusted = adjustDesirability(bid, bidRequest);
+  bid.desirability = bidDesirabilityAdjusted;
 }
 
 /**
