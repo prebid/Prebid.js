@@ -157,7 +157,6 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
     if (
       request.credentials === 'include' && (
         context.getCallers().length === 0 ||
-        !hasDeviceAccess() ||
         context.getCallers().some(([moduleType, moduleName]) => !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)))
       )
     ) {
