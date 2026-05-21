@@ -21,7 +21,7 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
  * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
  * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
- * @typedef {import('./yandexBidAdapterTypes.d.ts').YandexBidRequestParams} YandexBidRequestParams
+ * @typedef {import('./yandexBidAdapter.d.ts').YandexBidRequestParams} YandexBidRequestParams
  */
 
 /**
