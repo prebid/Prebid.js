@@ -11,7 +11,7 @@ import {
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { addBidderRequests } from '../../src/auction.js';
-import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from '../../src/targeting.js';
+import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } from '../../src/targeting.js';
 import { PBS, registerOrtbProcessor, REQUEST } from '../../src/pbjsORTB.js';
 import { timedBidResponseHook } from '../../src/utils/perfMetrics.js';
 import type { BidderCode } from "../../src/types/common.d.ts";
@@ -238,7 +238,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(highestCpmCallback)));
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit > 0) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
         bucketBids.sort(sortByMultibid);
         modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
       } else {

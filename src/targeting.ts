@@ -55,7 +55,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
       // if adUnitBidLimit is set, pass top N number bids
       const bidLimit = typeof adUnitBidLimit === 'object' ? adUnitBidLimit[bucketKey] : adUnitBidLimit;
       if (bidLimit) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort(winSorter);
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort(winSorter);
         bids.push(...bucketBids.slice(0, bidLimit));
       } else {
         bucketBids = bucketBids.sort(winSorter)
@@ -90,7 +90,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
  *    "hb_pb": "2"
  *  }]
  */
-export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
+export function sortByDealAndPriceBucketOrDesirability(useDesirability = false) {
   return function(a, b) {
     if (a.adserverTargeting.hb_deal !== undefined && b.adserverTargeting.hb_deal === undefined) {
       return -1;
@@ -101,7 +101,10 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
     }
 
     // assuming both values either have a deal or don't have a deal - sort by the hb_pb param
-    if (useCpm) {
+    if (useDesirability) {
+      if (b.desirability && a.desirability) {
+        return b.desirability - a.desirability;
+      }
       return b.cpm - a.cpm;
     }
 
@@ -561,7 +564,7 @@ export function newTargeting(auctionManager) {
         adUnitCode,
         adserverTargeting: targetingCopy[adUnitCode]
       };
-    }).sort(sortByDealAndPriceBucketOrCpm());
+    }).sort(sortByDealAndPriceBucketOrDesirability());
 
     // iterate through the targeting based on above list and transform the keys into the query-equivalent and count characters
     return targetingMap.reduce(function (accMap, currMap, index, arr) {
