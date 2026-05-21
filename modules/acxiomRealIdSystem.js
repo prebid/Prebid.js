@@ -10,6 +10,7 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { logError } from '../src/utils.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -23,6 +24,35 @@ const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/v1/eid/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
+const US_GPP_SID_API = {
+  7: 'usnat',
+  8: 'usca',
+  9: 'usva',
+  10: 'usco',
+  11: 'usut',
+  12: 'usct'
+};
+
+function flatSection(subsections) {
+  if (!Array.isArray(subsections)) return subsections;
+  return subsections.reduceRight((merged, section) => Object.assign(section, merged), {});
+}
+
+function isGppOptedOut(gppData) {
+  if (!gppData || !gppData.applicableSections || !gppData.parsedSections) {
+    return false;
+  }
+  for (const sid of gppData.applicableSections) {
+    const apiName = US_GPP_SID_API[sid];
+    if (!apiName) continue;
+    const sectionData = flatSection(gppData.parsedSections[apiName]);
+    if (sectionData && (sectionData.SaleOptOut === 1 || sectionData.SharingOptOut === 1)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isConsentBlocked(consentData) {
   if (!consentData) {
     return false;
@@ -34,12 +64,33 @@ function isConsentBlocked(consentData) {
     return true;
   }
 
-  // CCPA: us_privacy position 3 = Y → opted out of sale
+  // CCPA: us_privacy opt-out of sale (position 3, 0-indexed charAt(2))
   const usp = consentData.usp;
   if (usp && typeof usp === 'string' && usp.length >= 3 && usp.charAt(2) === 'Y') {
     return true;
   }
 
+  // GPP: US state sections — suppress on Sale or Sharing opt-out
+  if (isGppOptedOut(consentData.gpp)) {
+    return true;
+  }
+
+  return false;
+}
+
+function isConsentBlockedByHandlers() {
+  const gdpr = gdprDataHandler.getConsentData();
+  if (gdpr && (gdpr.gdprApplies || gdpr.consentString)) {
+    return true;
+  }
+  const usp = uspDataHandler.getConsentData();
+  if (usp && typeof usp === 'string' && usp.length >= 3 && usp.charAt(2) === 'Y') {
+    return true;
+  }
+  const gpp = gppDataHandler.getConsentData();
+  if (isGppOptedOut(gpp)) {
+    return true;
+  }
   return false;
 }
 
@@ -61,7 +112,11 @@ function buildLookupUrl(apiUrl) {
 export const acxiomRealIdSubmodule = {
   name: MODULE_NAME,
 
-  decode(value) {
+  decode(value, config) {
+    if (isConsentBlockedByHandlers()) {
+      deleteStoredToken(config);
+      return undefined;
+    }
     if (value && typeof value === 'string') {
       return { acxiomRealId: { id: value, atype: 1 } };
     }
@@ -113,7 +168,7 @@ export const acxiomRealIdSubmodule = {
                 const eids = parsed && parsed.user && parsed.user.eids;
                 const uid = eids && eids[0] && eids[0].uids && eids[0].uids[0];
                 if (uid && uid.id) {
-                  cb(uid.id);
+                  cb({ id: uid.id, atype: uid.atype });
                 } else {
                   cb();
                 }

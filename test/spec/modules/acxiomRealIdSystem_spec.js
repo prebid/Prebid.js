@@ -1,5 +1,6 @@
 import { acxiomRealIdSubmodule, storage } from 'modules/acxiomRealIdSystem.js';
 import * as ajaxLib from 'src/ajax.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai';
 
 const PARTNER_ID = 'TEST_PARTNER_01';
@@ -66,6 +67,71 @@ describe('acxiomRealIdSystem', () => {
 
     it('should return undefined for object without id', () => {
       expect(acxiomRealIdSubmodule.decode({ atype: 1 })).to.be.undefined;
+    });
+
+    describe('post-load consent suppression', () => {
+      let gdprStub, uspStub, gppStub;
+      let removeLocalStorageStub, setCookieStub;
+
+      beforeEach(() => {
+        gdprStub = sinon.stub(gdprDataHandler, 'getConsentData');
+        uspStub = sinon.stub(uspDataHandler, 'getConsentData');
+        gppStub = sinon.stub(gppDataHandler, 'getConsentData');
+        gdprStub.returns(null);
+        uspStub.returns(null);
+        gppStub.returns(null);
+        removeLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+        setCookieStub = sinon.stub(storage, 'setCookie');
+        sinon.stub(storage, 'localStorageIsEnabled').returns(true);
+        sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+      });
+
+      afterEach(() => {
+        sinon.restore();
+      });
+
+      it('should return EID when no consent signals block', () => {
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN);
+        expect(result).to.deep.equal({ acxiomRealId: { id: REAL_ID_TOKEN, atype: 1 } });
+      });
+
+      it('should suppress and delete token when GDPR handler reports gdprApplies', () => {
+        gdprStub.returns({ gdprApplies: true, consentString: 'BOtest' });
+        const config = { storage: { name: STORAGE_NAME } };
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        expect(result).to.be.undefined;
+        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+      });
+
+      it('should suppress and delete token when USP handler reports opt-out', () => {
+        uspStub.returns('1YYN');
+        const config = { storage: { name: STORAGE_NAME } };
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        expect(result).to.be.undefined;
+        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+      });
+
+      it('should suppress and delete token when GPP handler reports SaleOptOut', () => {
+        gppStub.returns({
+          applicableSections: [7],
+          parsedSections: { usnat: { Version: 1, SaleOptOut: 1, SharingOptOut: 2 } }
+        });
+        const config = { storage: { name: STORAGE_NAME } };
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        expect(result).to.be.undefined;
+        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+      });
+
+      it('should suppress and delete token when GPP handler reports SharingOptOut', () => {
+        gppStub.returns({
+          applicableSections: [8],
+          parsedSections: { usca: { Version: 1, SaleOptOut: 2, SharingOptOut: 1 } }
+        });
+        const config = { storage: { name: STORAGE_NAME } };
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        expect(result).to.be.undefined;
+        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+      });
     });
   });
 
@@ -139,6 +205,86 @@ describe('acxiomRealIdSystem', () => {
             { usp: '1Y' }
           );
           expect(result).to.have.property('callback');
+        });
+      });
+
+      describe('US — GPP', () => {
+        it('should suppress when GPP usnat SaleOptOut = 1', () => {
+          const result = acxiomRealIdSubmodule.getId(
+            { params: { partnerId: PARTNER_ID } },
+            {
+              gpp: {
+                applicableSections: [7],
+                parsedSections: { usnat: { Version: 1, SaleOptOut: 1, SharingOptOut: 2 } }
+              }
+            }
+          );
+          expect(result).to.be.undefined;
+        });
+
+        it('should suppress when GPP usnat SharingOptOut = 1', () => {
+          const result = acxiomRealIdSubmodule.getId(
+            { params: { partnerId: PARTNER_ID } },
+            {
+              gpp: {
+                applicableSections: [7],
+                parsedSections: { usnat: { Version: 1, SaleOptOut: 2, SharingOptOut: 1 } }
+              }
+            }
+          );
+          expect(result).to.be.undefined;
+        });
+
+        it('should suppress when GPP usca (California) SaleOptOut = 1', () => {
+          const result = acxiomRealIdSubmodule.getId(
+            { params: { partnerId: PARTNER_ID } },
+            {
+              gpp: {
+                applicableSections: [8],
+                parsedSections: { usca: { Version: 1, SaleOptOut: 1, SharingOptOut: 2 } }
+              }
+            }
+          );
+          expect(result).to.be.undefined;
+        });
+
+        it('should not suppress when GPP section has no opt-out', () => {
+          const result = acxiomRealIdSubmodule.getId(
+            { params: { partnerId: PARTNER_ID } },
+            {
+              gpp: {
+                applicableSections: [7],
+                parsedSections: { usnat: { Version: 1, SaleOptOut: 2, SharingOptOut: 2 } }
+              }
+            }
+          );
+          expect(result).to.have.property('callback');
+        });
+
+        it('should not suppress when applicable section is non-US', () => {
+          const result = acxiomRealIdSubmodule.getId(
+            { params: { partnerId: PARTNER_ID } },
+            {
+              gpp: {
+                applicableSections: [2],
+                parsedSections: {}
+              }
+            }
+          );
+          expect(result).to.have.property('callback');
+        });
+
+        it('should handle subsection arrays by flattening', () => {
+          const result = acxiomRealIdSubmodule.getId(
+            { params: { partnerId: PARTNER_ID } },
+            {
+              gpp: {
+                applicableSections: [7],
+                parsedSections: { usnat: [{ Version: 1, SaleOptOut: 2 }, { SaleOptOut: 1 }] }
+              }
+            }
+          );
+          expect(result).to.be.undefined;
         });
       });
 
