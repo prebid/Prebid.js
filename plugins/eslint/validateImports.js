@@ -1,7 +1,9 @@
 
 const path = require('path');
 const _ = require('lodash');
-const { CODE_EXT, isInDirectory } = require('./resolver.js');
+const { CODE_EXT } = require('./resolver.js');
+const { isInDirectory } = require('../utils.js');
+
 
 const MODULES_PATH = path.resolve(__dirname, '../../modules');
 const CREATIVE_PATH = path.resolve(__dirname, '../../creative');
