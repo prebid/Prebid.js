@@ -21,6 +21,7 @@ const getCallers = (() => {
         const callers = metadata.components.reduce((summary, {gvlid, componentName, componentType}) => {
           summary.gvlids.add(gvlid)
           summary.callers.push([componentType, componentName])
+          return summary;
         }, {gvlids: new Set(), callers: []});
         if (!callers.callers.length) {
           throw new Error(`Unexpected empty component list from metadata file ${metadataFile}`);
@@ -28,7 +29,7 @@ const getCallers = (() => {
         if (callers.gvlids.size > 1) {
           console.warn(`WARNING: more than one GVL ID is associated with '${filename}'. ${message}`)
         }
-        cache[filename] = callers;
+        cache[filename] = callers.callers;
       } else {
         console.warn(`WARNING: cannot determine moduleType/moduleName to associate with '${filename}'. If this is a new adapter it may need metadata to be updated.  ${message}`)
         cache[filename] = null;
