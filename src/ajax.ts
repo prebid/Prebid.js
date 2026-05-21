@@ -99,14 +99,51 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   return dep.makeRequest(url, rqOpts);
 }
 
+function callerContext(callers = []) {
+  const stack = [callers];
+  return {
+    attach(fn, callers) {
+      return function (...args) {
+        stack.push(callers);
+        try {
+          return fn(...args);
+        } finally {
+          callers.pop();
+        }
+      }
+    },
+    getCallers() {
+      return stack[stack.length - 1];
+    }
+  }
+}
+
+function fixedCallerContext(moduleType, moduleName) {
+  return {
+    attach: (fn) => fn,
+    getCallers: () => [[moduleType, moduleName]]
+  }
+}
+
 /**
  * Return a version of `fetch` that automatically cancels requests after `timeout` milliseconds.
  *
  * If provided, `request` and `done` should be functions accepting a single argument.
  * `request` is invoked at the beginning of each request, and `done` at the end; both are passed its origin.
- *
  */
 export function fetcherFactory(timeout = 3000, { request, done }: any = {}, moduleType?: string, moduleName?: string): typeof window['fetch'] {
+  return fetcherFactoryImpl(callerContext(), timeout, { request, done }, moduleType, moduleName);
+}
+(fetcherFactory as any).withCallers = (callers) => {
+  return (...args) => {
+    return fetcherFactoryImpl(callerContext(callers), ...args);
+  }
+}
+
+function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}, moduleType?: string, moduleName?: string): typeof window.fetch {
+  if (moduleName && moduleType) {
+    context = fixedCallerContext(moduleType, moduleName);
+  }
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
@@ -117,9 +154,9 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
 
     if (
       request.credentials === 'include' && (
-        !hasDeviceAccess() || (
-          moduleType && moduleName && !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName))
-        )
+        context.getCallers().length === 0 ||
+        !hasDeviceAccess() ||
+        context.getCallers().some(([moduleType, moduleName]) => !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)))
       )
     ) {
       request = dep.makeRequest(request, {
@@ -141,6 +178,7 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
       return req;
     })(fetcher);
   }
+  (fetcher as any).withCallers = (callers) => context.attach(fetcher, callers);
   return fetcher;
 }
 
@@ -209,10 +247,21 @@ export type AjaxErrorCallback = (statusText: string, xhr: XHR) => void;
 export type AjaxCallback = AjaxSuccessCallback | { success?: AjaxErrorCallback; error?: AjaxSuccessCallback };
 
 export function ajaxBuilder(timeout = 3000, { request, done } = {} as any, moduleType?: string, moduleName?: string) {
-  const fetcher = fetcherFactory(timeout, { request, done }, moduleType, moduleName);
-  return function (url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
+  return ajaxBuilderImpl(callerContext(), timeout, { request, done }, moduleType, moduleName);
+}
+(ajaxBuilder as any).withCallers = (callers) => {
+  return (...args) => {
+    return (ajaxBuilderImpl as any)(callerContext(callers), ...args);
+  }
+}
+
+function ajaxBuilderImpl(context, timeout = 3000, { request, done } = {} as any, moduleType?: string, moduleName?: string) {
+  const fetcher = fetcherFactoryImpl(context, timeout, { request, done }, moduleType, moduleName);
+  function ajax(url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
-  };
+  }
+  (ajax as any).withCallers = (callers) => context.attach(ajax, callers);
+  return ajax;
 }
 
 /**
