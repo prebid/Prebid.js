@@ -284,8 +284,11 @@ function generateOpenRtbObject(bidderRequest, bid) {
       },
       regs: {
         gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        gpp: bidderRequest.gppConsent ? bidderRequest.gppConsent.gppString : '',
-        gpp_sid: bidderRequest.gppConsent ? bidderRequest.gppConsent.applicableSections : [],
+        // Only emit gpp/gpp_sid when GPP applies; spec says fields should be absent otherwise.
+        ...(bidderRequest.gppConsent && {
+          gpp: bidderRequest.gppConsent.gppString,
+          gpp_sid: bidderRequest.gppConsent.applicableSections || []
+        }),
         // OpenRTB 2.6: us_privacy promoted to top-level (was regs.ext.us_privacy in 2.5)
         us_privacy: bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
         ext: {
@@ -353,12 +356,13 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    // Read schain from bid-level ortb2 first, then fall back to bidderRequest-level ortb2
-    // (Prebid Schain module and pbjs.setConfig({ortb2:{source:{schain:...}}}) inject into bidderRequest.ortb2)
-    const schain = bid?.ortb2?.source?.schain ||
-      bidderRequest?.ortb2?.source?.schain ||
-      bid?.ortb2?.source?.ext?.schain ||
-      bidderRequest?.ortb2?.source?.ext?.schain;
+    // Prefer canonical bidderRequest.ortb2.source.schain (where the Prebid Schain module and
+    // pbjs.setConfig({ortb2:{source:{schain:...}}}) inject); fall back to bid-level ortb2,
+    // then 2.5 ext locations for backward compat.
+    const schain = bidderRequest?.ortb2?.source?.schain ||
+      bid?.ortb2?.source?.schain ||
+      bidderRequest?.ortb2?.source?.ext?.schain ||
+      bid?.ortb2?.source?.ext?.schain;
     if (schain && isArray(schain.nodes) && schain.nodes.length > 0) {
       outBoundBidRequest.source.schain = deepAccess(schain, 'nodes') ? { ...schain } : schain;
       outBoundBidRequest.source.schain.nodes = schain.nodes.map((n, i) => i === 0 ? { ...n, rid: outBoundBidRequest.id } : { ...n });

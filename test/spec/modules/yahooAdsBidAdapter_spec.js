@@ -472,6 +472,26 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(data.source.schain.nodes[0].asi).to.equal('exchange.com');
       expect(data.source.ext.schain).to.be.undefined;
     });
+
+    it('should prefer bidderRequest.ortb2.source.schain over bid.ortb2.source.schain', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const canonicalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'canonical.com', sid: 'canonical-1', hp: 1 }]
+      };
+      const perBidSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'per-bid.com', sid: 'per-bid-1', hp: 1 }]
+      };
+      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
+      bidderRequest.ortb2.source = { schain: canonicalSchain };
+      bidRequest.ortb2 = bidRequest.ortb2 || {};
+      bidRequest.ortb2.source = { schain: perBidSchain };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.schain.nodes[0].asi).to.equal('canonical.com');
+    });
   });
 
   describe('First party data module - "Site" support (ortb2):', () => {
@@ -876,6 +896,22 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
       expect(data.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
       expect(data.regs.gpp_sid).to.eql(bidderRequest.gppConsent.applicableSections);
+    });
+
+    it('should omit regs.gpp and regs.gpp_sid when no GPP consent is present', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      delete bidderRequest.gppConsent;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs).to.not.have.property('gpp');
+      expect(data.regs).to.not.have.property('gpp_sid');
+    });
+
+    it('should default regs.gpp_sid to [] when GPP applies but applicableSections is undefined', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.gppConsent = { gppString: 'somegppstring' };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs.gpp).to.equal('somegppstring');
+      expect(data.regs.gpp_sid).to.eql([]);
     });
 
     it('overrides the GPP consent data using data from the ortb2 config object', function () {
