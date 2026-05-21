@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 
 export const dep = {
   ajax
-}
+};
 
 type AdelerateBidParams = {
   placementId: string;
