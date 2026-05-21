@@ -171,7 +171,7 @@ function interpretResponse(serverResponse, bidderRequest) {
       width: bid.width,
       height: bid.height,
       creativeId: bid.creativeId,
-      dealId: bid.dealId == null ? bid.dealId : '',
+      dealId: bid.dealId != null ? bid.dealId : undefined,
       currency: bid.currency,
       netRevenue: bid.netRevenue || false,
       mediaType: (bid.mediaType === NATIVE + NATIVE_SUFFIX) ? NATIVE : bid.mediaType,
