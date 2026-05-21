@@ -51,6 +51,11 @@ const converter = ortbConverter({
       request.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
 
+    const startioEid = request.user?.ext?.eids?.find(eid => eid.source === 'start.io');
+    if (startioEid?.uids?.[0]?.id) {
+      request.user.buyeruid = startioEid.uids[0].id;
+    }
+
     request.bcat = ortb?.bcat || bidParams?.bcat;
     request.badv = ortb?.badv || bidParams?.badv;
     request.bapp = ortb?.bapp || bidParams?.bapp;

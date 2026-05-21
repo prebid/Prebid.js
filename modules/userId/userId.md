@@ -20,6 +20,17 @@ pbjs.setConfig({
                 pid: "0010b00002GYU4eBAH" // Example ID
             }
         }, {
+            name: "abtshieldId",
+            params: {
+                sid: "pb.your-service-id"
+            },
+            storage: {
+                type: "cookie",
+                name: "abtshieldId",
+                expires: 1,
+                refreshInSeconds: 86400
+            }
+        }, {
             name: "pubCommonId",
             storage: {
                 type: "cookie",
@@ -157,6 +168,18 @@ pbjs.setConfig({
         },
         {
             name: "mygaruId"
+        },
+        {
+            name: "rediadsId",
+            params: {
+                source: "rediads.com"
+            },
+            storage: {
+                type: "html5",
+                name: "rediads_id",
+                expires: 30,
+                refreshInSeconds: 3600
+            }
         },
         {
             name: "startioId"

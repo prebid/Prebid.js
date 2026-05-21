@@ -259,6 +259,41 @@ describe('Prebid Adapter: Startio', function () {
       expect(request.regs.coppa).to.equal(1);
     });
 
+    it('should set buyeruid from start.io eid', function () {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+      bidderRequest.ortb2 = {
+        user: {
+          ext: {
+            eids: [
+              { source: 'start.io', uids: [{ id: 'test-startio-id', atype: 1 }] }
+            ]
+          }
+        }
+      };
+
+      const request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+
+      expect(request.user).to.exist;
+      expect(request.user.buyeruid).to.equal('test-startio-id');
+    });
+
+    it('should not set buyeruid when start.io eid is absent', function () {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+      bidderRequest.ortb2 = {
+        user: {
+          ext: {
+            eids: [
+              { source: 'other.com', uids: [{ id: 'other-id', atype: 1 }] }
+            ]
+          }
+        }
+      };
+
+      const request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+
+      expect(request.user?.buyeruid).to.not.exist;
+    });
+
     it('should provide blocked parameters', function () {
       let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
       let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);

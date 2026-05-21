@@ -350,7 +350,6 @@ function mapBid({
   delete bidObj['bidderWinsCount']
   delete bidObj['schain']
   delete bidObj['refererInfo']
-  delete bidObj['statusMessage']
   delete bidObj['status']
   delete bidObj['adUrl']
   delete bidObj['ad']
