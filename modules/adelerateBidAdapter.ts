@@ -5,6 +5,10 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
+export const dep = {
+  ajax
+}
+
 type AdelerateBidParams = {
   placementId: string;
   publisherId: string;
@@ -189,7 +193,7 @@ function onTimeout(data) {
   if (!data || !data.length) {
     return;
   }
-  ajax(`${EVENTS_ENDPOINT}/timeout`, undefined, JSON.stringify(data), {
+  dep.ajax(`${EVENTS_ENDPOINT}/timeout`, undefined, JSON.stringify(data), {
     method: 'POST',
     keepalive: true,
     withCredentials: true,
@@ -200,7 +204,7 @@ function onBidWon(bid) {
   if (!bid) {
     return;
   }
-  ajax(`${EVENTS_ENDPOINT}/win`, undefined, JSON.stringify({
+  dep.ajax(`${EVENTS_ENDPOINT}/win`, undefined, JSON.stringify({
     requestId: bid.requestId,
     adId: bid.adId,
     cpm: bid.cpm,
@@ -215,7 +219,7 @@ function onBidWon(bid) {
 
 function onBidderError(args) {
   const { error, bidderRequest } = args || {};
-  ajax(`${EVENTS_ENDPOINT}/error`, undefined, JSON.stringify({
+  dep.ajax(`${EVENTS_ENDPOINT}/error`, undefined, JSON.stringify({
     error: error?.status,
     bidderCode: BIDDER_CODE,
     auctionId: bidderRequest?.auctionId,
