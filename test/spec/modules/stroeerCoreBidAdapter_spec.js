@@ -277,7 +277,7 @@ describe('stroeerCore bid adapter', function () {
       bidRequest.mediaTypes = {
         video: {
           playerSize: [640, 480],
-          context: 'adpod'
+          context: 'video'
         },
         native: {
           image: {
@@ -900,27 +900,6 @@ describe('stroeerCore bid adapter', function () {
               }
             }
           }
-
-          bidReq.ortb2 = utils.deepClone(ortb2);
-
-          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
-          const sentOrtb2 = serverRequestInfo.data.ortb2;
-
-          assert.deepEqual(sentOrtb2, ortb2);
-        });
-
-        it('should add the Cookie Deprecation Label', () => {
-          const bidReq = buildBidderRequest();
-
-          const cDepObj = {
-            cdep: 'example_label_1'
-          };
-
-          const ortb2 = {
-            device: {
-              ext: cDepObj
-            }
-          };
 
           bidReq.ortb2 = utils.deepClone(ortb2);
 

@@ -587,7 +587,6 @@ describe('bid overrides', function () {
         'bidderCode': 'rubicon',
         'width': 970,
         'height': 250,
-        'statusMessage': 'Bid available',
         'mediaType': 'banner',
         'source': 'client',
         'currency': 'USD',
@@ -696,7 +695,6 @@ describe('bid overrides', function () {
         'bids': [{
           'width': 970,
           'height': 250,
-          'statusMessage': 'Bid available',
           'mediaType': 'banner',
           'source': 'client',
           'currency': 'USD',

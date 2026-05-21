@@ -26,10 +26,12 @@ import { PbPromise } from '../src/utils/promise.js';
 import { loadExternalScript } from '../src/adloader.js';
 
 /**
- * @typedef {import('../modules/userId/spec.ts').IdProviderSpec} Submodule
- * @typedef {import('../modules/userId/spec.ts').UserIdConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./id5IdSystem.d.ts').Id5IdSystemModuleName} Id5IdSystemModuleName
  * @typedef {import('../src/consentHandler').AllConsentData} ConsentData
- * @typedef {import('../modules/userId/spec.ts').ProviderResponse} ProviderResponse
+ * @typedef {import('../modules/userId/spec.js').ProviderResponse} ProviderResponse
  */
 
 const MODULE_NAME = 'id5Id';
@@ -170,7 +172,7 @@ const DEFAULT_EIDS = {
   }
 };
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<Id5IdSystemModuleName>} */
 export const id5IdSubmodule = {
   /**
    * used to link submodule with config

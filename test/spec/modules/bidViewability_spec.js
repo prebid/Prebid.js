@@ -36,7 +36,6 @@ const PBJS_WINNING_BID = {
   'bidder': 'pubmatic',
   'width': 300,
   'height': 250,
-  'statusMessage': 'Bid available',
   'adId': 'id',
   'requestId': 1024,
   'source': 'client',

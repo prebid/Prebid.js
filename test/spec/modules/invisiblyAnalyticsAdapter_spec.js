@@ -146,7 +146,6 @@ describe('Invisibly Analytics Adapter test suite', function () {
       size: '300x250',
       source: 'client',
       status: 'rendered',
-      statusMessage: 'Bid available',
       timeToRespond: 421,
       ttl: 300,
       width: 300,

@@ -12,6 +12,9 @@ import { activityParamsBuilder } from '../../src/activities/params.js';
 import type { StartAuctionOptions } from "../../src/prebid.ts";
 import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts";
 
+// export so that consumers can `import {type RTDProviderConfig} from 'prebid.js/modules/rtdModule'`
+export { type RTDProviderConfig } from './spec.ts';
+
 const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
@@ -53,7 +56,8 @@ const setEventsListeners = (function () {
         [EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
         [EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
         [EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
-        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent']
+        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent'],
+        [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent'],
       }).forEach(([ev, [handler, preprocess]]) => {
         events.on(ev as any, (args) => {
           preprocess && (preprocess as any)(args);

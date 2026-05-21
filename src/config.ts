@@ -135,9 +135,9 @@ function attachProperties(config, useDefaultValues = true) {
       set(val) {
         val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
           if (validatePriceGranularity(val[item])) {
-            if (typeof val === 'string') {
+            if (typeof val[item] === 'string') {
               aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
-            } else if (isPlainObject(val)) {
+            } else if (isPlainObject(val[item])) {
               aggregate[item] = val[item];
               logMessage(`Using custom price granularity for ${item}`);
             }
@@ -221,6 +221,21 @@ export interface Config {
    */
   useBidCache?: boolean;
   /**
+   * When Bid Caching is turned on, a custom Filter Function can be defined to gain more granular control over which “cached” bids can be used.
+   * This function will only be called for “cached” bids from previous auctions, not “current” bids from the most recent auction.
+   * The function should take a single bid object argument, and return true to use the cached bid, or false to not use the cached bid.
+   *
+   * For Example, to turn on Bid Caching, but exclude cached video bids, you could do this:
+   *
+   * ```
+   * pbjs.setConfig({
+   *   useBidCache: true,
+   *   bidCacheFilterFunction: bid => bid.mediaType !== 'video'
+   * });
+   * ```
+   */
+  bidCacheFilterFunction?: (bid: Bid) => boolean;
+  /**
    * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
    */
   deviceAccess?: boolean;
@@ -262,6 +277,10 @@ export interface Config {
    */
   bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
   /**
+   * Customize how a GPT slot is matched to an ad unit code during targeting.
+   */
+  customGptSlotMatching?: (slot: googletag.Slot) => ((adUnitCode: string) => boolean) | undefined;
+  /**
    * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
    * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
    */
@@ -288,7 +307,7 @@ interface GetConfig {
   (): Config;
     <S extends DeepProperty<Config> | string>(setting: S): S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown;
     (topic: typeof ALL_TOPICS, listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
-    <S extends DeepProperty<Config> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
+    <S extends NonNullable<DeepProperty<Config>> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
     (listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
 }
 
@@ -582,8 +601,14 @@ export function newConfig() {
     }
 
     const mergedConfig = mergeDeep(_getConfig(), config);
+    const updatedConfig = Object.keys(config).reduce((accumulator, topic) => {
+      if (Object.prototype.hasOwnProperty.call(mergedConfig, topic)) {
+        accumulator[topic] = mergedConfig[topic];
+      }
+      return accumulator;
+    }, {});
 
-    setConfig({ ...mergedConfig });
+    setConfig(updatedConfig);
     return mergedConfig;
   }
 

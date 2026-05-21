@@ -23,7 +23,8 @@ describe('AxisBidAdapter', function () {
       mediaTypes: {
         [BANNER]: {
           sizes: [[300, 250]],
-          pos: 1
+          pos: 1,
+          battr: [1, 3]
         }
       },
       params: {
@@ -40,7 +41,8 @@ describe('AxisBidAdapter', function () {
           playerSize: [[300, 300]],
           minduration: 5,
           maxduration: 60,
-          pos: 1
+          pos: 1,
+          battr: [1, 3]
         }
       },
       params: {
@@ -157,8 +159,7 @@ describe('AxisBidAdapter', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -186,12 +187,10 @@ describe('AxisBidAdapter', function () {
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
             expect(placement.pos).to.be.within(0, 7);
             break;
           case VIDEO:
@@ -199,6 +198,7 @@ describe('AxisBidAdapter', function () {
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
             expect(placement.pos).to.be.within(0, 7);
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -443,7 +443,7 @@ describe('AxisBidAdapter', function () {
 
   describe('getUserSyncs', function() {
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         consentString: 'ALL',
         gdprApplies: true,
       }, {});
@@ -455,7 +455,7 @@ describe('AxisBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {
         consentString: '1---'
       });
       expect(syncData).to.be.an('array').which.is.not.empty;
@@ -466,7 +466,7 @@ describe('AxisBidAdapter', function () {
       expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&ccpa=1---&coppa=0')
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {}, {
         gppString: 'abc123',
         applicableSections: [8]
       });

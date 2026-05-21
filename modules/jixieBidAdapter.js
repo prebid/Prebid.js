@@ -68,7 +68,6 @@ function setIds_(clientId, sessionId) {
  */
 const defaultGenIds_ = [
   { id: '_jxtoko' },
-  { id: '_jxifo' },
   { id: '_jxtdid' },
   { id: '_jxcomp' }
 ];
@@ -174,6 +173,7 @@ export const internal = {
 
 export const spec = {
   code: BIDDER_CODE,
+  disclosureURL: 'local://modules/jixieBidAdapterDisclosure.json',
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (typeof bid.params === 'undefined') {
@@ -217,6 +217,10 @@ export const spec = {
     if (eids1 && eids1.length) {
       eids = eids1;
     }
+
+    const siteKvs = deepAccess(bidderRequest, 'ortb2.site.ext.data');
+    const userKvs = deepAccess(bidderRequest, 'ortb2.user.ext.data');
+
     // we want to send this blob of info to our backend:
     const transformedParams = Object.assign({}, {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
@@ -237,6 +241,12 @@ export const spec = {
       pbjsver: PREBID_VERSION,
       cfg: jxCfg
     }, ids);
+    if (siteKvs) {
+      transformedParams.siteKvs = siteKvs;
+    }
+    if (userKvs) {
+      transformedParams.userKvs = userKvs;
+    }
     return Object.assign({}, {
       method: 'POST',
       url: REQUESTS_URL,

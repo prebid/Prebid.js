@@ -83,7 +83,6 @@ describe('adagio analytics adapter - adagio.js', () => {
         bidderCode: 'adagio',
         width: 300,
         height: 250,
-        statusMessage: 'Bid available',
         cpm: 6.2189757658226075,
         currency: '',
         netRevenue: false,

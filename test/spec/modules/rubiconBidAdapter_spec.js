@@ -700,16 +700,6 @@ describe('the rubicon adapter', function () {
           expect(data.get('p_pos')).to.equal('atf;;btf;;');
         });
 
-        it('should correctly send cdep signal when requested', () => {
-          var badposRequest = utils.deepClone(bidderRequest);
-          badposRequest.bids[0].ortb2 = { device: { ext: { cdep: 3 } } };
-
-          const [request] = spec.buildRequests(badposRequest.bids, badposRequest);
-          const data = new URLSearchParams(request.data);
-
-          expect(data.get('o_cdep')).to.equal('3');
-        });
-
         it('should correctly send ip signal when ortb2.device.ip is provided', () => {
           const ipRequest = utils.deepClone(bidderRequest);
           ipRequest.bids[0].ortb2 = { device: { ip: '123.45.67.89' } };
