@@ -439,6 +439,166 @@ describe('fluctAdapter', function () {
       expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
     });
 
+    it('includes no data.site by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.site).to.eql(undefined);
+    });
+
+    it('includes data.site if ortb2.site exists', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          site: {
+            cat: ['IAB1', 'IAB2'],
+            sectioncat: ['IAB1-1'],
+            pagecat: ['IAB1-2'],
+            keywords: 'sports,news',
+            content: { language: 'ja' },
+            domain: 'example.com',
+            ref: 'https://referrer.example.com',
+            ext: { data: { customKey: 'customValue' } },
+          },
+        },
+      }))[0];
+      expect(request.data.site).to.eql({
+        cat: ['IAB1', 'IAB2'],
+        sectioncat: ['IAB1-1'],
+        pagecat: ['IAB1-2'],
+        keywords: 'sports,news',
+        content: { language: 'ja' },
+        domain: 'example.com',
+        ref: 'https://referrer.example.com',
+        ext: { data: { customKey: 'customValue' } },
+      });
+    });
+
+    it('includes only specified fields in data.site', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          site: {
+            cat: ['IAB1'],
+            domain: 'example.com',
+          },
+        },
+      }))[0];
+      expect(request.data.site).to.eql({
+        cat: ['IAB1'],
+        domain: 'example.com',
+      });
+    });
+
+    it('includes no data.pos by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.pos).to.eql(undefined);
+    });
+
+    it('includes data.pos from mediaTypes.banner.pos', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        mediaTypes: { banner: { sizes: [[300, 250]], pos: 1 } },
+      })), bidderRequest)[0];
+      expect(request.data.pos).to.eql(1);
+    });
+
+    it('includes data.pos from ortb2Imp.ext.data.pos as fallback', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: { ext: { data: { pos: 3 } } },
+      })), bidderRequest)[0];
+      expect(request.data.pos).to.eql(3);
+    });
+
+    it('prefers mediaTypes.banner.pos over ortb2Imp.ext.data.pos', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        mediaTypes: { banner: { sizes: [[300, 250]], pos: 1 } },
+        ortb2Imp: { ext: { data: { pos: 3 } } },
+      })), bidderRequest)[0];
+      expect(request.data.pos).to.eql(1);
+    });
+
+    it('includes no data.device by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.device).to.eql(undefined);
+    });
+
+    it('includes data.device if ortb2.device exists', function () {
+      const sua = { browsers: [{ brand: 'Chrome', version: ['120'] }] };
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          device: {
+            sua,
+            ua: 'Mozilla/5.0',
+            w: 1920,
+            h: 1080,
+            language: 'ja',
+            devicetype: 2,
+          },
+        },
+      }))[0];
+      expect(request.data.device).to.eql({
+        sua,
+        ua: 'Mozilla/5.0',
+        w: 1920,
+        h: 1080,
+        language: 'ja',
+        devicetype: 2,
+      });
+    });
+
+    it('includes only specified fields in data.device', function () {
+      const sua = { browsers: [{ brand: 'Chrome', version: ['120'] }] };
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          device: { sua },
+        },
+      }))[0];
+      expect(request.data.device).to.eql({ sua });
+    });
+
+    it('includes no data.imp by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp).to.eql(undefined);
+    });
+
+    it('includes data.imp.ext.data from ortb2Imp.ext.data', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            data: {
+              section: 'sports',
+              contentType: 'article',
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.imp.ext.data).to.eql({
+        section: 'sports',
+        contentType: 'article',
+      });
+    });
+
+    it('sends no rwdd by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.rwdd).to.eql(undefined);
+    });
+
+    it('sends ortb2Imp.rwdd as rwdd', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: { rwdd: 1 },
+      })), bidderRequest)[0];
+      expect(request.data.rwdd).to.eql(1);
+    });
+
+    it('sends no rwdd when ortb2Imp.rwdd is 0', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: { rwdd: 0 },
+      })), bidderRequest)[0];
+      expect(request.data.rwdd).to.eql(undefined);
+    });
+
     it('sends no instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.instl).to.eql(0);

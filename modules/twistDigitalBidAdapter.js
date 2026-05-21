@@ -6,7 +6,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./twistDigitalBidAdapterTypes.d.ts').TwistDigitalBidRequestParams} TwistDigitalBidRequestParams
+ * @typedef {import('./twistDigitalBidAdapter.d.ts').TwistDigitalBidRequestParams} TwistDigitalBidRequestParams
  */
 
 const GVLID = 1292;

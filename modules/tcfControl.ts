@@ -34,6 +34,7 @@ import {
   ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
 import { processRequestOptions } from '../src/ajax.js';
+import type { TCFConsentData } from "./consentManagementTcf.ts";
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -199,9 +200,27 @@ export function shouldEnforce(consentData, purpose, name) {
   return consentData && consentData.gdprApplies;
 }
 
-function getConsentOrLI(consentData, path, id, acceptLI) {
+export function getAcceptableFlags(consentData: TCFConsentData, purpose: number, gvlid: number): { acceptConsent: boolean, acceptLI: boolean } {
+  // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#tcdata
+  //  0 - Not Allowed
+  //  1 - Require Consent
+  //  2 - Require Legitimate Interest
+  const restriction = consentData.vendorData?.publisher?.restrictions?.[purpose]?.[gvlid];
+  let acceptConsent = true;
+  let acceptLI = LI_PURPOSES.includes(purpose);
+  if (restriction === 0) {
+    acceptConsent = acceptLI = false;
+  } else if (restriction === 1) {
+    acceptLI = false;
+  } else if (restriction === 2) {
+    acceptConsent = false;
+  }
+  return { acceptConsent, acceptLI };
+}
+
+function getConsentOrLI(consentData, path, id, acceptConsent, acceptLI) {
   const data = deepAccess(consentData, `vendorData.${path}`);
-  return !!data?.consents?.[id] || (acceptLI && !!data?.legitimateInterests?.[id]);
+  return (acceptConsent && !!data?.consents?.[id]) || (acceptLI && !!data?.legitimateInterests?.[id]);
 }
 
 function getConsent(consentData, type, purposeNo, gvlId) {
@@ -212,11 +231,12 @@ function getConsent(consentData, type, purposeNo, gvlId) {
     const [path, liPurposes] = gvlId === VENDORLESS_GVLID
       ? ['publisher', PUBLISHER_LI_PURPOSES]
       : ['purpose', LI_PURPOSES];
-    purpose = getConsentOrLI(consentData, path, purposeNo, liPurposes.includes(purposeNo));
+    purpose = getConsentOrLI(consentData, path, purposeNo, true, liPurposes.includes(purposeNo));
   }
+  const { acceptConsent, acceptLI } = getAcceptableFlags(consentData, purposeNo, gvlId);
   return {
     purpose,
-    vendor: getConsentOrLI(consentData, 'vendor', gvlId, LI_PURPOSES.includes(purposeNo))
+    vendor: getConsentOrLI(consentData, 'vendor', gvlId, acceptConsent, acceptLI)
   }
 }
 
