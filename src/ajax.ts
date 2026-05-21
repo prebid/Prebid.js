@@ -280,15 +280,21 @@ export function sendBeacon(url, data) {
 }
 
 function requireNames<T extends typeof ajaxBuilder | typeof fetcherFactory>(fn: T) {
-  return function (moduleType: ModuleType, moduleName: string, timeout?, requestCallbacks?) {
+  return function (moduleType: ModuleType, moduleName: string, timeout?: number, requestCallbacks?): ReturnType<T> {
     if (!moduleType || !moduleName) {
       throw new Error('moduleType and moduleName are required');
     }
-    return fn(timeout, requestCallbacks, moduleType, moduleName);
+    return (fn as any)(timeout, requestCallbacks, moduleType, moduleName);
   };
 }
 
+/**
+ * A version of ajaxBuilder that requires moduleType and moduleName.
+ */
 export const qualifiedAjaxBuilder = requireNames(ajaxBuilder);
+/**
+ * A version of fetcherFactory that requires moduleType and moduleName.
+ */
 export const qualifiedFetcherFactory = requireNames(fetcherFactory);
 
 export const ajax = ajaxBuilder();
