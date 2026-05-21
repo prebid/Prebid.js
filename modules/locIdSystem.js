@@ -32,7 +32,7 @@ const IP_CACHE_SUFFIX = '_ip';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 export const dep = {
   ajaxBuilder
-}
+};
 /**
  * Normalizes privacy mode config to a boolean flag.
  * Supports both requirePrivacySignals (boolean) and privacyMode (string enum).
