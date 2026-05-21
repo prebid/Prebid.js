@@ -239,7 +239,7 @@ export const kinessoIdSubmodule = {
     const kinessoIdPayload = {};
     kinessoIdPayload.id = knnsoId;
     const payloadString = JSON.stringify(kinessoIdPayload);
-    ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
+    dep.ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
     return { 'id': knnsoId };
   },
   eids: {
