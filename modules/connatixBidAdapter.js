@@ -42,7 +42,7 @@ const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
 export const dep = {
   ajax
-}
+};
 
 let context = {};
 
