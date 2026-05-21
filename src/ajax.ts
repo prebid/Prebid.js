@@ -3,6 +3,7 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
 import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
+import type { ModuleType } from "./activities/modules.ts";
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -278,7 +279,28 @@ export function sendBeacon(url, data) {
   return window.navigator.sendBeacon(url, data);
 }
 
+function requireNames<T extends typeof ajaxBuilder | typeof fetcherFactory>(fn: T) {
+  return function (moduleType: ModuleType, moduleName: string, timeout?, requestCallbacks?) {
+    if (!moduleType || !moduleName) {
+      throw new Error('moduleType and moduleName are required');
+    }
+    return fn(timeout, requestCallbacks, moduleType, moduleName);
+  };
+}
+
+export const qualifiedAjaxBuilder = requireNames(ajaxBuilder);
+export const qualifiedFetcherFactory = requireNames(fetcherFactory);
+
 export const ajax = ajaxBuilder();
 export const fetch = fetcherFactory();
+
+/**
+ * A version of `ajax` that will never include request credentials (withCredentials = false).
+ */
+export const noCredsAjax = ajax;
+/**
+ * A version of `fetch` that will  never include request credentials (credentials = 'same-origin').
+ */
+export const noCredsFetch = fetch;
 
 export type Ajax = typeof ajax;

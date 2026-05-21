@@ -22,7 +22,11 @@ function getModuleName(filename) {
 const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
 
 function relPath(from, toRelToProjectRoot) {
-  return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
+  let result = path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
+  if (!result.startsWith('.')) {
+    result = `./${result}`
+  }
+  return result;
 }
 
 function isInDirectory(filename, dir) {
