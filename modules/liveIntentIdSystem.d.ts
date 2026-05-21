@@ -110,6 +110,9 @@ export type LiveIntentIdSystemParams = {
    * Container of all collector params.
    */
   liCollectConfig?: LiveIntentCollectConfig;
+  /**
+   * First party identifier
+   */
   fpid?: LiveIntentFpid;
 }
 
