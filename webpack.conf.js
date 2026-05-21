@@ -44,7 +44,8 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   target: isES5Mode ? ['web', 'es5'] : 'web',
-  cache: {
+  // ES5 builds must not reuse cached babel output for core-js (see node_modules exclude below)
+  cache: isES5Mode ? false : {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')
   },
@@ -75,12 +76,31 @@ module.exports = {
           const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), ES5: true});
           return [
             {
+              // In ES5 mode babelConfig sets modules:'commonjs', which rewrites ESM
+              // `export` in .mjs files (e.g. tiny-hashes) to `exports.X = ...`.
+              // Webpack 5 treats .mjs as strict ESM by default and does not inject
+              // an `exports` binding, causing "exports is not defined" at runtime.
+              // Force javascript/auto so the CJS output from babel is wrapped with
+              // module/exports.
+              test: /\.mjs$/,
+              type: 'javascript/auto',
+              resolve: { fullySpecified: false },
+            },
+            {
               test: /node_modules\/.*\.[cm]?js$/,
+              // Never babel core-js: breaks internals/export.js ($ helper) in concat bundles
+              exclude: [
+                /node_modules[\\/]core-js[\\/]/,
+                /node_modules[\\/]core-js$/,
+              ],
               use: [
                 {
                   loader: 'babel-loader',
                   options: Object.assign(
-                    {cacheDirectory: cacheDir, cacheCompression: false},
+                    {
+                      cacheDirectory: isES5Mode ? false : cacheDir,
+                      cacheCompression: false,
+                    },
                     babelConfig,
                     helpers.getAnalyticsOptions()
                   ),
