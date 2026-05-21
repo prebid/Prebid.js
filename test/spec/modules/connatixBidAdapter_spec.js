@@ -10,11 +10,10 @@ import {
   readFromLocalStorage as connatixReadFromLocalStorage,
   saveInLocalStorage as connatixSaveInLocalStorage,
   spec,
-  storage
+  storage, dep
 } from '../../../modules/connatixBidAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as utils from '../../../src/utils.js';
-import * as ajax from '../../../src/ajax.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as winDimensions from '../../../src/utils/winDimensions.js';
 import * as adUnits from 'src/utils/adUnits';
@@ -420,7 +419,7 @@ describe('connatixBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(() => {

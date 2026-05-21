@@ -40,6 +40,10 @@ let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
+export const dep = {
+  ajax
+}
+
 let context = {};
 
 /*
@@ -437,7 +441,7 @@ export const spec = {
   },
 
   triggerEvent(data) {
-    ajax(EVENTS_URL, null, JSON.stringify(data), {
+    dep.ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false
     });
