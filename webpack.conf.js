@@ -44,8 +44,7 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   target: isES5Mode ? ['web', 'es5'] : 'web',
-  // ES5 builds must not reuse cached babel output for core-js (see node_modules exclude below)
-  cache: isES5Mode ? false : {
+  cache: {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')
   },
@@ -97,10 +96,7 @@ module.exports = {
                 {
                   loader: 'babel-loader',
                   options: Object.assign(
-                    {
-                      cacheDirectory: isES5Mode ? false : cacheDir,
-                      cacheCompression: false,
-                    },
+                    {cacheDirectory: cacheDir, cacheCompression: false},
                     babelConfig,
                     helpers.getAnalyticsOptions()
                   ),
