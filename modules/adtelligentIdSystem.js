@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {qualifiedAjaxBuilder} from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 

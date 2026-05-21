@@ -6,7 +6,7 @@ const osPath = require('path');
 const NAMES = {
   'src/ajax.js': {
     names: ['ajax', 'ajaxBuilder', 'fetch', 'fetcherFactory'],
-    message: 'request credentials (ajax `withCredentials` / fetch `credentials: \'include\') may be unexpectedly denied. Consider using one of the "qualified" or "noCreds" variants of ajax / fetch instead.'
+    message: 'Request credentials may be unexpectedly denied. Consider using one of the "qualified" or "noCreds" variants of ajax / fetch instead.'
   }
 }
 

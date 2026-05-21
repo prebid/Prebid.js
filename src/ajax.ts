@@ -2,7 +2,7 @@ import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from './activities/activities.js'
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
-import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
+import { buildUrl, logError, parseUrl } from './utils.js';
 import type { ModuleType } from "./activities/modules.ts";
 
 export const dep = {

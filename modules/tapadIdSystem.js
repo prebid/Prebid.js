@@ -1,6 +1,6 @@
 import { logMessage } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import {qualifiedAjaxBuilder} from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 export const graphUrl = 'https://rtga.tapad.com/v1/graph';
