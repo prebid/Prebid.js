@@ -835,6 +835,104 @@ describe('IntentIQ tests', function () {
       expect(returnedObject.callback).to.be.undefined
       expect(server.requests.length).to.equal(0) // no server requests
     })
+
+    it('should NOT call the server on page reload when CMP has not loaded yet but partner data TTL is still fresh', async function () {
+      // Simulates page reload: FPD has a GDPR string from the previous session,
+      // but getCmpData() returns null because the TCF CMP has not responded yet.
+      // Without the cmpHasData guard this mismatch would incorrectly trigger a server call.
+      const allowedStorage = ['html5'];
+      const freshSCal = Date.now();
+      const freshDate = Date.now();
+      const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
+
+      const FPD = {
+        pcid: 'test-pcid-reload',
+        pcidDate: Date.now(),
+        sCal: freshSCal,
+        gdprString: 'stored_gdpr_consent',
+        gppString: null,
+        uspString: null
+      };
+      const storedPartnerData = {
+        date: freshDate,
+        cttl: 3600000, // 1 hour — still fresh
+        data: { eids: [{ source: 'intentiq.com', uids: [{ id: 'eid1' }] }] }
+      };
+
+      localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(FPD));
+      localStorage.setItem(partnerDataKey, JSON.stringify(storedPartnerData));
+
+      // CMP not loaded yet — all strings are null
+      // (no consent handler stubs → getCmpData returns null for all strings)
+
+      await waitForClientHints();
+
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should NOT call the server for opted-out user when partner data has no cttl (e.g. only terminationCause stored)', async function () {
+      // After our OptOut storage change, partner data only stores { terminationCause }.
+      // Without the !isOptedOut guard, missing cttl would incorrectly trigger a server call.
+      const allowedStorage = ['html5'];
+      const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
+
+      const FPD = {
+        pcid: 'test-pcid-optout',
+        pcidDate: Date.now(),
+        isOptedOut: true,
+        sCal: Date.now(),
+        gdprString: null,
+        gppString: null,
+        uspString: null
+      };
+      const strippedPartnerData = { terminationCause: 5 }; // only terminationCause — no cttl/date
+
+      localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(FPD));
+      localStorage.setItem(partnerDataKey, JSON.stringify(strippedPartnerData));
+
+      const returnedObj = intentIqIdSubmodule.getId(defaultConfigParams);
+      await waitForClientHints();
+
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('should call the server when CMP strings actually change (user updated consent)', async function () {
+      // When CMP has loaded and the consent string differs from the stored one,
+      // a server call MUST happen so the server receives the new consent.
+      const allowedStorage = ['html5'];
+      const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
+
+      const FPD = {
+        pcid: 'test-pcid-cmpchange',
+        pcidDate: Date.now(),
+        sCal: Date.now(),
+        gdprString: 'old_gdpr_consent',
+        gppString: null,
+        uspString: null
+      };
+      const storedPartnerData = {
+        date: Date.now(),
+        cttl: 3600000 // still fresh
+      };
+
+      localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(FPD));
+      localStorage.setItem(partnerDataKey, JSON.stringify(storedPartnerData));
+
+      // CMP IS loaded — returns a NEW consent string
+      const gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns({
+        gdprApplies: true,
+        consentString: 'new_gdpr_consent'
+      });
+
+      const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+      submoduleCallback(() => {});
+      await waitForClientHints();
+
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.contain('ProfilesEngineServlet?at=39');
+
+      gdprStub.restore();
+    });
   });
 
   describe('IntentIQ consent management within getId', function () {
@@ -924,7 +1022,7 @@ describe('IntentIQ tests', function () {
       expect(moduleFPD.gdprString).to.equal(gdprData.consentString);
     });
 
-    it('should clear localStorage, update runtimeEids and trigger callback with empty data if isOptedOut is true in response', async function () {
+    it('should keep only terminationCause in partner data, drop identifiers from FPD, and clear client hints when isOptedOut is true in response', async function () {
       // Save some data to localStorage for FPD and CLIENT_HINTS
       const FIRST_PARTY_DATA_KEY = FIRST_PARTY_KEY + '_' + partner;
       localStorage.setItem(FIRST_PARTY_DATA_KEY, JSON.stringify({ terminationCause: 35, some_key: 'someValue' }));
@@ -942,7 +1040,7 @@ describe('IntentIQ tests', function () {
       request.respond(
         200,
         responseHeader,
-        JSON.stringify({ isOptedOut: true })
+        JSON.stringify({ isOptedOut: true, tc: 41 })
       );
 
       // Check that the URL contains the expected consent data
@@ -951,16 +1049,71 @@ describe('IntentIQ tests', function () {
       expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
 
       const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      const lsPartnerData = JSON.parse(localStorage.getItem(FIRST_PARTY_DATA_KEY));
 
-      // Ensure that keys are removed if isOptedOut is true
-      expect(localStorage.getItem(FIRST_PARTY_DATA_KEY)).to.be.null;
+      // Client hints must be wiped
       expect(localStorage.getItem(CLIENT_HINTS_KEY)).to.be.null;
 
+      // Partner data must only retain terminationCause
+      expect(lsPartnerData).to.deep.equal({ terminationCause: 41 });
+
+      // FPD must not contain pcid / pcidDate / pid / abTestUuid when opted out
       expect(lsFirstPartyData.isOptedOut).to.equal(true);
+      expect(lsFirstPartyData).to.not.have.property('pcid');
+      expect(lsFirstPartyData).to.not.have.property('pcidDate');
+      expect(lsFirstPartyData).to.not.have.property('pid');
+      expect(lsFirstPartyData).to.not.have.property('abTestUuid');
+
       expect(callBackSpy.calledOnce).to.be.true;
       // Get the parameter with which the callback was called
       const callbackArgument = callBackSpy.args[0][0]; // The first argument from the callback call (runtimeEids)
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
+    });
+
+    it('should include tcfv (TCF API version) in the server request when window.__tcfapi is present and GDPR applies', async function () {
+      mockConsentHandlers(uspData, gppData, { ...gdprData, apiVersion: 2 });
+
+      const callBackSpy = sinon.spy();
+      const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+      submoduleCallback(callBackSpy);
+      await waitForClientHints();
+
+      const request = server.requests[0];
+      expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
+      expect(request.url).to.contain('&tcfv=2');
+    });
+
+    it('should NOT include tcfv when GDPR does not apply', async function () {
+      mockConsentHandlers(uspData, gppData, { gdprApplies: false, consentString: '', apiVersion: 2 });
+
+      const callBackSpy = sinon.spy();
+      const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+      submoduleCallback(callBackSpy);
+      await waitForClientHints();
+
+      const request = server.requests[0];
+      expect(request.url).to.not.contain('&tcfv=');
+    });
+
+    it('should not persist pcid/pcidDate/pid/abTestUuid to device when first-party data has isOptedOut=true on a subsequent session', async function () {
+      // Pre-existing opted-out FPD on device, missing pcid (as would be the case after OptOut)
+      const preservedSCal = Date.now();
+      const existingFPD = { isOptedOut: true, sCal: preservedSCal };
+      localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(existingFPD));
+
+      mockConsentHandlers(uspData, gppData, gdprData);
+
+      intentIqIdSubmodule.getId(defaultConfigParams);
+      await waitForClientHints();
+
+      const lsFPD = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      expect(lsFPD.isOptedOut).to.equal(true);
+      expect(lsFPD).to.not.have.property('pcid');
+      expect(lsFPD).to.not.have.property('pcidDate');
+      expect(lsFPD).to.not.have.property('pid');
+      expect(lsFPD).to.not.have.property('abTestUuid');
+      // sCal must be preserved across sessions on an opted-out user
+      expect(lsFPD.sCal).to.equal(preservedSCal);
     });
 
     it('should make request to correct address with iiqServerAddress parameter', async function() {

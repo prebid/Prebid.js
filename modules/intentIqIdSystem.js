@@ -17,7 +17,6 @@ import { readData, storeData, defineStorageType, removeDataByKey, tryParse } fro
 import {
   FIRST_PARTY_KEY,
   CLIENT_HINTS_KEY,
-  EMPTY,
   GVLID,
   VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
   HOURS_72, CH_KEYS, DEFAULT_PERCENTAGE, WITH_IIQ
@@ -117,6 +116,7 @@ function appendCMPData(url, cmpData) {
   if (cmpData.gdprApplies) {
     url += isValidValue(cmpData.gdprString) ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
     url += '&gdpr=1';
+    url += isValidValue(cmpData.tcfApiVersion) ? '&tcfv=' + encodeURIComponent(cmpData.tcfApiVersion) : '';
   } else {
     url += '&gdpr=0';
   }
@@ -376,14 +376,15 @@ export const intentIqIdSubmodule = {
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
-      firstPartyData = {
+      const newObj = {
         pcid: firstPartyId,
         pcidDate: Date.now(),
-        uspString: EMPTY,
-        gppString: EMPTY,
-        gdprString: EMPTY,
         date: Date.now()
       };
+      // Preserve existing FPD (gdprString, isOptedOut, sCal, ...) when present —
+      // when opted out, pcid/pcidDate are not persisted to device, so the runtime
+      // value is regenerated each session without overwriting persisted fields.
+      firstPartyData = firstPartyData ? { ...firstPartyData, ...newObj } : newObj;
       newUser = true;
       storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
     } else if (!firstPartyData.pcidDate) {
@@ -462,8 +463,10 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    let hasPartnerData = !!Object.keys(partnerData).length;
-    if (!isCMPStringTheSame(firstPartyData, cmpData) ||
+    const pdLength = !!Object.keys(partnerData).length
+    const hasPartnerData = pdLength && pdLength > 1; // in OptOut case we keep one property inside
+
+    if ((!isCMPStringTheSame(firstPartyData, cmpData)) ||
       !firstPartyData.sCal ||
       (hasPartnerData && (!partnerData.cttl || !partnerData.date || Date.now() - partnerData.date > partnerData.cttl))) {
       firstPartyData.uspString = cmpData.uspString;
@@ -586,14 +589,12 @@ export const intentIqIdSubmodule = {
               if (respJson.isOptedOut === true) {
                 respJson.data = partnerData.data = runtimeEids = { eids: [] };
 
-                const keysToRemove = [
-                  PARTNER_DATA_KEY,
-                  CLIENT_HINTS_KEY
-                ];
-
-                keysToRemove.forEach(key => removeDataByKey(key, allowedStorage));
+                // Remove client hints entirely; partner data is rewritten below with
+                // only terminationCause persisted (handled by storeData when opted out).
+                removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
 
                 storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+                storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
                 firePartnerCallback();
                 callback(runtimeEids);
                 return

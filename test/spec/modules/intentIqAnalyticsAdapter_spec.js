@@ -454,6 +454,32 @@ describe("IntentIQ tests all", function () {
     gdprStub.restore();
   });
 
+  it("should include tcfv (TCF API version) in report when TCF CMP is detected", function () {
+    const uspData = "1NYN";
+    const gppData = { gppString: '{"k":"v"}' };
+    const gdprData = { consentString: "gdprConsent", apiVersion: 2, gdprApplies: true };
+
+    const gppStub = sinon.stub(gppDataHandler, "getConsentData").returns(gppData);
+    const uspStub = sinon.stub(uspDataHandler, "getConsentData").returns(uspData);
+    const gdprStub = sinon.stub(gdprDataHandler, "getConsentData").returns(gdprData);
+
+    getWindowLocationStub = sinon
+      .stub(utils, "getWindowLocation")
+      .returns({ href: "http://localhost:9876/" });
+
+    events.emit(EVENTS.BID_WON, getWonRequest());
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
+    expect(request.url).to.contain(`&gdpr=1`);
+    expect(request.url).to.contain(`&tcfv=2`);
+
+    gppStub.restore();
+    uspStub.restore();
+    gdprStub.restore();
+  });
+
   regionCases.forEach(({ name, region, expectedEndpoint }) => {
     it(`should send request to region-specific report endpoint when region is "${name}"`, function () {
       userIdConfigForTest = getUserConfigWithReportingServerAddress();
