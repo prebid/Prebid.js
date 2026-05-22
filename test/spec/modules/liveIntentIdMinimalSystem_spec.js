@@ -234,12 +234,12 @@ describe('LiveIntentMinimalId', function() {
     const submoduleCallback = liveIntentIdSubmodule.getId({
       params: {
         ...defaultConfigParams.params,
-        ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
+        ...{ requestedAttributesOverrides: { 'sovrn': true, 'openx': false } }
       }
     }).callback;
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
-    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=nonId&resolve=foo`);
+    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=nonId&resolve=sovrn`);
     request.respond(
       200,
       responseHeader,

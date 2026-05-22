@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 
 /**
- * @typedef {import('./terceptAnalyticsAdapterTypes.d.ts').TerceptAnalyticsAdapterOptions} TerceptAnalyticsAdapterOptions
+ * @typedef {import('./terceptAnalyticsAdapter.d.ts').TerceptAnalyticsAdapterOptions} TerceptAnalyticsAdapterOptions
  */
 
 const emptyUrl = '';
