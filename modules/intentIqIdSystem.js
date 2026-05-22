@@ -463,7 +463,7 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    const pdLength = !!Object.keys(partnerData).length
+    const pdLength = Object.keys(partnerData).length
     const hasPartnerData = pdLength && pdLength > 1; // in OptOut case we keep one property inside
 
     if ((!isCMPStringTheSame(firstPartyData, cmpData)) ||
