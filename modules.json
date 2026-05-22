@@ -36,5 +36,7 @@
   "gptPreAuction",
   "equativBidAdapter",
   "allegroBidAdapter",
-  "richaudienceBidAdapter"
+  "richaudienceBidAdapter",
+  "msftBidAdapter",
+  "tripleliftBidAdapter"
 ]
