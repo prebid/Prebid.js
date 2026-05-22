@@ -20,6 +20,8 @@ When 51Degrees IPI is available in the cloud response, the module sets `device.i
 
 When 51DiD is available (via `id.usage` evidence), the module appends an entry to `user.eids` with `source = "51d.es"`, `inserter = "51degrees.com"`, `mm = 5` (inference), and `uids` carrying `idproblic` and `idprobglobal`. The `ext.tdl` URL inside the entry comes from the `params.tdlUrl` module config.
 
+The module also forwards the publisher's consent strings to the cloud as evidence when present. The TCF consent string (from Prebid's GDPR consent) is sent as `tcstring`; the cloud decodes it to derive the marketing usage when no explicit `id.usage` is provided, so 51DiD works for publishers running any TCF CMP, not only the 51Degrees PMP. An explicit `id.usage` always takes precedence. The GPP string (from Prebid's GPP consent) is sent as `gppstring` for forward compatibility; cloud-side GPP handling is not yet implemented, so that value is currently ignored. These come from Prebid's consent data, not module params, and are sent alongside `id.usage`.
+
 The module supports on-premise and cloud device detection services, with free options for both.
 
 A free resource key for use with 51Degrees cloud service can be obtained from [51Degrees cloud configuration](https://configure.51degrees.com/jJqVnTJR). This is the simplest approach to trial the module.

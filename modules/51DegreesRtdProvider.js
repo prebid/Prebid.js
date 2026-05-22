@@ -130,6 +130,8 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
  * @param {string} [pathData.onPremiseJSUrl] On-premise JS URL
  * @param {Object<string, any>} [pathData.hev] High entropy values
  * @param {string} [pathData.idUsage] id.usage value to forward to the cloud
+ * @param {string} [pathData.tcString] TCF consent string to forward as tcstring
+ * @param {string} [pathData.gpp] GPP string to forward as gppstring
  * @param {Window} [win] Window object (mainly for testing)
  * @returns {string} 51Degrees JS URL
  */
@@ -148,11 +150,15 @@ export const get51DegreesJSURL = (pathData, win) => {
   deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height);
   deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width);
   deepSetNotEmptyValue(qs, '51D_PixelRatio', getDevicePixelRatio(_window));
-  // Direct assignment: deepSetValue would treat the '.' in 'id.usage' as a
-  // nested-path separator and produce qs.id.usage instead of qs['id.usage'],
-  // which formatQS can't serialize back to a flat param.
+  // id.usage contains a dot, so set it directly.
   if (pathData.idUsage) {
     qs['id.usage'] = pathData.idUsage;
+  }
+  if (pathData.tcString) {
+    qs.tcstring = pathData.tcString;
+  }
+  if (pathData.gpp) {
+    qs.gppstring = pathData.gpp;
   }
 
   const _qs = formatQS(qs);
@@ -501,6 +507,28 @@ export const resolveIdUsage = (moduleConfig) => {
 }
 
 /**
+ * Reads the raw TCF consent string from Prebid user consent.
+ *
+ * @param {Object} userConsent Prebid user consent object
+ * @returns {string|undefined}
+ */
+export const resolveTcString = (userConsent) => {
+  const tc = deepAccess(userConsent, 'gdpr.consentString');
+  return (typeof tc === 'string' && tc.length > 0) ? tc : undefined;
+}
+
+/**
+ * Reads the raw GPP string from Prebid user consent.
+ *
+ * @param {Object} userConsent Prebid user consent object
+ * @returns {string|undefined}
+ */
+export const resolveGpp = (userConsent) => {
+  const gpp = deepAccess(userConsent, 'gpp.gppString');
+  return (typeof gpp === 'string' && gpp.length > 0) ? gpp : undefined;
+}
+
+/**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} callback Called on completion
  * @param {Object} moduleConfig Configuration for 1plusX RTD module
@@ -516,6 +544,10 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
     const idUsage = resolveIdUsage(moduleConfig);
     logMessage('Resolved id.usage: ', idUsage);
+    const tcString = resolveTcString(userConsent);
+    const gpp = resolveGpp(userConsent);
+    logMessage('TCF consent string present: ', !!tcString);
+    logMessage('GPP string present: ', !!gpp);
 
     // Check if 51Degrees meta is present (cloud only)
     if (resourceKey) {
@@ -527,7 +559,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
 
     getHighEntropyValues(['model', 'platform', 'platformVersion', 'fullVersionList']).then((hev) => {
       // Get 51Degrees JS URL, which is either cloud or on-premise
-      const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev, idUsage });
+      const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev, idUsage, tcString, gpp });
       logMessage('URL of the script to be injected: ', scriptURL);
 
       // Inject 51Degrees script, get device data and merge it into the ORTB2 object

@@ -8,10 +8,13 @@ import {
   convert51DegreesIpToOrtb2,
   convert51DegreesFoDiDToOrtb2,
   resolveIdUsage,
+  resolveTcString,
+  resolveGpp,
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
 import { mergeDeep } from '../../../src/utils.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 const inject51DegreesMeta = () => {
   const meta = document.createElement('meta');
@@ -305,6 +308,51 @@ describe('51DegreesRtdProvider', function() {
       };
       const config = { resourceKey: 'TEST_RESOURCE_KEY' };
       expect(get51DegreesJSURL(config, freshWindow)).to.not.include('id.usage');
+    });
+
+    it('appends tcstring when tcString is provided', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY', tcString: 'CONSENTX' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('tcstring=CONSENTX');
+    });
+
+    it('keeps a realistic multi-segment TCF string intact', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const tc = 'CPysuENPyveLkADACBENADCsAP_AAH_AAAAAAAAA.YAAAAAAAAA';
+      const config = { resourceKey: 'TEST_RESOURCE_KEY', tcString: tc };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('tcstring=' + tc);
+    });
+
+    it('omits tcstring when tcString is undefined', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.not.include('tcstring');
+    });
+
+    it('appends gppstring when gpp is provided', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY', gpp: 'GPPX' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('gppstring=GPPX');
+    });
+
+    it('omits gppstring when gpp is undefined', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.not.include('gppstring');
+    });
+
+    it('appends id.usage, tcstring and gppstring together', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = {
+        resourceKey: 'TEST_RESOURCE_KEY',
+        idUsage: 'standard',
+        tcString: 'CONSENTX',
+        gpp: 'GPPX',
+      };
+      const url = get51DegreesJSURL(config, freshWindow);
+      expect(url).to.include('id.usage=standard');
+      expect(url).to.include('tcstring=CONSENTX');
+      expect(url).to.include('gppstring=GPPX');
     });
   });
 
@@ -801,6 +849,55 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
+  describe('resolveTcString', function() {
+    it('returns the consent string from userConsent.gdpr.consentString', function() {
+      expect(resolveTcString({ gdpr: { consentString: 'CONSENTX' } })).to.equal('CONSENTX');
+    });
+
+    it('returns the string regardless of gdprApplies', function() {
+      expect(resolveTcString({ gdpr: { consentString: 'C', gdprApplies: false } })).to.equal('C');
+      expect(resolveTcString({ gdpr: { consentString: 'C', gdprApplies: true } })).to.equal('C');
+    });
+
+    it('returns undefined when consentString is empty', function() {
+      expect(resolveTcString({ gdpr: { consentString: '' } })).to.be.undefined;
+    });
+
+    it('returns undefined when consentString is not a string', function() {
+      expect(resolveTcString({ gdpr: { consentString: 123 } })).to.be.undefined;
+    });
+
+    it('returns undefined when gdpr is absent', function() {
+      expect(resolveTcString({})).to.be.undefined;
+    });
+
+    it('returns undefined when userConsent is undefined', function() {
+      expect(resolveTcString(undefined)).to.be.undefined;
+    });
+  });
+
+  describe('resolveGpp', function() {
+    it('returns the gpp string from userConsent.gpp.gppString', function() {
+      expect(resolveGpp({ gpp: { gppString: 'GPPX' } })).to.equal('GPPX');
+    });
+
+    it('returns undefined when gppString is empty', function() {
+      expect(resolveGpp({ gpp: { gppString: '' } })).to.be.undefined;
+    });
+
+    it('returns undefined when gppString is not a string', function() {
+      expect(resolveGpp({ gpp: { gppString: 123 } })).to.be.undefined;
+    });
+
+    it('returns undefined when gpp is absent', function() {
+      expect(resolveGpp({})).to.be.undefined;
+    });
+
+    it('returns undefined when userConsent is undefined', function() {
+      expect(resolveGpp(undefined)).to.be.undefined;
+    });
+  });
+
   describe('getBidRequestData', function() {
     let initialHeadInnerHTML;
     let reqBidsConfigObj = {};
@@ -928,6 +1025,23 @@ describe('51DegreesRtdProvider', function() {
       } finally {
         window.fod = originalFod;
       }
+    });
+
+    it('forwards tcstring and gppstring from userConsent to the script URL', async function() {
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+      const userConsent = {
+        gdpr: { consentString: 'TCSTRINGVAL', gdprApplies: true },
+        gpp: { gppString: 'GPPSTRINGVAL' },
+      };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(loadExternalScriptStub.called).to.be.true;
+      const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+      expect(scriptUrl).to.include('tcstring=TCSTRINGVAL');
+      expect(scriptUrl).to.include('gppstring=GPPSTRINGVAL');
     });
   });
 
