@@ -14,9 +14,11 @@ import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
 /**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../../modules/liveIntentIdSystem.d.ts').LiveIntentIdSystemModuleName} LiveIntentIdSystemModuleName
  */
 
 const EVENTS_TOPIC = 'pre_lips';
@@ -157,12 +159,12 @@ function tryFireEvent() {
   }
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<LiveIntentIdSystemModuleName>} */
 export const liveIntentIdSubmodule = {
   moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
    * Used to link submodule with config.
-   * @type {string}
+   * @type {LiveIntentIdSystemModuleName}
    */
   name: MODULE_NAME,
   gvlid: GVLID,
