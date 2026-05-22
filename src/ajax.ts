@@ -290,16 +290,20 @@ function requireNames<T extends typeof ajaxBuilder | typeof fetcherFactory>(fn: 
 }
 
 /**
- * A version of ajaxBuilder that requires moduleType and moduleName.
+ * A version of ajaxBuilder that requires an explicit moduleType and moduleName.
  */
 export const qualifiedAjaxBuilder = requireNames(ajaxBuilder);
 /**
- * A version of fetcherFactory that requires moduleType and moduleName.
+ * A version of fetcherFactory that requires an explicit moduleType and moduleName.
  */
 export const qualifiedFetcherFactory = requireNames(fetcherFactory);
 
 export const ajax = ajaxBuilder();
 export const fetch = fetcherFactory();
+
+// the difference between 'noCredsAjax'/'noCredsFetch' and 'ajax'/'fetch' is that the latter two (together with
+// ajaxBuilder and fetcherFactory) are automatically decorated with moduleType/moduleName at build time -
+// see plugins/callerContext.js
 
 /**
  * A version of `ajax` that will never include request credentials (withCredentials = false).
