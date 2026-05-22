@@ -406,6 +406,78 @@ describe('TNE Catalyst Bid Adapter', () => {
       });
     });
 
+    describe('ortb2 passthrough', () => {
+      it('passes ortb2.user through unchanged', () => {
+        const ortb2 = {
+          user: {
+            eids: [{ source: 'uidapi.com', uids: [{ id: 'uid2-token' }] }],
+            ext: { consent: 'WRAPPER_CONSENT_STRING' },
+            data: [{ name: 'contxtful', segment: [{ id: 'seg-1' }] }]
+          }
+        };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.user.eids).to.deep.equal(ortb2.user.eids);
+        expect(reqs[0].data.user.data).to.deep.equal(ortb2.user.data);
+        expect(reqs[0].data.user.ext.consent).to.equal('WRAPPER_CONSENT_STRING');
+      });
+
+      it('passes ortb2.regs through and preserves gpp/gpp_sid from wrapper', () => {
+        const ortb2 = { regs: { gpp: 'WRAPPER_GPP', gpp_sid: [7, 8], coppa: 0 } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.regs.gpp).to.equal('WRAPPER_GPP');
+        expect(reqs[0].data.regs.gpp_sid).to.deep.equal([7, 8]);
+        expect(reqs[0].data.regs.coppa).to.equal(0);
+      });
+
+      it('passes ortb2.device through unchanged', () => {
+        const ortb2 = { device: { ua: 'Mozilla/5.0', devicetype: 1, language: 'en' } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.device).to.deep.equal(ortb2.device);
+      });
+
+      it('passes ortb2.app through for in-app/CTV traffic', () => {
+        const ortb2 = { app: { bundle: 'com.example.app', name: 'Example App' } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.app).to.deep.equal(ortb2.app);
+      });
+
+      it('does not override wrapper-set ortb2.user.ext.consent with derived gdprConsent', () => {
+        const ortb2 = { user: { ext: { consent: 'WRAPPER_WINS' } } };
+        const br = makeBidderRequest({ ortb2, gdprConsent: { gdprApplies: true, consentString: 'DERIVED_LOSES' } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
+        expect(reqs[0].data.user.ext.consent).to.equal('WRAPPER_WINS');
+      });
+
+      it('falls back to derived gdprConsent when ortb2 has no consent', () => {
+        const br = makeBidderRequest({ gdprConsent: { gdprApplies: true, consentString: 'DERIVED_CONSENT' } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
+        expect(reqs[0].data.user.ext.consent).to.equal('DERIVED_CONSENT');
+      });
+
+      it('merges legacy bid.userIdAsEids with ortb2.user.eids without duplicates', () => {
+        const ortb2 = { user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'wrapper-uid2' }] }] } };
+        const bid = makeBidRequest({
+          userIdAsEids: [
+            { source: 'uidapi.com', uids: [{ id: 'legacy-uid2' }] },        // dup source — wrapper wins
+            { source: 'id5-sync.com', uids: [{ id: 'legacy-id5' }] }       // new source — included
+          ]
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest({ ortb2 }));
+        const eids = reqs[0].data.user.eids;
+        expect(eids).to.have.length(2);
+        expect(eids.find(e => e.source === 'uidapi.com').uids[0].id).to.equal('wrapper-uid2');
+        expect(eids.find(e => e.source === 'id5-sync.com')).to.exist;
+      });
+
+      it('does not override wrapper-set ortb2.regs.gpp with derived gppConsent', () => {
+        const ortb2 = { regs: { gpp: 'WRAPPER_GPP', gpp_sid: [7] } };
+        const br = makeBidderRequest({ ortb2, gppConsent: { gppString: 'DERIVED_GPP', applicableSections: [8] } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
+        expect(reqs[0].data.regs.gpp).to.equal('WRAPPER_GPP');
+        expect(reqs[0].data.regs.gpp_sid).to.deep.equal([7]);
+      });
+    });
+
     describe('GDPR', () => {
       it('sets regs.ext.gdpr=1 when gdprApplies is true', () => {
         const br = makeBidderRequest({ gdprConsent: { gdprApplies: true, consentString: 'CONSENT_STRING' } });

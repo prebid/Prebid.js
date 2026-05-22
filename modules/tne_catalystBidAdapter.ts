@@ -170,38 +170,57 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       ortbRequest.tmax = (bidderRequest as any).timeout;
     }
 
-    const regsExt: any = {};
+    // ortb2 passthrough — the wrapper's modern source of truth for user
+    // identity, compliance, device, and app context. Per Prebid module rules
+    // ("Bidder params should always only override that information coming on
+    // the request"), we treat ortb2.* as authoritative and only layer our
+    // derived overrides (consent strings synthesized from gdprConsent, etc.)
+    // when the wrapper hasn't already populated the same key.
+    const ortb2 = deepAccess(bidderRequest, 'ortb2') || {};
+    if (ortb2.user) ortbRequest.user = { ...ortb2.user };
+    if (ortb2.regs) ortbRequest.regs = { ...ortb2.regs };
+    if (ortb2.device) ortbRequest.device = { ...ortb2.device };
+    if (ortb2.app) ortbRequest.app = { ...ortb2.app };
+
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
-    if (gdpr) {
-      regsExt.gdpr = gdpr.gdprApplies ? 1 : 0;
-    }
     const usp = deepAccess(bidderRequest, 'uspConsent');
-    if (usp) {
-      regsExt.us_privacy = usp;
-    }
     const gpp = deepAccess(bidderRequest, 'gppConsent');
-    if (gpp && gpp.gppString) {
+
+    // regs.* — only set fields the wrapper didn't already supply via ortb2.
+    if (gdpr || usp || (gpp && gpp.gppString)) {
       ortbRequest.regs = ortbRequest.regs || {};
-      ortbRequest.regs.gpp = gpp.gppString;
-      ortbRequest.regs.gpp_sid = gpp.applicableSections || [];
-    }
-    if (Object.keys(regsExt).length > 0) {
-      ortbRequest.regs = ortbRequest.regs || {};
-      ortbRequest.regs.ext = regsExt;
+      if (gpp && gpp.gppString) {
+        if (ortbRequest.regs.gpp == null) ortbRequest.regs.gpp = gpp.gppString;
+        if (ortbRequest.regs.gpp_sid == null) ortbRequest.regs.gpp_sid = gpp.applicableSections || [];
+      }
+      if (gdpr || usp) {
+        const regsExt = { ...(ortbRequest.regs.ext || {}) };
+        if (gdpr && regsExt.gdpr == null) regsExt.gdpr = gdpr.gdprApplies ? 1 : 0;
+        if (usp && regsExt.us_privacy == null) regsExt.us_privacy = usp;
+        ortbRequest.regs.ext = regsExt;
+      }
     }
 
-    const userExt: any = {};
+    // user.eids — merge the legacy bid.userIdAsEids list with whatever the
+    // wrapper already put on ortb2.user.eids. De-duplicate by source so a
+    // legacy provider doesn't show up twice.
+    const legacyEids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (isArray(legacyEids) && legacyEids.length > 0) {
+      ortbRequest.user = ortbRequest.user || {};
+      const existing: any[] = isArray(ortbRequest.user.eids) ? ortbRequest.user.eids : [];
+      const seen = new Set(existing.map((e: any) => e && e.source).filter(Boolean));
+      const merged = existing.concat(legacyEids.filter((e: any) => e && e.source && !seen.has(e.source)));
+      ortbRequest.user.eids = merged;
+    }
+
+    // user.ext.consent — synthesize from gdprConsent only when ortb2 didn't
+    // already carry one.
     if (gdpr && gdpr.consentString) {
-      userExt.consent = gdpr.consentString;
-    }
-    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
-    if (isArray(eids) && eids.length > 0) {
       ortbRequest.user = ortbRequest.user || {};
-      ortbRequest.user.eids = eids;
-    }
-    if (Object.keys(userExt).length > 0) {
-      ortbRequest.user = ortbRequest.user || {};
-      ortbRequest.user.ext = userExt;
+      ortbRequest.user.ext = { ...(ortbRequest.user.ext || {}) };
+      if (ortbRequest.user.ext.consent == null) {
+        ortbRequest.user.ext.consent = gdpr.consentString;
+      }
     }
 
     const schain = deepAccess(validBidRequests[0], 'schain');
