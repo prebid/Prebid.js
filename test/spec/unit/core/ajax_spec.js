@@ -3,6 +3,8 @@ import { config } from 'src/config.js';
 import { server } from '../../../mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import { logError } from 'src/utils.js';
+import { registerActivityControl } from '../../../../src/activities/rules.js';
+import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from '../../../../src/activities/activities.js';
 
 const EXAMPLE_URL = 'https://www.example.com';
 
@@ -34,6 +36,42 @@ describe('fetcherFactory', () => {
       resp.catch(() => done());
     });
   });
+
+  describe('credentials', () => {
+    let resetRule, arqRule, denyCreds;
+    beforeEach(() => {
+      denyCreds = false;
+      arqRule = sinon.stub().callsFake(() => {
+        if (denyCreds) {
+          return { allow: false };
+        }
+      })
+      resetRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test', arqRule)
+    })
+    afterEach(() => {
+      resetRule();
+      config.resetConfig();
+    })
+    Object.entries({
+      'URL': [EXAMPLE_URL, { credentials: 'include' }],
+      'request object': [new Request(EXAMPLE_URL, { credentials: 'include' })],
+    }).forEach(([t, args]) => {
+      it('should be excluded when deviceAccess is false', () => {
+        config.setConfig({ deviceAccess: false });
+        fetcherFactory()(...args);
+        expect(server.requests[0].fetch.request.credentials).to.eql('same-origin');
+      });
+      it('should be excluded when accessRequestCredentials is denied', () => {
+        denyCreds = true;
+        fetcherFactory(1000, undefined, 'prebid', 'test')(...args);
+        sinon.assert.calledWith(arqRule, sinon.match({
+          componentType: 'prebid',
+          componentName: 'test'
+        }));
+        expect(server.requests[0].fetch.request.credentials).to.eql('same-origin');
+      })
+    })
+  })
 
   it('does not timeout after it completes', () => {
     const fetch = fetcherFactory(1000);
