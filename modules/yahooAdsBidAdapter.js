@@ -579,6 +579,33 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
       if (isArray(legacyKwarray) && legacyKwarray.length > 0) outBoundBidRequest.user.kwarray = legacyKwarray;
     }
 
+    // FPD fallback for user.consent: ortb2.user.consent (2.6) → ortb2.user.ext.consent (2.5).
+    // Only applied when bidderRequest.gdprConsent did not already populate it (rare; consent
+    // normally arrives via Prebid's consentManagement module, not FPD).
+    if (!outBoundBidRequest.user.consent) {
+      const fpdConsent = deepAccess(userObject, 'consent') || deepAccess(userObject, 'ext.consent');
+      if (isStr(fpdConsent) && fpdConsent.length > 0) outBoundBidRequest.user.consent = fpdConsent;
+    }
+
+    // Merge EIDs supplied via FPD: ortb2.user.eids (2.6) and ortb2.user.ext.eids (2.5)
+    // de-duplicated against eids already collected from bid.userIdAsEids.
+    const fpdEids = deepAccess(userObject, 'eids');
+    const legacyEids = deepAccess(userObject, 'ext.eids');
+    const extraEids = (isArray(fpdEids) ? fpdEids : []).concat(isArray(legacyEids) ? legacyEids : []);
+    if (extraEids.length) {
+      const merged = isArray(outBoundBidRequest.user.eids) ? [...outBoundBidRequest.user.eids] : [];
+      const seen = new Set(merged.map(e => `${e.source}|${JSON.stringify(e.uids)}`));
+      extraEids.forEach(eid => {
+        if (!eid || SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) === -1) return;
+        const key = `${eid.source}|${JSON.stringify(eid.uids)}`;
+        if (!seen.has(key)) {
+          merged.push(eid);
+          seen.add(key);
+        }
+      });
+      outBoundBidRequest.user.eids = merged;
+    }
+
     // Merge ext properties from ortb2.user.ext into existing user.ext instead of nesting
     if (userObject.ext && isPlainObject(userObject.ext)) {
       const extToMerge = { ...userObject.ext };

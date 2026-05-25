@@ -2086,6 +2086,83 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(data.user.ext.someOtherKey).to.equal('value');
     });
 
+    it('should pick up user.eids from ortb2.user (2.6 top-level) when userIdAsEids is empty', () => {
+      const fpdEids = [{ source: 'liveramp.com', uids: [{ id: 'lr-from-fpd', atype: 3 }] }];
+      const ortb2 = { user: { eids: fpdEids } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal(fpdEids);
+    });
+
+    it('should fall back to user.ext.eids (2.5 backward compat) when 2.6 field absent', () => {
+      const legacyEids = [{ source: 'criteo.com', uids: [{ id: 'criteo-from-fpd-ext', atype: 1 }] }];
+      const ortb2 = { user: { ext: { eids: legacyEids } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal(legacyEids);
+    });
+
+    it('should merge FPD user.eids with userIdAsEids and de-duplicate by source+uids', () => {
+      const idModuleEids = [{ source: 'yahoo.com', uids: [{ id: 'connectId', atype: 3 }] }];
+      const fpdEids = [
+        { source: 'yahoo.com', uids: [{ id: 'connectId', atype: 3 }] },
+        { source: 'liveramp.com', uids: [{ id: 'lr-from-fpd', atype: 3 }] }
+      ];
+      const ortb2 = { user: { eids: fpdEids } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = idModuleEids;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal([
+        { source: 'yahoo.com', uids: [{ id: 'connectId', atype: 3 }] },
+        { source: 'liveramp.com', uids: [{ id: 'lr-from-fpd', atype: 3 }] }
+      ]);
+    });
+
+    it('should ignore FPD user.eids with unsupported sources', () => {
+      const ortb2 = { user: { eids: [{ source: 'unsupported.example.com', uids: [{ id: 'x', atype: 1 }] }] } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal([]);
+    });
+
+    it('should not duplicate FPD eids into user.ext after promotion', () => {
+      const fpdEids = [{ source: 'criteo.com', uids: [{ id: 'criteo-id', atype: 1 }] }];
+      const ortb2 = { user: { ext: { eids: fpdEids, someOtherKey: 'value' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal(fpdEids);
+      expect(data.user.ext.eids).to.be.undefined;
+      expect(data.user.ext.someOtherKey).to.equal('value');
+    });
+
+    it('should fall back to ortb2.user.consent (2.6) when gdprConsent did not populate it', () => {
+      const ortb2 = { user: { consent: 'fpd-consent-string-26' } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.gdprConsent = { gdprApplies: false, consentString: '' };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.consent).to.equal('fpd-consent-string-26');
+    });
+
+    it('should fall back to ortb2.user.ext.consent (2.5) when neither gdprConsent nor 2.6 path is set', () => {
+      const ortb2 = { user: { ext: { consent: 'fpd-consent-string-25' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.gdprConsent = { gdprApplies: false, consentString: '' };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.consent).to.equal('fpd-consent-string-25');
+      expect(data.user.ext.consent).to.be.undefined;
+    });
+
+    it('should keep gdprConsent.consentString over FPD consent when gdpr applies', () => {
+      const ortb2 = { user: { consent: 'fpd-consent-should-be-ignored' } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
     it('should transform content.network string (2.5 backward compat) to an object with id and name', () => {
       const ortb2 = { site: { content: { network: 'yahoonetwork' } } };
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
