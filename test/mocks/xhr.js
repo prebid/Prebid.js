@@ -17,7 +17,10 @@ function mockFetchServer() {
 
   function makeRequest(resource, options) {
     const requestBody = options?.body || bodies.get(resource);
-    const request = new Request(resource, options);
+    const request = new Request(resource, Object.assign({
+      // firefox will lose keepalive otherwise
+      keepalive: resource?.keepalive
+    }, options));
     bodies.set(request, requestBody);
     return request;
   }
