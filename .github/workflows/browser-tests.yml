@@ -67,11 +67,16 @@ jobs:
               console.log("Skipping browserstack tests (credentials are not available)");
               bsBrowsers = 0;
             }
-            console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
+            const unitBrowers = browsers.filter(browser => browser.bsName != null)
+            const e2eBrowsers = browsers.filter(browser => browser.wdioName != null)
+            console.log("Browsers to be tested directly on runners:")
+            console.log("Unit tests", JSON.stringify(unitBrowsers, null, 2));
+            console.log("E2E tests, JSON.stringify(e2eBrowsers, null, 2));
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
               bsBrowsers,
-              browsers,
+              unitBrowsers,
+              e2eBrowsers,
               latestBrowsers: browsers.filter(browser => browser.version === 'latest') 
             }
       - name: "Save working directory"
@@ -91,13 +96,12 @@ jobs:
       test-cmd: gulp test-build-logic
 
   e2e-tests:
-    if: "${{ matrix.browser.wdioName }}"
     needs: [setup, build]
     name: "E2E (browser: ${{ matrix.browser.wdioName }})"
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.e2eBrowsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:
@@ -111,13 +115,12 @@ jobs:
       browserstack: false
 
   unit-tests:
-    if: "${{ matrix.browser.bsName }}"
     needs: [setup, build]
     name: "Unit (browser: ${{ matrix.browser.name }} ${{ matrix.browser.version }})"
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.unitBrowsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:
