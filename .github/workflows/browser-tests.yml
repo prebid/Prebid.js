@@ -67,7 +67,7 @@ jobs:
               console.log("Skipping browserstack tests (credentials are not available)");
               bsBrowsers = 0;
             }
-            const unitBrowers = browsers.filter(browser => browser.bsName != null)
+            const unitBrowsers = browsers.filter(browser => browser.bsName != null)
             const e2eBrowsers = browsers.filter(browser => browser.wdioName != null)
             console.log("Browsers to be tested directly on runners:")
             console.log("Unit tests", JSON.stringify(unitBrowsers, null, 2));
