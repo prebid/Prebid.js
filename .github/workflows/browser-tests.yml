@@ -21,7 +21,8 @@ jobs:
     name: "Define testing strategy"
     runs-on: ubuntu-latest
     outputs:
-      browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
+      unitBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).unitBrowsers) }}
+      e2eBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).e2eBrowsers) }}
       latestBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).latestBrowsers) }}
       bstack-key: ${{ steps.bstack-save.outputs.name }}
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
