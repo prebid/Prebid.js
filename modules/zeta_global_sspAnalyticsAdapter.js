@@ -27,34 +27,74 @@ function sendEvent(eventType, event) {
   );
 }
 
+function getPage(args = {}) {
+  return config.getConfig('pageUrl') || args.doc?.location?.host + args.doc?.location?.pathname;
+}
+
+function buildReceivedBid(bid) {
+  return {
+    adId: bid?.adId,
+    requestId: bid?.requestId,
+    auctionId: bid?.auctionId,
+    creativeId: bid?.creativeId,
+    bidder: bid?.bidderCode || bid?.bidder,
+    dspId: bid?.dspId,
+    mediaType: bid?.mediaType,
+    size: bid?.size,
+    adomain: bid?.adserverTargeting?.hb_adomain,
+    timeToRespond: bid?.timeToRespond,
+    cpm: bid?.cpm,
+    adUnitCode: bid?.adUnitCode,
+    floorData: bid?.floorData
+  };
+}
+
+function normalizeError(error) {
+  if (error == null) {
+    return undefined;
+  }
+  if (typeof error === 'string') {
+    return { message: error };
+  }
+  return {
+    message: error.message,
+    status: error.status,
+    statusText: error.statusText,
+    responseText: error.responseText
+  };
+}
+
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function adRenderSucceededHandler(args) {
-  const page = config.getConfig('pageUrl') || args.doc?.location?.host + args.doc?.location?.pathname;
+  const page = getPage(args);
   const event = {
     zetaParams: zetaParams,
     domain: parseDomain(page, { noLeadingWww: true }),
     page: page,
-    bid: {
-      adId: args.bid?.adId,
-      requestId: args.bid?.requestId,
-      auctionId: args.bid?.auctionId,
-      creativeId: args.bid?.creativeId,
-      bidder: args.bid?.bidderCode,
-      dspId: args.bid?.dspId,
-      mediaType: args.bid?.mediaType,
-      size: args.bid?.size,
-      adomain: args.bid?.adserverTargeting?.hb_adomain,
-      timeToRespond: args.bid?.timeToRespond,
-      cpm: args.bid?.cpm,
-      adUnitCode: args.bid?.adUnitCode,
-      floorData: args.bid?.floorData
-    },
+    bid: buildReceivedBid(args.bid),
     device: {
       ua: navigator.userAgent
     }
   }
   sendEvent(EVENTS.AD_RENDER_SUCCEEDED, event);
+}
+
+function adRenderFailedHandler(args) {
+  const page = getPage(args);
+  const event = {
+    zetaParams: zetaParams,
+    domain: parseDomain(page, { noLeadingWww: true }),
+    page: page,
+    adId: args.adId,
+    reason: args.reason,
+    message: args.message,
+    bid: buildReceivedBid(args.bid),
+    device: {
+      ua: navigator.userAgent
+    }
+  }
+  sendEvent(EVENTS.AD_RENDER_FAILED, event);
 }
 
 function auctionEndHandler(args) {
@@ -149,6 +189,64 @@ function bidTimeoutHandler(args) {
   sendEvent(EVENTS.BID_TIMEOUT, event);
 }
 
+function bidderErrorHandler(args) {
+  const bidderRequest = args.bidderRequest;
+  const event = {
+    zetaParams: zetaParams,
+    error: normalizeError(args.error),
+    bidderRequest: {
+      bidderCode: bidderRequest?.bidderCode,
+      domain: bidderRequest?.refererInfo?.domain,
+      page: bidderRequest?.refererInfo?.page,
+      bids: bidderRequest?.bids?.map(b => {
+        const mediaType = b?.mediaTypes?.video ? VIDEO : (b?.mediaTypes?.banner ? BANNER : undefined);
+        let floor;
+        if (typeof b?.getFloor === 'function') {
+          try {
+            const floorInfo = b.getFloor({
+              currency: 'USD',
+              mediaType: mediaType,
+              size: '*'
+            });
+            if (floorInfo && !isNaN(parseFloat(floorInfo.floor))) {
+              floor = parseFloat(floorInfo.floor);
+            }
+          } catch (e) {
+            // ignore floor lookup errors
+          }
+        }
+        return {
+          bidId: b?.bidId,
+          auctionId: b?.auctionId,
+          bidder: b?.bidder,
+          mediaType: mediaType,
+          sizes: b?.sizes,
+          device: b?.ortb2?.device,
+          adUnitCode: b?.adUnitCode,
+          floor: floor
+        };
+      })
+    }
+  }
+  sendEvent(EVENTS.BIDDER_ERROR, event);
+}
+
+function browserInterventionHandler(args) {
+  const page = getPage(args);
+  const event = {
+    zetaParams: zetaParams,
+    domain: parseDomain(page, { noLeadingWww: true }),
+    page: page,
+    adId: args.adId,
+    intervention: args.intervention,
+    bid: buildReceivedBid(args.bid),
+    device: {
+      ua: navigator.userAgent
+    }
+  }
+  sendEvent(EVENTS.BROWSER_INTERVENTION, event);
+}
+
 /// /////////// ADAPTER DEFINITION ///////////////////////////
 
 const baseAdapter = adapter({ analyticsType: 'endpoint' });
@@ -174,11 +272,20 @@ const zetaAdapter = Object.assign({}, baseAdapter, {
       case EVENTS.AD_RENDER_SUCCEEDED:
         adRenderSucceededHandler(args);
         break;
+      case EVENTS.AD_RENDER_FAILED:
+        adRenderFailedHandler(args);
+        break;
       case EVENTS.AUCTION_END:
         auctionEndHandler(args);
         break;
       case EVENTS.BID_TIMEOUT:
         bidTimeoutHandler(args);
+        break;
+      case EVENTS.BIDDER_ERROR:
+        bidderErrorHandler(args);
+        break;
+      case EVENTS.BROWSER_INTERVENTION:
+        browserInterventionHandler(args);
         break;
     }
   }

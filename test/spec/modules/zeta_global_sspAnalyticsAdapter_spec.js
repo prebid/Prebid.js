@@ -365,6 +365,103 @@ const SAMPLE_EVENTS = {
     },
     'adId': '5759bb3ef7be1e8'
   },
+  AD_RENDER_FAILED: {
+    'reason': 'exception',
+    'message': 'Render failed',
+    'bid': {
+      'bidderCode': 'zeta_global_ssp',
+      'adId': '5759bb3ef7be1e8',
+      'requestId': '206be9a13236af',
+      'mediaType': 'banner',
+      'cpm': 2.258302852806723,
+      'creativeId': '456456456',
+      'auctionId': '75e394d9',
+      'bidder': 'zeta_global_ssp',
+      'adUnitCode': '/19968336/header-bid-tag-0',
+      'timeToRespond': 123,
+      'size': '480x320',
+      'dspId': 'test-dsp-id-123',
+      'adserverTargeting': {
+        'hb_adomain': 'example.adomain'
+      },
+      'floorData': {
+        'floorValue': 1.5,
+        'floorCurrency': 'USD',
+        'floorRule': 'test-rule'
+      }
+    },
+    'adId': '5759bb3ef7be1e8'
+  },
+  BIDDER_ERROR: {
+    'error': {
+      'status': 503,
+      'statusText': 'Service Unavailable',
+      'responseText': 'upstream unavailable'
+    },
+    'bidderRequest': {
+      'bidderCode': 'zeta_global_ssp',
+      'refererInfo': {
+        'domain': 'test-zeta-ssp.net:63342',
+        'page': 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html'
+      },
+      'bids': [{
+        'adUnitCode': '/19968336/header-bid-tag-0',
+        'bidId': '206be9a13236af',
+        'auctionId': '75e394d9',
+        'bidder': 'zeta_global_ssp',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [300, 250],
+              [300, 600]
+            ]
+          }
+        },
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'ortb2': {
+          'device': {
+            'mobile': 1
+          }
+        },
+        'getFloor': function() {
+          return { floor: 1.5, currency: 'USD' };
+        }
+      }]
+    }
+  },
+  BROWSER_INTERVENTION: {
+    'bid': {
+      'bidderCode': 'zeta_global_ssp',
+      'adId': '5759bb3ef7be1e8',
+      'requestId': '206be9a13236af',
+      'mediaType': 'banner',
+      'cpm': 2.258302852806723,
+      'creativeId': '456456456',
+      'auctionId': '75e394d9',
+      'bidder': 'zeta_global_ssp',
+      'adUnitCode': '/19968336/header-bid-tag-0',
+      'timeToRespond': 123,
+      'size': '480x320',
+      'dspId': 'test-dsp-id-123',
+      'adserverTargeting': {
+        'hb_adomain': 'example.adomain'
+      },
+      'floorData': {
+        'floorValue': 1.5,
+        'floorCurrency': 'USD',
+        'floorRule': 'test-rule'
+      }
+    },
+    'adId': '5759bb3ef7be1e8',
+    'intervention': {
+      'type': 'intervention',
+      'id': 'HeavyAdIntervention',
+      'message': 'Heavy ad unloaded'
+    }
+  },
   BID_TIMEOUT: [
     {
       'bidder': 'zeta_global_ssp',
@@ -674,6 +771,98 @@ describe('Zeta Global SSP Analytics Adapter', function () {
         }
       });
       expect(auctionSucceeded.device.ua).to.not.be.empty;
+    });
+
+    it('should handle AD_RENDER_FAILED event', function () {
+      events.emit(EVENTS.AD_RENDER_FAILED, SAMPLE_EVENTS.AD_RENDER_FAILED);
+
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal('https://ssp.disqus.com/prebid/event/adRenderFailed');
+      const adRenderFailed = JSON.parse(requests[0].requestBody);
+      expect(adRenderFailed.zetaParams).to.be.deep.equal({
+        sid: 111,
+        tags: {
+          position: 'top',
+          shortname: 'name'
+        }
+      });
+      expect(adRenderFailed.domain).to.eql('config.domain.com');
+      expect(adRenderFailed.page).to.eql('https://www.config.domain.com/index.html');
+      expect(adRenderFailed.adId).to.eql('5759bb3ef7be1e8');
+      expect(adRenderFailed.reason).to.eql('exception');
+      expect(adRenderFailed.message).to.eql('Render failed');
+      expect(adRenderFailed.bid.bidder).to.eql('zeta_global_ssp');
+      expect(adRenderFailed.bid.floorData).to.be.deep.equal({
+        floorValue: 1.5,
+        floorCurrency: 'USD',
+        floorRule: 'test-rule'
+      });
+      expect(adRenderFailed.device.ua).to.not.be.empty;
+    });
+
+    it('should handle BIDDER_ERROR event', function () {
+      events.emit(EVENTS.BIDDER_ERROR, SAMPLE_EVENTS.BIDDER_ERROR);
+
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal('https://ssp.disqus.com/prebid/event/bidderError');
+      const bidderError = JSON.parse(requests[0].requestBody);
+      expect(bidderError.zetaParams).to.be.deep.equal({
+        sid: 111,
+        tags: {
+          position: 'top',
+          shortname: 'name'
+        }
+      });
+      expect(bidderError.error).to.be.deep.equal({
+        status: 503,
+        statusText: 'Service Unavailable',
+        responseText: 'upstream unavailable'
+      });
+      expect(bidderError.bidderRequest).to.be.deep.equal({
+        bidderCode: 'zeta_global_ssp',
+        domain: 'test-zeta-ssp.net:63342',
+        page: 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
+        bids: [{
+          adUnitCode: '/19968336/header-bid-tag-0',
+          bidId: '206be9a13236af',
+          auctionId: '75e394d9',
+          bidder: 'zeta_global_ssp',
+          mediaType: 'banner',
+          sizes: [
+            [300, 250],
+            [300, 600]
+          ],
+          device: {
+            mobile: 1
+          },
+          floor: 1.5
+        }]
+      });
+    });
+
+    it('should handle BROWSER_INTERVENTION event', function () {
+      events.emit(EVENTS.BROWSER_INTERVENTION, SAMPLE_EVENTS.BROWSER_INTERVENTION);
+
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.equal('https://ssp.disqus.com/prebid/event/browserIntervention');
+      const browserIntervention = JSON.parse(requests[0].requestBody);
+      expect(browserIntervention.zetaParams).to.be.deep.equal({
+        sid: 111,
+        tags: {
+          position: 'top',
+          shortname: 'name'
+        }
+      });
+      expect(browserIntervention.domain).to.eql('config.domain.com');
+      expect(browserIntervention.page).to.eql('https://www.config.domain.com/index.html');
+      expect(browserIntervention.adId).to.eql('5759bb3ef7be1e8');
+      expect(browserIntervention.intervention).to.be.deep.equal({
+        type: 'intervention',
+        id: 'HeavyAdIntervention',
+        message: 'Heavy ad unloaded'
+      });
+      expect(browserIntervention.bid.bidder).to.eql('zeta_global_ssp');
+      expect(browserIntervention.device.ua).to.not.be.empty;
     });
 
     it('should handle BID_TIMEOUT event', function () {
