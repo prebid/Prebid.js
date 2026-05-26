@@ -1,4 +1,3 @@
-import { auctionManager } from '../auctionManager.js';
 import type { BidRequest } from '../adapterManager.ts';
 import { bidderSettings } from '../bidderSettings.js';
 import type { Bid } from '../bidfactory.ts';
@@ -7,7 +6,6 @@ import { logError } from '../utils.js';
 import { getBidAdjustmentFn } from './cpm.js';
 
 export type SortByHighestDesirabilityDeps = {
-  index?: { getBidRequest(bid: Bid): BidRequest<BidderCode> | undefined };
   bs?: typeof bidderSettings;
 };
 
@@ -22,9 +20,7 @@ export function adjustDesirability(
   bidRequest: BidRequest<BidderCode> | undefined | null,
   deps: SortByHighestDesirabilityDeps = {},
 ): number {
-  const index = deps.index ?? auctionManager.index;
   const bs = deps.bs ?? bidderSettings;
-  bidRequest = bidRequest ?? index.getBidRequest(bid);
   const bidCopy = Object.assign({}, bid) as Bid;
 
   const adjustedCpm = bid.cpm;
