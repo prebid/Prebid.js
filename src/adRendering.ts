@@ -22,6 +22,7 @@ import { useMetrics } from './utils/perfMetrics.js';
 import { bidFilters } from './targeting/filters.ts';
 import { EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG } from './eventTrackers.js';
 import type { Bid } from "./bidfactory.ts";
+import type { SafeRendererConfig } from "./adUnits.ts";
 import { yieldsIf } from "./utils/yield.ts";
 import { PbPromise } from "./utils/promise.ts";
 
@@ -202,23 +203,75 @@ type RenderOptions = {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const { ad, adUrl, cpm, originalCpm, width, height, instl } = bidResponse
+  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
+  return {
+    ad,
+    adUrl,
+    width,
+    height,
+    instl,
+  };
+})
+
+function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
+  const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
   }
-  return {
+
+  const result = {
+    ...bidResponse,
     ad: replaceMacros(ad, repl),
-    adUrl: replaceMacros(adUrl, repl),
-    width,
-    height,
-    instl
+    adUrl: replaceMacros(adUrl, repl)
   };
-})
+
+  if (safeRenderer) {
+    result.safeRenderer = {
+      ...safeRenderer,
+      config: typeof safeRenderer?.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer?.config,
+    }
+  }
+
+  return result;
+}
+
+function prepareRenderingData(
+  bidResponse: Bid,
+  options: RenderOptions | undefined,
+  safeRenderer: SafeRendererConfig | undefined
+): Record<string, any> {
+  if (safeRenderer) {
+    const {
+      ad,
+      adUrl,
+      width,
+      height,
+      instl,
+      vastXml,
+      vastUrl,
+      mediaType,
+      safeRenderer: preparedSafeRenderer,
+    } = prepareBidForRendering(bidResponse, options);
+    return {
+      ad,
+      adUrl,
+      width,
+      height,
+      instl,
+      vastXml,
+      vastUrl,
+      mediaType,
+      safeRenderer: preparedSafeRenderer,
+    };
+  }
+  return getRenderingData(bidResponse, options);
+}
 
 export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
+  const safeRenderer = getSafeRenderer(bidResponse);
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
-  if (isMainDocument || videoBid) {
+  if ((isMainDocument || videoBid) && !safeRenderer?.url) {
     emitAdRenderFail({
       reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
       message: videoBid ? 'Cannot render video ad without a renderer' : `renderAd was prevented from writing to the main document.`,
@@ -227,7 +280,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     });
     return;
   }
-  const data = getRenderingData(bidResponse, options);
+  const data = prepareRenderingData(bidResponse, options, safeRenderer);
   renderFn(Object.assign({ adId: bidResponse.adId }, data));
   const { width, height } = data;
   if ((width ?? height) != null) {
@@ -238,7 +291,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer)) {
+  if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
     emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId })
     next.bail();
@@ -414,4 +467,8 @@ export function insertLocatorFrame() {
       document.body.appendChild(frame);
     }
   }
+}
+
+export function getSafeRenderer(bidResponse: Bid): SafeRendererConfig | undefined {
+  return bidResponse.safeRenderer;
 }
