@@ -841,6 +841,18 @@ describe('onetag', function () {
       const serverResponse = spec.interpretResponse(responseWithDsa, request);
       serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
     });
+    it('Returns dealId when present in server response', function () {
+      const interpretedResponse = spec.interpretResponse(response, request);
+      const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
+      expect(bannerBid.dealId).to.equal('dishfo');
+    });
+    it('Returns undefined dealId when absent from server response', function () {
+      const responseWithoutDealId = getBannerVideoNativeResponse();
+      responseWithoutDealId.body.bids.forEach(bid => delete bid.dealId);
+      const interpretedResponse = spec.interpretResponse(responseWithoutDealId, request);
+      const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
+      expect(bannerBid.dealId).to.be.undefined;
+    });
   });
   describe('getUserSyncs', function () {
     const sync_endpoint = 'https://onetag-sys.com/usync/';
