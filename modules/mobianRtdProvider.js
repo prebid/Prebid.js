@@ -43,6 +43,8 @@ export const EMOTIONS = 'emotions';
 export const GENRES = 'genres';
 export const RISK = 'risk';
 export const SENTIMENT = 'sentiment';
+export const TQ = 'tq';
+export const TG = 'tg';
 export const THEMES = 'themes';
 export const TONES = 'tones';
 
@@ -53,6 +55,8 @@ export const CONTEXT_KEYS = [
   GENRES,
   RISK,
   SENTIMENT,
+  TQ,
+  TG,
   THEMES,
   TONES
 ];
@@ -116,8 +120,9 @@ export function makeContextDataToKeyValuesReducer(config) {
         if (!value?.[apKey]?.length) return;
         keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))]);
       });
-    }
-    if (value?.length) {
+    } else if ((key === TQ || key === TG) && value != null) {
+      keyValues.push([`${prefix}_${key}`, value]);
+    } else if (value?.length) {
       keyValues.push([`${prefix}_${key}`, value]);
     }
     return keyValues;
@@ -181,6 +186,8 @@ export function makeDataFromResponse(contextData) {
     [GENRES]: results.mobianGenres,
     [RISK]: results.mobianRisk || 'unknown',
     [SENTIMENT]: results.mobianSentiment || 'unknown',
+    [TQ]: results.mobian_tq,
+    [TG]: results.mobian_tg,
     [THEMES]: results.mobianThemes,
     [TONES]: results.mobianTones,
   };

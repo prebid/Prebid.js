@@ -155,13 +155,13 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
   ortb2: DeepPartial<ORTBRequest>;
 }
 
-export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined }, keyof BaseBidRequest> {
+export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined | null }, keyof BaseBidRequest> {
   bidder: null;
   src: typeof S2S.SRC;
 }
 type BidderBidRequest<BIDDER extends BidderCode> = BaseBidRequest & AdUnitBidderBid<BIDDER>;
 
-export type BidRequest<BIDDER extends (BidderCode | null)> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<BIDDER>;
+export type BidRequest<BIDDER extends (BidderCode | null)> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<NonNullable<BIDDER>>;
 
 export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   /**
@@ -208,7 +208,7 @@ export interface ClientBidderRequest<BIDDER extends BidderCode> extends BaseBidd
   src: 'client';
 }
 
-export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<BIDDER> | S2SBidderRequest<BIDDER>;
+export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<NonNullable<BIDDER>> | S2SBidderRequest<BIDDER>;
 
 const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
@@ -745,7 +745,7 @@ const adapterManager = {
         const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
           request: requestCallbacks.request.bind(null, 's2s'),
           done: requestCallbacks.done
-        } : undefined);
+        } : undefined, MODULE_TYPE_PREBID, PBS_ADAPTER_NAME);
         const adaptersServerSide = s2sConfig.bidders;
         const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
         const uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
@@ -802,7 +802,7 @@ const adapterManager = {
       const ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
         done: requestCallbacks.done
-      } : undefined);
+      } : undefined, MODULE_TYPE_BIDDER, bidderRequest.bidderCode);
       const adapterDone = doneCb.bind(bidderRequest);
       try {
         config.runWithBidder(

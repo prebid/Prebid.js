@@ -24,7 +24,7 @@ const ALIASES = {
   'tredio': { area: '4', pid: '337' },
   'felixads': { area: '1', pid: '406' },
   'artechnology': { area: '1', pid: '420' },
-  'adinify': { area: '1', pid: '424' },
+  'adlywise': { area: '1', pid: '424' },
   'addigi': { area: '1', pid: '425' },
   'jambojar': { area: '1', pid: '426' },
   'anzu': { area: '1', pid: '445' },
@@ -56,8 +56,8 @@ const PARTNER_ENDPOINTS = {
   artechnology: {
     us_east: 'https://artechnology-prebid.attekmi.co/pbjs',
   },
-  adinify: {
-    us_east: 'https://adinify-prebid.attekmi.co/pbjs',
+  adlywise: {
+    us_east: 'https://adlywise-prebid.attekmi.co/pbjs',
   },
   addigi: {
     us_east: 'https://addigi-prebid.attekmi.co/pbjs',

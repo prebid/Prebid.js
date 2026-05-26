@@ -18,7 +18,6 @@
   },
   "SafariNative": {
     "wdioName": "safari technology preview",
-    "bsName": "safari",
     "runsOn": "macos-latest"
   },
   "FirefoxHeadless": {
