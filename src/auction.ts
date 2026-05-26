@@ -757,7 +757,7 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
 /**
  * Add additional bid response properties that are universal for all _accepted_ bids.
  */
-function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.index } = {}): Bid {
+export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.index } = {}): Bid {
   // Let listeners know that now is the time to adjust the bid, if they want to.
   //
   // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),

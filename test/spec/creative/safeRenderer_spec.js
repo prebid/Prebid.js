@@ -14,9 +14,11 @@ describe('Creative renderer - safe', () => {
   /**
    * @param {object} [options]
    * @param {boolean} [options.simulateMissingPbRenderInFrame] — script "loads" but does not set pbRenderInFrame
+   * @param {boolean} [options.simulateScriptLoadFailure] — script element fires `onerror` instead of `onload`
    */
   function stubFrameWithScriptPipeline(options = {}) {
     const simulateMissingPbRenderInFrame = !!options.simulateMissingPbRenderInFrame;
+    const simulateScriptLoadFailure = !!options.simulateScriptLoadFailure;
 
     const refs = {
       scriptStub: null,
@@ -37,6 +39,12 @@ describe('Creative renderer - safe', () => {
       const cw = {};
 
       const appendScript = sandbox.stub().callsFake((script) => {
+        if (simulateScriptLoadFailure) {
+          if (typeof script.onerror === 'function') {
+            script.onerror();
+          }
+          return;
+        }
         if (!simulateMissingPbRenderInFrame) {
           const fn = sandbox.stub();
           cw.pbRenderInFrame = fn;
@@ -138,6 +146,36 @@ describe('Creative renderer - safe', () => {
         height: data.height
       });
     });
+  });
+
+  it('rejects when safeRenderer.url script fails to load', () => {
+    stubFrameWithScriptPipeline({ simulateScriptLoadFailure: true });
+    return runRenderer(sr('https://example.com/r.js')).then(
+      () => {
+        throw new Error('expected reject');
+      },
+      (err) => {
+        expect(err.message).to.include('failed to load script');
+      }
+    );
+  });
+
+  it('rejects when iframe fails to load', () => {
+    appendChildFrame.resetBehavior();
+    appendChildFrame.callsFake((frame) => {
+      if (typeof frame.onerror === 'function') {
+        frame.onerror();
+      }
+    });
+
+    return runRenderer(sr('https://example.com/r.js')).then(
+      () => {
+        throw new Error('expected reject');
+      },
+      (err) => {
+        expect(err.message).to.include('iframe failed to load');
+      }
+    );
   });
 
   it('rejects when pbRenderInFrame is not a function after script load', () => {
