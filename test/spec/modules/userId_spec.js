@@ -1,4 +1,5 @@
 import {
+  addIdData,
   adUnitEidsHook,
   attachIdSystem,
   auctionDelay,
@@ -7,6 +8,7 @@ import {
   dep,
   enrichEids,
   findRootDomain,
+  generateSubmoduleContainers,
   getConsentHash,
   getValidSubmoduleConfigs,
   HTML5_SUFFIXES,
@@ -16,7 +18,7 @@ import {
   setStoredValue,
   setSubmoduleRegistry,
   startAuctionHook,
-  syncDelay,
+  syncDelay
 } from 'modules/userId/index.js';
 import { UID1_EIDS } from 'libraries/uid1Eids/uid1Eids.js';
 import { createEidsArray, EID_CONFIG } from 'modules/userId/eids.js';
@@ -39,7 +41,6 @@ import { allConsent, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHa
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
-import { addIdData, generateSubmoduleContainers } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import {
   discloseStorageUse,

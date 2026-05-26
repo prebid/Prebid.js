@@ -16,7 +16,7 @@ import {
 import { OPT_CACHE_KEY, OPT_TIME_KEY, ALIASES } from '../libraries/vidazooUtils/constants.js';
 
 /**
- * @typedef {import('./vidazooBidAdapterTypes.d.ts').VidazooBidRequestParams} VidazooBidRequestParams
+ * @typedef {import('./vidazooBidAdapter.d.ts').VidazooBidRequestParams} VidazooBidRequestParams
  */
 
 const GVLID = 744;

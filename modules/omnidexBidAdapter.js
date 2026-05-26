@@ -10,7 +10,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./omnidexBidAdapterTypes.d.ts').OmnidexBidRequestParams} OmnidexBidRequestParams
+ * @typedef {import('./omnidexBidAdapter.d.ts').OmnidexBidRequestParams} OmnidexBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';

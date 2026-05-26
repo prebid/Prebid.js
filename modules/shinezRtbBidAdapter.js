@@ -8,7 +8,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./shinezRtbBidAdapterTypes.d.ts').ShinezRtbBidRequestParams} ShinezRtbBidRequestParams
+ * @typedef {import('./shinezRtbBidAdapter.d.ts').ShinezRtbBidRequestParams} ShinezRtbBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';

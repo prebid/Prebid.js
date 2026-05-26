@@ -14,10 +14,10 @@ import {
   fireImpressionTrackers,
   fireClickTrackers,
   setNativeResponseProperties, getNativeRenderingData,
+  convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest
 } from 'src/native.js';
 import { NATIVE_KEYS } from 'src/constants.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
-import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { getRenderingData } from '../../src/adRendering.js';
 import { getCreativeRendererSource, PUC_MIN_VERSION } from '../../src/creativeRenderers.js';

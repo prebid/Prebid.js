@@ -10,6 +10,7 @@ import {
   currencySupportEnabled,
   currencyRates,
   responseReady
+  , requestBidsHook
 } from 'modules/currency.js';
 import { createBid } from '../../../src/bidfactory.js';
 import * as utils from 'src/utils.js';
@@ -17,7 +18,6 @@ import { EVENTS, REJECTION_REASON } from '../../../src/constants.js';
 import { server } from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 import { enrichFPD } from '../../../src/fpd/enrichment.js';
-import { requestBidsHook } from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;

@@ -1,13 +1,6 @@
-import {
-  expect
-} from 'chai';
-import {
-  spec,
-  internals
-} from 'modules/theAdxBidAdapter.js';
-import {
-  newBidder
-} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/theAdxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('TheAdxAdapter', function () {
   const adapter = newBidder(spec);

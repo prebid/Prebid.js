@@ -229,13 +229,16 @@ function precompile(options = {}) {
       generateCoreSummary,
       generateModuleSummary,
       generateGlobalDef(options),
-    ])
-  ]);
+    ]),
+  ].concat(options.dev ? [] : [
+    'ts-strict'
+  ]));
 }
 
 
 gulp.task('ts', helpers.execaTask('tsc'));
-gulp.task('ts-dev', helpers.execaTask('tsc --incremental'))
+gulp.task('ts-dev', helpers.execaTask('tsc --incremental'));
+gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
