@@ -99,8 +99,8 @@ function MarsmediaAdapter() {
   }
 
   function getValidSizeSet(dimensionList) {
-    const w = parseInt(dimensionList[0], 10);
-    const h = parseInt(dimensionList[1], 10);
+    const w = parseInt(dimensionList[0]);
+    const h = parseInt(dimensionList[1]);
     if (!Number.isNaN(w) && !Number.isNaN(h)) {
       return [w, h];
     }
