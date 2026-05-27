@@ -24,7 +24,7 @@ const ORTB_PARAMS = [
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
 export const ORTB_BANNER_PARAMS = new Map(ORTB_PARAMS);
-export interface BannerMediaType extends BaseMediaType, Partial<Pick<ORTBImp['banner'], (typeof ORTB_PARAMS)[number][0]>> {
+export interface BannerMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['banner']>, (typeof ORTB_PARAMS)[number][0]>> {
   /**
    * All sizes this ad unit can accept.
    * Examples: [400, 600], [[300, 250], [300, 600]].

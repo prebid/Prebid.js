@@ -29,7 +29,8 @@ export interface VidazooBaseBidderParams {
  * Bid floor value.
  */
 export type Ext = {
-  [key: string]: Record<string, any>;
+  [key: string]: Record<string, any>
+} & {
   customParameters?: CustomParameters;
 }
 

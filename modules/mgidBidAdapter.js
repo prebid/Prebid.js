@@ -30,7 +30,7 @@ import {
  * @typedef {import('../src/bidfactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('./mgidBidAdapterTypes.d.ts').MgidBidderParams} MgidBidderParams
+ * @typedef {import('./mgidBidAdapter.d.ts').MgidBidderParams} MgidBidderParams
  * @typedef {BidRequest & { params: MgidBidderParams }} MgidBidRequest
  */
 

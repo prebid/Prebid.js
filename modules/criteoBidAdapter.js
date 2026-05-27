@@ -92,8 +92,6 @@ function imp(buildImp, bidRequest, context) {
       context: bidRequest.mediaTypes.video.context,
       playersizes: parseSizes(bidRequest?.mediaTypes?.video?.playerSize, parseSize),
       plcmt: bidRequest.mediaTypes.video.plcmt,
-      poddur: bidRequest.mediaTypes.video.adPodDurationSec,
-      rqddurs: bidRequest.mediaTypes.video.durationRangeSec,
     })
   }
 

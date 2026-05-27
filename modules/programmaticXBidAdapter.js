@@ -9,7 +9,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./programmaticXBidAdapterTypes.d.ts').ProgrammaticXBidRequestParams} ProgrammaticXBidRequestParams
+ * @typedef {import('./programmaticXBidAdapter.d.ts').ProgrammaticXBidRequestParams} ProgrammaticXBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
