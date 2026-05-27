@@ -16,6 +16,8 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./teadsIdSystem.d.ts').TeadsIdSystemModuleName} TeadsIdSystemModuleName
  */
 
 const MODULE_NAME = 'teadsId';
@@ -37,7 +39,7 @@ export const gdprReason = {
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<TeadsIdSystemModuleName>} */
 export const teadsIdSubmodule = {
   /**
    * used to link submodule with config

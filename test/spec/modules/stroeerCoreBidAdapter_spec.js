@@ -277,7 +277,7 @@ describe('stroeerCore bid adapter', function () {
       bidRequest.mediaTypes = {
         video: {
           playerSize: [640, 480],
-          context: 'adpod'
+          context: 'video'
         },
         native: {
           image: {
