@@ -2,6 +2,7 @@ import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import { config } from 'src/config';
 import { EVENTS } from 'src/constants.js';
 import { server } from '../../mocks/xhr.js';
+import * as refererDetection from 'src/refererDetection.js';
 
 const utils = require('src/utils');
 const events = require('src/events');
@@ -725,6 +726,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           adUnitCode: '/19968336/header-bid-tag-0',
           adId: '5759bb3ef7be1e8',
           requestId: '206be9a13236af',
+          auctionId: '75e394d9',
           creativeId: '456456456',
           bidder: 'zeta_global_ssp',
           mediaType: 'banner',
@@ -800,6 +802,51 @@ describe('Zeta Global SSP Analytics Adapter', function () {
       expect(adRenderFailed.device.ua).to.not.be.empty;
     });
 
+    it('should handle AD_RENDER_FAILED event without pageUrl config using bid refererInfo', function () {
+      config.resetConfig();
+      events.emit(EVENTS.AD_RENDER_FAILED, {
+        ...SAMPLE_EVENTS.AD_RENDER_FAILED,
+        bid: {
+          ...SAMPLE_EVENTS.AD_RENDER_FAILED.bid,
+          refererInfo: {
+            domain: 'fallback.example.com',
+            page: 'https://fallback.example.com/article'
+          },
+          ortb2: {
+            device: {
+              w: 1024,
+              h: 768,
+              ua: 'test-ua-string'
+            }
+          }
+        }
+      });
+
+      expect(requests.length).to.equal(1);
+      const adRenderFailed = JSON.parse(requests[0].requestBody);
+      expect(adRenderFailed.page).to.eql('https://fallback.example.com/article');
+      expect(adRenderFailed.domain).to.eql('fallback.example.com');
+      expect(adRenderFailed.device).to.be.deep.equal({
+        w: 1024,
+        h: 768,
+        ua: 'test-ua-string'
+      });
+    });
+
+    it('should handle AD_RENDER_FAILED event without pageUrl config using getRefererInfo fallback', function () {
+      config.resetConfig();
+      sandbox.stub(refererDetection, 'getRefererInfo').returns({
+        domain: 'referer.example.com',
+        page: 'https://referer.example.com/page'
+      });
+      events.emit(EVENTS.AD_RENDER_FAILED, SAMPLE_EVENTS.AD_RENDER_FAILED);
+
+      expect(requests.length).to.equal(1);
+      const adRenderFailed = JSON.parse(requests[0].requestBody);
+      expect(adRenderFailed.page).to.eql('https://referer.example.com/page');
+      expect(adRenderFailed.domain).to.eql('referer.example.com');
+    });
+
     it('should handle BIDDER_ERROR event', function () {
       events.emit(EVENTS.BIDDER_ERROR, SAMPLE_EVENTS.BIDDER_ERROR);
 
@@ -838,6 +885,34 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           floor: 1.5
         }]
       });
+    });
+
+    it('should truncate long bidder error responseText', function () {
+      const longResponse = 'x'.repeat(600);
+      events.emit(EVENTS.BIDDER_ERROR, {
+        ...SAMPLE_EVENTS.BIDDER_ERROR,
+        error: {
+          message: 'Server error',
+          status: 500,
+          responseText: longResponse
+        }
+      });
+
+      expect(requests.length).to.equal(1);
+      const bidderError = JSON.parse(requests[0].requestBody);
+      expect(bidderError.error.responseText).to.have.lengthOf(500);
+      expect(bidderError.error.message).to.eql('Server error');
+    });
+
+    it('should stringify empty bidder error objects', function () {
+      events.emit(EVENTS.BIDDER_ERROR, {
+        ...SAMPLE_EVENTS.BIDDER_ERROR,
+        error: {}
+      });
+
+      expect(requests.length).to.equal(1);
+      const bidderError = JSON.parse(requests[0].requestBody);
+      expect(bidderError.error).to.be.deep.equal({ message: '[object Object]' });
     });
 
     it('should handle BROWSER_INTERVENTION event', function () {
