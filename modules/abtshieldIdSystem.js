@@ -6,8 +6,8 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { logError, logInfo, logWarn, deepClone } from '../src/utils.js';
-import { ajaxBuilder, processRequestOptions } from '../src/ajax.js';
+import { deepClone, logError, logInfo, logWarn } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'abtshieldId';
@@ -105,7 +105,7 @@ export const abtshieldIdSubmodule = {
             }
           },
           undefined,
-          processRequestOptions({ ...AJAX_OPTIONS }, MODULE_TYPE_UID, MODULE_NAME)
+          { ...AJAX_OPTIONS }
         );
       }
     };
