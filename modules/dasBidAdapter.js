@@ -164,6 +164,17 @@ function buildUserIds(customParams) {
   return userIds;
 }
 
+function buildUserEids(bidRequests) {
+  const eids = deepAccess(bidRequests, '0.userIdAsEids');
+  if (!Array.isArray(eids) || eids.length === 0) {
+    return null;
+  }
+
+  const onetEids = eids.filter(eid => eid.source === 'onet.pl');
+
+  return onetEids.length > 0 ? onetEids : null;
+}
+
 function getNpaFromPubConsent(pubConsent) {
   const params = new URLSearchParams(pubConsent);
   return params.get('npa') === '1';
@@ -257,6 +268,12 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
         dsa: customParams.dsainfo,
       },
     }
+  }
+
+  const userEids = buildUserEids(bidRequests);
+
+  if (userEids) {
+    request.user.eids = userEids;
   }
 
   return request;

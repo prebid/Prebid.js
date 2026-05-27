@@ -575,5 +575,59 @@ describe('dasBidAdapter', function () {
       const bidResponses = spec.interpretResponse(nativeResponse);
       expect(bidResponses[0].native).to.deep.equal({});
     });
+
+    describe('user.eids from userIdAsEids', function () {
+      const onetEid = {
+        source: 'onet.pl',
+        inserter: 'onet.pl',
+        uids: [{ id: 'test-artemis-id', atype: 1, ext: { id_type: 'tracking', consent_required: true } }]
+      };
+
+      it('should include user.eids when onet.pl EID is present in userIdAsEids', function () {
+        const bidRequestsWithEids = [{
+          ...bidRequests[0],
+          userIdAsEids: [onetEid]
+        }];
+
+        const request = spec.buildRequests(bidRequestsWithEids, bidderRequest);
+        const payload = JSON.parse(decodeURIComponent(new URL(request.url).searchParams.get('data')));
+
+        expect(payload.user.eids).to.be.an('array').with.lengthOf(1);
+        expect(payload.user.eids[0].source).to.equal('onet.pl');
+        expect(payload.user.eids[0].inserter).to.equal('onet.pl');
+        expect(payload.user.eids[0].uids[0].id).to.equal('test-artemis-id');
+        expect(payload.user.eids[0].uids[0].atype).to.equal(1);
+        expect(payload.user.eids[0].uids[0].ext.id_type).to.equal('tracking');
+        expect(payload.user.eids[0].uids[0].ext.consent_required).to.equal(true);
+      });
+
+      it('should not include user.eids when userIdAsEids is absent', function () {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const payload = JSON.parse(decodeURIComponent(new URL(request.url).searchParams.get('data')));
+
+        expect(payload.user).to.not.have.property('eids');
+      });
+
+      it('should not include user.eids when userIdAsEids contains no onet.pl source', function () {
+        const bidRequestsWithOtherEid = [{
+          ...bidRequests[0],
+          userIdAsEids: [{ source: 'other-source.com', uids: [{ id: 'some-id', atype: 1 }] }]
+        }];
+
+        const request = spec.buildRequests(bidRequestsWithOtherEid, bidderRequest);
+        const payload = JSON.parse(decodeURIComponent(new URL(request.url).searchParams.get('data')));
+
+        expect(payload.user).to.not.have.property('eids');
+      });
+
+      it('should not include user.eids when userIdAsEids is empty', function () {
+        const bidRequestsWithEmptyEids = [{ ...bidRequests[0], userIdAsEids: [] }];
+
+        const request = spec.buildRequests(bidRequestsWithEmptyEids, bidderRequest);
+        const payload = JSON.parse(decodeURIComponent(new URL(request.url).searchParams.get('data')));
+
+        expect(payload.user).to.not.have.property('eids');
+      });
+    });
   });
 });
