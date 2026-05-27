@@ -2,7 +2,6 @@ import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from './activities/activities.js'
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
-import { hook } from './hook.js';
 import { buildUrl, hasDeviceAccess, logError, logWarn, parseUrl } from './utils.js';
 
 export const dep = {
