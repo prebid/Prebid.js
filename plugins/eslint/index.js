@@ -1,8 +1,23 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
+const { checkDeclarationFilename } = require('./filename.js');
 
 module.exports = {
   rules: {
+    'declaration-filename': {
+      meta: {
+        docs: {
+          description: 'enforces consistent names for .d.ts files'
+        }
+      },
+      create: function(context) {
+        return {
+          Program(node) {
+            checkDeclarationFilename(context, node);
+          }
+        };
+      }
+    },
     'validate-imports': {
       meta: {
         docs: {

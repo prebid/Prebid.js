@@ -10,7 +10,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./opaMarketplaceBidAdapterTypes.d.ts').OpaMarketplaceBidRequestParams} OpaMarketplaceBidRequestParams
+ * @typedef {import('./opaMarketplaceBidAdapter.d.ts').OpaMarketplaceBidRequestParams} OpaMarketplaceBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
