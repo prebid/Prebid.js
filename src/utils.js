@@ -609,7 +609,7 @@ export function getSafeframeGeometry() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
 export function isFirefoxBrowser() {
