@@ -317,6 +317,11 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const coppa = bidderRequest?.ortb2?.regs?.coppa ?? 0;
   const device = bidderRequest?.ortb2?.device || {};
 
+  // delete device.devicetype if invalid
+  if (!Number.isInteger(device.devicetype)) {
+    delete device.devicetype;
+  }
+
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
