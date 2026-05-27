@@ -13,6 +13,7 @@ import {
   setSubmoduleRegistry,
   COOKIE_SUFFIXES, HTML5_SUFFIXES,
   syncDelay, adUnitEidsHook,
+  generateSubmoduleContainers, addIdData
 } from 'modules/userId/index.js';
 import { UID1_EIDS } from 'libraries/uid1Eids/uid1Eids.js';
 import { createEidsArray, EID_CONFIG, getEids } from 'modules/userId/eids.js';
@@ -36,7 +37,6 @@ import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
 import { extractEids } from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
-import { generateSubmoduleContainers, addIdData } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import {
   discloseStorageUse,

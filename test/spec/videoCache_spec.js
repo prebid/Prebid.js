@@ -7,13 +7,13 @@ import {
   _internal,
   storeBatch,
   callPrebidCache, updateVast
+  , storeLocally
 } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
-import { storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
 

@@ -1,5 +1,9 @@
 import { expect } from "chai";
-import iiqAnalyticsAnalyticsAdapter from "modules/intentIqAnalyticsAdapter.js";
+import iiqAnalyticsAnalyticsAdapter, {
+  REPORTER_ID,
+  preparePayload,
+  restoreReportList,
+} from "modules/intentIqAnalyticsAdapter.js";
 import * as utils from "src/utils.js";
 import { server } from "test/mocks/xhr.js";
 import { config } from "src/config.js";
@@ -7,11 +11,6 @@ import { EVENTS } from "src/constants.js";
 import * as events from "src/events.js";
 import { getGlobal } from "../../../src/prebidGlobal.js";
 import sinon from "sinon";
-import {
-  REPORTER_ID,
-  preparePayload,
-  restoreReportList,
-} from "../../../modules/intentIqAnalyticsAdapter.js";
 import {
   FIRST_PARTY_KEY,
   PREBID,

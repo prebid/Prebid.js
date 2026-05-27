@@ -1,17 +1,11 @@
 
 const path = require('path');
 const _ = require('lodash');
-const resolveFrom = require('resolve-from');
+const { CODE_EXT, isInDirectory } = require('./resolver.js');
+
 const MODULES_PATH = path.resolve(__dirname, '../../modules');
 const CREATIVE_PATH = path.resolve(__dirname, '../../creative');
 
-const CODE_EXT = ['.js', '.ts'];
-const IMPORT_EXT = CODE_EXT.join(CODE_EXT);
-
-function isInDirectory(filename, dir) {
-  const rel = path.relative(dir, filename);
-  return rel && !rel.startsWith('..') && !path.isAbsolute(rel);
-}
 
 
 function flagErrors(context, node, importPath) {
@@ -28,29 +22,9 @@ function flagErrors(context, node, importPath) {
   // don't allow extension-less local imports
   if (
     !importPath.match(/^\w+/) &&
-    !IMPORT_EXT.includes(parsedImportPath.ext)
+    !CODE_EXT.includes(parsedImportPath.ext)
   ) {
     context.report(node, `import "${importPath}" should include extension, one of ${CODE_EXT.join(', ')}`);
-  }
-
-  const matching = (CODE_EXT.includes(parsedImportPath.ext) ? CODE_EXT : [parsedImportPath.ext])
-    .filter((ext) => {
-      try {
-        resolveFrom(absFileDir, path.format({
-          name: parsedImportPath.name,
-          dir: parsedImportPath.dir,
-          ext
-        }));
-      } catch (e) {
-        return false;
-      }
-      return true;
-    }).length;
-
-  if (matching === 0) {
-    return context.report(node, `import "${importPath}" cannot be resolved`);
-  } else if (matching > 1) {
-    return context.report(node, `import "${importPath}" is ambiguous, both .js and .ts files exists`);
   }
 
   if (

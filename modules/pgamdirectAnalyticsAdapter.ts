@@ -43,6 +43,12 @@ const ANALYTICS_CODE = 'pgamdirect';
 const GVLID = 1353;
 const DEFAULT_ENDPOINT =
   'https://app.pgammedia.com/api/analytics-events';
+// Auction-context endpoint. Receives per-(publisher × placement × geo ×
+// device) summaries so the bidder-edge can calibrate per-cell floors
+// against observed market clearing. Separate from the main analytics
+// POST so the bidder-edge consumes it directly.
+const AUCTION_CONTEXT_ENDPOINT =
+  'https://rtb.pgammedia.com/rtb/v1/auction-context';
 
 // Which events we forward. Deliberately narrow: the four that carry
 // reconciliation-grade signal. Adding more here increases the
@@ -96,12 +102,98 @@ const pgamdirectAnalytics = Object.assign(
           contentType: 'text/plain',
           keepalive: true,
         });
+        // On AUCTION_END, also POST per-cell context to the bidder-edge
+        // (parallel, fire-and-forget). Used for floor calibration.
+        if (eventType === EVENTS.AUCTION_END) {
+          maybePostAuctionContext(args);
+        }
       } catch (err) {
         logError('[pgamdirectAnalytics] track failed', err);
       }
     },
   },
 );
+
+/**
+ * Forward per-cell auction context (publisher × placement × geo ×
+ * device) plus the auction's competitive-high CPM to the bidder-edge
+ * so it can calibrate per-cell floors. Best-effort; errors are
+ * intentionally swallowed.
+ */
+export function maybePostAuctionContext(args: unknown): void {
+  try {
+    const a = (args ?? {}) as {
+      bidsReceived?: Array<Record<string, unknown>>;
+    };
+    const bids = Array.isArray(a.bidsReceived) ? a.bidsReceived : [];
+    if (bids.length < 2) return;
+
+    // Group bids per ad unit; multi-imp auctions can have several pgam
+    // seatbids that we score independently.
+    const byAdUnit = new Map<string, { ours?: Record<string, unknown>; others: Array<Record<string, unknown>> }>();
+    for (const b of bids) {
+      const adUnit = typeof b.adUnitCode === 'string' ? b.adUnitCode : '';
+      if (!adUnit) continue;
+      let row = byAdUnit.get(adUnit);
+      if (!row) {
+        row = { others: [] };
+        byAdUnit.set(adUnit, row);
+      }
+      if (b.bidderCode === 'pgamdirect') {
+        const cpm = typeof b.cpm === 'number' ? b.cpm : 0;
+        const bestCpm = row.ours && typeof row.ours.cpm === 'number' ? row.ours.cpm : -1;
+        if (cpm > bestCpm) row.ours = b;
+      } else {
+        row.others.push(b);
+      }
+    }
+
+    for (const [, row] of byAdUnit) {
+      if (!row.ours) continue;
+      // Cell signature is set by the bidder-edge on every winning pgam bid.
+      const ours = row.ours as { ext?: { pgam?: { cell?: AuctionCellContext } } };
+      const cell = ours.ext?.pgam?.cell;
+      if (!cell || !cell.publisher_id) continue;
+      // Competitive-high CPM = highest CPM among non-pgam bidders.
+      let competitorHigh = 0;
+      for (const o of row.others) {
+        const cpm = typeof o.cpm === 'number' ? o.cpm : 0;
+        if (cpm > competitorHigh) competitorHigh = cpm;
+      }
+      if (competitorHigh <= 0) continue;
+
+      const body = JSON.stringify({
+        publisher_id: cell.publisher_id,
+        placement_ref: cell.placement_ref,
+        geo_country: cell.geo_country,
+        device_type: cell.device_type,
+        attention_bucket: cell.attention_bucket,
+        competitor_high_cpm_usd: competitorHigh,
+      });
+      // text/plain keeps the POST CORS-simple.
+      ajax(AUCTION_CONTEXT_ENDPOINT, undefined, body, {
+        method: 'POST',
+        withCredentials: false,
+        contentType: 'text/plain',
+        keepalive: true,
+      });
+    }
+  } catch (err) {
+    logMessage('[pgamdirectAnalytics] auction-context post skipped', err);
+  }
+}
+
+/**
+ * Per-cell auction signature attached by the bidder-edge to every
+ * winning pgam bid via bid.ext.pgam.cell.
+ */
+interface AuctionCellContext {
+  publisher_id: number;
+  placement_ref: string;
+  geo_country: string;
+  device_type: number;
+  attention_bucket: string;
+}
 
 // Minimal event shape we extract from each Prebid event.
 //
@@ -114,13 +206,15 @@ const pgamdirectAnalytics = Object.assign(
 //                  slot). Stable per-adunit; reused across auctions
 //                  when the same slot refreshes.
 //   ad_id        — Prebid's per-bid adId (unique per bid response,
-//                  changes every auction). Present on the render
-//                  events so we can tie a specific bid's render
-//                  outcome back to the BID_WON that preceded it.
+//                  changes every auction). Emitted on BID_WON and on
+//                  the AD_RENDER_* events so discrepancy analysis can
+//                  join render outcomes to the exact winning bid by a
+//                  single per-bid key. ad_unit_code alone is ambiguous
+//                  on refresh-heavy pages where several wins share the
+//                  same slot over time.
 //
-// Earlier revision misused adId as ad_unit_code on the render events
-// (flagged by Codex review on #14778); this split fixes
-// cross-event reconciliation.
+// Prior revisions fixed by Codex reviews on #14778 and the follow-up
+// that added ad_id to BID_WON.
 interface NormalisedEvent {
   t: string;
   ts: number;
@@ -163,6 +257,15 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
         creative_id: typeof a.creativeId === 'string' ? a.creativeId : undefined,
         media_type: typeof a.mediaType === 'string' ? a.mediaType : undefined,
         size: typeof a.size === 'string' ? a.size : undefined,
+        // ad_id (Prebid's per-bid adId) is the ONLY reliable join key
+        // between BID_WON and the subsequent AD_RENDER_SUCCEEDED /
+        // AD_RENDER_FAILED. On refresh-heavy pages multiple wins share
+        // the same ad_unit_code within a single adUnitCode lifecycle,
+        // so joining on ad_unit_code alone yields ambiguous matches
+        // and skews win-vs-render reconciliation. Emit it on BID_WON
+        // too so backend discrepancy analysis can key on a single
+        // per-bid identifier.
+        ad_id: typeof a.adId === 'string' ? a.adId : undefined,
       };
 
     case EVENTS.AUCTION_END: {

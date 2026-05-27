@@ -9,7 +9,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./tagorasBidAdapterTypes.d.ts').TagorasBidRequestParams} TagorasBidRequestParams
+ * @typedef {import('./tagorasBidAdapter.d.ts').TagorasBidRequestParams} TagorasBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';

@@ -484,6 +484,43 @@ describe('Equativ bid adapter tests', () => {
       expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
     });
 
+    it('should default imp.displaymanager and imp.displaymanagerver to Prebid.js and prebid version', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
+    });
+
+    it('should preserve publisher-provided ortb2Imp.displaymanager', () => {
+      const bidRequests = [{
+        ...DEFAULT_BANNER_BID_REQUESTS[0],
+        ortb2Imp: {
+          ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
+          displaymanager: 'Smart RTB+',
+        },
+      }];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Smart RTB+');
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
+    });
+
+    it('should preserve publisher-provided ortb2Imp.displaymanagerver', () => {
+      const bidRequests = [{
+        ...DEFAULT_BANNER_BID_REQUESTS[0],
+        ortb2Imp: {
+          ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
+          displaymanagerver: 'Android SDK7.20.2',
+        },
+      }];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(request.data.imp[0].displaymanagerver).to.equal('Android SDK7.20.2');
+    });
+
     it('should build a video request properly under normal circumstances', () => {
       // ASSEMBLE
       if (FEATURES.VIDEO) {
