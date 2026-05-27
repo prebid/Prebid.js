@@ -2,7 +2,6 @@ import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from './activities/activities.js'
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
-import { hook } from './hook.js';
 import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
 
 export const dep = {
@@ -59,13 +58,6 @@ export interface AjaxOptions {
   suppressTopicsEnrollmentWarning?: boolean;
 }
 
-export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
-  if (options.withCredentials) {
-    options.withCredentials = (moduleType && moduleName) ? isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)) : hasDeviceAccess();
-  }
-  return options;
-}, 'processRequestOptions');
-
 /**
  * transform legacy `ajax` parameters into a fetch request.
  * @returns {Request}
@@ -121,10 +113,21 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
       to = dep.timeout(timeout, resource);
       options = Object.assign({ signal: to.signal }, options);
     }
+    let request = dep.makeRequest(resource, options);
 
-    processRequestOptions(options, moduleType, moduleName);
-
-    let pm = dep.fetch(resource, options);
+    if (
+      request.credentials === 'include' && (
+        !hasDeviceAccess() || (
+          moduleType && moduleName && !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName))
+        )
+      )
+    ) {
+      request = dep.makeRequest(request, {
+        keepalive: request.keepalive, // According to MDN this should be unnecessary, but Firefox will lose `keepalive` without itt
+        credentials: 'same-origin'
+      });
+    }
+    let pm = dep.fetch(request);
     if (to?.done != null) pm = pm.finally(to.done);
     return pm;
   };

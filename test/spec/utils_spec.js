@@ -2,9 +2,16 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import { binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad } from 'src/utils.js';
+import {
+  binarySearch,
+  deepEqual,
+  encodeMacroURI,
+  getWinDimensions,
+  memoize,
+  sizesToSizeTuples,
+  waitForElementToLoad
+} from 'src/utils.js';
 import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
-import { getWinDimensions, internal } from '../../src/utils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
@@ -893,6 +900,10 @@ describe('Utils', function () {
       userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36';
       expect(utils.isSafariBrowser()).to.equal(false);
     });
+    it('does not flag Chromium', function () {
+      userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/124.0.0.0 Safari/537.36';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
     it('does not flag Chrome iOS', function () {
       userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
       expect(utils.isSafariBrowser()).to.equal(false);
@@ -1478,5 +1489,62 @@ describe('getWinDimensions', () => {
     clock.tick(18);
     expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
+  });
+});
+
+describe('polite sync helpers', () => {
+  let originalScheduler;
+  let originalRequestIdleCallback;
+  let originalFetch;
+  let originalRequest;
+
+  beforeEach(() => {
+    originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
+    originalFetch = window.fetch;
+    originalRequest = window.Request;
+    window.scheduler = undefined;
+    window.requestIdleCallback = undefined;
+    window.fetch = sinon.stub().returns(Promise.resolve());
+    window.Request = function (url, opts) {
+      this.url = url;
+      this.opts = opts;
+    };
+  });
+
+  afterEach(() => {
+    window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
+    window.fetch = originalFetch;
+    window.Request = originalRequest;
+  });
+
+  it('uses keepalive fetch for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'include',
+      keepalive: true
+    });
+  });
+
+  it('does not attempt fetch when Request is unavailable', () => {
+    window.Request = undefined;
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.called).to.equal(false);
+  });
+
+  it('uses background scheduling for politeInsertUserSyncIframe', () => {
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+
+    utils.politeInsertUserSyncIframe('http://example.com/iframe');
+    expect(window.scheduler.postTask.calledOnce).to.equal(true);
   });
 });

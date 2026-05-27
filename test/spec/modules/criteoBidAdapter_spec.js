@@ -1368,8 +1368,6 @@ describe('The Criteo bidding adapter', function () {
                 delivery: [1, 2, 3],
                 pos: 1,
                 playbackend: 1,
-                adPodDurationSec: 30,
-                durationRangeSec: [1, 30],
               }
             },
             params: {
@@ -1411,8 +1409,6 @@ describe('The Criteo bidding adapter', function () {
         expect(ortbRequest.imp[0].video.ext.context).to.equal('inbanner');
         expect(ortbRequest.imp[0].video.ext.playersizes).to.deep.equal(['640x480']);
         expect(ortbRequest.imp[0].video.ext.plcmt).to.equal(3);
-        expect(ortbRequest.imp[0].video.ext.poddur).to.equal(30);
-        expect(ortbRequest.imp[0].video.ext.rqddurs).to.deep.equal([1, 30]);
       });
     }
 

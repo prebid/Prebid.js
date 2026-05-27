@@ -13,6 +13,7 @@ const EXCLUDE_PATTERNS = [
   /^test\//,
   /^integrationExamples\//,
   /^[^\/]+$/,
+  /^.github\//,
 ]
 
 const LIBRARY_PATTERN = /^libraries\/([^\/]+)\//;
@@ -136,6 +137,7 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, au
     });
   const data = {
     pr: prNo,
+    draft: pr.data.draft,
     author: {
       login: author,
       isPrebidMember: await isPrebidMember(author)
@@ -147,7 +149,7 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, au
     review,
   }
   data.review.requires = reviewRequirements(data);
-  data.review.ok = satisfiesReviewRequirements(data.review);
+  data.review.ok = data.draft || satisfiesReviewRequirements(data.review);
   return data;
 }
 

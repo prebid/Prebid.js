@@ -10,7 +10,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { subscribeToGamSlotRenderEndedEvent, SlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
+import { subscribeToGamSlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -101,7 +101,6 @@ function getMediaTypeAlias(mediaType) {
     banner: 'ban',
     outstream: 'vidout',
     instream: 'vidin',
-    adpod: 'vidadpod',
     native: 'nat'
   };
   return mediaTypesMap[mediaType] || mediaType;
@@ -462,7 +461,7 @@ function handlerPbsAnalytics(event) {
  */
 
 /**
- * @param {SlotRenderEndedEvent} event
+ * @param {*} event
  * @returns {void}
  */
 function gamSlotCallback(event) {
