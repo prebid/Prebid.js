@@ -4,15 +4,8 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "bliink",
+      "componentName": "matterfull",
       "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "bk",
-      "aliasOf": "bliink",
       "gvlid": null,
       "disclosureURL": null
     }
