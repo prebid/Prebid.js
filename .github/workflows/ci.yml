@@ -26,7 +26,7 @@ jobs:
         run: node_modules/.bin/gulp build --modules=modules.json
 
       - name: version
-        run: cat package.json | grep -e "\"version.*\"" | grep -oP "\d\.\d+\.\d+" > version.txt
+        run: cat package.json | grep -e "\"version.*\"" | grep -oP "\d+\.\d+\.\d+" > version.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
