@@ -12,6 +12,7 @@ import { server } from '../../../mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import { registerActivityControl } from '../../../../src/activities/rules.js';
 import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from '../../../../src/activities/activities.js';
+import {defer} from 'src/utils/promise.js';
 
 const EXAMPLE_URL = 'https://www.example.com';
 
@@ -342,6 +343,80 @@ describe('ajax', () => {
       });
     });
   });
+
+  describe('keepalive', () => {
+    let sandbox, request;
+    before(() => {
+      server.restore();
+    })
+    after(() => {
+      server.enable();
+    })
+    beforeEach(() => {
+      request = defer();
+      sandbox = sinon.createSandbox();
+      sandbox.stub(dep, 'makeRequest').callsFake((r, o) => {
+        const req = new Request(r, o);
+        sandbox.spy(req, 'clone');
+        return req;
+      });
+      sandbox.stub(dep, 'fetch').callsFake(req => {
+        request.resolve(req);
+        return new Promise((resolve) => {});
+      });
+    });
+    afterEach(() => {
+      sandbox.restore();
+    })
+    Object.entries({
+      'small payload': {
+        body: 'x'.repeat(1024),
+        keepalive: true
+      },
+      'large payload': {
+        body: 'x'.repeat(65537),
+        keepalive: false
+      },
+    }).forEach(([t, {body, keepalive}]) => {
+      describe(`POST with ${t}`, () => {
+        Object.entries({
+          ajax() {
+            ajax(EXAMPLE_URL, () => {}, body, {method: 'POST', keepalive: true})
+          },
+          fetch() {
+            fetch(EXAMPLE_URL, {method: 'POST', body, keepalive: true})
+          }
+        }).forEach(([name, fn]) => {
+          describe(name, () => {
+            it(`should set keepalive = ${keepalive}`, () => {
+              fn();
+              return request.promise.then(req => {
+                expect(req.keepalive).to.eql(keepalive);
+              })
+            });
+            it('should not use the body', () => {
+              fn();
+              return request.promise.then(req => {
+                expect(req.bodyUsed).to.be.false;
+              })
+            })
+          })
+        })
+      })
+    });
+    it('should not try to get body size of requests without a body', () => {
+      fetch(EXAMPLE_URL, {keepalive: true});
+      return request.promise.then(req => {
+        sinon.assert.notCalled(req.clone);
+      })
+    });
+    it('should not try to get body size for requests that do not ask for keepalive', () => {
+      fetch(EXAMPLE_URL, {body: 'test', method: 'POST'});
+      return request.promise.then(req => {
+        sinon.assert.notCalled(req.clone);
+      })
+    })
+  })
 
   describe('attachCallbacks', () => {
     const sampleHeaders = new Headers({

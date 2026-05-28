@@ -7,7 +7,7 @@ import type { ModuleType } from "./activities/modules.ts";
 
 export const dep = {
   fetch: window.fetch.bind(window),
-  makeRequest: (r, o) => new Request(r, o),
+  makeRequest: (r, o?) => new Request(r, o),
   timeout(timeout, resource) {
     const ctl = new AbortController();
     let cancelTimer = setTimeout(() => {
@@ -95,6 +95,9 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
       rqOpts.suppressTopicsEnrollmentWarning = options.suppressTopicsEnrollmentWarning;
     }
   }
+  if (options.keepalive) {
+    rqOpts.keepalive = true;
+  }
   return dep.makeRequest(url, rqOpts);
 }
 
@@ -163,7 +166,21 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
         credentials: 'same-origin'
       });
     }
-    let pm = dep.fetch(request);
+    let pm;
+    if (request.keepalive && request.body != null) {
+      // requests can be "used" only once - and blob() counts as usage, so clone the request
+      pm = request.clone().blob().then(blob => {
+        if (blob.size > KEEPALIVE_MAX_BODY_SIZE) {
+          logWarn(`Ignoring keepalive: request body exceeds ${KEEPALIVE_MAX_BODY_SIZE} bytes`, request);
+          request = dep.makeRequest(request, {
+            keepalive: false
+          })
+        }
+        return dep.fetch(request);
+      })
+    } else {
+      pm = dep.fetch(request);
+    }
     if (to?.done != null) pm = pm.finally(to.done);
     return pm;
   };
