@@ -70,9 +70,9 @@ function resolveRenderSiteContext(args = {}) {
     ? docLocation.host + docLocation.pathname
     : undefined;
   const page = pageUrl || docPage || args.bid?.refererInfo?.page || getRefererInfo().page;
-  const domain = parseDomain(page, { noLeadingWww: true })
-    || args.bid?.refererInfo?.domain
-    || getRefererInfo().domain;
+  const domain = parseDomain(page, { noLeadingWww: true }) ||
+    args.bid?.refererInfo?.domain ||
+    getRefererInfo().domain;
   return { page, domain };
 }
 
