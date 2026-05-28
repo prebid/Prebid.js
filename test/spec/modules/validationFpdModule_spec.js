@@ -339,6 +339,89 @@ describe('the first party data validation module', function () {
       expect(validated.device).to.deep.equal(duplicate.device);
     });
 
+    it('filters expanded device fields for invalid OpenRTB types', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.device = {
+        ua: 'Mozilla/5.0',
+        dnt: 1,
+        lmt: 2,
+        ip: 123,
+        ipv6: '2001:db8::1',
+        make: 'Apple',
+        model: ['iPhone'],
+        os: 'iOS',
+        osv: 17,
+        hwv: '15,2',
+        h: 911,
+        w: 1733,
+        ppi: '460',
+        pxratio: 3,
+        js: 1,
+        geofetch: 0,
+        flashver: null,
+        language: 'en',
+        carrier: 'Example Carrier',
+        mccmnc: 310260,
+        ifa: 'ifa',
+        didsha1: {},
+        didmd5: 'did-md5',
+        dpidsha1: 'dpid-sha1',
+        dpidmd5: 10,
+        macsha1: 'mac-sha1',
+        macmd5: false,
+        ext: { foo: 'bar' },
+        geo: {
+          lat: 12.34,
+          lon: 56.78,
+          accuracy: 10,
+          lastfix: 'old',
+          ipservice: 2,
+          country: 'USA',
+          region: 6,
+          regionfips104: 'US06',
+          metro: '807',
+          city: 'LAX',
+          zip: 90001,
+          utcoffset: -480,
+          ext: { source: 'test' }
+        }
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated.device).to.deep.equal({
+        ua: 'Mozilla/5.0',
+        dnt: 1,
+        ipv6: '2001:db8::1',
+        make: 'Apple',
+        os: 'iOS',
+        hwv: '15,2',
+        h: 911,
+        w: 1733,
+        pxratio: 3,
+        js: 1,
+        geofetch: 0,
+        language: 'en',
+        carrier: 'Example Carrier',
+        ifa: 'ifa',
+        didmd5: 'did-md5',
+        dpidsha1: 'dpid-sha1',
+        macsha1: 'mac-sha1',
+        ext: { foo: 'bar' },
+        geo: {
+          lat: 12.34,
+          lon: 56.78,
+          accuracy: 10,
+          ipservice: 2,
+          country: 'USA',
+          regionfips104: 'US06',
+          metro: '807',
+          city: 'LAX',
+          utcoffset: -480,
+          ext: { source: 'test' }
+        }
+      });
+    });
+
     it('filters cur for invalid data type', function () {
       let validated;
       const duplicate = utils.deepClone(ortb2);

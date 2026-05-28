@@ -28,6 +28,43 @@ export function Obj(primitiveFields, spec = {}) {
   return scan;
 }
 
+export function Str() {
+  return (path, parent, field, value, onError) => {
+    if (typeof value !== 'string') {
+      onError(ERR_TYPE, path, parent, field, value);
+    }
+  };
+}
+
+export function Num() {
+  return (path, parent, field, value, onError) => {
+    if (typeof value !== 'number' || !isFinite(value)) {
+      onError(ERR_TYPE, path, parent, field, value);
+    }
+  };
+}
+
+export function Int() {
+  return (path, parent, field, value, onError) => {
+    if (!Number.isInteger(value)) {
+      onError(ERR_TYPE, path, parent, field, value);
+    }
+  };
+}
+
+export function IntEnumValues(values) {
+  const allowed = new Set(Object.values(values));
+  return (path, parent, field, value, onError) => {
+    const errno = (() => {
+      if (!Number.isInteger(value)) return ERR_TYPE;
+      if (!allowed.has(value)) return ERR_ENUM;
+    })();
+    if (errno != null) {
+      onError(errno, path, parent, field, value);
+    }
+  };
+}
+
 export const ID = Obj(['id']);
 export const Named = ID[extend](['name']);
 

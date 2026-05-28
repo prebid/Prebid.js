@@ -1,4 +1,4 @@
-import { ConnectionType, DeviceType, LocationType } from 'iab-adcom/enum';
+import { ConnectionType, DeviceType, IPLocationService, LocationType } from 'iab-adcom/enum';
 
 /**
  * Data type map
@@ -9,6 +9,11 @@ const TYPES = {
   number: 'number',
   integer: 'integer',
 };
+
+const SIGNAL = Object.freeze({
+  NO: 0,
+  YES: 1
+});
 
 /**
  * Template to define what ortb2 attributes should be validated
@@ -34,17 +39,54 @@ export const ORTB_MAP = {
   device: {
     type: TYPES.object,
     children: {
-      w: { type: TYPES.number },
-      h: { type: TYPES.number },
+      ua: { type: TYPES.string },
+      dnt: { type: TYPES.integer, enum: SIGNAL },
+      lmt: { type: TYPES.integer, enum: SIGNAL },
+      ip: { type: TYPES.string },
+      ipv6: { type: TYPES.string },
       devicetype: { type: TYPES.integer, enum: DeviceType },
+      make: { type: TYPES.string },
+      model: { type: TYPES.string },
+      os: { type: TYPES.string },
+      osv: { type: TYPES.string },
+      hwv: { type: TYPES.string },
+      h: { type: TYPES.number },
+      w: { type: TYPES.number },
+      ppi: { type: TYPES.number },
+      pxratio: { type: TYPES.number },
+      js: { type: TYPES.integer, enum: SIGNAL },
+      geofetch: { type: TYPES.integer, enum: SIGNAL },
+      flashver: { type: TYPES.string },
+      language: { type: TYPES.string },
+      carrier: { type: TYPES.string },
+      mccmnc: { type: TYPES.string },
       connectiontype: { type: TYPES.integer, enum: ConnectionType },
+      ifa: { type: TYPES.string },
+      didsha1: { type: TYPES.string },
+      didmd5: { type: TYPES.string },
+      dpidsha1: { type: TYPES.string },
+      dpidmd5: { type: TYPES.string },
+      macsha1: { type: TYPES.string },
+      macmd5: { type: TYPES.string },
+      ext: { type: TYPES.object },
       geo: {
         type: TYPES.object,
         isArray: false,
         children: {
           lat: { type: TYPES.number },
           lon: { type: TYPES.number },
-          type: { type: TYPES.integer, enum: LocationType }
+          type: { type: TYPES.integer, enum: LocationType },
+          accuracy: { type: TYPES.number },
+          lastfix: { type: TYPES.number },
+          ipservice: { type: TYPES.integer, enum: IPLocationService },
+          country: { type: TYPES.string },
+          region: { type: TYPES.string },
+          regionfips104: { type: TYPES.string },
+          metro: { type: TYPES.string },
+          city: { type: TYPES.string },
+          zip: { type: TYPES.string },
+          utcoffset: { type: TYPES.number },
+          ext: { type: TYPES.object }
         }
       }
     }

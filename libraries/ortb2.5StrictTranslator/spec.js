@@ -1,6 +1,8 @@
-import { Arr, extend, ID, IntEnum, Named, Obj } from './dsl.js';
+import { ConnectionType, DeviceType, IPLocationService, LocationType } from 'iab-adcom';
+import { Arr, extend, ID, IntEnum, IntEnumValues, Named, Num, Obj, Str } from './dsl.js';
 
 const CatDomain = Named[extend](['cat', 'domain']);
+const Flag = IntEnum(0, 1);
 const Segment = Named[extend](['value']);
 const Data = Named[extend]([], {
   segment: Arr(Segment)
@@ -20,12 +22,52 @@ const Client = CatDomain[extend](['sectioncat', 'pagecat', 'privacypolicy', 'key
 const Site = Client[extend](['page', 'ref', 'search', 'mobile']);
 const App = Client[extend](['bundle', 'storeurl', 'ver', 'paid']);
 
-const Geo = Obj(['lat', 'lon', 'accuracy', 'lastfix', 'country', 'region', 'regionfips104', 'metro', 'city', 'zip', 'utcoffset'], {
-  type: IntEnum(1, 3),
-  ipservice: IntEnum(1, 4)
+const Geo = Obj([], {
+  lat: Num(),
+  lon: Num(),
+  type: IntEnumValues(LocationType),
+  accuracy: Num(),
+  lastfix: Num(),
+  ipservice: IntEnumValues(IPLocationService),
+  country: Str(),
+  region: Str(),
+  regionfips104: Str(),
+  metro: Str(),
+  city: Str(),
+  zip: Str(),
+  utcoffset: Num()
 });
-const Device = Obj(['ua', 'dnt', 'lmt', 'ip', 'ipv6', 'make', 'model', 'os', 'osv', 'hwv', 'h', 'w', 'ppi', 'pxratio', 'js', 'geofetch', 'flashver', 'language', 'carrier', 'mccmnc', 'ifa', 'didsha1', 'didmd5', 'dpidsha1', 'dpidmd5', 'macsha1', 'macmd5'], {
-  geo: Geo, devicetype: IntEnum(1, 7), connectiontype: IntEnum(0, 6)
+const Device = Obj([], {
+  ua: Str(),
+  geo: Geo,
+  dnt: Flag,
+  lmt: Flag,
+  ip: Str(),
+  ipv6: Str(),
+  devicetype: IntEnumValues(DeviceType),
+  make: Str(),
+  model: Str(),
+  os: Str(),
+  osv: Str(),
+  hwv: Str(),
+  h: Num(),
+  w: Num(),
+  ppi: Num(),
+  pxratio: Num(),
+  js: Flag,
+  geofetch: Flag,
+  flashver: Str(),
+  language: Str(),
+  carrier: Str(),
+  mccmnc: Str(),
+  connectiontype: IntEnumValues(ConnectionType),
+  ifa: Str(),
+  didsha1: Str(),
+  didmd5: Str(),
+  dpidsha1: Str(),
+  dpidmd5: Str(),
+  macsha1: Str(),
+  macmd5: Str()
 });
 const User = ID[extend](['buyeruid', 'yob', 'gender', 'keywords', 'customdata'], {
   geo: Geo, data: Arr(Data),
