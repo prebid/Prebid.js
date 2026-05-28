@@ -460,7 +460,6 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
 // closed and we fall through to undefined.
 const PMP_STORAGE_KEY = '__51d_pmp_pref';
 const PMP_SCHEMA_VERSION = 1;
-const VALID_ID_USAGE = new Set(['non-marketing', 'standard', 'personalized']);
 
 // Storage manager scoped to this RTD module. Required by Prebid's storage
 // activity rules and the no-restricted-globals lint.

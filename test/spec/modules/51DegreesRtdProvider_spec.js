@@ -815,7 +815,6 @@ describe('51DegreesRtdProvider', function() {
     it('returns undefined when moduleConfig has no params', function() {
       expect(resolveIdUsage({})).to.be.undefined;
     });
-
   });
 
   describe('resolveTcString', function() {
