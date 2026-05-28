@@ -33,7 +33,7 @@ describe('gpt targeting shim', () => {
           expect(fn(mockGam)).to.eql([]);
         });
         it('returns keys from getConfig("targeting")', () => {
-          targetingConfig = { k1: 'v1', k2: 'v2' };
+          targetingConfig = { k1: ['v1'], k2: ['v2'] };
           expect(fn(mockGam)).to.eql(['k1', 'k2']);
         });
       });
@@ -47,8 +47,8 @@ describe('gpt targeting shim', () => {
           expect(fn(mockGam, 'key')).to.eql([]);
         });
         it('returns the value from config otherwise', () => {
-          targetingConfig = { key: 'value' };
-          expect(fn(mockGam, 'key')).to.eql('value');
+          targetingConfig = { key: ['value'] };
+          expect(fn(mockGam, 'key')).to.eql(['value']);
         });
       });
     });
@@ -62,8 +62,8 @@ describe('gpt targeting shim', () => {
           expect(fn(mockGam)).to.eql({});
         });
         it('returns the value from config otherwise', () => {
-          targetingConfig = { key: 'value' };
-          expect(fn(mockGam)).to.eql({ key: 'value' });
+          targetingConfig = { key: ['value'] };
+          expect(fn(mockGam)).to.eql({ key: ['value'] });
         })
       })
     })
@@ -90,20 +90,20 @@ describe('gpt targeting shim', () => {
     });
 
     it('getPageTargetingKeys calls pubads.getTargetingKeys', () => {
-      pubads.getTargetingKeys = () => 'passthrough';
-      expect(getPageTargetingKeys(mockGam)).to.eql('passthrough');
+      pubads.getTargetingKeys = () => ['passthrough'];
+      expect(getPageTargetingKeys(mockGam)).to.eql(['passthrough']);
     });
     it('getSlotTargetingKeys calls slot.getTargetingKeys', () => {
-      mockSlot.getTargetingKeys = () => 'passthrough';
-      expect(getSlotTargetingKeys(mockSlot)).to.eql('passthrough');
+      mockSlot.getTargetingKeys = () => ['passthrough'];
+      expect(getSlotTargetingKeys(mockSlot)).to.eql(['passthrough']);
     });
     it('getPageTargeting calls pubads.getTargeting', () => {
-      pubads.getTargeting = (key) => `passthrough-${key}`;
-      expect(getPageTargeting('k', mockGam)).to.eql('passthrough-k');
+      pubads.getTargeting = (key) => [`passthrough-${key}`];
+      expect(getPageTargeting('k', mockGam)).to.eql(['passthrough-k']);
     });
     it('getSlotTargeting calls slot.getTargeting', () => {
-      mockSlot.getTargeting = (key) => `passthrough-${key}`;
-      expect(getSlotTargeting(mockSlot, 'k')).to.eql('passthrough-k');
+      mockSlot.getTargeting = (key) => [`passthrough-${key}`];
+      expect(getSlotTargeting(mockSlot, 'k')).to.eql(['passthrough-k']);
     });
 
     it('setPageTargeting calls pubads.setTargeting', () => {
@@ -134,11 +134,11 @@ describe('gpt targeting shim', () => {
         it('calls getTargeting on each key from getTargetingkeys', () => {
           Object.assign(mock(), {
             getTargetingKeys: () => ['k1', 'k2'],
-            getTargeting: (key) => `${key}value`
+            getTargeting: (key) => [`${key}value`]
           });
           expect(fn(arg())).to.eql({
-            k1: 'k1value',
-            k2: 'k2value'
+            k1: ['k1value'],
+            k2: ['k2value']
           });
         });
       });
@@ -146,10 +146,10 @@ describe('gpt targeting shim', () => {
 
     it('getSlotTargetingMap calls slot.getTargeting on each key from slot.getTargetingKeys', () => {
       mockSlot.getTargetingKeys = () => ['k1', 'k2'];
-      mockSlot.getTargeting = (key) => `${key}value`;
+      mockSlot.getTargeting = (key) => [`${key}value`];
       expect(getSlotTargetingMap(mockSlot)).to.eql({
-        k1: 'k1value',
-        k2: 'k2value'
+        k1: ['k1value'],
+        k2: ['k2value']
       });
     })
   });
