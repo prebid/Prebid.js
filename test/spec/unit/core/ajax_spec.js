@@ -404,12 +404,6 @@ describe('ajax', () => {
         })
       })
     });
-    it('should not try to get body size of requests without a body', () => {
-      fetch(EXAMPLE_URL, { keepalive: true });
-      return request.promise.then(req => {
-        sinon.assert.notCalled(req.clone);
-      })
-    });
     it('should not try to get body size for requests that do not ask for keepalive', () => {
       fetch(EXAMPLE_URL, { body: 'test', method: 'POST' });
       return request.promise.then(req => {

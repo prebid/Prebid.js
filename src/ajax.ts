@@ -153,7 +153,10 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
       to = dep.timeout(timeout, resource);
       options = Object.assign({ signal: to.signal }, options);
     }
-    let request = dep.makeRequest(resource, options);
+    let request = dep.makeRequest(resource, {
+      ...options,
+      keepalive: options?.keepalive ?? resource?.keepalive // According to MDN this should be unnecessary, but Firefox will lose `keepalive` without itt
+    });
 
     if (
       request.credentials === 'include' && (
@@ -162,12 +165,12 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
       )
     ) {
       request = dep.makeRequest(request, {
-        keepalive: request.keepalive, // According to MDN this should be unnecessary, but Firefox will lose `keepalive` without itt
+        keepalive: request.keepalive,
         credentials: 'same-origin'
       });
     }
     let pm;
-    if (request.keepalive && request.body != null) {
+    if (request.keepalive) {
       // requests can be "used" only once - and blob() counts as usage, so clone the request
       pm = request.clone().blob().then(blob => {
         if (blob.size > KEEPALIVE_MAX_BODY_SIZE) {
