@@ -4,7 +4,6 @@ import {
   SUA_SOURCE_HIGH_ENTROPY,
   SUA_SOURCE_LOW_ENTROPY,
   SUA_SOURCE_UNKNOWN,
-  suaFromUAData,
   uaDataToSUA
 } from '../../../src/fpd/sua.js';
 

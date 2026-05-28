@@ -624,7 +624,6 @@ describe('yieldoneBidAdapter', function () {
         'cpm': 0.0536616,
         'crid': '2494768',
         'currency': 'JPY',
-        'statusMessage': 'Bid available',
         'dealId': 'P1-FIX-7800-DSP-MON',
         'adomain': [
           'www.example.com'
@@ -675,7 +674,6 @@ describe('yieldoneBidAdapter', function () {
         'dealId': 'P1-FIX-7800-DSP-MON',
         'crid': '2494768',
         'currency': 'JPY',
-        'statusMessage': 'Bid available',
         'adm': '<!-- vast -->'
       }
     };
@@ -744,7 +742,6 @@ describe('yieldoneBidAdapter', function () {
           'uid': '2c0b634db95a01',
           'height': 0,
           'crid': '',
-          'statusMessage': 'Bid returned empty or error response',
           'width': 0,
           'cpm': 0
         }

@@ -1,21 +1,27 @@
 import {
+  addIdData,
+  adUnitEidsHook,
   attachIdSystem,
   auctionDelay,
+  COOKIE_SUFFIXES,
   coreStorage,
-  dep, enrichEids,
+  dep,
+  enrichEids,
   findRootDomain,
-  getConsentHash, getValidSubmoduleConfigs,
+  generateSubmoduleContainers,
+  getConsentHash,
+  getValidSubmoduleConfigs,
+  HTML5_SUFFIXES,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
-  startAuctionHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
-  COOKIE_SUFFIXES, HTML5_SUFFIXES,
-  syncDelay, adUnitEidsHook,
+  startAuctionHook,
+  syncDelay
 } from 'modules/userId/index.js';
 import { UID1_EIDS } from 'libraries/uid1Eids/uid1Eids.js';
-import { createEidsArray, EID_CONFIG, getEids } from 'modules/userId/eids.js';
+import { createEidsArray, EID_CONFIG } from 'modules/userId/eids.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import * as events from 'src/events.js';
@@ -35,15 +41,13 @@ import { allConsent, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHa
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
-import { extractEids } from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
-import { generateSubmoduleContainers, addIdData } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import {
   discloseStorageUse,
-  STORAGE_TYPE_COOKIES,
-  STORAGE_TYPE_LOCALSTORAGE,
+  getCoreStorageManager,
   getStorageManager,
-  getCoreStorageManager
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE
 } from '../../../src/storageManager.js';
 
 const assert = require('chai').assert;
@@ -128,7 +132,7 @@ describe('User ID', function () {
     return cfg;
   }
 
-  let sandbox, consentData, startDelay, callbackDelay;
+  let sandbox, consentSandbox, consentData, startDelay, callbackDelay;
 
   function clearStack() {
     return new Promise((resolve) => setTimeout(resolve));
@@ -173,13 +177,15 @@ describe('User ID', function () {
   beforeEach(function () {
     resetConsentData();
     sandbox = sinon.createSandbox();
+    consentSandbox = sinon.createSandbox();
     consentData = null;
-    mockGdprConsent(sandbox, () => consentData);
+    mockGdprConsent(consentSandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
   });
 
   afterEach(() => {
     sandbox.restore();
+    consentSandbox.restore();
     config.resetConfig();
     startAuction.getHooks({ hook: startAuctionHook }).remove();
   });
@@ -1143,30 +1149,35 @@ describe('User ID', function () {
       const MOCK_ID = { 'MOCKID': '1111' };
       let mockIdCallback;
       let startInit;
+      let mockIdSystem;
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
-        const mockIdSystem = {
+        mockIdSystem = {
           name: 'mockId',
           decode: function(value) {
             return {
               'mid': value['MOCKID']
             };
           },
-          getId: sinon.stub().returns({ callback: mockIdCallback })
+          getId: sinon.stub().callsFake(() => {
+            return { callback: mockIdCallback }
+          })
         };
-        init(config);
-        setSubmoduleRegistry([mockIdSystem]);
-        startInit = () => config.setConfig({
-          userSync: {
-            auctionDelay: 10,
-            userIds: [{
-              name: 'mockId',
-              storage: { name: 'MOCKID', type: 'cookie' }
-            }]
-          }
-        });
+        startInit = () => {
+          init(config);
+          setSubmoduleRegistry([mockIdSystem]);
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'mockId',
+                storage: { name: 'MOCKID', type: 'cookie' }
+              }]
+            }
+          });
+        }
       });
 
       ['refreshUserIds', 'getUserIdsAsync'].forEach(method => {
@@ -1182,6 +1193,50 @@ describe('User ID', function () {
             expect(result).to.deep.equal(getGlobal().getUserIds()) // auction still not over, but refresh was explicitly forced
           });
         });
+      });
+
+      describe('consent changes', () => {
+        beforeEach(() => {
+          consentSandbox.restore();
+          allConsent.reset();
+          gdprDataHandler.enable();
+        });
+        it('should not trigger if consent changes before first init', async () => {
+          gdprDataHandler.setConsentData({ 'consentString': 'first' });
+          startInit();
+          gdprDataHandler.setConsentData({ 'consentString': 'second' });
+          await clearStack();
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: {
+              consentString: 'second'
+            }
+          }));
+          sinon.assert.calledOnce(mockIdSystem.getId);
+        });
+
+        it('should trigger if consent changes after first init', async () => {
+          startInit();
+          mockIdCallback.callsFake((cb) => cb({ 'MOCKID': gdprDataHandler.getConsentData().consentString }));
+          gdprDataHandler.setConsentData({ 'consentString': 'first' });
+          await clearStack();
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: {
+              consentString: 'first'
+            }
+          }));
+          const userIds = getGlobal().getUserIdsAsync();
+          gdprDataHandler.setConsentData({ 'consentString': 'second' });
+          await clearStack();
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: {
+              consentString: 'second'
+            }
+          }));
+          const resolvedUserIds = await userIds;
+          expect(resolvedUserIds).to.eql({
+            mid: 'second'
+          });
+        })
       })
 
       it('should not stop auctions', (done) => {
@@ -1373,7 +1428,7 @@ describe('User ID', function () {
       });
     });
 
-    it('pbjs.refreshUserIds refreshes single', function() {
+    it('pbjs.refreshUserIds refreshes single', async function () {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('refreshedid', '', EXPIRED_COOKIE_DATE);
 
@@ -1383,7 +1438,7 @@ describe('User ID', function () {
 
       const mockIdSystem = {
         name: 'mockId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'mid': value['MOCKID']
           };
@@ -1395,7 +1450,7 @@ describe('User ID', function () {
 
       const refreshedIdSystem = {
         name: 'refreshedId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'refresh': value['REFRESH']
           };
@@ -1422,6 +1477,8 @@ describe('User ID', function () {
         }
       });
 
+      await clearStack();
+
       return getGlobal().refreshUserIds({ submoduleNames: 'refreshedId' }, refreshUserIdsCallback).then(() => {
         expect(refreshedIdCallback.callCount).to.equal(2);
         expect(mockIdCallback.callCount).to.equal(1);
@@ -1431,37 +1488,96 @@ describe('User ID', function () {
   });
 
   describe('Opt out', function () {
-    before(function () {
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
-    });
-
-    beforeEach(function () {
-      sinon.stub(utils, 'logInfo');
-    });
-
-    afterEach(function () {
-      // removed cookie
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
-      requestBids.removeAll();
-      utils.logInfo.restore();
-    });
-
-    it('does not fetch ids if opt out cookie exists', function () {
+    let mockIdSystem, cfg;
+    beforeEach(() => {
+      mockIdSystem = {
+        name: 'mockId',
+        decode: sinon.stub().callsFake(function (value) {
+          return {
+            'mid': value.mock
+          };
+        }),
+        getId: sinon.stub().callsFake(function () {
+          return { id: { mock: 'id' } };
+        })
+      };
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      const cfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      cfg.userSync.auctionDelay = 1; // to let init complete without an auction
-      config.setConfig(cfg);
-      return getGlobal().getUserIdsAsync().then((uid) => {
-        expect(uid).to.eql({});
-      })
-    });
+      setSubmoduleRegistry([mockIdSystem]);
+      cfg = {
+        userSync: {
+          syncDelay: 0,
+          auctionDelay: 1, // to let init complete without an auction
+          userIds: [{
+            name: 'mockId'
+          }]
+        }
+      }
+    })
+    Object.entries({
+      'cookies': {
+        setup() {
+          coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
+        },
+        teardown() {
+          coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
+        }
+      },
+      'localStorage': {
+        setup() {
+          coreStorage.setDataInLocalStorage(PBJS_USER_ID_OPTOUT_NAME, '1');
+        },
+        teardown() {
+          coreStorage.removeDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME);
+        }
+      }
+    }).forEach(([t, { setup, teardown }]) => {
+      describe(`via ${t}`, () => {
+        afterEach(teardown);
 
-    it('initializes if no opt out cookie exists', function () {
-      init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
+        it('does not fetch ids if opt out flag is set', function () {
+          setup();
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            sinon.assert.notCalled(mockIdSystem.getId);
+            expect(uid).to.eql({});
+          })
+        });
+
+        it('initializes if opt out flag is not set', async function () {
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            sinon.assert.called(mockIdSystem.getId);
+            expect(uid).to.eql({ mid: 'id' });
+          })
+        });
+
+        it('should opt out on refresh', () => {
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            expect(uid).to.eql({ mid: 'id' });
+            sinon.assert.calledOnce(mockIdSystem.getId);
+            setup();
+            return getGlobal().refreshUserIds().then((uid) => {
+              sinon.assert.calledOnce(mockIdSystem.getId);
+              expect(uid).to.eql({});
+            })
+          })
+        });
+
+        it('should opt back in on refresh', () => {
+          setup();
+          config.setConfig(cfg);
+          return getGlobal().getUserIdsAsync().then((uid) => {
+            expect(uid).to.eql({});
+            sinon.assert.notCalled(mockIdSystem.getId);
+            teardown();
+            return getGlobal().refreshUserIds().then((uid) => {
+              sinon.assert.calledOnce(mockIdSystem.getId);
+              expect(uid).to.eql({ mid: 'id' });
+            });
+          });
+        });
+      });
     });
   });
 

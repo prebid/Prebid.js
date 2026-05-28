@@ -1,7 +1,7 @@
 import { uniques, flatten, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
@@ -88,7 +88,9 @@ export const spec = {
     { code: 'vaayaMedia' },
     { code: 'performist' },
     { code: 'oveeo' },
-    { code: 'embimedia' }
+    { code: 'embimedia' },
+    { code: 'pgamrtb' },
+    { code: 'nuclion' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 

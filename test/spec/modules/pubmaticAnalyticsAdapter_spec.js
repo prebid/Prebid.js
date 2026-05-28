@@ -1,4 +1,4 @@
-import pubmaticAnalyticsAdapter, { getMetadata } from 'modules/pubmaticAnalyticsAdapter.js';
+import pubmaticAnalyticsAdapter from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS, REJECTION_REASON } from 'src/constants.js';
 import { config } from 'src/config.js';
@@ -35,7 +35,6 @@ const BID = {
   'width': 640,
   'height': 480,
   'mediaType': 'video',
-  'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
   'partnerImpId': 'partnerImpressionID-1',
   'adId': 'fake_ad_id',

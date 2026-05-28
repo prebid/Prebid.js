@@ -91,7 +91,23 @@ describe('jixie Adapter', function () {
     const bidderRequest_ = {
       refererInfo: { referer: pageurl_ },
       auctionId: auctionId_,
-      timeout: timeout_
+      timeout: timeout_,
+      ortb2: {
+        site: {
+          ext: {
+            data: {
+              keyA: 'abcde'
+            }
+          }
+        },
+        user: {
+          ext: {
+            data: {
+              abc: 'def'
+            }
+          }
+        }
+      }
     };
     // to serve as the object that prebid will call jixie buildRequest with: (param1)
     const bidRequests_ = [
@@ -307,6 +323,8 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('timeout', timeout_);
       expect(payload).to.have.property('currency', currency_);
       expect(payload).to.have.property('bids').that.deep.equals(refBids_);
+      expect(payload).to.have.property('siteKvs').that.deep.equals(bidderRequest_.ortb2.site.ext.data);
+      expect(payload).to.have.property('userKvs').that.deep.equals(bidderRequest_.ortb2.user.ext.data);
 
       // unwire interceptors
       getCookieStub.restore();

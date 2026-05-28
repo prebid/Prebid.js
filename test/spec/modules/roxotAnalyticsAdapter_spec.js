@@ -85,7 +85,6 @@ describe('Roxot Prebid Analytic', function () {
     size: '300x250',
     source: 'client',
     status: 'rendered',
-    statusMessage: 'Bid available',
     timeToRespond: 421,
     ttl: 300,
     width: 300
@@ -109,7 +108,6 @@ describe('Roxot Prebid Analytic', function () {
     size: '300x250',
     source: 'client',
     status: 'rendered',
-    statusMessage: 'Bid available',
     timeToRespond: 6141,
     ttl: 300,
     width: 300
@@ -133,7 +131,6 @@ describe('Roxot Prebid Analytic', function () {
     size: '300x250',
     source: 'client',
     status: 'rendered',
-    statusMessage: 'Bid available',
     timeToRespond: 215,
     ttl: 300,
     width: 0

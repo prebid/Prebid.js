@@ -1,11 +1,10 @@
-import analyticsAdapter, { log } from 'modules/33acrossAnalyticsAdapter.js';
+import analyticsAdapter, { log, DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from 'modules/33acrossAnalyticsAdapter.js';
 
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as events from 'src/events.js';
 import * as faker from 'faker';
 import { EVENTS } from 'src/constants.js';
 import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
-import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from '../../../modules/33acrossAnalyticsAdapter.js';
 
 describe('33acrossAnalyticsAdapter:', function () {
   let sandbox;
@@ -1151,7 +1150,6 @@ function getMockEvents() {
         height: 250,
         source: 'client',
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
-        statusMessage: 'Bid available',
         rejectionReason: 'Bid does not meet price floor',
       }],
       AUCTION_END: {

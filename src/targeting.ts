@@ -1,5 +1,4 @@
 import { auctionManager } from './auctionManager.js';
-import { getBufferedTTL } from './bidTTL.js';
 import { bidderSettings } from './bidderSettings.js';
 import { config } from './config.js';
 import { BID_STATUS, DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, TARGETING_KEYS } from './constants.js';
@@ -11,14 +10,13 @@ import {
   groupBy,
   isAdUnitCodeMatchingSlot,
   isArray,
-  isFn,
+  isFn, isGptPubadsDefined,
   isStr,
   logError,
   logInfo,
   logMessage,
   logWarn,
   sortByHighestCpm,
-  timestamp,
   uniques,
 } from './utils.js';
 import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
@@ -26,6 +24,7 @@ import type { Bid } from './bidfactory.ts';
 import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
+import { isBidUsable } from './targeting/filters.ts';
 
 var pbTargetingKeys = [];
 
@@ -38,24 +37,6 @@ const TARGETING_KEY_CONFIGURATION_ERROR_MSG = `Only one of "${CFG_ALLOW_TARGETIN
 export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
   key => TARGETING_KEYS[key]
 );
-
-// return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 1000) > timestamp();
-
-// return bids whose status is not set. Winning bids can only have a status of `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
-
-const isBidNotLocked = (bid) => !lock.isLocked(bid.adserverTargeting);
-
-export const filters = {
-  isBidNotExpired,
-  isUnusedBid,
-  isBidNotLocked
-};
-
-export function isBidUsable(bid) {
-  return !Object.values(filters).some((predicate) => !predicate(bid));
-}
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
@@ -134,7 +115,7 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
  * @param adUnitCodes
  * @param getSlots
  */
-export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], getSlots = () => window.googletag.pubads().getSlots()): ByAdUnit<googletag.Slot[]> {
+export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], getSlots = () => (window as any).googletag.pubads().getSlots()): ByAdUnit<any[]> {
   return getSlots().reduce((auToSlots, slot) => {
     Object.keys(auToSlots).filter(isAdUnitCodeMatchingSlot(slot))
       .forEach(au => auToSlots[au].push(slot));
@@ -177,7 +158,7 @@ type TargetingValueLists = TargetingMap<string[]>;
 type TargetingArray = ByAdUnit<TargetingValueLists[]>[];
 
 type AdUnitPredicate = (adUnitCode: AdUnitCode) => boolean;
-export type SlotMatchingFn = (slot: googletag.Slot) => AdUnitPredicate;
+export type SlotMatchingFn = (slot: any) => AdUnitPredicate;
 
 declare module './events' {
   interface Events {
@@ -214,6 +195,12 @@ export interface TargetingControlsConfig {
    * The value to set for 'hb_ver'. Set to false to disable.
    */
   version?: false | string;
+  /**
+   * If true (the default), update GPT slots with partial targeting data at the beginning of each auction.
+   * Normally this has no effect, as it is overridden by full targeting data later (typically, when `pbjs.setTargetingForGPTASync()` is called after the auction is complete).
+   * The purpose of this update is to prevent accidental use of stale targeting data if slots are refreshed before then (e.g. on a failsafe timeout).
+   */
+  presetGPTTargeting?: boolean
 }
 
 const DEFAULT_HB_VER = '1.17.2';
@@ -304,32 +291,40 @@ export function newTargeting(auctionManager) {
       return flatTargeting;
     },
 
-    setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[]) {
-      // get our ad unit codes
-      const targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
-
+    updateGPTTargeting(targeting: ByAdUnit<GPTTargetingValues>, operation: string, postUpdate?: (targeting: GPTTargetingValues) => void) {
       const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
 
-      Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet))).forEach(([targetId, slots]) => {
+      Object.entries(getGPTSlotsForAdUnits(Object.keys(targeting))).forEach(([targetId, slots]) => {
         slots.forEach(slot => {
           // now set new targeting keys
-          Object.keys(targetingSet[targetId]).forEach(key => {
-            let value: string | string[] = targetingSet[targetId][key];
+          Object.keys(targeting[targetId]).forEach(key => {
+            let value: string | string[] = targeting[targetId][key];
             if (typeof value === 'string' && value.indexOf(',') !== -1) {
               // due to the check the array will be formed only if string has ',' else plain string will be assigned as value
               value = value.split(',');
             }
-            targetingSet[targetId][key] = value;
+            targeting[targetId][key] = value;
           });
-          logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingSet[targetId]);
-          slot.updateTargetingFromMap(Object.assign({}, resetMap, targetingSet[targetId]))
-          lock.lock(targetingSet[targetId]);
+          logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
+          slot.updateTargetingFromMap(Object.assign({}, resetMap, targeting[targetId]))
+          if (postUpdate != null) postUpdate(targeting[targetId]);
         })
       })
+    },
+
+    presetGPTTargeting(adUnits: AdUnitCode[]) {
+      if (config.getConfig('targetingControls.presetGPTTargeting') !== false && isGptPubadsDefined()) {
+        targeting.updateGPTTargeting(targeting.getAllTargeting(adUnits, 0, []), 'pre-set')
+      }
+    },
+
+    setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[]) {
+      const targetingSet = targeting.getAllTargeting(adUnit);
+      targeting.updateGPTTargeting(targetingSet, 'set', (targetingData) => lock.lock(targetingData));
 
       Object.keys(targetingSet).forEach((adUnitCode) => {
         Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
-          if (targetingKey === 'hb_adid') {
+          if (targetingKey === TARGETING_KEYS.AD_ID) {
             auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_STATUS.BID_TARGETING_SET);
           }
         });
@@ -406,6 +401,10 @@ export function newTargeting(auctionManager) {
       }
     },
   }
+
+  events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
+    targeting.presetGPTTargeting(adUnitCodes);
+  })
 
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {
     const standardKeys = TARGETING_KEYS_ARR.slice();

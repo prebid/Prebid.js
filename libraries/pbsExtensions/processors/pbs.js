@@ -44,11 +44,6 @@ export const PBS_PROCESSORS = {
       fn: extPrebidMediaType,
       priority: 99,
     },
-    videoCache: {
-      // sets response video attributes; in addition, looks at ext.prebid.cache and .targeting to set video cache key and URL
-      fn: setBidResponseVideoCache,
-      priority: -10, // after 'video'
-    },
     bidderCode: {
       // sets bidderCode from on seatbid.seat
       fn(bidResponse, bid, context) {
@@ -119,5 +114,13 @@ export const PBS_PROCESSORS = {
         });
       }
     },
+  }
+}
+
+if (FEATURES.VIDEO) {
+  PBS_PROCESSORS[BID_RESPONSE].videoCache = {
+    // sets response video attributes; in addition, looks at ext.prebid.cache and .targeting to set video cache key and URL
+    fn: setBidResponseVideoCache,
+    priority: -10, // after 'video'
   }
 }
