@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { spec, storage } from 'modules/criteoBidAdapter.js';
+import { dep, spec, storage } from 'modules/criteoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
-import * as ajax from 'src/ajax.js';
 import { config } from '../../../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -27,7 +26,7 @@ describe('The Criteo bidding adapter', function () {
     localStorage.removeItem('criteo_fast_bid');
     sandbox = sinon.createSandbox();
     logWarnStub = sandbox.stub(utils, 'logWarn');
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub(dep, 'ajax');
   });
 
   afterEach(function () {

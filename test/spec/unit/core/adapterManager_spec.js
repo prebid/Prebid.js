@@ -26,7 +26,13 @@ import { hook } from '../../../../src/hook.js';
 import { auctionManager } from '../../../../src/auctionManager.js';
 import { GDPR_GVLIDS } from '../../../../src/consentHandler.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
-import { ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS } from '../../../../src/activities/activities.js';
+import { server } from '../../../mocks/xhr.js';
+
+import {
+  ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
+  ACTIVITY_FETCH_BIDS,
+  ACTIVITY_REPORT_ANALYTICS
+} from '../../../../src/activities/activities.js';
 import { reset as resetAdUnitCounters } from '../../../../src/adUnits.js';
 import {
   EVENT_TYPE_IMPRESSION,
@@ -35,6 +41,7 @@ import {
   TRACKER_METHOD_JS
 } from '../../../../src/eventTrackers.js';
 import 'src/prebid.js';
+import { registerActivityControl } from '../../../../src/activities/rules.js';
 
 var events = require('../../../../src/events.js');
 
@@ -140,6 +147,35 @@ describe('adapterManager tests', function () {
       delete adapterManager.bidderRegistry['rubicon'];
       delete adapterManager.bidderRegistry['badBidder'];
       config.resetConfig();
+    });
+
+    describe('withCredentials', () => {
+      let unregRule;
+      beforeEach(() => {
+        unregRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test',
+          ({ componentName, componentTypeType }) => {
+            if (componentType === 'bidder' && componentName === 'appnexus') {
+              return { allow: false };
+            }
+          });
+      });
+      afterEach(() => {
+        unregRule();
+      });
+      it('should pass through accessRequestCredentials', () => {
+        const adUnits = [{
+          code: 'test',
+          bids: [
+            { bidder: 'appnexus' }
+          ]
+        }];
+        const bidRequests = adapterManager.makeBidRequests(adUnits);
+        adapterManager.bidderRegistry['appnexus'].callBids.callsFake((_1, _2, _3, ajax) => {
+          ajax('https://example.com', null, null, { withCredentials: true });
+        })
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(server.requests[0].fetch.request.credentials).to.eql('same-origin');
+      });
     });
 
     it('should log an error if a bidder is used that does not exist', function () {

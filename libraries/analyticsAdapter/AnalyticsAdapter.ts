@@ -1,5 +1,5 @@
 import { EVENTS } from '../../src/constants.js';
-import { ajax } from '../../src/ajax.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 import { logError, logMessage } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { config } from '../../src/config.js';

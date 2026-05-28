@@ -10,7 +10,7 @@ import {
   groupBy,
   isAdUnitCodeMatchingSlot,
   isArray,
-  isFn,
+  isFn, isGptPubadsDefined,
   isStr,
   logError,
   logInfo,
@@ -198,6 +198,12 @@ export interface TargetingControlsConfig {
    * The value to set for 'hb_ver'. Set to false to disable.
    */
   version?: false | string;
+  /**
+   * If true (the default), update GPT slots with partial targeting data at the beginning of each auction.
+   * Normally this has no effect, as it is overridden by full targeting data later (typically, when `pbjs.setTargetingForGPTASync()` is called after the auction is complete).
+   * The purpose of this update is to prevent accidental use of stale targeting data if slots are refreshed before then (e.g. on a failsafe timeout).
+   */
+  presetGPTTargeting?: boolean
 }
 
 const DEFAULT_HB_VER = '1.17.2';
@@ -288,32 +294,40 @@ export function newTargeting(auctionManager) {
       return flatTargeting;
     },
 
-    setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[]) {
-      // get our ad unit codes
-      const targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
-
+    updateGPTTargeting(targeting: ByAdUnit<GPTTargetingValues>, operation: string, postUpdate?: (targeting: GPTTargetingValues) => void) {
       const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
 
-      Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet))).forEach(([targetId, slots]) => {
+      Object.entries(getGPTSlotsForAdUnits(Object.keys(targeting))).forEach(([targetId, slots]) => {
         slots.forEach(slot => {
           // now set new targeting keys
-          Object.keys(targetingSet[targetId]).forEach(key => {
-            let value: string | string[] = targetingSet[targetId][key];
+          Object.keys(targeting[targetId]).forEach(key => {
+            let value: string | string[] = targeting[targetId][key];
             if (typeof value === 'string' && value.indexOf(',') !== -1) {
               // due to the check the array will be formed only if string has ',' else plain string will be assigned as value
               value = value.split(',');
             }
-            targetingSet[targetId][key] = value;
+            targeting[targetId][key] = value;
           });
-          logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingSet[targetId]);
-          slot.updateTargetingFromMap(Object.assign({}, resetMap, targetingSet[targetId]))
-          lock.lock(targetingSet[targetId]);
+          logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
+          slot.updateTargetingFromMap(Object.assign({}, resetMap, targeting[targetId]))
+          if (postUpdate != null) postUpdate(targeting[targetId]);
         })
       })
+    },
+
+    presetGPTTargeting(adUnits: AdUnitCode[]) {
+      if (config.getConfig('targetingControls.presetGPTTargeting') !== false && isGptPubadsDefined()) {
+        targeting.updateGPTTargeting(targeting.getAllTargeting(adUnits, 0, []), 'pre-set')
+      }
+    },
+
+    setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[]) {
+      const targetingSet = targeting.getAllTargeting(adUnit);
+      targeting.updateGPTTargeting(targetingSet, 'set', (targetingData) => lock.lock(targetingData));
 
       Object.keys(targetingSet).forEach((adUnitCode) => {
         Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
-          if (targetingKey === 'hb_adid') {
+          if (targetingKey === TARGETING_KEYS.AD_ID) {
             auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_STATUS.BID_TARGETING_SET);
           }
         });
@@ -390,6 +404,10 @@ export function newTargeting(auctionManager) {
       }
     },
   }
+
+  events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
+    targeting.presetGPTTargeting(adUnitCodes);
+  })
 
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {
     const standardKeys = TARGETING_KEYS_ARR.slice();

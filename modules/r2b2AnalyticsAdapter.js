@@ -7,6 +7,10 @@ import { isNumber, isPlainObject, isStr, logError, logWarn } from '../src/utils.
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
 
+export const dep = {
+  ajax
+};
+
 const ADAPTER_VERSION = '1.1.0';
 const ADAPTER_CODE = 'r2b2';
 const MODULE_NAME = 'R2B2 Analytics'
@@ -155,7 +159,7 @@ function reportError (message, params) {
     (CONFIG_ID ? `&conf=${encodeURIComponent(CONFIG_ID)}` : '') +
     (CONFIG_VERSION ? `&conf_ver=${encodeURIComponent(CONFIG_VERSION)}` : '') +
     `&u=${encodeURIComponent(REPORTED_URL)}`;
-  ajax(url, null, null, {});
+  dep.ajax(url, null, null, {});
 }
 function reportEvents (events) {
   try {
@@ -170,7 +174,7 @@ function reportEvents (events) {
       contentType: 'application/x-www-form-urlencoded'
     }
     data = data.replace(/&/g, '%26');
-    ajax(url, null, data, headers);
+    dep.ajax(url, null, data, headers);
   } catch (e) {
     const msg = `Error sending events - ${e.message}`;
     logError(`${MODULE_NAME}: ${msg}`);
