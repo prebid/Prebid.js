@@ -1083,7 +1083,7 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 3000', function () {
       beforeEach(function () {
-        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+        ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
         adUnits = [{
           mediaTypes: {
             banner: {
@@ -1655,7 +1655,7 @@ describe('auctionmanager.js', function () {
       ];
       const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       indexAuctions = [auction];
@@ -1817,7 +1817,7 @@ describe('auctionmanager.js', function () {
       const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
 
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
 
       spec = mockBidder(BIDDER_CODE, bids);
       spec1 = mockBidder(BIDDER_CODE1, bids1);
@@ -1857,7 +1857,7 @@ describe('auctionmanager.js', function () {
 
       beforeEach(function () {
         makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
-        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+        ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
 
         const adUnits = [{
           code: ADUNIT_CODE,

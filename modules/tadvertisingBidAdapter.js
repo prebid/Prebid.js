@@ -16,6 +16,11 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ajax, sendBeacon } from "../src/ajax.js";
 
+export const dep = {
+  ajax,
+  sendBeacon
+};
+
 const BIDDER_CODE = 'tadvertising';
 const GVL_ID = 213;
 const ENDPOINT_URL = 'https://prebid.tads.xplosion.de/bid';
@@ -121,9 +126,9 @@ export const sendNotification = (notifyUrl, eventType, data) => {
     const notificationUrl = `${notifyUrl}/${eventType}`;
     const payload = JSON.stringify(data)
 
-    if (!sendBeacon(notificationUrl, payload)) {
+    if (!dep.sendBeacon(notificationUrl, payload)) {
       // Fallback to using AJAX if Beacon API is not supported
-      ajax(notificationUrl, null, payload, {
+      dep.ajax(notificationUrl, null, payload, {
         method: 'POST',
         contentType: 'text/plain',
         keepalive: true,

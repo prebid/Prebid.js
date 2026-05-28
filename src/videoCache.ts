@@ -9,7 +9,7 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import { ajaxBuilder } from './ajax.js';
+import { qualifiedAjaxBuilder } from './ajax.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
@@ -17,6 +17,7 @@ import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
 import type { AudioBidResponse, VideoBid, VideoBidResponse } from "./bidfactory.ts";
+import { MODULE_TYPE_PREBID } from "./activities/modules.ts";
 
 /**
  * Might be useful to be configurable in the future
@@ -226,7 +227,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = ajaxBuilder) {
+export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };

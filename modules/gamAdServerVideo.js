@@ -23,7 +23,7 @@ import {
 } from '../src/utils.js';
 import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
-import { fetch } from '../src/ajax.js';
+import { noCredsFetch as fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
 import { getGlobalVarName } from '../src/buildOptions.js';
