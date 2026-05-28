@@ -952,22 +952,6 @@ describe('fluctAdapter', function () {
       expect(request.data.user.ext).to.eql(undefined);
     });
 
-    it('includes data.floorData from request.floorData', function () {
-      const floorBidRequests = bidRequests.map((req) => Object.assign({}, req, {
-        floorData: { modelVersion: 'v1', location: 'setConfig', floorProvider: 'pubmatic' },
-      }));
-      const request = spec.buildRequests(floorBidRequests, bidderRequest)[0];
-      expect(request.data.floorData).to.eql({
-        modelVersion: 'v1',
-        location: 'setConfig',
-        floorProvider: 'pubmatic',
-      });
-    });
-
-    it('does not include data.floorData when request.floorData is absent', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.floorData).to.eql(undefined);
-    });
   });
 
   describe('should interpretResponse', function() {

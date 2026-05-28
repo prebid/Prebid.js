@@ -269,13 +269,6 @@ export const spec = {
 
       data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
 
-      const floorMeta = request.floorData;
-      if (floorMeta) {
-        data.floorData = {};
-        if (floorMeta.modelVersion != null) data.floorData.modelVersion = floorMeta.modelVersion;
-        if (floorMeta.location) data.floorData.location = floorMeta.location;
-        if (floorMeta.floorProvider) data.floorData.floorProvider = floorMeta.floorProvider;
-      }
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
