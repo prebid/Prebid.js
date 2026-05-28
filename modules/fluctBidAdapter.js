@@ -10,7 +10,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid/';
-const VERSION = '1.5';
+const VERSION = '1.6';
 const NET_REVENUE = true;
 const TTL = 300;
 const DEFAULT_CURRENCY = 'JPY';
@@ -227,6 +227,13 @@ export const spec = {
         if (ortb2Device.h) data.device.h = ortb2Device.h;
         if (ortb2Device.language) data.device.language = ortb2Device.language;
         if (ortb2Device.devicetype) data.device.devicetype = ortb2Device.devicetype;
+        const vpw = ortb2Device.ext?.vpw;
+        const vph = ortb2Device.ext?.vph;
+        if (vpw != null || vph != null) {
+          data.device.ext = {};
+          if (vpw != null) data.device.ext.vpw = vpw;
+          if (vph != null) data.device.ext.vph = vph;
+        }
       }
 
       // Set top-level bidfloor to the highest floor across all sizes

@@ -567,6 +567,57 @@ describe('fluctAdapter', function () {
       expect(request.data.device).to.eql({ sua });
     });
 
+    it('includes device.ext.vpw and device.ext.vph from ortb2.device.ext', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          device: {
+            w: 1920,
+            h: 1080,
+            ext: { vpw: 1280, vph: 720 },
+          },
+        },
+      }))[0];
+      expect(request.data.device).to.eql({
+        w: 1920,
+        h: 1080,
+        ext: { vpw: 1280, vph: 720 },
+      });
+    });
+
+    it('includes device.ext.vpw only when vph is absent', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          device: {
+            ext: { vpw: 375 },
+          },
+        },
+      }))[0];
+      expect(request.data.device).to.eql({ ext: { vpw: 375 } });
+    });
+
+    it('includes device.ext.vph only when vpw is absent', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          device: {
+            ext: { vph: 667 },
+          },
+        },
+      }))[0];
+      expect(request.data.device).to.eql({ ext: { vph: 667 } });
+    });
+
+    it('does not set device.ext when neither vpw nor vph is present', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          device: {
+            w: 1920,
+            h: 1080,
+          },
+        },
+      }))[0];
+      expect(request.data.device.ext).to.eql(undefined);
+    });
+
     it('includes no data.imp by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.imp).to.eql(undefined);
