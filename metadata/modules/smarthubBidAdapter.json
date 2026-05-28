@@ -53,7 +53,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adinify",
+      "componentName": "adlywise",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null

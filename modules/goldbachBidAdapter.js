@@ -40,6 +40,9 @@ const EVENTS = {
 
 /* Goldbach storage */
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const dep = {
+  ajax
+};
 
 const setUid = (uid) => {
   if (storage.localStorageIsEnabled()) {
@@ -185,7 +188,7 @@ const converter = ortbConverter({
 const sendLog = (data, percentage = 0.0001) => {
   if (Math.random() > percentage) return;
   const encodedData = `data=${window.btoa(JSON.stringify({ ...data, source: 'goldbach_pbjs', projectedAmount: (1 / percentage) }))}`;
-  ajax(URL_LOGGING, null, encodedData, {
+  dep.ajax(URL_LOGGING, null, encodedData, {
     withCredentials: false,
     method: METHOD,
     crossOrigin: true,

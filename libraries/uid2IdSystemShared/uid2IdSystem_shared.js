@@ -1,4 +1,4 @@
-import { ajax } from '../../src/ajax.js'
+import { noCredsAjax as ajax } from '../../src/ajax.js'
 import { cyrb53Hash, logError } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
