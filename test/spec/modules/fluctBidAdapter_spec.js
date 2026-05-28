@@ -870,6 +870,13 @@ describe('fluctAdapter', function () {
       expect(request.data.numIframes).to.eql(2);
     });
 
+    it('includes data.numIframes = 0 when page is at top level', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', numIframes: 0 },
+      }))[0];
+      expect(request.data.numIframes).to.eql(0);
+    });
+
     it('includes data.timeout from bidderRequest.timeout', function () {
       const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
         timeout: 3000,
@@ -907,6 +914,20 @@ describe('fluctAdapter', function () {
       expect(request.data.site.name).to.eql('My Site');
       expect(request.data.site.search).to.eql('prebid');
       expect(request.data.site.publisher).to.eql({ domain: 'publisher.example.com' });
+    });
+
+    it('includes data.site.publisher.id even when domain is absent', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { site: { publisher: { id: 'pub-123' } } },
+      }))[0];
+      expect(request.data.site.publisher).to.eql({ id: 'pub-123' });
+    });
+
+    it('includes both id and domain in data.site.publisher when both present', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { site: { publisher: { id: 'pub-123', domain: 'example.com' } } },
+      }))[0];
+      expect(request.data.site.publisher).to.eql({ id: 'pub-123', domain: 'example.com' });
     });
 
     it('includes data.user.yob, data.user.gender, data.user.keywords', function () {

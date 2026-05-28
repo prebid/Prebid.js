@@ -140,7 +140,11 @@ export const spec = {
         if (ortb2Site.domain) data.site.domain = ortb2Site.domain;
         if (ortb2Site.ref) data.site.ref = ortb2Site.ref;
         if (ortb2Site.search) data.site.search = ortb2Site.search;
-        if (ortb2Site.publisher?.domain) data.site.publisher = { domain: ortb2Site.publisher.domain };
+        if (ortb2Site.publisher) {
+          data.site.publisher = {};
+          if (ortb2Site.publisher.id) data.site.publisher.id = ortb2Site.publisher.id;
+          if (ortb2Site.publisher.domain) data.site.publisher.domain = ortb2Site.publisher.domain;
+        }
         if (ortb2Site.ext?.data) data.site.ext = { data: ortb2Site.ext.data };
       }
 
@@ -154,7 +158,7 @@ export const spec = {
           ...(ortb2User?.ext?.eids ?? []),
         ],
       };
-      if (ortb2User?.yob) data.user.yob = ortb2User.yob;
+      if (ortb2User?.yob != null) data.user.yob = ortb2User.yob;
       if (ortb2User?.gender != null) data.user.gender = ortb2User.gender;
       if (ortb2User?.keywords) data.user.keywords = ortb2User.keywords;
       if (ortb2User?.ext?.data) data.user.ext = { data: ortb2User.ext.data };
@@ -200,7 +204,7 @@ export const spec = {
       if (bidderRequest.refererInfo?.canonicalUrl) data.canonicalUrl = bidderRequest.refererInfo.canonicalUrl;
       if (bidderRequest.refererInfo?.isAmp) data.isAmp = true;
       if (bidderRequest.refererInfo?.reachedTop != null) data.reachedTop = bidderRequest.refererInfo.reachedTop;
-      if (bidderRequest.refererInfo?.numIframes) data.numIframes = bidderRequest.refererInfo.numIframes;
+      if (bidderRequest.refererInfo?.numIframes != null) data.numIframes = bidderRequest.refererInfo.numIframes;
       if (bidderRequest.timeout != null) data.timeout = bidderRequest.timeout;
       if (bidderRequest.ortb2?.source?.tid) deepSetValue(data, 'source.tid', bidderRequest.ortb2.source.tid);
       if (bidderRequest.ortb2?.user?.ext?.data?.im_segments) {
