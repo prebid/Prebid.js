@@ -114,6 +114,10 @@ export type LiveIntentIdSystemParams = {
    * First party identifier
    */
   fpid?: LiveIntentFpid;
+  /**
+   * Delay expressed in milliseconds
+   */
+  fireEventDelay?: number;
 }
 
 declare module './userId/spec' {

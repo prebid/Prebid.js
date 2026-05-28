@@ -31,7 +31,9 @@ declare module '../src/adUnits' {
     [BIDDER_CODE]: MileBidParams;
   }
 }
-
+export const dep = {
+  ajax
+};
 export let siteIdTracker : string | undefined;
 export let publisherIdTracker : string | undefined;
 
@@ -396,10 +398,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       site: deepAccess(bid, 'meta.domain') || '',
     }
 
-    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
+    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
 
-    // @ts-expect-error - bid.nurl is not defined
-    if (bid.nurl) ajax(bid.nurl, null, null, { method: 'GET' });
+    if ((bid as any).nurl) dep.ajax((bid as any).nurl, null, null, { method: 'GET' });
   },
 
   /**
@@ -430,7 +431,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       timedOutBids.push(timeoutNotificationData);
     });
 
-    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' });
+    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' });
   },
 };
 
