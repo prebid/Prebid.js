@@ -271,6 +271,74 @@ describe('the first party data validation module', function () {
       expect(validated).to.deep.equal(expected);
     });
 
+    it('filters device fields for invalid iab enum values and integer data types', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.device = {
+        h: 911,
+        w: 1733,
+        devicetype: 2.5,
+        connectiontype: 99,
+        geo: {
+          lat: 12.34,
+          lon: 56.78,
+          type: '1'
+        }
+      };
+
+      const expected = {
+        device: {
+          h: 911,
+          w: 1733,
+          geo: {
+            lat: 12.34,
+            lon: 56.78
+          }
+        },
+        user: {
+          data: [{
+            segment: [{
+              id: 'foo'
+            }],
+            name: 'bar'
+          }]
+        },
+        site: {
+          content: {
+            data: [{
+              segment: [{
+                id: 'test'
+              }],
+              name: 'content',
+              ext: {
+                foo: 'bar'
+              }
+            }]
+          }
+        }
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated).to.deep.equal(expected);
+    });
+
+    it('keeps valid iab enum values in device fields', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.device = {
+        h: 911,
+        w: 1733,
+        devicetype: 2,
+        connectiontype: 2,
+        geo: {
+          lat: 12.34,
+          lon: 56.78,
+          type: 1
+        }
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated.device).to.deep.equal(duplicate.device);
+    });
+
     it('filters cur for invalid data type', function () {
       let validated;
       const duplicate = utils.deepClone(ortb2);

@@ -65,6 +65,9 @@ function typeValidation(data, mapping) {
     case 'number':
       if (typeof data === 'number' && isFinite(data)) check = true;
       break;
+    case 'integer':
+      if (Number.isInteger(data)) check = true;
+      break;
     case 'object':
       if (typeof data === 'object') {
         if ((Array.isArray(data) && mapping.isArray) || (!Array.isArray(data) && !mapping.isArray)) check = true;
@@ -156,13 +159,21 @@ export function validateFpd(fpd, path = '', parent = '') {
     return false;
   }).filter(key => {
     const mapping = deepAccess(ORTB_MAP, path + key);
-    // let typeBool = false;
-    const typeBool = (mapping) ? typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray }) : true;
+    if (!mapping) return key;
 
-    if (typeBool || !mapping) return key;
+    const typeBool = typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray });
 
-    logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
-    return false;
+    if (!typeBool) {
+      logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
+      return false;
+    }
+
+    if (mapping.enum && !Object.values(mapping.enum).includes(fpd[key])) {
+      logWarn(`Filtered ${parent}${key} property in ortb2 data: expected value from ${Object.values(mapping.enum).join(', ')}`);
+      return false;
+    }
+
+    return key;
   }).reduce((result, key) => {
     const mapping = deepAccess(ORTB_MAP, path + key);
     let modified = {};

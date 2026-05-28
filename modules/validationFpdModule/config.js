@@ -1,3 +1,6 @@
+// eslint-disable-next-line prebid/validate-imports
+import { ConnectionType, DeviceType, LocationType } from 'iab-adcom/enum';
+
 /**
  * Data type map
  */
@@ -5,6 +8,7 @@ const TYPES = {
   string: 'string',
   object: 'object',
   number: 'number',
+  integer: 'integer',
 };
 
 /**
@@ -12,6 +16,7 @@ const TYPES = {
  * Accepted fields:
  * -- invalid - {Boolean} if true, field is not valid
  * -- type - {String} valid data type of field
+ * -- enum - {Object} valid values enum for the field
  * -- isArray - {Boolean} if true, field must be an array
  * -- childType - {String} used in conjuction with isArray: true, defines valid type of array indices
  * -- children - {Object} defines child properties needed to be validated (used only if type: object)
@@ -31,7 +36,18 @@ export const ORTB_MAP = {
     type: TYPES.object,
     children: {
       w: { type: TYPES.number },
-      h: { type: TYPES.number }
+      h: { type: TYPES.number },
+      devicetype: { type: TYPES.integer, enum: DeviceType },
+      connectiontype: { type: TYPES.integer, enum: ConnectionType },
+      geo: {
+        type: TYPES.object,
+        isArray: false,
+        children: {
+          lat: { type: TYPES.number },
+          lon: { type: TYPES.number },
+          type: { type: TYPES.integer, enum: LocationType }
+        }
+      }
     }
   },
   site: {
