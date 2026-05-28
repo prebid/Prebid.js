@@ -95,10 +95,12 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
       rqOpts.suppressTopicsEnrollmentWarning = options.suppressTopicsEnrollmentWarning;
     }
   }
+  const request = dep.makeRequest(url, rqOpts);
   if (options.keepalive) {
-    rqOpts.keepalive = true;
+    // do not set the "real" keepalive flag as Safari won't allow us to change it
+    (request as any)._keepalive = true;
   }
-  return dep.makeRequest(url, rqOpts);
+  return request;
 }
 
 function callerContext(callers = []) {
@@ -148,6 +150,12 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
     context = fixedCallerContext(moduleType, moduleName);
   }
   let fetcher = (resource, options) => {
+    // special treatment for keepalive - because of inconsistent browser behavior,
+    // we must start with keepalive: false and flip it as a last step
+    // Updating request options with new Request(oldRequest, newOptions):
+    //  on Firefox, will default newOptions.keepalive = false
+    //  on Safari, will not honor any change to 'keepalive'
+    const keepalive = resource?._keepalive ?? options?.keepalive ?? resource?.keepalive;
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
       to = dep.timeout(timeout, resource);
@@ -155,7 +163,7 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
     }
     let request = dep.makeRequest(resource, {
       ...options,
-      keepalive: options?.keepalive ?? resource?.keepalive // According to MDN this should be unnecessary, but Firefox will lose `keepalive` without itt
+      keepalive: false
     });
 
     if (
@@ -165,19 +173,19 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
       )
     ) {
       request = dep.makeRequest(request, {
-        keepalive: request.keepalive,
         credentials: 'same-origin'
       });
     }
     let pm;
-    if (request.keepalive) {
+    if (keepalive) {
       // requests can be "used" only once - and blob() counts as usage, so clone the request
       pm = request.clone().blob().then(blob => {
         if (blob.size > KEEPALIVE_MAX_BODY_SIZE) {
           logWarn(`Ignoring keepalive: request body exceeds ${KEEPALIVE_MAX_BODY_SIZE} bytes`, request);
+        } else {
           request = dep.makeRequest(request, {
-            keepalive: false
-          })
+            keepalive: true
+          });
         }
         return dep.fetch(request);
       });
