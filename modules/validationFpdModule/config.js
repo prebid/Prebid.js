@@ -1,4 +1,3 @@
-// eslint-disable-next-line prebid/validate-imports
 import { ConnectionType, DeviceType, LocationType } from 'iab-adcom/enum';
 
 /**
