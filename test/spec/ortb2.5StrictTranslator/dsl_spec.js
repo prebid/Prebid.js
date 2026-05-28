@@ -54,7 +54,7 @@ describe('DSL', () => {
           const obj = { inner: { enum: val } };
           scan(obj);
           sinon.assert.calledOnce(onError);
-          sinon.assert.calledWith(onError, ERR_ENUM, 'inner.enum', obj.inner, 'enum', val);
+          sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enum', obj.inner, 'enum', val);
         });
       });
       it('accepts arrays of enums that are in range', () => {
@@ -73,6 +73,12 @@ describe('DSL', () => {
         sinon.assert.calledOnce(onError);
         sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enum', obj.inner, 'enum', 'err');
       })
+      it('detects enum values that are not integers', () => {
+        const obj = { inner: { enum: 12.5 } };
+        scan(obj);
+        sinon.assert.calledOnce(onError);
+        sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enum', obj.inner, 'enum', 12.5);
+      })
       it('detects arrays of enums that are out of range', () => {
         const obj = { inner: { enumArray: [12, 13, -1, 14] } };
         scan(obj);
@@ -90,6 +96,12 @@ describe('DSL', () => {
         scan(obj);
         sinon.assert.calledOnce(onError);
         sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enumArray.1', obj.inner.enumArray, 1, 'err');
+      })
+      it('detects items within enum arrays that are not integers', () => {
+        const obj = { inner: { enumArray: [12, 13.5, 14] } };
+        scan(obj);
+        sinon.assert.calledOnce(onError);
+        sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enumArray.1', obj.inner.enumArray, 1, 13.5);
       })
     });
     describe('into arrays', () => {

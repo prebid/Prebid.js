@@ -14,4 +14,8 @@ describe('toOrtb25Strict', () => {
   it('removes fields out of spec', () => {
     expect(toOrtb25Strict({ unk: 'field', imp: ['err', {}] }, translator)).to.eql({ imp: [{}] });
   });
+
+  it('removes non-integer enum fields', () => {
+    expect(toOrtb25Strict({ device: { devicetype: 1.5, connectiontype: 2, geo: { type: 2.5 } } }, translator)).to.eql({ device: { connectiontype: 2, geo: {} } });
+  });
 });

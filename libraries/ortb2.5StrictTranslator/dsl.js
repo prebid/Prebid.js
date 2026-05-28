@@ -1,4 +1,4 @@
-export const ERR_TYPE = 0; // field has wrong type (only objects, enums, and arrays of objects or enums are checked)
+export const ERR_TYPE = 0; // field has wrong type (only objects, integer enums, and arrays of objects or integer enums are checked)
 export const ERR_UNKNOWN_FIELD = 1; // field is not defined in ORTB 2.5 spec
 export const ERR_ENUM = 2; // field is an enum and its value is not one of those listed in the ORTB 2.5 spec
 
@@ -44,8 +44,8 @@ export function Arr(def) {
 export function IntEnum(min, max) {
   return (path, parent, field, value, onError) => {
     const errno = (() => {
-      if (typeof value !== 'number') return ERR_TYPE;
-      if (isNaN(value) || value > max || value < min) return ERR_ENUM;
+      if (!Number.isInteger(value)) return ERR_TYPE;
+      if (value > max || value < min) return ERR_ENUM;
     })();
     if (errno != null) {
       onError(errno, path, parent, field, value);
