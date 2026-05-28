@@ -17,8 +17,13 @@ import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDom
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../modules/33acrossIdSystem.d.ts').ThirtyThreeAcrossIdSystemModuleName} ThirtyThreeAcrossIdSystemModuleName
  */
 
+/**
+ * @type {ThirtyThreeAcrossIdSystemModuleName}
+ */
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
 const AJAX_TIMEOUT = 10000;
@@ -192,11 +197,11 @@ function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }
   });
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<ThirtyThreeAcrossIdSystemModuleName>} */
 export const thirtyThreeAcrossIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {ThirtyThreeAcrossIdSystemModuleName}
    */
   name: MODULE_NAME,
 

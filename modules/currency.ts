@@ -1,7 +1,7 @@
 import { deepSetValue, logError, logInfo, logMessage, logWarn } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import { defer } from '../src/utils/promise.js';

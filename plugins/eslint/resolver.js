@@ -1,20 +1,12 @@
 const path = require('path');
 const resolveFrom = require('resolve-from');
 const fs = require('fs');
-
-const TEST_DIR = path.resolve(__dirname, '../../test');
-const ROOT_DIR = path.resolve(__dirname, '../..');
+const {isInDirectory, TEST_DIR, PREBID_ROOT} = require('../utils.js');
 
 const CODE_EXT = ['.ts', '.js', '.mjs']
 
-function isInDirectory(filename, dir) {
-  const rel = path.relative(dir, filename);
-  return rel && !rel.startsWith('..') && !path.isAbsolute(rel);
-}
-
 module.exports = {
   interfaceVersion: 2,
-  isInDirectory,
   CODE_EXT,
   resolve(source, file) {
     const {name, dir, ext} = path.parse(source);
@@ -25,7 +17,7 @@ module.exports = {
     const candidates = fileNames.map(fn => [fileDir, fn]);
     if (isTest && !source.startsWith('.')) {
       // tests can do import like 'src/auction.js'
-      candidates.push(...fileNames.map(fn => [ROOT_DIR, `./${fn}`]))
+      candidates.push(...fileNames.map(fn => [PREBID_ROOT, `./${fn}`]))
     }
     const matching = Object.keys(
       candidates.reduce((matches, [from, path]) => {

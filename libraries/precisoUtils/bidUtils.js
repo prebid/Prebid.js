@@ -1,6 +1,6 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice, deepAccess, logInfo } from '../../src/utils.js';
-import { ajax } from '../../src/ajax.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';

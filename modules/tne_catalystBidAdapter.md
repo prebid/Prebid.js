@@ -2,15 +2,19 @@
 
 ## Overview
 
-TNE Catalyst is a programmatic exchange that manages demand relationships server-side. Publishers configure a single bidder with their account ID and placement slot; TNE routes the request to its configured SSP partners and returns the winning bid. No SSP-specific IDs or configuration is required on the publisher side.
+TNE Catalyst is a programmatic exchange that manages demand relationships server-side. Publishers can integrate with a single `{ bidder: 'tne_catalyst' }` entry — no params are required. Publisher identity is resolved server-side from the page domain via sellers.json, and the slot key defaults to `adUnitCode`. TNE routes the request to its configured SSP partners and returns the winning bid. No SSP-specific IDs or configuration is required on the publisher side.
 
 ## Bid Parameters
 
+All params are optional. Supply them to override the server-side defaults.
+
 | Param | Scope | Type | Description |
 |-------|-------|------|-------------|
-| `publisherId` | required | string | Publisher account ID assigned by TNE (e.g. `NXS003`) |
-| `slot` | required | string | Placement identifier matching the slot configured in the TNE dashboard (e.g. `billboard`) |
-| `bidfloor` | optional | number | Minimum acceptable CPM in USD |
+| `publisherId` | optional | string | Override domain-based publisher resolution (e.g. `NXS003`) |
+| `slot` | optional | string | Override the default slot key (defaults to `adUnitCode`) |
+| `bidfloor` | optional | number | Minimum acceptable CPM in USD (also read from the Floors module via `getFloor()`) |
+| `endpoint` | optional | string | Override the auction endpoint URL (testing / staging) |
+| `testMode` | optional | boolean | Marks the request as test traffic via `imp.ext.tne_catalyst.testMode` |
 
 ## Supported Media Types
 
@@ -37,7 +41,7 @@ ops@thenexusengine.io
 
 ## Example Ad Units
 
-### Banner
+### Banner (minimal — recommended)
 
 ```javascript
 var adUnits = [
@@ -46,28 +50,33 @@ var adUnits = [
     mediaTypes: {
       banner: { sizes: [[970, 250], [728, 90]] }
     },
-    bids: [{
-      bidder: 'tne_catalyst',
-      params: {
-        publisherId: 'NXS003',
-        slot: 'billboard'
-      }
-    }]
+    bids: [{ bidder: 'tne_catalyst' }]
   },
   {
     code: 'div-rectangle',
     mediaTypes: {
       banner: { sizes: [[300, 250], [300, 600]] }
     },
-    bids: [{
-      bidder: 'tne_catalyst',
-      params: {
-        publisherId: 'NXS003',
-        slot: 'rectangle'
-      }
-    }]
+    bids: [{ bidder: 'tne_catalyst' }]
   }
 ];
+```
+
+### Banner (with overrides)
+
+```javascript
+var adUnits = [{
+  code: 'div-billboard',
+  mediaTypes: { banner: { sizes: [[970, 250], [728, 90]] } },
+  bids: [{
+    bidder: 'tne_catalyst',
+    params: {
+      publisherId: 'NXS003',   // optional override
+      slot: 'billboard',       // optional override (defaults to adUnitCode)
+      bidfloor: 0.5            // optional
+    }
+  }]
+}];
 ```
 
 ### Native

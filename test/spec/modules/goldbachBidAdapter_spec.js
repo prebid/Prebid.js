@@ -1,12 +1,11 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec, storage } from 'modules/goldbachBidAdapter.js';
+import { dep, spec, storage } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
-import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { OUTSTREAM } from 'src/video.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import * as ajaxLib from 'src/ajax.js';
 
 const BIDDER_NAME = 'goldbach'
 const ENDPOINT = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
@@ -276,7 +275,7 @@ describe('GoldbachBidAdapter', function () {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    ajaxStub = sandbox.stub(ajaxLib, 'ajax');
+    ajaxStub = sandbox.stub(dep, 'ajax');
     sandbox.stub(Math, 'random').returns(0);
   });
 

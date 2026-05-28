@@ -8,6 +8,10 @@ import type { Size } from '../src/types/common.d.ts';
 const BIDDER_CODE = 'asterio';
 export const ENDPOINT = 'https://bid.asterio.ai/prebid/bid';
 
+export const dep = {
+  ajax
+}
+
 export type AsterioBidParams = {
   adUnitToken: string;
   pos?: number;
@@ -127,7 +131,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   onBidWon: function (bid: { winUrl?: string; cpm: number }) {
     if (bid.winUrl) {
       const winUrl = bid.winUrl.replace(/\$\{AUCTION_PRICE}/, String(bid.cpm));
-      ajax(winUrl, null, undefined, { keepalive: true });
+      dep.ajax(winUrl, null, undefined, { keepalive: true });
       return true;
     }
     return false;
