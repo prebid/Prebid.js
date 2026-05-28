@@ -1054,11 +1054,12 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
-      const urlInfo = parseUrl(config.getConfig('cache.url'));
-
       if (typeof adserverTargeting.find(targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return (bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname) as string;
+          if (bidResponse.cacheUrl) {
+            return parseUrl(bidResponse.cacheUrl).hostname
+          }
+          return bidResponse.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST];
         }));
       }
     }
