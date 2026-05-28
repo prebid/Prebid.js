@@ -771,30 +771,6 @@ describe('51DegreesRtdProvider', function() {
       localStorage.removeItem(PMP_STORAGE_KEY);
     });
 
-    it('returns params.idUsage when it is "non-marketing"', function() {
-      expect(resolveIdUsage({ params: { idUsage: 'non-marketing' } })).to.equal('non-marketing');
-    });
-
-    it('returns params.idUsage when it is "standard"', function() {
-      expect(resolveIdUsage({ params: { idUsage: 'standard' } })).to.equal('standard');
-    });
-
-    it('returns params.idUsage when it is "personalized"', function() {
-      expect(resolveIdUsage({ params: { idUsage: 'personalized' } })).to.equal('personalized');
-    });
-
-    it('trims whitespace around params.idUsage', function() {
-      expect(resolveIdUsage({ params: { idUsage: '  standard  ' } })).to.equal('standard');
-    });
-
-    it('ignores params.idUsage when value is not a valid usage', function() {
-      expect(resolveIdUsage({ params: { idUsage: 'rubbish' } })).to.be.undefined;
-    });
-
-    it('ignores params.idUsage when value is empty string', function() {
-      expect(resolveIdUsage({ params: { idUsage: '' } })).to.be.undefined;
-    });
-
     it('reads "standard" from PMP storage when params absent', function() {
       localStorage.setItem(
         PMP_STORAGE_KEY,
@@ -840,13 +816,6 @@ describe('51DegreesRtdProvider', function() {
       expect(resolveIdUsage({})).to.be.undefined;
     });
 
-    it('params.idUsage takes precedence over PMP storage', function() {
-      localStorage.setItem(
-        PMP_STORAGE_KEY,
-        JSON.stringify({ v: 1, p: 'standard', t: Date.now() }),
-      );
-      expect(resolveIdUsage({ params: { idUsage: 'personalized' } })).to.equal('personalized');
-    });
   });
 
   describe('resolveTcString', function() {

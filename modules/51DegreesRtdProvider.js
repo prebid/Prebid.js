@@ -129,7 +129,6 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
  * @param {string} [pathData.resourceKey] Resource key
  * @param {string} [pathData.onPremiseJSUrl] On-premise JS URL
  * @param {Object<string, any>} [pathData.hev] High entropy values
- * @param {string} [pathData.idUsage] id.usage value to forward to the cloud
  * @param {string} [pathData.tcString] TCF consent string to forward as tcstring
  * @param {string} [pathData.gpp] GPP string to forward as gppstring
  * @param {Window} [win] Window object (mainly for testing)
@@ -471,25 +470,14 @@ const storageManager = getStorageManager({
 });
 
 /**
- * Resolves the id.usage value from module params or PMP localStorage.
- * Params take precedence. Returns undefined when no valid value is found,
+ * Resolves the id.usage value from PMP localStorage.
+ * Returns undefined when no valid value is found,
  * which signals the caller to omit id.usage from the cloud URL entirely.
  *
  * @param {Object} moduleConfig 51Degrees RTD module config
  * @returns {string|undefined}
  */
 export const resolveIdUsage = (moduleConfig) => {
-  const raw = deepAccess(moduleConfig, 'params.idUsage');
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
-    if (VALID_ID_USAGE.has(trimmed)) {
-      return trimmed;
-    }
-    if (trimmed.length > 0) {
-      logWarn(`Ignoring invalid params.idUsage value '${raw}'`);
-    }
-  }
-
   try {
     const stored = storageManager.getDataFromLocalStorage(PMP_STORAGE_KEY);
     if (!stored) {
