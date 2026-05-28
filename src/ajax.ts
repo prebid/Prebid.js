@@ -177,7 +177,7 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
           })
         }
         return dep.fetch(request);
-      })
+      });
     } else {
       pm = dep.fetch(request);
     }
