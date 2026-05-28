@@ -25,7 +25,7 @@ const Geo = Obj(['lat', 'lon', 'accuracy', 'lastfix', 'country', 'region', 'regi
   ipservice: IntEnum(1, 4)
 });
 const Device = Obj(['ua', 'dnt', 'lmt', 'ip', 'ipv6', 'make', 'model', 'os', 'osv', 'hwv', 'h', 'w', 'ppi', 'pxratio', 'js', 'geofetch', 'flashver', 'language', 'carrier', 'mccmnc', 'ifa', 'didsha1', 'didmd5', 'dpidsha1', 'dpidmd5', 'macsha1', 'macmd5'], {
-  geo: Geo, devicetype: IntEnum(1, 7), connectiontype: IntEnum(0, 6)
+  geo: Geo, devicetype: IntEnum(1, 7), connectiontype: IntEnum(0, 7)
 });
 const User = ID[extend](['buyeruid', 'yob', 'gender', 'keywords', 'customdata'], {
   geo: Geo, data: Arr(Data),

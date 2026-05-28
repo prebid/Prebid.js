@@ -327,7 +327,7 @@ describe('the first party data validation module', function () {
         h: 911,
         w: 1733,
         devicetype: 2,
-        connectiontype: 2,
+        connectiontype: 0,
         geo: {
           lat: 12.34,
           lon: 56.78,
@@ -337,6 +337,14 @@ describe('the first party data validation module', function () {
 
       const validated = validateFpd(duplicate);
       expect(validated.device).to.deep.equal(duplicate.device);
+    });
+
+    it('keeps valid 5g connection type in device fields', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.device.connectiontype = 7;
+
+      const validated = validateFpd(duplicate);
+      expect(validated.device.connectiontype).to.equal(7);
     });
 
     it('filters cur for invalid data type', function () {

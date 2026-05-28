@@ -10,6 +10,11 @@ const TYPES = {
   integer: 'integer',
 };
 
+const CONNECTION_TYPES = {
+  UNKNOWN: 0,
+  ...ConnectionType
+};
+
 /**
  * Template to define what ortb2 attributes should be validated
  * Accepted fields:
@@ -37,7 +42,7 @@ export const ORTB_MAP = {
       w: { type: TYPES.number },
       h: { type: TYPES.number },
       devicetype: { type: TYPES.integer, enum: DeviceType },
-      connectiontype: { type: TYPES.integer, enum: ConnectionType },
+      connectiontype: { type: TYPES.integer, enum: CONNECTION_TYPES },
       geo: {
         type: TYPES.object,
         isArray: false,
