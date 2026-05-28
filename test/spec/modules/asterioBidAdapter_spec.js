@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as ajaxModule from 'src/ajax.js';
-import { ENDPOINT, spec } from 'modules/asterioBidAdapter.js';
+import { dep, ENDPOINT, spec } from 'modules/asterioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const REQUEST = {
@@ -230,7 +229,7 @@ describe('asterioBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajaxModule, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {

@@ -47,6 +47,9 @@ export const TQ = 'tq';
 export const TG = 'tg';
 export const THEMES = 'themes';
 export const TONES = 'tones';
+export const dep = {
+  ajaxBuilder
+};
 
 export const CONTEXT_KEYS = [
   AP_VALUES,
@@ -132,7 +135,7 @@ export function makeContextDataToKeyValuesReducer(config) {
 export async function fetchContextData() {
   const pageUrl = encodeURIComponent(window.location.href);
   const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
-  const request = ajaxBuilder();
+  const request = dep.ajaxBuilder();
 
   return new Promise((resolve, reject) => {
     request(requestUrl, { success: resolve, error: reject });
