@@ -416,6 +416,119 @@ describe('the first party data validation module', function () {
       expect(validated).to.deep.equal(expected);
     });
 
+    it('validates additional OpenRTB site and content fields with IAB enum values', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.site = {
+        id: 'site-id',
+        cattax: 6,
+        mobile: 1,
+        privacypolicy: 0,
+        inventorypartnerdomain: 'partner.example',
+        kwarray: ['sports', 'news'],
+        ext: { inventory: 'premium' },
+        content: {
+          id: 'content-id',
+          episode: 3,
+          cattax: 7,
+          cat: ['IAB1'],
+          prodq: 1,
+          context: 5,
+          qagmediarating: 2,
+          livestream: 0,
+          sourcerelationship: 1,
+          embeddable: 1,
+          kwarray: ['article'],
+          producer: {
+            id: 'producer-id',
+            cattax: 6,
+            cat: ['IAB2'],
+            domain: 'producer.example'
+          },
+          data: [{
+            id: 'provider-id',
+            name: 'content',
+            segment: [{ id: 'test', name: 'seg', value: 'value', ext: { foo: 'bar' } }],
+            cids: ['cid-1']
+          }],
+          network: { id: 'net-id', name: 'network', domain: 'network.example' },
+          channel: { id: 'channel-id', name: 'channel', domain: 'channel.example' }
+        },
+        publisher: {
+          id: 'pub-id',
+          cattax: 6,
+          cat: ['IAB3'],
+          name: 'publisher'
+        }
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated.site).to.deep.equal(duplicate.site);
+    });
+
+    it('filters invalid additional OpenRTB site and content field types and enum values', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.site = {
+        id: 123,
+        cattax: 99,
+        mobile: 2,
+        privacypolicy: '1',
+        inventorypartnerdomain: ['partner.example'],
+        kwarray: ['sports', 12],
+        content: {
+          episode: '3',
+          cattax: 99,
+          cat: ['IAB1', 2],
+          prodq: 99,
+          context: 99,
+          qagmediarating: 99,
+          livestream: '0',
+          sourcerelationship: 2,
+          embeddable: 2,
+          kwarray: ['article', {}],
+          producer: {
+            cattax: '6',
+            cat: ['IAB2', false],
+            domain: ['producer.example']
+          },
+          data: [{
+            name: 'content',
+            segment: [{ id: 'test', name: 1, value: 2, ext: 'bad' }],
+            cids: ['cid-1', 1]
+          }],
+          network: { id: 1, name: 'network', domain: ['network.example'] },
+          channel: { id: 'channel-id', name: 2, domain: 'channel.example' }
+        },
+        publisher: {
+          cattax: '6',
+          cat: ['IAB3', {}],
+          name: 'publisher'
+        }
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated.site).to.deep.equal({
+        kwarray: ['sports'],
+        content: {
+          cat: ['IAB1'],
+          kwarray: ['article'],
+          producer: {
+            cat: ['IAB2']
+          },
+          data: [{
+            name: 'content',
+            segment: [{ id: 'test' }],
+            cids: ['cid-1']
+          }],
+          network: { name: 'network' },
+          channel: { id: 'channel-id', domain: 'channel.example' }
+        },
+        publisher: {
+          cat: ['IAB3'],
+          name: 'publisher'
+        }
+      });
+    });
+
     it('filters site.publisher object properties for invalid data type', function () {
       const duplicate = utils.deepClone(ortb2);
       duplicate.site.publisher = {

@@ -42,10 +42,15 @@ export function Arr(def) {
 }
 
 export function IntEnum(min, max) {
+  return EnumValues(Array.from({ length: max - min + 1 }, (v, i) => min + i));
+}
+
+export function EnumValues(values) {
+  const validValues = new Set(Array.isArray(values) ? values : Object.values(values));
   return (path, parent, field, value, onError) => {
     const errno = (() => {
       if (!Number.isInteger(value)) return ERR_TYPE;
-      if (value > max || value < min) return ERR_ENUM;
+      if (!validValues.has(value)) return ERR_ENUM;
     })();
     if (errno != null) {
       onError(errno, path, parent, field, value);

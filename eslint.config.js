@@ -42,7 +42,9 @@ const allowedImports = {
   // even innocuous imports can become problematic if the source changes,
   // and it's too easy to forget this is a problem for debugging-standalone.
   'modules/debugging': [false],
-  libraries: [],
+  libraries: [
+    'iab-adcom'
+  ],
   creative: [],
 }
 

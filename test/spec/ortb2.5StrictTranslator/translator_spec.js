@@ -18,4 +18,37 @@ describe('toOrtb25Strict', () => {
   it('removes non-integer enum fields', () => {
     expect(toOrtb25Strict({ device: { devicetype: 1.5, connectiontype: 2, geo: { type: 2.5 } } }, translator)).to.eql({ device: { connectiontype: 2, geo: {} } });
   });
+
+  it('validates site content enum values with IAB AdCOM enums', () => {
+    expect(toOrtb25Strict({
+      site: {
+        content: {
+          prodq: 1,
+          context: 5,
+          qagmediarating: 2,
+          videoquality: 3
+        }
+      }
+    }, translator)).to.eql({
+      site: {
+        content: {
+          prodq: 1,
+          context: 5,
+          qagmediarating: 2,
+          videoquality: 3
+        }
+      }
+    });
+
+    expect(toOrtb25Strict({
+      site: {
+        content: {
+          prodq: 99,
+          context: 99,
+          qagmediarating: 99,
+          videoquality: 99
+        }
+      }
+    }, translator)).to.eql({ site: { content: {} } });
+  });
 });

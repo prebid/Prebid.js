@@ -1,4 +1,5 @@
-import { Arr, extend, ID, IntEnum, Named, Obj } from './dsl.js';
+import { ContentContext, MediaRating, ProductionQuality } from 'iab-adcom/enum';
+import { Arr, EnumValues, extend, ID, IntEnum, Named, Obj } from './dsl.js';
 
 const CatDomain = Named[extend](['cat', 'domain']);
 const Segment = Named[extend](['value']);
@@ -8,10 +9,10 @@ const Data = Named[extend]([], {
 const Content = ID[extend](['episode', 'title', 'series', 'season', 'artist', 'genre', 'album', 'isrc', 'url', 'cat', 'contentrating', 'userrating', 'keywords', 'livestream', 'sourcerelationship', 'len', 'language', 'embeddable'], {
   producer: CatDomain,
   data: Arr(Data),
-  prodq: IntEnum(0, 3),
-  videoquality: IntEnum(0, 3),
-  context: IntEnum(1, 7),
-  qagmediarating: IntEnum(1, 3),
+  prodq: EnumValues(ProductionQuality),
+  videoquality: EnumValues(ProductionQuality),
+  context: EnumValues(ContentContext),
+  qagmediarating: EnumValues(MediaRating),
 });
 
 const Client = CatDomain[extend](['sectioncat', 'pagecat', 'privacypolicy', 'keywords'], {

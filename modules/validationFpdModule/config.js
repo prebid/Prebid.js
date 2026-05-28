@@ -1,4 +1,4 @@
-import { ConnectionType, DeviceType, LocationType } from 'iab-adcom/enum';
+import { CategoryTaxonomy, ConnectionType, ContentContext, DeviceType, LocationType, MediaRating, ProductionQuality } from 'iab-adcom/enum';
 
 /**
  * Data type map
@@ -52,12 +52,26 @@ export const ORTB_MAP = {
   site: {
     type: TYPES.object,
     children: {
+      id: { type: TYPES.string },
       name: { type: TYPES.string },
       domain: { type: TYPES.string },
+      cattax: { type: TYPES.integer, enum: CategoryTaxonomy },
       page: { type: TYPES.string },
       ref: { type: TYPES.string },
       keywords: { type: TYPES.string },
+      kwarray: {
+        type: TYPES.object,
+        isArray: true,
+        childType: TYPES.string
+      },
       search: { type: TYPES.string },
+      mobile: { type: TYPES.integer, enum: { NO: 0, YES: 1 } },
+      privacypolicy: { type: TYPES.integer, enum: { NO: 0, YES: 1 } },
+      inventorypartnerdomain: { type: TYPES.string },
+      ext: {
+        type: TYPES.object,
+        isArray: false
+      },
       cat: {
         type: TYPES.object,
         isArray: true,
@@ -77,24 +91,127 @@ export const ORTB_MAP = {
         type: TYPES.object,
         isArray: false,
         children: {
+          id: { type: TYPES.string },
+          episode: { type: TYPES.integer },
+          title: { type: TYPES.string },
+          series: { type: TYPES.string },
+          season: { type: TYPES.string },
+          artist: { type: TYPES.string },
+          genre: { type: TYPES.string },
+          album: { type: TYPES.string },
+          isrc: { type: TYPES.string },
+          url: { type: TYPES.string },
+          cattax: { type: TYPES.integer, enum: CategoryTaxonomy },
+          cat: {
+            type: TYPES.object,
+            isArray: true,
+            childType: TYPES.string
+          },
+          prodq: { type: TYPES.integer, enum: ProductionQuality },
+          context: { type: TYPES.integer, enum: ContentContext },
+          contentrating: { type: TYPES.string },
+          userrating: { type: TYPES.string },
+          qagmediarating: { type: TYPES.integer, enum: MediaRating },
+          keywords: { type: TYPES.string },
+          kwarray: {
+            type: TYPES.object,
+            isArray: true,
+            childType: TYPES.string
+          },
+          livestream: { type: TYPES.integer, enum: { NO: 0, YES: 1 } },
+          sourcerelationship: { type: TYPES.integer, enum: { INDIRECT: 0, DIRECT: 1 } },
+          len: { type: TYPES.integer },
+          language: { type: TYPES.string },
+          langb: { type: TYPES.string },
+          genres: {
+            type: TYPES.object,
+            isArray: true,
+            childType: TYPES.string
+          },
+          gtax: { type: TYPES.integer },
+          embeddable: { type: TYPES.integer, enum: { NO: 0, YES: 1 } },
+          producer: {
+            type: TYPES.object,
+            isArray: false,
+            children: {
+              id: { type: TYPES.string },
+              name: { type: TYPES.string },
+              cattax: { type: TYPES.integer, enum: CategoryTaxonomy },
+              cat: {
+                type: TYPES.object,
+                isArray: true,
+                childType: TYPES.string
+              },
+              domain: { type: TYPES.string },
+              ext: {
+                type: TYPES.object,
+                isArray: false
+              }
+            }
+          },
           data: {
             type: TYPES.object,
             isArray: true,
             childType: TYPES.object,
             required: ['name', 'segment'],
             children: {
+              id: { type: TYPES.string },
               segment: {
                 type: TYPES.object,
                 isArray: true,
                 childType: TYPES.object,
                 required: ['id'],
                 children: {
-                  id: { type: TYPES.string }
+                  id: { type: TYPES.string },
+                  name: { type: TYPES.string },
+                  value: { type: TYPES.string },
+                  ext: {
+                    type: TYPES.object,
+                    isArray: false
+                  }
                 }
               },
               name: { type: TYPES.string },
-              ext: { type: TYPES.object },
+              cids: {
+                type: TYPES.object,
+                isArray: true,
+                childType: TYPES.string
+              },
+              ext: {
+                type: TYPES.object,
+                isArray: false
+              },
             }
+          },
+          network: {
+            type: TYPES.object,
+            isArray: false,
+            children: {
+              id: { type: TYPES.string },
+              name: { type: TYPES.string },
+              domain: { type: TYPES.string },
+              ext: {
+                type: TYPES.object,
+                isArray: false
+              }
+            }
+          },
+          channel: {
+            type: TYPES.object,
+            isArray: false,
+            children: {
+              id: { type: TYPES.string },
+              name: { type: TYPES.string },
+              domain: { type: TYPES.string },
+              ext: {
+                type: TYPES.object,
+                isArray: false
+              }
+            }
+          },
+          ext: {
+            type: TYPES.object,
+            isArray: false
           }
         }
       },
@@ -104,6 +221,7 @@ export const ORTB_MAP = {
         children: {
           id: { type: TYPES.string },
           name: { type: TYPES.string },
+          cattax: { type: TYPES.integer, enum: CategoryTaxonomy },
           cat: {
             type: TYPES.object,
             isArray: true,
