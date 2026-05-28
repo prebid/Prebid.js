@@ -11,6 +11,10 @@ import { getStorageManager } from '../src/storageManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getHighEntropySUA, getLowEntropySUA } from '../src/fpd/sua.js';
 
+export const dep = {
+  fetch, sendBeacon
+};
+
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'wurfl';
@@ -1413,13 +1417,13 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
 
   // Both sendBeacon and fetch send as text/plain to avoid CORS preflight requests.
   // Server must parse body as JSON regardless of Content-Type header.
-  const sentBeacon = sendBeacon(url.toString(), payload);
+  const sentBeacon = dep.sendBeacon(url.toString(), payload);
   if (sentBeacon) {
     WurflDebugger.setBeaconPayload(payloadData);
     return;
   }
 
-  fetch(url.toString(), {
+  dep.fetch(url.toString(), {
     method: 'POST',
     body: payload,
     mode: 'no-cors',

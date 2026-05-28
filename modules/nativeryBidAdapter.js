@@ -28,6 +28,9 @@ const DEFAULT_CURRENCY = 'EUR';
 const TTL = 30;
 const MAX_IMPS_PER_REQUEST = 10;
 const GVLID = 1133;
+export const dep = {
+  ajax
+};
 
 export const converter = ortbConverter({
   context: {
@@ -182,7 +185,7 @@ function reportEvent(event, data, sampling = null) {
       event,
       data,
     };
-    ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true });
+    dep.ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true });
   }
 }
 

@@ -19,6 +19,10 @@ const DEFAULT_TTL = 300;
 const DEFAULT_SAMPLING_RATE = 1.0;
 const PREBID_VERSION = '$prebid.version$';
 
+export const dep = {
+  ajax
+};
+
 // ORTB conversion
 const converter = ortbConverter({
   context: {
@@ -239,7 +243,7 @@ const logEvent = (eventType, data) => {
       logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Beacon and payload: ${stringifiedPayload}`);
     } else {
       // Fallback to using ajax
-      ajax(eventUrl, null, stringifiedPayload, {
+      dep.ajax(eventUrl, null, stringifiedPayload, {
         method: 'POST',
         contentType: 'application/json',
         withCredentials: true,
