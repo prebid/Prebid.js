@@ -1,4 +1,4 @@
-import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
@@ -30,6 +30,22 @@ function vdoIsBidResponseValid(vdoresponse) {
   return false;
 }
 
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidfloor || null;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: bid.params.adUnitType || '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return bid.params.bidfloor || null;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -41,9 +57,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (vdobid) => {
-    logMessage('vdobid', vdobid);
-    return Boolean(vdobid.bidId && vdobid.params && vdobid.params.host && vdobid.params.adUnitType &&
-      (vdobid.params.adUnitId || vdobid.params.adUnitId === 0));
+    return Boolean(vdobid.bidId && vdobid.params && vdobid.params.host && vdobid.params.adUnitType && vdobid.params.adUnitId);
   },
 
   /**
@@ -71,12 +85,27 @@ export const spec = {
    */
   onBidWon: (vdobid) => {
     const cpm = vdobid.pbMg;
-    if (vdobid.nurl !== '') {
+    if (vdobid.nurl && vdobid.nurl !== '') {
       vdobid.nurl = vdobid.nurl.replace(
         /\$\{AUCTION_PRICE\}/,
         cpm
       );
       ajax(vdobid.nurl, null);
+    }
+  },
+
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder is billable
+   * @param {Bid} vdobid The bid that is billable
+   */
+  onBidBillable: (vdobid) => {
+    const cpm = vdobid.pbMg;
+    if (vdobid.burl && vdobid.burl !== '') {
+      vdobid.burl = vdobid.burl.replace(
+        /\$\{AUCTION_PRICE\}/,
+        cpm
+      );
+      ajax(vdobid.burl, null);
     }
   },
 
@@ -147,13 +176,15 @@ function vdoBuildPlacement(vdoBidRequest) {
         break;
       case VIDEO:
         if (vdoBidRequest.mediaTypes.video && vdoBidRequest.mediaTypes.video.playerSize) {
-          sizes = [vdoBidRequest.mediaTypes.video.playerSize];
+          sizes = vdoBidRequest.mediaTypes.video.playerSize;
         }
         break;
     }
   }
   sizes = (sizes || []).concat(vdoBidRequest.sizes || []);
-  return {
+  sizes = sizes.filter(uniques);
+  const bidfloor = getBidFloor(vdoBidRequest);
+  const placement = {
     host: vdoBidRequest.params.host,
     adUnit: {
       id: vdoBidRequest.params.adUnitId,
@@ -176,5 +207,9 @@ function vdoBuildPlacement(vdoBidRequest) {
       custom4: vdoBidRequest.params.custom4,
       custom5: vdoBidRequest.params.custom5
     }
+  };
+  if (bidfloor) {
+    placement.adUnit.bidfloor = bidfloor;
   }
+  return placement;
 }

@@ -11,6 +11,7 @@ Maintainer: arjit@z1media.com
 Module that connects to VDO.AI's demand sources
 
 # Test Parameters for banner
+
 ```
 var adUnits = [{
     code: 'placementCode',
@@ -22,20 +23,23 @@ var adUnits = [{
     bids: [{
         bidder: 'vdoai',
         params: {
-            host: 'exchange-9qao.ortb.net',
-            adUnitId: 0,
+            host: 'ortb.vdo.ai',
+            adUnitId: 123456,
+            publisherId: 'pub-abc',
             adUnitType: 'banner',
             custom1: 'custom1',
             custom2: 'custom2',
             custom3: 'custom3',
             custom4: 'custom4',
-            custom5: 'custom5'
+            custom5: 'custom5',
+            bidfloor: 1.5
         }
     }]
 }];
 ```
 
 # Test Parameters for video
+
 ```
 var videoAdUnit = [{
     code: 'video1',
@@ -43,14 +47,16 @@ var videoAdUnit = [{
     bids: [{
         bidder: 'vdoai',
         params: {
-            host: 'exchange-9qao.ortb.net',
-            adUnitId: 0,
+            host: 'ortb.vdo.ai',
+            adUnitId: 123456,
+            publisherId: 'pub-abc',
             adUnitType: 'video',
             custom1: 'custom1',
             custom2: 'custom2',
             custom3: 'custom3',
             custom4: 'custom4',
-            custom5: 'custom5'
+            custom5: 'custom5',
+            bidfloor: 1.5
         }
     }]
 }];
