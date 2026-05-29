@@ -549,6 +549,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "reload",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -1200,6 +1207,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "anzuDSP",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "anzuSSP",
       "aliasOf": null,
       "gvlid": null,
@@ -1636,7 +1650,7 @@
       "componentType": "bidder",
       "componentName": "bliink",
       "aliasOf": null,
-      "gvlid": 658,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2621,6 +2635,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "hubvisor",
+      "aliasOf": null,
+      "gvlid": 1112,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "hybrid",
       "aliasOf": null,
       "gvlid": 206,
@@ -3203,6 +3224,13 @@
     {
       "componentType": "bidder",
       "componentName": "mathildeads",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "matterfull",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
