@@ -1,7 +1,6 @@
 import { assert, expect } from 'chai';
-import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
+import { dep, NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import * as ajax from 'src/ajax.js';
 import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
@@ -977,7 +976,7 @@ describe('Yandex adapter', function () {
 
   describe('onTimeout callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       expect(spec.onTimeout({ forTest: true })).to.not.throw;
       expect(ajaxStub.calledOnce).to.be.true;
     });
@@ -985,7 +984,7 @@ describe('Yandex adapter', function () {
 
   describe('on onBidderError callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       spec.onBidderError({ forTest: true });
       expect(ajaxStub.calledOnce).to.be.true;
     });
@@ -993,7 +992,7 @@ describe('Yandex adapter', function () {
 
   describe('on onBidBillable callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       spec.onBidBillable({ forTest: true });
       expect(ajaxStub.calledOnce).to.be.true;
     });
@@ -1001,7 +1000,7 @@ describe('Yandex adapter', function () {
 
   describe('on onAdRenderSucceeded callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       spec.onAdRenderSucceeded({ forTest: true });
       expect(ajaxStub.calledOnce).to.be.true;
     });
