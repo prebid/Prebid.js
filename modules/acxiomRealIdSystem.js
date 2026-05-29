@@ -9,7 +9,7 @@ import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { logError } from '../src/utils.js';
+import { logError, getWindowSelf } from '../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 /**
@@ -153,7 +153,7 @@ export const acxiomRealIdSubmodule = {
     const payload = {
       partnerId,
       ip: '',
-      userAgent: navigator.userAgent,
+      userAgent: getWindowSelf().navigator?.userAgent || '',
       sourceId: sourceId || DEFAULT_SOURCE_ID
     };
     if (hem) {
