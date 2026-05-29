@@ -95,23 +95,30 @@ describe('acxiomRealIdSystem', () => {
         expect(result).to.deep.equal({ acxiomRealId: { id: REAL_ID_TOKEN, atype: 1 } });
       });
 
-      it('should suppress and delete token when GDPR handler reports gdprApplies', () => {
+      it('should suppress and delete token with all suffixes when GDPR handler reports gdprApplies', () => {
         gdprStub.returns({ gdprApplies: true, consentString: 'BOtest' });
         const config = { storage: { name: STORAGE_NAME } };
         const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
         expect(result).to.be.undefined;
-        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+        ['', '_exp', '_cst', '_last'].forEach(suffix => {
+          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+        });
+        ['', '_cst', '_last'].forEach(suffix => {
+          expect(setCookieStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+        });
       });
 
-      it('should suppress and delete token when USP handler reports opt-out', () => {
+      it('should suppress and delete token with all suffixes when USP handler reports opt-out', () => {
         uspStub.returns('1YYN');
         const config = { storage: { name: STORAGE_NAME } };
         const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
         expect(result).to.be.undefined;
-        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+        ['', '_exp', '_cst', '_last'].forEach(suffix => {
+          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+        });
       });
 
-      it('should suppress and delete token when GPP handler reports SaleOptOut', () => {
+      it('should suppress and delete token with all suffixes when GPP handler reports SaleOptOut', () => {
         gppStub.returns({
           applicableSections: [7],
           parsedSections: { usnat: { Version: 1, SaleOptOut: 1, SharingOptOut: 2 } }
@@ -119,10 +126,12 @@ describe('acxiomRealIdSystem', () => {
         const config = { storage: { name: STORAGE_NAME } };
         const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
         expect(result).to.be.undefined;
-        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+        ['', '_exp', '_cst', '_last'].forEach(suffix => {
+          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+        });
       });
 
-      it('should suppress and delete token when GPP handler reports SharingOptOut', () => {
+      it('should suppress and delete token with all suffixes when GPP handler reports SharingOptOut', () => {
         gppStub.returns({
           applicableSections: [8],
           parsedSections: { usca: { Version: 1, SaleOptOut: 2, SharingOptOut: 1 } }
@@ -130,7 +139,9 @@ describe('acxiomRealIdSystem', () => {
         const config = { storage: { name: STORAGE_NAME } };
         const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
         expect(result).to.be.undefined;
-        expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
+        ['', '_exp', '_cst', '_last'].forEach(suffix => {
+          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+        });
       });
     });
   });
@@ -303,13 +314,17 @@ describe('acxiomRealIdSystem', () => {
           sinon.restore();
         });
 
-        it('should delete stored token when consent is blocked', () => {
+        it('should delete stored token and all suffixes when consent is blocked', () => {
           acxiomRealIdSubmodule.getId(
             { params: { partnerId: PARTNER_ID }, storage: { name: STORAGE_NAME } },
             { usp: '1YYN' }
           );
-          expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
-          expect(setCookieStub.called).to.be.true;
+          ['', '_exp', '_cst', '_last'].forEach(suffix => {
+            expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+          });
+          ['', '_cst', '_last'].forEach(suffix => {
+            expect(setCookieStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+          });
         });
       });
 
@@ -578,17 +593,23 @@ describe('acxiomRealIdSystem', () => {
       sinon.restore();
     });
 
-    it('should delete token from localStorage and cookies', () => {
+    it('should delete token and all suffixes from localStorage and cookies', () => {
       acxiomRealIdSubmodule.onDataDeletionRequest(
         { storage: { name: STORAGE_NAME } }
       );
-      expect(removeLocalStorageStub.calledWith(STORAGE_NAME)).to.be.true;
-      expect(setCookieStub.called).to.be.true;
+      ['', '_exp', '_cst', '_last'].forEach(suffix => {
+        expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+      });
+      ['', '_cst', '_last'].forEach(suffix => {
+        expect(setCookieStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+      });
     });
 
-    it('should use module name as fallback when storage name is not configured', () => {
+    it('should use module name as fallback and delete all suffixes when storage name is not configured', () => {
       acxiomRealIdSubmodule.onDataDeletionRequest({});
-      expect(removeLocalStorageStub.calledWith('acxiomRealId')).to.be.true;
+      ['', '_exp', '_cst', '_last'].forEach(suffix => {
+        expect(removeLocalStorageStub.calledWith(`acxiomRealId${suffix}`)).to.be.true;
+      });
     });
   });
 

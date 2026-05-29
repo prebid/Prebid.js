@@ -96,11 +96,16 @@ function isConsentBlockedByHandlers() {
 
 function deleteStoredToken(config) {
   const storageName = (config && config.storage && config.storage.name) || MODULE_NAME;
+  const expired = new Date(0).toUTCString();
   if (storage.localStorageIsEnabled()) {
-    storage.removeDataFromLocalStorage(storageName);
+    ['', '_exp', '_cst', '_last'].forEach(suffix => {
+      storage.removeDataFromLocalStorage(`${storageName}${suffix}`);
+    });
   }
   if (storage.cookiesAreEnabled()) {
-    storage.setCookie(storageName, '', new Date(0).toUTCString());
+    ['', '_cst', '_last'].forEach(suffix => {
+      storage.setCookie(`${storageName}${suffix}`, '', expired);
+    });
   }
 }
 
