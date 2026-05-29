@@ -3,7 +3,7 @@
 ```
 Module Name  : MagicBid Bid Adapter
 Module Type  : Bidder Adapter
-Maintainer   : prebid@magicbid.com
+Maintainer   : support@magicbid.ai
 ```
 
 ## Description
@@ -95,6 +95,6 @@ var adUnits = [
 
 ## Notes
 
-- The `host` value is unique per publisher and is generated when MagicBid onboards a new publisher. Contact [prebid@magicbid.com](mailto:prebid@magicbid.com) to get your values.
+- The `host` value is unique per publisher and is generated when MagicBid onboards a new publisher. Contact [support@magicbid.ai](mailto:prebid@magicbid.com) to get your values.
 - GDPR, USP/CCPA, COPPA, GPP, and Supply Chain (schain) signals are automatically forwarded.
 - User ID modules (all) are supported via `eids`.
