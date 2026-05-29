@@ -67,7 +67,6 @@ describe('51DegreesRtdProvider', function() {
       ppi: 109,
       pxratio: 1,
       ext: {
-        fiftyonedegrees_deviceId: '17595-131215-132535-18092',
         fod: {
           deviceId: '17595-131215-132535-18092',
           tpc: 1,
