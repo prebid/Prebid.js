@@ -19,6 +19,31 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
+/**
+ * @typedef {Object} AcxiomRealIdParams
+ * @property {string} partnerId - Partner ID issued by GrowthCode on behalf of Acxiom
+ * @property {string} [hem] - SHA-256 hashed email for improved match rate
+ * @property {string} [sourceId] - EID source to request from the lookup API. Defaults to 'acxiom.id'
+ * @property {string} [apiUrl] - Override the full API endpoint URL
+ */
+
+/**
+ * @typedef {Object} AcxiomRealIdValue
+ * @property {string} id - The resolved Acxiom Real ID token
+ * @property {number} atype - Agent type per OpenRTB spec (1 = cookie/device, 2 = in-app, 3 = person-based)
+ */
+
+/**
+ * @typedef {Object} AcxiomRealIdConfig
+ * @property {'acxiomRealId'} name - Module identifier
+ * @property {AcxiomRealIdParams} params - Module configuration parameters
+ * @property {Object} [storage] - Storage configuration
+ * @property {'html5'|'cookie'} [storage.type] - Storage method
+ * @property {string} [storage.name] - Storage key name
+ * @property {number} [storage.expires] - TTL in days
+ * @property {number} [storage.refreshInSeconds] - How often to re-fetch the ID in seconds
+ */
+
 const MODULE_NAME = 'acxiomRealId';
 const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/v1/eid/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
