@@ -1,4 +1,4 @@
-import { acxiomRealIdSubmodule, storage } from 'modules/acxiomRealIdSystem.js';
+import { acxiomRealIdSubmodule, storage } from 'modules/acxiomRealIdSystem.ts';
 import * as ajaxLib from 'src/ajax.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai';

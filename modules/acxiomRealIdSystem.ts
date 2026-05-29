@@ -12,44 +12,45 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { logError, getWindowSelf } from '../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
-/**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
- */
+import type { IdProviderSpec, UserIdConfig, EID } from './userId/spec.ts';
+import type { AllConsentData } from '../src/consentHandler.ts';
 
-/**
- * @typedef {Object} AcxiomRealIdParams
- * @property {string} partnerId - Partner ID issued by GrowthCode on behalf of Acxiom
- * @property {string} [hem] - SHA-256 hashed email for improved match rate
- * @property {string} [sourceId] - EID source to request from the lookup API. Defaults to 'acxiom.id'
- * @property {string} [apiUrl] - Override the full API endpoint URL
- */
-
-/**
- * @typedef {Object} AcxiomRealIdValue
- * @property {string} id - The resolved Acxiom Real ID token
- * @property {number} atype - Agent type per OpenRTB spec (1 = cookie/device, 2 = in-app, 3 = person-based)
- */
-
-/**
- * @typedef {Object} AcxiomRealIdConfig
- * @property {'acxiomRealId'} name - Module identifier
- * @property {AcxiomRealIdParams} params - Module configuration parameters
- * @property {Object} [storage] - Storage configuration
- * @property {'html5'|'cookie'} [storage.type] - Storage method
- * @property {string} [storage.name] - Storage key name
- * @property {number} [storage.expires] - TTL in days
- * @property {number} [storage.refreshInSeconds] - How often to re-fetch the ID in seconds
- */
-
-const MODULE_NAME = 'acxiomRealId';
+const MODULE_NAME = 'acxiomRealId' as const;
 const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/v1/eid/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-const US_GPP_SID_API = {
+export type AcxiomRealIdParams = {
+  /** Partner ID issued by GrowthCode on behalf of Acxiom */
+  partnerId: string;
+  /** SHA-256 hashed email for improved match rate */
+  hem?: string;
+  /** EID source to request from the lookup API. Defaults to 'acxiom.id' */
+  sourceId?: string;
+  /** Override the full API endpoint URL */
+  apiUrl?: string;
+}
+
+export type AcxiomRealIdValue = {
+  /** The resolved Acxiom Real ID token */
+  id: string;
+  /** Agent type per OpenRTB spec (1 = cookie/device, 2 = in-app, 3 = person-based) */
+  atype: number;
+}
+
+declare module './userId/spec' {
+  interface UserId {
+    acxiomRealId: AcxiomRealIdValue;
+  }
+  interface ProvidersToId {
+    acxiomRealId: 'acxiomRealId';
+  }
+  interface ProviderParams {
+    acxiomRealId: AcxiomRealIdParams;
+  }
+}
+
+const US_GPP_SID_API: Record<number, string> = {
   7: 'usnat',
   8: 'usca',
   9: 'usva',
@@ -58,12 +59,23 @@ const US_GPP_SID_API = {
   12: 'usct'
 };
 
-function flatSection(subsections) {
-  if (!Array.isArray(subsections)) return subsections;
-  return subsections.reduceRight((merged, section) => Object.assign(section, merged), {});
+interface GppSectionData {
+  SaleOptOut?: number;
+  SharingOptOut?: number;
+  [key: string]: unknown;
 }
 
-function isGppOptedOut(gppData) {
+interface GppData {
+  applicableSections?: number[];
+  parsedSections?: Record<string, GppSectionData | GppSectionData[]>;
+}
+
+function flatSection(subsections: GppSectionData | GppSectionData[]): GppSectionData {
+  if (!Array.isArray(subsections)) return subsections;
+  return subsections.reduceRight((merged, section) => Object.assign(section, merged), {} as GppSectionData);
+}
+
+function isGppOptedOut(gppData: GppData | null | undefined): boolean {
   if (!gppData || !gppData.applicableSections || !gppData.parsedSections) {
     return false;
   }
@@ -78,32 +90,29 @@ function isGppOptedOut(gppData) {
   return false;
 }
 
-function isConsentBlocked(consentData) {
+function isConsentBlocked(consentData: Partial<AllConsentData> | undefined): boolean {
   if (!consentData) {
     return false;
   }
 
-  // EU/UK passive suppression: TCF string present → do not fire
   const gdpr = consentData.gdpr;
   if (gdpr && (gdpr.gdprApplies || gdpr.consentString)) {
     return true;
   }
 
-  // CCPA: us_privacy opt-out of sale (position 3, 0-indexed charAt(2))
   const usp = consentData.usp;
   if (usp && typeof usp === 'string' && usp.length >= 3 && usp.charAt(2) === 'Y') {
     return true;
   }
 
-  // GPP: US state sections — suppress on Sale or Sharing opt-out
-  if (isGppOptedOut(consentData.gpp)) {
+  if (isGppOptedOut(consentData.gpp as GppData)) {
     return true;
   }
 
   return false;
 }
 
-function isConsentBlockedByHandlers() {
+function isConsentBlockedByHandlers(): boolean {
   const gdpr = gdprDataHandler.getConsentData();
   if (gdpr && (gdpr.gdprApplies || gdpr.consentString)) {
     return true;
@@ -113,14 +122,14 @@ function isConsentBlockedByHandlers() {
     return true;
   }
   const gpp = gppDataHandler.getConsentData();
-  if (isGppOptedOut(gpp)) {
+  if (isGppOptedOut(gpp as GppData)) {
     return true;
   }
   return false;
 }
 
-function deleteStoredToken(config) {
-  const storageName = (config && config.storage && config.storage.name) || MODULE_NAME;
+function deleteStoredToken(config: UserIdConfig<typeof MODULE_NAME>) {
+  const storageName = config?.storage?.name || MODULE_NAME;
   const expired = new Date(0).toUTCString();
   if (storage.localStorageIsEnabled()) {
     ['', '_exp', '_cst', '_last'].forEach(suffix => {
@@ -134,12 +143,11 @@ function deleteStoredToken(config) {
   }
 }
 
-function buildLookupUrl(apiUrl) {
+function buildLookupUrl(apiUrl: string | undefined): string {
   return (apiUrl || DEFAULT_API_URL).replace(/\/+$/, '');
 }
 
-/** @type {Submodule} */
-export const acxiomRealIdSubmodule = {
+export const acxiomRealIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
   name: MODULE_NAME,
 
   decode(value, config) {
@@ -150,14 +158,15 @@ export const acxiomRealIdSubmodule = {
     if (value && typeof value === 'string') {
       return { acxiomRealId: { id: value, atype: 1 } };
     }
-    if (value && typeof value === 'object' && value.id) {
-      return { acxiomRealId: { id: value.id, atype: value.atype || 1 } };
+    if (value && typeof value === 'object' && (value as AcxiomRealIdValue).id) {
+      const v = value as AcxiomRealIdValue;
+      return { acxiomRealId: { id: v.id, atype: v.atype || 1 } };
     }
     return undefined;
   },
 
   getId(config, consentData, storedId) {
-    const configParams = (config && config.params) || {};
+    const configParams = config?.params || {} as AcxiomRealIdParams;
     const { partnerId, apiUrl, sourceId, hem } = configParams;
 
     if (!partnerId) {
@@ -175,7 +184,7 @@ export const acxiomRealIdSubmodule = {
     }
 
     const url = buildLookupUrl(apiUrl);
-    const payload = {
+    const payload: Record<string, string> = {
       partnerId,
       ip: '',
       userAgent: getWindowSelf().navigator?.userAgent || '',
@@ -195,19 +204,19 @@ export const acxiomRealIdSubmodule = {
             success: (response) => {
               try {
                 const parsed = JSON.parse(response);
-                const eids = parsed && parsed.user && parsed.user.eids;
-                const uid = eids && eids[0] && eids[0].uids && eids[0].uids[0];
-                if (uid && uid.id) {
+                const eids = parsed?.user?.eids;
+                const uid = eids?.[0]?.uids?.[0];
+                if (uid?.id) {
                   cb({ id: uid.id, atype: uid.atype });
                 } else {
-                  cb();
+                  cb(undefined);
                 }
               } catch (e) {
-                cb();
+                cb(undefined);
               }
             },
             error: () => {
-              cb();
+              cb(undefined);
             }
           },
           body,
@@ -229,7 +238,7 @@ export const acxiomRealIdSubmodule = {
     'acxiomRealId': (values) => {
       return values.map(data => ({
         source: DEFAULT_SOURCE_ID,
-        uids: [{ id: data.id, atype: data.atype }]
+        uids: [{ id: data.id, atype: data.atype as EID['uids'][number]['atype'] }]
       }));
     }
   }
