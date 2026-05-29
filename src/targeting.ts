@@ -25,6 +25,7 @@ import type { AdUnitCode, ByAdUnit, Identifier } from './types/common.d.ts';
 import type { DefaultTargeting } from './auction.ts';
 import { lock } from "./targeting/lock.ts";
 import { isBidUsable } from './targeting/filters.ts';
+import { updateSlotTargetingFromMap } from "./utils/gptTargeting.ts";
 
 var pbTargetingKeys = [];
 
@@ -306,7 +307,7 @@ export function newTargeting(auctionManager) {
             targeting[targetId][key] = value;
           });
           logMessage(`Attempting to ${operation} targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targeting[targetId]);
-          slot.updateTargetingFromMap(Object.assign({}, resetMap, targeting[targetId]))
+          updateSlotTargetingFromMap(slot, Object.assign({}, resetMap, targeting[targetId]));
           if (postUpdate != null) postUpdate(targeting[targetId]);
         })
       })
