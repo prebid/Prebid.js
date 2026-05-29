@@ -24,7 +24,7 @@ import {
 } from './utils.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
-import { ajaxBuilder } from './ajax.js';
+import { qualifiedAjaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
 import {
@@ -155,13 +155,13 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
   ortb2: DeepPartial<ORTBRequest>;
 }
 
-export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined }, keyof BaseBidRequest> {
+export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined | null }, keyof BaseBidRequest> {
   bidder: null;
   src: typeof S2S.SRC;
 }
 type BidderBidRequest<BIDDER extends BidderCode> = BaseBidRequest & AdUnitBidderBid<BIDDER>;
 
-export type BidRequest<BIDDER extends (BidderCode | null)> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<BIDDER>;
+export type BidRequest<BIDDER extends (BidderCode | null)> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<NonNullable<BIDDER>>;
 
 export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
   /**
@@ -208,7 +208,7 @@ export interface ClientBidderRequest<BIDDER extends BidderCode> extends BaseBidd
   src: 'client';
 }
 
-export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<BIDDER> | S2SBidderRequest<BIDDER>;
+export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<NonNullable<BIDDER>> | S2SBidderRequest<BIDDER>;
 
 const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
@@ -742,7 +742,7 @@ const adapterManager = {
     _s2sConfigs.forEach((s2sConfig) => {
       if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
         // s2s should get the same client side timeout as other client side requests.
-        const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+        const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
           request: requestCallbacks.request.bind(null, 's2s'),
           done: requestCallbacks.done
         } : undefined);
@@ -799,7 +799,7 @@ const adapterManager = {
         logMessage(`CALLING BIDDER`);
         events.emit(EVENTS.BID_REQUESTED, bidderRequest);
       });
-      const ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+      const ajax = qualifiedAjaxBuilder(MODULE_TYPE_BIDDER, bidderRequest.bidderCode, requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
         done: requestCallbacks.done
       } : undefined);

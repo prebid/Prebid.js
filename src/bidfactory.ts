@@ -7,6 +7,7 @@ import { Metrics } from "./utils/perfMetrics.ts";
 import { Renderer } from './Renderer.js';
 import { type BID_STATUS } from "./constants.ts";
 import type { DemandChain } from "./types/ortb/ext/dchain.d.ts";
+import type { SafeRendererConfig } from "./adUnits.ts";
 
 type BidIdentifiers = ContextIdentifiers & {
   src: BidSource;
@@ -91,6 +92,10 @@ export interface BaseBidResponse {
    */
   eventtrackers?: EventTrackerResponse[];
   renderer?: Renderer;
+  /**
+   * Safe iframe renderer: script URL + optional config for `pbRenderInFrame` (set by adapter or inherited from ad unit).
+   */
+  safeRenderer?: SafeRendererConfig;
   /**
    * Billing tracker URL.
    */
