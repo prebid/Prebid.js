@@ -297,7 +297,7 @@ function _getDeviceData(ortb2Data) {
     pxratio: _device.pxratio,
     lmt: _device.lmt,
     ifa: _device.lmt !== 1 ? _device.ifa : undefined,
-    foddid: _device?.ext?.fiftyonedegrees_deviceId,
+    foddid: _device?.ext?.fod?.deviceId,
   };
 
   // return device data params with only non-empty values
