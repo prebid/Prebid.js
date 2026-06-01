@@ -61,7 +61,7 @@ function previousDisclosure(moduleName, {componentType, componentName, disclosur
 
 const biddersWithoutP2LI = [];
 
-async function metadataFor(moduleName, metas) {
+async function metadataFor(moduleName, metas, fetch = true) {
   const disclosures = {};
   const purposes = {};
   const bidders = [];
@@ -72,7 +72,7 @@ async function metadataFor(moduleName, metas) {
     if (meta.disclosureURL) {
       const disclosure = {
         timestamp: new Date().toISOString(),
-        disclosures: await fetchDisclosure(meta)
+        disclosures: fetch ? await fetchDisclosure(meta) : null
       };
       if (disclosure.disclosures == null) {
         Object.assign(disclosure, await previousDisclosure(moduleName, meta));
@@ -99,7 +99,7 @@ async function metadataFor(moduleName, metas) {
   };
 }
 
-async function compileCoreMetadata() {
+async function compileCoreMetadata(fetch = true) {
   const modules = coreMetadata.components.reduce((byModule, item) => {
     if (!byModule.hasOwnProperty(item.moduleName)) {
       byModule[item.moduleName] = [];
@@ -109,7 +109,7 @@ async function compileCoreMetadata() {
     return byModule;
   }, {});
   for (let [moduleName, metadata] of Object.entries(modules)) {
-    await updateModuleMetadata(moduleName, metadata);
+    await updateModuleMetadata(moduleName, metadata, fetch);
   }
   return Object.keys(modules);
 }
@@ -118,10 +118,10 @@ function moduleMetadataPath(moduleName) {
   return path.resolve(`./metadata/modules/${moduleName}.json`);
 }
 
-async function updateModuleMetadata(moduleName, metadata) {
+async function updateModuleMetadata(moduleName, metadata, fetch = true) {
   fs.writeFileSync(
     moduleMetadataPath(moduleName),
-    JSON.stringify(await metadataFor(moduleName, metadata), null, 2)
+    JSON.stringify(await metadataFor(moduleName, metadata, fetch), null, 2)
   );
 }
 
@@ -147,7 +147,7 @@ async function validateGvlIds() {
   }
 }
 
-async function compileModuleMetadata() {
+async function compileModuleMetadata(fetch = true) {
   const processed = [];
   const found = new WeakSet();
   let err = false;
@@ -173,7 +173,7 @@ async function compileModuleMetadata() {
         console.error('More than one module name matches module file:', moduleName, names);
         err = true;
       } else {
-        await updateModuleMetadata(moduleName, meta);
+        await updateModuleMetadata(moduleName, meta, fetch);
         processed.push(moduleName);
       }
     }
@@ -192,10 +192,10 @@ async function compileModuleMetadata() {
 }
 
 
-export default async function compileMetadata() {
+export default async function compileMetadata(fetch = true) {
   await validateGvlIds();
-  const allModules = new Set((await compileCoreMetadata())
-    .concat(await compileModuleMetadata()));
+  const allModules = new Set((await compileCoreMetadata(fetch))
+    .concat(await compileModuleMetadata(fetch)));
   if (biddersWithoutP2LI.length > 0) {
     console.warn('The following bidders do not declare LI for purpose 2:', JSON.stringify(biddersWithoutP2LI, null, 2));
   }
