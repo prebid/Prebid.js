@@ -34,6 +34,34 @@ const STORAGE_TYPE_COOKIES = 'cookie';
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
+function normalizeBidId(value) {
+  let bidId = value;
+  let previousBidId;
+
+  do {
+    previousBidId = bidId;
+
+    if (bidId && typeof bidId === 'object' && typeof bidId.criteoId === 'string') {
+      bidId = bidId.criteoId;
+    } else if (typeof bidId === 'string' && bidId.trim().charAt(0) === '{') {
+      try {
+        const parsedBidId = JSON.parse(bidId);
+        if (parsedBidId && typeof parsedBidId.criteoId === 'string') {
+          bidId = parsedBidId.criteoId;
+        } else {
+          return bidId;
+        }
+      } catch (error) {
+        break;
+      }
+    } else {
+      break;
+    }
+  } while (bidId !== previousBidId);
+
+  return typeof bidId === 'string' && bidId ? bidId : undefined;
+}
+
 function extractProtocolHost(url, returnOnlyHost = false) {
   const parsedUrl = parseUrl(url, { noDecodeWholeURL: true })
   return returnOnlyHost
@@ -95,7 +123,7 @@ function getCriteoDataFromStorage(submoduleConfig) {
   return {
     bundle: getFromStorage(submoduleConfig, bundleStorageKey),
     dnaBundle: getFromStorage(submoduleConfig, dnaBundleStorageKey),
-    bidId: getFromStorage(submoduleConfig, bididStorageKey),
+    bidId: normalizeBidId(getFromStorage(submoduleConfig, bididStorageKey)),
   }
 }
 
@@ -189,8 +217,7 @@ function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
 
       if (jsonResponse.bidId) {
         saveOnStorage(submoduleConfig, bididStorageKey, jsonResponse.bidId, domain);
-        const criteoId = { criteoId: jsonResponse.bidId };
-        callback(criteoId);
+        callback(jsonResponse.bidId);
       } else {
         deleteFromAllStorages(bididStorageKey, domain);
         callback();
@@ -219,13 +246,14 @@ export const criteoIdSubmodule = {
    * @returns {{criteoId: string} | undefined}
    */
   decode(bidId) {
-    return bidId;
+    const normalizedBidId = normalizeBidId(bidId);
+    return normalizedBidId ? { criteoId: normalizedBidId } : undefined;
   },
   /**
    * get the Criteo Id from local storages and initiate a new user sync
    * @function
    * @param {SubmoduleConfig} [submoduleConfig]
-   * @returns {{id: {criteoId: string} | undefined}}}
+   * @returns {{id: string | undefined, callback: function}}
    */
   getId(submoduleConfig) {
     const localData = getCriteoDataFromStorage(submoduleConfig);
@@ -233,7 +261,7 @@ export const criteoIdSubmodule = {
     const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);
 
     return {
-      id: localData.bidId ? { criteoId: localData.bidId } : undefined,
+      id: localData.bidId,
       callback: result
     }
   },
