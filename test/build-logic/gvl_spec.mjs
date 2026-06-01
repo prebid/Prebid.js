@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { isValidGvlId } from '../../metadata/gvl.mjs';
+import { getPurposes, isValidGvlId } from '../../metadata/gvl.mjs';
 
 describe('gvl build time checks', () => {
   let gvl;
@@ -27,6 +27,24 @@ describe('gvl build time checks', () => {
         }
         expect(await isValidGvlId(123, getGvl)).to.be.false;
       })
+    })
+  });
+
+  describe('getPurposes', () => {
+    it('should return purposes from gvl', async () => {
+      const purposes = {
+        purposes: [1],
+        legIntPurposes: [2],
+        flexiblePurposes: [3]
+      };
+      gvl = {
+        vendors: {
+          123: {
+            ...purposes
+          }
+        }
+      }
+      expect(await getPurposes(123, getGvl)).to.eql(purposes);
     })
   })
 })
