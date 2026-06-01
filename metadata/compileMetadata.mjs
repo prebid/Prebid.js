@@ -60,6 +60,7 @@ function previousDisclosure(moduleName, {componentType, componentName, disclosur
 }
 
 const biddersWithoutP2LI = [];
+const componentsWithUndeclaredFlexiblePurposes = [];
 
 async function metadataFor(moduleName, metas, fetch = true) {
   const disclosures = {};
@@ -89,6 +90,11 @@ async function metadataFor(moduleName, metas, fetch = true) {
   bidders.forEach(({gvlid, componentName}) => {
     if (!purposes[gvlid].legIntPurposes.includes(2)) {
       biddersWithoutP2LI.push(componentName)
+    }
+  })
+  Object.entries(purposes).forEach(([gvlid, {flexiblePurposes, legIntPurposes, purposes}]) => {
+    if (flexiblePurposes.some(purpose => !purposes.includes(purpose) && !legIntPurposes.includes(purpose))) {
+      componentsWithUndeclaredFlexiblePurposes.push(...metas.filter(({ gvlid }) => gvlid.toString() === gvlid).map(meta => meta.component));
     }
   })
   return {
@@ -198,6 +204,9 @@ export default async function compileMetadata(fetch = true) {
     .concat(await compileModuleMetadata(fetch)));
   if (biddersWithoutP2LI.length > 0) {
     console.warn('The following bidders do not declare LI for purpose 2:', JSON.stringify(biddersWithoutP2LI, null, 2));
+  }
+  if (componentsWithUndeclaredFlexiblePurposes.length > 0) {
+    console.warn('The following components declare some purposes as flexible, but do not list them in either purposes or legIntPurposes:', JSON.stringify(componentsWithUndeclaredFlexiblePurposes, null, 2))
   }
   logErrorSummary();
   fs.readdirSync('./metadata/modules')
