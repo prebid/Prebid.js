@@ -35,6 +35,10 @@ const EVENTS = {
   ERROR: 'error'
 };
 
+export const dep = {
+  ajax
+};
+
 /* Custom extensions */
 const getRendererForBid = (bidRequest, bidResponse) => {
   if (!bidRequest.renderer) {
@@ -163,7 +167,7 @@ const sendMetrics = (data, sampleRate = 0.0001) => {
       projected: 1 / sampleRate,
       ts: Date.now()
     }
-    ajax(url, null, JSON.stringify(payload), {
+    dep.ajax(url, null, JSON.stringify(payload), {
       withCredentials: false,
       method: 'POST',
       crossOrigin: true,

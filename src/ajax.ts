@@ -2,8 +2,8 @@ import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from './activities/activities.js'
 import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import { config } from './config.js';
-import { hook } from './hook.js';
-import { buildUrl, hasDeviceAccess, logError, parseUrl } from './utils.js';
+import { buildUrl, logError, parseUrl } from './utils.js';
+import type { ModuleType } from "./activities/modules.ts";
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -59,13 +59,6 @@ export interface AjaxOptions {
   suppressTopicsEnrollmentWarning?: boolean;
 }
 
-export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
-  if (options.withCredentials) {
-    options.withCredentials = (moduleType && moduleName) ? isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)) : hasDeviceAccess();
-  }
-  return options;
-}, 'processRequestOptions');
-
 /**
  * transform legacy `ajax` parameters into a fetch request.
  * @returns {Request}
@@ -107,24 +100,72 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   return dep.makeRequest(url, rqOpts);
 }
 
+function callerContext(callers = []) {
+  const stack = [callers];
+  return {
+    attach(fn, callers) {
+      return function (...args) {
+        stack.push(callers);
+        try {
+          return fn(...args);
+        } finally {
+          stack.pop();
+        }
+      }
+    },
+    getCallers() {
+      return stack[stack.length - 1];
+    }
+  }
+}
+
+function fixedCallerContext(moduleType, moduleName) {
+  return {
+    attach: (fn) => fn,
+    getCallers: () => [[moduleType, moduleName]]
+  }
+}
+
 /**
  * Return a version of `fetch` that automatically cancels requests after `timeout` milliseconds.
  *
  * If provided, `request` and `done` should be functions accepting a single argument.
  * `request` is invoked at the beginning of each request, and `done` at the end; both are passed its origin.
- *
  */
 export function fetcherFactory(timeout = 3000, { request, done }: any = {}, moduleType?: string, moduleName?: string): typeof window['fetch'] {
+  return fetcherFactoryImpl(callerContext(), timeout, { request, done }, moduleType, moduleName);
+}
+(fetcherFactory as any).withCallers = (callers) => {
+  // this is not intended to be used directly; see plugins/callerContext.js
+  return (...args) => {
+    return fetcherFactoryImpl(callerContext(callers), ...args);
+  }
+}
+
+function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}, moduleType?: string, moduleName?: string): typeof window.fetch {
+  if (moduleName && moduleType) {
+    context = fixedCallerContext(moduleType, moduleName);
+  }
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
       to = dep.timeout(timeout, resource);
       options = Object.assign({ signal: to.signal }, options);
     }
+    let request = dep.makeRequest(resource, options);
 
-    processRequestOptions(options, moduleType, moduleName);
-
-    let pm = dep.fetch(resource, options);
+    if (
+      request.credentials === 'include' && (
+        context.getCallers().length === 0 ||
+        context.getCallers().some(([moduleType, moduleName]) => !isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)))
+      )
+    ) {
+      request = dep.makeRequest(request, {
+        keepalive: request.keepalive, // According to MDN this should be unnecessary, but Firefox will lose `keepalive` without itt
+        credentials: 'same-origin'
+      });
+    }
+    let pm = dep.fetch(request);
     if (to?.done != null) pm = pm.finally(to.done);
     return pm;
   };
@@ -138,6 +179,7 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
       return req;
     })(fetcher);
   }
+  (fetcher as any).withCallers = (callers) => context.attach(fetcher, callers);
   return fetcher;
 }
 
@@ -206,10 +248,22 @@ export type AjaxErrorCallback = (statusText: string, xhr: XHR) => void;
 export type AjaxCallback = AjaxSuccessCallback | { success?: AjaxErrorCallback; error?: AjaxSuccessCallback };
 
 export function ajaxBuilder(timeout = 3000, { request, done } = {} as any, moduleType?: string, moduleName?: string) {
-  const fetcher = fetcherFactory(timeout, { request, done }, moduleType, moduleName);
-  return function (url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
+  return ajaxBuilderImpl(callerContext(), timeout, { request, done }, moduleType, moduleName);
+}
+(ajaxBuilder as any).withCallers = (callers) => {
+  // this is not intended to be used directly; see plugins/callerContext.js
+  return (...args) => {
+    return ajaxBuilderImpl(callerContext(callers), ...args);
+  }
+}
+
+function ajaxBuilderImpl(context, timeout = 3000, { request, done } = {} as any, moduleType?: string, moduleName?: string) {
+  const fetcher = fetcherFactoryImpl(context, timeout, { request, done }, moduleType, moduleName);
+  function ajax(url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
-  };
+  }
+  (ajax as any).withCallers = (callers) => context.attach(ajax, callers);
+  return ajax;
 }
 
 /**
@@ -226,7 +280,38 @@ export function sendBeacon(url, data) {
   return window.navigator.sendBeacon(url, data);
 }
 
+function requireNames<T extends typeof ajaxBuilder | typeof fetcherFactory>(fn: T) {
+  return function (moduleType: ModuleType, moduleName: string, timeout?: number, requestCallbacks?): ReturnType<T> {
+    if (!moduleType || !moduleName) {
+      throw new Error('moduleType and moduleName are required');
+    }
+    return (fn as any)(timeout, requestCallbacks, moduleType, moduleName);
+  };
+}
+
+/**
+ * A version of ajaxBuilder that requires an explicit moduleType and moduleName.
+ */
+export const qualifiedAjaxBuilder = requireNames(ajaxBuilder);
+/**
+ * A version of fetcherFactory that requires an explicit moduleType and moduleName.
+ */
+export const qualifiedFetcherFactory = requireNames(fetcherFactory);
+
 export const ajax = ajaxBuilder();
 export const fetch = fetcherFactory();
+
+// the difference between 'noCredsAjax'/'noCredsFetch' and 'ajax'/'fetch' is that the latter two (together with
+// ajaxBuilder and fetcherFactory) are automatically decorated with moduleType/moduleName at build time -
+// see plugins/callerContext.js
+
+/**
+ * A version of `ajax` that will never include request credentials (withCredentials = false).
+ */
+export const noCredsAjax = ajax;
+/**
+ * A version of `fetch` that will  never include request credentials (credentials = 'same-origin').
+ */
+export const noCredsFetch = fetch;
 
 export type Ajax = typeof ajax;

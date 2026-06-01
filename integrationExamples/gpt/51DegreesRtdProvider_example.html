@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        var RESOURCE_KEY = new URLSearchParams(location.search).get('resourceKey') || '';
+        function injectPmp() {
+            if (!RESOURCE_KEY) return;
+            var pmp = document.createElement('script');
+            pmp.src = 'https://cloud.51degrees.com/api/v4/pmp?resource=' + RESOURCE_KEY;
+            pmp.setAttribute('data-action-url', 'javascript:startPrebid()');
+            pmp.setAttribute('data-tcf-vendor', 'CQkMqUAQkMqUAAfABAENCfFsAP_wAEPgAAAAMetR_G__bWlr-bb3abtkeYxP9_hr7sQxBgbIkm4FzLvW7JwHx2EZNAzatiIKmRIAu3TBIQNlHJDURUCgKIgFryDMaE2U4TNKJ6BkiFMZI2tQCFxvm4tjeQCY4ur_9kc1mB-t7dr82dzyy6hHn3a5fmS1UJCdIYetDfv8ZBOT-9IEd-x8v4v4_EbpEm8eS1n_pGtp4jc6Yns_dBmxt-Tyff7Pn__7l_e7X_ve_n3zv8oXn7rr____f_-7___2b_-___b-__7Z_zI_4MegAmGh0QRlkQKBAoCEECABQVhABQIAgAASAogIATBgQ5AwAXWESAEAKAAYIAQAAgwABAAAJAAhEAEABAIAQIBAoAAwAIAgIAGBgADABQiAQAAgOgYpgQQCBYAJEZUBpgQgAJBAS2VCCUDAgrhCkWOAQQIiYKAAAEAAoAAEB8LAQklBKxIIAuILoAEAAAAKIEWBFIWYAgqDNFoKwJOAyNMASPMEiSnQRAEwQkZBkQmqCQeKYohQQ5AbFLMAdPEFADLtZIQ_1As3AIAA.IMetX_H__bX9v-f736ft0eY1f9_j77uQxBhfJs-4FzLvW_JwX32E7NF36tqYKmRIEu3bBIQNtHJnUTVihaogVrzHsak2c4TtKJ-BkiHMZe29YCF5vm4tj-QKZ5_r_93d92T_9_dv-3dzy3_1nv3f9_-f1eLide5_tH_v_bROb-_I_9_7-_4v8_t_rk2_eT1v_9evv7__-________9_____________-____f________________________f__________9____4AA');
+            pmp.setAttribute('data-brand-name', 'Demo Publisher');
+            pmp.setAttribute('data-brand-terms-url', 'https://example.com/privacy');
+            pmp.setAttribute('data-brand-logo', 'https://51degrees.com/129/24/logo-menu.webp');
+            pmp.setAttribute('data-alt-name', 'Remove ads');
+            pmp.setAttribute('data-alt-url', "javascript:alert('Subscribe to remove ads!')");
+            pmp.setAttribute('data-show-standard', 'true');
+            document.body.appendChild(pmp);
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectPmp);
+        } else {
+            injectPmp();
+        }
+    </script>
     <meta http-equiv="Delegate-CH" content="sec-ch-ua-full-version-list https://cloud.51degrees.com; sec-ch-ua-model https://cloud.51degrees.com; sec-ch-ua-platform https://cloud.51degrees.com; sec-ch-ua-platform-version https://cloud.51degrees.com">
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script async src="../../build/dev/prebid.js"></script>
@@ -38,28 +60,12 @@
             pbjs.initAdserverSet = true;
         }
 
-        pbjs.que.push(function () {
-            var adUnits = [{
-                code: 'div-banner-native-1',
-                mediaTypes: {
-                    banner: {
-                        sizes: [
-                            [300, 250]
-                        ]
-                    },
-                    native: {
-                        type: 'image'
-                    },
-                },
-                bids: [{
-                    bidder: 'appnexus',
-                    params: {
-                        placementId: 13232392,
-                    }
-                }]
-            },
-                {
-                    code: 'div-banner-native-2',
+        window.startPrebid = function () {
+            if (window.__prebidStarted) return;
+            window.__prebidStarted = true;
+            pbjs.que.push(function () {
+                var adUnits = [{
+                    code: 'div-banner-native-1',
                     mediaTypes: {
                         banner: {
                             sizes: [
@@ -67,16 +73,8 @@
                             ]
                         },
                         native: {
-                            title: {
-                                required: true
-                            },
-                            image: {
-                                required: true
-                            },
-                            sponsoredBy: {
-                                required: true
-                            }
-                        }
+                            type: 'image'
+                        },
                     },
                     bids: [{
                         bidder: 'appnexus',
@@ -84,48 +82,96 @@
                             placementId: 13232392,
                         }
                     }]
-                }
-            ];
-
-            pbjs.setConfig({
-                debug: true, // use only for testing, remove in production
-                realTimeData: {
-                    auctionDelay: 1000, // should be set lower in production use
-                    dataProviders: [
-                        {
-                            name: '51Degrees',
-                            waitForIt: true,
-                            params: {
-                                // Get your resource key from https://configure.51degrees.com/HNZ75HT1
-                                resourceKey: '<YOUR_RESOURCE_KEY>',
-                                // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen end point
-                                // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
-                            }
-                        }
-                    ]
                 },
-            });
+                    {
+                        code: 'div-banner-native-2',
+                        mediaTypes: {
+                            banner: {
+                                sizes: [
+                                    [300, 250]
+                                ]
+                            },
+                            native: {
+                                title: {
+                                    required: true
+                                },
+                                image: {
+                                    required: true
+                                },
+                                sponsoredBy: {
+                                    required: true
+                                }
+                            }
+                        },
+                        bids: [{
+                            bidder: 'appnexus',
+                            params: {
+                                placementId: 13232392,
+                            }
+                        }]
+                    }
+                ];
 
-            pbjs.addAdUnits(adUnits);
-
-            pbjs.onEvent('bidRequested', function (data) {
-              try {
-                fod.complete(() => {
-                  document.getElementById('enriched-51').style.display = 'block';
-                  document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
+                pbjs.setConfig({
+                    debug: true, // verbose logging
+                    debugging: {
+                        enabled: true, // activates the debugging-module bid interceptor
+                        intercept: [{
+                            when: { bidder: 'appnexus' },
+                            then: {
+                                cpm: 1.50,
+                                currency: 'USD',
+                                ttl: 300,
+                                creativeId: 'mock-creative',
+                                netRevenue: true,
+                                mediaType: 'banner',
+                                width: 300,
+                                height: 250,
+                                ad: '<div style="background:#fc0;width:300px;height:250px;text-align:center;line-height:250px;font-family:sans-serif;">Mock bid $1.50</div>'
+                            }
+                        }]
+                    },
+                    realTimeData: {
+                        auctionDelay: 1000, // should be set lower in production use
+                        dataProviders: [
+                            {
+                                name: '51Degrees',
+                                waitForIt: true,
+                                params: {
+                                    resourceKey: RESOURCE_KEY,
+                                    // tdlUrl populates user.eids[].ext.tdl per data labels spec.
+                                    // Replace with your real TDL endpoint.
+                                    tdlUrl: 'https://tdl.example/replace-me',
+                                    // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen end point
+                                    // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
+                                }
+                            }
+                        ]
+                    },
                 });
-              } catch (e) {
-                console.error('Error while trying to display enriched data', e);
-              }
-            });
 
-            pbjs.requestBids({
-                timeout: PREBID_TIMEOUT,
-                bidsBackHandler: function (bidResponses) {
-                    initAdserver();
-                }
+                pbjs.addAdUnits(adUnits);
+
+                pbjs.onEvent('bidRequested', function (data) {
+                  try {
+                    fod.complete(() => {
+                      document.getElementById('enriched-51').style.display = 'block';
+                      document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
+                      document.getElementById('enriched-51-eids').textContent = JSON.stringify(data.ortb2.user?.eids || [], null, 2);
+                    });
+                  } catch (e) {
+                    console.error('Error while trying to display enriched data', e);
+                  }
+                });
+
+                pbjs.requestBids({
+                    timeout: PREBID_TIMEOUT,
+                    bidsBackHandler: function (bidResponses) {
+                        initAdserver();
+                    }
+                });
             });
-        });
+        };
         setTimeout(initAdserver, FAILSAFE_TIMEOUT);
     </script>
 
@@ -161,6 +207,30 @@
 <body>
     <h2>51Degrees RTD submodule - example of usage</h2>
 
+    <form id="rk-form" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border: 1px solid #ddd;">
+        <label><strong>resourceKey:</strong>
+            <input type="text" id="rk-input" size="40" placeholder="paste your 51Degrees resource key">
+        </label>
+        <button type="submit">Apply &amp; reload</button>
+        <button type="button" onclick="localStorage.removeItem('__51d_pmp_pref'); location.reload();">Clear PMP preference &amp; reload</button>
+        <small> &mdash; or pass <code>?resourceKey=...</code> in the URL.</small>
+    </form>
+    <script>
+        (function () {
+            var input = document.getElementById('rk-input');
+            var current = new URLSearchParams(location.search).get('resourceKey');
+            if (current) input.value = current;
+            document.getElementById('rk-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var k = input.value.trim();
+                var url = new URL(location.href);
+                if (k) url.searchParams.set('resourceKey', k);
+                else url.searchParams.delete('resourceKey');
+                location.href = url.toString();
+            });
+        })();
+    </script>
+
     <h3>div-banner-native-1</h3>
     <div id='div-banner-native-1'>
         <p>No response</p>
@@ -186,14 +256,18 @@
         <ol>
             <li>Make sure you have <code>debug: true</code> under <code>pbjs.setConfig</code> in this example code (be sure to remove it for production!)
             <li>Make sure you have replaced <code>&lt;YOUR RESOURCE KEY&gt;</code> in this example code with the one you have obtained
-            from the <a href="https://configure.51degrees.com/HNZ75HT1" target="blank;">51Degrees Configurator Tool</a></li>
+            from the <a href="https://configure.51degrees.com/Q5cD1H9W" target="blank;">51Degrees Configurator Tool</a></li>
+            <li>Replace the placeholder <code>tdlUrl</code> in the example with your real TDL endpoint</li>
+            <li>Pick a marketing preference in the PMP CMP overlay when it appears; the module reads <code>localStorage['__51d_pmp_pref']</code> to derive the cloud's <code>id.usage</code> evidence</li>
             <li>Open DevTools Console in your browser and refresh the page</li>
-            <li>Observe the enriched ortb device data shown below and also in the console as part of the <code>[51Degrees RTD Submodule]: reqBidsConfigObj:</code> message (under <code>reqBidsConfigObj.global.device</code>)</li>
+            <li>Observe the enriched ORTB shown below: <code>device</code>, <code>device.geo</code>, and <code>user.eids</code>. Also check the console for <code>[51Degrees RTD Submodule]: reqBidsConfigObj:</code></li>
         </ol>
     </div>
     <div id="enriched-51" style="display: none">
         <h3>Enriched ORTB2 device data</h3>
         <pre id="enriched-51-data"></pre>
+        <h3>user.eids</h3>
+        <pre id="enriched-51-eids"></pre>
     </div>
 </body>
 </html>
