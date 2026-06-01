@@ -9,29 +9,61 @@ const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_REGION = 'us-e';
 const DEFAULT_PARTNER = BIDDER_CODE;
-const PARTNER_REGION_WHITELIST = {
-  [DEFAULT_PARTNER]: [DEFAULT_REGION],
-};
+const SYNC_PATH = '/sync';
 
-function isAllowedPartnerRegion(partner, region) {
-  return PARTNER_REGION_WHITELIST[partner]?.includes(region) || false;
+// partner/region are interpolated into the request host, so they must be valid DNS labels —
+// otherwise a value with URL delimiters (e.g. 'evil.com/x?') would change the request origin.
+const HOST_LABEL_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
+function isValidHostLabel(label) {
+  return typeof label === 'string' && HOST_LABEL_REGEX.test(label);
+}
+
+// Bidding host: the supply partner's regional subdomain (floxis itself has no partner prefix).
+function getBidHost(region, partner) {
+  if (!isValidHostLabel(region) || !isValidHostLabel(partner)) return null;
+  return partner === BIDDER_CODE
+    ? `${region}.floxis.tech`
+    : `${partner}-${region}.floxis.tech`;
 }
 
 function getEndpointUrl(seat, region, partner) {
-  if (!isAllowedPartnerRegion(partner, region)) return null;
-  const host = partner === BIDDER_CODE
-    ? `${region}.floxis.tech`
-    : `${partner}-${region}.floxis.tech`;
-  return `https://${host}/pbjs?seat=${encodeURIComponent(seat)}`;
+  const host = getBidHost(region, partner);
+  return host ? `https://${host}/pbjs?seat=${encodeURIComponent(seat)}` : null;
+}
+
+// Cookie-sync host is Floxis-operated and region-scoped (px-<region>.floxis.tech), independent of
+// the partner subdomain used for bidding. The trackers /sync endpoint resolves seat -> supply partner.
+function getSyncHost(region) {
+  return isValidHostLabel(region) ? `https://px-${region}.floxis.tech` : null;
+}
+
+// IAB consent query params for the trackers /sync endpoint.
+function buildConsentQuery(gdprConsent, uspConsent, gppConsent) {
+  const query = [];
+  if (gdprConsent) {
+    query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
+    query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+  }
+  if (uspConsent) {
+    query.push('us_privacy=' + encodeURIComponent(uspConsent));
+  }
+  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+    query.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+    query.push('gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(',')));
+  }
+  return query;
 }
 
 function normalizeBidParams(params = {}) {
   return {
     seat: params.seat,
-    region: params.region ?? DEFAULT_REGION,
-    partner: params.partner ?? DEFAULT_PARTNER
+    region: params.region || DEFAULT_REGION,
+    partner: params.partner || DEFAULT_PARTNER
   };
 }
+
+// Seat/region pairs from the latest buildRequests, consumed by getUserSyncs (which is not given params).
+let syncTargets = [];
 
 const CONVERTER = ortbConverter({
   context: {
@@ -82,15 +114,12 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid(bid) {
-    const params = bid?.params;
-    if (!params) return false;
-    const { seat, region, partner } = normalizeBidParams(params);
-    if (typeof seat !== 'string' || !seat.length) return false;
-    if (!isAllowedPartnerRegion(partner, region)) return false;
-    return true;
+    const seat = bid?.params?.seat;
+    return typeof seat === 'string' && seat.length > 0;
   },
 
   buildRequests(validBidRequests = [], bidderRequest = {}) {
+    syncTargets = [];
     if (!validBidRequests.length) return [];
     const filteredBidRequests = validBidRequests.filter((bidRequest) => spec.isBidRequestValid(bidRequest));
     if (!filteredBidRequests.length) return [];
@@ -111,7 +140,15 @@ export const spec = {
       return groups;
     }, {});
 
-    return Object.values(bidRequestsByParams).map((groupedBidRequests) => {
+    const groups = Object.values(bidRequestsByParams);
+    syncTargets = groups
+      .map((groupedBidRequests) => {
+        const { seat, region } = groupedBidRequests[0].params;
+        return { seat, region };
+      })
+      .filter((target) => isValidHostLabel(target.region));
+
+    return groups.map((groupedBidRequests) => {
       const { seat, region, partner } = groupedBidRequests[0].params;
       const url = getEndpointUrl(seat, region, partner);
       if (!url) return null;
@@ -132,8 +169,29 @@ export const spec = {
     return CONVERTER.fromORTB({ request: request.data, response: response.body })?.bids || [];
   },
 
-  getUserSyncs() {
-    return [];
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
+    // Empty serverResponses => this adapter did not bid in this auction, so buildRequests was not
+    // called and syncTargets would be stale from a prior auction. Consume the targets either way.
+    const targets = syncTargets;
+    syncTargets = [];
+    if (!serverResponses || !serverResponses.length || !targets.length) return [];
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
+    const consentSuffix = query.length ? '&' + query.join('&') : '';
+    const seen = {};
+    const syncs = [];
+    targets.forEach(({ seat, region }) => {
+      const host = getSyncHost(region);
+      const key = `${seat}|${region}`;
+      if (!host || seen[key]) return;
+      seen[key] = true;
+      syncs.push({
+        type: pixelType,
+        url: `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`
+      });
+    });
+    return syncs;
   },
 
   onBidWon(bid) {

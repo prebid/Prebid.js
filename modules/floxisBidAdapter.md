@@ -15,6 +15,7 @@ The Floxis Bid Adapter enables integration with the Floxis programmatic advertis
 - OpenRTB 2.x compliant
 - Privacy regulation compliance (GDPR, USP, GPP, COPPA)
 - Prebid.js Floors Module support
+- User sync (iframe and pixel cookie matching)
 
 ## Supported Media Types
 - Banner
@@ -36,9 +37,7 @@ pbjs.addAdUnits([
     bids: [{
       bidder: 'floxis',
       params: {
-        seat: 'testSeat',
-        region: 'us-e',
-        partner: 'floxis'
+        seat: 'testSeat'
       }
     }]
   }
@@ -52,8 +51,22 @@ pbjs.addAdUnits([
 | Name | Scope | Description | Example | Type |
 | --- | --- | --- | --- | --- |
 | `seat` | required | Seat identifier | `'testSeat'` | `string` |
-| `region` | required | Region identifier for routing | `'us-e'` | `string` |
-| `partner` | required | Partner identifier | `'floxis'` | `string` |
+| `region` | optional | Region identifier for routing (defaults to `us-e`) | `'us-e'` | `string` |
+| `partner` | optional | Partner identifier (defaults to `floxis`) | `'floxis'` | `string` |
+
+Only `seat` is required. `region` and `partner` are optional and accepted as-is — any value routes to the matching `[<partner>-]<region>.floxis.tech` endpoint.
+
+## User Sync
+The adapter registers cookie syncs to the Floxis trackers endpoint (`px-<region>.floxis.tech/sync`), which sets the Floxis DMP id and chains to the seat's demand-partner syncs. Both iframe and pixel syncs are supported; the type emitted follows your `userSync` configuration. Enable it for the adapter, e.g.:
+```javascript
+pbjs.setConfig({
+  userSync: {
+    filterSettings: {
+      iframe: { bidders: ['floxis'], filter: 'include' }
+    }
+  }
+});
+```
 
 ## Testing
-Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building, response interpretation, and bid-won notifications.
+Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building, response interpretation, user syncs, and bid-won notifications.
