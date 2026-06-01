@@ -56,15 +56,6 @@ function bidderRequest(overrides = {}) {
         h: 768,
       },
     },
-    gdprConsent: {
-      gdprApplies: true,
-      consentString: "consent-string",
-    },
-    uspConsent: "1YNN",
-    gppConsent: {
-      gppString: "gpp-string",
-      applicableSections: [8],
-    },
     ...overrides,
   };
 }
@@ -439,7 +430,6 @@ describe("ferioBidAdapter", function () {
             tid: "imp-tid",
           },
         },
-        userIdAsEids: userEids,
       });
       const nativeBid = bidRequest({
         bidId: "native-bid",
@@ -452,7 +442,18 @@ describe("ferioBidAdapter", function () {
         },
       });
 
-      const request = buildRequest([bannerBid, videoBid, nativeBid]);
+      const request = buildRequest(
+        [bannerBid, videoBid, nativeBid],
+        {
+          ortb2: {
+            user: {
+              ext: {
+                eids: userEids,
+              },
+            },
+          },
+        }
+      );
 
       const bannerImp = getImp(request, "banner-bid");
       expect(bannerImp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
@@ -480,8 +481,27 @@ describe("ferioBidAdapter", function () {
       expect(request.data.user.ext.eids).to.deep.equal(userEids);
     });
 
-    it("adds privacy fields to the OpenRTB request", function () {
-      const request = buildRequest([bidRequest()]);
+    it("passes privacy fields from ortb2 to the OpenRTB request", function () {
+      const request = buildRequest(
+        [bidRequest()],
+        {
+          ortb2: {
+            regs: {
+              ext: {
+                gdpr: 1,
+                us_privacy: "1YNN",
+              },
+              gpp: "gpp-string",
+              gpp_sid: [8],
+            },
+            user: {
+              ext: {
+                consent: "consent-string",
+              },
+            },
+          },
+        }
+      );
 
       expect(request.data.regs.ext.gdpr).to.equal(1);
       expect(request.data.user.ext.consent).to.equal("consent-string");
@@ -490,84 +510,26 @@ describe("ferioBidAdapter", function () {
       expect(request.data.regs.gpp_sid).to.deep.equal([8]);
     });
 
-    it("adds legacy bidRequest.schain to the OpenRTB request", function () {
+    it("passes schain from ortb2 to the OpenRTB request", function () {
       const schain = {
         ver: "1.0",
         complete: 1,
         nodes: [{ asi: "exchange.example", sid: "seller-123", hp: 1 }],
       };
-      const request = buildRequest([
-        bidRequest({
-          schain,
-        }),
-      ]);
-
-      expect(request.data.source.ext.schain).to.deep.equal(schain);
-    });
-
-    it("does not overwrite schain already present in ortb2", function () {
-      const ortbSchain = {
-        ver: "1.0",
-        complete: 1,
-        nodes: [{ asi: "ortb.example", sid: "ortb-seller", hp: 1 }],
-      };
-      const legacySchain = {
-        ver: "1.0",
-        complete: 1,
-        nodes: [{ asi: "legacy.example", sid: "legacy-seller", hp: 1 }],
-      };
       const request = buildRequest(
-        [
-          bidRequest({
-            schain: legacySchain,
-          }),
-        ],
+        [bidRequest()],
         {
           ortb2: {
             source: {
               ext: {
-                schain: ortbSchain,
+                schain,
               },
             },
           },
         }
       );
 
-      expect(request.data.source.ext.schain).to.deep.equal(ortbSchain);
-    });
-
-    it("does not overwrite EIDs already present in ortb2", function () {
-      const ortbEids = [
-        {
-          source: "sharedid.org",
-          uids: [{ id: "shared", atype: 1 }],
-        },
-      ];
-      const bidEids = [
-        {
-          source: "pubcid.org",
-          uids: [{ id: "pubcid", atype: 1 }],
-        },
-      ];
-
-      const request = buildRequest(
-        [
-          bidRequest({
-            userIdAsEids: bidEids,
-          }),
-        ],
-        {
-          ortb2: {
-            user: {
-              ext: {
-                eids: ortbEids,
-              },
-            },
-          },
-        }
-      );
-
-      expect(request.data.user.ext.eids).to.deep.equal(ortbEids);
+      expect(request.data.source.ext.schain).to.deep.equal(schain);
     });
 
     it("returns an empty request list when there are no valid bid requests", function () {

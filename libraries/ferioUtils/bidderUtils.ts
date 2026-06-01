@@ -9,7 +9,6 @@ import {
   type ConsentDataForKey,
 } from "../../src/consentHandler.js";
 import {
-  deepSetValue,
   isPlainObject,
   logError,
   sizesToSizeTuples,
@@ -22,7 +21,6 @@ import type {
 } from "../../src/adapters/bidderFactory.js";
 import type {
   BidRequest,
-  BidderRequest,
   ClientBidderRequest,
 } from "../../src/adapterManager.js";
 import type { BidResponse } from "../../src/bidfactory.js";
@@ -31,7 +29,6 @@ import type { BidderCode, Currency, Size } from "../../src/types/common.d.ts";
 import type { ORTBRequest } from "../../src/types/ortb/request.d.ts";
 import type { ORTBBid, ORTBResponse } from "../../src/types/ortb/response.d.ts";
 import type { NativeResponse } from "../../src/types/ortb/native.d.ts";
-import type { EID, SupplyChain } from "iab-openrtb/v26";
 
 const DEFAULT_CURRENCY: Currency = "USD";
 const DEFAULT_TTL = 300;
@@ -48,11 +45,6 @@ type FerioParamsRecord = {
   publisherId?: unknown;
   adUnitId?: unknown;
   [key: string]: unknown;
-};
-
-type LegacyFerioBidRequest<B extends BidderCode> = BidRequest<B> & {
-  schain?: SupplyChain;
-  userIdAsEids?: EID[];
 };
 
 type FerioAdapterRequest = AdapterRequest & {
@@ -244,69 +236,6 @@ function normalizeNativeAdm(
   return bid;
 }
 
-function addPrivacyFields<B extends BidderCode>(
-  request: ORTBRequest,
-  bidderRequest: Partial<BidderRequest<B>> = {}
-): void {
-  const gdprConsent = bidderRequest.gdprConsent;
-  if (isRecord(gdprConsent)) {
-    if (typeof gdprConsent.gdprApplies === "boolean") {
-      deepSetValue(
-        request,
-        "regs.ext.gdpr",
-        gdprConsent.gdprApplies ? 1 : 0
-      );
-    }
-    if (typeof gdprConsent.consentString === "string") {
-      deepSetValue(request, "user.ext.consent", gdprConsent.consentString);
-    }
-  }
-
-  if (typeof bidderRequest.uspConsent === "string" && bidderRequest.uspConsent) {
-    deepSetValue(request, "regs.ext.us_privacy", bidderRequest.uspConsent);
-  }
-
-  const gppConsent = bidderRequest.gppConsent;
-  if (isRecord(gppConsent)) {
-    if (typeof gppConsent.gppString === "string" && gppConsent.gppString) {
-      deepSetValue(request, "regs.gpp", gppConsent.gppString);
-    }
-    if (Array.isArray(gppConsent.applicableSections)) {
-      deepSetValue(request, "regs.gpp_sid", gppConsent.applicableSections);
-    }
-  }
-}
-
-function addUserEids<B extends BidderCode>(
-  request: ORTBRequest,
-  bidRequests: LegacyFerioBidRequest<B>[] = []
-): void {
-  if (request.user?.ext?.eids || request.user?.eids) {
-    return;
-  }
-
-  const bidWithEids = bidRequests.find(
-    (bid) => Array.isArray(bid.userIdAsEids) && bid.userIdAsEids.length
-  );
-  if (bidWithEids) {
-    deepSetValue(request, "user.ext.eids", bidWithEids.userIdAsEids);
-  }
-}
-
-function addLegacySchain<B extends BidderCode>(
-  request: ORTBRequest,
-  bidRequests: LegacyFerioBidRequest<B>[] = []
-): void {
-  if (request.source?.ext?.schain || request.source?.schain) {
-    return;
-  }
-
-  const bidWithSchain = bidRequests.find((bid) => bid.schain);
-  if (bidWithSchain) {
-    deepSetValue(request, "source.ext.schain", bidWithSchain.schain);
-  }
-}
-
 function getAdapterResponseBids(response: AdapterResponse): BidResponse[] {
   if (isRecord(response) && Array.isArray(response.bids)) {
     return response.bids as BidResponse[];
@@ -347,19 +276,6 @@ function createFerioConverter<B extends BidderCode>(
         { ...bidRequest, bidder: paramBidderCode } as BidRequest<B>,
         context
       );
-    },
-    request(buildRequest, imps, bidderRequest, context) {
-      const request = buildRequest(imps, bidderRequest, context);
-      addLegacySchain(
-        request,
-        context.bidRequests as LegacyFerioBidRequest<B>[]
-      );
-      addPrivacyFields(request, bidderRequest);
-      addUserEids(
-        request,
-        context.bidRequests as LegacyFerioBidRequest<B>[]
-      );
-      return request;
     },
     bidResponse(buildBidResponse, bid, context) {
       let responseContext = context;
