@@ -691,7 +691,7 @@
       "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
-      "gvlid": 1210,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -1334,13 +1334,6 @@
     {
       "componentType": "bidder",
       "componentName": "featureforward",
-      "aliasOf": "appnexus",
-      "gvlid": 32,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "oftmedia",
       "aliasOf": "appnexus",
       "gvlid": 32,
       "disclosureURL": null
@@ -2175,7 +2168,7 @@
       "componentType": "bidder",
       "componentName": "distroscale",
       "aliasOf": null,
-      "gvlid": 754,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3414,6 +3407,13 @@
       "componentType": "bidder",
       "componentName": "msft",
       "aliasOf": null,
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "oftmedia",
+      "aliasOf": "msft",
       "gvlid": 32,
       "disclosureURL": null
     },
@@ -5803,6 +5803,13 @@
       "componentType": "userId",
       "componentName": "abtshieldId",
       "gvlid": 825,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "acxiomRealId",
+      "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
     },

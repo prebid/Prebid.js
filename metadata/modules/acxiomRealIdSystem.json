@@ -4,9 +4,11 @@
   "purposes": {},
   "components": [
     {
-      "componentType": "analytics",
-      "componentName": "adloox",
-      "gvlid": null
+      "componentType": "userId",
+      "componentName": "acxiomRealId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
     }
   ]
 }
