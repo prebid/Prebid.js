@@ -1,6 +1,5 @@
 const {relPath, isInDirectory, TEST_DIR, getFreeName, getModuleName, getMetadata, PREBID_ROOT } = require('./utils.js');
 const t = require('@babel/core').types;
-const fs = require('fs');
 const osPath = require('path');
 
 const NAMES = {

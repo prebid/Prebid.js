@@ -1,5 +1,4 @@
 const path = require('path');
-const osPath = require('path');
 const fs = require('fs');
 const PREBID_ROOT = path.resolve(__dirname, '..');
 const TEST_DIR = path.resolve(__dirname, '../test');
