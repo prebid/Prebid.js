@@ -59,16 +59,40 @@ export const spec = {
     }
 
     function getUserEids(validBidRequests, bidderRequest) {
-      const bidWithEids = validBidRequests?.find(bid => Array.isArray(bid.userIdAsEids) && bid.userIdAsEids.length);
-      if (bidWithEids) {
-        return bidWithEids.userIdAsEids;
+      const eids = [];
+      const seenEids = new Set();
+
+      function getEidKey(eid) {
+        const uidKeys = (eid.uids || []).map(uid => JSON.stringify({
+          id: uid.id,
+          atype: uid.atype,
+          ext: uid.ext,
+        }));
+        return JSON.stringify({
+          source: eid.source,
+          uids: uidKeys,
+        });
       }
 
-      if (Array.isArray(bidderRequest?.userIdAsEids) && bidderRequest.userIdAsEids.length) {
-        return bidderRequest.userIdAsEids;
+      function addEids(sourceEids) {
+        if (!Array.isArray(sourceEids)) return;
+
+        sourceEids.forEach(eid => {
+          const eidKey = getEidKey(eid);
+          if (!seenEids.has(eidKey)) {
+            seenEids.add(eidKey);
+            eids.push(eid);
+          }
+        });
       }
 
-      return [];
+      validBidRequests?.forEach(bid => addEids(bid.userIdAsEids));
+
+      if (eids.length === 0) {
+        addEids(bidderRequest?.userIdAsEids);
+      }
+
+      return eids;
     }
 
     const userEids = getUserEids(validBidRequests, bidderRequest);

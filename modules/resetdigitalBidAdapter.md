@@ -13,7 +13,7 @@ Video is supported but requires a publisher supplied renderer at this time.
 
 # User IDs
 
-The adapter forwards Prebid User ID module EIDs from `bidRequest.userIdAsEids` in OpenRTB format under `user.eids`.
+The adapter forwards Prebid User ID module EIDs in OpenRTB format under `user.eids`. It aggregates and de-duplicates bid-level EIDs from `bidRequest.userIdAsEids` first, then falls back to `bidderRequest.userIdAsEids` if no bid-level EIDs are present.
 To make the widest set of IDs available, publishers should include and configure the Prebid User ID module and any desired ID submodules.
 
 # Test Parameters

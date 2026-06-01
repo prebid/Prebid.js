@@ -107,7 +107,7 @@ describe('resetdigitalBidAdapter', function () {
     })
 
     it('should pass all user id eids in OpenRTB format', function () {
-      const eids = [{
+      const liverampEid = {
         source: 'liveramp.com',
         uids: [{
           id: 'XiR-liveRamp-envelope',
@@ -117,17 +117,29 @@ describe('resetdigitalBidAdapter', function () {
             stype: 'ppuid'
           }
         }]
-      }, {
+      }
+      const sharedIdEid = {
         source: 'sharedid.org',
         uids: [{
           id: 'shared-id',
           atype: 1
         }]
-      }]
+      }
+      const uid2Eid = {
+        source: 'uidapi.com',
+        uids: [{
+          id: 'uid2-id',
+          atype: 3
+        }]
+      }
+      const eids = [liverampEid, sharedIdEid, uid2Eid]
 
       const request = spec.buildRequests([{
         ...bannerRequest,
-        userIdAsEids: eids
+        userIdAsEids: [liverampEid, sharedIdEid]
+      }, {
+        ...videoRequest,
+        userIdAsEids: [sharedIdEid, uid2Eid]
       }], { refererInfo: {} })
       const payload = JSON.parse(request.data)
 
@@ -142,6 +154,9 @@ describe('resetdigitalBidAdapter', function () {
         },
         'sharedid.org': {
           id: 'shared-id'
+        },
+        'uidapi.com': {
+          id: 'uid2-id'
         }
       })
     })
