@@ -32,7 +32,7 @@ const getCallers = (() => {
         cache[filename] = callers.callers;
       } else {
         console.warn(`WARNING: cannot determine moduleType/moduleName to associate with '${filename}'. If this is a new adapter it may need metadata to be updated.  ${message}`)
-        cache[filename] = null;
+        cache[filename] = [];
       }
     }
     return cache[filename];
