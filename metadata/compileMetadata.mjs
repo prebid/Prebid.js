@@ -5,7 +5,7 @@ import moduleMetadata from './modules.json' with {type: 'json'};
 import coreMetadata from './core.json' with {type: 'json'};
 
 import overrides from './overrides.mjs';
-import {fetchDisclosure, getDisclosureUrl, logErrorSummary} from './storageDisclosure.mjs';
+import { fetchDisclosure, getDisclosureUrl, getPublicURL, logErrorSummary } from './storageDisclosure.mjs';
 import { getPurposes, isValidGvlId } from './gvl.mjs';
 
 const MAX_DISCLOSURE_AGE_DAYS = 14;
@@ -75,6 +75,7 @@ async function metadataFor(moduleName, metas, fetch = true) {
         timestamp: new Date().toISOString(),
         disclosures: fetch ? await fetchDisclosure(meta) : null
       };
+      meta.disclosureURL = getPublicURL(meta.disclosureURL);
       if (disclosure.disclosures == null) {
         Object.assign(disclosure, await previousDisclosure(moduleName, meta));
       }
