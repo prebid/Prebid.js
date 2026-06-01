@@ -58,7 +58,21 @@ export const spec = {
       return result;
     }
 
-    const userIds = extractUserIdsFromEids(bidderRequest.userIdAsEids);
+    function getUserEids(validBidRequests, bidderRequest) {
+      const bidWithEids = validBidRequests?.find(bid => Array.isArray(bid.userIdAsEids) && bid.userIdAsEids.length);
+      if (bidWithEids) {
+        return bidWithEids.userIdAsEids;
+      }
+
+      if (Array.isArray(bidderRequest?.userIdAsEids) && bidderRequest.userIdAsEids.length) {
+        return bidderRequest.userIdAsEids;
+      }
+
+      return [];
+    }
+
+    const userEids = getUserEids(validBidRequests, bidderRequest);
+    const userIds = extractUserIdsFromEids(userEids);
 
     const payload = {
       start_time: timestamp(),
@@ -74,6 +88,12 @@ export const spec = {
       user_ids: userIds,
       sync_limit: spb,
     };
+
+    if (userEids.length) {
+      payload.user = {
+        eids: deepClone(userEids),
+      };
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

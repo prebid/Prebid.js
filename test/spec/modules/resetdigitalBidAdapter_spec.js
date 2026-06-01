@@ -105,6 +105,64 @@ describe('resetdigitalBidAdapter', function () {
     it('should include media types', function () {
       expect(rdata.imps[0].media_types !== null).to.be.true
     })
+
+    it('should pass all user id eids in OpenRTB format', function () {
+      const eids = [{
+        source: 'liveramp.com',
+        uids: [{
+          id: 'XiR-liveRamp-envelope',
+          atype: 1,
+          ext: {
+            rtiPartner: 'idl',
+            stype: 'ppuid'
+          }
+        }]
+      }, {
+        source: 'sharedid.org',
+        uids: [{
+          id: 'shared-id',
+          atype: 1
+        }]
+      }]
+
+      const request = spec.buildRequests([{
+        ...bannerRequest,
+        userIdAsEids: eids
+      }], { refererInfo: {} })
+      const payload = JSON.parse(request.data)
+
+      expect(payload.user.eids).to.deep.equal(eids)
+      expect(payload.user_ids).to.deep.equal({
+        'liveramp.com': {
+          id: 'XiR-liveRamp-envelope',
+          ext: {
+            rtiPartner: 'idl',
+            stype: 'ppuid'
+          }
+        },
+        'sharedid.org': {
+          id: 'shared-id'
+        }
+      })
+    })
+
+    it('should fall back to bidderRequest user id eids', function () {
+      const eids = [{
+        source: 'uidapi.com',
+        uids: [{
+          id: 'uid2-id',
+          atype: 3
+        }]
+      }]
+
+      const request = spec.buildRequests([bannerRequest], {
+        refererInfo: {},
+        userIdAsEids: eids
+      })
+      const payload = JSON.parse(request.data)
+
+      expect(payload.user.eids).to.deep.equal(eids)
+    })
   })
 
   describe('interpretResponse', function () {
