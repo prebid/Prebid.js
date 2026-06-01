@@ -65,6 +65,7 @@ import {
   WINNING_BID_ABSENT_ERROR, ERROR_IWB_BID_MISSING, POST_ENDPOINT_RA
 } from '../libraries/medianetUtils/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 // General Constants
 const ADAPTER_CODE = 'medianetAnalytics';
@@ -549,10 +550,9 @@ function setupSlotResponseReceivedListener() {
         mnetGlobals.infoByAdIdMap[adId] = mnetGlobals.infoByAdIdMap[adId] || {};
         mnetGlobals.infoByAdIdMap[adId].srrEvt = slotInf;
       };
-
-      slot.getTargetingKeys()
+      getSlotTargetingKeys(slot)
         .filter((key) => key.startsWith(TARGETING_KEYS.AD_ID))
-        .forEach((key) => setSlotResponseInf(slot.getTargeting(key)[0]));
+        .forEach((key) => setSlotResponseInf(getSlotTargeting(slot, key)[0]));
     });
   });
 }

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 import { triggerPixel, logError } from '../../src/utils.js';
-import { ajaxBuilder } from '../../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../../src/ajax.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
@@ -26,7 +26,7 @@ const EVENTS_TOPIC = 'pre_lips';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout, headers) => {
-    ajaxBuilder(timeout)(
+    qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME, timeout)(
       url,
       {
         success: onSuccess,
