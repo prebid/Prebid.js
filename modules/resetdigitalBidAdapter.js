@@ -58,44 +58,7 @@ export const spec = {
       return result;
     }
 
-    function getUserEids(validBidRequests, bidderRequest) {
-      const eids = [];
-      const seenEids = new Set();
-
-      function getEidKey(eid) {
-        const uidKeys = (eid.uids || []).map(uid => JSON.stringify({
-          id: uid.id,
-          atype: uid.atype,
-          ext: uid.ext,
-        }));
-        return JSON.stringify({
-          source: eid.source,
-          uids: uidKeys,
-        });
-      }
-
-      function addEids(sourceEids) {
-        if (!Array.isArray(sourceEids)) return;
-
-        sourceEids.forEach(eid => {
-          const eidKey = getEidKey(eid);
-          if (!seenEids.has(eidKey)) {
-            seenEids.add(eidKey);
-            eids.push(eid);
-          }
-        });
-      }
-
-      validBidRequests?.forEach(bid => addEids(bid.userIdAsEids));
-
-      if (eids.length === 0) {
-        addEids(bidderRequest?.userIdAsEids);
-      }
-
-      return eids;
-    }
-
-    const userEids = getUserEids(validBidRequests, bidderRequest);
+    const userEids = validBidRequests[0]?.userIdAsEids || [];
     const userIds = extractUserIdsFromEids(userEids);
 
     const payload = {
