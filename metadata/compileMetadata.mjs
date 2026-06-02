@@ -6,7 +6,8 @@ import coreMetadata from './core.json' with {type: 'json'};
 
 import overrides from './overrides.mjs';
 import { fetchDisclosure, getDisclosureUrl, getPublicURL, logErrorSummary } from './storageDisclosure.mjs';
-import { getPurposes, isValidGvlId, validatePurposeDeclarations } from './gvl.mjs';
+import { getPurposes, isValidGvlId } from './gvl.mjs';
+import {validatePurposeDeclarations} from '../libraries/purposeDeclarations/validate.mjs';
 
 const MAX_DISCLOSURE_AGE_DAYS = 14;
 

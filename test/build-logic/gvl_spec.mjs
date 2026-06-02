@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { getPurposes, isValidGvlId, validatePurposeDeclarations } from '../../metadata/gvl.mjs';
+import { getPurposes, isValidGvlId } from '../../metadata/gvl.mjs';
+import {validatePurposeDeclarations} from '../../libraries/purposeDeclarations/validate.mjs';
 
 describe('gvl build time checks', () => {
   let gvl;
@@ -49,7 +50,7 @@ describe('gvl build time checks', () => {
     })
   })
 
-  describe('purposeDeclarationsAreValid', () => {
+  describe('validatePurposeDeclarations', () => {
     Object.entries({
       'flexiblePurpose without corresponding purpose / LI': {
         flexiblePurposes: [1],
