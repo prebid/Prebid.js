@@ -2,15 +2,12 @@
 // needs the ".mjs" extension, but precompilation transforms this into a "normal" .js
 
 export function validatePurposeDeclarations({ purposes, legIntPurposes, flexiblePurposes }) {
-  purposes = new Set(purposes);
-  legIntPurposes = new Set(legIntPurposes);
-  flexiblePurposes = new Set(flexiblePurposes);
-  const bothBases = purposes.intersection(legIntPurposes);
-  if (bothBases.size > 0) {
-    return `declares both consent and LI for purposes ${Array.from(bothBases).join(', ')}`
+  const bothBases = purposes.concat(legIntPurposes).filter(purpose => purposes.includes(purpose) && legIntPurposes.includes(purpose));
+  if (bothBases.length > 0) {
+    return `declares both consent and LI for purposes ${bothBases.join(', ')}`
   }
-  const noBasis = flexiblePurposes.difference(purposes).difference(legIntPurposes);
-  if (noBasis.size > 0) {
-    return `declares purposes ${Array.from(noBasis).join(', ')} as flexible, but no legal basis for them`
+  const noBasis = flexiblePurposes.filter(purpose => !purposes.includes(purpose) && !legIntPurposes.includes(purpose));
+  if (noBasis.length > 0) {
+    return `declares purposes ${noBasis.join(', ')} as flexible, but no legal basis for them`
   }
 }
