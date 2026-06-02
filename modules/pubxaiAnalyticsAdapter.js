@@ -12,7 +12,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash
 } from '../src/utils.js';
-import { getSlotTargeting } from '../src/utils/gptTargeting.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 let initOptions;
 
@@ -100,8 +100,7 @@ const getAdServerDataForBid = (bid) => {
   const gptSlot = getGptSlotForAdUnitCode(bid);
   if (gptSlot) {
     return Object.fromEntries(
-      gptSlot
-        .getTargetingKeys()
+      getSlotTargetingKeys(gptSlot)
         .filter(
           (key) =>
             key.startsWith('pubx-') ||
