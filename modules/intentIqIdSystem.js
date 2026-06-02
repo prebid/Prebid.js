@@ -13,7 +13,6 @@ import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js';
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.js';
-import { readData, storeData, defineStorageType, removeDataByKey, tryParse } from '../libraries/intentIqUtils/storageUtils.js';
 import {
   defineStorageType,
   readData,
@@ -22,8 +21,8 @@ import {
   tryParse
 } from '../libraries/intentIqUtils/storageUtils.js';
 import {
-  CH_KEYS,
   CLIENT_HINTS_KEY,
+  FIRST_PARTY_KEY,
   GVLID,
   VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
   HOURS_72, CH_KEYS, DEFAULT_PERCENTAGE, WITH_IIQ
@@ -56,7 +55,7 @@ const encoderCH = {
 };
 let sourceMetaData;
 let sourceMetaDataExternal;
-let globalName = ''
+let globalName = '';
 
 let FIRST_PARTY_KEY_FINAL = FIRST_PARTY_KEY;
 let PARTNER_DATA_KEY;
@@ -67,7 +66,7 @@ let noDataCount = 0;
 export let firstPartyData;
 let partnerData;
 let clientHints;
-let actualABGroup
+let actualABGroup;
 
 function getEffectiveAbPercentage(abPercentage) {
   const n = Number(abPercentage);
