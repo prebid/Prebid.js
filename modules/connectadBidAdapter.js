@@ -99,8 +99,7 @@ const converter = ortbConverter({
 
     // Support outstream video with a default renderer if none is provided
     if (bidResponse.mediaType === VIDEO && context.bidRequest?.mediaTypes?.video?.context === 'outstream' && !bidResponse.renderer && !context.bidRequest?.renderer) {
-      const isLocalTest = typeof window !== 'undefined' && (window.location.host === 'handler-test.test' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const rendererUrl = isLocalTest ? 'http://handler-test.test/connectad-outstream.js' : 'https://cdn.connectad.io/video/outstream/connectad-outstream.js';
+      const rendererUrl = 'https://cdn.connectad.io/video/outstream/connectad-outstream.js';
       bidResponse.renderer = Renderer.install({
         id: bid.id,
         url: rendererUrl,
