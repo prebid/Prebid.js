@@ -175,7 +175,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
     } else if (moduleType === MODULE_TYPE_PREBID) {
       return VENDORLESS_GVLID;
     } else {
-      let {gvlid, modules} = GDPR_GVLIDS.get(moduleName);
+      let { gvlid, modules } = GDPR_GVLIDS.get(moduleName);
       if (gvlid == null && Object.keys(modules).length > 0) {
         // this behavior is for backwards compatibility; if multiple modules with the same
         // name declare different GVL IDs, pick the bidder's first, then userId, then analytics
@@ -272,7 +272,7 @@ export function getAcceptableFlags(consentData: TCFConsentData, type: 'purpose' 
     acceptConsent = true;
     acceptLI = type === 'feature' ? false : PUBLISHER_LI_PURPOSES.includes(purpose)
   } else {
-    const {purposes, legIntPurposes, flexiblePurposes, specialFeatures} = purposeDeclarations(gvlid);
+    const { purposes, legIntPurposes, flexiblePurposes, specialFeatures } = purposeDeclarations(gvlid);
     acceptLI = type === 'feature' ? false : legIntPurposes.includes(purpose) || flexiblePurposes.includes(purpose);
     acceptConsent = type === 'feature' ? specialFeatures.includes(purpose) : acceptLI || purposes.includes(purpose);
   }
@@ -288,7 +288,7 @@ export function getAcceptableFlags(consentData: TCFConsentData, type: 'purpose' 
   } else if (restriction === 2) {
     acceptConsent = false;
   }
-  return {acceptConsent, acceptLI};
+  return { acceptConsent, acceptLI };
 }
 
 function getConsentOrLI(consentData, path, id, acceptConsent, acceptLI) {
@@ -297,7 +297,7 @@ function getConsentOrLI(consentData, path, id, acceptConsent, acceptLI) {
 }
 
 function getConsent(consentData, type, purposeNo, gvlId) {
-  const {acceptConsent, acceptLI} = getAcceptableFlags(consentData, type, purposeNo, gvlId);
+  const { acceptConsent, acceptLI } = getAcceptableFlags(consentData, type, purposeNo, gvlId);
   let purpose;
   if (CONSENT_PATHS[type] !== false) {
     purpose = acceptConsent && !!deepAccess(consentData, `vendorData.${CONSENT_PATHS[type]}.${purposeNo}`);
@@ -328,7 +328,7 @@ export function validateRules(rule, consentData, currentModule, gvlId, params = 
   }
   const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
   const deferS2Sbidders = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders && !gvlId;
-  const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
+  const { purpose, vendor } = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
   return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || deferS2Sbidders || vendor);
 }
 
@@ -342,7 +342,7 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = 
       const allow = !!checkConsent(consentData, modName, gvlid, params);
       if (!allow) {
         blocked && blocked.add(modName);
-        return {allow};
+        return { allow };
       }
     }
   };
@@ -388,7 +388,7 @@ export const transmitEidsRule = exceptPrebidModules((() => {
       if (ACTIVE_RULES.purpose[pno]?.vendorExceptions?.includes(modName)) {
         return true;
       }
-      const {purpose, vendor} = getConsent(consentData, 'purpose', pno, gvlId);
+      const { purpose, vendor } = getConsent(consentData, 'purpose', pno, gvlId);
       if (purpose && (vendor || ACTIVE_RULES.purpose[pno]?.softVendorExceptions?.includes(modName))) {
         return true;
       }

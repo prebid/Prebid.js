@@ -1,7 +1,7 @@
 // NOTE: this file is used both by the build system and Prebid runtime; the former
 // needs the ".mjs" extension, but precompilation transforms this into a "normal" .js
 
-export function validatePurposeDeclarations({purposes, legIntPurposes, flexiblePurposes}) {
+export function validatePurposeDeclarations({ purposes, legIntPurposes, flexiblePurposes }) {
   purposes = new Set(purposes);
   legIntPurposes = new Set(legIntPurposes);
   flexiblePurposes = new Set(flexiblePurposes);

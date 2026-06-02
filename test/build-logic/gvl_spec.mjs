@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { getPurposes, isValidGvlId } from '../../metadata/gvl.mjs';
-import {validatePurposeDeclarations} from '../../libraries/purposeDeclarations/validate.mjs';
+import { validatePurposeDeclarations } from '../../libraries/purposeDeclarations/validate.mjs';
 
 describe('gvl build time checks', () => {
   let gvl;

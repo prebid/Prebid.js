@@ -233,7 +233,6 @@ describe('gdpr enforcement', function () {
       };
     });
 
-
     Object.entries({
       'purpose accepts consent': {
         type: 'purpose',
@@ -367,7 +366,7 @@ describe('gdpr enforcement', function () {
         }
         describe('with no restrictions', () => {
           it(`should return acceptConsent=${expectation.acceptConsent}, acceptLI=${expectation.acceptLI}`, () => {
-            expect(getAcceptableFlags({}, type,purpose, gvlid, getPurposes)).to.eql({
+            expect(getAcceptableFlags({}, type, purpose, gvlid, getPurposes)).to.eql({
               acceptConsent: expectation.acceptConsent,
               acceptLI: expectation.acceptLI
             })
