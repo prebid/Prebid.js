@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { getPurposes, isValidGvlId } from '../../metadata/gvl.mjs';
+import { getPurposes, isValidGvlId, validatePurposeDeclarations } from '../../metadata/gvl.mjs';
 
 describe('gvl build time checks', () => {
   let gvl;
@@ -46,6 +46,25 @@ describe('gvl build time checks', () => {
         }
       }
       expect(await getPurposes(123, getGvl)).to.eql(purposes);
+    })
+  })
+
+  describe('purposeDeclarationsAreValid', () => {
+    Object.entries({
+      'flexiblePurpose without corresponding purpose / LI': {
+        flexiblePurposes: [1],
+        purposes: [],
+        legIntPurposes: [],
+      },
+      'both consent as LI as legal basis': {
+        purposes: [1],
+        legIntPurposes: [1],
+        flexiblePurposes: [],
+      }
+    }).forEach(([t, purposes]) => {
+      it(`should fail on ${t}`, () => {
+        expect(validatePurposeDeclarations(purposes)).to.be.a('string');
+      })
     })
   })
 })
