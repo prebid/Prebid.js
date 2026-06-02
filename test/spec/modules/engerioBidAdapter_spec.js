@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import * as ajaxModule from 'src/ajax.js';
 import { spec } from 'modules/engerioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
@@ -97,6 +98,11 @@ describe('engerioBidAdapter', () => {
         page: 'https://example.com/article',
         domain: 'example.com',
       },
+      ortb2: {
+        device: {
+          ua: 'Mozilla/5.0 (normalized by Prebid)',
+        },
+      },
     };
 
     it('returns a single POST request to the Engerio endpoint', () => {
@@ -105,9 +111,9 @@ describe('engerioBidAdapter', () => {
       expect(request.url).to.equal(ENDPOINT_URL);
     });
 
-    it('sets Content-Type to application/json', () => {
+    it('sets Content-Type to text/plain', () => {
       const request = spec.buildRequests([validBid], bidderRequest);
-      expect(request.options.contentType).to.equal('application/json');
+      expect(request.options.contentType).to.equal('text/plain');
     });
 
     it('does not send credentials', () => {
@@ -150,10 +156,10 @@ describe('engerioBidAdapter', () => {
       expect(body.site.domain).to.equal('example.com');
     });
 
-    it('populates device.ua from navigator.userAgent', () => {
+    it('populates device.ua from normalized bidderRequest.ortb2.device.ua', () => {
       const request = spec.buildRequests([validBid], bidderRequest);
       const body = JSON.parse(request.data);
-      expect(body.device.ua).to.equal(navigator.userAgent);
+      expect(body.device.ua).to.equal('Mozilla/5.0 (normalized by Prebid)');
     });
 
     it('builds one imp per bid request', () => {
@@ -173,6 +179,7 @@ describe('engerioBidAdapter', () => {
       const body = JSON.parse(request.data);
       expect(body.site.page).to.be.undefined;
       expect(body.site.domain).to.be.undefined;
+      expect(body.device).to.be.undefined;
     });
   });
 
@@ -279,14 +286,14 @@ describe('engerioBidAdapter', () => {
   // ── onBidWon ─────────────────────────────────────────────────────────────────
 
   describe('onBidWon', () => {
-    let fetchStub;
+    let ajaxStub;
 
     beforeEach(() => {
-      fetchStub = sinon.stub(window, 'fetch').resolves(new Response());
+      ajaxStub = sinon.stub(ajaxModule, 'ajax');
     });
 
     afterEach(() => {
-      fetchStub.restore();
+      ajaxStub.restore();
     });
 
     it('fires a GET request to the nurl', () => {
@@ -294,14 +301,14 @@ describe('engerioBidAdapter', () => {
         nurl: 'https://api.engerio.sk/api/v1/adserver/prebid/win/abc-123/',
       };
       spec.onBidWon(bid);
-      expect(fetchStub.calledOnce).to.be.true;
-      expect(fetchStub.firstCall.args[0]).to.equal(bid.nurl);
-      expect(fetchStub.firstCall.args[1]).to.deep.include({ method: 'GET' });
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[0]).to.equal(bid.nurl);
+      expect(ajaxStub.firstCall.args[3]).to.deep.include({ method: 'GET', keepalive: true });
     });
 
     it('does nothing when nurl is absent', () => {
       spec.onBidWon({ cpm: 1.5 });
-      expect(fetchStub.called).to.be.false;
+      expect(ajaxStub.called).to.be.false;
     });
   });
 });

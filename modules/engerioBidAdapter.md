@@ -55,14 +55,15 @@ var adUnits = [
 ## Win Notification
 
 Engerio uses the OpenRTB `nurl` field for win notifications. When Prebid.js
-renders the winning ad it calls `onBidWon`, which fires a `GET` request to the
-`nurl` URL. This triggers impression recording and budget deduction on the
+renders the winning ad it calls `onBidWon`, which routes a `GET` request to the
+`nurl` URL through Prebid's core ajax helper. This triggers impression recording and budget deduction on the
 Engerio server — no additional publisher-side configuration is needed.
 
 ## Notes
 
 - Requests are sent without credentials (`withCredentials: false`).
+- Auction payloads are JSON-serialized and sent as `text/plain` to avoid CORS preflights.
 - The adapter passes `site.page` and `site.domain` from Prebid.js `refererInfo`
   for contextual targeting.
-- `device.ua` is populated from `navigator.userAgent`.
+- `device.ua` is forwarded from Prebid.js normalized request data when available.
 - Bid TTL is 300 seconds.

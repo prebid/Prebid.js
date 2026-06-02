@@ -1,4 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, generateUUID, logWarn } from '../src/utils.js';
 
@@ -51,6 +52,7 @@ export const spec = {
 
     const page = deepAccess(bidderRequest, 'refererInfo.page');
     const domain = deepAccess(bidderRequest, 'refererInfo.domain');
+    const userAgent = deepAccess(bidderRequest, 'ortb2.device.ua');
 
     const bidRequest = {
       id: generateUUID(),
@@ -59,17 +61,20 @@ export const spec = {
         page: page || undefined,
         domain: domain || undefined,
       },
-      device: {
-        ua: navigator.userAgent,
-      },
     };
+
+    if (userAgent) {
+      bidRequest.device = {
+        ua: userAgent,
+      };
+    }
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: JSON.stringify(bidRequest),
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: false,
       },
     };
@@ -125,7 +130,7 @@ export const spec = {
    */
   onBidWon(bid) {
     if (bid.nurl) {
-      fetch(bid.nurl, { method: 'GET', keepalive: true }).catch(() => {});
+      ajax(bid.nurl, null, undefined, { method: 'GET', keepalive: true });
     }
   },
 };
