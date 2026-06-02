@@ -21,6 +21,10 @@ function mockFetchServer() {
       // firefox will lose keepalive otherwise
       keepalive: resource?.keepalive
     }, options));
+    request.clone = () => ({
+      ...request,
+      blob: () => GreedyPromise.resolve(new Blob([requestBody]))
+    })
     bodies.set(request, requestBody);
     return request;
   }

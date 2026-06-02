@@ -1,5 +1,4 @@
-import { acxiomRealIdSubmodule, storage } from 'modules/acxiomRealIdSystem.ts';
-import * as ajaxLib from 'src/ajax.js';
+import { acxiomRealIdSubmodule, dep, storage } from 'modules/acxiomRealIdSystem.ts';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai';
 
@@ -349,7 +348,7 @@ describe('acxiomRealIdSystem', () => {
 
       it('should POST to the default API URL with partnerId and default sourceId in body', (done) => {
         let capturedUrl, capturedBody, capturedOptions;
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks, body, options) => {
             capturedUrl = url;
             capturedBody = body;
@@ -380,7 +379,7 @@ describe('acxiomRealIdSystem', () => {
 
       it('should include HEM in POST body when provided', (done) => {
         let capturedBody;
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks, body) => {
             capturedBody = body;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
@@ -402,7 +401,7 @@ describe('acxiomRealIdSystem', () => {
 
       it('should not include HEM in POST body when not provided', (done) => {
         let capturedBody;
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks, body) => {
             capturedBody = body;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
@@ -424,7 +423,7 @@ describe('acxiomRealIdSystem', () => {
       it('should use custom sourceId in POST body when provided', (done) => {
         let capturedBody;
         const customSourceId = 'custom.source';
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks, body) => {
             capturedBody = body;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
@@ -447,7 +446,7 @@ describe('acxiomRealIdSystem', () => {
       it('should use custom API URL when provided', (done) => {
         let capturedUrl;
         const customUrl = 'https://custom.example.com/v1/eid/l';
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             capturedUrl = url;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
@@ -468,7 +467,7 @@ describe('acxiomRealIdSystem', () => {
 
       it('should strip trailing slashes from custom API URL', (done) => {
         let capturedUrl;
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             capturedUrl = url;
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 1));
@@ -487,7 +486,7 @@ describe('acxiomRealIdSystem', () => {
       });
 
       it('should preserve atype from API response', (done) => {
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             callbacks.success(makeEidResponse(REAL_ID_TOKEN, 3));
           }
@@ -505,7 +504,7 @@ describe('acxiomRealIdSystem', () => {
       });
 
       it('should call callback with undefined on no-match response', (done) => {
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             callbacks.success(JSON.stringify({ requestId: 'test', user: {} }));
           }
@@ -523,7 +522,7 @@ describe('acxiomRealIdSystem', () => {
       });
 
       it('should call callback with undefined when eids array is empty', (done) => {
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             callbacks.success(makeEmptyResponse());
           }
@@ -541,7 +540,7 @@ describe('acxiomRealIdSystem', () => {
       });
 
       it('should call callback with undefined on API error', (done) => {
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             callbacks.error('server error');
           }
@@ -559,7 +558,7 @@ describe('acxiomRealIdSystem', () => {
       });
 
       it('should call callback with undefined on malformed JSON response', (done) => {
-        ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(
+        ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(
           (url, callbacks) => {
             callbacks.success('not json');
           }
