@@ -68,6 +68,10 @@ interface PgamAnalyticsOptions {
 let orgId: string | null = null;
 let endpoint = DEFAULT_ENDPOINT;
 
+export const dep = {
+  ajax
+};
+
 const pgamdirectAnalytics = Object.assign(
   adapter({ url: DEFAULT_ENDPOINT, analyticsType: 'endpoint' }),
   {
@@ -96,7 +100,7 @@ const pgamdirectAnalytics = Object.assign(
         // navigation / unload get dropped before the XHR lands. The
         // most valuable events (BID_WON, AD_RENDER_*) fire exactly
         // in the unload window, so this directly improves delivery.
-        ajax(endpoint, undefined, body, {
+        dep.ajax(endpoint, undefined, body, {
           method: 'POST',
           withCredentials: false,
           contentType: 'text/plain',
@@ -171,7 +175,7 @@ export function maybePostAuctionContext(args: unknown): void {
         competitor_high_cpm_usd: competitorHigh,
       });
       // text/plain keeps the POST CORS-simple.
-      ajax(AUCTION_CONTEXT_ENDPOINT, undefined, body, {
+      dep.ajax(AUCTION_CONTEXT_ENDPOINT, undefined, body, {
         method: 'POST',
         withCredentials: false,
         contentType: 'text/plain',

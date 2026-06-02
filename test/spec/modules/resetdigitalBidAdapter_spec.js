@@ -105,6 +105,48 @@ describe('resetdigitalBidAdapter', function () {
     it('should include media types', function () {
       expect(rdata.imps[0].media_types !== null).to.be.true
     })
+
+    it('should pass user id eids in OpenRTB format', function () {
+      const liverampEid = {
+        source: 'liveramp.com',
+        uids: [{
+          id: 'XiR-liveRamp-envelope',
+          atype: 1,
+          ext: {
+            rtiPartner: 'idl',
+            stype: 'ppuid'
+          }
+        }]
+      }
+      const sharedIdEid = {
+        source: 'sharedid.org',
+        uids: [{
+          id: 'shared-id',
+          atype: 1
+        }]
+      }
+      const eids = [liverampEid, sharedIdEid]
+
+      const request = spec.buildRequests([{
+        ...bannerRequest,
+        userIdAsEids: eids
+      }], { refererInfo: {} })
+      const payload = JSON.parse(request.data)
+
+      expect(payload.user.eids).to.deep.equal(eids)
+      expect(payload.user_ids).to.deep.equal({
+        'liveramp.com': {
+          id: 'XiR-liveRamp-envelope',
+          ext: {
+            rtiPartner: 'idl',
+            stype: 'ppuid'
+          }
+        },
+        'sharedid.org': {
+          id: 'shared-id'
+        }
+      })
+    })
   })
 
   describe('interpretResponse', function () {

@@ -1,32 +1,23 @@
 import { config } from './config.js';
 
-import { EVENTS } from './constants.js';
 import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
 import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
+import * as logging from './utils/logging.js';
+import * as debug from './utils/debug.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
-const consoleExists = Boolean(window.console);
-const consoleLogExists = Boolean(consoleExists && window.console.log);
-const consoleInfoExists = Boolean(consoleExists && window.console.info);
-const consoleWarnExists = Boolean(consoleExists && window.console.warn);
-const consoleErrorExists = Boolean(consoleExists && window.console.error);
 
-let eventEmitter;
-
-export function _setEventEmitter(emitFn) {
-  // called from events.js - this hoop is to avoid circular imports
-  eventEmitter = emitFn;
-}
-
-function emitEvent(...args) {
-  if (eventEmitter != null) {
-    eventEmitter(...args);
-  }
-}
+// many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
+export const logInfo = logging.logInfo;
+export const logWarn = logging.logWarn;
+export const logError = logging.logError;
+export const logMessage = logging.logMessage;
+export const prefixLog = logging.prefixLog;
+export const debugTurnedOn = debug.debugTurnedOn;
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -217,82 +208,6 @@ export function getFallbackWindow(win) {
     return win;
   }
   return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-}
-
-/**
- * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
- */
-// eslint-disable-next-line no-restricted-syntax
-export function logMessage() {
-  if (debugTurnedOn() && consoleLogExists) {
-    // eslint-disable-next-line no-console
-    console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
-  }
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logInfo() {
-  if (debugTurnedOn() && consoleInfoExists) {
-    // eslint-disable-next-line no-console
-    console.info.apply(console, decorateLog(arguments, 'INFO:'));
-  }
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logWarn() {
-  if (debugTurnedOn() && consoleWarnExists) {
-    // eslint-disable-next-line no-console
-    console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logError() {
-  if (debugTurnedOn() && consoleErrorExists) {
-    // eslint-disable-next-line no-console
-    console.error.apply(console, decorateLog(arguments, 'ERROR:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
-}
-
-export function prefixLog(prefix) {
-  function decorate(fn) {
-    return function (...args) {
-      fn(prefix, ...args);
-    }
-  }
-  return {
-    logError: decorate(logError),
-    logWarn: decorate(logWarn),
-    logMessage: decorate(logMessage),
-    logInfo: decorate(logInfo),
-  }
-}
-
-function decorateLog(args, prefix) {
-  args = [].slice.call(args);
-  const bidder = config.getCurrentBidder();
-
-  prefix && args.unshift(prefix);
-  if (bidder) {
-    args.unshift(label('#aaa'));
-  }
-  args.unshift(label('#3b88c3'));
-  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
-  return args;
-
-  function label(color) {
-    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
-  }
-}
-
-export function hasConsoleLogger() {
-  return consoleLogExists;
-}
-
-export function debugTurnedOn() {
-  return !!config.getConfig('debug');
 }
 
 export const createIframe = (() => {
@@ -694,7 +609,7 @@ export function getSafeframeGeometry() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
 export function isFirefoxBrowser() {

@@ -16,10 +16,10 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveRtdProviderConfig} PermutiveRtdProviderConfig
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveRtdProviderParams} PermutiveRtdProviderParams
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveBidderConfig} PermutiveBidderConfig
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveTransformationConfig} PermutiveTransformationConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveRtdProviderConfig} PermutiveRtdProviderConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveRtdProviderParams} PermutiveRtdProviderParams
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveBidderConfig} PermutiveBidderConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveTransformationConfig} PermutiveTransformationConfig
  */
 
 const MODULE_NAME = 'permutive'

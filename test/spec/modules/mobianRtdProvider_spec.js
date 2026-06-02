@@ -22,7 +22,7 @@ import {
   makeMemoizedFetch,
   makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
-  setTargeting,
+  setTargeting, dep,
 } from 'modules/mobianRtdProvider.js';
 
 describe('Mobian RTD Submodule', function () {
@@ -102,7 +102,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('fetchContextData', function () {
     it('should return fetched context data', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
         callbacks.success(mockResponse);
       });
 
@@ -120,7 +120,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('getContextData', function () {
     it('should return formatted context data', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
         callbacks.success(mockResponse);
       });
 
@@ -320,7 +320,7 @@ describe('Mobian RTD Submodule', function () {
     it('should evict the oldest entry when cache exceeds maxSize', async function () {
       const maxSize = 2;
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.success(mockResponse);
       });
@@ -357,7 +357,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should fall back to MAX_CACHE_SIZE when given an invalid maxSize', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.success(mockResponse);
       });
@@ -394,7 +394,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should floor fractional maxSize to an integer', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.success(mockResponse);
       });
@@ -420,7 +420,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should share a single in-flight request for concurrent calls to the same URL', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         setTimeout(() => callbacks.success(mockResponse), 10);
       });
@@ -440,7 +440,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should delete failed cache entries so subsequent calls refetch after an error', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.error(new Error('network error'));
       });
@@ -460,7 +460,7 @@ describe('Mobian RTD Submodule', function () {
       let fetchCount = 0;
       let shouldError = true;
 
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         if (shouldError) {
           setTimeout(() => callbacks.error(new Error('server error')), 10);

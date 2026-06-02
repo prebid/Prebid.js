@@ -182,6 +182,15 @@ module.exports = [
       '@stylistic/multiline-ternary': 'off',
     }
   },
+  {
+    files: getSourceFolders().map(dir => `${dir}/**/*.d.ts`),
+    ignores: [
+      'src/types/**/*'
+    ],
+    rules: {
+      'prebid/declaration-filename': 'error'
+    }
+  },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
     const {globals, props} = noGlobals({
       require: 'use import instead',

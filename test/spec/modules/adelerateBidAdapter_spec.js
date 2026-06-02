@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adelerateBidAdapter.js';
+import { dep, spec } from 'modules/adelerateBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
@@ -769,7 +769,7 @@ describe('AdelerateBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {
@@ -799,7 +799,7 @@ describe('AdelerateBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {
@@ -833,7 +833,7 @@ describe('AdelerateBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {
