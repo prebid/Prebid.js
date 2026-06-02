@@ -35,7 +35,8 @@ describe('gvl build time checks', () => {
       const purposes = {
         purposes: [1],
         legIntPurposes: [2],
-        flexiblePurposes: [3]
+        flexiblePurposes: [3],
+        specialFeatures: [4]
       };
       gvl = {
         vendors: {

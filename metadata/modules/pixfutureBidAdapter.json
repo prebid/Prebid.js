@@ -15,7 +15,11 @@
         10
       ],
       "legIntPurposes": [],
-      "flexiblePurposes": []
+      "flexiblePurposes": [],
+      "specialFeatures": [
+        1,
+        2
+      ]
     }
   },
   "components": [

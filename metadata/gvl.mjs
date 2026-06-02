@@ -23,9 +23,9 @@ export function isValidGvlId(gvlId, gvl = getGvl) {
 
 export function getPurposes(gvlId, gvl = getGvl) {
   return gvl().then(gvl => {
-    const {purposes, legIntPurposes, flexiblePurposes} = gvl.vendors[gvlId];
+    const {purposes, legIntPurposes, flexiblePurposes, specialFeatures} = gvl.vendors[gvlId];
     return {
-      purposes, legIntPurposes, flexiblePurposes
+      purposes, legIntPurposes, flexiblePurposes, specialFeatures
     }
   })
 
