@@ -27,6 +27,7 @@ const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
+const UNSPECIFIED_NETWORK = 'unspecified-network-id';
 
 const ENVS = {
   localhost: {
@@ -357,7 +358,7 @@ export const spec = {
         continue;
       }
 
-      const network = bid.params.network || 'network';
+      const network = bid.params.network || UNSPECIFIED_NETWORK;
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
@@ -444,9 +445,10 @@ export const spec = {
         requestURL = ENVS[bidderConfig.env][bidderConfig.endPointType || 'as'];
       }
       requestURL = (bidderConfig.protocol || 'https') + '://' + requestURL + '/i';
+      const requestQueryParams = network === UNSPECIFIED_NETWORK ? queryParamsAndValues : queryParamsAndValues.concat('network=' + encodeURIComponent(network));
       requests.push({
         method: 'POST',
-        url: requestURL + '?' + queryParamsAndValues.join('&'),
+        url: requestURL + '?' + requestQueryParams.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });

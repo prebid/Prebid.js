@@ -2,7 +2,19 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnit } from '../../../modules/ixBidAdapter.js';
+import {
+  addDeviceInfo,
+  bidToNativeImp,
+  bidToVideoImp,
+  combineImps,
+  deduplicateImpExtFields,
+  FEATURE_TOGGLES,
+  getDivIdFromAdUnit,
+  LOCAL_STORAGE_FEATURE_TOGGLES_KEY,
+  removeSiteIDs,
+  spec,
+  storage
+} from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
@@ -4137,7 +4149,7 @@ describe('IndexexchangeAdapter', function () {
       expect(videoResult[0].ttl).to.equal(200);
     });
 
-    it('should default bid[].ttl if seat[].bid[].exp is not in the resposne', function () {
+    it('should default bid[].ttl if seat[].bid[].exp is not in the response', function () {
       const bannerResult = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, bannerBidderRequest);
       const videoResult = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, videoBidderRequest);
 

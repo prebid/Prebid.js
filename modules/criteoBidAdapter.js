@@ -35,6 +35,10 @@ const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
 const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
 const DEFAULT_GZIP_ENABLED = true;
 
+export const dep = {
+  ajax
+};
+
 /**
  * Defines the generic oRTB converter and all customization functions.
  */
@@ -92,8 +96,6 @@ function imp(buildImp, bidRequest, context) {
       context: bidRequest.mediaTypes.video.context,
       playersizes: parseSizes(bidRequest?.mediaTypes?.video?.playerSize, parseSize),
       plcmt: bidRequest.mediaTypes.video.plcmt,
-      poddur: bidRequest.mediaTypes.video.adPodDurationSec,
-      rqddurs: bidRequest.mediaTypes.video.durationRangeSec,
     })
   }
 
@@ -406,7 +408,7 @@ export const spec = {
     const id = readFromAllStorages(BUNDLE_COOKIE_NAME);
     if (id) {
       deleteFromAllStorages(BUNDLE_COOKIE_NAME);
-      ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
+      dep.ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
         null,
         JSON.stringify({ publisherUserId: id }),
         {
@@ -671,7 +673,9 @@ function createOutstreamVideoRenderer(bid) {
   };
 
   const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });
-  renderer.setRender(render);
+  renderer.setRender(
+    (renderBid, renderDocument) => renderBid.renderer.push(() => render(renderBid, renderDocument))
+  );
   return renderer;
 }
 

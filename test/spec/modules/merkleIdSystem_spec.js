@@ -86,7 +86,7 @@ describe('Merkle System', function () {
       sinon.stub(utils, 'logWarn');
       sinon.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
@@ -176,7 +176,7 @@ describe('Merkle System', function () {
       sinon.stub(utils, 'logWarn');
       sinon.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {

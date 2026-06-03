@@ -1,4 +1,4 @@
-import { spec, safeStringify } from 'modules/contxtfulBidAdapter.js';
+import { spec, safeStringify, dep } from 'modules/contxtfulBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import * as ajax from 'src/ajax.js';
@@ -884,8 +884,7 @@ describe('contxtful bid adapter', function () {
         const userSyncs = spec.getUserSyncs({}, [{ body: bidResponse }]);
         expect(userSyncs).to.deep.equal([
           {
-            'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
-            'type': 'image'
+            'url': 'mysyncurl.com?qparam1=qparamv1&qparam2=qparamv2'
           }
         ]);
       });
@@ -915,7 +914,7 @@ describe('contxtful bid adapter', function () {
         });
 
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(true);
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         expect(spec.onTimeout({ 'customData': 'customvalue' })).to.not.throw;
         expect(beaconStub.called).to.be.true;
         expect(ajaxStub.called).to.be.false;
@@ -926,7 +925,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         expect(spec.onTimeout({ 'customData': 'customvalue' })).to.not.throw;
         expect(beaconStub.called).to.be.true;
@@ -941,7 +940,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidderError({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;
@@ -955,7 +954,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidWon({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;
@@ -967,7 +966,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         const payload = {
           adata: "hello"
@@ -984,7 +983,7 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: { customer: CUSTOMER, version: VERSION, sampling: { onBidBillable: 1.0 } },
         });
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidBillable({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;
@@ -997,7 +996,7 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: { customer: CUSTOMER, version: VERSION, sampling: { onAdRenderSucceeded: 1.0 } },
         });
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onAdRenderSucceeded({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;

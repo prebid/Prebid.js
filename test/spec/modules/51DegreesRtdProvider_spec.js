@@ -390,6 +390,42 @@ describe('51DegreesRtdProvider', function() {
       expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('model');
     });
 
+    it('prefers hardwarenameprefix over hardwaremodel for model field', function() {
+      const device = { ...fiftyOneDegreesDevice, hardwarenameprefix: 'iPhone' };
+      expect(convert51DegreesDeviceToOrtb2(device).device).to.deep.include({ model: 'iPhone' });
+    });
+
+    it('falls back to hardwaremodel when hardwarenameprefix is not provided', function() {
+      const device = { ...fiftyOneDegreesDevice };
+      delete device.hardwarenameprefix;
+      expect(convert51DegreesDeviceToOrtb2(device).device).to.deep.include({ model: 'Macintosh' });
+    });
+
+    it('sets hwv from hardwarenameversion when provided', function() {
+      const device = { ...fiftyOneDegreesDevice, hardwarenameversion: '12 Pro Max' };
+      expect(convert51DegreesDeviceToOrtb2(device).device).to.deep.include({ hwv: '12 Pro Max' });
+    });
+
+    it('does not set hwv if hardwarenameversion is not provided', function() {
+      const device = { ...fiftyOneDegreesDevice };
+      delete device.hardwarenameversion;
+      expect(convert51DegreesDeviceToOrtb2(device).device).to.not.have.any.keys('hwv');
+    });
+
+    it('sets model from hardwarenameprefix independently of hwv from hardwarenameversion', function() {
+      const deviceWithPrefix = { ...fiftyOneDegreesDevice, hardwarenameprefix: 'iPhone' };
+      delete deviceWithPrefix.hardwarenameversion;
+      const resultWithPrefix = convert51DegreesDeviceToOrtb2(deviceWithPrefix).device;
+      expect(resultWithPrefix).to.deep.include({ model: 'iPhone' });
+      expect(resultWithPrefix).to.not.have.any.keys('hwv');
+
+      const deviceWithVersion = { ...fiftyOneDegreesDevice, hardwarenameversion: '12 Pro Max' };
+      delete deviceWithVersion.hardwarenameprefix;
+      const resultWithVersion = convert51DegreesDeviceToOrtb2(deviceWithVersion).device;
+      expect(resultWithVersion).to.deep.include({ hwv: '12 Pro Max' });
+      expect(resultWithVersion).to.deep.include({ model: 'Macintosh' });
+    });
+
     it('does not set the ppi if screeninchesheight is not provided', function() {
       const device = { ...fiftyOneDegreesDevice };
       delete device.screeninchesheight;

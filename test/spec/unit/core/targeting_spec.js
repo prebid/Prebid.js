@@ -1,11 +1,12 @@
 import { expect } from 'chai';
 import {
-  filters,
   getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
   sortByDealAndPriceBucketOrCpm,
   targeting as targetingInstance
+  , getAdUnitBidLimitMap
 } from 'src/targeting.js';
+import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
 import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
@@ -16,7 +17,6 @@ import { createBid } from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import { getHighestCpm } from '../../../../src/utils/reducers.js';
 import { getGlobal } from '../../../../src/prebidGlobal.js';
-import { getAdUnitBidLimitMap } from '../../../../src/targeting.js';
 
 function mkBid(bid) {
   return Object.assign(createBid(), bid);
@@ -26,7 +26,6 @@ const sampleBid = {
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
-  'statusMessage': 'Bid available',
   'adId': '148018fe5e',
   'cpm': 0.537234,
   'ad': 'markup',
@@ -60,7 +59,6 @@ const bid2 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
-  'statusMessage': 'Bid available',
   'adId': '5454545',
   'cpm': 0.25,
   'ad': 'markup',
@@ -90,7 +88,6 @@ const bid3 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '600',
-  'statusMessage': 'Bid available',
   'adId': '48747745',
   'cpm': 0.75,
   'ad': 'markup',
@@ -120,7 +117,6 @@ const nativeBid1 = mkBid({
   'bidderCode': 'appnexus',
   'width': 0,
   'height': 0,
-  'statusMessage': 'Bid available',
   'adId': '591e7c9354b633',
   'requestId': '24aae81e32d6f6',
   'mediaType': 'native',
@@ -188,7 +184,6 @@ const nativeBid2 = mkBid({
   'bidderCode': 'dgads',
   'width': 0,
   'height': 0,
-  'statusMessage': 'Bid available',
   'adId': '6e0aba55ed54e5',
   'requestId': '4de26ec83d9661',
   'mediaType': 'native',
@@ -301,11 +296,11 @@ describe('targeting tests', function () {
             }
             setup(bid, ttlBuffer);
 
-            expect(filters.isBidNotExpired(bid)).to.be.true;
+            expect(bidFilters.isBidNotExpired(bid)).to.be.true;
             clock.tick((bid.ttl - ttlBuffer) * 1000 - 100);
-            expect(filters.isBidNotExpired(bid)).to.be.true;
+            expect(bidFilters.isBidNotExpired(bid)).to.be.true;
             clock.tick(101);
-            expect(filters.isBidNotExpired(bid)).to.be.false;
+            expect(bidFilters.isBidNotExpired(bid)).to.be.false;
           });
         });
       });
@@ -329,7 +324,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
       logWarnStub = sinon.stub(utils, 'logWarn');
       logErrorStub = sinon.stub(utils, 'logError');
     });
@@ -343,13 +338,14 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
-    describe('when handling different adunit targeting value types', function () {
+    describe('when the ad unit has adserverTargeting', function () {
       const adUnitCode = '/123456/header-bid-tag-0';
-      const adServerTargeting = {};
+      let adServerTargeting;
 
       let getAdUnitsStub;
 
       before(function() {
+        adServerTargeting = {};
         getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
           return [
             {
@@ -367,27 +363,41 @@ describe('targeting tests', function () {
       afterEach(function() {
         delete adServerTargeting.test_type;
       });
+      describe('when handling different adunit targeting value types', () => {
+        const pairs = [
+          ['string', '2.3', '2.3'],
+          ['number', 2.3, '2.3'],
+          ['boolean', true, 'true'],
+          ['string-separated', '2.3, 4.5', '2.3,4.5'],
+          ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
+          ['array-of-number', [2.3, 4.5], '2.3,4.5'],
+          ['array-of-boolean', [true, false], 'true,false']
+        ];
+        pairs.forEach(([type, value, result]) => {
+          it(`accepts ${type}`, function() {
+            adServerTargeting.test_type = value;
 
-      const pairs = [
-        ['string', '2.3', '2.3'],
-        ['number', 2.3, '2.3'],
-        ['boolean', true, 'true'],
-        ['string-separated', '2.3, 4.5', '2.3,4.5'],
-        ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
-        ['array-of-number', [2.3, 4.5], '2.3,4.5'],
-        ['array-of-boolean', [true, false], 'true,false']
-      ];
-      pairs.forEach(([type, value, result]) => {
-        it(`accepts ${type}`, function() {
-          adServerTargeting.test_type = value;
+            const targeting = targetingInstance.getAllTargeting([adUnitCode]);
 
-          const targeting = targetingInstance.getAllTargeting([adUnitCode]);
-
-          expect(targeting[adUnitCode].test_type).is.equal(result);
+            expect(targeting[adUnitCode].test_type).is.equal(result);
+          });
         });
       });
-    });
+      describe('when bidsReceived is empty', () => {
+        it('includes ad unit targeting', () => {
+          adServerTargeting.test = 'value';
+          const targeting = targetingInstance.getAllTargeting([adUnitCode], 0, []);
+          sinon.assert.match(targeting[adUnitCode], {
+            test: 'value'
+          });
+        });
 
+        it('does not look up bids received', () => {
+          targetingInstance.getAllTargeting([adUnitCode], 0, []);
+          sinon.assert.notCalled(auctionManager.getBidsReceived);
+        });
+      })
+    });
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
@@ -1114,17 +1124,6 @@ describe('targeting tests', function () {
       });
     }
 
-    it('does not include adpod type bids in the getBidsReceived results', function () {
-      const adpodBid = utils.deepClone(bid1);
-      adpodBid.video = { context: 'adpod', durationSeconds: 15, durationBucket: 15 };
-      adpodBid.cpm = 5;
-      bidsReceived.push(adpodBid);
-
-      const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-      expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', 'hb_adid', 'hb_bidder');
-      expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
-    });
-
     describe('bidTargetingExclusion', function () {
       it('includes all bids in targeting when bidTargetingExclusion is not set', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
@@ -1217,7 +1216,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
 
       setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, function (fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
         fn.call(this, bidsReceived, highestCpmCallback, adUnitBidLimit, true);
@@ -1249,7 +1248,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
     });
 
     it('returns targetingSet correctly', function () {
@@ -1266,7 +1265,7 @@ describe('targeting tests', function () {
       let auctionManagerStub;
       beforeEach(function () {
         enableSendAllBids = false;
-        bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+        bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
         auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
       });
 
@@ -1651,6 +1650,53 @@ describe('targeting tests', function () {
       expect(bids[4].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[5].adserverTargeting.hb_adid).to.equal('mno');
     });
+  });
+
+  describe('GPT eager targeting', () => {
+    let slots, prevGPT;
+    before(() => {
+      prevGPT = window.googletag;
+    });
+    after(() => {
+      if (typeof prevGPT !== 'undefined') {
+        window.googletag = prevGPT;
+      }
+    })
+    beforeEach(() => {
+      slots = [];
+      window.googletag = {
+        pubads: sandbox.stub().callsFake(() => ({
+          getSlots: () => slots,
+        }))
+      }
+    });
+    describe('updateGPTTargeting', () => {
+      it(' does not modify any slot when passed an empty targeting set', () => {
+        slots = [{
+          getAdUnitPath: sinon.stub(),
+          getSlotElementId: sinon.stub()
+        }];
+        targetingInstance.updateGPTTargeting({});
+        sinon.assert.notCalled(slots[0].getAdUnitPath);
+        sinon.assert.notCalled(slots[0].getSlotElementId);
+      });
+    })
+
+    describe('presetGPTTargeting', () => {
+      it('does not choke when GPT is not available', () => {
+        delete window.googletag;
+        targetingInstance.presetGPTTargeting();
+      });
+      it('has no effect when targetingControls.presetGPTTargeting = false', () => {
+        config.setConfig({
+          targetingControls: {
+            presetGPTTargeting: false
+          }
+        })
+        targetingInstance.presetGPTTargeting();
+        sinon.assert.notCalled(window.googletag.pubads);
+      })
+    })
   });
 
   describe('setTargetingForAst', function () {

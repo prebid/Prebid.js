@@ -6,10 +6,17 @@ import {
   viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
 import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
+import { enable, disable } from 'test/mocks/percentInView.js';
 
 import { defer } from 'src/utils/promise.js';
 
 describe('percentInView', () => {
+  before(() => {
+    disable();
+  });
+  after(() => {
+    enable();
+  });
   let sandbox;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -92,7 +99,7 @@ describe('percentInView', () => {
       let err = new Error();
       nakedObs.observe.throws(err);
       try {
-        await obs.observe(null);
+        await obs.observe({});
       } catch (e) {
         expect(e).to.eql(err);
         return;

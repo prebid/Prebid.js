@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { spec, storage } from 'modules/criteoBidAdapter.js';
+import { dep, spec, storage } from 'modules/criteoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
-import * as ajax from 'src/ajax.js';
 import { config } from '../../../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -27,7 +26,7 @@ describe('The Criteo bidding adapter', function () {
     localStorage.removeItem('criteo_fast_bid');
     sandbox = sinon.createSandbox();
     logWarnStub = sandbox.stub(utils, 'logWarn');
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub(dep, 'ajax');
   });
 
   afterEach(function () {
@@ -1368,8 +1367,6 @@ describe('The Criteo bidding adapter', function () {
                 delivery: [1, 2, 3],
                 pos: 1,
                 playbackend: 1,
-                adPodDurationSec: 30,
-                durationRangeSec: [1, 30],
               }
             },
             params: {
@@ -1411,8 +1408,6 @@ describe('The Criteo bidding adapter', function () {
         expect(ortbRequest.imp[0].video.ext.context).to.equal('inbanner');
         expect(ortbRequest.imp[0].video.ext.playersizes).to.deep.equal(['640x480']);
         expect(ortbRequest.imp[0].video.ext.plcmt).to.equal(3);
-        expect(ortbRequest.imp[0].video.ext.poddur).to.equal(30);
-        expect(ortbRequest.imp[0].video.ext.rqddurs).to.deep.equal([1, 30]);
       });
     }
 
@@ -1927,22 +1922,6 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.imp[1].ext.bidder.uid).to.equal(888);
     });
 
-    it('should properly transmit device.ext.cdep if available', async function () {
-      const bidderRequest = {
-        ortb2: {
-          device: {
-            ext: {
-              cdep: 'cookieDeprecationLabel'
-            }
-          }
-        }
-      };
-      const bidRequests = [];
-      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const ortbRequest = request.data;
-      expect(ortbRequest.device.ext.cdep).to.equal('cookieDeprecationLabel');
-    });
-
     it('should interpret correctly gzip configuration given as a string', async function() {
       bidderConfigStub.returns({ criteo: { gzipEnabled: 'false' } });
 
@@ -2223,6 +2202,8 @@ describe('The Criteo bidding adapter', function () {
         expect(bids[0].renderer.url).to.equal('https://static.criteo.net/js/ld/publishertag.renderer.js');
         expect(typeof bids[0].renderer.config.documentResolver).to.equal('function');
         expect(typeof bids[0].renderer._render).to.equal('function');
+        const render = bids[0].renderer._render;
+        expect(() => render(bids[0])).to.not.throw();
       });
     }
 

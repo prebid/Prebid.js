@@ -7,12 +7,12 @@ import {
   getPriceByGranularity,
   addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
-import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
+import { BID_STATUS, EVENTS, TARGETING_KEYS, S2S, REJECTION_REASON } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import { _internal as store } from 'src/videoCache.js';
+import { _internal as store, updateVast } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../src/hook.js';
@@ -25,10 +25,9 @@ import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js'
 
-import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 import { sandbox } from 'sinon';
-import { getMinBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
@@ -870,6 +869,29 @@ describe('auctionmanager.js', function () {
       })
     })
 
+    describe('setConfig(minTargetedBidCacheTTL)', () => {
+      it('should update getMinTargetedBidCacheTTL', () => {
+        expect(getMinTargetedBidCacheTTL()).to.eql(null);
+        config.setConfig({ minTargetedBidCacheTTL: 3600 });
+        expect(getMinTargetedBidCacheTTL()).to.eql(3600);
+      });
+
+      it('getEffectiveMinBidCacheTTL uses minTargetedBidCacheTTL for bids with targeting set', () => {
+        config.setConfig({ minBidCacheTTL: 30, minTargetedBidCacheTTL: 3600 });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        const bidWithoutTargeting = { status: 'other' };
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(3600);
+        expect(getEffectiveMinBidCacheTTL(bidWithoutTargeting)).to.eql(30);
+      });
+
+      it('getEffectiveMinBidCacheTTL uses minBidCacheTTL when minTargetedBidCacheTTL not set', () => {
+        config.resetConfig();
+        config.setConfig({ minBidCacheTTL: 30 });
+        const bidWithTargeting = { status: BID_STATUS.BID_TARGETING_SET };
+        expect(getEffectiveMinBidCacheTTL(bidWithTargeting)).to.eql(30);
+      })
+    })
+
     describe('minBidCacheTTL', () => {
       let clock, auction;
       beforeEach(() => {
@@ -910,7 +932,7 @@ describe('auctionmanager.js', function () {
 
         it('pick up updates to minBidCacheTTL that happen during bid lifetime', async () => {
           auction.callBids();
-          await auction.edn;
+          await auction.end;
           clock.tick(10 * 1000);
           config.setConfig({
             minBidCacheTTL: 20
@@ -918,6 +940,37 @@ describe('auctionmanager.js', function () {
           await clock.tick(0);
           await clock.tick(20 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(1);
+        });
+
+        it('do not expire targeted bids when minTargetedBidCacheTTL is set', async () => {
+          config.setConfig({
+            minBidCacheTTL: 30,
+            minTargetedBidCacheTTL: 3600
+          });
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10,
+              adId: utils.getUniqueIdentifierStr(),
+              auctionId: auction.getAuctionId()
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100,
+              adId: utils.getUniqueIdentifierStr(),
+              auctionId: auction.getAuctionId()
+            }
+          ];
+          auction.callBids();
+          await auction.end;
+          const shortTtlBid = auctionManager.getBidsReceived().find(b => b.ttl === 10);
+          auctionManager.setStatusForBids(shortTtlBid.adId, BID_STATUS.BID_TARGETING_SET);
+          await clock.tick(105 * 1000);
+          await clock.tick(0);
+          const bidsReceived = auctionManager.getBidsReceived();
+          expect(bidsReceived.length).to.equal(1);
+          expect(bidsReceived[0].adId).to.equal(shortTtlBid.adId);
         })
       })
 
@@ -1030,7 +1083,7 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 3000', function () {
       beforeEach(function () {
-        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+        ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
         adUnits = [{
           mediaTypes: {
             banner: {
@@ -1100,6 +1153,47 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting[TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
+
+      if (FEATURES.VIDEO) {
+        describe('BID_ACCEPTED', () => {
+          let updateVastHook, sandbox;
+          before(() => {
+            sandbox = sinon.createSandbox();
+            sandbox.stub(events, 'emit');
+            updateVastHook = sinon.stub();
+            updateVast.before(updateVastHook);
+            config.setConfig({
+              cache: {
+                useLocal: true,
+              }
+            });
+          });
+          after(() => {
+            updateVast.getHooks({ hook: updateVastHook }).remove();
+            sandbox.restore();
+          });
+          it('should be fired before video caching', () => {
+            bids = [Object.assign(bids[0], {
+              mediaType: 'video',
+              vastXml: 'mock-vast'
+            })];
+            spec.interpretResponse.returns(bids);
+            const pm = new Promise((resolve, reject) => {
+              updateVastHook.callsFake((next, bid) => {
+                try {
+                  sinon.assert.calledWith(events.emit, EVENTS.BID_ACCEPTED, bid);
+                  resolve()
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            })
+            auction.callBids();
+            return pm;
+          });
+        });
+      }
+
       it('should add the bidResponse to the collection before calling BID_RESPONSE', function () {
         let hasBid = false;
         const eventHandler = function(bid) {
@@ -1315,7 +1409,7 @@ describe('auctionmanager.js', function () {
     });
 
     describe('when auction timeout is 20', function () {
-      let eventsEmitSpy, auctionDone;
+      let eventsEmitSpy, auctionDone, bidsBackCallback;
 
       function respondToRequest(requestIndex) {
         server.requests[requestIndex].respond(200, {}, 'response body');
@@ -1348,7 +1442,8 @@ describe('auctionmanager.js', function () {
         registerBidder(spec1);
         const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
         registerBidder(spec2);
-        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: () => auctionDone(), cbTimeout: 20 });
+        bidsBackCallback = sinon.stub().callsFake(() => { auctionDone() });
+        auction = auctionModule.newAuction({ adUnits, adUnitCodes, callback: bidsBackCallback, cbTimeout: 20 });
         indexAuctions = [auction];
       });
 
@@ -1505,6 +1600,22 @@ describe('auctionmanager.js', function () {
         respondToRequest(1);
         return pm;
       })
+
+      it('should invoke callback with bids as quasi-normal arrays', () => {
+        const pm = runAuction();
+        respondToRequest(0);
+        respondToRequest(1);
+
+        function expectBidsArray(arr) {
+          sinon.assert.match(arr[0], { requestId: bids[0].requestId });
+          sinon.assert.match(arr[1], { requestId: bids[1].requestId });
+        }
+        return pm.then(() => {
+          const cbArg0 = bidsBackCallback.args[0][0];
+          expectBidsArray(cbArg0[ADUNIT_CODE]);
+          expectBidsArray(cbArg0[ADUNIT_CODE].bids);
+        })
+      })
     });
   });
 
@@ -1544,7 +1655,7 @@ describe('auctionmanager.js', function () {
       ];
       const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       indexAuctions = [auction];
@@ -1706,7 +1817,7 @@ describe('auctionmanager.js', function () {
       const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
 
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
 
       spec = mockBidder(BIDDER_CODE, bids);
       spec1 = mockBidder(BIDDER_CODE1, bids1);
@@ -1746,7 +1857,7 @@ describe('auctionmanager.js', function () {
 
       beforeEach(function () {
         makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
-        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+        ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
 
         const adUnits = [{
           code: ADUNIT_CODE,
@@ -2070,7 +2181,7 @@ describe('auctionmanager.js', function () {
       })
 
       describe('when responsesReady defers', () => {
-        let resolve, reject, promise, callbacks, bids;
+        let promiseResolve, promiseReject, promise, callbacks, bids;
 
         function hook(next, ready) {
           next(ready.then(() => promise));
@@ -2085,10 +2196,9 @@ describe('auctionmanager.js', function () {
         });
 
         beforeEach(() => {
-          // eslint-disable-next-line promise/param-names
-          promise = new Promise((rs, rj) => {
-            resolve = rs;
-            reject = rj;
+          promise = new Promise((resolve, reject) => {
+            promiseResolve = resolve;
+            promiseReject = reject;
           });
           bids = [
             mockBid({ bidderCode: BIDDER_CODE1 }),
@@ -2102,8 +2212,8 @@ describe('auctionmanager.js', function () {
         });
 
         Object.entries({
-          'resolve': () => resolve(),
-          'reject': () => reject(),
+          'resolve': () => promiseResolve(),
+          'reject': () => promiseReject(),
         }).forEach(([t, resolver]) => {
           it(`should wait for responsesReady to ${t} before calling auctionDone`, (done) => {
             bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));

@@ -1,8 +1,9 @@
 import {
-  accessDeviceRule,
+  accessDeviceRule, accessRequestCredentialsRule,
   ACTIVE_RULES,
   enrichEidsRule,
   fetchBidsRule,
+  getAcceptableFlags,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
   reportAnalyticsRule,
@@ -29,7 +30,6 @@ import { requestBids } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { GDPR_GVLIDS, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
 import { activityParams } from '../../../src/activities/activityParams.js';
-import { checkIfCredentialsAllowed } from '../../../modules/tcfControl.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -110,8 +110,11 @@ describe('gdpr enforcement', function () {
   };
   let gvlids, sandbox;
 
-  function setupConsentData({ gdprApplies = true, apiVersion = 2 } = {}) {
+  function setupConsentData({ gdprApplies = true, apiVersion = 2, tcDataMutator } = {}) {
     const cd = utils.deepClone(staticConfig);
+    if (typeof tcDataMutator === 'function') {
+      tcDataMutator(cd.consentData.getTCData);
+    }
     const consent = {
       vendorData: cd.consentData.getTCData,
       gdprApplies,
@@ -147,95 +150,195 @@ describe('gdpr enforcement', function () {
     sandbox.restore();
   })
 
-  describe('deviceAccessRule', () => {
-    afterEach(() => {
-      config.resetConfig();
+  describe('getAcceptableFlags', () => {
+    let consentData;
+    beforeEach(() => {
+      consentData = {
+        vendorData: {
+          publisher: {
+            restrictions: {}
+          }
+        }
+      };
     });
 
-    it('should not check for consent when enforcePurpose and enforceVendor are false', function () {
-      Object.assign(gvlids, {
-        appnexus: 1,
-        rubicon: 5
+    describe('with no restrictions', () => {
+      it('should allow both consent and LI for purpose 2', () => {
+        expect(getAcceptableFlags({}, 2, 123)).to.eql({
+          acceptConsent: true,
+          acceptLI: true
+        })
       });
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: false,
-            enforceVendor: false,
-            vendorExceptions: ['appnexus']
-          }]
-        }
-      });
-      setupConsentData();
-      ['appnexus', 'rubicon'].forEach(bidder => expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, bidder))));
-    });
-
-    it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function () {
-      Object.assign(gvlids, {
-        appnexus: 1,
-        rubicon: 3
-      });
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: true,
-            enforceVendor: true,
-          }]
-        }
-      });
-      setupConsentData();
-      Object.entries({
-        appnexus: true,
-        rubicon: false
-      }).forEach(([bidder, isAllowed]) => {
-        expectAllow(isAllowed, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
+      it('should allow only consent for other purposes', () => {
+        expect(getAcceptableFlags({}, 4, 123)).to.eql({
+          acceptConsent: true,
+          acceptLI: false
+        })
       })
     });
-
-    it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
-      gvlids.appnexus = 1;
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: true,
-            enforceVendor: true,
-            vendorExceptions: []
-          }]
+    describe('with restrictions', () => {
+      [
+        {
+          purpose: 2,
+          restriction: 0,
+          expectation: {
+            acceptConsent: false,
+            acceptLI: false
+          }
+        },
+        {
+          purpose: 2,
+          restriction: 1,
+          expectation: {
+            acceptConsent: true,
+            acceptLI: false
+          }
+        },
+        {
+          purpose: 2,
+          restriction: 2,
+          expectation: {
+            acceptConsent: false,
+            acceptLI: true
+          }
+        },
+        {
+          // require LI for a purpose where we don't allow LI
+          purpose: 4,
+          restriction: 2,
+          expectation: {
+            acceptConsent: false,
+            acceptLI: false
+          }
         }
-      });
-      setupConsentData();
-      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
-    });
-
-    it('should use gvlMapping set by publisher', function() {
-      config.setConfig({
-        'gvlMapping': {
-          'appnexus': 4
-        }
-      });
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: true,
-            enforceVendor: true,
-            vendorExceptions: []
-          }]
-        }
-      });
-      setupConsentData();
-      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
-    });
-
-    it(`should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
-      setEnforcementConfig({});
-      setupConsentData();
-      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_PREBID, 'mockCoreModule')));
+      ].forEach(({ purpose, restriction, expectation }) => {
+        it(`shold return ${JSON.stringify(expectation)} for purpose ${purpose} when restriction is ${restriction}`, () => {
+          consentData.vendorData.publisher.restrictions = {
+            [purpose]: {
+              123: restriction
+            }
+          };
+          expect(getAcceptableFlags(consentData, purpose, 123)).to.eql(expectation);
+        })
+      })
     })
   });
+
+  Object.entries({
+    accessDeviceRule,
+    accessRequestCredentialsRule
+  }).forEach(([name, rule]) => {
+    describe(name, () => {
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('should not check for consent when enforcePurpose and enforceVendor are false', function () {
+        Object.assign(gvlids, {
+          appnexus: 1,
+          rubicon: 5
+        });
+        setEnforcementConfig({
+          gdpr: {
+            rules: [{
+              purpose: 'storage',
+              enforcePurpose: false,
+              enforceVendor: false,
+              vendorExceptions: ['appnexus']
+            }]
+          }
+        });
+        setupConsentData();
+        ['appnexus', 'rubicon'].forEach(bidder => expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, bidder))));
+      });
+
+      it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function () {
+        Object.assign(gvlids, {
+          appnexus: 1,
+          rubicon: 3
+        });
+        setEnforcementConfig({
+          gdpr: {
+            rules: [{
+              purpose: 'storage',
+              enforcePurpose: true,
+              enforceVendor: true,
+            }]
+          }
+        });
+        setupConsentData();
+        Object.entries({
+          appnexus: true,
+          rubicon: false
+        }).forEach(([bidder, isAllowed]) => {
+          expectAllow(isAllowed, rule(activityParams(MODULE_TYPE_BIDDER, bidder)));
+        })
+      });
+
+      it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
+        gvlids.appnexus = 1;
+        setEnforcementConfig({
+          gdpr: {
+            rules: [{
+              purpose: 'storage',
+              enforcePurpose: true,
+              enforceVendor: true,
+              vendorExceptions: []
+            }]
+          }
+        });
+        setupConsentData();
+        expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
+      });
+
+      it('should support TCF 2.3 tcData using disclosedVendors', function () {
+        gvlids.appnexus = 1;
+        setEnforcementConfig({
+          gdpr: {
+            rules: [{
+              purpose: 'storage',
+              enforcePurpose: true,
+              enforceVendor: true,
+              vendorExceptions: []
+            }]
+          }
+        });
+        setupConsentData({
+          tcDataMutator: (tcData) => {
+            tcData.tcfPolicyVersion = 3;
+            tcData.disclosedVendors = { '1': true, '2': true };
+          }
+        });
+        expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
+      });
+
+      it('should use gvlMapping set by publisher', function() {
+        config.setConfig({
+          'gvlMapping': {
+            'appnexus': 4
+          }
+        });
+        setEnforcementConfig({
+          gdpr: {
+            rules: [{
+              purpose: 'storage',
+              enforcePurpose: true,
+              enforceVendor: true,
+              vendorExceptions: []
+            }]
+          }
+        });
+        setupConsentData();
+        expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
+      });
+    })
+  });
+
+  it(`accessDeviceRule should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
+    setEnforcementConfig({});
+    setupConsentData();
+    expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_PREBID, 'mockCoreModule')));
+  })
 
   describe('syncUserRule', () => {
     it('should allow bidder to do user sync if consent is true', function () {
@@ -1137,28 +1240,5 @@ describe('gdpr enforcement', function () {
         expect(getGvlidFromAnalyticsAdapter('analytics')).to.not.be.ok;
       });
     });
-  })
-  describe('checkIfCredentialsAllowed', () => {
-    it('should not allow access credentials for lack of purpose consent 1', () => {
-      const logWarn = sinon.spy(utils, 'logWarn');
-      const rules = [{
-        purpose: 'storage',
-        enforcePurpose: true,
-        enforceVendor: false
-      }]
-      setEnforcementConfig({ gdpr: { rules } });
-      const consent = setupConsentData({ gdprApplies: false });
-      consent.vendorData.purpose.consents['1'] = false;
-      const nextSpy = sinon.spy();
-      const options = {
-        withCredentials: true
-      }
-
-      checkIfCredentialsAllowed(nextSpy, options);
-
-      sinon.assert.calledWith(nextSpy, { withCredentials: false });
-      expect(logWarn.calledOnce).to.equal(true);
-      logWarn.restore();
-    })
   })
 });
