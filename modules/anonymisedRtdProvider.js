@@ -69,7 +69,7 @@ export function createRtdProvider(moduleName) {
    * @return {'t'|'h'}
    */
   function getSignalLiftGroup() {
-    return storage.getDataFromSessionStorage(SIGNAL_LIFT_GROUP_KEY) ?? 't';
+    return storage.getDataFromSessionStorage(SIGNAL_LIFT_GROUP_KEY) === 'h' ? 'h' : 't';
   }
   /**
    * Load the Anonymised Marketing Tag script
