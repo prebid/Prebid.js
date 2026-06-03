@@ -398,7 +398,8 @@ describe('pubxaiRtdProvider', () => {
       setFloorsApiStatus(FloorsApiStatus.SUCCESS);
       sinon.assert.calledWith(
         window.dispatchEvent,
-        new CustomEvent(FLOORS_EVENT_HANDLE, {
+        sinon.match({
+          type: FLOORS_EVENT_HANDLE,
           detail: { status: FloorsApiStatus.SUCCESS },
         })
       );
