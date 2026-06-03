@@ -192,16 +192,31 @@ describe('fluctAdapter', function () {
       expect(request.data.regs).to.eql(undefined);
     });
 
-    it('does not include x-fluct-prebid-wrapper header by default', function () {
+    it('does not include wrapperName in data by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.options.customHeaders['x-fluct-prebid-wrapper']).to.be.undefined;
+      expect(request.data.wrapperName).to.be.undefined;
     });
 
-    it('includes x-fluct-prebid-wrapper header when fluct.wrapperName is configured', function () {
+    it('includes wrapperName in data when fluct.wrapperName is configured', function () {
       sb.stub(config, 'getConfig').withArgs('fluct').returns({ wrapperName: 'boost' });
 
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.options.customHeaders['x-fluct-prebid-wrapper']).to.equal('boost');
+      expect(request.data.wrapperName).to.equal('boost');
+    });
+
+    it('includes adapterVersion in data', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.adapterVersion).to.be.a('string').and.not.empty;
+    });
+
+    it('does not set application/json content type', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.options.contentType).to.be.undefined;
+    });
+
+    it('does not include custom headers', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.options.customHeaders).to.be.undefined;
     });
 
     it('includes filtered user.eids if any exists', function () {
