@@ -1,5 +1,6 @@
-const {relPath, isInDirectory, TEST_DIR, getFreeName, getModuleName, getMetadata, PREBID_ROOT } = require('./utils.js');
+const {relPath, isInDirectory, TEST_DIR, getFreeName, getModuleName, PREBID_ROOT } = require('./utils.js');
 const t = require('@babel/core').types;
+const fs = require('fs');
 const osPath = require('path');
 
 const NAMES = {
@@ -14,15 +15,16 @@ const getCallers = (() => {
   return function (filename, message) {
     if (!cache.hasOwnProperty(filename)) {
       const moduleName = getModuleName(osPath.resolve(PREBID_ROOT, filename));
-      const metadata = getMetadata(moduleName);
-      if (moduleName != null && metadata != null) {
+      const metadataFile = osPath.resolve(__dirname, `../metadata/modules/${moduleName}.json`);
+      if (moduleName != null && fs.existsSync(metadataFile)) {
+        const metadata = JSON.parse(fs.readFileSync(metadataFile).toString());
         const callers = metadata.components.reduce((summary, {gvlid, componentName, componentType}) => {
           summary.gvlids.add(gvlid)
           summary.callers.push([componentType, componentName])
           return summary;
         }, {gvlids: new Set(), callers: []});
         if (!callers.callers.length) {
-          throw new Error(`Unexpected empty component list from metadata for '${moduleName}'`);
+          throw new Error(`Unexpected empty component list from metadata file ${metadataFile}`);
         }
         if (callers.gvlids.size > 1) {
           console.warn(`WARNING: more than one GVL ID is associated with '${filename}'. ${message}`)

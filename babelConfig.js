@@ -34,7 +34,6 @@ module.exports = function (options = {}) {
       const plugins = [
         [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
         [path.resolve(__dirname, './plugins/callerContext.js'), options],
-        [path.resolve(__dirname, './plugins/gvlPurposes.js'), options],
         [useLocal('@babel/plugin-transform-runtime')],
       ];
       return plugins;
