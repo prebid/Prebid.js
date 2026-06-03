@@ -88,7 +88,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         auction.timer = setTimeout(() => flush(args.auctionId), timeout);
       } else if (eventType === EVENTS.BID_WON) {
         const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);
-        updateBid(args.auctionId, args.requestId, {
+        const winFields = {
           renderStatus: 4,
           renderedSize: args.size,
           host: window.location.hostname,
@@ -96,6 +96,30 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           search: window.location.search,
           adserverAdSlot,
           pbAdSlot
+        };
+        updateBid(args.auctionId, args.requestId, winFields);
+        // Send an immediate win beacon so the win is captured even when BID_WON
+        // fires after the batch timer has already flushed the auction, or when
+        // the user navigates away before the batch timer fires.
+        send({
+          bidWon: {
+            bidId: args.requestId,
+            bidderCode: args.bidderCode,
+            adUnitCode: args.adUnitCode,
+            auctionId: args.auctionId,
+            creativeId: args.creativeId,
+            transactionId: args.transactionId,
+            currency: args.currency,
+            cpm: args.cpm,
+            netRevenue: args.netRevenue,
+            mediaType: args.mediaType,
+            statusMessage: args.statusMessage,
+            status: args.status,
+            timeToRespond: args.timeToRespond,
+            requestTimestamp: args.requestTimestamp,
+            responseTimestamp: args.responseTimestamp,
+            ...winFields
+          }
         });
       } else if (eventType === EVENTS.AD_RENDER_SUCCEEDED) {
         const bid = args.bid;
