@@ -412,6 +412,20 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user?.ext?.eids).to.be.undefined;
     });
 
+    it('does not inject duplicate EID when anonymised.io entry already exists in user.ext.eids', function() {
+      const existingEid = {
+        source: 'anonymised.io',
+        uids: [{ id: 'existing-cuid', atype: 1, ext: { stype: 'ppuid' } }]
+      };
+      getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(JSON.stringify({ profile: { cuid: 'new-cuid' } }));
+
+      const bidConfig = { ortb2Fragments: { global: { user: { ext: { eids: [existingEid] } } } } };
+      getRealTimeData(bidConfig, () => {}, { params: {} }, {});
+
+      expect(bidConfig.ortb2Fragments.global.user.ext.eids).to.have.length(1);
+      expect(bidConfig.ortb2Fragments.global.user.ext.eids[0]).to.deep.equal(existingEid);
+    });
+
     it('injects CUID alongside cohort segments', function() {
       getDataFromLocalStorageStub.withArgs('cohort_ids').returns(JSON.stringify(['SEG001']));
       getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(JSON.stringify({ profile: { cuid: 'cuid-with-cohort' } }));
