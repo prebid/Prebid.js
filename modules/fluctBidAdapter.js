@@ -267,8 +267,6 @@ export const spec = {
         data.bidfloorcur = highestFloorData.currency;
       }
 
-      data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
-
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
