@@ -7,7 +7,7 @@
  */
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
-import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { isPlainObject, mergeDeep, logMessage, logWarn, logError, getWindowLocation } from '../src/utils.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 /**
@@ -53,7 +53,9 @@ export function createRtdProvider(moduleName) {
    * @return {string|undefined}
    */
   function getCUID() {
-    const oidcKey = `oidc.user:https://account.anonymised.io/login:${window.location.origin}`;
+    const origin = getWindowLocation()?.origin;
+    if (!origin) return undefined;
+    const oidcKey = `oidc.user:https://account.anonymised.io/login:${origin}`;
     try {
       const record = storage.getDataFromLocalStorage(oidcKey);
       return record ? JSON.parse(record)?.profile?.cuid : undefined;
