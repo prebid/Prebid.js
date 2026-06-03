@@ -353,3 +353,4 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
 }
 
 export const allConsent = multiHandler();
+export const GVL_PURPOSES = {}; // this is populated by plugins/gvlPurposes.js

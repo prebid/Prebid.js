@@ -1,11 +1,15 @@
 import {
-  accessDeviceRule, accessRequestCredentialsRule,
+  accessDeviceRule,
+  accessRequestCredentialsRule,
   ACTIVE_RULES,
+  DEFAULT_PURPOSE_DECLARATION,
   enrichEidsRule,
   fetchBidsRule,
   getAcceptableFlags,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
+  getPurposeDeclarations,
+  NO_PURPOSE_DECLARATION,
   reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
@@ -28,7 +32,7 @@ import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
 import { requestBids } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
-import { GDPR_GVLIDS, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
+import { GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
 import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
@@ -149,9 +153,97 @@ describe('gdpr enforcement', function () {
   afterEach(() => {
     sandbox.restore();
   })
+  describe('getPurposeDeclarations', () => {
+    const GVL_ID = 123;
+    let origDecl, decl;
+    beforeEach(() => {
+      origDecl = GVL_PURPOSES[GVL_ID];
+      delete GVL_PURPOSES[GVL_ID];
+      decl = {
+        purposes: [1],
+        legIntPurposes: [2],
+        flexiblePurposes: [2],
+        specialFeatures: [3]
+      };
+    })
+    afterEach(() => {
+      GVL_PURPOSES[GVL_ID] = origDecl;
+      config.resetConfig();
+    })
+    it('should use data from GVL_PURPOSES', () => {
+      GVL_PURPOSES[GVL_ID] = decl;
+      expect(getPurposeDeclarations(GVL_ID)).to.eql(decl);
+    });
+    it('should give precedence to gvlLegalBasisMapping', () => {
+      GVL_PURPOSES[GVL_ID] = decl;
+      config.setConfig({
+        gvlLegalBasisMapping: {
+          [GVL_ID]: {
+            ...decl,
+            purposes: [1, 3]
+          }
+        }
+      });
+      expect(getPurposeDeclarations(GVL_ID)).to.eql({
+        ...decl,
+        purposes: [1, 3]
+      })
+    });
+    it('should provide defaults for gvlLegalBasisMapping', () => {
+      config.setConfig({
+        gvlLegalBasisMapping: {
+          [GVL_ID]: {
+            purposes: [1]
+          }
+        }
+      });
+      expect(getPurposeDeclarations(GVL_ID)).to.eql({
+        purposes: [1],
+        legIntPurposes: [],
+        flexiblePurposes: [],
+        specialFeatures: []
+      })
+    });
+    Object.entries({
+      'no declaration is available for a GVL ID': GVL_ID,
+      'GVL ID is not known': null
+    }).forEach(([t, gvlid]) => {
+      it('should fall back to allow (almost) anything when defaultLegalBasis is not set', () => {
+        expect(getPurposeDeclarations(gvlid)).to.eql(DEFAULT_PURPOSE_DECLARATION);
+      });
+      it('should fall back to defaultLegalBasis when provided', () => {
+        config.setConfig({
+          consentManagement: {
+            gdpr: {
+              defaultLegalBasis: {
+                purposes: [1]
+              }
+            }
+          }
+        });
+        expect(getPurposeDeclarations(gvlid)).to.eql({
+          purposes: [1],
+          legIntPurposes: [],
+          flexiblePurposes: [],
+          specialFeatures: [],
+        })
+      })
+    })
+    it('should fall back to allow nothing when the declaration is invalid', () => {
+      config.setConfig({
+        gvlLegalBasisMapping: {
+          [GVL_ID]: {
+            flexiblePurposes: [2]
+          }
+        }
+      });
+      expect(getPurposeDeclarations(GVL_ID)).to.eql(NO_PURPOSE_DECLARATION)
+    })
+  });
 
   describe('getAcceptableFlags', () => {
     let consentData;
+
     beforeEach(() => {
       consentData = {
         vendorData: {
@@ -162,66 +254,185 @@ describe('gdpr enforcement', function () {
       };
     });
 
-    describe('with no restrictions', () => {
-      it('should allow both consent and LI for purpose 2', () => {
-        expect(getAcceptableFlags({}, 2, 123)).to.eql({
-          acceptConsent: true,
-          acceptLI: true
-        })
-      });
-      it('should allow only consent for other purposes', () => {
-        expect(getAcceptableFlags({}, 4, 123)).to.eql({
+    Object.entries({
+      'purpose accepts consent': {
+        type: 'purpose',
+        gvlid: 123,
+        purpose: 2,
+        declaration: {
+          purposes: [2],
+          legIntPurposes: [],
+          flexiblePurposes: [],
+        },
+        expectation: {
           acceptConsent: true,
           acceptLI: false
-        })
-      })
-    });
-    describe('with restrictions', () => {
-      [
-        {
-          purpose: 2,
-          restriction: 0,
-          expectation: {
-            acceptConsent: false,
-            acceptLI: false
-          }
-        },
-        {
-          purpose: 2,
-          restriction: 1,
-          expectation: {
-            acceptConsent: true,
-            acceptLI: false
-          }
-        },
-        {
-          purpose: 2,
-          restriction: 2,
-          expectation: {
-            acceptConsent: false,
-            acceptLI: true
-          }
-        },
-        {
-          // require LI for a purpose where we don't allow LI
-          purpose: 4,
-          restriction: 2,
-          expectation: {
-            acceptConsent: false,
-            acceptLI: false
-          }
         }
-      ].forEach(({ purpose, restriction, expectation }) => {
-        it(`shold return ${JSON.stringify(expectation)} for purpose ${purpose} when restriction is ${restriction}`, () => {
-          consentData.vendorData.publisher.restrictions = {
-            [purpose]: {
-              123: restriction
-            }
-          };
-          expect(getAcceptableFlags(consentData, purpose, 123)).to.eql(expectation);
-        })
-      })
-    })
+      },
+      'purpose accepts LI': {
+        type: 'purpose',
+        gvlid: 123,
+        purpose: 2,
+        declaration: {
+          purposes: [],
+          legIntPurposes: [2],
+          flexiblePurposes: []
+        },
+        expectation: {
+          acceptConsent: true,
+          acceptLI: true,
+        }
+      },
+      'purpose is flexible (default consent)': {
+        type: 'purpose',
+        gvlid: 123,
+        purpose: 2,
+        declaration: {
+          purposes: [2],
+          legIntPurposes: [],
+          flexiblePurposes: [2],
+        },
+        expectation: {
+          acceptConsent: true,
+          acceptLI: true,
+        }
+      },
+      'purpose is flexible (default LI)': {
+        type: 'purpose',
+        gvlid: 123,
+        purpose: 2,
+        declaration: {
+          purposes: [],
+          legIntPurposes: [2],
+          flexiblePurposes: [2],
+        },
+        expectation: {
+          acceptConsent: true,
+          acceptLI: true,
+        }
+      },
+      'special feature is declared': {
+        type: 'feature',
+        gvlid: 123,
+        purpose: 2,
+        declaration: {
+          specialFeatures: [2]
+        },
+        expectation: {
+          acceptConsent: true,
+          acceptLI: false,
+        }
+      },
+      'special feature is not declared': {
+        type: 'feature',
+        gvlid: 123,
+        purpose: 2,
+        declaration: {
+          specialFeatures: []
+        },
+        expectation: {
+          acceptConsent: false,
+          acceptLI: false
+        }
+      },
+      'vendorless gvlid, LI purpose': {
+        type: 'purpose',
+        gvlid: VENDORLESS_GVLID,
+        purpose: 2,
+        declaration: {
+          // should be ignored
+          legIntPurposes: [],
+          purposes: [],
+          flexiblePurposes: []
+        },
+        expectation: {
+          acceptLI: true,
+          acceptConsent: true
+        }
+      },
+      'vendorless gvlid, non-LI purpose': {
+        type: 'purpose',
+        gvlid: VENDORLESS_GVLID,
+        purpose: 4,
+        declaration: {
+          // should be ignored
+          legIntPurposes: [],
+          purposes: [],
+          flexiblePurposes: []
+        },
+        expectation: {
+          acceptLI: false,
+          acceptConsent: true
+        }
+      },
+      'vendorless gvlid, special feature': {
+        type: 'feature',
+        gvlid: VENDORLESS_GVLID,
+        purpose: 1,
+        declaration: {
+          // should be ignored
+          legIntPurposes: [],
+          purposes: [],
+          flexiblePurposes: []
+        },
+        expectation: {
+          acceptLI: false,
+          acceptConsent: true
+        }
+      }
+    }).forEach(([t, { gvlid, purpose, type, declaration, expectation }]) => {
+      describe(t, () => {
+        function getPurposes(id) {
+          if (id === gvlid) return declaration;
+        }
+        describe('with no restrictions', () => {
+          it(`should return acceptConsent=${expectation.acceptConsent}, acceptLI=${expectation.acceptLI}`, () => {
+            expect(getAcceptableFlags({}, type, purpose, gvlid, getPurposes)).to.eql({
+              acceptConsent: expectation.acceptConsent,
+              acceptLI: expectation.acceptLI
+            })
+          });
+        });
+        describe('with restrictions', () => {
+          [
+            {
+              restriction: 0,
+              expectation: {
+                acceptConsent: false,
+                acceptLI: false,
+              }
+            },
+            {
+              restriction: 1,
+              expectation: {
+                acceptConsent: expectation.acceptConsent,
+                acceptLI: false
+              }
+            },
+            {
+              restriction: 2,
+              expectation: {
+                acceptConsent: false,
+                acceptLI: expectation.acceptLI
+              }
+            },
+          ].forEach(({ restriction, expectation: newExpectation }) => {
+            describe(`restriction is ${restriction}`, () => {
+              const restrictedExpectation = type === 'feature' ? expectation : newExpectation;
+
+              it(`shold return ${JSON.stringify(restrictedExpectation)}`, () => {
+                consentData.vendorData.publisher.restrictions = {
+                  [purpose]: {
+                    [gvlid]: restriction
+                  }
+                };
+                expect(getAcceptableFlags(consentData, type, purpose, gvlid, getPurposes)).to.eql(restrictedExpectation);
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   Object.entries({
@@ -654,6 +865,20 @@ describe('gdpr enforcement', function () {
       const LI_PURPOSES = [2];
       const CONSENT_TYPES = ['consents', 'legitimateInterests'];
 
+      beforeEach(() => {
+        config.setConfig({
+          gvlLegalBasisMapping: {
+            [GVL_ID]: {
+              purposes: LI_PURPOSES.concat(CS_PURPOSES),
+              flexiblePurposes: LI_PURPOSES
+            }
+          }
+        })
+      })
+      afterEach(() => {
+        config.resetConfig();
+      })
+
       describe('should deny if', () => {
         describe('config is default', () => {
           beforeEach(() => {
@@ -885,21 +1110,46 @@ describe('gdpr enforcement', function () {
     };
 
     // Bidder = 'bidderB' doesn't have vendorConsent
-    const vendorBlockedModule = 'bidderB';
-    const vendorBlockedGvlId = 3;
-
-    const consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
-    consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false;
+    const module = 'bidderB';
+    const gvlid = 3;
 
     describe('when the vendor has a softVendorException', () => {
-      const gdprRule = createGdprRule('storage', true, true, [], [vendorBlockedModule]);
-
+      let gdprRule, consentDataWithPurposeConsentFalse;
+      beforeEach(() => {
+        config.setConfig({
+          // make sure the vendor's declaration is ignored
+          gvlLegalBasisMapping: {
+            [gvlid]: {}
+          }
+        })
+        consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
+        consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false
+        gdprRule = createGdprRule('storage', true, true, [], [module]);
+      });
+      afterEach(() => {
+        config.resetConfig();
+      })
       it('should return false if general consent was not given', () => {
-        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
+        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, module, gvlid);
         expect(isAllowed).to.be.false;
       })
       it('should return true if general consent was given', () => {
-        const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
+        const isAllowed = validateRules(gdprRule, consentData, module, gvlid);
+        expect(isAllowed).to.be.true;
+      });
+      it('should return true if LI was given, and defaultLegalBasis accepts it', () => {
+        config.setConfig({
+          consentManagement: {
+            gdpr: {
+              defaultLegalBasis: {
+                legIntPurposes: [1],
+                flexiblePurposes: [1]
+              }
+            }
+          }
+        })
+        consentDataWithPurposeConsentFalse.vendorData.purpose.legitimateInterests[1] = true;
+        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, module, gvlid);
         expect(isAllowed).to.be.true;
       })
     })
