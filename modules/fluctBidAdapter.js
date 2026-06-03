@@ -267,7 +267,6 @@ export const spec = {
         data.bidfloorcur = highestFloorData.currency;
       }
 
-
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
         tagId: request.params.tagId,
