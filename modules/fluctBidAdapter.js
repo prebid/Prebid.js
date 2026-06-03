@@ -10,7 +10,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid/';
-const VERSION = '1.6';
+const VERSION = '1.7';
 const NET_REVENUE = true;
 const TTL = 300;
 const DEFAULT_CURRENCY = 'JPY';
@@ -131,6 +131,7 @@ export const spec = {
       const ortb2Site = bidderRequest.ortb2?.site;
       if (ortb2Site) {
         data.site = {};
+        if (ortb2Site.name) data.site.name = ortb2Site.name;
         if (ortb2Site.cat) data.site.cat = ortb2Site.cat;
         if (ortb2Site.sectioncat) data.site.sectioncat = ortb2Site.sectioncat;
         if (ortb2Site.pagecat) data.site.pagecat = ortb2Site.pagecat;
@@ -138,18 +139,29 @@ export const spec = {
         if (ortb2Site.content) data.site.content = ortb2Site.content;
         if (ortb2Site.domain) data.site.domain = ortb2Site.domain;
         if (ortb2Site.ref) data.site.ref = ortb2Site.ref;
+        if (ortb2Site.search) data.site.search = ortb2Site.search;
+        if (ortb2Site.publisher) {
+          data.site.publisher = {};
+          if (ortb2Site.publisher.id) data.site.publisher.id = ortb2Site.publisher.id;
+          if (ortb2Site.publisher.domain) data.site.publisher.domain = ortb2Site.publisher.domain;
+        }
         if (ortb2Site.ext?.data) data.site.ext = { data: ortb2Site.ext.data };
       }
 
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
+      const ortb2User = bidderRequest.ortb2?.user;
       data.user = {
-        data: bidderRequest.ortb2?.user?.data ?? [],
+        data: ortb2User?.data ?? [],
         eids: [
           ...(request.userIdAsEids ?? []),
-          ...(bidderRequest.ortb2?.user?.ext?.eids ?? []),
+          ...(ortb2User?.ext?.eids ?? []),
         ],
       };
+      if (ortb2User?.yob != null) data.user.yob = ortb2User.yob;
+      if (ortb2User?.gender != null) data.user.gender = ortb2User.gender;
+      if (ortb2User?.keywords) data.user.keywords = ortb2User.keywords;
+      if (ortb2User?.ext?.data) data.user.ext = { data: ortb2User.ext.data };
 
       if (impExt) {
         data.transactionId = impExt.tid;
@@ -183,6 +195,18 @@ export const spec = {
           sid: bidderRequest.ortb2.regs.gpp_sid
         });
       }
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) {
+        deepSetValue(data, 'regs.ext.dsa', bidderRequest.ortb2.regs.ext.dsa);
+      }
+      if (bidderRequest.ortb2?.regs?.ext?.gpc != null) {
+        deepSetValue(data, 'regs.ext.gpc', bidderRequest.ortb2.regs.ext.gpc);
+      }
+      if (bidderRequest.refererInfo?.canonicalUrl) data.canonicalUrl = bidderRequest.refererInfo.canonicalUrl;
+      if (bidderRequest.refererInfo?.isAmp) data.isAmp = true;
+      if (bidderRequest.refererInfo?.reachedTop != null) data.reachedTop = bidderRequest.refererInfo.reachedTop;
+      if (bidderRequest.refererInfo?.numIframes != null) data.numIframes = bidderRequest.refererInfo.numIframes;
+      if (bidderRequest.timeout != null) data.timeout = bidderRequest.timeout;
+      if (bidderRequest.ortb2?.source?.tid) deepSetValue(data, 'source.tid', bidderRequest.ortb2.source.tid);
       if (bidderRequest.ortb2?.user?.ext?.data?.im_segments) {
         deepSetValue(data, 'params.kv.imsids', bidderRequest.ortb2.user.ext.data.im_segments);
       }
