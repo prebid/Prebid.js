@@ -951,7 +951,6 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.user.ext).to.eql(undefined);
     });
-
   });
 
   describe('should interpretResponse', function() {
