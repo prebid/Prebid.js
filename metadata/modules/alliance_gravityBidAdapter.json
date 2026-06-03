@@ -6,21 +6,6 @@
       "disclosures": []
     }
   },
-  "purposes": {
-    "501": {
-      "purposes": [
-        1,
-        2,
-        3,
-        4,
-        7,
-        9
-      ],
-      "legIntPurposes": [],
-      "flexiblePurposes": [],
-      "specialFeatures": []
-    }
-  },
   "components": [
     {
       "componentType": "bidder",
