@@ -18,6 +18,8 @@ export function createRtdProvider(moduleName) {
   const SUBMODULE_NAME = moduleName;
   const GVLID = 1116;
   const MARKETING_TAG_URL = 'https://static.anonymised.io/light/loader.js';
+  const SIGNAL_LIFT_GROUP_KEY = 'anon-sl-group-session';
+  const ANONYMISED_SOURCE = 'anonymised.io';
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
   /**
@@ -43,6 +45,31 @@ export function createRtdProvider(moduleName) {
       logError(`${SUBMODULE_NAME}RtdProvider: failed to parse json:`, data);
       return null;
     }
+  }
+  /**
+   * Retrieve the current user's CUID from localStorage via the Prebid storage
+   * manager. The OIDC key is composed as:
+   * "oidc.user:" + OIDC_AUTHORITY + ":" + window.location.origin
+   * @return {string|undefined}
+   */
+  function getCUID() {
+    const oidcKey = `oidc.user:https://account.anonymised.io/login:${window.location.origin}`;
+    try {
+      const record = storage.getDataFromLocalStorage(oidcKey);
+      return record ? JSON.parse(record)?.profile?.cuid : undefined;
+    } catch (e) {
+      logWarn(`${SUBMODULE_NAME}RtdProvider: failed to parse CUID from localStorage`);
+      return undefined;
+    }
+  }
+  /**
+   * Return the SignalLift holdout/treatment group for the current user.
+   * Reads from sessionStorage via the Prebid storage manager.
+   * Defaults to 't' (treatment) when the key is absent.
+   * @return {'t'|'h'}
+   */
+  function getSignalLiftGroup() {
+    return storage.getDataFromSessionStorage(SIGNAL_LIFT_GROUP_KEY) ?? 't';
   }
   /**
    * Load the Anonymised Marketing Tag script
@@ -87,47 +114,63 @@ export function createRtdProvider(moduleName) {
       const cohortStorageKey = config.params.cohortStorageKey;
       const bidders = config.params.bidders;
 
-      if (cohortStorageKey !== 'cohort_ids') {
-        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`)
-        return;
-      }
+      if (cohortStorageKey === 'cohort_ids') {
+        const jsonData = storage.getDataFromLocalStorage(cohortStorageKey);
+        const segments = jsonData && tryParse(jsonData);
 
-      const jsonData = storage.getDataFromLocalStorage(cohortStorageKey);
-      if (!jsonData) {
-        return;
-      }
+        if (segments) {
+          const udSegment = {
+            name: ANONYMISED_SOURCE,
+            ext: {
+              segtax: config.params.segtax
+            },
+            segment: segments.map(x => ({ id: x }))
+          }
 
-      const segments = tryParse(jsonData);
-
-      if (segments) {
-        const udSegment = {
-          name: 'anonymised.io',
-          ext: {
-            segtax: config.params.segtax
-          },
-          segment: segments.map(x => ({ id: x }))
-        }
-
-        logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
-        const data = {
-          rtd: {
-            ortb2: {
-              user: {
-                data: [
-                  udSegment
-                ]
+          logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
+          const data = {
+            rtd: {
+              ortb2: {
+                user: {
+                  data: [
+                    udSegment
+                  ]
+                }
               }
             }
+          };
+
+          if (bidders?.includes('appnexus')) {
+            data.rtd.ortb2.user.keywords = segments.map(x => `perid=${x}`).join(',');
           }
-        };
 
-        if (bidders?.includes('appnexus')) {
-          data.rtd.ortb2.user.keywords = segments.map(x => `perid=${x}`).join(',');
+          addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
         }
-
-        addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
+      } else if (cohortStorageKey) {
+        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
       }
     }
+
+    if (getSignalLiftGroup() !== 'h') {
+      const cuid = getCUID();
+      const existingEids = reqBidsConfigObj.ortb2Fragments?.global?.user?.ext?.eids;
+      const alreadyPresent = existingEids?.some(eid => eid.source === ANONYMISED_SOURCE);
+      if (cuid && !alreadyPresent) {
+        logMessage(`${SUBMODULE_NAME}RtdProvider: injecting CUID as user EID`);
+        mergeDeep(reqBidsConfigObj.ortb2Fragments?.global, {
+          user: {
+            ext: {
+              eids: [{
+                source: ANONYMISED_SOURCE,
+                uids: [{ id: cuid, atype: 1, ext: { stype: 'ppuid' } }]
+              }]
+            }
+          }
+        });
+      }
+    }
+
+    onDone();
   }
   /**
    * Module init

@@ -3,6 +3,8 @@
 Anonymised is a data anonymization technology for privacy-preserving advertising. Publishers and advertisers are able to target and retarget custom audience segments covering 100% of consented audiences.
 Anonymised’s Real-time Data Provider automatically obtains segment IDs from the Anonymised on-domain script (via localStorage) and passes them to the bid-stream.
 
+It also injects the authenticated user’s CUID (Customer User ID) as a publisher-provided ID (`user.ext.eids`) into each bid request, equivalent to what the `pubProvidedId` user ID module provides. Users in the SignalLift holdout group are excluded from PPID injection to preserve measurement integrity. `waitForIt: true` is required so the auction waits for PPID injection before sending bids.
+
 ### Integration
 
  - Build the anonymisedRtd module into the Prebid.js package with:

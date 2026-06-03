@@ -359,4 +359,71 @@ describe('anonymisedRtdProvider', function() {
       expect(getRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig)).to.equal(undefined)
     });
   });
+
+  describe('CUID EID injection', function() {
+    const OIDC_KEY = `oidc.user:https://account.anonymised.io/login:${window.location.origin}`;
+    let getDataFromSessionStorageStub;
+
+    beforeEach(function() {
+      getDataFromSessionStorageStub = sinon.stub(storage, 'getDataFromSessionStorage').returns(null);
+    });
+
+    afterEach(function() {
+      getDataFromSessionStorageStub.restore();
+    });
+
+    it('injects CUID as user EID when OIDC user record is present', function() {
+      getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(JSON.stringify({ profile: { cuid: 'test-cuid-123' } }));
+
+      const bidConfig = { ortb2Fragments: { global: {} } };
+      getRealTimeData(bidConfig, () => {}, { params: {} }, {});
+
+      expect(bidConfig.ortb2Fragments.global.user.ext.eids).to.deep.equal([{
+        source: 'anonymised.io',
+        uids: [{ id: 'test-cuid-123', atype: 1, ext: { stype: 'ppuid' } }]
+      }]);
+    });
+
+    it('does not inject EID when OIDC user record is absent', function() {
+      getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(null);
+
+      const bidConfig = { ortb2Fragments: { global: {} } };
+      getRealTimeData(bidConfig, () => {}, { params: {} }, {});
+
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
+    });
+
+    it('does not inject EID when user record has no cuid', function() {
+      getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(JSON.stringify({ profile: { name: 'Test User' } }));
+
+      const bidConfig = { ortb2Fragments: { global: {} } };
+      getRealTimeData(bidConfig, () => {}, { params: {} }, {});
+
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
+    });
+
+    it('does not inject EID when SignalLift group is holdout', function() {
+      getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(JSON.stringify({ profile: { cuid: 'test-cuid-123' } }));
+      getDataFromSessionStorageStub.withArgs('anon-sl-group-session').returns('h');
+
+      const bidConfig = { ortb2Fragments: { global: {} } };
+      getRealTimeData(bidConfig, () => {}, { params: {} }, {});
+
+      expect(bidConfig.ortb2Fragments.global.user?.ext?.eids).to.be.undefined;
+    });
+
+    it('injects CUID alongside cohort segments', function() {
+      getDataFromLocalStorageStub.withArgs('cohort_ids').returns(JSON.stringify(['SEG001']));
+      getDataFromLocalStorageStub.withArgs(OIDC_KEY).returns(JSON.stringify({ profile: { cuid: 'cuid-with-cohort' } }));
+
+      const bidConfig = { ortb2Fragments: { global: {} } };
+      getRealTimeData(bidConfig, () => {}, { params: { cohortStorageKey: 'cohort_ids', segtax: 503 } }, {});
+
+      expect(bidConfig.ortb2Fragments.global.user.data).to.have.length(1);
+      expect(bidConfig.ortb2Fragments.global.user.ext.eids).to.deep.equal([{
+        source: 'anonymised.io',
+        uids: [{ id: 'cuid-with-cohort', atype: 1, ext: { stype: 'ppuid' } }]
+      }]);
+    });
+  });
 });

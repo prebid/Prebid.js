@@ -52,7 +52,8 @@
               realTimeData: {
                 dataProviders: [
                   {
-                    name: "anonymised",                    
+                    name: "anonymised",
+                    waitForIt: true,
                     params: {
                       cohortStorageKey: "cohort_ids",
                       bidders: ['smartadserver', 'appnexus'],
