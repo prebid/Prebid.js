@@ -10,6 +10,21 @@ Maintainer: arjit@z1media.com
 
 Module that connects to VDO.AI's demand sources
 
+# Bid Parameters
+
+| Name          | Scope    | Description                                      | Example               | Type               |
+| :------------ | :------- | :----------------------------------------------- | :-------------------- | :----------------- |
+| `host`        | required | Ad network's RTB host                            | `'exchange.ortb.net'` | `string`           |
+| `adUnitId`    | required | Ad Unit Id will be generated on VDO.AI Platform. | `123456`              | `integer / string` |
+| `publisherId` | required | publisherId will be generated on VDO.AI Platform | `'pub-abc'`           | `string`           |
+| `adUnitType`  | required | Type of Ad Unit (`'video'`, `'banner'`)          | `'banner'`            | `string`           |
+| `custom1`     | optional | Custom targeting field 1                         | `'custom1'`           | `string`           |
+| `custom2`     | optional | Custom targeting field 2                         | `'custom2'`           | `string`           |
+| `custom3`     | optional | Custom targeting field 3                         | `'custom3'`           | `string`           |
+| `custom4`     | optional | Custom targeting field 4                         | `'custom4'`           | `string`           |
+| `custom5`     | optional | Custom targeting field 5                         | `'custom5'`           | `string`           |
+| `bidfloor`    | optional | Minimum bid floor price in USD                   | `1.5`                 | `float`            |
+
 # Test Parameters for banner
 
 ```
