@@ -298,6 +298,28 @@ describe('floxisBidAdapter', function () {
         const imp = requests[0].data.imp[0];
         expect(imp.bidfloor).to.be.undefined;
       });
+
+      it('should not set bidfloor when getFloor returns 0', function () {
+        const bidZeroFloor = {
+          ...validBannerBid,
+          getFloor: function () {
+            return { floor: 0, currency: 'USD' };
+          }
+        };
+        const requests = spec.buildRequests([bidZeroFloor], bidderRequest);
+        expect(requests[0].data.imp[0].bidfloor).to.be.undefined;
+      });
+
+      it('should fall back to params.bidFloor when getFloor is absent', function () {
+        const bidStaticFloor = {
+          ...validBannerBid,
+          params: { ...DEFAULT_PARAMS, bidFloor: 1.75, bidFloorCur: 'USD' }
+        };
+        const requests = spec.buildRequests([bidStaticFloor], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp.bidfloor).to.equal(1.75);
+        expect(imp.bidfloorcur).to.equal('USD');
+      });
     });
 
     describe('ortb2 passthrough', function () {
@@ -325,6 +347,43 @@ describe('floxisBidAdapter', function () {
         const requests = spec.buildRequests([validBannerBid], uspBidderRequest);
         const data = requests[0].data;
         expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      });
+
+      it('should forward COPPA from ortb2.regs', function () {
+        const coppaReq = { ...bidderRequest, ortb2: { regs: { coppa: 1 } } };
+        const data = spec.buildRequests([validBannerBid], coppaReq)[0].data;
+        expect(data.regs.coppa).to.equal(1);
+      });
+
+      it('should forward GPP from ortb2.regs', function () {
+        const gppReq = { ...bidderRequest, ortb2: { regs: { gpp: 'DBACNYA~xxx', gpp_sid: [7] } } };
+        const data = spec.buildRequests([validBannerBid], gppReq)[0].data;
+        expect(data.regs.gpp).to.equal('DBACNYA~xxx');
+        expect(data.regs.gpp_sid).to.deep.equal([7]);
+      });
+
+      it('should forward user.ext.eids', function () {
+        const eids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5-x', atype: 1 }] }];
+        const eidsReq = { ...bidderRequest, ortb2: { user: { ext: { eids } } } };
+        const data = spec.buildRequests([validBannerBid], eidsReq)[0].data;
+        expect(data.user.ext.eids).to.deep.equal(eids);
+      });
+
+      it('should forward source.ext.schain', function () {
+        const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'floxis.tech', sid: '1', hp: 1 }] };
+        const schainReq = { ...bidderRequest, ortb2: { source: { ext: { schain } } } };
+        const data = spec.buildRequests([validBannerBid], schainReq)[0].data;
+        expect(data.source.ext.schain).to.deep.equal(schain);
+      });
+
+      it('should pass tmax from the bidder request timeout', function () {
+        const data = spec.buildRequests([validBannerBid], bidderRequest)[0].data;
+        expect(data.tmax).to.equal(3000);
+      });
+
+      it('should default cur to USD', function () {
+        const data = spec.buildRequests([validBannerBid], bidderRequest)[0].data;
+        expect(data.cur).to.deep.equal(['USD']);
       });
     });
   });
@@ -666,11 +725,18 @@ describe('floxisBidAdapter', function () {
       expect(url).to.include('gpp_sid=7%2C8');
     });
 
-    it('should set gdpr=0 when gdpr does not apply (consent param still present, empty)', function () {
+    it('should set gdpr=0 when gdprApplies is false and omit empty consent', function () {
       spec.buildRequests([validBannerBid], syncBidderRequest);
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES, { gdprApplies: false, consentString: '' });
       expect(syncs[0].url).to.include('gdpr=0');
-      expect(syncs[0].url).to.include('gdpr_consent=');
+      expect(syncs[0].url).to.not.include('gdpr_consent=');
+    });
+
+    it('should omit the gdpr param entirely when gdprApplies is not a boolean', function () {
+      spec.buildRequests([validBannerBid], syncBidderRequest);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES, { consentString: 'TC123' });
+      expect(syncs[0].url).to.not.match(/[?&]gdpr=/);
+      expect(syncs[0].url).to.include('gdpr_consent=TC123');
     });
 
     it('should emit one sync per distinct seat', function () {
@@ -697,7 +763,7 @@ describe('floxisBidAdapter', function () {
     });
   });
 
-  describe('onBidWon', function () {
+  describe('onBidBillable', function () {
     let triggerPixelStub;
 
     beforeEach(function () {
@@ -708,27 +774,54 @@ describe('floxisBidAdapter', function () {
       triggerPixelStub.restore();
     });
 
-    it('should fire burl pixel', function () {
-      spec.onBidWon({ burl: 'https://example.com/burl' });
-      expect(triggerPixelStub.calledWith('https://example.com/burl')).to.be.true;
+    it('should fire the burl pixel with the AUCTION_PRICE macro substituted', function () {
+      spec.onBidBillable({ burl: 'https://example.com/burl?p=${AUCTION_PRICE}', cpm: 1.23, originalCpm: 1.23 });
+      expect(triggerPixelStub.calledWith('https://example.com/burl?p=1.23')).to.be.true;
     });
 
-    it('should fire nurl pixel', function () {
-      spec.onBidWon({ nurl: 'https://example.com/nurl' });
-      expect(triggerPixelStub.calledWith('https://example.com/nurl')).to.be.true;
+    it('should prefer originalCpm over cpm for the macro', function () {
+      spec.onBidBillable({ burl: 'https://example.com/burl?p=${AUCTION_PRICE}', cpm: 0.9, originalCpm: 1.5 });
+      expect(triggerPixelStub.calledWith('https://example.com/burl?p=1.5')).to.be.true;
     });
 
-    it('should fire both burl and nurl pixels', function () {
-      spec.onBidWon({
-        burl: 'https://example.com/burl',
-        nurl: 'https://example.com/nurl'
-      });
-      expect(triggerPixelStub.callCount).to.equal(2);
-    });
-
-    it('should not fire pixels when no urls present', function () {
-      spec.onBidWon({});
+    it('should not fire a pixel when burl is absent', function () {
+      spec.onBidBillable({ cpm: 1.0 });
       expect(triggerPixelStub.called).to.be.false;
+    });
+  });
+
+  describe('bid response meta', function () {
+    function responseWithExt(ext) {
+      const request = spec.buildRequests([validBannerBid], { bidderCode: 'floxis', auctionId: 'a-meta' })[0];
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: validBannerBid.bidId, price: 1.0, w: 300, h: 250, crid: 'c1', adm: '<div>ad</div>', mtype: 1, ext
+            }]
+          }]
+        }
+      };
+      return spec.interpretResponse(serverResponse, request);
+    }
+
+    it('should map DSP ext fields into bid.meta', function () {
+      const bids = responseWithExt({ dspid: 42, advertiser_name: 'AdvCo', agency_name: 'AgCo', agency_id: 'ag-7' });
+      expect(bids[0].meta.networkId).to.equal(42);
+      expect(bids[0].meta.advertiserName).to.equal('AdvCo');
+      expect(bids[0].meta.agencyName).to.equal('AgCo');
+      expect(bids[0].meta.agencyId).to.equal('ag-7');
+    });
+
+    it('should mirror the resolved mediaType into bid.meta', function () {
+      const bids = responseWithExt({});
+      expect(bids[0].meta.mediaType).to.equal(BANNER);
+    });
+
+    it('should leave meta DSP fields unset when ext is absent', function () {
+      const bids = responseWithExt(undefined);
+      expect(bids[0].meta.networkId).to.be.undefined;
+      expect(bids[0].meta.advertiserName).to.be.undefined;
     });
   });
 });

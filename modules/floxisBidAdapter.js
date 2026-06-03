@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { triggerPixel, mergeDeep } from '../src/utils.js';
+import { triggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
 
 const BIDDER_CODE = 'floxis';
 const DEFAULT_BID_TTL = 300;
@@ -41,8 +41,12 @@ function getSyncHost(region) {
 function buildConsentQuery(gdprConsent, uspConsent, gppConsent) {
   const query = [];
   if (gdprConsent) {
-    query.push('gdpr=' + (gdprConsent.gdprApplies & 1));
-    query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      query.push('gdpr=' + Number(gdprConsent.gdprApplies));
+    }
+    if (gdprConsent.consentString) {
+      query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
+    }
   }
   if (uspConsent) {
     query.push('us_privacy=' + encodeURIComponent(uspConsent));
@@ -69,33 +73,45 @@ const CONVERTER = ortbConverter({
   context: {
     netRevenue: DEFAULT_NET_REVENUE,
     ttl: DEFAULT_BID_TTL,
-    currency: DEFAULT_CURRENCY
+    currency: DEFAULT_CURRENCY,
+    nativeRequest: { eventtrackers: [{ event: 1, methods: [1, 2] }] }
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
 
-    let floorInfo;
-    if (typeof bidRequest.getFloor === 'function') {
-      try {
-        floorInfo = bidRequest.getFloor({
-          currency: DEFAULT_CURRENCY,
-          mediaType: '*',
-          size: '*'
-        });
-      } catch (e) { }
-    }
-    const floor = floorInfo?.floor;
-    const floorCur = floorInfo?.currency || DEFAULT_CURRENCY;
-    if (typeof floor === 'number' && !isNaN(floor)) {
-      imp.bidfloor = floor;
-      imp.bidfloorcur = floorCur;
+    // The priceFloors processor already sets imp.bidfloor when the module is active; only fill a
+    // floor here when it left none — from getFloor (ignoring 0, which would clobber an FPD floor)
+    // or a static params.bidFloor fallback for bundles without the floors module.
+    if (!imp.bidfloor) {
+      let floor;
+      let floorCur = DEFAULT_CURRENCY;
+      if (typeof bidRequest.getFloor === 'function') {
+        try {
+          const floorInfo = bidRequest.getFloor({ currency: DEFAULT_CURRENCY, mediaType: '*', size: '*' });
+          if (floorInfo && typeof floorInfo.floor === 'number' && floorInfo.floor > 0) {
+            floor = floorInfo.floor;
+            floorCur = floorInfo.currency || DEFAULT_CURRENCY;
+          }
+        } catch (e) { }
+      }
+      if (floor === undefined && bidRequest.params?.bidFloor > 0) {
+        floor = parseFloat(bidRequest.params.bidFloor);
+        floorCur = bidRequest.params.bidFloorCur || DEFAULT_CURRENCY;
+      }
+      if (floor !== undefined) {
+        imp.bidfloor = floor;
+        imp.bidfloorcur = floorCur;
+      }
     }
 
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
+    if (!req.cur) {
+      req.cur = [DEFAULT_CURRENCY];
+    }
     mergeDeep(req, {
       at: 1,
       ext: {
@@ -106,6 +122,17 @@ const CONVERTER = ortbConverter({
       }
     });
     return req;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    const ext = bid.ext || {};
+    bidResponse.meta = bidResponse.meta || {};
+    if (ext.dspid != null) bidResponse.meta.networkId = ext.dspid;
+    if (ext.advertiser_name) bidResponse.meta.advertiserName = ext.advertiser_name;
+    if (ext.agency_name) bidResponse.meta.agencyName = ext.agency_name;
+    if (ext.agency_id) bidResponse.meta.agencyId = ext.agency_id;
+    if (bidResponse.mediaType) bidResponse.meta.mediaType = bidResponse.mediaType;
+    return bidResponse;
   }
 });
 
@@ -194,12 +221,11 @@ export const spec = {
     return syncs;
   },
 
-  onBidWon(bid) {
+  onBidBillable(bid) {
+    // Fire the DSP billing notice on billing (which respects bidViewability's deferral), substituting
+    // the cleared price into the ${AUCTION_PRICE} macro. originalCpm is pre-currency-conversion.
     if (bid.burl) {
-      triggerPixel(bid.burl);
-    }
-    if (bid.nurl) {
-      triggerPixel(bid.nurl);
+      triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm));
     }
   }
 };
