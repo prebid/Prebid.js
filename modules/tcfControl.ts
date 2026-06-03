@@ -155,9 +155,9 @@ declare module '../src/config' {
      * Map from GVL ID to an object describing the legal basis (consent or legitimate interest) that applies to each purpose or feature. This follows the same format as the GVL -
      *  see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20Consent%20string%20and%20vendor%20list%20formats%20v2.md -
      *  and by default is taken from it, for those GVL IDs that are known to Prebid (i.e. declared by adapters, not set through gvlMapping).
-     *  When the GVL ID is not known, the default is {purposes: [1,2,4,7], flexiblePurposes: [2], legIntPurposes: [], specialFeatures: [1]}.
+     *  When the GVL ID is not known, the default can be configured with `consentManagement.gdpr.defaultLegalBasis`.
      */
-    gvlPurposeMapping?: { [gvlId: number]: PurposeDeclarations }
+    gvlLegalBasisMapping?: { [gvlId: number]: PurposeDeclarations }
   }
 }
 
@@ -238,28 +238,28 @@ export const NO_PURPOSE_DECLARATION: PurposeDeclarations = {
   specialFeatures: []
 }
 
-let gvlPurposeMapping = {};
+let gvlLegalBasisMapping = {};
 let defaultPurposeDeclaration = NO_PURPOSE_DECLARATION;
 
-config.getConfig('gvlPurposeMapping', (cfg) => {
+config.getConfig('gvlLegalBasisMapping', (cfg) => {
   // validate now to give warnings regardless of whether the mapping will actually be used
-  gvlPurposeMapping = cfg.gvlPurposeMapping ?? {};
-  Object.entries(gvlPurposeMapping).forEach(([key, value]) => {
+  gvlLegalBasisMapping = cfg.gvlLegalBasisMapping ?? {};
+  Object.entries(gvlLegalBasisMapping).forEach(([key, value]) => {
     value = Object.assign({}, NO_PURPOSE_DECLARATION, value);
     const errorMessage = validatePurposeDeclarations(value);
     if (errorMessage != null) {
-      logWarn(`gvlPurposeMapping for GVL ID ${key} is invalid: ${errorMessage}; assuming no legal basis for any purpose`, value);
+      logWarn(`gvlLegalBasisMapping for GVL ID ${key} is invalid: ${errorMessage}; assuming no legal basis for any purpose`, value);
       value = NO_PURPOSE_DECLARATION;
     }
-    gvlPurposeMapping[key] = value;
+    gvlLegalBasisMapping[key] = value;
   })
 })
 
 export function getPurposeDeclarations(gvlId) {
   if (gvlId == null) return defaultPurposeDeclaration;
-  let declaration = gvlPurposeMapping?.[gvlId] ?? GVL_PURPOSES[gvlId];
+  let declaration = gvlLegalBasisMapping?.[gvlId] ?? GVL_PURPOSES[gvlId];
   if (declaration == null) {
-    logWarn(`No purpose declarations found for GVL ID ${gvlId}. You may set one using setConfig({gvlPurposeMapping}). Falling back to ${JSON.stringify(defaultPurposeDeclaration)}`);
+    logWarn(`No purpose declarations found for GVL ID ${gvlId}. You may set one using setConfig({gvlLegalBasisMapping}). Falling back to ${JSON.stringify(defaultPurposeDeclaration)}`);
     return defaultPurposeDeclaration;
   }
   return declaration;
@@ -478,10 +478,12 @@ declare module './consentManagementTcf' {
     /**
      * Legal basis to use when it cannot be determined from on a vendor's GVL declaration.
      * Normally, Prebid decides whether to accept purpose consent and/or LI transparency based on what the vendor declared
-     * in the Global Vendor List, falling back to the `gvlPurposeMapping` config. This configuration is used instead when:
+     * in the Global Vendor List, falling back to the `gvlLegalBasisMapping` config. This configuration is used instead when:
      *  - `enforceVendor` is false, or
      *  - the vendor is listed in `softVendorExceptions`, or
-     *  - the vendor's declaration is unknown (for example, it has a `gvlMapping` without a corresponding `gvlPurposeMapping`)
+     *  - the vendor's declaration is unknown (for example, it has a `gvlMapping` without a corresponding `gvlLegalBasisMapping`)
+     *
+     *  The default is {purposes: [1,2,4,7], flexiblePurposes: [2], legIntPurposes: [], specialFeatures: [1]}.
      */
     defaultLegalBasis?: PurposeDeclarations
     rules?: TCFControlRule[];

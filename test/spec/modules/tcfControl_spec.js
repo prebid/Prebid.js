@@ -174,10 +174,10 @@ describe('gdpr enforcement', function () {
       GVL_PURPOSES[GVL_ID] = decl;
       expect(getPurposeDeclarations(GVL_ID)).to.eql(decl);
     });
-    it('should give precedence to gvlPurposeMapping', () => {
+    it('should give precedence to gvlLegalBasisMapping', () => {
       GVL_PURPOSES[GVL_ID] = decl;
       config.setConfig({
-        gvlPurposeMapping: {
+        gvlLegalBasisMapping: {
           [GVL_ID]: {
             ...decl,
             purposes: [1, 3]
@@ -189,9 +189,9 @@ describe('gdpr enforcement', function () {
         purposes: [1, 3]
       })
     });
-    it('should provide defaults for gvlPurposeMapping', () => {
+    it('should provide defaults for gvlLegalBasisMapping', () => {
       config.setConfig({
-        gvlPurposeMapping: {
+        gvlLegalBasisMapping: {
           [GVL_ID]: {
             purposes: [1]
           }
@@ -231,7 +231,7 @@ describe('gdpr enforcement', function () {
     })
     it('should fall back to allow nothing when the declaration is invalid', () => {
       config.setConfig({
-        gvlPurposeMapping: {
+        gvlLegalBasisMapping: {
           [GVL_ID]: {
             flexiblePurposes: [2]
           }
@@ -867,7 +867,7 @@ describe('gdpr enforcement', function () {
 
       beforeEach(() => {
         config.setConfig({
-          gvlPurposeMapping: {
+          gvlLegalBasisMapping: {
             [GVL_ID]: {
               purposes: LI_PURPOSES.concat(CS_PURPOSES),
               flexiblePurposes: LI_PURPOSES
@@ -1118,7 +1118,7 @@ describe('gdpr enforcement', function () {
       beforeEach(() => {
         config.setConfig({
           // make sure the vendor's declaration is ignored
-          gvlPurposeMapping: {
+          gvlLegalBasisMapping: {
             [gvlid]: {}
           }
         })
