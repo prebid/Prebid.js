@@ -180,6 +180,14 @@ export const spec = {
     }
 
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+    const firstBidUserIdAsEids = validBidRequests[0]?.userIdAsEids;
+    if (Array.isArray(firstBidUserIdAsEids) && firstBidUserIdAsEids.length) {
+      data.user = data.user || {};
+      data.user.ext = data.user.ext || {};
+      if (!Array.isArray(data.user.ext.eids) || data.user.ext.eids.length === 0) {
+        data.user.ext.eids = firstBidUserIdAsEids;
+      }
+    }
 
     let url = ENDPOINT_URL;
     if (validBidRequests[0] && validBidRequests[0].params && validBidRequests[0].params.endpointUrl) {

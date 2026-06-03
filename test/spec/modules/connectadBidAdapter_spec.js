@@ -116,6 +116,34 @@ describe('ConnectAd Adapter', function () {
       expect(request.data.regs.gpp).to.equal('test-gpp-string');
       expect(request.data.regs.gpp_sid).to.deep.equal([2, 6]);
     });
+
+    it('should copy first bid userIdAsEids into user.ext.eids', function () {
+      bidRequests[0].userIdAsEids = [{
+        source: 'id5-sync.com',
+        uids: [{ id: 'user-123', atype: 1 }]
+      }];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
+    });
+
+    it('should not overwrite existing user.ext.eids from ortb2', function () {
+      bidRequests[0].userIdAsEids = [{
+        source: 'id5-sync.com',
+        uids: [{ id: 'user-123', atype: 1 }]
+      }];
+      bidderRequest.ortb2 = {
+        user: {
+          ext: {
+            eids: [{
+              source: 'publisher-fpd',
+              uids: [{ id: 'fpd-456', atype: 3 }]
+            }]
+          }
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user.ext.eids).to.deep.equal(bidderRequest.ortb2.user.ext.eids);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -171,6 +199,11 @@ describe('ConnectAd Adapter', function () {
     });
 
     it('should parse audio responses correctly', function () {
+      const globalFeatures = window.FEATURES || {};
+      if (!globalFeatures.AUDIO) {
+        this.skip();
+      }
+
       const audioBidRequests = [
         {
           bidder: 'connectad',
