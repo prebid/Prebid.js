@@ -75,7 +75,16 @@ module.exports = {
           const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), ES5: true});
           return [
             {
-              test: /\.node_modules\/.*\.js$/,
+              test: /\.mjs$/,
+              type: 'javascript/auto',
+              resolve: { fullySpecified: false },
+            },
+            {
+              test: /node_modules\/.*\.[cm]?js$/,
+              exclude: [
+                /node_modules[\\/]core-js[\\/]/,
+                /node_modules[\\/]core-js$/,
+              ],
               use: [
                 {
                   loader: 'babel-loader',
