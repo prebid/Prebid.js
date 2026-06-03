@@ -239,6 +239,7 @@ export const NO_PURPOSE_DECLARATION: PurposeDeclarations = {
 }
 
 let gvlPurposeMapping = {};
+let defaultPurposeDeclaration = NO_PURPOSE_DECLARATION;
 
 config.getConfig('gvlPurposeMapping', (cfg) => {
   // validate now to give warnings regardless of whether the mapping will actually be used
@@ -255,10 +256,11 @@ config.getConfig('gvlPurposeMapping', (cfg) => {
 })
 
 export function getPurposeDeclarations(gvlId) {
+  if (gvlId == null) return defaultPurposeDeclaration;
   let declaration = gvlPurposeMapping?.[gvlId] ?? GVL_PURPOSES[gvlId];
   if (declaration == null) {
-    logWarn(`No purpose declarations found for GVL ID ${gvlId}. You may set one using setConfig({gvlPurposeMapping}). Falling back to ${JSON.stringify(DEFAULT_PURPOSE_DECLARATION)}`);
-    return DEFAULT_PURPOSE_DECLARATION;
+    logWarn(`No purpose declarations found for GVL ID ${gvlId}. You may set one using setConfig({gvlPurposeMapping}). Falling back to ${JSON.stringify(defaultPurposeDeclaration)}`);
+    return defaultPurposeDeclaration;
   }
   return declaration;
 }
@@ -326,10 +328,10 @@ export function validateRules(rule, consentData, currentModule, gvlId, params = 
   if ((rule.vendorExceptions || []).includes(currentModule)) {
     return true;
   }
-  const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
-  const deferS2Sbidders = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders && !gvlId;
-  const { purpose, vendor } = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
-  return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || deferS2Sbidders || vendor);
+  const deferToS2S = params['isS2S'] && rule.purpose === 'basicAds' && rule.deferS2Sbidders && !gvlId;
+  const useVendorsLegalBasis = !deferToS2S && rule.enforceVendor && !(rule.softVendorExceptions || []).includes(currentModule);
+  const { purpose, vendor } = getConsent(consentData, ruleOptions.type, ruleOptions.id, useVendorsLegalBasis ? gvlId : null);
+  return (!rule.enforcePurpose || purpose) && (!useVendorsLegalBasis || gvlId === VENDORLESS_GVLID || vendor);
 }
 
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = () => null) {
@@ -452,10 +454,14 @@ type TCFControlRule = {
   softVendorExceptions?: string[]
   /**
    * Only relevant when `purpose` is  `'personalizedAds'`.
-   * If true, user IDs and EIDs will not be shared without evidence of consent for TCF Purpose 4.
    * If false (the default), evidence of consent for any of Purposes 2-10 is sufficient for sharing user IDs and EIDs.
    */
   eidsRequireP4Consent?: boolean;
+  /**
+   * Only relevant when `purpose` is 'basicAds'.
+   * If true, allows bidders with unknown GVL ID to be included in Prebid Server auctions.
+   */
+  deferS2Sbidders?: boolean
 }
 
 declare module '../src/consentHandler' {
@@ -469,6 +475,15 @@ declare module '../src/consentHandler' {
 }
 declare module './consentManagementTcf' {
   interface TCFConfig {
+    /**
+     * Legal basis to use when it cannot be determined from on a vendor's GVL declaration.
+     * Normally, Prebid decides whether to accept purpose consent and/or LI transparency based on what the vendor declared
+     * in the Global Vendor List, falling back to the `gvlPurposeMapping` config. This configuration is used instead when:
+     *  - `enforceVendor` is false, or
+     *  - the vendor is listed in `softVendorExceptions`, or
+     *  - the vendor's declaration is unknown (for example, it has a `gvlMapping` without a corresponding `gvlPurposeMapping`)
+     */
+    defaultLegalBasis?: PurposeDeclarations
     rules?: TCFControlRule[];
   }
 }
@@ -480,10 +495,11 @@ declare module './consentManagementTcf' {
 export function setEnforcementConfig(config) {
   let rules: Record<keyof typeof CONFIGURABLE_RULES, TCFControlRule> = deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    logWarn('TCF2: enforcing P1 and P2 by default');
+    logWarn('TCF2: enforcing P1, P2, P4, P7 and SP1 by default');
   }
   rules = Object.fromEntries((rules as any || []).map(r => [r.purpose, r])) as any;
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
+  defaultPurposeDeclaration = Object.assign({}, NO_PURPOSE_DECLARATION, config.gdpr?.defaultLegalBasis ?? DEFAULT_PURPOSE_DECLARATION)
 
   Object.entries(CONFIGURABLE_RULES).forEach(([name, opts]) => {
     ACTIVE_RULES[opts.type][opts.id] = rules[name] ?? opts.default;

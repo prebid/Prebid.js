@@ -153,7 +153,6 @@ describe('gdpr enforcement', function () {
   afterEach(() => {
     sandbox.restore();
   })
-
   describe('getPurposeDeclarations', () => {
     const GVL_ID = 123;
     let origDecl, decl;
@@ -205,9 +204,31 @@ describe('gdpr enforcement', function () {
         specialFeatures: []
       })
     });
-    it('should fall back to allow (almost) anything when no declaration is available', () => {
-      expect(getPurposeDeclarations(GVL_ID)).to.eql(DEFAULT_PURPOSE_DECLARATION);
-    });
+    Object.entries({
+      'no declaration is available for a GVL ID': GVL_ID,
+      'GVL ID is not known': null
+    }).forEach(([t, gvlid]) => {
+      it('should fall back to allow (almost) anything when defaultLegalBasis is not set', () => {
+        expect(getPurposeDeclarations(gvlid)).to.eql(DEFAULT_PURPOSE_DECLARATION);
+      });
+      it('should fall back to defaultLegalBasis when provided', () => {
+        config.setConfig({
+          consentManagement: {
+            gdpr: {
+              defaultLegalBasis: {
+                purposes: [1]
+              }
+            }
+          }
+        });
+        expect(getPurposeDeclarations(gvlid)).to.eql({
+          purposes: [1],
+          legIntPurposes: [],
+          flexiblePurposes: [],
+          specialFeatures: [],
+        })
+      })
+    })
     it('should fall back to allow nothing when the declaration is invalid', () => {
       config.setConfig({
         gvlPurposeMapping: {
@@ -1089,21 +1110,46 @@ describe('gdpr enforcement', function () {
     };
 
     // Bidder = 'bidderB' doesn't have vendorConsent
-    const vendorBlockedModule = 'bidderB';
-    const vendorBlockedGvlId = 3;
-
-    const consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
-    consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false;
+    const module = 'bidderB';
+    const gvlid = 3;
 
     describe('when the vendor has a softVendorException', () => {
-      const gdprRule = createGdprRule('storage', true, true, [], [vendorBlockedModule]);
-
+      let gdprRule, consentDataWithPurposeConsentFalse;
+      beforeEach(() => {
+        config.setConfig({
+          // make sure the vendor's declaration is ignored
+          gvlPurposeMapping: {
+            [gvlid]: {}
+          }
+        })
+        consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
+        consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false
+        gdprRule = createGdprRule('storage', true, true, [], [module]);
+      });
+      afterEach(() => {
+        config.resetConfig();
+      })
       it('should return false if general consent was not given', () => {
-        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
+        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, module, gvlid);
         expect(isAllowed).to.be.false;
       })
       it('should return true if general consent was given', () => {
-        const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
+        const isAllowed = validateRules(gdprRule, consentData, module, gvlid);
+        expect(isAllowed).to.be.true;
+      });
+      it('should return true if LI was given, and defaultLegalBasis accepts it', () => {
+        config.setConfig({
+          consentManagement: {
+            gdpr: {
+              defaultLegalBasis: {
+                legIntPurposes: [1],
+                flexiblePurposes: [1]
+              }
+            }
+          }
+        })
+        consentDataWithPurposeConsentFalse.vendorData.purpose.legitimateInterests[1] = true;
+        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, module, gvlid);
         expect(isAllowed).to.be.true;
       })
     })
