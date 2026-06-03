@@ -1,11 +1,10 @@
 import { expect } from 'chai';
-import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
+import { sharethroughAdapterSpec, sharethroughInternal, getImpIdMap, setIsEqtvTest } from 'modules/sharethroughBidAdapter.js';
 import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
 import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js';
-import { getImpIdMap, setIsEqtvTest } from '../../../modules/sharethroughBidAdapter.js';
 import { deepSetValue } from '../../../src/utils.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();

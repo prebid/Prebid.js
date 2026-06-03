@@ -954,8 +954,6 @@ export function adStateFactory() {
       adPlacementType: convertPlacementToOrtbCode(event.placement),
       waterfallIndex: event.witem,
       waterfallCount: event.wcount,
-      adPodCount: event.podcount,
-      adPodIndex: event.sequence,
       wrapperAdIds: event.wrapperAdIds
     };
 

@@ -11,10 +11,11 @@ import {
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { addBidderRequests } from '../../src/auction.js';
-import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from '../../src/targeting.js';
+import { getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrDesirability } from '../../src/targeting.js';
 import { PBS, registerOrtbProcessor, REQUEST } from '../../src/pbjsORTB.js';
 import { timedBidResponseHook } from '../../src/utils/perfMetrics.js';
 import type { BidderCode } from "../../src/types/common.d.ts";
+import { sortByHighestDesirability } from '../../src/utils/desirability.ts';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -146,12 +147,9 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
   const floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
-  // Checks if multiconfig exists and bid bidderCode exists within config and is an adpod bid
-  // Else checks if multiconfig exists and bid bidderCode exists within config
+  // Checks if multiconfig exists and bid bidderCode exists within config
   // Else continue with no modifications
-  if (hasMultibid && multiConfig[bid.bidderCode] && deepAccess(bid, 'video.context') === 'adpod') {
-    fn.call(this, adUnitCode, bid, reject);
-  } else if (hasMultibid && multiConfig[bid.bidderCode]) {
+  if (hasMultibid && multiConfig[bid.bidderCode]) {
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
@@ -241,7 +239,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(highestCpmCallback)));
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit > 0) {
-        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
+        bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrDesirability(true)) : bucketBids.sort(sortByHighestDesirability);
         bucketBids.sort(sortByMultibid);
         modifiedBids.push(...bucketBids.slice(0, adUnitBidLimit));
       } else {

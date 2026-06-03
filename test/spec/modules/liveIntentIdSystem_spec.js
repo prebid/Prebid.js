@@ -420,12 +420,12 @@ describe('LiveIntentId', function() {
     const submoduleCallback = liveIntentIdSubmodule.getId({
       params: {
         ...defaultConfigParams.params,
-        ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
+        ...{ requestedAttributesOverrides: { 'sovrn': true, 'openx': false } }
       }
     }).callback;
     submoduleCallback(callBackSpy);
     const request = idxRequests()[0];
-    expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=nonId.*&resolve=foo.*/);
+    expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&resolve=nonId.*&resolve=sovrn.*/);
     request.respond(
       200,
       responseHeader,

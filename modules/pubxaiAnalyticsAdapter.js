@@ -12,6 +12,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash
 } from '../src/utils.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 let initOptions;
 
@@ -99,14 +100,13 @@ const getAdServerDataForBid = (bid) => {
   const gptSlot = getGptSlotForAdUnitCode(bid);
   if (gptSlot) {
     return Object.fromEntries(
-      gptSlot
-        .getTargetingKeys()
+      getSlotTargetingKeys(gptSlot)
         .filter(
           (key) =>
             key.startsWith('pubx-') ||
             (key.startsWith('hb_') && (key.match(/_/g) || []).length === 1)
         )
-        .map((key) => [key, gptSlot.getTargeting(key)])
+        .map((key) => [key, getSlotTargeting(gptSlot, key)])
     );
   }
   return {}; // TODO: support more ad servers

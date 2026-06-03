@@ -7,13 +7,13 @@ import {
   _internal,
   storeBatch,
   callPrebidCache, updateVast
+  , storeLocally
 } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
-import { storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
 
@@ -365,7 +365,7 @@ describe('The video cache', function () {
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
     });
-    it('should set bids\' videoCacheKey and vastUrl', () => {
+    it('should set bids\' videoCacheKey, vastUrl, and cacheUrl', () => {
       config.setConfig({
         cache: {
           url: 'mock-cache'
@@ -376,7 +376,8 @@ describe('The video cache', function () {
       storeBatch([el]);
       sinon.assert.match(el.bidResponse, {
         videoCacheKey: 'mock-id',
-        vastUrl: 'mock-cache?uuid=mock-id'
+        vastUrl: 'mock-cache?uuid=mock-id',
+        cacheUrl: 'mock-cache',
       })
     });
   })
@@ -598,21 +599,11 @@ describe('The video cache', function () {
 });
 
 describe('The getCache function', function () {
-  beforeEach(function () {
-    config.setConfig({
-      cache: {
-        url: 'https://test.cache.url/endpoint'
-      }
-    })
-  });
-
-  afterEach(function () {
-    config.resetConfig();
-  });
+  const CACHE_URL = 'https://test.cache.url/endpoint';
 
   it('should return the expected URL', function () {
     const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
-    const url = getCacheUrl(uuid);
+    const url = getCacheUrl(CACHE_URL, uuid);
     url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
   });
 })

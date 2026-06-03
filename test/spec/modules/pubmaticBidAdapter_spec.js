@@ -585,7 +585,7 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
 
-      xit('should include custom targeting data in imp.ext when provided by RTD', () => {
+      it('should include custom targeting data in imp.ext when provided by RTD', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
         expect(imp).to.be.an('array');

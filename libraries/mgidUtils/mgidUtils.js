@@ -40,7 +40,10 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
       query.push(`us_privacy=${encodeURIComponent(uspConsent?.consentString)}`);
     }
     if (isPlainObject(gppConsent) && gppConsent?.gppString) {
-      query.push(`gppString=${encodeURIComponent(gppConsent?.gppString)}`);
+      query.push(`gppString=${encodeURIComponent(gppConsent.gppString)}`);
+      if (isArray(gppConsent.applicableSections) && gppConsent.applicableSections.length > 0) {
+        query.push(`gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+      }
     }
     if (config.getConfig('coppa')) {
       query.push('coppa=1')
@@ -70,4 +73,5 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
     }
     return syncs;
   }
+  return [];
 }

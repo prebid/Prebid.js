@@ -969,6 +969,21 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(data.dsa).to.deep.equal({ required: 1 });
     });
 
+    it('should not include device.deviceType if original is not a number', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          ...baseBidderRequest.ortb2,
+          regs: { coppa: 0, ext: { dsa: { required: 1 } } }
+        }
+      };
+      bidderRequest.ortb2.device.devicetype = '';
+      const data = utilities.buildRequestData(
+        baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data?.device?.devicetype).not.exist;
+    });
+
     it('should include placementId when set in params', function () {
       const bid = {
         ...baseBid,
@@ -1106,6 +1121,17 @@ describe('Vidazoo Bidder Utils Tests', function () {
       if (data.res) {
         expect(data.res).to.match(/^\d+x\d+$/);
       }
+    });
+
+    it('should include params.host in data when host is present in params', function () {
+      const bid = {
+        ...baseBid,
+        params: { ...baseBid.params, host: 'twist.win' }
+      };
+      const data = utilities.buildRequestData(
+        bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data.params).to.deep.equal({ host: 'twist.win' });
     });
 
     it('should handle missing ortb2 sub-objects gracefully', function () {

@@ -1,9 +1,8 @@
-import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
+import { spec, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
-import { hasTypeNative } from '../../../modules/onetagBidAdapter.js';
 
 const NATIVE_SUFFIX = 'Ad';
 
@@ -841,6 +840,18 @@ describe('onetag', function () {
       responseWithDsa.body.bids.forEach(bid => bid.dsa = { ...dsaResponseObj });
       const serverResponse = spec.interpretResponse(responseWithDsa, request);
       serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
+    });
+    it('Returns dealId when present in server response', function () {
+      const interpretedResponse = spec.interpretResponse(response, request);
+      const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
+      expect(bannerBid.dealId).to.equal('dishfo');
+    });
+    it('Returns undefined dealId when absent from server response', function () {
+      const responseWithoutDealId = getBannerVideoNativeResponse();
+      responseWithoutDealId.body.bids.forEach(bid => delete bid.dealId);
+      const interpretedResponse = spec.interpretResponse(responseWithoutDealId, request);
+      const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
+      expect(bannerBid.dealId).to.be.undefined;
     });
   });
   describe('getUserSyncs', function () {
