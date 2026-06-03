@@ -660,34 +660,43 @@ describe('floxisBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const syncBidderRequest = { bidderCode: 'floxis', auctionId: 'auction-sync' };
-    const RESPONSES = [{ body: {} }];
+    // Server-echo: the /pbjs response carries seat + region in the x-floxis-sync header (on bid and
+    // no-bid alike). getUserSyncs reads it off serverResponses — no module state. A no-bid is a 204 with
+    // an empty body, so these fixtures carry only the header (body is irrelevant to sync derivation).
+    function syncResponse(headerValue, body = '') {
+      return {
+        body,
+        headers: { get: (name) => (name === 'x-floxis-sync' ? headerValue : null) }
+      };
+    }
+    const RESPONSES = [syncResponse('seat=Gmtb&region=us-e')];
 
     it('should return empty array when no sync method is enabled', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, RESPONSES)).to.be.an('array').that.is.empty;
     });
 
-    it('should return empty array when no requests were built', function () {
-      spec.buildRequests([], syncBidderRequest);
-      expect(spec.getUserSyncs({ iframeEnabled: true }, RESPONSES)).to.be.an('array').that.is.empty;
-    });
-
     it('should return empty array when the adapter did not respond this auction (no serverResponses)', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.be.an('array').that.is.empty;
     });
 
-    it('should not reuse stale sync targets on a later auction without buildRequests', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
-      // first auction consumes the targets
-      expect(spec.getUserSyncs({ iframeEnabled: true }, RESPONSES)).to.have.lengthOf(1);
-      // a later auction where buildRequests was never called must not re-register them
-      expect(spec.getUserSyncs({ iframeEnabled: true }, RESPONSES)).to.be.an('array').that.is.empty;
+    it('should sync on a no-bid response (empty body) as long as the sync header is present', function () {
+      const noBid = syncResponse('seat=Gmtb&region=us-e', '');
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [noBid]);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].url).to.equal('https://px-us-e.floxis.tech/sync?seat=Gmtb');
+    });
+
+    it('should be a no-op when the response carries no sync header (older backend)', function () {
+      const noHeader = { body: '', headers: { get: () => null } };
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [noHeader])).to.be.an('array').that.is.empty;
+    });
+
+    it('should ignore a malformed sync header that lacks a valid region', function () {
+      const malformed = syncResponse('seat=Gmtb&region=evil.com/x');
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [malformed])).to.be.an('array').that.is.empty;
     });
 
     it('should emit an iframe sync to the region trackers host for the seat', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, RESPONSES);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -695,20 +704,16 @@ describe('floxisBidAdapter', function () {
     });
 
     it('should emit an image sync when only pixels are enabled', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, RESPONSES);
       expect(syncs[0].type).to.equal('image');
     });
 
-    it('should use the custom partner region for the sync host', function () {
-      const customBid = { ...validBannerBid, params: { seat: 'Gmtb', region: 'apac-sin', partner: 'mypartner' } };
-      spec.buildRequests([customBid], syncBidderRequest);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES);
+    it('should use the echoed custom region for the sync host', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [syncResponse('seat=Gmtb&region=apac-sin')]);
       expect(syncs[0].url).to.equal('https://px-apac-sin.floxis.tech/sync?seat=Gmtb');
     });
 
     it('should append gdpr, us_privacy and gpp consent params', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
         RESPONSES,
@@ -726,39 +731,29 @@ describe('floxisBidAdapter', function () {
     });
 
     it('should set gdpr=0 when gdprApplies is false and omit empty consent', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES, { gdprApplies: false, consentString: '' });
       expect(syncs[0].url).to.include('gdpr=0');
       expect(syncs[0].url).to.not.include('gdpr_consent=');
     });
 
     it('should omit the gdpr param entirely when gdprApplies is not a boolean', function () {
-      spec.buildRequests([validBannerBid], syncBidderRequest);
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES, { consentString: 'TC123' });
       expect(syncs[0].url).to.not.match(/[?&]gdpr=/);
       expect(syncs[0].url).to.include('gdpr_consent=TC123');
     });
 
-    it('should emit one sync per distinct seat', function () {
-      const secondBid = { ...validBannerBid, bidId: 'bid-9', params: { ...DEFAULT_PARAMS, seat: 'Seat2' } };
-      spec.buildRequests([validBannerBid, secondBid], syncBidderRequest);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES);
+    it('should emit one sync per distinct seat across responses', function () {
+      const responses = [syncResponse('seat=Gmtb&region=us-e'), syncResponse('seat=Seat2&region=us-e')];
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
       expect(syncs).to.have.lengthOf(2);
       const urls = syncs.map((s) => s.url);
       expect(urls).to.include('https://px-us-e.floxis.tech/sync?seat=Gmtb');
       expect(urls).to.include('https://px-us-e.floxis.tech/sync?seat=Seat2');
     });
 
-    it('should dedupe syncs that share a seat and region across partners', function () {
-      const bidA = { ...validBannerBid, bidId: 'a', params: { seat: 'Gmtb', region: 'us-e', partner: 'floxis' } };
-      const bidB = {
-        ...validBannerBid,
-        bidId: 'b',
-        adUnitCode: 'adunit-2',
-        params: { seat: 'Gmtb', region: 'us-e', partner: 'other' }
-      };
-      spec.buildRequests([bidA, bidB], syncBidderRequest);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, RESPONSES);
+    it('should dedupe syncs that share a seat and region across responses', function () {
+      const responses = [syncResponse('seat=Gmtb&region=us-e'), syncResponse('seat=Gmtb&region=us-e')];
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
       expect(syncs).to.have.lengthOf(1);
     });
   });

@@ -10,6 +10,10 @@ const DEFAULT_NET_REVENUE = true;
 const DEFAULT_REGION = 'us-e';
 const DEFAULT_PARTNER = BIDDER_CODE;
 const SYNC_PATH = '/sync';
+// Server-echo user-sync: the /pbjs response carries seat + region in this header (on bid and no-bid
+// alike), so getUserSyncs derives sync targets from serverResponses statelessly — no module state that
+// could leak across concurrent auctions. Absent header (older backend) => no sync, a safe no-op.
+const SYNC_HEADER = 'x-floxis-sync';
 
 // partner/region are interpolated into the request host, so they must be valid DNS labels —
 // otherwise a value with URL delimiters (e.g. 'evil.com/x?') would change the request origin.
@@ -66,8 +70,16 @@ function normalizeBidParams(params = {}) {
   };
 }
 
-// Seat/region pairs from the latest buildRequests, consumed by getUserSyncs (which is not given params).
-let syncTargets = [];
+// Parse the server-echoed sync header (`seat=<seat>&region=<label>`) into a sync target. Returns null
+// for an absent or malformed header so a response without it simply contributes no sync.
+function parseSyncHeader(headerValue) {
+  if (typeof headerValue !== 'string' || !headerValue) return null;
+  const params = new URLSearchParams(headerValue);
+  const seat = params.get('seat');
+  const region = params.get('region');
+  if (!seat || !isValidHostLabel(region)) return null;
+  return { seat, region };
+}
 
 const CONVERTER = ortbConverter({
   context: {
@@ -146,7 +158,6 @@ export const spec = {
   },
 
   buildRequests(validBidRequests = [], bidderRequest = {}) {
-    syncTargets = [];
     if (!validBidRequests.length) return [];
     const filteredBidRequests = validBidRequests.filter((bidRequest) => spec.isBidRequestValid(bidRequest));
     if (!filteredBidRequests.length) return [];
@@ -168,12 +179,6 @@ export const spec = {
     }, {});
 
     const groups = Object.values(bidRequestsByParams);
-    syncTargets = groups
-      .map((groupedBidRequests) => {
-        const { seat, region } = groupedBidRequests[0].params;
-        return { seat, region };
-      })
-      .filter((target) => isValidHostLabel(target.region));
 
     return groups.map((groupedBidRequests) => {
       const { seat, region, partner } = groupedBidRequests[0].params;
@@ -198,17 +203,16 @@ export const spec = {
 
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
-    // Empty serverResponses => this adapter did not bid in this auction, so buildRequests was not
-    // called and syncTargets would be stale from a prior auction. Consume the targets either way.
-    const targets = syncTargets;
-    syncTargets = [];
-    if (!serverResponses || !serverResponses.length || !targets.length) return [];
+    if (!serverResponses || !serverResponses.length) return [];
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
     const consentSuffix = query.length ? '&' + query.join('&') : '';
     const seen = {};
     const syncs = [];
-    targets.forEach(({ seat, region }) => {
+    serverResponses.forEach((serverResponse) => {
+      const target = parseSyncHeader(serverResponse?.headers?.get?.(SYNC_HEADER));
+      if (!target) return;
+      const { seat, region } = target;
       const host = getSyncHost(region);
       const key = `${seat}|${region}`;
       if (!host || seen[key]) return;
