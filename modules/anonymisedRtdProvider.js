@@ -157,7 +157,9 @@ export function createRtdProvider(moduleName) {
       const alreadyPresent = existingEids?.some(eid => eid.source === ANONYMISED_SOURCE);
       if (cuid && !alreadyPresent) {
         logMessage(`${SUBMODULE_NAME}RtdProvider: injecting CUID as user EID`);
-        mergeDeep(reqBidsConfigObj.ortb2Fragments?.global, {
+        reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
+        reqBidsConfigObj.ortb2Fragments.global = reqBidsConfigObj.ortb2Fragments.global || {};
+        mergeDeep(reqBidsConfigObj.ortb2Fragments.global, {
           user: {
             ext: {
               eids: [{
