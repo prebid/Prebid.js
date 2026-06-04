@@ -102,7 +102,7 @@ const GVLID = 32;
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 // ORTB2 device types according to the OpenRTB specification
 const ORTB2_DEVICE_TYPE = {
-  MOBILE_TABLET: 1,
+  MOBILE_TABLET: 11,
   PERSONAL_COMPUTER: 2,
   CONNECTED_TV: 3,
   PHONE: 4,
