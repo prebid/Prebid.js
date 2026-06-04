@@ -14,7 +14,7 @@ runs:
       id: restore
       uses: actions/cache/restore@v4
       with:
-        path: ${{ inputs.lcov }}
+        path: ${{ runner.temp }}/coverage.info
         key: ${{ inputs.cache-key }}
     - name: Restore source
       if: ${{ steps.restore.outputs.cache-hit != 'true' }}
@@ -27,13 +27,17 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install lcov -y
-        find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o ${{ inputs.lcov }}
+        find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o ${{ runner.temp }}/coverage.info
     - name: Save to cache
       if: ${{ steps.restore.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
-        path: ${{ inputs.lcov }}
+        path: ${{ runner.temp }}/coverage.info
         key: ${{ inputs.cache-key }}
+    - name: Rename file
+      shell: bash
+      run: |
+        mv ${{ runner.temp }}/coverage.info ${{ inputs.lcov }}
     - name: Save as artifact
       uses: actions/upload-artifact@v7
       with:

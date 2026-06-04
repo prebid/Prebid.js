@@ -129,14 +129,14 @@ jobs:
         id: restore
         uses: actions/cache/restore@v4
         with:
-          path: "base-coverage.info"
+          path: ${{ runner.temp }}/coverage.info
           key: coverage-${{ needs.checkout.outputs.base-commit }}
       - name: Save as artifact
         if: ${{ steps.restore.outputs.cache-hit == 'true' }}
         uses: actions/upload-artifact@v7
         with:
-          name: "base-coverage.info"
-          path: "base-coverage.info"
+          name: base-coverage.info
+          path: ${{ runner.temp }}/coverage.info
       - name: Checkout
         if: ${{ steps.restore.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v6
