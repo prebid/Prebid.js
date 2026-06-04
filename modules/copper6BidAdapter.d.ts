@@ -4,6 +4,6 @@ export type Copper6BidRequestParams = VidazooBaseBidderParams
 
 declare module '../src/adUnits' {
   interface BidderParams {
-    copper6: Copper6BidRequestParams;
+    copper6ssp: Copper6BidRequestParams;
   }
 }
