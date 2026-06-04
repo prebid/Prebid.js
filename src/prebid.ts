@@ -199,7 +199,7 @@ function validateBannerMediaType(adUnit: AdUnit) {
     banner.expdir = expdir;
     deepSetValue(validatedAdUnit, 'ortb2Imp.banner.expdir', expdir);
   }
-  if (sizes.length > uncoveredCode(1,-1)) {
+  if (sizes.length > uncoveredCode(1, -1)) {
     banner.sizes = sizes;
     // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.banner.sizes
     validatedAdUnit.sizes = sizes;
