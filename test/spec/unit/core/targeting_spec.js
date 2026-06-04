@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import {
   getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
-  sortByDealAndPriceBucketOrCpm,
+  sortByDealAndPriceBucketOrDesirability,
   targeting as targetingInstance
   , getAdUnitBidLimitMap
 } from 'src/targeting.js';
@@ -338,13 +338,14 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
-    describe('when handling different adunit targeting value types', function () {
+    describe('when the ad unit has adserverTargeting', function () {
       const adUnitCode = '/123456/header-bid-tag-0';
-      const adServerTargeting = {};
+      let adServerTargeting;
 
       let getAdUnitsStub;
 
       before(function() {
+        adServerTargeting = {};
         getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
           return [
             {
@@ -362,27 +363,41 @@ describe('targeting tests', function () {
       afterEach(function() {
         delete adServerTargeting.test_type;
       });
+      describe('when handling different adunit targeting value types', () => {
+        const pairs = [
+          ['string', '2.3', '2.3'],
+          ['number', 2.3, '2.3'],
+          ['boolean', true, 'true'],
+          ['string-separated', '2.3, 4.5', '2.3,4.5'],
+          ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
+          ['array-of-number', [2.3, 4.5], '2.3,4.5'],
+          ['array-of-boolean', [true, false], 'true,false']
+        ];
+        pairs.forEach(([type, value, result]) => {
+          it(`accepts ${type}`, function() {
+            adServerTargeting.test_type = value;
 
-      const pairs = [
-        ['string', '2.3', '2.3'],
-        ['number', 2.3, '2.3'],
-        ['boolean', true, 'true'],
-        ['string-separated', '2.3, 4.5', '2.3,4.5'],
-        ['array-of-string', ['2.3', '4.5'], '2.3,4.5'],
-        ['array-of-number', [2.3, 4.5], '2.3,4.5'],
-        ['array-of-boolean', [true, false], 'true,false']
-      ];
-      pairs.forEach(([type, value, result]) => {
-        it(`accepts ${type}`, function() {
-          adServerTargeting.test_type = value;
+            const targeting = targetingInstance.getAllTargeting([adUnitCode]);
 
-          const targeting = targetingInstance.getAllTargeting([adUnitCode]);
-
-          expect(targeting[adUnitCode].test_type).is.equal(result);
+            expect(targeting[adUnitCode].test_type).is.equal(result);
+          });
         });
       });
-    });
+      describe('when bidsReceived is empty', () => {
+        it('includes ad unit targeting', () => {
+          adServerTargeting.test = 'value';
+          const targeting = targetingInstance.getAllTargeting([adUnitCode], 0, []);
+          sinon.assert.match(targeting[adUnitCode], {
+            test: 'value'
+          });
+        });
 
+        it('does not look up bids received', () => {
+          targetingInstance.getAllTargeting([adUnitCode], 0, []);
+          sinon.assert.notCalled(auctionManager.getBidsReceived);
+        });
+      })
+    });
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
@@ -1466,7 +1481,7 @@ describe('targeting tests', function () {
     });
   });
 
-  describe('sortByDealAndPriceBucketOrCpm', function() {
+  describe('sortByDealAndPriceBucketOrDesirability', function() {
     it('will properly sort bids when some bids have deals and some do not', function () {
       const bids = [{
         adserverTargeting: {
@@ -1502,7 +1517,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00',
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm());
+      bids.sort(sortByDealAndPriceBucketOrDesirability());
       expect(bids[0].adserverTargeting.hb_adid).to.equal('ghi');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('abc');
@@ -1537,7 +1552,7 @@ describe('targeting tests', function () {
           hb_deal: '9864'
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm());
+      bids.sort(sortByDealAndPriceBucketOrDesirability());
       expect(bids[0].adserverTargeting.hb_adid).to.equal('ghi');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('abc');
@@ -1576,7 +1591,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00'
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm());
+      bids.sort(sortByDealAndPriceBucketOrDesirability());
       expect(bids[0].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');
@@ -1627,7 +1642,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00',
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm(true));
+      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
       expect(bids[0].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('abc');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');
@@ -1635,6 +1650,53 @@ describe('targeting tests', function () {
       expect(bids[4].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[5].adserverTargeting.hb_adid).to.equal('mno');
     });
+  });
+
+  describe('GPT eager targeting', () => {
+    let slots, prevGPT;
+    before(() => {
+      prevGPT = window.googletag;
+    });
+    after(() => {
+      if (typeof prevGPT !== 'undefined') {
+        window.googletag = prevGPT;
+      }
+    })
+    beforeEach(() => {
+      slots = [];
+      window.googletag = {
+        pubads: sandbox.stub().callsFake(() => ({
+          getSlots: () => slots,
+        }))
+      }
+    });
+    describe('updateGPTTargeting', () => {
+      it(' does not modify any slot when passed an empty targeting set', () => {
+        slots = [{
+          getAdUnitPath: sinon.stub(),
+          getSlotElementId: sinon.stub()
+        }];
+        targetingInstance.updateGPTTargeting({});
+        sinon.assert.notCalled(slots[0].getAdUnitPath);
+        sinon.assert.notCalled(slots[0].getSlotElementId);
+      });
+    })
+
+    describe('presetGPTTargeting', () => {
+      it('does not choke when GPT is not available', () => {
+        delete window.googletag;
+        targetingInstance.presetGPTTargeting();
+      });
+      it('has no effect when targetingControls.presetGPTTargeting = false', () => {
+        config.setConfig({
+          targetingControls: {
+            presetGPTTargeting: false
+          }
+        })
+        targetingInstance.presetGPTTargeting();
+        sinon.assert.notCalled(window.googletag.pubads);
+      })
+    })
   });
 
   describe('setTargetingForAst', function () {

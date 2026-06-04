@@ -10,6 +10,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('./apsBidAdapter.d.ts').ApsAdapterConfig} ApsAdapterConfig
  */
 
 const GVLID = 793;
@@ -44,6 +45,7 @@ function record(eventName, data) {
   const finalEventName =
     parts.length < 3 ? `${prefixedEventName}/didTrigger` : prefixedEventName;
 
+  /** @type {ApsAdapterConfig['accountID']|undefined} */
   const accountID = config.readConfig('aps.accountID');
   if (!accountID) {
     return;
@@ -197,6 +199,13 @@ export const converter = ortbConverter({
     }
 
     const bidResponse = buildBidResponse(bid, context);
+    bidResponse.meta = bidResponse.meta || {};
+    if (bid.ext?.bidder) {
+      bidResponse.meta.networkId = bid.ext.bidder;
+    }
+    if (context.seatbid?.seat) {
+      bidResponse.meta.seat = context.seatbid.seat;
+    }
     if (bidResponse.mediaType === VIDEO) {
       bidResponse.vastUrl = vastUrl;
     }

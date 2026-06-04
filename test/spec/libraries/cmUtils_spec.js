@@ -114,7 +114,8 @@ describe('consent management utils', () => {
       consentDataHandler = {
         enable: sinon.stub(),
         setConsentData: sinon.stub(),
-        getConsentData: sinon.stub()
+        getConsentData: sinon.stub(),
+        error: sinon.stub(),
       };
       setupCmp = sinon.stub();
       cmpTimeout = 0;
@@ -148,7 +149,7 @@ describe('consent management utils', () => {
         sinon.assert.fail('should throw');
       } catch (e) {
         expect(e).to.equal(err);
-        sinon.assert.calledWith(consentDataHandler.setConsentData, null);
+        sinon.assert.calledWith(consentDataHandler.error, err);
       }
     });
 

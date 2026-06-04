@@ -1,9 +1,10 @@
-import { ConsentHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
+import { consentHandler, coppaDataHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
+import { config } from 'src/config.js';
 
 describe('Consent data handler', () => {
   let handler;
   beforeEach(() => {
-    handler = new ConsentHandler();
+    handler = consentHandler();
   })
 
   it('should be disabled, return null data on init', () => {
@@ -16,6 +17,54 @@ describe('Consent data handler', () => {
       expect(data).to.equal(null);
     });
   });
+
+  it('should reject promise on reject', async () => {
+    const err = new Error();
+    handler.error(err);
+    expect(handler.getConsentData()).to.equal(null);
+    expect(handler.ready).to.be.true;
+    try {
+      await handler.promise;
+      sinon.assert.fail('promise did not reject');
+    } catch (e) {
+      expect(e).to.equal(err);
+    }
+  });
+
+  describe('onChange', () => {
+    let listener;
+    beforeEach(() => {
+      listener = sinon.stub();
+    });
+    it('should trigger on consent data changes', () => {
+      handler.onChange(listener);
+      handler.setConsentData(true);
+      sinon.assert.calledWith(listener, true);
+    });
+    it('should not trigger when consent data does not change', () => {
+      handler.setConsentData(true);
+      handler.onChange(listener);
+      handler.setConsentData(true);
+      sinon.assert.notCalled(listener);
+    });
+    describe('using hashFields', () => {
+      beforeEach(() => {
+        handler = consentHandler({ hashFields: ['tcString'] });
+      });
+      it('should trigger when hashFields change', () => {
+        handler.setConsentData({ tcString: 'initial' });
+        handler.onChange(listener);
+        handler.setConsentData({ tcString: 'updated' });
+        sinon.assert.calledWith(listener, { tcString: 'updated' });
+      });
+      it('should not trigger when non-hashFields change', () => {
+        handler.setConsentData({ tcString: 'constant' });
+        handler.onChange(listener);
+        handler.setConsentData({ tcString: 'constant', other: 'ignored' });
+        sinon.assert.notCalled(listener);
+      });
+    })
+  })
 
   it('should return data after setConsentData', () => {
     const data = { consent: 'string' };
@@ -78,7 +127,7 @@ describe('Consent data handler', () => {
       expect(handler.hash).to.eql(h1);
     });
     it('does not change when non-hashFields are updated', () => {
-      handler.hashFields = ['field', 'enabled'];
+      handler = consentHandler({ hashFields: ['field', 'enabled'] });
       handler.setConsentData({ field: 'value', enabled: true });
       const h1 = handler.hash;
       handler.setConsentData({ field: 'value', enabled: true, other: 'data' });
@@ -90,7 +139,14 @@ describe('Consent data handler', () => {
 describe('multiHandler', () => {
   let handlers, multi;
   beforeEach(() => {
-    handlers = { h1: {}, h2: {} };
+    handlers = {
+      h1: {
+        onChange: sinon.stub()
+      },
+      h2: {
+        onChange: sinon.stub()
+      }
+    };
     multi = multiHandler(handlers);
   });
 
@@ -137,6 +193,43 @@ describe('multiHandler', () => {
         expect(multi.hash).to.not.eql(first);
       })
     })
+  });
+  describe('onChange', () => {
+    ['h1', 'h2'].forEach((handler, i) => {
+      it(`triggers when handler #${i + 1} changes`, () => {
+        handlers.h1.getConsentData = () => 'one';
+        handlers.h2.getConsentData = () => 'two';
+        const listener = sinon.stub();
+        multi.onChange(listener);
+        handlers[handler].onChange.args[0][0]();
+        sinon.assert.calledWith(listener, {
+          h1: 'one',
+          h2: 'two'
+        })
+      })
+    })
+  });
+})
+
+describe('coppaDataHandler', () => {
+  after(() => {
+    config.resetConfig();
+  })
+  it('should default to false', () => {
+    expect(coppaDataHandler.getCoppa()).to.be.false;
+  });
+
+  it('should reflect configuration updates', () => {
+    config.setConfig({ coppa: true });
+    expect(coppaDataHandler.getCoppa()).to.be.true;
+    config.setConfig({ coppa: false });
+    expect(coppaDataHandler.getCoppa()).to.be.false;
+  });
+  it('should be enabled and ready on reset', () => {
+    config.setConfig({ coppa: true });
+    coppaDataHandler.reset();
+    expect(coppaDataHandler.enabled).to.be.true;
+    expect(coppaDataHandler.getConsentData()).to.be.true;
   })
 })
 
