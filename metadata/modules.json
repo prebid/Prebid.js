@@ -2390,6 +2390,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "ferio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "finative",
       "aliasOf": null,
       "gvlid": null,
@@ -6394,6 +6401,11 @@
     {
       "componentType": "analytics",
       "componentName": "hadronAnalytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "hubvisor",
       "gvlid": null
     },
     {
