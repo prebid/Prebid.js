@@ -129,6 +129,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adelerate",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "adf",
       "aliasOf": null,
       "gvlid": 50,
@@ -542,6 +549,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "reload",
+      "aliasOf": "adkernel",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "admaru",
       "aliasOf": null,
       "gvlid": null,
@@ -677,7 +691,7 @@
       "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
-      "gvlid": 1210,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -888,13 +902,6 @@
       "componentName": "janet",
       "aliasOf": "adtelligent",
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "selectmedia",
-      "aliasOf": "adtelligent",
-      "gvlid": 775,
       "disclosureURL": null
     },
     {
@@ -1200,6 +1207,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "anzuDSP",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "anzuSSP",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "apacdex",
       "aliasOf": null,
       "gvlid": null,
@@ -1313,13 +1334,6 @@
     {
       "componentType": "bidder",
       "componentName": "featureforward",
-      "aliasOf": "appnexus",
-      "gvlid": 32,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "oftmedia",
       "aliasOf": "appnexus",
       "gvlid": 32,
       "disclosureURL": null
@@ -1629,7 +1643,7 @@
       "componentType": "bidder",
       "componentName": "bliink",
       "aliasOf": null,
-      "gvlid": 658,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2154,7 +2168,7 @@
       "componentType": "bidder",
       "componentName": "distroscale",
       "aliasOf": null,
-      "gvlid": 754,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2376,6 +2390,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "ferio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "finative",
       "aliasOf": null,
       "gvlid": null,
@@ -2593,6 +2614,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "haloads",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "harion",
       "aliasOf": null,
       "gvlid": 1406,
@@ -2603,6 +2631,13 @@
       "componentName": "holid",
       "aliasOf": null,
       "gvlid": 1177,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "hubvisor",
+      "aliasOf": null,
+      "gvlid": 1112,
       "disclosureURL": null
     },
     {
@@ -3195,6 +3230,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "matterfull",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mediaConsortium",
       "aliasOf": null,
       "gvlid": 1112,
@@ -3363,8 +3405,22 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "movingup",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "msft",
       "aliasOf": null,
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "oftmedia",
+      "aliasOf": "msft",
       "gvlid": 32,
       "disclosureURL": null
     },
@@ -3541,13 +3597,6 @@
       "componentName": "scoremedia",
       "aliasOf": "nexx360",
       "gvlid": 965,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "movingup",
-      "aliasOf": "nexx360",
-      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4364,6 +4413,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "selectmedia",
+      "aliasOf": null,
+      "gvlid": 775,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "setupad",
       "aliasOf": null,
       "gvlid": 1241,
@@ -4518,7 +4574,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adinify",
+      "componentName": "adlywise",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
@@ -5759,6 +5815,13 @@
     },
     {
       "componentType": "userId",
+      "componentName": "acxiomRealId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
       "componentName": "admixerId",
       "gvlid": 511,
       "disclosureURL": null,
@@ -6338,6 +6401,11 @@
     {
       "componentType": "analytics",
       "componentName": "hadronAnalytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "hubvisor",
       "gvlid": null
     },
     {

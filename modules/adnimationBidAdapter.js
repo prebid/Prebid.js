@@ -10,7 +10,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./adnimationBidAdapterTypes.d.ts').AdnimationBidRequestParams} AdnimationBidRequestParams
+ * @typedef {import('./adnimationBidAdapter.d.ts').AdnimationBidRequestParams} AdnimationBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';

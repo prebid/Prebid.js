@@ -24,7 +24,7 @@ import {
 } from './utils.js';
 import { decorateAdUnitsWithNativeParams, nativeAdapters } from './native.js';
 import { newBidder } from './adapters/bidderFactory.js';
-import { ajaxBuilder } from './ajax.js';
+import { qualifiedAjaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
 import {
@@ -742,7 +742,7 @@ const adapterManager = {
     _s2sConfigs.forEach((s2sConfig) => {
       if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
         // s2s should get the same client side timeout as other client side requests.
-        const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+        const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
           request: requestCallbacks.request.bind(null, 's2s'),
           done: requestCallbacks.done
         } : undefined);
@@ -799,7 +799,7 @@ const adapterManager = {
         logMessage(`CALLING BIDDER`);
         events.emit(EVENTS.BID_REQUESTED, bidderRequest);
       });
-      const ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+      const ajax = qualifiedAjaxBuilder(MODULE_TYPE_BIDDER, bidderRequest.bidderCode, requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
         done: requestCallbacks.done
       } : undefined);

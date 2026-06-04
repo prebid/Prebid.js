@@ -1,6 +1,15 @@
 name: Run unit tests on all browsers
 on:
   workflow_call:
+    inputs:
+      source-key:
+        type: string
+        default: 'source'
+        required: false
+      coverage-only:
+        type: boolean
+        default: false
+        required: false
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -15,13 +24,15 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       build-cmd: npx gulp build
+      source-key: ${{ inputs.source-key }}
 
   setup:
     needs: build
     name: "Define testing strategy"
     runs-on: ubuntu-latest
     outputs:
-      browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
+      unitBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).unitBrowsers) }}
+      e2eBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).e2eBrowsers) }}
       latestBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).latestBrowsers) }}
       bstack-key: ${{ steps.bstack-save.outputs.name }}
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
@@ -52,8 +63,10 @@ jobs:
                  browsers.push(...Object.entries(versions).map(([version, def]) => Object.assign({}, browser, {version, ...def})))
               }
               return browsers;
-            })
-            const bstackBrowsers = Object.fromEntries(
+            }).filter(browser => {
+             return !${{inputs.coverage-only}} || browser.coverage
+            });
+            const bstackBrowsers = ${{inputs.coverage-only}} ? {} : Object.fromEntries(
               // exclude versions of browsers that we can test on GH actions
               Object.entries(require('./browsers.json'))
               .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) == null)
@@ -67,11 +80,14 @@ jobs:
               console.log("Skipping browserstack tests (credentials are not available)");
               bsBrowsers = 0;
             }
-            console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
+            const unitBrowsers = browsers.filter(browser => browser.bsName != null);
+            const e2eBrowsers = ${{ inputs.coverage-only }} ? [] : browsers.filter(browser => browser.wdioName != null);
+            console.log("Browsers to be tested directly on runners:", JSON.stringify({unitBrowsers, e2eBrowsers}, null, 2))
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
               bsBrowsers,
-              browsers,
+              unitBrowsers,            
+              e2eBrowsers,
               latestBrowsers: browsers.filter(browser => browser.version === 'latest') 
             }
       - name: "Save working directory"
@@ -83,6 +99,7 @@ jobs:
 
   test-build-logic:
     needs: build
+    if: ${{ !inputs.coverage-only }}
     name: "Test build logic"
     uses:
       ./.github/workflows/run-tests.yml
@@ -92,11 +109,12 @@ jobs:
 
   e2e-tests:
     needs: [setup, build]
+    if: ${{ !inputs.coverage-only }}
     name: "E2E (browser: ${{ matrix.browser.wdioName }})"
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.e2eBrowsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:
@@ -115,7 +133,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.unitBrowsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:

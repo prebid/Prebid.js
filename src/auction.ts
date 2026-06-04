@@ -32,13 +32,14 @@ import { getEffectiveMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js'
 import type { Bid, BidResponse } from "./bidfactory.ts";
 import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
 import type { TargetingMap } from "./targeting.ts";
-import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
+import type { AdUnit, AdUnitDefinition, SafeRendererConfig } from "./adUnits.ts";
 import type { MediaType } from "./mediaTypes.ts";
 import type { VideoContext } from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
 import { wrapInBids } from "./utils/wrapsInBids.ts";
+import { adjustDesirability } from './utils/desirability.ts';
 
 const { syncUsers } = userSync;
 
@@ -757,7 +758,7 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
 /**
  * Add additional bid response properties that are universal for all _accepted_ bids.
  */
-function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.index } = {}): Bid {
+export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.index } = {}): Bid {
   // Let listeners know that now is the time to adjust the bid, if they want to.
   //
   // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
@@ -769,16 +770,19 @@ function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.in
   bid.element = adUnit?.element;
 
   // a publisher-defined renderer can be used to render bids
-  const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;
+  const bidRequest = index.getBidRequest(bid);
+  const bidRenderer = bidRequest?.renderer || adUnit.renderer;
+  const bidSafeRenderer = bidRequest?.safeRenderer || adUnit.safeRenderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
   const mediaTypes = index.getMediaTypes(bid);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
-  var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+  const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+  const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
 
-  var renderer = null;
+  let renderer = null;
 
   // the renderer for the mediaType takes precendence
   if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
@@ -787,10 +791,28 @@ function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionManager.in
     renderer = bidRenderer;
   }
 
-  if (renderer) {
-    // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-    bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
-    bid.renderer.setRender(renderer.render);
+  let safeRenderer: SafeRendererConfig | undefined = null;
+
+  if (mediaTypeSafeRenderer && mediaTypeSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
+    safeRenderer = mediaTypeSafeRenderer;
+  } else if (bidSafeRenderer && bidSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
+    safeRenderer = bidSafeRenderer;
+  }
+
+  if (safeRenderer != null) {
+    bid.safeRenderer = safeRenderer;
+  }
+
+  const allowTopWindowRenderers = config.getConfig('allowTopWindowRenderers') ?? true;
+
+  if (allowTopWindowRenderers) {
+    if (renderer) {
+      // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
+      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+      bid.renderer.setRender(renderer.render);
+    }
+  } else {
+    bid.renderer = null;
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
@@ -1032,11 +1054,12 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
-      const urlInfo = parseUrl(config.getConfig('cache.url'));
-
       if (typeof adserverTargeting.find(targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return (bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname) as string;
+          if (bidResponse.cacheUrl) {
+            return parseUrl(bidResponse.cacheUrl).hostname
+          }
+          return bidResponse.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST];
         }));
       }
     }
@@ -1105,11 +1128,16 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  const bidPriceAdjusted = adjustCpm(bid.cpm, bid);
+  const bidRequest = auctionManager.index.getBidRequest(bid);
+  const bidPriceAdjusted = adjustCpm(bid.cpm, bid, bidRequest);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
   }
+
+  // defaults to  cpm
+  const bidDesirabilityAdjusted = adjustDesirability(bid, bidRequest);
+  bid.desirability = bidDesirabilityAdjusted;
 }
 
 /**

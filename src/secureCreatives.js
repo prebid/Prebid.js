@@ -17,6 +17,7 @@ import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
 import { auctionManager } from './auctionManager.js';
+import { getSlotTargetingKeys, getSlotTargeting } from './utils/gptTargeting.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -210,8 +211,8 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
 
   function getDfpElementId(adId) {
     const slot = window.googletag.pubads().getSlots().find(slot => {
-      return slot.getTargetingKeys().find(key => {
-        return slot.getTargeting(key).includes(adId);
+      return getSlotTargetingKeys(slot).find(key => {
+        return getSlotTargeting(slot, key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;
