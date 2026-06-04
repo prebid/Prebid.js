@@ -44,6 +44,9 @@ export interface GamVideoOptions {
   url?: string;
 }
 
+export type GamVideoCustParams = {
+  [key: string]: string | string[] | number | boolean | undefined;
+};
 export interface GamVideoParams {
   /**
    * Google Ad Manager ad unit ID.
@@ -58,9 +61,13 @@ export interface GamVideoParams {
   /**
    * Key-value pairs merged with Prebid’s targeting values and sent to Google Ad Manager on the video ad tag URL.
    */
-  cust_params?: {
-    [key: string]: string | string[] | number | boolean | undefined;
-  };
+  cust_params?: GamVideoCustParams;
+  /**
+   * Additional VAST Ad Tag parameters
+   *
+   * @see {@link https://support.google.com/admanager/answer/10678356?hl=en}
+   */
+  [key: string]: string | number | boolean | GamVideoCustParams | undefined;
 }
 
 /**
