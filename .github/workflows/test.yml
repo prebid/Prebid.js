@@ -110,31 +110,81 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
-  coveralls:
-    name: Update coveralls
-    needs: [checkout, test]
+  base-coverage-check:
+    name: Check for base branch coverage
+    needs: [checkout]
+    outputs:
+      needs-base-coverage: ${{ steps.restore.outputs.cache-hit != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore from cache
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          path: "base-coverage.info"
+          key: coverage-${{ needs.checkout.outputs.base-commit }}
+      - name: Checkout
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.checkout.outputs.base-commit }}
+      - name: Install dependencies
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/npm-ci
+      - name: 'Save working directory'
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/save
+        with:
+          name: base-branch-source
+  base-coverage-compute:
+    name: Compute base branch coverage
+    needs: [base-coverage-check]
+    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage }}
+    uses: ./.github/workflows/browser-tests.yml
+    with:
+      source-key: base-branch-source
+      coverage-only: true
+  base-coverage-combine:
+    name: Combine base branch coverage
+    needs: [checkout, base-coverage-check, base-coverage-compute]
+    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Restore source
-        uses: ./.github/actions/load
-        with:
-          name: ${{ needs.test.outputs.coverage }}
-
       - name: Combine coverage results
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install lcov -y
-          find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o build/coverage/combined.info
-
-      - name: Coveralls
-        uses: coverallsapp/github-action@v2
+        uses: ./.github/actions/combine-coverage
         with:
-          file: build/coverage/combined.info
-          git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
-          git-commit: ${{ needs.checkout.outputs.commit }}
-          compare-ref: ${{ needs.checkout.outputs.base-branch }}
-          compare-sha: ${{ needs.checkout.outputs.base-commit }}
+          source-artifact: ${{ needs.base-coverage-compute.outputs.coverage }}
+          lcov: base-coverage.info
+          cache-key: coverage-${{needs.checkout.outputs.base-commit}}
+  coverage:
+    name: Coverage
+    needs: [checkout, test, base-coverage-combine]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Combine coverage results
+        uses: ./.github/actions/combine-coverage
+        with:
+          source-artifact: ${{ needs.test.outputs.coverage }}
+          lcov: coverage.info
+          cache-key: coverage-${{needs.checkout.commit}}
+      - name: Fetch base branch coverage
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: "base-coverage.info"
+          key: coverage-${{ needs.checkout.outputs.base-commit }}
+      - name: Generate Code Coverage report
+        id: code-coverage
+        uses: barecheck/code-coverage-action@v1
+        with:
+          barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
+          lcov-file: "coverage.info"
+          base-lcov-file: "base-coverage.info"
+          minimum-ratio: 0 # Fails Github action once code coverage is decreasing
+          send-summary-comment: true
+          show-annotations: "warning" # Possible options warning|error

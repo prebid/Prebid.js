@@ -1,6 +1,15 @@
 name: Run unit tests on all browsers
 on:
   workflow_call:
+    inputs:
+      source-key:
+        type: string
+        default: 'source'
+        required: false
+      coverage-only:
+        type: boolean
+        default: false
+        required: false
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -15,6 +24,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       build-cmd: npx gulp build
+      source-key: ${{ inputs.source-key }}
 
   setup:
     needs: build
@@ -53,7 +63,9 @@ jobs:
                  browsers.push(...Object.entries(versions).map(([version, def]) => Object.assign({}, browser, {version, ...def})))
               }
               return browsers;
-            })
+            }).filter(browser => {
+             !${{inputs.coverage-only}} || browser.coverage
+            });            
             const bstackBrowsers = Object.fromEntries(
               // exclude versions of browsers that we can test on GH actions
               Object.entries(require('./browsers.json'))
