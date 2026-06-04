@@ -137,6 +137,7 @@ export function syncOrtb2(adUnit, mediaType) {
     return;
   }
 
+  
   const fields = {
     [VIDEO]: FEATURES.VIDEO && ORTB_VIDEO_PARAMS,
     [BANNER]: ORTB_BANNER_PARAMS
