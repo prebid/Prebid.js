@@ -199,6 +199,13 @@ export const converter = ortbConverter({
     }
 
     const bidResponse = buildBidResponse(bid, context);
+    bidResponse.meta = bidResponse.meta || {};
+    if (bid.ext?.bidder) {
+      bidResponse.meta.networkId = bid.ext.bidder;
+    }
+    if (context.seatbid?.seat) {
+      bidResponse.meta.seat = context.seatbid.seat;
+    }
     if (bidResponse.mediaType === VIDEO) {
       bidResponse.vastUrl = vastUrl;
     }

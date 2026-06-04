@@ -2,7 +2,7 @@ import { registerActivityControl } from '../../src/activities/rules.js';
 import {
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
-  ACTIVITY_SYNC_USER,
+  ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_UFPD
 } from '../../src/activities/activities.js';
@@ -122,6 +122,7 @@ export function isTransmitGeoConsentDenied(cd) {
 const CONSENT_RULES = {
   [ACTIVITY_SYNC_USER]: isConsentDenied,
   [ACTIVITY_ENRICH_EIDS]: isConsentDenied,
+  [ACTIVITY_TRANSMIT_EIDS]: isConsentDenied,
   [ACTIVITY_ENRICH_UFPD]: isConsentDenied,
   [ACTIVITY_TRANSMIT_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied

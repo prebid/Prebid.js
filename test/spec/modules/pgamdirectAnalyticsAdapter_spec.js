@@ -2,8 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS } from 'src/constants.js';
-import * as ajaxLib from 'src/ajax.js';
-import pgamdirectAnalytics, { normalise, maybePostAuctionContext } from 'modules/pgamdirectAnalyticsAdapter.js';
+import pgamdirectAnalytics, { dep, maybePostAuctionContext, normalise } from 'modules/pgamdirectAnalyticsAdapter.js';
 
 /**
  * Spec for modules/pgamdirectAnalyticsAdapter.ts.
@@ -207,7 +206,7 @@ describe('pgamdirect Analytics Adapter', () => {
   describe('maybePostAuctionContext', () => {
     let ajaxStub;
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
     afterEach(() => {
       ajaxStub.restore();
