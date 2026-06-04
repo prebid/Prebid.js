@@ -170,7 +170,7 @@ jobs:
         with:
           source-artifact: ${{ needs.test.outputs.coverage }}
           lcov: coverage.info
-          cache-key: coverage-${{needs.checkout.commit}}
+          cache-key: coverage-${{needs.checkout.outputs.commit}}
       - name: Fetch base branch coverage
         id: restore
         uses: actions/cache/restore@v4
