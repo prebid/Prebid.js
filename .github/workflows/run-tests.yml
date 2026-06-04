@@ -208,17 +208,17 @@ jobs:
         if: ${{ steps.coverage.outputs.coverage }}
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
+          name: coverage-partial-${{needs.checkout.outputs.id}}-${{ matrix.chunk-no }}
           path: ./build/coverage
           overwrite: true
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
-    needs: [build, run-tests]
+    needs: [checkout, build, run-tests]
     name: 'Collect coverage results'
     runs-on: ubuntu-latest
     outputs:
-      coverage: coverage-complete-${{ inputs.test-cmd }}
+      coverage: ${{ steps.save.outputs.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -232,11 +232,12 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: ./build/coverage
-          pattern: coverage-partial-${{ inputs.test-cmd }}-*
+          pattern: coverage-partial-${{ needs.checkout.outputs.id }}-*
           merge-multiple: true
 
       - name: 'Save working directory'
+        id: save
         uses: ./.github/actions/save
         with:
-          name: coverage-complete-${{ inputs.test-cmd }}
+          prefix: coverage-complete-
 
