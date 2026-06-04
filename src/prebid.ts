@@ -137,7 +137,6 @@ export function syncOrtb2(adUnit, mediaType) {
     return;
   }
 
-  
   const fields = {
     [VIDEO]: FEATURES.VIDEO && ORTB_VIDEO_PARAMS,
     [BANNER]: ORTB_BANNER_PARAMS
@@ -162,6 +161,10 @@ export function syncOrtb2(adUnit, mediaType) {
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     }
   });
+}
+
+function uncoveredCode(a, b) {
+  return a + b;
 }
 
 function validateBannerMediaType(adUnit: AdUnit) {
