@@ -1,79 +1,36 @@
 # Overview
 
-```
-Module Name: Copper6SSP Bidder Adapter
-Module Type: Copper6SSP Bidder Adapter
-Maintainer: info@copper6.com
-```
+**Module Name:** Copper6 Bidder Adapter
+
+**Module Type:** Bidder Adapter
+
+**Maintainer:** operations@copper6.com
 
 # Description
 
-Connects to Copper6SSP exchange for bids.
-Copper6SSP bid adapter supports Banner, Video (instream and outstream) and Native.
+Module that connects to Copper6's demand sources.
 
 # Test Parameters
-```
-    var adUnits = [
-                // Will return static test banner
-                {
-                    code: 'adunit1',
-                    mediaTypes: {
-                        banner: {
-                            sizes: [ [300, 250], [320, 50] ],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'copper6ssp',
-                            params: {
-                                placementId: 'testBanner',
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit2',
-                    mediaTypes: {
-                        video: {
-                            playerSize: [ [640, 480] ],
-                            context: 'instream',
-                            minduration: 5,
-                            maxduration: 60,
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'copper6ssp',
-                            params: {
-                                placementId: 'testVideo',
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit3',
-                    mediaTypes: {
-                        native: {
-                            title: {
-                                required: true
-                            },
-                            body: {
-                                required: true
-                            },
-                            icon: {
-                                required: true,
-                                size: [64, 64]
-                            }
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'copper6ssp',
-                            params: {
-                                placementId: 'testNative',
-                            }
-                        }
-                    ]
+
+```js
+var adUnits = [
+    {
+        code: 'test-ad',
+        sizes: [[300, 250]],
+        bids: [
+            {
+                bidder: 'copper6ssp',
+                params: {
+                    cId: '562524b21b1c1f08117667f9',
+                    pId: '59ac17c192832d0016683fe3',
+                    bidFloor: 0.0001,
+                    ext: {
+                        param1: 'loremipsum',
+                        param2: 'dolorsitamet'
+                    }
                 }
-            ];
+            }
+        ]
+    }
+];
 ```
