@@ -67,15 +67,24 @@ export const spec = {
 
   buildRequests(bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest });
-    // Stash impid → mediaType so interpretResponse can stamp bid.mtype
-    // before ortbConverter classifies the response. Built from the
-    // original Prebid bidRequests (always populated) rather than the
-    // OpenRTB imp (imp.native isn't materialised unless the host build
-    // includes Prebid's native module).
+    // Stash impid → expected mtype so interpretResponse can stamp
+    // bid.mtype before ortbConverter classifies the response. Realry's
+    // endpoint emits plain openrtb2.Bid without mtype, so without this
+    // fix-up fromORTB drops every bid.
+    //
+    // Single-format imps: lock the answer (banner-only → BANNER,
+    // native-only → NATIVE). Multi-format imps: leave null and defer
+    // to adm-shape sniffing in interpretResponse — the server picks
+    // banner or native per bid and pre-deciding here would route
+    // banner HTML to the native processor (and vice versa).
     const impMtype = {};
     for (const bid of bidRequests) {
       const mt = bid.mediaTypes || {};
-      impMtype[bid.bidId] = mt.native ? MTYPE_NATIVE : MTYPE_BANNER;
+      const hasNative = !!mt.native;
+      const hasBanner = !!mt.banner;
+      if (hasNative && !hasBanner) impMtype[bid.bidId] = MTYPE_NATIVE;
+      else if (hasBanner && !hasNative) impMtype[bid.bidId] = MTYPE_BANNER;
+      else impMtype[bid.bidId] = null; // multi-format → sniff from adm
     }
     return [{
       method: 'POST',
@@ -88,19 +97,30 @@ export const spec = {
 
   interpretResponse(response, request) {
     if (!response || !response.body || !response.body.seatbid) return [];
-    // Realry's endpoint emits plain openrtb2.Bid without mtype — without
-    // this fix-up ortbConverter.fromORTB drops every bid because it
-    // can't classify the media type.
     const impMtype = request.impMtype || {};
     for (const seat of response.body.seatbid) {
       for (const bid of (seat.bid || [])) {
         if (bid.mtype == null) {
-          bid.mtype = impMtype[bid.impid] || MTYPE_BANNER;
+          const locked = impMtype[bid.impid];
+          bid.mtype = (locked != null) ? locked : sniffMtypeFromAdm(bid.adm);
         }
       }
     }
     return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
 };
+
+// sniffMtypeFromAdm picks banner vs native for multi-format imps by
+// inspecting the adm shape: Realry's bidder emits a Native 1.2 admObject
+// as JSON ('{...}') for native fills and HTML ('<a ...>') for banner
+// fills. Anything else (empty / unrecognised) falls back to banner —
+// banner's renderer is more forgiving than native's, so misrouting a
+// truly-native bid is preferable to misrouting a banner one.
+function sniffMtypeFromAdm(adm) {
+  if (typeof adm !== 'string') return MTYPE_BANNER;
+  const t = adm.trimStart();
+  if (t.charAt(0) === '{') return MTYPE_NATIVE;
+  return MTYPE_BANNER;
+}
 
 registerBidder(spec);

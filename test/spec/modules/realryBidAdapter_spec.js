@@ -237,6 +237,75 @@ describe('realryBidAdapter', function () {
       expect(out[0].mediaType).to.equal(NATIVE);
       expect(out[0].cpm).to.equal(0.85);
     });
+
+    // Multi-format imp regression: if the imp opts into both banner AND
+    // native, the adapter must NOT pre-decide media type at request time
+    // — the server picks per bid. mtype is sniffed from the adm shape
+    // (`{` = native admObject JSON, anything else = banner HTML).
+    function multiFormatBid() {
+      const b = bannerBid();
+      b.bidId = 'bid-mf-1';
+      b.adUnitCode = 'div-mf';
+      b.mediaTypes = {
+        banner: { sizes: [[300, 250]] },
+        native: { ortb: { assets: [{ id: 1, required: 1, title: { len: 90 } }] } },
+      };
+      return b;
+    }
+
+    it('routes a banner adm to BANNER on a multi-format imp', function () {
+      const bids = [multiFormatBid()];
+      const request = build(bids);
+      const response = {
+        body: {
+          id: 'breq-mf',
+          cur: 'USD',
+          seatbid: [{
+            seat: 'realry',
+            bid: [{
+              impid: bids[0].bidId,
+              price: 1.10,
+              crid: 'prod-mf',
+              adomain: ['realry.com'],
+              w: 300,
+              h: 250,
+              adm: '<a href="https://bid.realry.com/click?bid_id=bid-mf"><img src="https://cdn.example.com/bag.jpg" /></a>',
+            }],
+          }],
+        },
+      };
+      const out = spec.interpretResponse(response, request);
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].mediaType).to.equal(BANNER);
+    });
+
+    it('routes a Native 1.2 admObject to NATIVE on a multi-format imp', function () {
+      const bids = [multiFormatBid()];
+      const request = build(bids);
+      const admObject = {
+        ver: '1.2',
+        assets: [{ id: 1, title: { text: 'Leather Crossbody Bag' } }],
+        link: { url: 'https://bid.realry.com/click?bid_id=bid-mf' },
+      };
+      const response = {
+        body: {
+          id: 'breq-mf',
+          cur: 'USD',
+          seatbid: [{
+            seat: 'realry',
+            bid: [{
+              impid: bids[0].bidId,
+              price: 0.95,
+              crid: 'prod-mf',
+              adm: JSON.stringify(admObject),
+            }],
+          }],
+        },
+      };
+      const out = spec.interpretResponse(response, request);
+      expect(out).to.have.lengthOf(1);
+      expect(out[0].mediaType).to.equal(NATIVE);
+    });
   });
 
   afterEach(function () { config.resetConfig(); });
