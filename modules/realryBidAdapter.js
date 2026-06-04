@@ -5,6 +5,8 @@ import { deepAccess, deepSetValue, logError } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./realryBidAdapter.d.ts').RealryBidderParams} RealryBidderParams
+ * @typedef {BidRequest & { params: RealryBidderParams }} RealryBidRequest
  *
  * Realry is a commerce DSP focused on luxury-fashion product listings. The
  * adapter forwards Prebid.js bid requests as OpenRTB 2.6 to
