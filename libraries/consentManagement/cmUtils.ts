@@ -64,7 +64,7 @@ export function lookupConsentData(
   consentDataHandler.enable();
   let timeoutHandle;
 
-  return new Promise((resolve, reject) => {
+  const lookup = new Promise((resolve, reject) => {
     let provisionalConsent;
     let cmpLoaded = false;
 
@@ -92,9 +92,13 @@ export function lookupConsentData(
     setupCmp(setProvisionalConsent)
       .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
     cmpTimeout != null && resetTimeout(cmpTimeout);
-  }).finally(() => {
+  });
+
+  return lookup.then((result) => {
     timeoutHandle && clearTimeout(timeoutHandle);
-  }).catch((e) => {
+    return result;
+  }, (e) => {
+    timeoutHandle && clearTimeout(timeoutHandle);
     consentDataHandler.error(e);
     throw e;
   });
@@ -250,10 +254,10 @@ export function configParser(
       let cd;
       return function () {
         if (cd == null) {
-          cd = lookup().catch(err => {
+          cd = lookup();
+          cd.catch(() => {
             cd = null;
-            throw err;
-          })
+          });
         }
         return cd;
       }

@@ -54,6 +54,7 @@ describe('Debugging', () => {
       const error = new Error();
       alreadyInstalled.returns(false);
       scriptResult = Promise.reject(error)
+      scriptResult.catch(() => null);
       return loader().then(() => {
         throw new Error('loader should not resolve');
       }).catch((err) => {
@@ -93,12 +94,12 @@ describe('Debugging', () => {
     });
 
     it('should continue when module cannot be loaded', () => {
+      const error = new Error('debugging load failed');
       debugging.enable();
       hook();
-      loader.reject();
-      return loader.promise.catch(() => {
-        return Promise.resolve();
-      }).then(() => {
+      const handledLoad = loader.promise.catch(() => Promise.resolve());
+      loader.reject(error);
+      return handledLoad.then(() => {
         expect(hookRan).to.be.true;
       })
     })
