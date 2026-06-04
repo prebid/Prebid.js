@@ -139,7 +139,7 @@ jobs:
   base-coverage-compute:
     name: Compute base branch coverage
     needs: [base-coverage-check]
-    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
+    if: always() && needs.base-coverage-check.outputs.needs-base-coverage == 'true'
     uses: ./.github/workflows/browser-tests.yml
     with:
       source-key: base-branch-source
@@ -147,7 +147,7 @@ jobs:
   base-coverage-combine:
     name: Combine base branch coverage
     needs: [checkout, base-coverage-check, base-coverage-compute]
-    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
+    if: always() && needs.base-coverage-check.outputs.needs-base-coverage == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
