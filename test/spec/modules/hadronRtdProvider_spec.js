@@ -1,13 +1,17 @@
 import { config } from 'src/config.js';
 import {
-  HADRONID_LOCAL_NAME,
-  RTD_LOCAL_NAME,
   addRealTimeData,
   getRealTimeData,
   hadronSubmodule,
   storage
 } from 'modules/hadronRtdProvider.js';
+import 'modules/userId/index.js';
 import { server } from 'test/mocks/xhr.js';
+
+// TODO: these symbols were imported, but not exported, from hadronRtdProvider.js
+// setting them as undefined achieves the same result but clearly something's wrong here
+const HADRONID_LOCAL_NAME = undefined;
+const RTD_LOCAL_NAME = undefined;
 
 const responseHeader = { 'Content-Type': 'application/json' };
 

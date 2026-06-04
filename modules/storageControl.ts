@@ -18,7 +18,7 @@ import { registerActivityControl } from '../src/activities/rules.js';
 import { ACTIVITY_ACCESS_DEVICE } from '../src/activities/activities.js';
 import { addApiMethod } from "../src/prebid.ts";
 // @ts-expect-error the ts compiler is confused by build-time renaming of summary.mjs to summary.js, reassure it
-// eslint-disable-next-line prebid/validate-imports
+
 import { getStorageDisclosureSummary } from "../libraries/storageDisclosure/summary.js";
 import { getGlobal } from "../src/prebidGlobal.ts";
 

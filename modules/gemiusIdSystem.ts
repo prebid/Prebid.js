@@ -25,6 +25,9 @@ declare module './userId/spec' {
   interface ProvidersToId {
     gemiusId: 'gemiusId';
   }
+  interface ProviderParams {
+    gemiusId: never
+  }
 }
 
 function getTopAccessibleWindow(): Window {

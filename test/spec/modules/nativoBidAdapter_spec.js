@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec, BidDataMap } from 'modules/nativoBidAdapter.js'
 import {
+  spec, BidDataMap,
   getSizeWildcardPrice,
   getMediaWildcardPrices,
   sizeToString,
@@ -12,7 +12,7 @@ import {
   RequestData,
   UserEIDs,
   buildRequestUrl,
-} from '../../../modules/nativoBidAdapter.js'
+} from 'modules/nativoBidAdapter.js'
 
 describe('bidDataMap', function () {
   it('Should fail gracefully if no key value pairs have been added and no key is sent', function () {

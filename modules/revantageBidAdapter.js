@@ -8,6 +8,7 @@ const SYNC_URL = 'https://sync.revantage.io/sync';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1588,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {

@@ -9,6 +9,19 @@ const PCID_EXPIRY = 365;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
+ * Detects partner-data keys of the form `_iiq_fdata_<partnerId>`.
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function isPartnerDataKey(key) {
+  if (typeof key !== 'string') return false;
+  const parts = key.split('_fdata_');
+  if (parts.length < 2) return false;
+  const partnerId = parts[1];
+  return !!partnerId && !Number.isNaN(Number(partnerId));
+}
+
+/**
  * Read data from local storage or cookie based on allowed storage types.
  * @param {string} key - The key to read data from.
  * @param {Array} allowedStorage - Array of allowed storage types ('html5' or 'cookie').
@@ -34,12 +47,30 @@ export function readData(key, allowedStorage) {
  * @param {string} key - The key under which the data will be stored.
  * @param {string} value - The value to be stored (e.g., IntentIQ ID).
  * @param {Array} allowedStorage - An array of allowed storage types: 'html5' for Local Storage and/or 'cookie' for Cookies.
- * @param {Object} firstPartyData - Contains user consent data; if isOptedOut is true, data will not be stored (except for FIRST_PARTY_KEY).
+ * @param {Object} firstPartyData - Contains user consent data; when isOptedOut is true only a stripped subset is persisted to device.
  */
 export function storeData(key, value, allowedStorage, firstPartyData) {
   try {
-    if (firstPartyData?.isOptedOut && key !== FIRST_PARTY_KEY) {
-      return;
+    if (firstPartyData?.isOptedOut) {
+      // Limit what reaches device storage when the user is opted out.
+      // - FIRST_PARTY_KEY: drop identifiers (pcid, pcidDate, pid, abTestUuid). Keep gdprString/isOptedOut/sCal etc.
+      // - Partner data (_iiq_fdata_<partnerId>): persist only terminationCause.
+      // - Anything else: do not persist.
+      if (key === FIRST_PARTY_KEY) {
+        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? { ...value } : null);
+        if (parsed) {
+          delete parsed.pcid;
+          delete parsed.pcidDate;
+          delete parsed.pid;
+          delete parsed.abTestUuid;
+          value = JSON.stringify(parsed);
+        }
+      } else if (isPartnerDataKey(key)) {
+        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? value : null);
+        value = JSON.stringify({ terminationCause: parsed ? parsed.terminationCause : undefined });
+      } else {
+        return;
+      }
     }
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
     if (value) {

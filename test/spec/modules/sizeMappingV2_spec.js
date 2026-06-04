@@ -1,19 +1,18 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-import { internal as utilInternal, deepClone } from '../../../src/utils.js';
+import { deepClone, internal as utilInternal } from '../../../src/utils.js';
 import {
-  isUsingNewSizeMapping,
   checkAdUnitSetupHook,
   checkBidderSizeConfigFormat,
-  isLabelActivated,
-  isSizeConfigActivated,
   getActiveSizeBucket,
-  getRelevantMediaTypesForBidder,
-  sizeMappingInternalStore,
   getAdUnitDetail,
   getFilteredMediaTypes,
-  getBids,
-  internal, setupAdUnitMediaTypes
+  getRelevantMediaTypesForBidder,
+  internal,
+  isLabelActivated,
+  isSizeConfigActivated,
+  isUsingNewSizeMapping,
+  setupAdUnitMediaTypes
 } from '../../../modules/sizeMappingV2.js';
 
 import { adUnitSetupChecks } from '../../../src/prebid.js';

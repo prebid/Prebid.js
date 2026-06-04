@@ -1,16 +1,19 @@
 import { expect } from 'chai';
 import adapterManager, {
-  gdprDataHandler,
-  coppaDataHandler,
   _partitionBidders,
-  PARTITIONS,
-  getS2SBidderSet, filterBidsForAdUnit, dep, partitionBidders
+  coppaDataHandler,
+  dep,
+  filterBidsForAdUnit,
+  gdprDataHandler,
+  getS2SBidderSet,
+  partitionBidders,
+  PARTITIONS
 } from 'src/adapterManager.js';
 import {
   getAdUnits,
+  getBidRequests,
   getServerTestingConfig,
   getServerTestingsAds,
-  getBidRequests,
   getTwinAdUnits
 } from 'test/fixtures/fixtures.js';
 import { EVENTS, S2S } from 'src/constants.js';
@@ -18,14 +21,19 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'modules/sizeMapping.js';
-import s2sTesting from 'modules/s2sTesting.js';
+import s2sTestingMod from 'modules/s2sTesting.js';
 import { hook } from '../../../../src/hook.js';
 import { auctionManager } from '../../../../src/auctionManager.js';
 import { GDPR_GVLIDS } from '../../../../src/consentHandler.js';
 import { MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER } from '../../../../src/activities/modules.js';
-import { ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS } from '../../../../src/activities/activities.js';
+import { server } from '../../../mocks/xhr.js';
+
+import {
+  ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
+  ACTIVITY_FETCH_BIDS,
+  ACTIVITY_REPORT_ANALYTICS
+} from '../../../../src/activities/activities.js';
 import { reset as resetAdUnitCounters } from '../../../../src/adUnits.js';
-import { deepClone } from 'src/utils.js';
 import {
   EVENT_TYPE_IMPRESSION,
   EVENT_TYPE_WIN,
@@ -33,6 +41,8 @@ import {
   TRACKER_METHOD_JS
 } from '../../../../src/eventTrackers.js';
 import 'src/prebid.js';
+import { registerActivityControl } from '../../../../src/activities/rules.js';
+
 var events = require('../../../../src/events.js');
 
 const CONFIG = {
@@ -111,7 +121,7 @@ describe('adapterManager tests', function () {
     sandbox = sinon.createSandbox();
   });
   afterEach(() => {
-    s2sTesting.clientTestBidders.clear();
+    s2sTestingMod.clientTestBidders.clear();
     sandbox.restore();
   });
 
@@ -137,6 +147,35 @@ describe('adapterManager tests', function () {
       delete adapterManager.bidderRegistry['rubicon'];
       delete adapterManager.bidderRegistry['badBidder'];
       config.resetConfig();
+    });
+
+    describe('withCredentials', () => {
+      let unregRule;
+      beforeEach(() => {
+        unregRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test',
+          ({ componentName, componentTypeType }) => {
+            if (componentType === 'bidder' && componentName === 'appnexus') {
+              return { allow: false };
+            }
+          });
+      });
+      afterEach(() => {
+        unregRule();
+      });
+      it('should pass through accessRequestCredentials', () => {
+        const adUnits = [{
+          code: 'test',
+          bids: [
+            { bidder: 'appnexus' }
+          ]
+        }];
+        const bidRequests = adapterManager.makeBidRequests(adUnits);
+        adapterManager.bidderRegistry['appnexus'].callBids.callsFake((_1, _2, _3, ajax) => {
+          ajax('https://example.com', null, null, { withCredentials: true });
+        })
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(server.requests[0].fetch.request.credentials).to.eql('same-origin');
+      });
     });
 
     it('should log an error if a bidder is used that does not exist', function () {
@@ -1208,7 +1247,7 @@ describe('adapterManager tests', function () {
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
 
-      stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
+      stubGetSourceBidderMap = sinon.stub(s2sTestingMod, 'getSourceBidderMap');
 
       prebidServerAdapterMock.callBids.resetHistory();
       prebidServerAdapterMock.callBids.resetBehavior();
@@ -1221,11 +1260,11 @@ describe('adapterManager tests', function () {
     });
 
     afterEach(function () {
-      s2sTesting.getSourceBidderMap.restore();
+      s2sTestingMod.getSourceBidderMap.restore();
     });
 
     it('calls server adapter if no sources defined', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: [], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: [], [s2sTestingMod.SERVER]: [] });
       callBids();
 
       // server adapter
@@ -1239,7 +1278,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls client adapter if one client source defined', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus'], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: ['appnexus'], [s2sTestingMod.SERVER]: [] });
       callBids();
 
       // server adapter
@@ -1253,7 +1292,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls client adapters if client sources defined', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: ['appnexus', 'adequant'], [s2sTestingMod.SERVER]: [] });
       callBids();
 
       // server adapter
@@ -1267,12 +1306,12 @@ describe('adapterManager tests', function () {
     });
 
     it('does not call server adapter for bidders that go to client', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: ['appnexus', 'adequant'], [s2sTestingMod.SERVER]: [] });
       var adUnits = getTestAdUnits();
-      adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
-      adUnits[0].bids[1].finalSource = s2sTesting.CLIENT;
-      adUnits[1].bids[0].finalSource = s2sTesting.CLIENT;
-      adUnits[1].bids[1].finalSource = s2sTesting.CLIENT;
+      adUnits[0].bids[0].finalSource = s2sTestingMod.CLIENT;
+      adUnits[0].bids[1].finalSource = s2sTestingMod.CLIENT;
+      adUnits[1].bids[0].finalSource = s2sTestingMod.CLIENT;
+      adUnits[1].bids[1].finalSource = s2sTestingMod.CLIENT;
       callBids(adUnits);
 
       // server adapter
@@ -1286,12 +1325,12 @@ describe('adapterManager tests', function () {
     });
 
     it('does not call client adapters for bidders that go to server', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: ['appnexus', 'adequant'], [s2sTestingMod.SERVER]: [] });
       var adUnits = getTestAdUnits();
-      adUnits[0].bids[0].finalSource = s2sTesting.SERVER;
-      adUnits[0].bids[1].finalSource = s2sTesting.SERVER;
-      adUnits[1].bids[0].finalSource = s2sTesting.SERVER;
-      adUnits[1].bids[1].finalSource = s2sTesting.SERVER;
+      adUnits[0].bids[0].finalSource = s2sTestingMod.SERVER;
+      adUnits[0].bids[1].finalSource = s2sTestingMod.SERVER;
+      adUnits[1].bids[0].finalSource = s2sTestingMod.SERVER;
+      adUnits[1].bids[1].finalSource = s2sTestingMod.SERVER;
       callBids(adUnits);
 
       // server adapter
@@ -1305,7 +1344,7 @@ describe('adapterManager tests', function () {
     });
 
     it('calls client and server adapters for bidders that go to both', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: ['appnexus', 'adequant'], [s2sTestingMod.SERVER]: [] });
       var adUnits = getTestAdUnits();
       // adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
       // adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
@@ -1324,12 +1363,12 @@ describe('adapterManager tests', function () {
     });
 
     it('makes mixed client/server adapter calls for mixed bidder sources', function () {
-      stubGetSourceBidderMap.returns({ [s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: [] });
+      stubGetSourceBidderMap.returns({ [s2sTestingMod.CLIENT]: ['appnexus', 'adequant'], [s2sTestingMod.SERVER]: [] });
       var adUnits = getTestAdUnits();
-      adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
-      adUnits[0].bids[1].finalSource = s2sTesting.CLIENT;
-      adUnits[1].bids[0].finalSource = s2sTesting.SERVER;
-      adUnits[1].bids[1].finalSource = s2sTesting.SERVER;
+      adUnits[0].bids[0].finalSource = s2sTestingMod.CLIENT;
+      adUnits[0].bids[1].finalSource = s2sTestingMod.CLIENT;
+      adUnits[1].bids[0].finalSource = s2sTestingMod.SERVER;
+      adUnits[1].bids[1].finalSource = s2sTestingMod.SERVER;
       callBids(adUnits);
 
       // server adapter
@@ -2681,7 +2720,7 @@ describe('adapterManager tests', function () {
     describe('s2sTesting - testServerOnly', () => {
       beforeEach(() => {
         config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });
-        s2sTesting.bidSource = {};
+        s2sTestingMod.bidSource = {};
       });
 
       afterEach(() => {
@@ -2811,7 +2850,7 @@ describe('adapterManager tests', function () {
 
       afterEach(() => {
         config.resetConfig()
-        s2sTesting.bidSource = {};
+        s2sTestingMod.bidSource = {};
       });
 
       const makeBidRequests = ads => {

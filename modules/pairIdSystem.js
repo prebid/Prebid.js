@@ -12,8 +12,13 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../modules/pairIdSystem.d.ts').PairIdSystemModuleName} PairIdSystemModuleName
  */
 
+/**
+ * @type {PairIdSystemModuleName}
+ */
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
 const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
@@ -28,11 +33,11 @@ function pairIdFromCookie(key) {
   return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<PairIdSystemModuleName>} */
 export const pairIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {PairIdSystemModuleName}
    */
   name: MODULE_NAME,
   /**

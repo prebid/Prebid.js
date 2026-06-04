@@ -65,8 +65,7 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'),
-        enforce: "pre",
-        use: ["source-map-loader"],
+        extractSourceMap: true,
       },
       ...(() => {
         if (!isES5Mode) {

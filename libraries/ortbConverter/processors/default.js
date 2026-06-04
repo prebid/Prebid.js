@@ -88,6 +88,7 @@ export const DEFAULT_PROCESSORS = {
           burl: bid.burl,
           ttl: bid.exp || context.ttl,
           netRevenue: context.netRevenue,
+          duration: bid.dur,
         }).filter(([k, v]) => typeof v !== 'undefined')
           .forEach(([k, v]) => {
             bidResponse[k] = v;

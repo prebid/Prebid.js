@@ -20,6 +20,9 @@ module.exports = {
     },
     'renderers/native': {
       import: './creative/renderers/native/renderer.js'
+    },
+    'renderers/safe': {
+      import: './creative/renderers/safe/renderer.js'
     }
   },
   output: {
@@ -27,7 +30,7 @@ module.exports = {
   },
   module: {
     rules: [{
-      use: 'source-map-loader'
+      extractSourceMap: true
     }]
   }
 }

@@ -45,7 +45,7 @@ export type TCFConsentData = {
   /**
    * The response from the CMP.
    */
-  vendorData: Record<string, string>;
+  vendorData: Record<string, any>;
   /**
    * Additional consent string, if provided by the CMP.
    * @see https://support.google.com/admanager/answer/9681920?hl=en

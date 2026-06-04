@@ -6,7 +6,7 @@ import { EVENTS } from '../src/constants.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { appendVrrefAndFui, getCurrentUrl, getRelevantRefferer } from '../libraries/intentIqUtils/getRefferer.js';
-import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
+import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.js';
 import { getUnitPosition } from '../libraries/intentIqUtils/getUnitPosition.js';
 import {
   VERSION,
@@ -68,6 +68,8 @@ const PARAMS_NAMES = {
   placementId: 'placementId',
   adType: 'adType',
   abTestUuid: 'abTestUuid',
+  abPercentage: 'abPercentage',
+  userPercentage: 'userPercentage',
 };
 
 const DEFAULT_URL = 'https://reports.intentiq.com/report';
@@ -90,6 +92,7 @@ const getDefaultInitOptions = () => {
     siloEnabled: false,
     reportMethod: null,
     abPercentage: null,
+    userPercentage: null,
     abTestUuid: null,
     additionalParams: null,
     reportingServerAddress: '',
@@ -104,12 +107,23 @@ const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, a
       case BID_WON:
         bidWon(args);
         break;
-      case BID_REQUESTED:
+      case BID_REQUESTED: {
         if (!alreadySubscribedOnGAM && shouldSubscribeOnGAM()) {
           alreadySubscribedOnGAM = true;
           gamPredictionReport(iiqConfig?.gamObjectReference, bidWon);
         }
+        const fpdFromGlobalObject = window[identityGlobalName]?.firstPartyData;
+        if (fpdFromGlobalObject) {
+          const currentCmpData = getCmpData();
+          const hasCmpMismatch = ['gdprString', 'gppString', 'uspString'].some(field =>
+            !areCmpValuesEqual(fpdFromGlobalObject[field], currentCmpData[field])
+          );
+          if (hasCmpMismatch) {
+            pbjs.refreshUserIds({ submoduleNames: ['intentIqId'] });
+          }
+        }
         break;
+      }
       default:
         break;
     }
@@ -175,6 +189,12 @@ function receivePartnerData() {
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = actualABGroup;
     }
     iiqAnalyticsAnalyticsAdapter.initOptions.clientHints = clientHints;
+
+    const { abPercentage, userProvidedAbPercentage } = window[identityGlobalName];
+    if (abPercentage !== undefined) {
+      iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage = abPercentage;
+    }
+    iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage = userProvidedAbPercentage;
   } catch (e) {
     logError(e);
     return false;
@@ -296,6 +316,12 @@ export function preparePayload(data) {
   }
   if (iiqAnalyticsAnalyticsAdapter.initOptions.configSource) {
     result[PARAMS_NAMES.ABTestingConfigurationSource] = iiqAnalyticsAnalyticsAdapter.initOptions.configSource
+  }
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage !== null) {
+    result[PARAMS_NAMES.abPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage;
+  }
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage !== undefined && iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage !== null) {
+    result[PARAMS_NAMES.userPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage;
   }
   prepareData(data, result);
 
@@ -445,9 +471,12 @@ function constructFullUrl(data) {
         PREBID +
         '&uh=' +
         encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.clientHints) +
-        (cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
-        (cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
-        (cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1' : '&gdpr=0');
+        (isValidValue(cmpData.uspString) ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
+        (isValidValue(cmpData.gppString) ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
+        (isValidValue(cmpData.gdprString)
+          ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
+          : '&gdpr=0') +
+        (cmpData.gdprApplies && isValidValue(cmpData.tcfApiVersion) ? '&tcfv=' + encodeURIComponent(cmpData.tcfApiVersion) : '');
 
   url = appendSPData(url, partnerData);
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);

@@ -7,7 +7,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   logMessage, logError, mergeDeep
 } from '../src/utils.js';
-import * as ajax from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
@@ -85,7 +85,7 @@ function callServer(configParams, items, expiresAt, userConsent) {
       url = tryAppendQueryString(url, 'tcf', userConsent.gdpr.consentString)
     }
 
-    ajax.ajaxBuilder()(url, {
+    qualifiedAjaxBuilder(MODULE_TYPE_RTD, MODULE_NAME)(url, {
       success: response => {
         const respJson = tryParse(response);
         // If response is a valid json and should save is true

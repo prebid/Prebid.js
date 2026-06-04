@@ -9,7 +9,7 @@ import { deepAccess } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('./aceexBidAdapterTypes.d.ts').AceexBidderParams} AceexBidderParams
+ * @typedef {import('./aceexBidAdapter.d.ts').AceexBidderParams} AceexBidderParams
  * @typedef {BidRequest & { params: AceexBidderParams }} AceexBidRequest
  */
 

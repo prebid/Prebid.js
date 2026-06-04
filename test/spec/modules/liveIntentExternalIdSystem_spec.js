@@ -291,7 +291,7 @@ describe('LiveIntentExternalId', function() {
     liveIntentExternalIdSubmodule.getId({
       params: {
         ...defaultConfigParams.params,
-        ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
+        ...{ requestedAttributesOverrides: { 'sovrn': true, 'openx': false } }
       }
     }).callback(() => {});
 
@@ -316,7 +316,7 @@ describe('LiveIntentExternalId', function() {
     expect(resolveCommand).to.eql({
       clientRef: {},
       onSuccess: [{ type: 'callback' }],
-      requestedAttributes: ['nonId', 'foo'],
+      requestedAttributes: ['nonId', 'sovrn'],
       type: 'resolve'
     })
   });

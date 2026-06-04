@@ -4,10 +4,9 @@ import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { deepClone, getUnixTimestampFromNow } from 'src/utils.js';
+import { deepClone, getUnixTimestampFromNow, getWinDimensions } from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import { getWinDimensions } from '../../../src/utils.js';
 
 import { getGlobalVarName } from '../../../src/buildOptions.js';
 

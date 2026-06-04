@@ -21,7 +21,8 @@ jobs:
     name: "Define testing strategy"
     runs-on: ubuntu-latest
     outputs:
-      browsers: ${{ toJSON(fromJSON(steps.define.outputs.result).browsers) }}
+      unitBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).unitBrowsers) }}
+      e2eBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).e2eBrowsers) }}
       latestBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).latestBrowsers) }}
       bstack-key: ${{ steps.bstack-save.outputs.name }}
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
@@ -33,7 +34,7 @@ jobs:
         with:
           name: ${{ needs.build.outputs.built-key }}
       - name: "Define testing strategy"
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: define
         env:
           browserstack: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -67,11 +68,14 @@ jobs:
               console.log("Skipping browserstack tests (credentials are not available)");
               bsBrowsers = 0;
             }
-            console.log("Browsers to be tested directly on runners:", JSON.stringify(browsers, null, 2))
+            const unitBrowsers = browsers.filter(browser => browser.bsName != null);
+            const e2eBrowsers = browsers.filter(browser => browser.wdioName != null);
+            console.log("Browsers to be tested directly on runners:", JSON.stringify({unitBrowsers, e2eBrowsers}, null, 2))
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
               bsBrowsers,
-              browsers,
+              unitBrowsers,            
+              e2eBrowsers,
               latestBrowsers: browsers.filter(browser => browser.version === 'latest') 
             }
       - name: "Save working directory"
@@ -96,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.e2eBrowsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:
@@ -115,7 +119,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: ${{ fromJSON(needs.setup.outputs.browsers) }}
+        browser: ${{ fromJSON(needs.setup.outputs.unitBrowsers) }}
     uses:
       ./.github/workflows/run-tests.yml
     with:

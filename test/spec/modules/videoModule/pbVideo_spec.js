@@ -1,6 +1,6 @@
 import 'src/prebid.js';
 import { expect } from 'chai';
-import { PbVideo } from 'modules/videoModule';
+import { PbVideo } from 'modules/videoModule/index.js';
 import { EVENTS } from 'src/constants.js';
 
 let ortbVideoMock;

@@ -11,6 +11,7 @@ import { createEidsArray } from '../../../modules/userId/eids.js';
 const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('LotameId', function() {
+  let sandbox;
   let logErrorStub;
   let getCookieStub;
   let setCookieStub;
@@ -22,16 +23,19 @@ describe('LotameId', function() {
 
   const nowTimestamp = new Date().getTime();
   beforeEach(function () {
-    logErrorStub = sinon.stub(utils, 'logError');
-    getCookieStub = sinon.stub(storage, 'getCookie');
-    setCookieStub = sinon.stub(storage, 'setCookie');
-    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-    removeFromLocalStorageStub = sinon.stub(
+    sandbox = sinon.createSandbox();
+    logErrorStub = sandbox.stub(utils, 'logError');
+    getCookieStub = sandbox.stub(storage, 'getCookie');
+    setCookieStub = sandbox.stub(storage, 'setCookie');
+    getLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+    setLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+    removeFromLocalStorageStub = sandbox.stub(
       storage,
       'removeDataFromLocalStorage'
     );
-    timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
+    timeStampStub = sandbox.stub(utils, 'timestamp').returns(nowTimestamp);
     if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
       requestHost = 'https://c.ltmsphrcl.net/id';
     } else {
@@ -40,13 +44,7 @@ describe('LotameId', function() {
   });
 
   afterEach(function () {
-    logErrorStub.restore();
-    getCookieStub.restore();
-    setCookieStub.restore();
-    getLocalStorageStub.restore();
-    setLocalStorageStub.restore();
-    removeFromLocalStorageStub.restore();
-    timeStampStub.restore();
+    sandbox.restore();
   });
 
   describe('caching initial data received from the remote server', function () {

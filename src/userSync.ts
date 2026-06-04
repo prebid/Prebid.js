@@ -1,6 +1,6 @@
 import {
   deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
-  logWarn, isStr, isSafariBrowser
+  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel
 } from './utils.js';
 import { config } from './config.js';
 
@@ -54,6 +54,11 @@ export interface UserSyncConfig {
    * Enable/disable registered syncs for aliased adapters. Default: false.
    */
   aliasSyncEnabled?: boolean;
+  /**
+   * Use background-friendly user sync transport methods for both image and iframe syncs.
+   * Can be toggled via `setConfig({userSync: {usePoliteSync: ...}})`. Default: false.
+   */
+  usePoliteSync?: boolean;
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
@@ -66,7 +71,8 @@ export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
   },
   syncsPerBidder: 5,
   syncDelay: 3000,
-  auctionDelay: 500
+  auctionDelay: 500,
+  usePoliteSync: false
 };
 
 // Set userSync default values
@@ -187,8 +193,11 @@ export function newUserSync(deps) {
     forEachFire(queue.image, (sync) => {
       const [bidderName, trackingPixelUrl] = sync;
       logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
-      triggerPixel(trackingPixelUrl);
+      if (usConfig.usePoliteSync) {
+        politeTriggerPixel(trackingPixelUrl);
+      } else {
+        triggerPixel(trackingPixelUrl);
+      }
     });
   }
 
@@ -205,8 +214,11 @@ export function newUserSync(deps) {
     forEachFire(queue.iframe, (sync) => {
       const [bidderName, iframeUrl] = sync;
       logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
-      // Insert iframe into DOM
-      insertUserSyncIframe(iframeUrl);
+      if (usConfig.usePoliteSync) {
+        politeInsertUserSyncIframe(iframeUrl);
+      } else {
+        insertUserSyncIframe(iframeUrl);
+      }
       // for a bidder, if iframe sync is present then remove image pixel
       removeImagePixelsForBidder(queue, bidderName);
     });
@@ -388,7 +400,7 @@ export const userSync = newUserSync(Object.defineProperties({
   browserSupportsCookies: {
     get: function() {
       // call storage lazily to give time for consent data to be available
-      return !isSafariBrowser() && storage.cookiesAreEnabled();
+      return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
     }
   }
 }));

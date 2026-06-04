@@ -969,7 +969,8 @@ describe('gumgumAdapter', function () {
         api: [1, 2],
         mimes: ['video/mp4', 'video/webm'],
         playbackmethod: [1, 2],
-        playbackend: 2
+        playbackend: 2,
+        pos: 1
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -996,6 +997,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.mimes).to.eq(videoVals.mimes.join(','));
       expect(bidRequest.data.pbm).to.eq(videoVals.playbackmethod.join(','));
       expect(bidRequest.data.pbe).to.eq(videoVals.playbackend);
+      expect(bidRequest.data.vpos).to.eq(videoVals.pos);
     });
     it('should add parameters associated with invideo if invideo request param is found', function () {
       const inVideoVals = {
@@ -1012,7 +1014,8 @@ describe('gumgumAdapter', function () {
         api: [1, 2],
         mimes: ['video/mp4', 'video/webm'],
         playbackmethod: [6],
-        playbackend: 1
+        playbackend: 1,
+        pos: 3
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -1037,6 +1040,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.skip).to.eq(inVideoVals.skip);
       expect(bidRequest.data.api).to.eq(inVideoVals.api.join(','));
       expect(bidRequest.data.mimes).to.eq(inVideoVals.mimes.join(','));
+      expect(bidRequest.data.vpos).to.eq(inVideoVals.pos);
       expect(bidRequest.data.pbm).to.eq(inVideoVals.playbackmethod.join(','));
       expect(bidRequest.data.pbe).to.eq(inVideoVals.playbackend);
     });
@@ -1333,7 +1337,7 @@ describe('gumgumAdapter', function () {
           hwv: 'iPhone15,2',
           os: 'iOS',
           osv: '17.4',
-          ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
+          ext: { fod: { deviceId: '17595-133085-133468-18092' } },
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
           lmt: 1,
@@ -1354,7 +1358,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.hwv).to.equal(ortb2.device.hwv);
       expect(bidRequest.data.os).to.equal(ortb2.device.os);
       expect(bidRequest.data.osv).to.equal(ortb2.device.osv);
-      expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
+      expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fod.deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
       expect(bidRequest.data.lmt).to.equal(ortb2.device.lmt);

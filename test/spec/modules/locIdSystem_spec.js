@@ -3,12 +3,11 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { locIdSubmodule, storage } from 'modules/locIdSystem.js';
+import { dep, locIdSubmodule, storage } from 'modules/locIdSystem.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { attachIdSystem } from 'modules/userId/index.js';
-import * as ajax from 'src/ajax.js';
 import { VENDORLESS_GVLID } from 'src/consentHandler.js';
-import { uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
+import { gppDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai/index.mjs';
 import sinon from 'sinon';
 
@@ -28,7 +27,7 @@ describe('LocID System', () => {
     sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
     sandbox.stub(storage, 'setDataInLocalStorage');
     ajaxStub = sandbox.stub();
-    ajaxBuilderStub = sandbox.stub(ajax, 'ajaxBuilder').returns(ajaxStub);
+    ajaxBuilderStub = sandbox.stub(dep, 'ajaxBuilder').returns(ajaxStub);
   });
 
   afterEach(() => {

@@ -17,7 +17,14 @@ function mockFetchServer() {
 
   function makeRequest(resource, options) {
     const requestBody = options?.body || bodies.get(resource);
-    const request = new Request(resource, options);
+    const request = new Request(resource, Object.assign({
+      // firefox will lose keepalive otherwise
+      keepalive: resource?.keepalive
+    }, options));
+    request.clone = () => ({
+      ...request,
+      blob: () => GreedyPromise.resolve(new Blob([requestBody]))
+    })
     bodies.set(request, requestBody);
     return request;
   }

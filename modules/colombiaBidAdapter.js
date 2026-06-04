@@ -8,6 +8,10 @@ const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
 const ENDPOINT_TIMEOUT = "https://ade.clmbtech.com/cde/bidNotify.htm";
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 
+export const dep = {
+  ajax
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['clmb'],
@@ -124,7 +128,7 @@ export const spec = {
     payload.bidNotifyType = 1;
     payload.evt = bid.ext && bid.ext.evtData;
 
-    ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
+    dep.ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
       method: 'POST',
       withCredentials: false
     });
@@ -145,7 +149,7 @@ export const spec = {
     payload.bidNotifyType = 2;
     payload.pubAdCodeNames = pubAdCodesString;
 
-    ajax(ENDPOINT_TIMEOUT, null, JSON.stringify(payload), {
+    dep.ajax(ENDPOINT_TIMEOUT, null, JSON.stringify(payload), {
       method: 'POST',
       withCredentials: false
     });

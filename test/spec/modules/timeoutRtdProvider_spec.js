@@ -22,7 +22,7 @@ describe('Timeout RTD submodule', () => {
     const ajaxStub = sandbox.stub().callsFake(function (url, callbackObj) {
       callbackObj.success(response);
     });
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(function () { return ajaxStub });
+    sandbox.stub(ajax, 'qualifiedAjaxBuilder').callsFake(function () { return ajaxStub });
 
     const reqBidsConfigObj = {}
     const expectedLink = 'https://somelink.json'
@@ -43,7 +43,7 @@ describe('Timeout RTD submodule', () => {
 
   it('should make a request to the endpoint url and ignore the rules object if the endpoint is provided', () => {
     const ajaxStub = sandbox.stub().callsFake((url, callbackObj) => {});
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(() => ajaxStub);
+    sandbox.stub(ajax, 'qualifiedAjaxBuilder').callsFake(() => ajaxStub);
     const expectedLink = 'https://somelink.json'
     const config = {
       'name': 'timeout',
@@ -82,7 +82,7 @@ describe('Timeout RTD submodule', () => {
   it('should exit quietly if no relevant timeout config is found', () => {
     const callback = sandbox.stub()
     const ajaxStub = sandbox.stub().callsFake((url, callbackObj) => {});
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(function() { return ajaxStub });
+    sandbox.stub(ajax, 'qualifiedAjaxBuilder').callsFake(function() { return ajaxStub });
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
 
     timeoutSubmodule.getBidRequestData({}, callback, {});

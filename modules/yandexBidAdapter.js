@@ -9,6 +9,10 @@ import { config as pbjsConfig } from '../src/config.js';
 import { isWebdriverEnabled } from '../libraries/webdriver/webdriver.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
+export const dep = {
+  ajax
+};
+
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -21,7 +25,7 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
  * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
  * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
- * @typedef {import('./yandexBidAdapterTypes.d.ts').YandexBidRequestParams} YandexBidRequestParams
+ * @typedef {import('./yandexBidAdapter.d.ts').YandexBidRequestParams} YandexBidRequestParams
  */
 
 /**
@@ -633,7 +637,7 @@ function eventLog(name, resp) {
 
     const domain = getBidderDomain();
 
-    ajax(`https://${domain}${EVENT_TRACKER_URL}`, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
+    dep.ajax(`https://${domain}${EVENT_TRACKER_URL}`, undefined, JSON.stringify(data), { method: 'POST', withCredentials: true });
   }
 }
 

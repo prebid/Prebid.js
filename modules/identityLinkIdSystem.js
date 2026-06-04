@@ -16,6 +16,8 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./identityLinkIdSystem.d.ts').IdentityLinkIdSystemModuleName} IdentityLinkIdSystemModuleName
  */
 
 const MODULE_NAME = 'identityLink';
@@ -24,7 +26,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 
 const liverampEnvelopeName = '_lr_env';
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<IdentityLinkIdSystemModuleName>} */
 export const identityLinkSubmodule = {
   /**
    * used to link submodule with config

@@ -22,7 +22,7 @@ import {
 } from './constants.js';
 import { NATIVE } from './mediaTypes.js';
 import { getRenderingData } from './adRendering.js';
-import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
+import { getCreativeDefaultRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from './eventTrackers.js';
 import type { Link, NativeRequest, NativeResponse } from "./types/ortb/native.d.ts";
 import type { Size } from "./types/common.d.ts";
@@ -469,7 +469,7 @@ function assetsMessage(data, adObject, keys, { index = auctionManager.index } = 
     // include it in full ("all assets") together with the renderer.
     // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
     msg.native = Object.assign({}, renderData);
-    msg.renderer = getCreativeRendererSource(adObject);
+    msg.renderer = getCreativeDefaultRendererSource(adObject);
     msg.rendererVersion = PUC_MIN_VERSION;
     if (keys != null) {
       renderData.assets = renderData.assets.filter(({ key }) => keys.includes(key))

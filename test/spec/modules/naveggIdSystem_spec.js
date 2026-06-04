@@ -1,6 +1,4 @@
-import { naveggIdSubmodule, storage, getIdFromAPI } from 'modules/naveggIdSystem.js';
-import { server } from 'test/mocks/xhr.js';
-import * as ajaxLib from 'src/ajax.js';
+import { dep, naveggIdSubmodule, storage } from 'modules/naveggIdSystem.js';
 
 const NAVEGGID_CONFIG_COOKIE_HTML5 = {
   storage: {
@@ -45,7 +43,7 @@ describe('getId', function () {
 
   beforeEach(function() {
     ajaxStub = sinon.stub();
-    ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(ajaxStub);
+    ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(ajaxStub);
   });
 
   afterEach(function() {

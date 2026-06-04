@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import {
-  spec,
-  buildSuccessNotification,
   buildErrorNotification,
+  buildSuccessNotification,
   buildTimeoutNotification,
+  dep,
+  getBidFloor,
   sendNotification,
-  getBidFloor
+  spec
 } from 'modules/tadvertisingBidAdapter';
 import * as utils from '../../../src/utils.js';
-import * as ajax from '../../../src/ajax.js';
 import sinon from 'sinon';
 
 describe('tadvertisingBidAdapter', () => {
@@ -729,8 +729,8 @@ describe('tadvertisingBidAdapter', () => {
 
     beforeEach(function() {
       spec.notify_url = 'https://test.com/notify';
-      sendBeaconStub = sinon.stub(ajax, 'sendBeacon');
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      sendBeaconStub = sinon.stub(dep, 'sendBeacon');
+      ajaxStub = sinon.stub(dep, 'ajax');
       logErrorStub = sinon.stub(utils, 'logError');
     });
 

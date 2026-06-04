@@ -8,10 +8,13 @@
 
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
-import { ajax } from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { targeting } from '../src/targeting.js';
 import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+
+const ajax = qualifiedAjaxBuilder(MODULE_TYPE_ANALYTICS, 'adloox');
 
 const MODULE = 'adlooxAdserverVideo';
 

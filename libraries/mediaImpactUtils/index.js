@@ -1,5 +1,5 @@
 import { buildUrl } from '../../src/utils.js';
-import { ajax } from '../../src/ajax.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 
 /**
  * Builds the bid requests and beacon parameters.

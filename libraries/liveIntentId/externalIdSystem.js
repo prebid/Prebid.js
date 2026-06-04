@@ -3,6 +3,12 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapt
 import { submodule } from '../../src/hook.js';
 import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeResult, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
+/**
+ * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../../modules/liveIntentIdSystem.d.ts').LiveIntentIdSystemModuleName} LiveIntentIdSystemModuleName
+ */
+
 // Reference to the client for the liQHub.
 let cachedClientRef
 
@@ -115,15 +121,11 @@ function resolve(configParams, clientRef, callback) {
   })
 }
 
-/**
- * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
- */
-
-/** @type {Submodule} */
+/** @type {IdProviderSpec<LiveIntentIdSystemModuleName>} */
 export const liveIntentExternalIdSubmodule = {
   /**
    * Used to link submodule with config.
-   * @type {string}
+   * @type {LiveIntentIdSystemModuleName}
    */
   name: MODULE_NAME,
   gvlid: GVLID,

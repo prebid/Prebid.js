@@ -1253,7 +1253,7 @@ describe('kargo adapter tests', function() {
 
       it('fetches gpp from the bidder request if present', function() {
         bidderRequest.gppConsent = {
-          consentString: 'gppString',
+          gppString: 'gppString',
           applicableSections: [-1]
         };
         const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
@@ -1266,7 +1266,7 @@ describe('kargo adapter tests', function() {
 
       it('does not send empty gpp values', function() {
         bidderRequest.gppConsent = {
-          consentString: '',
+          gppString: '',
           applicableSections: ''
         };
         const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
@@ -2028,13 +2028,13 @@ describe('kargo adapter tests', function() {
 
     it('includes gpp information if provided', function() {
       [
-        { applicableSections: [-1], consentString: 'test-consent-string', as: '-1', cs: 'test-consent-string' },
-        { applicableSections: [1, 2, 3], consentString: 'test-consent-string', as: '1,2,3', cs: 'test-consent-string' },
+        { applicableSections: [-1], gppString: 'test-consent-string', as: '-1', cs: 'test-consent-string' },
+        { applicableSections: [1, 2, 3], gppString: 'test-consent-string', as: '1,2,3', cs: 'test-consent-string' },
         { applicableSections: [-1], as: '-1', cs: '' },
-        { applicableSections: false, consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
-        { applicableSections: null, consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
-        { applicableSections: {}, consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
-        { applicableSections: [], consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: false, gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: null, gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: {}, gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: [], gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
         { as: '', cs: '' },
       ].forEach(value => expect(getUserSyncs(undefined, undefined, value), `Value - ${value}`)
         .to.deep.equal(buildSyncUrls(baseUrl
@@ -2060,7 +2060,7 @@ describe('kargo adapter tests', function() {
       expect(getUserSyncs(
         { gdprApplies: true, consentString: 'test-gdpr-consent' },
         '1---',
-        { applicableSections: [1, 2, 3], consentString: 'test-gpp-consent' }
+        { applicableSections: [1, 2, 3], gppString: 'test-gpp-consent' }
       )).to.deep.equal(buildSyncUrls(baseUrl
         .replace(/gdpr=\d/, 'gdpr=1')
         .replace(/gdpr_consent=/, 'gdpr_consent=test-gdpr-consent')

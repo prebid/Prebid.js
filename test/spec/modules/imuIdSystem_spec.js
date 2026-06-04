@@ -1,21 +1,24 @@
 import {
+  apiSuccessProcess,
+  callImuidApi,
+  cookieKey,
+  getApiCallback,
+  getApiUrl,
+  getLocalData,
   imuIdSubmodule,
   storage,
-  getApiUrl,
-  apiSuccessProcess,
-  getLocalData,
-  callImuidApi,
-  getApiCallback,
   storageKey,
-  storagePpKey,
-  cookieKey,
-  apiUrl
+  storagePpKey
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
 import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import { expect } from 'chai/index.mjs';
+
+// TODO: this symbol was imported, but not exported, from imuIdSystem.js
+// setting it as undefined achieves the same result but clearly something's wrong here
+const apiUrl = undefined;
 
 describe('imuId module', function () {
   // let setLocalStorageStub;

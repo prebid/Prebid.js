@@ -1,14 +1,13 @@
 import {
   weboramaSubmodule
+  ,
+  storage,
+  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
 } from 'modules/weboramaRtdProvider.js';
 import {
   server
 } from 'test/mocks/xhr.js';
-import {
-  storage,
-  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
-  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
-} from '../../../modules/weboramaRtdProvider.js';
 
 import 'src/prebid.js';
 

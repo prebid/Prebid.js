@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 
 import * as utils from 'src/utils.js';
-import { internal } from 'src/utils.js';
+import { internal, resetWinDimensions } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
-import { resetWinDimensions } from '../../../src/utils.js';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);

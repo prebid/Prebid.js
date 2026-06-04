@@ -109,34 +109,42 @@ describe('TNE Catalyst Bid Adapter', () => {
   // isBidRequestValid
   // -------------------------------------------------------------------------
   describe('isBidRequestValid', () => {
-    it('returns true for a valid bid', () => {
+    it('returns true for a fully-specified bid', () => {
       expect(spec.isBidRequestValid(makeBidRequest())).to.equal(true);
     });
 
-    it('returns false when params is missing', () => {
+    it('returns true when params is missing entirely', () => {
       const bid = makeBidRequest();
       delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('returns false when publisherId is missing', () => {
-      const bid = makeBidRequest({ params: { slot: 'billboard' } });
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    it('returns true when params is an empty object', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: {} }))).to.equal(true);
     });
 
-    it('returns false when publisherId is empty string', () => {
-      const bid = makeBidRequest({ params: { publisherId: '', slot: 'billboard' } });
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    it('returns true with only publisherId', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: { publisherId: 'NXS003' } }))).to.equal(true);
     });
 
-    it('returns false when slot is missing', () => {
-      const bid = makeBidRequest({ params: { publisherId: 'NXS003' } });
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    it('returns true with only slot', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: { slot: 'billboard' } }))).to.equal(true);
     });
 
-    it('returns false when slot is empty string', () => {
-      const bid = makeBidRequest({ params: { publisherId: 'NXS003', slot: '' } });
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    it('returns false when publisherId is the wrong type', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: { publisherId: 123 } }))).to.equal(false);
+    });
+
+    it('returns false when slot is the wrong type', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: { slot: 42 } }))).to.equal(false);
+    });
+
+    it('returns false when bidfloor is the wrong type', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: { bidfloor: 'free' } }))).to.equal(false);
+    });
+
+    it('returns false when testMode is the wrong type', () => {
+      expect(spec.isBidRequestValid(makeBidRequest({ params: { testMode: 'yes' } }))).to.equal(false);
     });
 
     it('returns false for a null bid', () => {
@@ -333,6 +341,159 @@ describe('TNE Catalyst Bid Adapter', () => {
       });
     });
 
+    describe('permissive params (AMX-style)', () => {
+      it('falls back to adUnitCode when params.slot is absent', () => {
+        const bid = makeBidRequest({
+          params: { publisherId: 'NXS003' },
+          adUnitCode: 'div-billboard',
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].ext.tne_catalyst.slot).to.equal('div-billboard');
+      });
+
+      it('mirrors the resolved slot into imp.tagid', () => {
+        const bid = makeBidRequest({
+          params: {},
+          adUnitCode: 'div-leaderboard',
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].tagid).to.equal('div-leaderboard');
+      });
+
+      it('explicit params.slot wins over adUnitCode', () => {
+        const bid = makeBidRequest({
+          params: { slot: 'override-slot' },
+          adUnitCode: 'div-billboard',
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].ext.tne_catalyst.slot).to.equal('override-slot');
+        expect(reqs[0].data.imp[0].tagid).to.equal('override-slot');
+      });
+
+      it('omits site.publisher when publisherId is absent', () => {
+        const bid = makeBidRequest({ params: { slot: 'billboard' } });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.site.publisher).to.be.undefined;
+      });
+
+      it('still merges ortb2.site fields when publisherId is absent', () => {
+        const bid = makeBidRequest({ params: { slot: 'billboard' } });
+        const br = makeBidderRequest({ ortb2: { site: { cat: ['IAB1'] } } });
+        const reqs = spec.buildRequests([bid], br);
+        expect(reqs[0].data.site.cat).to.deep.equal(['IAB1']);
+        expect(reqs[0].data.site.publisher).to.be.undefined;
+      });
+
+      it('uses params.endpoint when provided', () => {
+        const bid = makeBidRequest({
+          params: { endpoint: 'https://staging.thenexusengine.com/openrtb2/auction' },
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].url).to.equal('https://staging.thenexusengine.com/openrtb2/auction');
+      });
+
+      it('marks the request as test mode when params.testMode is true', () => {
+        const bid = makeBidRequest({
+          params: { publisherId: 'NXS003', slot: 'billboard', testMode: true },
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.imp[0].ext.tne_catalyst.testMode).to.equal(true);
+      });
+
+      it('does not set testMode flag when params.testMode is absent or false', () => {
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest());
+        expect(reqs[0].data.imp[0].ext.tne_catalyst.testMode).to.be.undefined;
+      });
+    });
+
+    describe('ortb2 passthrough', () => {
+      it('passes ortb2.user through unchanged', () => {
+        const ortb2 = {
+          user: {
+            eids: [{ source: 'uidapi.com', uids: [{ id: 'uid2-token' }] }],
+            ext: { consent: 'WRAPPER_CONSENT_STRING' },
+            data: [{ name: 'contxtful', segment: [{ id: 'seg-1' }] }]
+          }
+        };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.user.eids).to.deep.equal(ortb2.user.eids);
+        expect(reqs[0].data.user.data).to.deep.equal(ortb2.user.data);
+        expect(reqs[0].data.user.ext.consent).to.equal('WRAPPER_CONSENT_STRING');
+      });
+
+      it('passes ortb2.regs through and preserves gpp/gpp_sid from wrapper', () => {
+        const ortb2 = { regs: { gpp: 'WRAPPER_GPP', gpp_sid: [7, 8], coppa: 0 } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.regs.gpp).to.equal('WRAPPER_GPP');
+        expect(reqs[0].data.regs.gpp_sid).to.deep.equal([7, 8]);
+        expect(reqs[0].data.regs.coppa).to.equal(0);
+      });
+
+      it('passes ortb2.device through unchanged', () => {
+        const ortb2 = { device: { ua: 'Mozilla/5.0', devicetype: 1, language: 'en' } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.device).to.deep.equal(ortb2.device);
+      });
+
+      it('passes ortb2.app through for in-app/CTV traffic', () => {
+        const ortb2 = { app: { bundle: 'com.example.app', name: 'Example App' } };
+        const bid = makeBidRequest({ params: { slot: 'billboard' } }); // omit publisherId
+        const reqs = spec.buildRequests([bid], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.app).to.deep.equal(ortb2.app);
+        expect(reqs[0].data.site).to.be.undefined; // app + site are mutually exclusive
+      });
+
+      it('stamps explicit params.publisherId onto app.publisher.id', () => {
+        const ortb2 = { app: { bundle: 'com.example.app' } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.app.publisher).to.deep.equal({ id: 'NXS003' });
+        expect(reqs[0].data.site).to.be.undefined;
+      });
+
+      it('omits site entirely when ortb2.app is present (OpenRTB site/app mutex)', () => {
+        const ortb2 = { app: { bundle: 'com.example.app' }, site: { domain: 'should-be-ignored.com' } };
+        const reqs = spec.buildRequests([makeBidRequest()], makeBidderRequest({ ortb2 }));
+        expect(reqs[0].data.site).to.be.undefined;
+        expect(reqs[0].data.app.bundle).to.equal('com.example.app');
+      });
+
+      it('does not override wrapper-set ortb2.user.ext.consent with derived gdprConsent', () => {
+        const ortb2 = { user: { ext: { consent: 'WRAPPER_WINS' } } };
+        const br = makeBidderRequest({ ortb2, gdprConsent: { gdprApplies: true, consentString: 'DERIVED_LOSES' } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
+        expect(reqs[0].data.user.ext.consent).to.equal('WRAPPER_WINS');
+      });
+
+      it('falls back to derived gdprConsent when ortb2 has no consent', () => {
+        const br = makeBidderRequest({ gdprConsent: { gdprApplies: true, consentString: 'DERIVED_CONSENT' } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
+        expect(reqs[0].data.user.ext.consent).to.equal('DERIVED_CONSENT');
+      });
+
+      it('merges legacy bid.userIdAsEids with ortb2.user.eids without duplicates', () => {
+        const ortb2 = { user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'wrapper-uid2' }] }] } };
+        const bid = makeBidRequest({
+          userIdAsEids: [
+            { source: 'uidapi.com', uids: [{ id: 'legacy-uid2' }] },        // dup source — wrapper wins
+            { source: 'id5-sync.com', uids: [{ id: 'legacy-id5' }] }       // new source — included
+          ]
+        });
+        const reqs = spec.buildRequests([bid], makeBidderRequest({ ortb2 }));
+        const eids = reqs[0].data.user.eids;
+        expect(eids).to.have.length(2);
+        expect(eids.find(e => e.source === 'uidapi.com').uids[0].id).to.equal('wrapper-uid2');
+        expect(eids.find(e => e.source === 'id5-sync.com')).to.exist;
+      });
+
+      it('does not override wrapper-set ortb2.regs.gpp with derived gppConsent', () => {
+        const ortb2 = { regs: { gpp: 'WRAPPER_GPP', gpp_sid: [7] } };
+        const br = makeBidderRequest({ ortb2, gppConsent: { gppString: 'DERIVED_GPP', applicableSections: [8] } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
+        expect(reqs[0].data.regs.gpp).to.equal('WRAPPER_GPP');
+        expect(reqs[0].data.regs.gpp_sid).to.deep.equal([7]);
+      });
+    });
+
     describe('GDPR', () => {
       it('sets regs.ext.gdpr=1 when gdprApplies is true', () => {
         const br = makeBidderRequest({ gdprConsent: { gdprApplies: true, consentString: 'CONSENT_STRING' } });
@@ -392,10 +553,26 @@ describe('TNE Catalyst Bid Adapter', () => {
     });
 
     describe('schain', () => {
-      it('sets source.schain when schain is present on the bid', () => {
+      it('sets source.schain when schain is present on the bid (legacy path)', () => {
         const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'thenexusengine.io', sid: 'NXS003' }] };
         const bid = makeBidRequest({ schain });
         const reqs = spec.buildRequests([bid], makeBidderRequest());
+        expect(reqs[0].data.source.schain).to.deep.equal(schain);
+      });
+
+      it('prefers ortb2.source.ext.schain over legacy bid.schain', () => {
+        const wrapperSchain = { ver: '1.0', complete: 1, nodes: [{ asi: 'wrapper.com', sid: 'W1' }] };
+        const legacySchain = { ver: '1.0', complete: 1, nodes: [{ asi: 'legacy.com', sid: 'L1' }] };
+        const bid = makeBidRequest({ schain: legacySchain });
+        const br = makeBidderRequest({ ortb2: { source: { ext: { schain: wrapperSchain } } } });
+        const reqs = spec.buildRequests([bid], br);
+        expect(reqs[0].data.source.schain).to.deep.equal(wrapperSchain);
+      });
+
+      it('reads ortb2.source.schain (OpenRTB 2.6 top-level) when ext path absent', () => {
+        const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'wrapper.com', sid: 'W1' }] };
+        const br = makeBidderRequest({ ortb2: { source: { schain } } });
+        const reqs = spec.buildRequests([makeBidRequest()], br);
         expect(reqs[0].data.source.schain).to.deep.equal(schain);
       });
 

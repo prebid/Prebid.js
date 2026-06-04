@@ -492,7 +492,7 @@ describe('MGIDXBidAdapter', function () {
       config.setConfig({ userSync: { syncsPerBidder: USERSYNC_DEFAULT_CONFIG.syncsPerBidder } });
     });
     it('should do nothing on getUserSyncs without inputs', function () {
-      expect(spec.getUserSyncs()).to.equal(undefined)
+      expect(spec.getUserSyncs()).to.deep.equal([])
     });
     it('should return frame object with empty consents', function () {
       const sync = spec.getUserSyncs({ iframeEnabled: true })

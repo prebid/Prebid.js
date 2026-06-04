@@ -2,7 +2,7 @@
 import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
 

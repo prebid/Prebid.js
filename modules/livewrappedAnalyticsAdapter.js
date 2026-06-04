@@ -18,7 +18,6 @@ const ADRENDERFAILEDSENT = 16;
 let initOptions;
 const prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
-const CACHE_CLEANUP_DELAY = BID_WON_TIMEOUT * 3;
 
 const cache = {
   auctions: {}
@@ -160,6 +159,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICST
 // save the base class function
 livewrappedAnalyticsAdapter.originEnableAnalytics = livewrappedAnalyticsAdapter.enableAnalytics;
 livewrappedAnalyticsAdapter.allRequestEvents = [];
+const baseClearAllAuctions = prebidGlobal.clearAllAuctions;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 livewrappedAnalyticsAdapter.enableAnalytics = function (config) {
@@ -191,12 +191,6 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
-
-  setTimeout(() => {
-    sentRequests.auctionIds.forEach(id => {
-      delete cache.auctions[id];
-    });
-  }, CACHE_CLEANUP_DELAY);
 };
 
 function getMediaTypeEnum(mediaType) {
@@ -430,6 +424,11 @@ function getbidAdUnits() {
   return bidAdUnits;
 }
 
+prebidGlobal.clearAllAuctions = function() {
+  cache.auctions = {};
+  baseClearAllAuctions();
+}
+
 adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
@@ -438,7 +437,5 @@ adapterManager.registerAnalyticsAdapter({
 export function getAuctionCache() {
   return cache.auctions;
 }
-
-export { CACHE_CLEANUP_DELAY };
 
 export default livewrappedAnalyticsAdapter;

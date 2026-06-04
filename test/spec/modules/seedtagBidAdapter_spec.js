@@ -1,9 +1,8 @@
 import { expect } from 'chai';
-import { getTimeoutUrl, spec } from 'modules/seedtagBidAdapter.js';
+import { getTimeoutUrl, spec, BIDFLOOR_CURRENCY } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
-import { BIDFLOOR_CURRENCY } from '../../../modules/seedtagBidAdapter.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const PUBLISHER_ID = '0000-0000-01';

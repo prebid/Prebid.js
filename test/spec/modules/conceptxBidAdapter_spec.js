@@ -15,8 +15,14 @@ describe('conceptxBidAdapter', function () {
       adUnitCode: 'div-1',
       auctionId: 'auc-1',
       params: {
-        site: 'example.com',
+        site: 'cxba_example.com',
         adunit: 'some-id-3',
+      },
+      ortb2: {
+        site: {
+          page: 'https://example.com/article/1',
+          domain: 'example.com',
+        },
       },
       mediaTypes: {
         banner: {
@@ -52,7 +58,7 @@ describe('conceptxBidAdapter', function () {
   const requestPayload = {
     data: JSON.stringify({
       id: 'auc-1',
-      site: { id: 'example.com', domain: 'example.com', page: 'example.com' },
+      site: { id: 'cxba_example.com', domain: 'example.com', page: 'https://example.com/article/1' },
       imp: [
         {
           id: '123',
@@ -112,7 +118,9 @@ describe('conceptxBidAdapter', function () {
 
       const payload = JSON.parse(requests[0].data);
       expect(payload).to.have.property('site');
-      expect(payload.site).to.have.property('id', 'example.com');
+      expect(payload.site).to.have.property('id', 'cxba_example.com');
+      expect(payload.site).to.have.property('domain', 'example.com');
+      expect(payload.site).to.have.property('page', 'https://example.com/article/1');
       expect(payload).to.have.property('imp');
       expect(payload.imp).to.have.lengthOf(1);
       expect(payload.imp[0].ext.prebid.storedrequest).to.deep.equal({
@@ -127,6 +135,90 @@ describe('conceptxBidAdapter', function () {
     it('should include withCredentials in options', function () {
       const requests = spec.buildRequests(bidderRequests, {});
       expect(requests[0].options).to.deep.include({ withCredentials: true });
+    });
+
+    it('should use params.site only for site.id, not for domain or page', function () {
+      const bids = [
+        {
+          bidId: '456',
+          bidder: 'conceptx',
+          adUnitCode: 'div-2',
+          auctionId: 'auc-2',
+          params: {
+            site: 'cxba_soundvenue.com',
+            adunit: '5a18nh',
+          },
+          ortb2: {
+            site: {
+              page: 'https://soundvenue.com/musik/2025/article',
+              domain: 'soundvenue.com',
+            },
+          },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+        },
+      ];
+      const requests = spec.buildRequests(bids, {});
+      const payload = JSON.parse(requests[0].data);
+
+      expect(payload.site.id).to.equal('cxba_soundvenue.com');
+      expect(payload.site.domain).to.equal('soundvenue.com');
+      expect(payload.site.page).to.equal('https://soundvenue.com/musik/2025/article');
+    });
+
+    it('should fall back to refererInfo when ortb2.site is absent', function () {
+      const bids = [
+        {
+          bidId: '789',
+          bidder: 'conceptx',
+          adUnitCode: 'div-3',
+          auctionId: 'auc-3',
+          params: {
+            site: 'cxba_mysite.dk',
+            adunit: 'abc123',
+          },
+          ortb2: {},
+          mediaTypes: { banner: { sizes: [[728, 90]] } },
+        },
+      ];
+      const bidderReq = {
+        refererInfo: {
+          page: 'https://mysite.dk/page',
+          domain: 'mysite.dk',
+        },
+      };
+      const requests = spec.buildRequests(bids, bidderReq);
+      const payload = JSON.parse(requests[0].data);
+
+      expect(payload.site.id).to.equal('cxba_mysite.dk');
+      expect(payload.site.domain).to.equal('mysite.dk');
+      expect(payload.site.page).to.equal('https://mysite.dk/page');
+    });
+
+    it('should use adUnitCode as site.id when params.site is absent', function () {
+      const bids = [
+        {
+          bidId: '101',
+          bidder: 'conceptx',
+          adUnitCode: 'div-fallback',
+          auctionId: 'auc-4',
+          params: {
+            adunit: 'xyz789',
+          },
+          ortb2: {
+            site: {
+              page: 'https://fallback.com/page',
+              domain: 'fallback.com',
+            },
+          },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+        },
+      ];
+      const requests = spec.buildRequests(bids, {});
+      const payload = JSON.parse(requests[0].data);
+
+      expect(payload.site.id).to.equal('fallback.com');
+      expect(payload.site.domain).to.equal('fallback.com');
+      expect(payload.site.page).to.equal('https://fallback.com/page');
     });
   });
 

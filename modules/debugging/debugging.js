@@ -2,10 +2,17 @@ import { makebidInterceptor } from './bidInterceptor.js';
 import { makePbsInterceptor } from './pbsInterceptor.js';
 import { addHooks, removeHooks } from './legacy.js';
 
+/**
+ * @typedef {import('./debuggingModule.d.ts').DebugModuleConfiguration} DebugModuleConfiguration
+ */
+
 const interceptorHooks = [];
 let bidInterceptor;
 let enabled = false;
 
+/**
+ * @param {DebugModuleConfiguration} debugConfig Configuration of the debug module
+ */
 function enableDebugging(debugConfig, { fromSession = false, config, hook, logger }) {
   config.setConfig({ debug: true });
   bidInterceptor.updateConfig(debugConfig);

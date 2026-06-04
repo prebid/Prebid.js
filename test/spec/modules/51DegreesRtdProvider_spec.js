@@ -5,10 +5,16 @@ import {
   deepSetNotEmptyValue,
   convert51DegreesDataToOrtb2,
   convert51DegreesDeviceToOrtb2,
+  convert51DegreesIpToOrtb2,
+  convert51DegreesFoDiDToOrtb2,
+  resolveIdUsage,
+  resolveTcString,
+  resolveGpp,
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
 import { mergeDeep } from '../../../src/utils.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 const inject51DegreesMeta = () => {
   const meta = document.createElement('meta');
@@ -61,7 +67,6 @@ describe('51DegreesRtdProvider', function() {
       ppi: 109,
       pxratio: 1,
       ext: {
-        fiftyonedegrees_deviceId: '17595-131215-132535-18092',
         fod: {
           deviceId: '17595-131215-132535-18092',
           tpc: 1,
@@ -280,6 +285,74 @@ describe('51DegreesRtdProvider', function() {
       expect(get51DegreesJSURL(config, mockWindow)).to.equal('https://example.com/51Degrees.core.js');
       expect(get51DegreesJSURL(config, window)).to.not.equal('https://example.com/51Degrees.core.js');
     });
+
+    it('appends id.usage when idUsage is provided', function () {
+      // The previous test deletes screen/devicePixelRatio from the shared
+      // mockWindow, so build a fresh one here.
+      const freshWindow = {
+        screen: { height: 1117, width: 1728 },
+        devicePixelRatio: 2,
+      };
+      const config = {
+        resourceKey: 'TEST_RESOURCE_KEY',
+        idUsage: 'standard',
+      };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('id.usage=standard');
+    });
+
+    it('omits id.usage when idUsage is undefined', function () {
+      const freshWindow = {
+        screen: { height: 1117, width: 1728 },
+        devicePixelRatio: 2,
+      };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.not.include('id.usage');
+    });
+
+    it('appends tcstring when tcString is provided', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY', tcString: 'CONSENTX' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('tcstring=CONSENTX');
+    });
+
+    it('keeps a realistic multi-segment TCF string intact', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const tc = 'CPysuENPyveLkADACBENADCsAP_AAH_AAAAAAAAA.YAAAAAAAAA';
+      const config = { resourceKey: 'TEST_RESOURCE_KEY', tcString: tc };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('tcstring=' + tc);
+    });
+
+    it('omits tcstring when tcString is undefined', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.not.include('tcstring');
+    });
+
+    it('appends gppstring when gpp is provided', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY', gpp: 'GPPX' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.include('gppstring=GPPX');
+    });
+
+    it('omits gppstring when gpp is undefined', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = { resourceKey: 'TEST_RESOURCE_KEY' };
+      expect(get51DegreesJSURL(config, freshWindow)).to.not.include('gppstring');
+    });
+
+    it('appends id.usage, tcstring and gppstring together', function () {
+      const freshWindow = { screen: { height: 1117, width: 1728 }, devicePixelRatio: 2 };
+      const config = {
+        resourceKey: 'TEST_RESOURCE_KEY',
+        idUsage: 'standard',
+        tcString: 'CONSENTX',
+        gpp: 'GPPX',
+      };
+      const url = get51DegreesJSURL(config, freshWindow);
+      expect(url).to.include('id.usage=standard');
+      expect(url).to.include('tcstring=CONSENTX');
+      expect(url).to.include('gppstring=GPPX');
+    });
   });
 
   describe('is51DegreesMetaPresent', function() {
@@ -356,6 +429,45 @@ describe('51DegreesRtdProvider', function() {
 
     it('converts all 51Degrees data to ORTB2 format', function() {
       expect(convert51DegreesDataToOrtb2(fiftyOneDegreesData)).to.deep.equal(expectedORTB2Result);
+    });
+
+    it('merges ip data into the result when data51.ip is present', function () {
+      const data51 = {
+        device: fiftyOneDegreesDevice,
+        ip: {
+          ip: '1.2.3.4',
+          locationconfidence: 'high',
+          latitude: 51.5,
+          longitude: -0.1,
+          countrycode3: 'GBR',
+        },
+      };
+      const result = convert51DegreesDataToOrtb2(data51);
+      expect(result.device.ip).to.equal('1.2.3.4');
+      expect(result.device.geo.lat).to.equal(51.5);
+      expect(result.device.geo.ipservice).to.equal(511);
+      expect(result.device.make).to.equal('Apple');
+    });
+
+    it('merges fodid data into user.eids when tdlUrl is supplied', function () {
+      const data51 = {
+        device: fiftyOneDegreesDevice,
+        fodid: {
+          idproblic: 'lic-uid',
+          idprobglobal: 'global-uid',
+        },
+      };
+      const result = convert51DegreesDataToOrtb2(data51, { tdlUrl: 'https://tdl.example/x' });
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
+      expect(result.user.eids[0].ext.tdl).to.deep.equal(['https://tdl.example/x']);
+    });
+
+    it('returns only device mapping when ip and fodid are absent', function () {
+      const data51 = { device: fiftyOneDegreesDevice };
+      const result = convert51DegreesDataToOrtb2(data51, { tdlUrl: 'https://tdl.example/x' });
+      expect(result.device.make).to.equal('Apple');
+      expect(result.user).to.be.undefined;
     });
   });
 
@@ -463,6 +575,296 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
+  describe('convert51DegreesIpToOrtb2', function() {
+    const fullIp = {
+      ip: '1.2.3.4',
+      ipv6: '2001:db8::1',
+      latitude: 51.5,
+      longitude: -0.1,
+      countrycode3: 'GBR',
+      iso31662lvl4: 'GB-ENG',
+      zipcode: 'SW1',
+      timezoneoffset: 0,
+      accuracyradiusmin: 1.5,
+      locationconfidence: 'high',
+    };
+
+    it('returns an empty object when ip is undefined', function() {
+      expect(convert51DegreesIpToOrtb2(undefined)).to.deep.equal({});
+    });
+
+    it('returns an empty object when ip is null', function() {
+      expect(convert51DegreesIpToOrtb2(null)).to.deep.equal({});
+    });
+
+    it('maps ip and ipv6 unconditionally when locationconfidence is missing', function() {
+      const result = convert51DegreesIpToOrtb2({ ip: '1.2.3.4', ipv6: '2001:db8::1' });
+      expect(result).to.deep.equal({
+        device: { ip: '1.2.3.4', ipv6: '2001:db8::1' },
+      });
+    });
+
+    it('maps full ip data with locationconfidence=high → ipservice=511', function() {
+      const result = convert51DegreesIpToOrtb2(fullIp);
+      expect(result).to.deep.equal({
+        device: {
+          ip: '1.2.3.4',
+          ipv6: '2001:db8::1',
+          geo: {
+            lat: 51.5,
+            lon: -0.1,
+            country: 'GBR',
+            region: 'GB-ENG',
+            zip: 'SW1',
+            utcoffset: 0,
+            accuracy: 1500,
+            type: 2,
+            ipservice: 511,
+          },
+        },
+      });
+    });
+
+    it('uses ipservice=512 when locationconfidence=medium', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'medium' });
+      expect(result.device.geo.ipservice).to.equal(512);
+    });
+
+    it('compares locationconfidence case-insensitively', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'HIGH' });
+      expect(result.device.geo.ipservice).to.equal(511);
+    });
+
+    it('skips all geo fields when locationconfidence=low', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'low' });
+      expect(result.device.geo).to.be.undefined;
+      expect(result.device.ip).to.equal('1.2.3.4');
+      expect(result.device.ipv6).to.equal('2001:db8::1');
+    });
+
+    it('skips all geo fields when locationconfidence=unknown', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, locationconfidence: 'Unknown' });
+      expect(result.device.geo).to.be.undefined;
+      expect(result.device.ip).to.equal('1.2.3.4');
+      expect(result.device.ipv6).to.equal('2001:db8::1');
+    });
+
+    it('skips all geo fields when locationconfidence is absent', function() {
+      const { locationconfidence, ...withoutConfidence } = fullIp;
+      const result = convert51DegreesIpToOrtb2(withoutConfidence);
+      expect(result.device.geo).to.be.undefined;
+    });
+
+    it('multiplies accuracyradiusmin by 1000 for accuracy in meters', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, accuracyradiusmin: 2 });
+      expect(result.device.geo.accuracy).to.equal(2000);
+    });
+
+    it('maps iso31662lvl4 to device.geo.region', function() {
+      const result = convert51DegreesIpToOrtb2(fullIp);
+      expect(result.device.geo.region).to.equal('GB-ENG');
+    });
+
+    it('omits device.geo.region when iso31662lvl4 is absent', function() {
+      const { iso31662lvl4, ...withoutRegion } = fullIp;
+      const result = convert51DegreesIpToOrtb2(withoutRegion);
+      expect(result.device.geo.region).to.be.undefined;
+    });
+
+    it('preserves zero coordinates as valid values', function() {
+      const result = convert51DegreesIpToOrtb2({
+        ...fullIp,
+        latitude: 0,
+        longitude: 0,
+      });
+      expect(result.device.geo.lat).to.equal(0);
+      expect(result.device.geo.lon).to.equal(0);
+    });
+
+    it('preserves zero accuracyradiusmin', function() {
+      const result = convert51DegreesIpToOrtb2({ ...fullIp, accuracyradiusmin: 0 });
+      expect(result.device.geo.accuracy).to.equal(0);
+    });
+
+    it('omits null/undefined source fields from output', function() {
+      const result = convert51DegreesIpToOrtb2({
+        ip: '1.2.3.4',
+        locationconfidence: 'high',
+        latitude: 51.5,
+      });
+      expect(result.device.geo).to.deep.equal({
+        lat: 51.5,
+        type: 2,
+        ipservice: 511,
+      });
+    });
+  });
+
+  describe('convert51DegreesFoDiDToOrtb2', function() {
+    const fullFodid = {
+      idproblic: 'lic-uid-base64',
+      idprobglobal: 'global-uid-base64',
+    };
+    const TDL_URL = 'https://tdl.example/x';
+
+    it('returns an empty object when fodid is undefined', function() {
+      expect(convert51DegreesFoDiDToOrtb2(undefined, TDL_URL)).to.deep.equal({});
+    });
+
+    it('returns an empty object when fodid is null', function() {
+      expect(convert51DegreesFoDiDToOrtb2(null, TDL_URL)).to.deep.equal({});
+    });
+
+    it('emits an empty object when both uids are absent', function() {
+      expect(convert51DegreesFoDiDToOrtb2({}, TDL_URL)).to.deep.equal({});
+    });
+
+    it('emits a full eids entry with tdlUrl', function() {
+      const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
+      expect(result).to.deep.equal({
+        user: {
+          eids: [{
+            inserter: '51degrees.com',
+            source: '51d.es',
+            mm: 5,
+            uids: [{ id: 'lic-uid-base64', atype: 1 }, { id: 'global-uid-base64', atype: 1 }],
+            ext: { tdl: [TDL_URL] },
+          }],
+        },
+      });
+    });
+
+    it('omits ext.tdl when tdlUrl is falsy', function() {
+      const result = convert51DegreesFoDiDToOrtb2(fullFodid, undefined);
+      expect(result.user.eids[0].ext).to.be.undefined;
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-uid-base64', atype: 1 }, { id: 'global-uid-base64', atype: 1 }]);
+    });
+
+    it('emits entry with only idproblic when idprobglobal is absent', function() {
+      const result = convert51DegreesFoDiDToOrtb2({ idproblic: 'lic-only' }, TDL_URL);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'lic-only', atype: 1 }]);
+    });
+
+    it('emits entry with only idprobglobal when idproblic is absent', function() {
+      const result = convert51DegreesFoDiDToOrtb2({ idprobglobal: 'global-only' }, TDL_URL);
+      expect(result.user.eids[0].uids).to.deep.equal([{ id: 'global-only', atype: 1 }]);
+    });
+
+    it('uses constant inserter, source, and mm', function() {
+      const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
+      expect(result.user.eids[0].inserter).to.equal('51degrees.com');
+      expect(result.user.eids[0].source).to.equal('51d.es');
+      expect(result.user.eids[0].mm).to.equal(5);
+    });
+
+    it('omits matcher field', function() {
+      const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
+      expect(result.user.eids[0]).to.not.have.property('matcher');
+    });
+  });
+
+  describe('resolveIdUsage', function() {
+    const PMP_STORAGE_KEY = '__51d_pmp_pref';
+
+    afterEach(function() {
+      localStorage.removeItem(PMP_STORAGE_KEY);
+    });
+
+    it('reads "standard" from PMP storage when params absent', function() {
+      localStorage.setItem(
+        PMP_STORAGE_KEY,
+        JSON.stringify({ v: 1, p: 'standard', t: Date.now() }),
+      );
+      expect(resolveIdUsage({ params: {} })).to.equal('standard');
+    });
+
+    it('reads "personalized" from PMP storage when params absent', function() {
+      localStorage.setItem(
+        PMP_STORAGE_KEY,
+        JSON.stringify({ v: 1, p: 'personalized', t: Date.now() }),
+      );
+      expect(resolveIdUsage({ params: {} })).to.equal('personalized');
+    });
+
+    it('returns undefined when PMP storage has unknown schema version', function() {
+      localStorage.setItem(
+        PMP_STORAGE_KEY,
+        JSON.stringify({ v: 2, p: 'standard', t: Date.now() }),
+      );
+      expect(resolveIdUsage({ params: {} })).to.be.undefined;
+    });
+
+    it('returns undefined when PMP storage has unknown preference value', function() {
+      localStorage.setItem(
+        PMP_STORAGE_KEY,
+        JSON.stringify({ v: 1, p: 'never-heard-of-it', t: Date.now() }),
+      );
+      expect(resolveIdUsage({ params: {} })).to.be.undefined;
+    });
+
+    it('returns undefined when PMP storage is malformed JSON', function() {
+      localStorage.setItem(PMP_STORAGE_KEY, 'not-json{');
+      expect(resolveIdUsage({ params: {} })).to.be.undefined;
+    });
+
+    it('returns undefined when both sources are absent', function() {
+      expect(resolveIdUsage({ params: {} })).to.be.undefined;
+    });
+
+    it('returns undefined when moduleConfig has no params', function() {
+      expect(resolveIdUsage({})).to.be.undefined;
+    });
+  });
+
+  describe('resolveTcString', function() {
+    it('returns the consent string from userConsent.gdpr.consentString', function() {
+      expect(resolveTcString({ gdpr: { consentString: 'CONSENTX' } })).to.equal('CONSENTX');
+    });
+
+    it('returns the string regardless of gdprApplies', function() {
+      expect(resolveTcString({ gdpr: { consentString: 'C', gdprApplies: false } })).to.equal('C');
+      expect(resolveTcString({ gdpr: { consentString: 'C', gdprApplies: true } })).to.equal('C');
+    });
+
+    it('returns undefined when consentString is empty', function() {
+      expect(resolveTcString({ gdpr: { consentString: '' } })).to.be.undefined;
+    });
+
+    it('returns undefined when consentString is not a string', function() {
+      expect(resolveTcString({ gdpr: { consentString: 123 } })).to.be.undefined;
+    });
+
+    it('returns undefined when gdpr is absent', function() {
+      expect(resolveTcString({})).to.be.undefined;
+    });
+
+    it('returns undefined when userConsent is undefined', function() {
+      expect(resolveTcString(undefined)).to.be.undefined;
+    });
+  });
+
+  describe('resolveGpp', function() {
+    it('returns the gpp string from userConsent.gpp.gppString', function() {
+      expect(resolveGpp({ gpp: { gppString: 'GPPX' } })).to.equal('GPPX');
+    });
+
+    it('returns undefined when gppString is empty', function() {
+      expect(resolveGpp({ gpp: { gppString: '' } })).to.be.undefined;
+    });
+
+    it('returns undefined when gppString is not a string', function() {
+      expect(resolveGpp({ gpp: { gppString: 123 } })).to.be.undefined;
+    });
+
+    it('returns undefined when gpp is absent', function() {
+      expect(resolveGpp({})).to.be.undefined;
+    });
+
+    it('returns undefined when userConsent is undefined', function() {
+      expect(resolveGpp(undefined)).to.be.undefined;
+    });
+  });
+
   describe('getBidRequestData', function() {
     let initialHeadInnerHTML;
     let reqBidsConfigObj = {};
@@ -535,6 +937,78 @@ describe('51DegreesRtdProvider', function() {
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal(expectedORTB2Result);
+    });
+
+    it('enriches ortb2 with ip and user.eids when data51 contains them', async function() {
+      // Override the global window.fod for this case only; restore after.
+      const originalFod = window.fod;
+      const data51 = {
+        device: fiftyOneDegreesDevice,
+        ip: { ip: '5.6.7.8', locationconfidence: 'high', countrycode3: 'USA' },
+        fodid: { idproblic: 'lic-uid', idprobglobal: 'global-uid' },
+      };
+      window.fod = { complete: (cb) => cb(data51) };
+
+      const callback = sinon.spy();
+      const moduleConfig = {
+        params: {
+          resourceKey: 'INVALID_RESOURCE_KEY',
+          idUsage: 'standard',
+          tdlUrl: 'https://tdl.example/x',
+        },
+      };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        expect(callback.calledOnce).to.be.true;
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('5.6.7.8');
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.geo.country).to.equal('USA');
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids).to.have.lengthOf(1);
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].uids)
+          .to.deep.equal([{ id: 'lic-uid', atype: 1 }, { id: 'global-uid', atype: 1 }]);
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.eids[0].ext.tdl)
+          .to.deep.equal(['https://tdl.example/x']);
+      } finally {
+        window.fod = originalFod;
+      }
+    });
+
+    it('does not overwrite a publisher-set device.ip / device.ipv6', async function() {
+      const originalFod = window.fod;
+      window.fod = {
+        complete: (cb) => cb({ ip: { ip: '5.6.7.8', ipv6: 'fe80::51d', locationconfidence: 'high' } }),
+      };
+      reqBidsConfigObj.ortb2Fragments.global.device = { ip: '10.0.0.1', ipv6: 'fe80::pub' };
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ip).to.equal('10.0.0.1');
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.ipv6).to.equal('fe80::pub');
+      } finally {
+        window.fod = originalFod;
+      }
+    });
+
+    it('forwards tcstring and gppstring from userConsent to the script URL', async function() {
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+      const userConsent = {
+        gdpr: { consentString: 'TCSTRINGVAL', gdprApplies: true },
+        gpp: { gppString: 'GPPSTRINGVAL' },
+      };
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(loadExternalScriptStub.called).to.be.true;
+      const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+      expect(scriptUrl).to.include('tcstring=TCSTRINGVAL');
+      expect(scriptUrl).to.include('gppstring=GPPSTRINGVAL');
     });
   });
 

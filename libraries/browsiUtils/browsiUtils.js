@@ -1,5 +1,6 @@
 import { isGptPubadsDefined, logError } from '../../src/utils.js';
 import { setKeyValue as setGptKeyValue } from '../../libraries/gptUtils/gptUtils.js';
+import { getSlotTargeting } from '../../src/utils/gptTargeting.js';
 
 /** @type {string} */
 const VIEWABILITY_KEYNAME = 'browsiViewability';
@@ -234,7 +235,7 @@ export function getMacroId(macro, slot) {
   if (macro) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
-        return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
+        return (p1 && getSlotTargeting(slot, p1).join('_')) || 'NA';
       });
       return macroResult;
     } catch (e) {

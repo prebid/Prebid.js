@@ -21,6 +21,9 @@ const LOG_EVENT_TYPE_TIMEOUT = 'timeout';
 let isUserSyncsInit = false;
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const dep = {
+  ajax
+};
 
 /**
  * Sends diagnostic events.
@@ -37,7 +40,7 @@ function logEvent(type, payload, sampleRate = LOG_EVENT_SAMPLE_RATE) {
   const data = { type, payload };
   const options = { method: 'POST', withCredentials: true, contentType: 'application/json' };
 
-  ajax(LOG_EVENT_URL, undefined, safeJSONEncode(data), options);
+  dep.ajax(LOG_EVENT_URL, undefined, safeJSONEncode(data), options);
 }
 
 /**

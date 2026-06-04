@@ -21,10 +21,13 @@ const NAVEGG_ID = 'nvggid';
 const BASE_URL = 'https://id.navegg.com/uid/';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const dep = {
+  ajaxBuilder
+};
 
 function getIdFromAPI() {
   const resp = function (callback) {
-    ajaxBuilder()(
+    dep.ajaxBuilder()(
       BASE_URL,
       response => {
         if (response) {

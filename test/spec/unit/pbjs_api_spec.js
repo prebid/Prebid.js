@@ -639,7 +639,7 @@ describe('Unit: Prebid Module', function () {
       auction = auctionManagerInstance.createAuction({ adUnits, adUnitCodes });
       indexStub = sinon.stub(auctionManager, 'index');
       indexStub.get(() => auctionManagerInstance.index);
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(function() {
         return function(url, callback) {
           const fakeResponse = sinon.stub();
           fakeResponse.returns('headerContent');
@@ -822,7 +822,7 @@ describe('Unit: Prebid Module', function () {
     const initTestConfig = (data) => {
       pbjs.bidderSettings = {};
 
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(function() {
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(function() {
         return function(url, callback) {
           const fakeResponse = sinon.stub();
           fakeResponse.returns('headerContent');

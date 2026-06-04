@@ -7,7 +7,7 @@ import {
   getPriceByGranularity,
   addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
-import { BID_STATUS, EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
+import { BID_STATUS, EVENTS, TARGETING_KEYS, S2S, REJECTION_REASON } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
@@ -25,7 +25,6 @@ import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js'
 
-import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 import { sandbox } from 'sinon';
 import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
@@ -278,13 +277,14 @@ describe('auctionmanager.js', function () {
       it('No bidder level configuration defined - default for video', function () {
         config.setConfig({
           cache: {
-            url: 'https://test.cache.url/endpoint'
+            url: 'ignored'
           }
         });
         getGlobal().bidderSettings = {};
         const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
+        videoBid.cacheUrl = 'https://test.cache.url/endpoint';
 
         const expected = getDefaultExpected(videoBid);
         const response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
@@ -371,12 +371,13 @@ describe('auctionmanager.js', function () {
       it('Custom configuration for all bidders with video bid', function () {
         config.setConfig({
           cache: {
-            url: 'https://test.cache.url/endpoint'
+            url: 'ignored'
           }
         });
         const videoBid = utils.deepClone(bid);
         videoBid.mediaType = 'video';
         videoBid.videoCacheKey = 'abc123def';
+        videoBid.cacheUrl = 'https://test.cache.url/endpoint';
 
         getGlobal().bidderSettings =
           {
@@ -1084,7 +1085,7 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 3000', function () {
       beforeEach(function () {
-        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+        ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
         adUnits = [{
           mediaTypes: {
             banner: {
@@ -1656,7 +1657,7 @@ describe('auctionmanager.js', function () {
       ];
       const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       indexAuctions = [auction];
@@ -1818,7 +1819,7 @@ describe('auctionmanager.js', function () {
       const makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
 
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
 
       spec = mockBidder(BIDDER_CODE, bids);
       spec1 = mockBidder(BIDDER_CODE1, bids1);
@@ -1858,7 +1859,7 @@ describe('auctionmanager.js', function () {
 
       beforeEach(function () {
         makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
-        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+        ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockAjaxBuilder);
 
         const adUnits = [{
           code: ADUNIT_CODE,
@@ -2182,7 +2183,7 @@ describe('auctionmanager.js', function () {
       })
 
       describe('when responsesReady defers', () => {
-        let resolve, reject, promise, callbacks, bids;
+        let promiseResolve, promiseReject, promise, callbacks, bids;
 
         function hook(next, ready) {
           next(ready.then(() => promise));
@@ -2197,10 +2198,9 @@ describe('auctionmanager.js', function () {
         });
 
         beforeEach(() => {
-          // eslint-disable-next-line promise/param-names
-          promise = new Promise((rs, rj) => {
-            resolve = rs;
-            reject = rj;
+          promise = new Promise((resolve, reject) => {
+            promiseResolve = resolve;
+            promiseReject = reject;
           });
           bids = [
             mockBid({ bidderCode: BIDDER_CODE1 }),
@@ -2214,8 +2214,8 @@ describe('auctionmanager.js', function () {
         });
 
         Object.entries({
-          'resolve': () => resolve(),
-          'reject': () => reject(),
+          'resolve': () => promiseResolve(),
+          'reject': () => promiseReject(),
         }).forEach(([t, resolver]) => {
           it(`should wait for responsesReady to ${t} before calling auctionDone`, (done) => {
             bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));

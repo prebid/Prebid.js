@@ -1,14 +1,18 @@
 import { config } from 'src/config.js';
 import {
+  DAP_ENCRYPTED_MEMBERSHIP,
+  DAP_MAX_RETRY_TOKENIZE,
+  DAP_MEMBERSHIP,
+  DAP_SS_ID,
+  DAP_TOKEN,
   dapUtils,
   generateRealTimeData,
-  symitriDapRtdSubmodule,
-  onBidWonListener,
-  storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
+  storage,
+  symitriDapRtdSubmodule
 } from 'modules/symitriDapRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../../src/hook.js';
-import { EVENTS } from 'src/constants.js';
+
 const responseHeader = { 'Content-Type': 'application/json' };
 
 const events = require('src/events');

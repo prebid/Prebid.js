@@ -161,6 +161,10 @@ export function setScores(result) {
   let scores = {};
   try {
     scores = JSON.parse(result);
+    let pagelevel;
+    if (scores.pagelevel) {
+      pagelevel = scores.pagelevel;
+    }
     if (device !== 'default' && scores.device && scores.device[device]) {
       scores = scores.device[device];
     }
@@ -169,6 +173,7 @@ export function setScores(result) {
     window.optimera = window.optimera || {};
     window.optimera.data = window.optimera.data || {};
     window.optimera.insights = window.optimera.insights || {};
+    window.optimera.pagelevel = window.optimera.pagelevel || [];
     Object.keys(scores).forEach((key) => {
       if (key !== 'insights') {
         window.optimera.data[key] = scores[key];
@@ -176,6 +181,9 @@ export function setScores(result) {
     });
     if (scores.insights) {
       window.optimera.insights = scores.insights;
+    }
+    if (pagelevel !== undefined) {
+      window.optimera.pagelevel = pagelevel;
     }
   } catch (e) {
     logError('Optimera score file could not be parsed.');

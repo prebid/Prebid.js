@@ -3,13 +3,13 @@ import * as utils from 'src/utils.js';
 import {
   deferRendering,
   doRender,
-  getBidToRender,
   emitAdRenderSucceeded,
   getRenderingData,
   handleCreativeEvent,
   handleNativeMessage,
-  handleRender, markWinningBid, renderIfDeferred
+  handleRender, markWinningBid, renderIfDeferred,
 } from '../../../src/adRendering.js';
+import { getPreparedBidForAuction } from '../../../src/auction.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import { expect } from 'chai/index.mjs';
 import { config } from 'src/config.js';
@@ -130,6 +130,41 @@ describe('adRendering', () => {
             bid: bidResponse,
             adId: bidResponse.adId
           }));
+        });
+      });
+
+      describe('when the ad has a safe renderer URL', () => {
+        it('does not emit AD_RENDER_SUCCEDED immediately', () => {
+          getRenderingDataStub.returns({ safeRenderer: { url: 'mock-url-safe-renderer' } });
+          let bidWithSafeRenderer = {
+            adId: 'mock-ad-id',
+            safeRenderer: { url: 'mock-url-safe-renderer' }
+          }
+          doRender({ renderFn, bidResponse: bidWithSafeRenderer })
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
+        });
+
+        it('prepareBidForRendering: safeRenderer.getConfig(bid) overrides static safeRenderer.config', () => {
+          const publisherConfig = { player: 'pub', theme: 'dark' };
+          const getConfig = sinon.stub().returns(publisherConfig);
+          const bidWithSafeRenderer = {
+            adId: 'safe-config-priority',
+            cpm: 2.5,
+            safeRenderer: {
+              url: 'https://cdn.example/safe.js',
+              config: { player: 'bidder', theme: 'light', onlyOnBid: true },
+              getConfig,
+            },
+          };
+
+          doRender({ renderFn, resizeFn, bidResponse: bidWithSafeRenderer });
+
+          sinon.assert.calledOnce(getConfig);
+          sinon.assert.calledWithExactly(getConfig, bidWithSafeRenderer);
+          sinon.assert.calledOnce(renderFn);
+          const payload = renderFn.firstCall.args[0];
+          expect(payload.safeRenderer.config).to.eql(publisherConfig);
+          expect(payload.safeRenderer.url).to.equal('https://cdn.example/safe.js');
         });
       });
 
@@ -347,6 +382,91 @@ describe('adRendering', () => {
       });
     })
   })
+
+  describe('allowTopWindowRenderers', () => {
+    /** Minimal index stub so `getPreparedBidForAuction` can resolve publisher renderers from the bid request. */
+    function makeIndexStub({ requestRenderer, requestSafeRenderer }) {
+      return {
+        getAdUnit: sinon.stub().returns({}),
+        getBidRequest: sinon.stub().returns({
+          ...(requestRenderer && { renderer: requestRenderer }),
+          ...(requestSafeRenderer && { safeRenderer: requestSafeRenderer }),
+        }),
+        getMediaTypes: sinon.stub().returns({}),
+      };
+    }
+
+    beforeEach(() => {
+      sandbox.stub(events, 'emit');
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    it('when false, strips bid.renderer so top-window publisher renderers are not installed', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      const renderStub = sinon.stub();
+      const idx = makeIndexStub({
+        requestRenderer: {
+          url: 'https://publisher/renderer.js',
+          render: renderStub,
+          options: {},
+        },
+        requestSafeRenderer: { url: 'https://publisher/safe.js' },
+      });
+      const bid = {
+        bidderCode: 'appnexus',
+        adUnitCode: 'div-1',
+        mediaType: 'banner',
+        requestId: 'req-1',
+        cpm: 1.5,
+      };
+      const prepared = getPreparedBidForAuction(bid, { index: idx });
+
+      expect(prepared.renderer).to.equal(null);
+      expect(prepared.safeRenderer).to.deep.include({ url: 'https://publisher/safe.js' });
+    });
+
+    it('when false, clears an adapter-preinstalled renderer on the bid', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      const adapterRender = sinon.stub();
+      const idx = makeIndexStub({});
+      const bid = {
+        bidderCode: 'demo',
+        adUnitCode: 'div-1',
+        mediaType: 'banner',
+        requestId: 'req-2',
+        cpm: 1,
+        renderer: { url: 'https://bidder/outstream.js', render: adapterRender },
+      };
+      const prepared = getPreparedBidForAuction(bid, { index: idx });
+      expect(prepared.renderer).to.equal(null);
+    });
+
+    it('when true, installs publisher renderer from the bid request onto the bid', () => {
+      config.setConfig({ allowTopWindowRenderers: true });
+      const renderStub = sinon.stub();
+      const idx = makeIndexStub({
+        requestRenderer: {
+          url: 'https://publisher/renderer.js',
+          render: renderStub,
+          options: {},
+        },
+      });
+      const bid = {
+        bidderCode: 'appnexus',
+        adUnitCode: 'div-1',
+        mediaType: 'banner',
+        requestId: 'req-3',
+        cpm: 2,
+      };
+      const prepared = getPreparedBidForAuction(bid, { index: idx });
+
+      expect(prepared.renderer).to.be.an('object');
+      expect(prepared.renderer.url).to.equal('https://publisher/renderer.js');
+    });
+  });
 
   describe('handleCreativeEvent', () => {
     let bid;

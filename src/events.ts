@@ -5,6 +5,7 @@ import * as utils from './utils.js'
 import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import { ttlCollection } from './utils/ttlCollection.js';
 import { config } from './config.js';
+import { _setEventEmitter } from "./utils/logging.ts";
 
 type CoreEvent = { [K in keyof typeof EVENTS]: typeof EVENTS[K] }[keyof typeof EVENTS];
 
@@ -194,7 +195,7 @@ const _public = (function () {
   }
 }());
 
-utils._setEventEmitter(_public.emit.bind(_public));
+_setEventEmitter(_public.emit.bind(_public));
 
 export const { on, off, get, getEvents, emit, addEvents, has } = _public;
 

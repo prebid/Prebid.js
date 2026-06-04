@@ -11,6 +11,7 @@ import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 import { safeJSONParse, timestamp } from '../../../src/utils.js';
 import { server } from '../../mocks/xhr.js';
 
+const SAMPLE_ENCRYPTED_DATA = 'sample-encrypted-data';
 describe('Experian realtime module', () => {
   const sandbox = sinon.createSandbox();
   let requests;
@@ -55,14 +56,14 @@ describe('Experian realtime module', () => {
             bidder: 'pubmatic',
             data: {
               key: 'pubmatic-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           },
           {
             bidder: 'sovrn',
             data: {
               key: 'sovrn-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           }
         ]), null)
@@ -93,14 +94,14 @@ describe('Experian realtime module', () => {
             bidder: 'pubmatic',
             data: {
               key: 'pubmatic-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           },
           {
             bidder: 'sovrn',
             data: {
               key: 'sovrn-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           }
         ]), null)
@@ -131,14 +132,14 @@ describe('Experian realtime module', () => {
             bidder: 'pubmatic',
             data: {
               key: 'pubmatic-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           },
           {
             bidder: 'sovrn',
             data: {
               key: 'sovrn-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           }
         ]), null)
@@ -259,14 +260,14 @@ describe('Experian realtime module', () => {
             bidder: 'pubmatic',
             data: {
               key: 'pubmatic-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           },
           {
             bidder: 'sovrn',
             data: {
               key: 'sovrn-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           }
         ]), null)
@@ -286,7 +287,7 @@ describe('Experian realtime module', () => {
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
           pubmatic: {
             experianRtidKey: 'pubmatic-encryption-key-1',
-            experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+            experianRtidData: SAMPLE_ENCRYPTED_DATA
           }
         })
       })
@@ -299,7 +300,7 @@ describe('Experian realtime module', () => {
             bidder: 'sovrn',
             data: {
               key: 'sovrn-encryption-key-1',
-              data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              data: SAMPLE_ENCRYPTED_DATA
             }
           }
         ]), null)
@@ -319,7 +320,7 @@ describe('Experian realtime module', () => {
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
           sovrn: {
             experianRtidKey: 'sovrn-encryption-key-1',
-            experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+            experianRtidData: SAMPLE_ENCRYPTED_DATA
           }
         })
       })
@@ -333,11 +334,11 @@ describe('Experian realtime module', () => {
       requests[0].respond(
         200,
         { 'Content-Type': 'application/json' },
-        '{"staleAt":"2023-06-01T00:00:00","expiresAt":"2023-06-03T00:00:00","status":"ok","data":[{"bidder":"pubmatic","data":{"key":"pubmatic-encryption-key-1","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}},{"bidder":"sovrn","data":{"key":"sovrn-encryption-key-1","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}]}'
+        `{"staleAt":"2023-06-01T00:00:00","expiresAt":"2023-06-03T00:00:00","status":"ok","data":[{"bidder":"pubmatic","data":{"key":"pubmatic-encryption-key-1","data":"${SAMPLE_ENCRYPTED_DATA}"}},{"bidder":"sovrn","data":{"key":"sovrn-encryption-key-1","data":"${SAMPLE_ENCRYPTED_DATA}"}}]}`
       )
 
       expect(requests[0].url).to.equal('https://rtid.tapad.com/acc/ZylatYg/ids?gdpr=0&gdpr_consent=wow&us_privacy=1YYY')
-      expect(safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null))).to.deep.equal([{ bidder: 'pubmatic', data: { key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } }, { bidder: 'sovrn', data: { key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } }])
+      expect(safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null))).to.deep.equal([{ bidder: 'pubmatic', data: { key: 'pubmatic-encryption-key-1', data: SAMPLE_ENCRYPTED_DATA } }, { bidder: 'sovrn', data: { key: 'sovrn-encryption-key-1', data: SAMPLE_ENCRYPTED_DATA } }])
       expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY)).to.equal('2023-06-01T00:00:00')
       expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
     })

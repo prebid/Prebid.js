@@ -1,16 +1,16 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import { attachIdSystem } from 'modules/userId';
+import { attachIdSystem } from 'modules/userId/index.js';
 import { createEidsArray } from 'modules/userId/eids';
 import {
-  MODULE_NAME,
-  SOURCE,
-  getRewardedInterestApi,
-  watchRewardedInterestApi,
-  getRewardedInterestId,
   apiNotAvailable,
-  rewardedInterestIdSubmodule
+  getRewardedInterestApi,
+  getRewardedInterestId,
+  MODULE_NAME,
+  rewardedInterestIdSubmodule,
+  SOURCE,
+  watchRewardedInterestApi
 } from 'modules/rewardedInterestIdSystem.js';
 
 describe('rewardedInterestIdSystem', () => {

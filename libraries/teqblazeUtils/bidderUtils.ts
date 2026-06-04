@@ -28,10 +28,9 @@ const PROTOCOL_PATTERN = /^[a-z0-9.+-]+:/i;
 
 type Mode = 'every' | 'some';
 
-interface TeqBlazeBidParams {
-  placementId?: string | number;
-  endpointId?: string | number;
-}
+export type TeqBlazeBidParams =
+  | { placementId: string | number; endpointId?: string | number }
+  | { placementId?: string | number; endpointId: string | number };
 
 interface RequestBody {
   deviceWidth: number;

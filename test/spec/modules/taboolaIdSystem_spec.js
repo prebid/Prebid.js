@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { server } from 'test/mocks/xhr'; // Or '../../mocks/xhr' depending on your repo structure
 import sinon from 'sinon';
 
-import { taboolaIdSubmodule, sm, decode } from 'modules/taboolaIdSystem.js';
+import { sm, taboolaIdSubmodule } from 'modules/taboolaIdSystem.js';
 
 let getCookieStub;
 let setDataInLocalStorageStub;

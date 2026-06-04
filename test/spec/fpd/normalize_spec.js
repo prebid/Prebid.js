@@ -1,6 +1,6 @@
-import { makeNormalizer, normalizeEIDs, normalizeFPD, normalizeSchain } from '../../../src/fpd/normalize.js';
+import { makeNormalizer, normalizeEIDs } from '../../../src/fpd/normalize.js';
 import * as utils from '../../../src/utils.js';
-import { deepClone, deepSetValue } from '../../../src/utils.js';
+import { deepSetValue } from '../../../src/utils.js';
 import deepAccess from 'dlv/index.js';
 
 describe('FPD normalization', () => {

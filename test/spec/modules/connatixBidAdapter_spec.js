@@ -10,12 +10,11 @@ import {
   readFromLocalStorage as connatixReadFromLocalStorage,
   saveInLocalStorage as connatixSaveInLocalStorage,
   spec,
-  storage
+  storage, dep
 } from '../../../modules/connatixBidAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as utils from '../../../src/utils.js';
-import * as ajax from '../../../src/ajax.js';
-import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as winDimensions from '../../../src/utils/winDimensions.js';
 import * as adUnits from 'src/utils/adUnits';
 
@@ -420,7 +419,7 @@ describe('connatixBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(() => {
@@ -483,11 +482,6 @@ describe('connatixBidAdapter', function () {
     it('Should return true if video is set correctly', function () {
       addVideoToBidMock(bid);
       expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-    it('Should return false if context is set to adpod on video media type', function() {
-      addVideoToBidMock(bid);
-      bid.mediaTypes.video.context = ADPOD;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return true if add an extra field was added to the bidRequest', function () {
       bid.params.test = 1;

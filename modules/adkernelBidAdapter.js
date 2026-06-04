@@ -108,7 +108,8 @@ export const spec = {
     { code: 'qohere' },
     { code: 'blutonic' },
     { code: 'appmonsta', gvlid: 1283 },
-    { code: 'intlscoop' }
+    { code: 'intlscoop' },
+    { code: 'reload' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

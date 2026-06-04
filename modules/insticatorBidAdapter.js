@@ -532,7 +532,7 @@ function buildBid(bid, bidderRequest, seatbid) {
   if (mediaType === 'video') {
     bidResponse.vastXml = bid.adm;
 
-    // ORTB 2.6: Add video duration for adpod support
+    // ORTB 2.6: Add video duration
     if (bid.dur && isInteger(bid.dur) && bid.dur > 0) {
       bidResponse.video = bidResponse.video || {};
       bidResponse.video.durationSeconds = bid.dur;

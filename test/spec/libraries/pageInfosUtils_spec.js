@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from './pageInfosUtils.js';
+import { getConnectionDownLink, getPageDescription, getPageTitle, getReferrerInfo } from 'libraries/pageInfosUtils/pageInfosUtils.js';
 
 describe('pageInfosUtils', () => {
   describe('getReferrerInfo', () => {
@@ -22,62 +22,66 @@ describe('pageInfosUtils', () => {
   });
 
   describe('getPageTitle', () => {
-    let topDocumentStub, documentStub;
+    let winMock;
 
     beforeEach(() => {
-      topDocumentStub = sinon.stub(window.top, 'document').value({
-        title: 'Top Document Title',
-        querySelector: sinon.stub().returns(null)
-      });
-      documentStub = sinon.stub(document, 'querySelector').returns(null);
-    });
-
-    afterEach(() => {
-      topDocumentStub.restore();
-      documentStub.restore();
+      winMock = {
+        top: {
+          document: {
+            title: 'Top Document Title',
+            querySelector: sinon.stub().returns(null)
+          }
+        },
+        document: {
+          querySelector: sinon.stub().returns(null)
+        }
+      }
     });
 
     it('should return the title from the top-level document', () => {
-      const result = getPageTitle();
+      const result = getPageTitle(winMock);
       expect(result).to.equal('Top Document Title');
     });
 
     it('should return the title from the current document if top-level document access fails', () => {
-      topDocumentStub.value({
+      winMock.top.document = {
         title: '',
         querySelector: sinon.stub().throws(new Error('Cross-origin restriction'))
-      });
-      documentStub.returns({ content: 'Current Document Title' });
-      const result = getPageTitle();
+      }
+      winMock.document.querySelector = sinon.stub().returns({
+        content: 'Current Document Title'
+      })
+      const result = getPageTitle(winMock);
       expect(result).to.equal('Current Document Title');
     });
   });
 
   describe('getPageDescription', () => {
-    let topDocumentStub, documentStub;
+    let winMock;
 
     beforeEach(() => {
-      topDocumentStub = sinon.stub(window.top, 'document').value({
-        querySelector: sinon.stub().returns(null)
-      });
-      documentStub = sinon.stub(document, 'querySelector').returns(null);
-    });
-
-    afterEach(() => {
-      topDocumentStub.restore();
-      documentStub.restore();
+      winMock = {
+        top: {
+          document: {
+            querySelector: sinon.stub().returns(null)
+          }
+        },
+        document: {
+          querySelector: sinon.stub().returns(null)
+        }
+      }
     });
 
     it('should return the description from the top-level document', () => {
-      topDocumentStub.querySelector.withArgs('meta[name="description"]').returns({ content: 'Top Document Description' });
-      const result = getPageDescription();
+      winMock.top.document.querySelector.withArgs('meta[name="description"]').returns({ content: 'Top Document Description' });
+      const result = getPageDescription(winMock);
       expect(result).to.equal('Top Document Description');
     });
 
     it('should return the description from the current document if top-level document access fails', () => {
-      topDocumentStub.querySelector.throws(new Error('Cross-origin restriction'));
-      documentStub.withArgs('meta[name="description"]').returns({ content: 'Current Document Description' });
-      const result = getPageDescription();
+      winMock.top.document.querySelector.throws(new Error('Cross-origin restriction'));
+      winMock.document.querySelector.withArgs('meta[name="description"]').returns({ content: 'Current Document Description' });
+      const result = getPageDescription(winMock);
       expect(result).to.equal('Current Document Description');
     });
   });

@@ -1,10 +1,9 @@
-import ooloAnalytics, { PAGEVIEW_ID } from 'modules/ooloAnalyticsAdapter.js';
+import ooloAnalytics, { PAGEVIEW_ID, buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js'
 import * as events from 'src/events'
 import { config } from 'src/config';
-import { buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter';
 
 const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
 const auctionStart = 1598513385415

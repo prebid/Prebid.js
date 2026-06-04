@@ -21,11 +21,11 @@ import {
 } from '../src/utils.js';
 
 import {
-  ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -39,6 +39,10 @@ const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collec
 let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+export const dep = {
+  ajax
+};
 
 let context = {};
 
@@ -81,7 +85,7 @@ export function validateVideo(mediaTypes) {
     return true;
   }
 
-  return video.context !== ADPOD;
+  return video.context === INSTREAM || video.context === OUTSTREAM;
 }
 
 export function _getMinSize(sizes) {
@@ -437,7 +441,7 @@ export const spec = {
   },
 
   triggerEvent(data) {
-    ajax(EVENTS_URL, null, JSON.stringify(data), {
+    dep.ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false
     });

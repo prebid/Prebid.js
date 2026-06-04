@@ -823,28 +823,6 @@ export function adStateFactory() {
       // adPlacementType
     };
 
-    const adPodInfo = event.adPodInfo;
-    if (adPodInfo && adPodInfo.podIndex > -1) {
-      updates.adPodCount = adPodInfo.totalAds;
-      updates.adPodIndex = adPodInfo.adPosition - 1; // Per IMA docs, adPosition is 1 based.
-    }
-
-    if (adPodInfo && adPodInfo.timeOffset) {
-      switch (adPodInfo.timeOffset) {
-        case -1:
-          updates.offset = 'post';
-          break
-
-        case 0:
-          // TODO: Defaults to 0 if this ad is not part of a pod, or the pod is not part of an ad playlist. - need to check if loaded dynamically and pass last content time update
-          updates.offset = 'pre';
-          break
-
-        default:
-          updates.offset = '' + adPodInfo.timeOffset;
-      }
-    }
-
     if (skippable) {
       updates.skipafter = event.skipTimeOffset;
     }

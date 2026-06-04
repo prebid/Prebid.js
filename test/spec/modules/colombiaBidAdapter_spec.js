@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/colombiaBidAdapter';
+import { dep, spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import * as ajaxLib from 'src/ajax.js';
 
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
@@ -155,7 +154,7 @@ describe('colombiaBidAdapter', function () {
   describe('onBidWon', function () {
     let ajaxStub;
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(() => {
@@ -198,7 +197,7 @@ describe('colombiaBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {

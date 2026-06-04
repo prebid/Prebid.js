@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildGamVideoUrl as buildDfpVideoUrl, dep } from 'modules/gamAdServerVideo.js';
+import { buildGamVideoUrl as buildDfpVideoUrl, dep, getVastXml } from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone, generateUUID } from 'src/utils.js';
 import { config } from 'src/config.js';
 import { targeting } from 'src/targeting.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -14,9 +14,7 @@ import * as adServer from 'src/adserver.js';
 import { hook } from '../../../src/hook.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
-import { getVastXml } from '../../../modules/gamAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
-import { generateUUID } from '../../../src/utils.js';
 import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
 
 describe('The DFP video support module', function () {

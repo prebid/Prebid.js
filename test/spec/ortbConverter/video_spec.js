@@ -1,4 +1,4 @@
-import { fillVideoImp, fillVideoResponse, VALIDATIONS } from '../../../libraries/ortbConverter/processors/video.js';
+import { fillVideoImp, fillVideoResponse } from '../../../libraries/ortbConverter/processors/video.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('pbjs -> ortb video conversion', () => {

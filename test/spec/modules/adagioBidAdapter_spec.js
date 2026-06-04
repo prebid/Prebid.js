@@ -2,7 +2,6 @@ import * as utils from '../../../src/utils.js';
 import {
   BB_RENDERER_URL,
   ENDPOINT,
-  VERSION,
   _internal,
   setExtraParam,
   spec
@@ -110,7 +109,6 @@ describe('Adagio bid adapter', () => {
     window.ADAGIO.pbjsAdUnits = [];
     window.ADAGIO.queue = [];
     window.ADAGIO.versions = {};
-    window.ADAGIO.versions.adagioBidderAdapter = VERSION;
     window.ADAGIO.pageviewId = 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a';
 
     utilsMock = sinon.mock(utils);

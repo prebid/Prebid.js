@@ -6,19 +6,12 @@
  */
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js'
+import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {
-  deepSetValue,
-  deepAccess,
-  timestamp,
-  mergeDeep,
-  logError,
-  logInfo,
-  isFn
-} from '../src/utils.js'
+import { deepAccess, deepSetValue, isFn, logError, logInfo, mergeDeep, timestamp } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -112,11 +105,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     deepSetValue(ortb2, 'user.ext.data.im_uid', data.im_uid);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
-      window.googletag = window.googletag || { cmd: [] };
-      window.googletag.cmd = window.googletag.cmd || [];
-      window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', segments);
-      });
+      setKeyValue('im_segments', segments)
     }
   }
 

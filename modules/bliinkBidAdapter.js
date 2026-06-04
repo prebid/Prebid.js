@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
 import { _each, canAccessWindowTop, deepAccess, deepSetValue, getDomLoadingDuration, getWindowSelf, getWindowTop } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
-export const GVL_ID = 658
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
 
 export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://tag.bliink.io/usersync.html'
@@ -313,7 +312,6 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
  */
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   aliases: aliasBidderCode,
   supportedMediaTypes: supportedMediaTypes,
   isBidRequestValid,

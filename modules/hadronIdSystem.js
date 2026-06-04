@@ -17,8 +17,13 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../modules/hadronIdSystem.d.ts').HadronIdSystemModuleName} HadronIdSystemModuleName
  */
 
+/**
+ * @type {HadronIdSystemModuleName}
+ */
 export const MODULE_NAME = 'hadronId';
 const LOG_PREFIX = `[${MODULE_NAME}System]`;
 export const LS_TAM_KEY = 'auHadronId';
@@ -53,11 +58,11 @@ const urlAddParams = (url, params) => {
 
 const isDebug = config.getConfig('debug') || false;
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<HadronIdSystemModuleName>} */
 export const hadronIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {HadronIdSystemModuleName}
    */
   name: MODULE_NAME,
   gvlid: AU_GVLID,

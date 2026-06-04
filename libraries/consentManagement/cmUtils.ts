@@ -1,9 +1,9 @@
 import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../../src/utils.js';
-import { ConsentHandler } from '../../src/consentHandler.js';
 import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';
+import { type ConsentHandler } from "../../src/consentHandler.ts";
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -95,7 +95,7 @@ export function lookupConsentData(
   }).finally(() => {
     timeoutHandle && clearTimeout(timeoutHandle);
   }).catch((e) => {
-    consentDataHandler.setConsentData(null);
+    consentDataHandler.error(e);
     throw e;
   });
 }

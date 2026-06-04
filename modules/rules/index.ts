@@ -4,7 +4,7 @@ import { ACTIVITY_ADD_BID_RESPONSE, ACTIVITY_FETCH_BIDS } from "../../src/activi
 import { MODULE_TYPE_BIDDER } from "../../src/activities/modules.ts";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
 import { registerActivityControl } from "../../src/activities/rules.js";
-import { ajax } from "../../src/ajax.ts";
+import { noCredsAjax as ajax } from "../../src/ajax.ts";
 import { AuctionIndex } from "../../src/auctionIndex.js";
 import { auctionManager } from "../../src/auctionManager.js";
 import { config } from "../../src/config.ts";

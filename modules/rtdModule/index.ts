@@ -12,6 +12,9 @@ import { activityParamsBuilder } from '../../src/activities/params.js';
 import type { StartAuctionOptions } from "../../src/prebid.ts";
 import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts";
 
+// export so that consumers can `import {type RTDProviderConfig} from 'prebid.js/modules/rtdModule'`
+export { type RTDProviderConfig } from './spec.ts';
+
 const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */

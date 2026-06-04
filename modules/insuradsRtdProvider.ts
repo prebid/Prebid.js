@@ -17,6 +17,10 @@ const GVLID = 596;
 let keyValues = {};
 let apiCallPromise = Promise.resolve();
 
+export const dep = {
+  fetch
+};
+
 declare module './rtdModule/spec.ts' {
   interface ProviderConfig {
     insuradsRtd: {
@@ -87,7 +91,7 @@ async function makeApiCall(publicId: string) {
   const currentUrl = encodeURIComponent(location.href);
 
   try {
-    const response = await fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
+    const response = await dep.fetch(`${ENDPOINT}/${publicId}?url=${currentUrl}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

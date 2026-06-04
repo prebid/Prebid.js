@@ -9,7 +9,7 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import { ajaxBuilder } from './ajax.js';
+import { qualifiedAjaxBuilder } from './ajax.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
@@ -17,6 +17,7 @@ import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
 import type { AudioBidResponse, VideoBid, VideoBidResponse } from "./bidfactory.ts";
+import { MODULE_TYPE_PREBID } from "./activities/modules.ts";
 
 /**
  * Might be useful to be configurable in the future
@@ -96,6 +97,11 @@ declare module './bidfactory' {
      * The cache key that was used for this bid.
      */
     videoCacheKey?: string;
+    /**
+     * URL of the cache service Prebid used to cache this bid (`getConfig('cache.url')`). Undefined if Prebid did
+     * not cache this bid.
+     */
+    cacheUrl?: string;
   }
 }
 
@@ -226,7 +232,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = ajaxBuilder) {
+export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };
@@ -237,8 +243,8 @@ export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax 
   });
 }
 
-export function getCacheUrl(id) {
-  return `${config.getConfig('cache.url')}?uuid=${id}`;
+export function getCacheUrl(cacheUrl, id) {
+  return `${cacheUrl}?uuid=${id}`;
 }
 
 export const storeLocally = (bid) => {
@@ -307,6 +313,7 @@ export function storeBatch(batch) {
   function err(msg) {
     logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
   }
+  const cacheUrl = config.getConfig('cache.url');
   _internal.store(bids, function (error, cacheIds) {
     if (error) {
       err(error)
@@ -318,7 +325,8 @@ export function storeBatch(batch) {
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
-          assignVastUrlAndCacheId(bidResponse, getCacheUrl(cacheId.uuid), cacheId.uuid);
+          bidResponse.cacheUrl = cacheUrl;
+          assignVastUrlAndCacheId(bidResponse, getCacheUrl(cacheUrl, cacheId.uuid), cacheId.uuid);
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }

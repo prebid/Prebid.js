@@ -7,7 +7,6 @@ import {
   BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME,
   getEffectiveConnectionType,
   getUserIds,
-  GVL_ID,
 } from 'modules/bliinkBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -139,7 +138,7 @@ const getConfigVideoBid = () => {
  */
 const getConfigCreative = () => {
   return {
-    ad: '<iframe src="https://creative-stg.bliink.io/test-preview-jonathan/index.html?cb=54545&cb=1653984833&gdpr=1&gdpr_consent=#click=https://e-stg.api.bliink.io/c?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTY0MTMzMzgsImlhdCI6MTY1NTgwODUzOCwiaXNzIjoiYmxpaW5rIiwiZGF0YSI6eyJ0eXBlIjoiYWQtc2VydmVyIiwidHJhbnNhY3Rpb25JZCI6IjQ3ZmQyMmY1LThiM2MtNGI4Zi05MzgyLTAzNGEwNGJmNGNmZSIsIm5ldHdvcmtJZCI6MjEsInNpdGVJZCI6NDgsInRhZ0lkIjo4MSwiY29va2llSWQiOiI4NjkwZDEzMDkyNjM5YThhMDliM2MwZDgzMDFlMTBkNmM5MWRhMzBlZWY3NTA2OTRkNTQ5Y2ExYWEwN2M0OTU2IiwiZXZlbnRJZCI6MywidGFyZ2V0aW5nIjp7InBsYXRmb3JtIjoiV2Vic2l0ZSIsInJlZmVycmVyIjoiaHR0cDovL2xvY2FsaG9zdDo5OTk5L2ludGVncmF0aW9uRXhhbXBsZXMvZ3B0L2dkcHJfaGVsbG9fd29ybGQuaHRtbCIsInBhZ2VVcmwiOiJodHRwOi8vbG9jYWxob3N0Ojk5OTkvaW50ZWdyYXRpb25FeGFtcGxlcy9ncHQvZ2Rwcl9oZWxsb193b3JsZC5odG1sIiwidGltZSI6MTY1NTgwODUzOCwibG9jYXRpb24iOnsibGF0aXR1ZGUiOjQ4LjgzMjMsImxvbmdpdHVkZSI6Mi40MDc1LCJyZWdpb24iOiJJREYiLCJjb3VudHJ5IjoiRlIiLCJjaXR5IjoiUGFyaXMiLCJ6aXBDb2RlIjoiNzUwMTUiLCJkZXBhcnRtZW50IjoiNzUifSwiY2l0eSI6IlBhcmlzIiwiY291bnRyeSI6IkZSIiwiZGV2aWNlT3MiOiJtYWNPUyIsImRldmljZVBsYXRmb3JtIjoiV2Vic2l0ZSIsInJhd1VzZXJBZ2VudCI6Ik1vemlsbGEvNS4wIChNYWNpbnRvc2g7IEludGVsIE1hYyBPUyBYIDEwXzE1XzcpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIENocm9tZS8xMDIuMC4wLjAgU2FmYXJpLzUzNy4zNiJ9LCJnZHByIjp7Imhhc0NvbnNlbnQiOmZhbHNlLCJjb25zZW50U3RyaW5nIjoiQlBhbzY5dVBhNHd2WkFBQUJBRlJBQkFBQUFBQUFBIn0sIm5wIjoiNGNCNHVhQW5ncFliZ0RRYXliUGFnUT09IiwiZ3AiOiI3K05UVjErK0ttWndkcDhuTVd3NGl3PT0iLCJjdXJyZW5jeSI6IkVVUiIsIndpbiI6ZmFsc2UsImZvcm1hdCI6MywiZGlzcGxheVR5cGUiOiJzdGlja3kiLCJhZElkIjoxNjgsImFkdmVydGlzZXJJZCI6MjEsImNhbXBhaWduSWQiOjUzNSwiY3JlYXRpdmVJZCI6NzEsImVycm9yIjpmYWxzZX19.8hkPblKo1y1hftESf7e0GN9EzJ1LNVposv_a0TS4h_8&redirect=" style="height: 100%; width: 100%; border: 0;"></iframe><script src="https://tag-stg.bliink.io/creative.min.js?cb=0.0.0"></script>',
+    ad: '<iframe src="https://creative-stg.bliink.io/test-preview/index.html"></iframe>',
     mediaType: 'banner',
     cpm: 4,
     currency: 'EUR',
@@ -214,12 +213,14 @@ const getConfigInterpretResponse = (noAd = false) => {
       ...getConfigCreative(),
       mode: 'ad',
       transactionId: '2def0c5b2a7f6e',
-      token:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjgxNzA4MzEsImlhdCI6MTYyNzU2NjAzMSwiaXNzIjoiYmxpaW5rIiwiZGF0YSI6eyJ0eXBlIjoiYWQtc2VydmVyIiwidHJhbnNhY3Rpb25JZCI6IjM1YmU1NDNjLTNkZTQtNGQ1Yy04N2NjLWIzYzEyOGZiYzU0MCIsIm5ldHdvcmtJZCI6MjEsInNpdGVJZCI6NTksInRhZ0lkIjo1OSwiY29va2llSWQiOiJjNGU4MWVhOS1jMjhmLTQwZDItODY1ZC1hNjQzZjE1OTcyZjUiLCJldmVudElkIjozLCJ0YXJnZXRpbmciOnsicGxhdGZvcm0iOiJXZWJzaXRlIiwiaXAiOiI3OC4xMjIuNzUuNzIiLCJ0aW1lIjoxNjI3NTY2MDMxLCJsb2NhdGlvbiI6eyJsYXRpdHVkZSI6NDguOTczOSwibG9uZ2l0dWRlIjozLjMxMTMsInJlZ2lvbiI6IkhERiIsImNvdW50cnkiOiJGUiIsImNpdHkiOiJTYXVsY2hlcnkiLCJ6aXBDb2RlIjoiMDIzMTAiLCJkZXBhcnRtZW50IjoiMDIifSwiY2l0eSI6IlNhdWxjaGVyeSIsImNvdW50cnkiOiJGUiIsImRldmljZU9zIjoibWFjT1MiLCJkZXZpY2VQbGF0Zm9ybSI6IldlYnNpdGUiLCJyYXdVc2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTEuMC40NDcyLjEyNCBTYWZhcmkvNTM3LjM2In0sImdkcHIiOnsiaGFzQ29uc2VudCI6dHJ1ZX0sIndpbiI6ZmFsc2UsImFkSWQiOjU2NDgsImFkdmVydGlzZXJJZCI6MSwiY2FtcGFpZ25JZCI6MSwiY3JlYXRpdmVJZCI6MjgyNSwiZXJyb3IiOmZhbHNlfX0.-UefQH4G0k-RJGemBYffs-KL7EEwma2Wuwgk2xnpij8',
+      token: SAMPLE_BID_EVENT_TOKEN,
     },
     headers: {},
   };
 };
+
+const SAMPLE_BID_EVENT_TOKEN = 'sample-bid-event-token';
+const SAMPLE_VAST_EVENT_TOKEN = 'sample-vast-event-token';
 
 /**
  * @description Mockup response from API for RTB creative
@@ -240,8 +241,8 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
       <Wrapper>
         <AdSystem>BLIINK</AdSystem>
         <VASTAdTagURI>https://vast.bliink.io/p/508379d0-9f65-4198-8ba5-f61f2b51224f.xml</VASTAdTagURI>
-        <Error>https://e.api.bliink.io/e?name=vast-error&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzQwMzA1MjcsImlhdCI6MTYzMzQyNTcyNywiaXNzIjoiYmxpaW5rIiwiZGF0YSI6eyJ0eXBlIjoiYWQtc2VydmVyIiwidHJhbnNhY3Rpb25JZCI6ImE2NjJjZGJmLTkzNDYtNDI0MS1iMTU0LTJhOTc2OTg0NjNmOSIsIm5ldHdvcmtJZCI6MjUsInNpdGVJZCI6MTQzLCJ0YWdJZCI6MTI3MSwiY29va2llSWQiOiIwNWFhN2UwMi05MzgzLTQ1NGYtOTJmZC1jOTE2YWNlMmUyZjYiLCJldmVudElkIjozLCJ0YXJnZXRpbmciOnsicGxhdGZvcm0iOiJXZWJzaXRlIiwicmVmZXJyZXIiOiJodHRwOi8vbG9jYWxob3N0OjgxODEvaW50ZWdyYXRpb25FeGFtcGxlcy9ncHQvYmxpaW5rLWluc3RyZWFtLmh0bWwiLCJwYWdlVXJsIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgxL2ludGVncmF0aW9uRXhhbXBsZXMvZ3B0L2JsaWluay1pbnN0cmVhbS5odG1sIiwiaXAiOiIzMS4zOS4xNDEuMTQwIiwidGltZSI6MTYzMzQyNTcyNywibG9jYXRpb24iOnsibGF0aXR1ZGUiOjQ4Ljk0MjIsImxvbmdpdHVkZSI6Mi41MDM5LCJyZWdpb24iOiJJREYiLCJjb3VudHJ5IjoiRlIiLCJjaXR5IjoiQXVsbmF5LXNvdXMtQm9pcyIsInppcENvZGUiOiI5MzYwMCIsImRlcGFydG1lbnQiOiI5MyJ9LCJjaXR5IjoiQXVsbmF5LXNvdXMtQm9pcyIsImNvdW50cnkiOiJGUiIsImRldmljZU9zIjoibWFjT1MiLCJkZXZpY2VQbGF0Zm9ybSI6IldlYnNpdGUiLCJyYXdVc2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTMuMC40NTc3LjYzIFNhZmFyaS81MzcuMzYiLCJjb250ZW50Q2xhc3NpZmljYXRpb24iOnsiYnJhbmRzYWZlIjpmYWxzZX19LCJnZHByIjp7Imhhc0NvbnNlbnQiOnRydWV9LCJ3aW4iOmZhbHNlLCJhZElkIjo1NzkzLCJhZHZlcnRpc2VySWQiOjEsImNhbXBhaWduSWQiOjEsImNyZWF0aXZlSWQiOjExOTQsImVycm9yIjpmYWxzZX19.nJSJPKovg0_jSHtLdrMPDqesAIlFKCuXPXYxpsyWBDw</Error>
-        <Impression>https://e.api.bliink.io/e?name=impression&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzQwMzA1MjcsImlhdCI6MTYzMzQyNTcyNywiaXNzIjoiYmxpaW5rIiwiZGF0YSI6eyJ0eXBlIjoiYWQtc2VydmVyIiwidHJhbnNhY3Rpb25JZCI6ImE2NjJjZGJmLTkzNDYtNDI0MS1iMTU0LTJhOTc2OTg0NjNmOSIsIm5ldHdvcmtJZCI6MjUsInNpdGVJZCI6MTQzLCJ0YWdJZCI6MTI3MSwiY29va2llSWQiOiIwNWFhN2UwMi05MzgzLTQ1NGYtOTJmZC1jOTE2YWNlMmUyZjYiLCJldmVudElkIjozLCJ0YXJnZXRpbmciOnsicGxhdGZvcm0iOiJXZWJzaXRlIiwicmVmZXJyZXIiOiJodHRwOi8vbG9jYWxob3N0OjgxODEvaW50ZWdyYXRpb25FeGFtcGxlcy9ncHQvYmxpaW5rLWluc3RyZWFtLmh0bWwiLCJwYWdlVXJsIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgxL2ludGVncmF0aW9uRXhhbXBsZXMvZ3B0L2JsaWluay1pbnN0cmVhbS5odG1sIiwiaXAiOiIzMS4zOS4xNDEuMTQwIiwidGltZSI6MTYzMzQyNTcyNywibG9jYXRpb24iOnsibGF0aXR1ZGUiOjQ4Ljk0MjIsImxvbmdpdHVkZSI6Mi41MDM5LCJyZWdpb24iOiJJREYiLCJjb3VudHJ5IjoiRlIiLCJjaXR5IjoiQXVsbmF5LXNvdXMtQm9pcyIsInppcENvZGUiOiI5MzYwMCIsImRlcGFydG1lbnQiOiI5MyJ9LCJjaXR5IjoiQXVsbmF5LXNvdXMtQm9pcyIsImNvdW50cnkiOiJGUiIsImRldmljZU9zIjoibWFjT1MiLCJkZXZpY2VQbGF0Zm9ybSI6IldlYnNpdGUiLCJyYXdVc2VyQWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvOTMuMC40NTc3LjYzIFNhZmFyaS81MzcuMzYiLCJjb250ZW50Q2xhc3NpZmljYXRpb24iOnsiYnJhbmRzYWZlIjpmYWxzZX19LCJnZHByIjp7Imhhc0NvbnNlbnQiOnRydWV9LCJ3aW4iOmZhbHNlLCJhZElkIjo1NzkzLCJhZHZlcnRpc2VySWQiOjEsImNhbXBhaWduSWQiOjEsImNyZWF0aXZlSWQiOjExOTQsImVycm9yIjpmYWxzZX19.nJSJPKovg0_jSHtLdrMPDqesAIlFKCuXPXYxpsyWBDw</Impression>
+        <Error>https://e.api.bliink.io/e?name=vast-error&token=${SAMPLE_VAST_EVENT_TOKEN}</Error>
+        <Impression>https://e.api.bliink.io/e?name=impression&token=${SAMPLE_VAST_EVENT_TOKEN}</Impression>
         <Extensions><Price>1</Price><Currency>EUR</Currency>
       </Wrapper>
     </Ad>
@@ -1191,8 +1192,4 @@ describe('getEffectiveConnectionType', () => {
       expect(result).to.equal('unsupported');
     });
   }
-});
-
-it('should expose gvlid', function () {
-  expect(spec.gvlid).to.equal(GVL_ID);
 });

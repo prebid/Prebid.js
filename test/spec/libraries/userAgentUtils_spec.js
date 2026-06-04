@@ -1,7 +1,7 @@
 /* globals describe, beforeEach, afterEach, sinon */
 import { expect } from 'chai';
 import { getDeviceType, getBrowser, getOS } from 'libraries/userAgentUtils';
-import { deviceTypes, browserTypes, osTypes } from 'libraries/userAgentUtils/userAgentTypes.enums';
+import { deviceTypes, browserTypes, osTypes } from 'libraries/userAgentUtils/userAgentTypes.enums.js';
 
 const ORIGINAL_USER_AGENT = window.navigator.userAgent;
 const ORIGINAL_VENDOR = window.navigator.vendor;

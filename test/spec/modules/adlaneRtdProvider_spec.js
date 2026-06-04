@@ -1,16 +1,16 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import {
+  adlaneSubmodule,
   getAgeVerification,
   getAgeVerificationByLocalStorage,
-  setAgeVerificationConfig,
   isAdlCmpAvailable,
-  adlaneSubmodule
+  setAgeVerificationConfig
 } from '../../../modules/adlaneRtdProvider.js';
 import * as utils from 'src/utils.js';
 import * as storageManager from 'src/storageManager.js';
 import { config } from 'src/config.js';
-import { init } from 'modules/rtdModule'
+import { init } from 'modules/rtdModule/index.js';
 
 describe('adlane Module', () => {
   let sandbox;

@@ -1,5 +1,6 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
 import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+import { setPageTargeting } from '../../src/utils/gptTargeting.js';
 
 const slotInfoCache = new Map();
 
@@ -25,10 +26,14 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 export function setKeyValue(key, value) {
   if (!key || typeof key !== 'string') return false;
   window.googletag = window.googletag || { cmd: [] };
-  window.googletag.cmd = window.googletag.cmd || [];
-  window.googletag.cmd.push(() => {
-    window.googletag.pubads().setTargeting(key, value);
-  });
+  setKeyValueOn(key, value, window.googletag)
+}
+
+export function setKeyValueOn(key, value, gpt = window.googletag) {
+  gpt.cmd = gpt.cmd || [];
+  gpt.cmd.push(() => {
+    setPageTargeting(key, value, gpt);
+  })
 }
 
 /**

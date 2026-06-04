@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { spec, resetInvibes, stubDomainOptions, readGdprConsent, storage } from 'modules/invibesBidAdapter.js';
+import { resetInvibes, spec, storage } from 'modules/invibesBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {

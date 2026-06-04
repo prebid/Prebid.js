@@ -220,6 +220,57 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[1].data.cur).to.deep.equal('USD');
       });
 
+      it('should set UA client hints from bidderRequest.ortb2.device.sua', function () {
+        const request = spec.buildRequests([BANNER_BID], {
+          ortb2: {
+            device: {
+              sua: {
+                browsers: [{ brand: 'Chromium', version: ['123', '0', '6312', '86'] }],
+                platform: { brand: 'macOS', version: ['14', '4', '1'] },
+                architecture: 'arm',
+                bitness: '64',
+                mobile: 0,
+                model: 'MacBookPro'
+              }
+            }
+          }
+        });
+
+        expect(request[0].data.ucfvl).to.equal('"Chromium";v="123.0.6312.86"');
+        expect(request[0].data.ucp).to.equal('"macOS"');
+        expect(request[0].data.ucarch).to.equal('"arm"');
+        expect(request[0].data.ucpv).to.equal('"14.4.1"');
+        expect(request[0].data.ucbit).to.equal('"64"');
+        expect(request[0].data.ucmbl).to.equal('?0');
+        expect(request[0].data.ucmdl).to.equal('"MacBookPro"');
+      });
+
+      it('should prefer bid.ortb2.device.sua over bidderRequest.ortb2.device.sua', function () {
+        const request = spec.buildRequests([{
+          ...BANNER_BID,
+          ortb2: {
+            device: {
+              sua: {
+                platform: { brand: 'Android' },
+                mobile: 1
+              }
+            }
+          }
+        }], {
+          ortb2: {
+            device: {
+              sua: {
+                platform: { brand: 'macOS' },
+                mobile: 0
+              }
+            }
+          }
+        });
+
+        expect(request[0].data.ucp).to.equal('"Android"');
+        expect(request[0].data.ucmbl).to.equal('?1');
+      });
+
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('adtk');

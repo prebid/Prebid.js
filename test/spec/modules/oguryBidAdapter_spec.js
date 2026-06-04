@@ -41,10 +41,10 @@ describe('OguryBidAdapter', () => {
           floor: 0
         };
 
-        if (mediaType === 'banner') {
-          floorResult.floor = 4;
-        } else {
+        if (mediaType === 'video') {
           floorResult.floor = 1000;
+        } else {
+          floorResult.floor = 4;
         }
 
         return floorResult;
@@ -676,7 +676,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.0.6'
+        adapterversion: '2.1.0'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -815,6 +815,7 @@ describe('OguryBidAdapter', () => {
             id: 'advertId',
             impid: 'bidId',
             price: 100,
+            mtype: 1,
             nurl: 'url',
             adm: `<div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div>`,
             adomain: ['renault.fr'],
@@ -834,6 +835,7 @@ describe('OguryBidAdapter', () => {
             id: 'advertId2',
             impid: 'bidId2',
             price: 150,
+            mtype: 1,
             nurl: 'url2',
             adm: `<div><img style="width: 600px; height: 500px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div>`,
             adomain: ['peugeot.fr'],
@@ -991,5 +993,289 @@ describe('OguryBidAdapter', () => {
       expect(requests[0].method).to.equal('POST');
       expect(JSON.parse(requests[0].requestBody).location).to.equal(window.location.href);
     })
+  });
+
+  describe('video support', () => {
+    let videoBidRequest;
+    let mixedBidRequest;
+    let windowTopStub;
+
+    beforeEach(() => {
+      videoBidRequest = {
+        adUnitCode: 'adUnitCodeVideo',
+        ortb2Imp: { ext: { gpid: 'gpidVideo' } },
+        auctionId: 'auctionId',
+        bidId: 'bidIdVideo',
+        bidder: 'ogury',
+        params: {
+          assetKey: 'OGY-assetkey',
+          adUnitId: 'adunitIdVideo'
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [[640, 480]],
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            protocols: [2, 3, 5, 6]
+          }
+        },
+        getFloor: ({ mediaType }) => ({
+          currency: 'USD',
+          floor: mediaType === 'video' ? 7 : 3
+        }),
+        transactionId: 'transactionIdVideo'
+      };
+
+      mixedBidRequest = utils.deepClone(bidRequests[0]);
+      mixedBidRequest.mediaTypes.video = {
+        playerSize: [[640, 480]],
+        context: 'outstream',
+        mimes: ['video/mp4']
+      };
+
+      windowTopStub = sinon.stub(utils, 'getWindowTop');
+      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: 1 });
+    });
+
+    afterEach(() => {
+      windowTopStub.restore();
+    });
+
+    describe('supportedMediaTypes', () => {
+      it('should declare both BANNER and VIDEO', () => {
+        expect(spec.supportedMediaTypes).to.include.members(['banner', 'video']);
+      });
+    });
+
+    describe('isBidRequestValid', () => {
+      it('should validate a video-only bid with playerSize', () => {
+        expect(spec.isBidRequestValid(videoBidRequest)).to.be.true;
+      });
+
+      it('should not validate a video-only bid without playerSize', () => {
+        const invalidBid = utils.deepClone(videoBidRequest);
+        delete invalidBid.mediaTypes.video.playerSize;
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+
+      it('should not validate a video-only bid with empty playerSize', () => {
+        const invalidBid = utils.deepClone(videoBidRequest);
+        invalidBid.mediaTypes.video.playerSize = [];
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+
+      it('should validate a mixed banner+video bid', () => {
+        expect(spec.isBidRequestValid(mixedBidRequest)).to.be.true;
+      });
+
+      it('should validate a video-only bid using publisherId + adUnitCode flow', () => {
+        const validBid = utils.deepClone(videoBidRequest);
+        delete validBid.params.adUnitId;
+        delete validBid.params.assetKey;
+        validBid.ortb2 = { site: { publisher: { id: 'publisherId' } } };
+        expect(spec.isBidRequestValid(validBid)).to.be.true;
+      });
+
+      it('should not validate a bid with empty mediaTypes.banner and no video', () => {
+        // Guard the edge case where mediaTypes.banner is declared but carries no
+        // sizes. isBidRequestValid must reject it — neither banner sizes nor
+        // video playerSize are present. This keeps getFloor's banner detection
+        // (Boolean(mediaTypes.banner)) safe: a malformed bid never reaches it.
+        const invalidBid = utils.deepClone(bidRequests[0]);
+        invalidBid.mediaTypes = { banner: {} };
+        delete invalidBid.sizes;
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+    });
+
+    if (FEATURES.VIDEO) {
+      describe('buildRequests', () => {
+        it('should build imp.video from mediaTypes.video.playerSize', () => {
+          const request = spec.buildRequests([videoBidRequest], { ...bidderRequestBase, bids: [videoBidRequest] });
+          expect(request.data.imp[0].video).to.exist;
+          expect(request.data.imp[0].video.w).to.equal(640);
+          expect(request.data.imp[0].video.h).to.equal(480);
+          expect(request.data.imp[0].banner).to.be.an('undefined');
+        });
+
+        it('should set imp.bidfloor from video floor for video-only bids', () => {
+          const request = spec.buildRequests([videoBidRequest], { ...bidderRequestBase, bids: [videoBidRequest] });
+          expect(request.data.imp[0].bidfloor).to.equal(7);
+        });
+
+        it('should build both imp.banner and imp.video for mixed bids', () => {
+          const request = spec.buildRequests([mixedBidRequest], { ...bidderRequestBase, bids: [mixedBidRequest] });
+          expect(request.data.imp[0].banner).to.exist;
+          expect(request.data.imp[0].video).to.exist;
+        });
+
+        it('should use banner floor on mixed banner+video bids (preserves pre-video banner behavior)', () => {
+          const request = spec.buildRequests([mixedBidRequest], { ...bidderRequestBase, bids: [mixedBidRequest] });
+          expect(request.data.imp[0].bidfloor).to.equal(4);
+        });
+
+        it('should use banner floor on mixed bids even when video floor is higher', () => {
+          const bid = utils.deepClone(mixedBidRequest);
+          bid.getFloor = ({ mediaType }) => ({
+            currency: 'USD',
+            floor: mediaType === 'video' ? 10 : 5
+          });
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(5);
+        });
+
+        it('should not set imp.bidfloor on a video-only bid when getFloor is not a function', () => {
+          const bid = utils.deepClone(videoBidRequest);
+          bid.getFloor = undefined;
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.be.an('undefined');
+        });
+
+        it('should query video floor on a video-only bid even when bid.sizes is auto-populated from playerSize', () => {
+          // Prebid populates bid.sizes from mediaTypes.video.playerSize when no
+          // banner mediaType is declared. The adapter must not interpret that as
+          // a banner imp — banner detection lives on mediaTypes.banner, not on
+          // bid.sizes / getAdUnitSizes.
+          const bid = utils.deepClone(videoBidRequest);
+          bid.sizes = [[640, 480]];
+          bid.getFloor = ({ mediaType }) => ({
+            currency: 'USD',
+            floor: mediaType === 'video' ? 9 : 2
+          });
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(9);
+        });
+
+        it('should not query video floor when mediaTypes.video is declared without playerSize', () => {
+          const bid = utils.deepClone(bidRequests[0]);
+          bid.mediaTypes.video = { context: 'outstream', mimes: ['video/mp4'] };
+          bid.getFloor = ({ mediaType }) => ({
+            currency: 'USD',
+            floor: mediaType === 'video' ? 1 : 6
+          });
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(6);
+        });
+
+        it('should pass mediaType:"banner" to getFloor on a banner-only bid (ISO with pre-video behaviour)', () => {
+          // Blindage non-régression banner: detect that the new
+          // Boolean(mediaTypes.banner) check still routes pure banner bids to
+          // the banner floor query. If a future refactor reverses the
+          // hasBanner/hasVideo branching, this test will fail.
+          // We exercise spec.getFloor directly (not via buildRequests) to
+          // isolate the adapter's own getFloor invocation from the
+          // ortbConverter auto-floor processor (which also calls
+          // bid.getFloor when the priceFloors module is loaded by a sibling
+          // spec in the same Karma chunk).
+          const bid = utils.deepClone(bidRequests[0]);
+          const calls = [];
+          bid.getFloor = (args) => {
+            calls.push(args);
+            return { currency: 'USD', floor: 3 };
+          };
+
+          const floor = spec.getFloor(bid);
+          expect(calls).to.have.lengthOf(1);
+          expect(calls[0].mediaType).to.equal('banner');
+          expect(calls[0].size).to.equal('*');
+          expect(floor).to.equal(3);
+        });
+
+        it('should query banner floor with size:"*" (wildcard) rather than iterating per banner size', () => {
+          const bid = utils.deepClone(bidRequests[0]);
+          bid.mediaTypes.banner.sizes = [[300, 250], [728, 90]];
+          bid.getFloor = ({ size }) => {
+            if (size === '*') {
+              return { currency: 'USD', floor: 99 };
+            }
+            return { currency: 'USD', floor: 1 };
+          };
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(99);
+        });
+      });
+
+      describe('interpretResponse', () => {
+        it('should mark bidResponse.mediaType as video for a video imp', () => {
+          const request = spec.buildRequests([videoBidRequest], { ...bidderRequestBase, bids: [videoBidRequest] });
+          const videoOrtbResponse = {
+            body: {
+              id: 'video_response',
+              seatbid: [{
+                bid: [{
+                  id: 'advertIdVideo',
+                  impid: 'bidIdVideo',
+                  price: 12,
+                  mtype: 2,
+                  nurl: 'urlVideo',
+                  adm: '<VAST version="3.0"><Ad></Ad></VAST>',
+                  adomain: ['ogury.com'],
+                  w: 640,
+                  h: 480
+                }]
+              }]
+            }
+          };
+
+          const result = spec.interpretResponse(videoOrtbResponse, request);
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].mediaType).to.equal('video');
+          expect(result[0].vastXml).to.contain('<VAST');
+        });
+      });
+
+      describe('instream', () => {
+        let instreamBidRequest;
+
+        beforeEach(() => {
+          instreamBidRequest = utils.deepClone(videoBidRequest);
+          instreamBidRequest.mediaTypes.video.context = 'instream';
+        });
+
+        it('should validate an instream video bid with playerSize', () => {
+          expect(spec.isBidRequestValid(instreamBidRequest)).to.be.true;
+        });
+
+        it('should build imp.video from an instream bid', () => {
+          const request = spec.buildRequests([instreamBidRequest], { ...bidderRequestBase, bids: [instreamBidRequest] });
+          expect(request.data.imp[0].video).to.exist;
+          expect(request.data.imp[0].video.w).to.equal(640);
+          expect(request.data.imp[0].video.h).to.equal(480);
+          expect(request.data.imp[0].banner).to.be.an('undefined');
+        });
+
+        it('should return a video bid with vastXml from a VAST instream response', () => {
+          const request = spec.buildRequests([instreamBidRequest], { ...bidderRequestBase, bids: [instreamBidRequest] });
+          const instreamOrtbResponse = {
+            body: {
+              id: 'instream_response',
+              seatbid: [{
+                bid: [{
+                  id: 'advertIdInstream',
+                  impid: 'bidIdVideo',
+                  price: 15,
+                  mtype: 2,
+                  nurl: 'urlInstream',
+                  adm: '<VAST version="3.0"><Ad></Ad></VAST>',
+                  adomain: ['ogury.com'],
+                  w: 640,
+                  h: 480
+                }]
+              }]
+            }
+          };
+
+          const result = spec.interpretResponse(instreamOrtbResponse, request);
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].mediaType).to.equal('video');
+          expect(result[0].vastXml).to.contain('<VAST');
+        });
+      });
+    }
   });
 });

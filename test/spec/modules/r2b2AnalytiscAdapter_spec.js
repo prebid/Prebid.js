@@ -1,12 +1,11 @@
-import r2b2Analytics, { resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js';
+import r2b2Analytics, { dep, resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js';
 
 import { expect } from 'chai';
-import { EVENTS, AD_RENDER_FAILED_REASON, REJECTION_REASON } from 'src/constants.js';
+import { AD_RENDER_FAILED_REASON, EVENTS, REJECTION_REASON } from 'src/constants.js';
 import * as pbEvents from 'src/events.js';
-import * as ajax from 'src/ajax.js';
 import * as utils from 'src/utils';
-import { getGlobal } from 'src/prebidGlobal';
 import * as prebidGlobal from 'src/prebidGlobal';
+
 const adapterManager = require('src/adapterManager').default;
 
 const {
@@ -371,7 +370,7 @@ describe('r2b2 Analytics', function () {
     getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns({
       getHighestCpmBids: () => [R2B2_AD_UNIT_2_BID]
     });
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub(dep, 'ajax');
 
     adapterManager.registerAnalyticsAdapter({
       code: 'r2b2',

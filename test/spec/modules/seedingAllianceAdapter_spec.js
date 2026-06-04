@@ -2,6 +2,7 @@
 import { assert, expect } from 'chai';
 import { getStorageManager } from 'src/storageManager.js';
 import { spec } from 'modules/seedingAllianceBidAdapter.js';
+import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('SeedingAlliance adapter', function () {
@@ -20,6 +21,14 @@ describe('SeedingAlliance adapter', function () {
       native: {}
     }
   }];
+
+  describe('spec metadata', function () {
+    it('should expose code, gvlid, and supportedMediaTypes', function () {
+      expect(spec.code).to.equal('seedingAlliance');
+      expect(spec.gvlid).to.equal(371);
+      expect(spec.supportedMediaTypes).to.have.members(['native', 'banner']);
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
@@ -54,6 +63,75 @@ describe('SeedingAlliance adapter', function () {
       const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
       assert.equal(request.site.page, siteUrl);
+    });
+
+    it('should set imp.tagid from params.adUnitId', function () {
+      const bidRequests = [{ bidId: 'bidId', params: { adUnitId: 'unit-1' }, mediaType: { native: {} } }];
+      const request = JSON.parse(spec.buildRequests(bidRequests, { refererInfo: { page: 'page' } }).data);
+
+      assert.equal(request.imp[0].tagid, 'unit-1');
+    });
+
+    it('should remove device from request', function () {
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const request = JSON.parse(spec.buildRequests(bidRequests, { refererInfo: { page: 'page' } }).data);
+
+      assert.isUndefined(request.device);
+    });
+
+    it('should set regs.ext.pb_ver', function () {
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const request = JSON.parse(spec.buildRequests(bidRequests, { refererInfo: { page: 'page' } }).data);
+
+      assert.ok(request.regs.ext.pb_ver);
+    });
+
+    it('should default currency to EUR', function () {
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const request = JSON.parse(spec.buildRequests(bidRequests, { refererInfo: { page: 'page' } }).data);
+
+      assert.deepEqual(request.cur, ['EUR']);
+    });
+
+    it('should use currency from config when adServerCurrency is set', function () {
+      config.setConfig({ currency: { adServerCurrency: 'USD' } });
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const request = JSON.parse(spec.buildRequests(bidRequests, { refererInfo: { page: 'page' } }).data);
+
+      assert.deepEqual(request.cur, ['USD']);
+      config.resetConfig();
+    });
+
+    it('should use custom endpoint from config when seedingAlliance.endpoint is set', function () {
+      config.setConfig({ seedingAlliance: { endpoint: 'https://custom.example/rtb' } });
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const result = spec.buildRequests(bidRequests, { refererInfo: { page: 'page' } });
+
+      assert.equal(result.url, 'https://custom.example/rtb');
+      config.resetConfig();
+    });
+
+    it('should set GDPR consent fields when gdprConsent is present', function () {
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const bidderRequest = {
+        refererInfo: { page: 'page' },
+        gdprConsent: { gdprApplies: true, consentString: 'CONSENT-XYZ' }
+      };
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      assert.equal(request.user.ext.consent, 'CONSENT-XYZ');
+      assert.equal(request.regs.ext.gdpr, 1);
+    });
+
+    it('should set regs.ext.gdpr to 0 when gdprApplies is not a boolean', function () {
+      const bidRequests = [{ bidId: 'bidId', params: {}, mediaType: { native: {} } }];
+      const bidderRequest = {
+        refererInfo: { page: 'page' },
+        gdprConsent: { gdprApplies: undefined, consentString: 'X' }
+      };
+      const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      assert.equal(request.regs.ext.gdpr, 0);
     });
   });
 
@@ -137,6 +215,45 @@ describe('SeedingAlliance adapter', function () {
       request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
 
       expect(request.user.ext.eids).to.deep.include(nativendoUserEid);
+    });
+
+    it('should append userIdAsEids when present on the bid request', function () {
+      getGlobal().bidderSettings = {
+        seedingAlliance: { storageAllowed: true }
+      };
+      localStorageIsEnabledStub.returns(true);
+
+      const userIdEid = { source: 'pubcid.org', uids: [{ id: 'pub-id-1', atype: 1 }] };
+      const bidRequestsWithEids = [{
+        bidId: 'bidId',
+        params: {},
+        userIdAsEids: userIdEid
+      }];
+
+      request = JSON.parse(spec.buildRequests(bidRequestsWithEids, bidderRequest).data);
+
+      expect(request.user.ext.eids).to.deep.include(userIdEid);
+    });
+
+    it('should generate and persist a new nativendo_id when none exists in storage', function () {
+      getGlobal().bidderSettings = {
+        seedingAlliance: { storageAllowed: true }
+      };
+      localStorageIsEnabledStub.returns(true);
+      window.localStorage.removeItem('nativendo_id');
+
+      try {
+        request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+        const persisted = window.localStorage.getItem('nativendo_id');
+        expect(persisted).to.be.a('string').and.not.empty;
+
+        const nativendoEid = request.user.ext.eids.find(e => e.source === 'nativendo.de');
+        expect(nativendoEid).to.exist;
+        expect(nativendoEid.uids[0].id).to.equal(persisted);
+      } finally {
+        window.localStorage.removeItem('nativendo_id');
+      }
     });
   });
 
@@ -254,6 +371,147 @@ describe('SeedingAlliance adapter', function () {
       const regExpContent = new RegExp('<iframe.+?' + bid.price + '.+?</iframe>');
 
       assert.ok(result[0].ad.search(regExpContent) > -1);
+    });
+
+    it('should return an empty array when seatbid is undefined', function () {
+      const result = spec.interpretResponse({ body: { cur: 'EUR', id: 'bidid1' } }, bidNativeRequest);
+      assert.equal(result.length, 0);
+    });
+
+    it('should accept adm provided as an object', function () {
+      const objectAdmResponse = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: {
+                native: {
+                  link: { url: 'https://domain.for/ad/' }
+                }
+              },
+              impid: 1,
+              price: 0.55
+            }]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(objectAdmResponse, bidNativeRequest);
+
+      expect(result[0].native.clickUrl).to.equal('https://domain.for/ad/');
+    });
+
+    it('should leave native undefined when adm string is not valid JSON', function () {
+      const invalidJsonResponse = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: 'not-json',
+              impid: 1,
+              price: 0.55
+            }]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(invalidJsonResponse, bidNativeRequest);
+
+      expect(result).to.have.length(1);
+      expect(result[0].native).to.be.undefined;
+    });
+
+    it('should replace AUCTION_PRICE in native eventtrackers', function () {
+      const eventTrackerResponse = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: JSON.stringify({
+                native: {
+                  link: { url: 'https://domain.for/ad/' },
+                  eventtrackers: [
+                    { event: 1, method: 1, url: 'https://domain.for/event?price=${AUCTION_PRICE}' }
+                  ]
+                }
+              }),
+              impid: 1,
+              price: 1.23
+            }]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(eventTrackerResponse, bidNativeRequest);
+
+      expect(result[0].native.ortb.eventtrackers[0].url).to.equal('https://domain.for/event?price=1.23');
+    });
+
+    it('should default meta.advertiserDomains to an empty array when adomain is missing', function () {
+      const result = spec.interpretResponse(goodNativeResponse, bidNativeRequest);
+
+      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
+    });
+
+    it('should populate meta.advertiserDomains from adomain', function () {
+      const responseWithAdomain = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: JSON.stringify({ native: { link: { url: 'https://domain.for/ad/' } } }),
+              impid: 1,
+              price: 0.55,
+              adomain: ['example.com']
+            }]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(responseWithAdomain, bidNativeRequest);
+
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
+
+    it('should replace AUCTION_PRICE macro in banner ad', function () {
+      const bannerWithMacro = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: '<iframe src="https://domain.tld/cds/delivery?wp=${AUCTION_PRICE}"></iframe>',
+              impid: 1,
+              price: 1.5,
+              h: 250,
+              w: 300
+            }]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(bannerWithMacro, bidBannerRequest);
+
+      expect(result[0].ad).to.contain('wp=1.5');
+      expect(result[0].ad).to.not.contain('${AUCTION_PRICE}');
+    });
+
+    it('should filter out bid requests without a matching seatbid response', function () {
+      const noMatchResponse = {
+        body: {
+          cur: 'EUR',
+          seatbid: [{
+            seat: 'seedingAlliance',
+            bid: [{
+              adm: JSON.stringify({ native: { link: { url: 'https://x' } } }),
+              impid: 999,
+              price: 0.5
+            }]
+          }]
+        }
+      };
+      const result = spec.interpretResponse(noMatchResponse, bidNativeRequest);
+
+      expect(result).to.have.length(0);
     });
   });
 });
