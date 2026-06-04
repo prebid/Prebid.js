@@ -168,7 +168,6 @@ jobs:
   coverage:
     name: Combine coverage results
     needs: [checkout, test]
-    if: always() && needs.test.result == 'success' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
