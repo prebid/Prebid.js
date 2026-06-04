@@ -1,0 +1,52 @@
+name: Post a comment
+on:
+  workflow_run:
+    workflows:
+      - Run tests
+    types:
+      - completed
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  barecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: master
+      - name: Retrieve commit info
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: commitInfo.json
+      - name: Parse commit info
+        id: info
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            return JSON.parse(fs.readFileSync('${{runner.temp}}/artifacts/commitInfo.json').toString())
+      - name: Fetch base branch coverage
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: "base-coverage.info"
+          key: coverage-${{ fromJSON(steps.info.outputs.result).baseCommit }}
+      - name: Fetch PR coverage
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: "coverage.info"
+          key: coverage-${{ fromJSON(steps.info.outputs.result).commit }}
+      - name: Generate Code Coverage report
+        id: code-coverage
+        uses: barecheck/code-coverage-action@v1
+        with:
+          barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
+          lcov-file: "coverage.info"
+          base-lcov-file: "base-coverage.info"
+          minimum-ratio: 0 # Fails Github action once code coverage is decreasing
+          send-summary-comment: true
+          show-annotations: "warning" # Possible options warning|error
