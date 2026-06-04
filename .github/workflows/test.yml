@@ -164,8 +164,8 @@ jobs:
           lcov: base-coverage.info
           cache-key: coverage-${{needs.checkout.outputs.base-commit}}
   coverage:
-    name: Coverage
-    needs: [checkout, test, base-coverage-combine]
+    name: Combine coverage results
+    needs: [checkout, test]
     if: always() && needs.test.result == 'success' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
@@ -177,20 +177,3 @@ jobs:
           source-artifact: ${{ needs.test.outputs.coverage }}
           lcov: coverage.info
           cache-key: coverage-${{needs.checkout.outputs.commit}}
-      - name: Fetch base branch coverage
-        id: restore
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: "base-coverage.info"
-          key: coverage-${{ needs.checkout.outputs.base-commit }}
-      - name: Generate Code Coverage report
-        id: code-coverage
-        uses: barecheck/code-coverage-action@v1
-        with:
-          barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
-          lcov-file: "coverage.info"
-          base-lcov-file: "base-coverage.info"
-          minimum-ratio: 0 # Fails Github action once code coverage is decreasing
-          send-summary-comment: true
-          show-annotations: "warning" # Possible options warning|error
