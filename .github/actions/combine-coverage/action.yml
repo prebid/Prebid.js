@@ -34,3 +34,10 @@ runs:
       with:
         path: ${{ inputs.lcov }}
         key: ${{ inputs.cache-key }}
+    - name: Save as artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.lcov }}
+        path: ${{ inputs.lcov }}
+
+

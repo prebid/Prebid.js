@@ -66,14 +66,7 @@ jobs:
           echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
           echo base-branch="$BASE_BRANCH" >> $GITHUB_OUTPUT
           echo base-commit="$BASE_COMMIT" >> $GITHUB_OUTPUT
-      - name: "Generate commitInfo.json"
-        run: |
-          echo '{"commit": "${{steps.info.outputs.commit}}", "baseCommit": "${{steps.info.outputs.base-commit}}" }' > ${{runner.temp}}/commitInfo.json
-      - name: "Upload commit info artifact"
-        uses: actions/upload-artifact@v7
-        with:
-          name: commitInfo.json
-          path: ${{ runner.temp}}/commitInfo.json
+
       - name: Install dependencies
         uses: ./.github/actions/npm-ci
 
@@ -130,6 +123,12 @@ jobs:
         with:
           path: "base-coverage.info"
           key: coverage-${{ needs.checkout.outputs.base-commit }}
+      - name: Save as artifact
+        if: ${{ steps.restore.outputs.cache-hit == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: "base-coverage.info"
+          path: "base-coverage.info"
       - name: Checkout
         if: ${{ steps.restore.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v6

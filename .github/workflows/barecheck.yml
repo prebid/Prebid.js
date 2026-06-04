@@ -16,36 +16,21 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: master
-      - name: Retrieve commit info
+      - name: Fetch base branch coverage
         uses: ./.github/actions/unzip-artifact
         with:
-          name: commitInfo.json
-      - name: Parse commit info
-        id: info
-        uses: actions/github-script@v9
-        with:
-          script: |
-            const fs = require('fs');
-            return JSON.parse(fs.readFileSync('${{runner.temp}}/artifacts/commitInfo.json').toString())
-      - name: Fetch base branch coverage
-        uses: actions/cache/restore@v4
-        with:
-          fail-on-cache-miss: true
-          path: "base-coverage.info"
-          key: coverage-${{ fromJSON(steps.info.outputs.result).baseCommit }}
+          name: "base-coverage.info"
       - name: Fetch PR coverage
-        uses: actions/cache/restore@v4
+        uses: ./.github/actions/unzip-artifact
         with:
-          fail-on-cache-miss: true
-          path: "coverage.info"
-          key: coverage-${{ fromJSON(steps.info.outputs.result).commit }}
+          name: "coverage.info"
       - name: Generate Code Coverage report
         id: code-coverage
         uses: barecheck/code-coverage-action@v1
         with:
           barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
-          lcov-file: "coverage.info"
-          base-lcov-file: "base-coverage.info"
+          lcov-file: "${{ runner.temp }}/artifacts/coverage.info"
+          base-lcov-file: "${{ runner.temp }}/artifacts/base-coverage.info"
           minimum-ratio: 0 # Fails Github action once code coverage is decreasing
           send-summary-comment: true
           show-annotations: "warning" # Possible options warning|error
