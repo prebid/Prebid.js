@@ -37,7 +37,7 @@ runs:
     - name: Rename file
       shell: bash
       run: |
-        mv ${{ runner.temp }}/coverage.info ${{ inputs.lcov }}
+        mv "${{ runner.temp }}/coverage.info" "${{ inputs.lcov }}"
     - name: Save as artifact
       uses: actions/upload-artifact@v7
       with:
