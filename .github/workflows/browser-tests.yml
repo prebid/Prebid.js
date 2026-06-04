@@ -64,9 +64,9 @@ jobs:
               }
               return browsers;
             }).filter(browser => {
-             !${{inputs.coverage-only}} || browser.coverage
-            });            
-            const bstackBrowsers = Object.fromEntries(
+             return !${{inputs.coverage-only}} || browser.coverage
+            });
+            const bstackBrowsers = ${{inputs.coverage-only}} ? {} : Object.fromEntries(
               // exclude versions of browsers that we can test on GH actions
               Object.entries(require('./browsers.json'))
               .filter(([name, def]) => browsers.find(({bsName, version}) => bsName === def.browser && version === def.browser_version) == null)
@@ -81,7 +81,7 @@ jobs:
               bsBrowsers = 0;
             }
             const unitBrowsers = browsers.filter(browser => browser.bsName != null);
-            const e2eBrowsers = browsers.filter(browser => browser.wdioName != null);
+            const e2eBrowsers = ${{ inputs.coverage-only }} ? [] : browsers.filter(browser => browser.wdioName != null);
             console.log("Browsers to be tested directly on runners:", JSON.stringify({unitBrowsers, e2eBrowsers}, null, 2))
             await fs.writeFile('./browsers.json', updatedBrowsersJson);
             return {
@@ -99,6 +99,7 @@ jobs:
 
   test-build-logic:
     needs: build
+    if: ${{ !inputs.coverage-only }}
     name: "Test build logic"
     uses:
       ./.github/workflows/run-tests.yml
@@ -108,6 +109,7 @@ jobs:
 
   e2e-tests:
     needs: [setup, build]
+    if: ${{ !inputs.coverage-only }}
     name: "E2E (browser: ${{ matrix.browser.wdioName }})"
     strategy:
       fail-fast: false
