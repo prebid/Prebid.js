@@ -930,8 +930,7 @@ describe('r2b2 Analytics', function () {
     });
 
     it('bid viewable content', (done) => {
-      const dateStub = sandbox.stub(Date, 'now');
-      dateStub.returns(100);
+      clock.setSystemTime(100);
 
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
@@ -939,7 +938,7 @@ describe('r2b2 Analytics', function () {
         [AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED]
       ]);
 
-      dateStub.returns(150);
+      clock.setSystemTime(150);
 
       fireEvents([[BID_VIEWABLE, MOCK.BID_VIEWABLE]]);
 
@@ -960,7 +959,6 @@ describe('r2b2 Analytics', function () {
       }, 500);
 
       clock.tick(500);
-      dateStub.restore();
     });
 
     it('no auction data error', (done) => {

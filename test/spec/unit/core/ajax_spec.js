@@ -1,10 +1,18 @@
-import { ajaxBuilder, attachCallbacks, dep, fetch, ajax, fetcherFactory, toFetchRequest } from '../../../../src/ajax.js';
+import {
+  ajax,
+  ajaxBuilder,
+  attachCallbacks,
+  dep,
+  fetch,
+  fetcherFactory,
+  toFetchRequest
+} from '../../../../src/ajax.js';
 import { config } from 'src/config.js';
 import { server } from '../../../mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import { logError } from 'src/utils.js';
 import { registerActivityControl } from '../../../../src/activities/rules.js';
 import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from '../../../../src/activities/activities.js';
+import { defer } from 'src/utils/promise.js';
 
 const EXAMPLE_URL = 'https://www.example.com';
 
@@ -46,13 +54,13 @@ describe('ajax', () => {
           if (denyCreds) {
             return { allow: false };
           }
-        })
-        resetRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test', arqRule)
-      })
+        });
+        resetRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test', arqRule);
+      });
       afterEach(() => {
         resetRule();
         config.resetConfig();
-      })
+      });
       Object.entries({
         'URL': [EXAMPLE_URL, { credentials: 'include' }],
         'request object': [new Request(EXAMPLE_URL, { credentials: 'include' })],
@@ -70,9 +78,9 @@ describe('ajax', () => {
             componentName: 'test'
           }));
           expect(server.requests[0].fetch.request.credentials).to.eql('same-origin');
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('does not timeout after it completes', () => {
       const fetch = fetcherFactory(1000);
@@ -247,10 +255,10 @@ describe('ajax', () => {
               toFetchRequest(EXAMPLE_URL, null, opts);
               sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: undefined });
             });
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
   });
 
   describe('credentials', () => {
@@ -330,11 +338,79 @@ describe('ajax', () => {
               component: 'prebid.test'
             }));
             sinon.assert.calledOnce(arqRule);
-          })
+          });
         });
-      })
+      });
     });
   });
+
+  describe('keepalive', () => {
+    let sandbox, request;
+    before(() => {
+      server.restore();
+    })
+    after(() => {
+      server.enable();
+    })
+    beforeEach(() => {
+      request = defer();
+      sandbox = sinon.createSandbox();
+      sandbox.stub(dep, 'makeRequest').callsFake((r, o) => {
+        const req = new Request(r, o);
+        sandbox.spy(req, 'clone');
+        return req;
+      });
+      sandbox.stub(dep, 'fetch').callsFake(req => {
+        request.resolve(req);
+        return new Promise((resolve) => {});
+      });
+    });
+    afterEach(() => {
+      sandbox.restore();
+    })
+    Object.entries({
+      'small payload': {
+        body: 'x'.repeat(1024),
+        keepalive: true
+      },
+      'large payload': {
+        body: 'x'.repeat(65537),
+        keepalive: false
+      },
+    }).forEach(([t, { body, keepalive }]) => {
+      describe(`POST with ${t}`, () => {
+        Object.entries({
+          ajax() {
+            ajax(EXAMPLE_URL, () => {}, body, { method: 'POST', keepalive: true })
+          },
+          fetch() {
+            fetch(EXAMPLE_URL, { method: 'POST', body, keepalive: true })
+          }
+        }).forEach(([name, fn]) => {
+          describe(name, () => {
+            it(`should set keepalive = ${keepalive}`, () => {
+              fn();
+              return request.promise.then(req => {
+                expect(req.keepalive).to.eql(keepalive);
+              })
+            });
+            it('should not use the body', () => {
+              fn();
+              return request.promise.then(req => {
+                expect(req.bodyUsed).to.be.false;
+              })
+            })
+          })
+        })
+      })
+    });
+    it('should not try to get body size for requests that do not ask for keepalive', () => {
+      fetch(EXAMPLE_URL, { body: 'test', method: 'POST' });
+      return request.promise.then(req => {
+        sinon.assert.notCalled(req.clone);
+      })
+    })
+  })
 
   describe('attachCallbacks', () => {
     const sampleHeaders = new Headers({
@@ -394,7 +470,7 @@ describe('ajax', () => {
           done();
         }
       });
-    })
+    });
 
     Object.entries({
       '2xx response': {
@@ -459,11 +535,11 @@ describe('ajax', () => {
 
         afterEach(() => {
           sandbox.restore();
-        })
+        });
 
         function checkXHR(xhr) {
           utils.logError.resetHistory();
-          const serialized = JSON.parse(JSON.stringify(xhr))
+          const serialized = JSON.parse(JSON.stringify(xhr));
           // serialization of `responseXML` should not generate console messages
           sinon.assert.notCalled(utils.logError);
 
@@ -516,8 +592,8 @@ describe('ajax', () => {
               expect(payload).to.eql(body);
               checkXHR(xhr);
               done();
-            })
-          })
+            });
+          });
         }
       });
     });
@@ -549,4 +625,4 @@ describe('ajax', () => {
       });
     });
   });
-})
+});

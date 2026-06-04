@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import {
   getGPTSlotsForAdUnits,
   getHighestCpmBidsFromBidPool,
-  sortByDealAndPriceBucketOrCpm,
+  sortByDealAndPriceBucketOrDesirability,
   targeting as targetingInstance
   , getAdUnitBidLimitMap
 } from 'src/targeting.js';
@@ -1481,7 +1481,7 @@ describe('targeting tests', function () {
     });
   });
 
-  describe('sortByDealAndPriceBucketOrCpm', function() {
+  describe('sortByDealAndPriceBucketOrDesirability', function() {
     it('will properly sort bids when some bids have deals and some do not', function () {
       const bids = [{
         adserverTargeting: {
@@ -1517,7 +1517,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00',
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm());
+      bids.sort(sortByDealAndPriceBucketOrDesirability());
       expect(bids[0].adserverTargeting.hb_adid).to.equal('ghi');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('abc');
@@ -1552,7 +1552,7 @@ describe('targeting tests', function () {
           hb_deal: '9864'
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm());
+      bids.sort(sortByDealAndPriceBucketOrDesirability());
       expect(bids[0].adserverTargeting.hb_adid).to.equal('ghi');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('abc');
@@ -1591,7 +1591,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00'
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm());
+      bids.sort(sortByDealAndPriceBucketOrDesirability());
       expect(bids[0].adserverTargeting.hb_adid).to.equal('pqr');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');
@@ -1642,7 +1642,7 @@ describe('targeting tests', function () {
           hb_pb: '100.00',
         }
       }];
-      bids.sort(sortByDealAndPriceBucketOrCpm(true));
+      bids.sort(sortByDealAndPriceBucketOrDesirability(true));
       expect(bids[0].adserverTargeting.hb_adid).to.equal('jkl');
       expect(bids[1].adserverTargeting.hb_adid).to.equal('abc');
       expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');

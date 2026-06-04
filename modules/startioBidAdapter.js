@@ -127,7 +127,7 @@ export const spec = {
         url: ENDPOINT_URL,
         options: {
           contentType: 'text/plain',
-          withCredentials: false,
+          withCredentials: true,
           crossOrigin: true
         },
         data: data,

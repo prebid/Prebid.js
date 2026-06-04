@@ -19,6 +19,9 @@ const MODULE_NAME = 'acxiomRealId' as const;
 const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/v1/eid/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const dep = {
+  ajaxBuilder
+}
 
 export type AcxiomRealIdParams = {
   /** Partner ID issued by GrowthCode on behalf of Acxiom */
@@ -197,7 +200,7 @@ export const acxiomRealIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
 
     return {
       callback: (cb) => {
-        const ajax = ajaxBuilder();
+        const ajax = dep.ajaxBuilder();
         ajax(
           url,
           {
