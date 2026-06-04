@@ -10,7 +10,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./copper6sspBidAdapter.d.ts').Copper6BidRequestParams} Copper6BidRequestParams
+ * @typedef {import('./copper6sspBidAdapter.d.ts').Copper6SSPBidRequestParams} Copper6SSPBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'bidder';
