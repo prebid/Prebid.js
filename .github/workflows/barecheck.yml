@@ -16,18 +16,32 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: master
+      - name: Fetch PR number
+        id: fetchPrNo
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: prNo
+      - name: Read PR number
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
+        id: prNo
+        run: |
+          echo prNo=$(<${{ runner.temp }}/artifacts/prNo) >> $GITHUB_OUTPUT
       - name: Fetch base branch coverage
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
         uses: ./.github/actions/unzip-artifact
         with:
           name: "base-coverage.info"
       - name: Fetch PR coverage
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
         uses: ./.github/actions/unzip-artifact
         with:
           name: "coverage.info"
       - name: Generate Code Coverage report
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
         id: code-coverage
         uses: barecheck/code-coverage-action@v1
         with:
+          pull-number: ${{ steps.prNo.outputs.prNo }}
           barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
           lcov-file: "${{ runner.temp }}/artifacts/coverage.info"
           base-lcov-file: "${{ runner.temp }}/artifacts/base-coverage.info"

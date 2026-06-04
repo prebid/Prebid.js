@@ -66,10 +66,18 @@ jobs:
           echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
           echo base-branch="$BASE_BRANCH" >> $GITHUB_OUTPUT
           echo base-commit="$BASE_COMMIT" >> $GITHUB_OUTPUT
-
+      - name: Save PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo ${{ github.event.pull_request.number }} > ${{ runner.temp }}/prNo
+      - name: Upload PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: prNo
+          path: ${{ runner.temp }}/prNo
       - name: Install dependencies
         uses: ./.github/actions/npm-ci
-
       - name: 'Save working directory'
         uses: ./.github/actions/save
         with:
