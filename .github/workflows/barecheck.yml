@@ -1,4 +1,4 @@
-name: Post a comment
+name: Code coverage report
 on:
   workflow_run:
     workflows:
@@ -7,7 +7,6 @@ on:
       - completed
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
   barecheck:
