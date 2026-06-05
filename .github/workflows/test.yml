@@ -192,7 +192,7 @@ jobs:
       - name: Fetch base branch coverage
         uses: actions/download-artifact@v8
         with:
-          path: "base-coverage.info"
+          path: "."
           name: "base-coverage.info"
       - name: Generate coverage annotations
         uses: barecheck/code-coverage-action@v1
