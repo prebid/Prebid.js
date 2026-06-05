@@ -667,7 +667,7 @@ const createParamValidator = (bid) => (fieldPath, validateCb, errorCb, errorCbPa
     const hasValidMediaTypesParams = validateCb(mediaTypesParams);
 
     if (hasValidValueParams) return valueParams;
-    else if (hasValidMediaTypesParams) return hasValidMediaTypesParams;
+    else if (hasValidMediaTypesParams) return mediaTypesParams;
     else {
       if (!hasValidValueParams) errorCb(valueFieldPath, valueParams, errorCbParam);
       else if (!hasValidMediaTypesParams) errorCb(mediaFieldPath, mediaTypesParams, errorCbParam);
@@ -700,7 +700,7 @@ function validateVideoParams(bid) {
 
     validate('video.playerSize', val => isArrayOfNums(val, 2) ||
       (isArray(val) && val.every(v => isArrayOfNums(v, 2))),
-    paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
+      paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
 
     validate('video.mimes', val => isDefined(val), paramRequired);
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
