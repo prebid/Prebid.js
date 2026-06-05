@@ -1,6 +1,7 @@
 import { _each, deepAccess, deepSetValue, isEmpty, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -241,6 +242,10 @@ export const spec = {
 
       const pos = deepAccess(request, 'mediaTypes.banner.pos') ?? deepAccess(request, 'ortb2Imp.ext.data.pos');
       if (pos != null) data.pos = pos;
+
+      // Forward the device autoplay capability as a raw signal so the bidder can
+      // avoid autoplay-dependent (e.g. video) inventory when autoplay is blocked.
+      data.autoplay = isAutoplayEnabled() ? 1 : 0;
 
       const ortb2Device = bidderRequest.ortb2?.device;
       if (ortb2Device) {
