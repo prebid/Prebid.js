@@ -333,6 +333,36 @@ describe('vdoaiBidAdapter', function () {
       validateAdUnit(serverRequests[0].data.adUnits[1], bid3)
       // validateAdUnit(serverRequests[1].data.adUnits[1], bid4)
     })
+    it('normalizes single video playerSize into one size', function () {
+      const videoBid = {
+        ...bid3,
+        sizes: undefined,
+        mediaTypes: {
+          video: {
+            playerSize: [800, 600]
+          }
+        }
+      };
+      const serverRequests = spec.buildRequests([videoBid], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].sizes).to.deep.equal([
+        { width: 800, height: 600 }
+      ]);
+    })
+    it('normalizes video playerSize array of arrays', function () {
+      const videoBid = {
+        ...bid3,
+        sizes: undefined,
+        mediaTypes: {
+          video: {
+            playerSize: [[800, 600]]
+          }
+        }
+      };
+      const serverRequests = spec.buildRequests([videoBid], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].sizes).to.deep.equal([
+        { width: 800, height: 600 }
+      ]);
+    })
     it('Returns empty data if no valid requests are passed', function () {
       const serverRequests = spec.buildRequests([])
       expect(serverRequests).to.be.an('array').that.is.empty

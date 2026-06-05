@@ -1,4 +1,4 @@
-import { logMessage, groupBy, flatten, uniques, isFn, isPlainObject } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques, isFn, isPlainObject, sizesToSizeTuples } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
@@ -181,7 +181,7 @@ function vdoBuildPlacement(vdoBidRequest) {
         break;
     }
   }
-  sizes = (sizes || []).concat(vdoBidRequest.sizes || []);
+  sizes = sizesToSizeTuples(sizes).concat(sizesToSizeTuples(vdoBidRequest.sizes));
   sizes = sizes.filter(uniques);
   const bidfloor = getBidFloor(vdoBidRequest);
   const placement = {
