@@ -177,7 +177,7 @@ jobs:
           lcov: base-coverage.info
           cache-key: coverage-${{needs.checkout.outputs.base-commit}}
   coverage:
-    name: Combine coverage results
+    name: Coverage
     needs: [checkout, test]
     runs-on: ubuntu-latest
     steps:
@@ -197,7 +197,7 @@ jobs:
         uses: barecheck/code-coverage-action@v1
         with:
           github-token: ${{ github.token }}
-          lcov-file: "$coverage.info"
+          lcov-file: "coverage.info"
           base-lcov-file: "base-coverage.info"
           minimum-ratio: 0
           send-summary-comment: false
