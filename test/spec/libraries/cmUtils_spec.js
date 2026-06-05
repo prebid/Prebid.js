@@ -39,9 +39,8 @@ describe('consent management utils', () => {
       }
     }).forEach(([errorDesc, { error, check: checkLogs }]) => {
       describe(`when loadConsentData rejects with ${errorDesc}`, () => {
-        beforeEach(() => {
+        beforeEach(async () => {
           loadResult = Promise.reject(error);
-          loadResult.catch(() => null);
         });
         afterEach(() => {
           checkLogs(utils.logError);

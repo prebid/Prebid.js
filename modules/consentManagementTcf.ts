@@ -113,7 +113,6 @@ function lookupIabConsent(setProvisionalConsent) {
 
     if (!cmp) {
       reject(new Error('TCF2 CMP not found.'))
-      return;
     }
     if ((cmp as any).isDirect) {
       logInfo('Detected CMP API is directly accessible, calling it now...');
@@ -130,7 +129,7 @@ function lookupIabConsent(setProvisionalConsent) {
     cmp({
       command: 'addEventListener',
       callback: cmpResponseCallback
-    }).catch(reject);
+    })
   })
 }
 

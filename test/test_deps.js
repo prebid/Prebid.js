@@ -22,12 +22,7 @@ window.addEventListener('error', function (ev) {
 
 window.addEventListener('unhandledrejection', function (ev) {
   // this message is used for counting intentional failures created in the tests
-  if (ev.reason === 'pending failure' || ev.reason == null) return;
-  // consentManagement tests intentionally exercise missing and rejecting CMP paths
-  if ([
-    'TCF2 CMP not found.',
-    'CMP unable to register callback function.'
-  ].some(msg => ev.reason?.message?.startsWith(msg))) return;
+  if (ev.reason === 'pending failure') return;
   // eslint-disable-next-line no-console
   console.error('Unhandled rejection:', ev.reason);
 })
