@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 
 concurrency:
   group: test-${{ github.head_ref || github.ref }}
