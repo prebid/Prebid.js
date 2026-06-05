@@ -58,7 +58,7 @@ const DEBUG_QUERY_PARAM_MAP = {
 };
 const VIDEO_MAPPING = {
   playback_method: {
-    'unknown': 0,
+    'unknown': 1,
     'auto_play_sound_on': 1,
     'auto_play_sound_off': 2,
     'click_to_play': 3,
