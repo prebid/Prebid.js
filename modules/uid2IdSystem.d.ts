@@ -38,12 +38,6 @@ export type Uid2IdSystemParams = {
    */
   uid2ServerCookie?: string;
   /**
-   * Used only if the page has a separate mechanism for storing the UID 2.0 ID.
-   * The value is an object containing the values to be sent to the adapters.
-   * In this scenario, no URL is called and nothing is added to local storage, and the tokens are not automatically refreshed.
-   */
-  value?: object;
-  /**
    * Specify whether to use cookie or localStorage for module-internal storage.
    * It is recommended to not provide this and allow the module to use the default.
    */
