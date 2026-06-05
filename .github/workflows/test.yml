@@ -189,3 +189,17 @@ jobs:
           source-artifact: ${{ needs.test.outputs.coverage }}
           lcov: coverage.info
           cache-key: coverage-${{needs.checkout.outputs.commit}}
+      - name: Fetch base branch coverage
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: "base-coverage.info"
+      - name: Generate coverage annotations
+        uses: barecheck/code-coverage-action@v1
+        with:
+          github-token: ${{ github.token }}
+          lcov-file: "$coverage.info"
+          base-lcov-file: "base-coverage.info"
+          minimum-ratio: 0
+          send-summary-comment: false
+          show-annotations: "warning"
+
