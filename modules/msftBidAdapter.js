@@ -153,8 +153,9 @@ import {
       }
 
       if (bidderParams) {
-        if (bidderParams.placement_id) {
-          extANData.placement_id = bidderParams.placement_id;
+        const placementId = bidderParams.placement_id || bidderParams.placementId;
+        if (placementId) {
+          extANData.placement_id = parseInt(placementId, 10);
         } else if (bidderParams.inv_code) {
           deepSetValue(imp, 'tagid', bidderParams.inv_code);
         }
@@ -319,14 +320,14 @@ import {
   export const spec = {
     code: BIDDER_CODE,
     gvlid: GVLID,
-    aliases: [], // TODO fill in after full transition or as seperately requested
+    aliases: ['gourmetads'], // Inherits GVLID 32 from MSFT natively
     supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
     isBidRequestValid: (bid) => {
       const params = bid.params;
       return !!(
-        (typeof params.placement_id === 'number') ||
-        (typeof params.member === 'number' && isNotEmptyString(params?.inv_code))
+        (params.placement_id || params.placementId) ||
+        (params.member && (isNotEmptyString(params?.inv_code) || isNotEmptyString(params?.invCode)))
       );
     },
 
