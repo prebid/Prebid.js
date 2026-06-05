@@ -190,8 +190,9 @@ jobs:
           lcov: coverage.info
           cache-key: coverage-${{needs.checkout.outputs.commit}}
       - name: Fetch base branch coverage
-        uses: ./.github/actions/unzip-artifact
+        uses: actions/download-artifact@v8
         with:
+          path: "base-coverage.info"
           name: "base-coverage.info"
       - name: Generate coverage annotations
         uses: barecheck/code-coverage-action@v1
