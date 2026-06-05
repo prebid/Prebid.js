@@ -178,7 +178,8 @@ jobs:
           cache-key: coverage-${{needs.checkout.outputs.base-commit}}
   coverage:
     name: Coverage
-    needs: [checkout, test]
+    needs: [checkout, test, base-coverage-combine]
+    if: always() && needs.test.result == 'success' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
