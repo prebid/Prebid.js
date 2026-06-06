@@ -55,6 +55,7 @@ function generateMetadataModules() {
   function cleanMetadata(file) {
     const data = JSON.parse(file.contents.toString())
     delete data.NOTICE;
+    delete data.purposes; // directly included in adapter source
     data.components.forEach(component => {
       delete component.gvlid;
       if (component.aliasOf == null) {
