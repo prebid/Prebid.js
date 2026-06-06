@@ -194,7 +194,6 @@ describe('tercept analytics adapter', function () {
       clock.tick(1);
       expect(server.requests.length).to.equal(1);
     });
-
   });
 
   // ─── Payload structure ────────────────────────────────────────────────────
