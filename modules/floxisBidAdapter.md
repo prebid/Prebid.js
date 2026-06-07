@@ -3,7 +3,7 @@
 ```
 Module Name: Floxis Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: admin@floxis.tech
+Maintainer: prebid@floxis.tech
 ```
 
 # Description
@@ -105,5 +105,8 @@ pbjs.setConfig({
 });
 ```
 
+## Error & Timeout Telemetry
+The adapter reports client-observed auction timeouts and bidder transport errors to Floxis as cookieless operational telemetry. Each beacon is a `keepalive` fetch sent with credentials omitted (no cookies) and scheduled off the auction's critical path, so it carries only the seat, region, event type, and relevant operational dimensions (HTTP status, timeout flag, duration, auction ID, publisher domain) — no user or device identifier is included. Consent signals are forwarded as opaque pass-through parameters where available. Each beacon fires at most once per distinct seat+region pair per event, and telemetry failures are silently suppressed so they never affect the auction lifecycle.
+
 ## Testing
-Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, FPD/consent passthrough), response interpretation and meta mapping, user syncs, and billing notifications.
+Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, FPD/consent passthrough), response interpretation and meta mapping, user syncs, billing notifications, and error/timeout telemetry callbacks.
