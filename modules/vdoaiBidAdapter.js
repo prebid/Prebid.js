@@ -7,6 +7,8 @@ import { ajax } from '../src/ajax.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('./vdoaiBidAdapter.d.ts').VdoaiBidRequestParams} VdoaiBidRequestParams
+ * @typedef {BidRequest & { params: VdoaiBidRequestParams }} VdoaiBidRequest
  */
 
 const BIDDER_CODE = 'vdoai';
@@ -30,6 +32,10 @@ function vdoIsBidResponseValid(vdoresponse) {
   return false;
 }
 
+/**
+ * @param {VdoaiBidRequest} bid The bid request to get floor data from.
+ * @return {?number} The bid floor.
+ */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor || null;
@@ -53,7 +59,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} vdobid The bid params to validate.
+   * @param {VdoaiBidRequest} vdobid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (vdobid) => {
@@ -165,6 +171,10 @@ function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
   }
 }
 
+/**
+ * @param {VdoaiBidRequest} vdoBidRequest The bid request to convert into placement data.
+ * @return {object} The placement data.
+ */
 function vdoBuildPlacement(vdoBidRequest) {
   let sizes;
   if (vdoBidRequest.mediaTypes) {
