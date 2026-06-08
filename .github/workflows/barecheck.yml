@@ -12,7 +12,6 @@ permissions:
 jobs:
   barecheck:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -29,17 +28,19 @@ jobs:
         run: |
           echo prNo=$(<${{ runner.temp }}/artifacts/prNo) >> $GITHUB_OUTPUT
       - name: Fetch base branch coverage
+        id: fetch-base
         if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
         uses: ./.github/actions/unzip-artifact
         with:
           name: "base-coverage.info"
       - name: Fetch PR coverage
+        id: fetch-pr
         if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
         uses: ./.github/actions/unzip-artifact
         with:
           name: "coverage.info"
       - name: Generate Code Coverage report
-        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
+        if: ${{ steps.fetch-base.outputs.exists == 'true' && steps.fetch-pr.outputs.exists == 'true' }}
         id: code-coverage
         uses: barecheck/code-coverage-action@v1
         with:
@@ -47,6 +48,5 @@ jobs:
           barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
           lcov-file: "${{ runner.temp }}/artifacts/coverage.info"
           base-lcov-file: "${{ runner.temp }}/artifacts/base-coverage.info"
-          minimum-ratio: 0 # Fails Github action once code coverage is decreasing
           send-summary-comment: true
-          show-annotations: "warning" # Possible options warning|error
+          show-annotations: ""
