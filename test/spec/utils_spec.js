@@ -1530,6 +1530,46 @@ describe('polite sync helpers', () => {
     });
   });
 
+  it('omits credentials when requested for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'omit',
+      keepalive: true
+    });
+  });
+
+  it('skips the image fallback for an omit beacon when the keepalive fetch fails', async () => {
+    window.fetch = sinon.stub().callsFake(() => Promise.reject(new Error('network')));
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(false); // no <img> => the cookieless guarantee holds even on fetch failure
+  });
+
+  it('falls back to an image pixel for the default include beacon when the keepalive fetch fails', async () => {
+    window.fetch = sinon.stub().callsFake(() => Promise.reject(new Error('network')));
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(true); // default behavior preserved byte-for-byte
+  });
+
+  it('skips the image fallback for an omit beacon when Request is unavailable', () => {
+    window.Request = undefined;
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(false);
+  });
+
   it('does not attempt fetch when Request is unavailable', () => {
     window.Request = undefined;
     utils.politeTriggerPixel('http://example.com/pixel');
