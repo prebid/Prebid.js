@@ -12,7 +12,7 @@ import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.js'
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.js';
 import { isCHSupported } from '../libraries/intentIqUtils/chUtils.js';
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.js';
-import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
+import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.js';
 import {
   defineStorageType,
   readData,
@@ -21,17 +21,11 @@ import {
   tryParse
 } from '../libraries/intentIqUtils/storageUtils.js';
 import {
-  CH_KEYS,
   CLIENT_HINTS_KEY,
-  EMPTY,
   FIRST_PARTY_KEY,
   GVLID,
-  HOURS_72,
-  INVALID_ID,
-  META_DATA_CONSTANT,
-  PREBID,
-  SYNC_REFRESH_MILL,
-  VERSION
+  VERSION, INVALID_ID, SYNC_REFRESH_MILL, META_DATA_CONSTANT, PREBID,
+  HOURS_72, CH_KEYS, DEFAULT_PERCENTAGE, WITH_IIQ
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 import { SYNC_KEY } from '../libraries/intentIqUtils/getSyncKey.js';
 import { getIiqServerAddress, iiqPixelServerAddress } from '../libraries/intentIqUtils/intentIqConfig.js';
@@ -61,7 +55,7 @@ const encoderCH = {
 };
 let sourceMetaData;
 let sourceMetaDataExternal;
-let globalName = ''
+let globalName = '';
 
 let FIRST_PARTY_KEY_FINAL = FIRST_PARTY_KEY;
 let PARTNER_DATA_KEY;
@@ -72,7 +66,13 @@ let noDataCount = 0;
 export let firstPartyData;
 let partnerData;
 let clientHints;
-let actualABGroup
+let actualABGroup;
+
+function getEffectiveAbPercentage(abPercentage) {
+  const n = Number(abPercentage);
+  if (!Number.isFinite(n)) return DEFAULT_PERCENTAGE;
+  return Math.max(0, Math.min(100, n));
+}
 
 /**
  * Generate standard UUID string
@@ -118,11 +118,15 @@ function appendPartnersFirstParty(url, configParams) {
 }
 
 function appendCMPData(url, cmpData) {
-  url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
-  url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
-  url += cmpData.gdprApplies
-    ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
-    : '&gdpr=0';
+  url += isValidValue(cmpData.uspString) ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
+  url += isValidValue(cmpData.gppString) ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
+  if (cmpData.gdprApplies) {
+    url += isValidValue(cmpData.gdprString) ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
+    url += '&gdpr=1';
+    url += isValidValue(cmpData.tcfApiVersion) ? '&tcfv=' + encodeURIComponent(cmpData.tcfApiVersion) : '';
+  } else {
+    url += '&gdpr=0';
+  }
   return url
 }
 
@@ -185,6 +189,11 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   url = handleAdditionalParams(browser, url, 0, configParams.additionalParams);
   url = appendSPData(url, partnerData);
   url += '&source=' + PREBID;
+  url += actualABGroup ? '&testGroup=' + encodeURIComponent(actualABGroup) : '';
+  if (isNumber(configParams.abPercentage)) {
+    url += '&testPercentage=' + encodeURIComponent(getEffectiveAbPercentage(configParams.abPercentage));
+  }
+  url += '&isInTestGroup=' + (actualABGroup === WITH_IIQ);
   return url;
 }
 
@@ -250,9 +259,9 @@ export function handleClientHints(clientHints) {
 }
 
 export function isCMPStringTheSame(fpData, cmpData) {
-  const firstPartyDataCPString = `${fpData.gdprString}${fpData.gppString}${fpData.uspString}`;
-  const cmpDataString = `${cmpData.gdprString}${cmpData.gppString}${cmpData.uspString}`;
-  return firstPartyDataCPString === cmpDataString;
+  return ['gdprString', 'gppString', 'uspString'].every(field =>
+    areCmpValuesEqual(fpData[field], cmpData[field])
+  );
 }
 
 function updateCountersAndStore(runtimeEids, allowedStorage, partnerData) {
@@ -348,14 +357,13 @@ export const intentIqIdSubmodule = {
     const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage));
     actualABGroup = defineABTestingGroup(configParams, partnerData?.terminationCause);
+    if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const isBlacklisted = browserBlackList?.includes(currentBrowserLowerCase);
     let newUser = false;
 
     setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
-
-    if (groupChanged) groupChanged(actualABGroup, partnerData?.terminationCause);
 
     callbackTimeoutID = setTimeout(() => {
       firePartnerCallback();
@@ -364,14 +372,15 @@ export const intentIqIdSubmodule = {
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
-      firstPartyData = {
+      const newObj = {
         pcid: firstPartyId,
         pcidDate: Date.now(),
-        uspString: EMPTY,
-        gppString: EMPTY,
-        gdprString: EMPTY,
         date: Date.now()
       };
+      // Preserve existing FPD (gdprString, isOptedOut, sCal, ...) when present —
+      // when opted out, pcid/pcidDate are not persisted to device, so the runtime
+      // value is regenerated each session without overwriting persisted fields.
+      firstPartyData = firstPartyData ? { ...firstPartyData, ...newObj } : newObj;
       newUser = true;
       storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
     } else if (!firstPartyData.pcidDate) {
@@ -445,11 +454,15 @@ export const intentIqIdSubmodule = {
         window[globalName].firstPartyData = firstPartyData
         window[globalName].clientHints = clientHints
         window[globalName].actualABGroup = actualABGroup
+        window[globalName].abPercentage = getEffectiveAbPercentage(configParams.abPercentage)
+        window[globalName].userProvidedAbPercentage = configParams.abPercentage
       }
     }
 
-    let hasPartnerData = !!Object.keys(partnerData).length;
-    if (!isCMPStringTheSame(firstPartyData, cmpData) ||
+    const pdLength = Object.keys(partnerData).length
+    const hasPartnerData = pdLength && pdLength > 1; // in OptOut case we keep one property inside
+
+    if ((!isCMPStringTheSame(firstPartyData, cmpData)) ||
       !firstPartyData.sCal ||
       (hasPartnerData && (!partnerData.cttl || !partnerData.date || Date.now() - partnerData.date > partnerData.cttl))) {
       firstPartyData.uspString = cmpData.uspString;
@@ -518,6 +531,9 @@ export const intentIqIdSubmodule = {
     url += VERSION ? '&jsver=' + VERSION : '';
     url += actualABGroup ? '&testGroup=' + encodeURIComponent(actualABGroup) : '';
     url = addMetaData(url, sourceMetaDataExternal || sourceMetaData);
+    if (isNumber(configParams.abPercentage)) {
+      url += '&testPercentage=' + encodeURIComponent(getEffectiveAbPercentage(configParams.abPercentage));
+    }
     url = handleAdditionalParams(currentBrowserLowerCase, url, 1, additionalParams);
     url = appendSPData(url, partnerData)
     url += '&source=' + PREBID;
@@ -569,14 +585,12 @@ export const intentIqIdSubmodule = {
               if (respJson.isOptedOut === true) {
                 respJson.data = partnerData.data = runtimeEids = { eids: [] };
 
-                const keysToRemove = [
-                  PARTNER_DATA_KEY,
-                  CLIENT_HINTS_KEY
-                ];
-
-                keysToRemove.forEach(key => removeDataByKey(key, allowedStorage));
+                // Remove client hints entirely; partner data is rewritten below with
+                // only terminationCause persisted (handled by storeData when opted out).
+                removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
 
                 storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+                storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
                 firePartnerCallback();
                 callback(runtimeEids);
                 return

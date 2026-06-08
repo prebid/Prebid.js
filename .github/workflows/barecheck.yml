@@ -1,0 +1,52 @@
+name: Code coverage report
+on:
+  workflow_run:
+    workflows:
+      - Run tests
+    types:
+      - completed
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  barecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: master
+      - name: Fetch PR number
+        id: fetchPrNo
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: prNo
+      - name: Read PR number
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
+        id: prNo
+        run: |
+          echo prNo=$(<${{ runner.temp }}/artifacts/prNo) >> $GITHUB_OUTPUT
+      - name: Fetch base branch coverage
+        id: fetch-base
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: "base-coverage.info"
+      - name: Fetch PR coverage
+        id: fetch-pr
+        if: ${{ steps.fetchPrNo.outputs.exists == 'true' }}
+        uses: ./.github/actions/unzip-artifact
+        with:
+          name: "coverage.info"
+      - name: Generate Code Coverage report
+        if: ${{ steps.fetch-base.outputs.exists == 'true' && steps.fetch-pr.outputs.exists == 'true' }}
+        id: code-coverage
+        uses: barecheck/code-coverage-action@v1
+        with:
+          pull-number: ${{ steps.prNo.outputs.prNo }}
+          barecheck-github-app-token: ${{ secrets.BARECHECK_GITHUB_APP_TOKEN }}
+          lcov-file: "${{ runner.temp }}/artifacts/coverage.info"
+          base-lcov-file: "${{ runner.temp }}/artifacts/base-coverage.info"
+          send-summary-comment: true
+          show-annotations: ""

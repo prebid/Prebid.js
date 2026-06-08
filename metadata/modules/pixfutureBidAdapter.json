@@ -6,6 +6,22 @@
       "disclosures": []
     }
   },
+  "purposes": {
+    "839": {
+      "purposes": [
+        1,
+        2,
+        7,
+        10
+      ],
+      "legIntPurposes": [],
+      "flexiblePurposes": [],
+      "specialFeatures": [
+        1,
+        2
+      ]
+    }
+  },
   "components": [
     {
       "componentType": "bidder",
