@@ -25,8 +25,7 @@ var adUnits = [
                     pId: '59ac17c192832d0016683fe3',
                     bidFloor: 0.0001,
                     ext: {
-                        param1: 'loremipsum',
-                        param2: 'dolorsitamet'
+                        // custom params that were recomended to add by a partner
                     }
                 }
             }
