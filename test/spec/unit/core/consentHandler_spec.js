@@ -20,6 +20,7 @@ describe('Consent data handler', () => {
 
   it('should reject promise on reject', async () => {
     const err = new Error();
+    handler.promise.catch(() => null);
     handler.error(err);
     expect(handler.getConsentData()).to.equal(null);
     expect(handler.ready).to.be.true;
