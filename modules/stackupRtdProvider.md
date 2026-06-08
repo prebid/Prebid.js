@@ -50,7 +50,9 @@ pbjs.setConfig({
           articleId: "", // required when articleIdMode is 'explicit'
           apiUrl: "https://api.stackup-ai.com/v1/enrich-ortb-rtd", // optional — override API endpoint
           cache: {
+            enabled: true, // optional — disable all cache read/write when false (default: true)
             ttlSeconds: 3600, // optional — cache TTL in seconds (default: 3600)
+            storage: "session", // optional — 'session' (default) or 'memory'
           },
         },
       },
@@ -71,7 +73,9 @@ pbjs.setConfig({
 | `params.articleIdMode`    |  optional   | String  | How the article ID is determined. `'path'` derives it from the page URL path; `'explicit'` uses `params.articleId` directly |                     `'path'`                      |
 | `params.articleId`        | optional\*  | String  | Article identifier — required when `articleIdMode` is `'explicit'`. Max 512 characters                                      |                         —                         |
 | `params.apiUrl`           |  optional   | String  | Override the Stack Up enrichment endpoint                                                                                   | `'https://api.stackup-ai.com/v1/enrich-ortb-rtd'` |
+| `params.cache.enabled`    |  optional   | Boolean | Enable/disable cache usage entirely                                                                                         |                      `true`                       |
 | `params.cache.ttlSeconds` |  optional   | Integer | How long a cached result is considered fresh (sessionStorage TTL)                                                           |                      `3600`                       |
+| `params.cache.storage`    |  optional   | String  | Cache backend: `'session'` for browser sessionStorage or `'memory'` for in-process cache                                    |                    `'session'`                    |
 | `params.debug`            |  optional   | Boolean | Enable verbose `[stackupRtd]` console logging                                                                               |                      `false`                      |
 | `params.debugDomain`      |  optional   | String  | Override the domain sent to the API when `debug: true`                                                                      |                    page domain                    |
 
@@ -101,15 +105,17 @@ Pass a stable, opaque article identifier directly in `params.articleId`. Use thi
 
 ## Caching
 
-On the first visit to a page the module fetches from the API and writes the result to `sessionStorage` under the key:
+When `params.cache.enabled` is `true` (default), the module checks cache before making a network call.
+With `params.cache.storage: 'session'`, it writes to `sessionStorage` under the key:
 
 ```text
 stackup:enrich:v1:path_<hash>
 ```
 
-On subsequent page views within the same session the cache is read instead of calling the API, keeping the enrichment latency at ~0 ms. Cache entries expire after `params.cache.ttlSeconds` (default 1 hour).
+With `params.cache.storage: 'memory'`, entries are kept in runtime memory only and are cleared on full page reload.
+Cache entries expire after `params.cache.ttlSeconds` (default 1 hour). Setting `params.cache.enabled: false` disables both reads and writes.
 
-The hash is derived from the normalised article path, so AMP and canonical URLs for the same article share a cache entry.
+The hash is derived from article context (articleId plus publisher/request context), preventing cross-publisher/context cache reuse in a shared browser session.
 
 ## ortb2 Output Shape
 
