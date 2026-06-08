@@ -11,7 +11,7 @@ import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid/';
-const VERSION = '1.7';
+const VERSION = '1.8';
 const NET_REVENUE = true;
 const TTL = 300;
 const DEFAULT_CURRENCY = 'JPY';
@@ -131,6 +131,8 @@ export const spec = {
       const data = {};
 
       data.page = page;
+      data.adapterVersion = VERSION;
+      if (wrapperName) data.wrapperName = wrapperName;
 
       const ortb2Site = bidderRequest.ortb2?.site;
       if (ortb2Site) {
@@ -285,9 +287,7 @@ export const spec = {
         method: 'POST',
         url: END_POINT + '?' + searchParams.toString(),
         options: {
-          contentType: 'application/json',
           withCredentials: true,
-          customHeaders,
         },
         data: data
       });
