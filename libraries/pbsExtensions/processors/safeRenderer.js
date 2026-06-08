@@ -9,9 +9,10 @@ export function setRequestExtPrebidSafeRenderer(ortbRequest, bidderRequest) {
 }
 
 export function setBidResponseSafeRenderer(bidResponse, bid) {
-  if (bid.ext.prebid.meta.rendererUrl) {
+  const { rendererUrl } = bid.ext?.prebid?.meta || {};
+  if (rendererUrl) {
     bidResponse.safeRenderer = {
-      url: bid.ext.prebid.meta.rendererUrl,
+      url: rendererUrl,
     }
   }
 }
