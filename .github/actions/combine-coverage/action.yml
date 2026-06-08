@@ -1,0 +1,47 @@
+name: Combine coverage
+description: Combine and cache coverage results
+inputs:
+  cache-key:
+    description: cache key to use
+  lcov:
+    description: output LCOV file name
+  source-artifact:
+    description: Source code artifact name
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore from cache
+      id: restore
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ runner.temp }}/coverage.info
+        key: ${{ inputs.cache-key }}
+    - name: Restore source
+      if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+      uses: ./.github/actions/load
+      with:
+        name: ${{ inputs.source-artifact }}
+    - name: Combine coverage results
+      if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install lcov -y
+        find build/coverage/chunks  -name 'lcov.info' -printf ' -a %p' | xargs lcov -o ${{ runner.temp }}/coverage.info
+    - name: Save to cache
+      if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ runner.temp }}/coverage.info
+        key: ${{ inputs.cache-key }}
+    - name: Rename file
+      shell: bash
+      run: |
+        mv "${{ runner.temp }}/coverage.info" "${{ inputs.lcov }}"
+    - name: Save as artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.lcov }}
+        path: ${{ inputs.lcov }}
+
+

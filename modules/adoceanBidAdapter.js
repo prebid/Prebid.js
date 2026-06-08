@@ -1,4 +1,4 @@
-import { _each, isStr, isArray, parseSizesInput } from '../src/utils.js';
+import { _each, isStr, isArray, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -8,14 +8,18 @@ const URL_SAFE_FIELDS = {
   slaves: true
 };
 
-function buildEndpointUrl(emitter, payloadMap) {
+function buildEndpointUrl(emitter, payloadMap, emitterRequestParams) {
   const payload = [];
   _each(payloadMap, function(v, k) {
     payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
-  return 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
+  let request = 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
+  if (emitterRequestParams.length) {
+    request += '&' + emitterRequestParams.join('&');
+  }
+  return request;
 }
 
 function buildRequest(bid, gdprConsent) {
@@ -33,6 +37,13 @@ function buildRequest(bid, gdprConsent) {
 
   if (bid.userId && bid.userId.gemiusId) {
     payload.aouserid = bid.userId.gemiusId;
+  }
+
+  const emitterRequestParams = [];
+  if (bid.params.emitterRequestParams) {
+    _each(bid.params.emitterRequestParams, function(v, k) {
+      emitterRequestParams.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    });
   }
 
   const bidIdMap = {};
@@ -60,7 +71,7 @@ function buildRequest(bid, gdprConsent) {
 
   return {
     method: 'GET',
-    url: buildEndpointUrl(emitter, payload),
+    url: buildEndpointUrl(emitter, payload, emitterRequestParams),
     data: '',
     bidIdMap: bidIdMap
   };
@@ -107,6 +118,10 @@ export const spec = {
   isBidRequestValid: function(bid) {
     const requiredParams = ['slaveId', 'masterId', 'emitter'];
     if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
+      return false;
+    }
+
+    if (bid.params.emitterRequestParams && !isPlainObject(bid.params.emitterRequestParams)) {
       return false;
     }
 
