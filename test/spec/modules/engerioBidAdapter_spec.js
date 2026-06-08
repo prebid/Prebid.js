@@ -25,6 +25,17 @@ describe('engerioBidAdapter', () => {
     },
   };
 
+  const fallbackBid = {
+    bidder: 'engerio',
+    bidId: 'bid-003',
+    adUnitCode: 'homepage-sidebar',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      },
+    },
+  };
+
   const validBidRequest = {
     method: 'POST',
     url: ENDPOINT_URL,
@@ -74,19 +85,18 @@ describe('engerioBidAdapter', () => {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('returns false when params.adUnitCode is missing', () => {
-      const bid = { ...validBid, params: {} };
+    it('returns true when params.adUnitCode is missing but adUnitCode is present', () => {
+      expect(spec.isBidRequestValid(fallbackBid)).to.be.true;
+    });
+
+    it('returns false when params.adUnitCode and adUnitCode are both missing', () => {
+      const bid = { bidder: 'engerio', bidId: 'bid-002' };
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('returns false when params is missing entirely', () => {
-      const bid = { bidder: 'engerio', bidId: 'bid-002', adUnitCode: 'div-x' };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-
-    it('returns false when params.adUnitCode is an empty string', () => {
-      const bid = { ...validBid, params: { adUnitCode: '' } };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+    it('uses adUnitCode as a fallback when params.adUnitCode is an empty string', () => {
+      const bid = { ...fallbackBid, params: { adUnitCode: '' } };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
   });
 
@@ -99,8 +109,28 @@ describe('engerioBidAdapter', () => {
         domain: 'example.com',
       },
       ortb2: {
+        regs: {
+          ext: {
+            gdpr: 1,
+          },
+        },
+        user: {
+          ext: {
+            consent: 'consent-string',
+          },
+        },
+        site: {
+          page: 'https://stale.example.com/page',
+          domain: 'stale.example.com',
+          ext: {
+            data: {
+              section: 'sports',
+            },
+          },
+        },
         device: {
           ua: 'Mozilla/5.0 (normalized by Prebid)',
+          lmt: 1,
         },
       },
     };
@@ -123,6 +153,12 @@ describe('engerioBidAdapter', () => {
 
     it('populates imp[].ext.adUnitCode from params.adUnitCode', () => {
       const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp[0].ext.adUnitCode).to.equal('homepage-sidebar');
+    });
+
+    it('falls back to bid.adUnitCode when params.adUnitCode is absent', () => {
+      const request = spec.buildRequests([fallbackBid], bidderRequest);
       const body = JSON.parse(request.data);
       expect(body.imp[0].ext.adUnitCode).to.equal('homepage-sidebar');
     });
@@ -156,6 +192,17 @@ describe('engerioBidAdapter', () => {
       expect(body.site.domain).to.equal('example.com');
     });
 
+    it('preserves consent and other ortb2 fields while overriding site.page/site.domain', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.regs.ext.gdpr).to.equal(1);
+      expect(body.user.ext.consent).to.equal('consent-string');
+      expect(body.site.ext.data.section).to.equal('sports');
+      expect(body.device.lmt).to.equal(1);
+      expect(body.site.page).to.equal('https://example.com/article');
+      expect(body.site.domain).to.equal('example.com');
+    });
+
     it('populates device.ua from normalized bidderRequest.ortb2.device.ua', () => {
       const request = spec.buildRequests([validBid], bidderRequest);
       const body = JSON.parse(request.data);
@@ -177,8 +224,7 @@ describe('engerioBidAdapter', () => {
     it('handles missing refererInfo gracefully', () => {
       const request = spec.buildRequests([validBid], {});
       const body = JSON.parse(request.data);
-      expect(body.site.page).to.be.undefined;
-      expect(body.site.domain).to.be.undefined;
+      expect(body.site).to.be.undefined;
       expect(body.device).to.be.undefined;
     });
   });
