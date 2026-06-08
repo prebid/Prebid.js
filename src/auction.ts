@@ -39,6 +39,7 @@ import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
 import { wrapInBids } from "./utils/wrapsInBids.ts";
+import { adjustDesirability } from './utils/desirability.ts';
 
 const { syncUsers } = userSync;
 
@@ -1053,11 +1054,12 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
-      const urlInfo = parseUrl(config.getConfig('cache.url'));
-
       if (typeof adserverTargeting.find(targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return (bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname) as string;
+          if (bidResponse.cacheUrl) {
+            return parseUrl(bidResponse.cacheUrl).hostname
+          }
+          return bidResponse.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST];
         }));
       }
     }
@@ -1126,11 +1128,16 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  const bidPriceAdjusted = adjustCpm(bid.cpm, bid);
+  const bidRequest = auctionManager.index.getBidRequest(bid);
+  const bidPriceAdjusted = adjustCpm(bid.cpm, bid, bidRequest);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
   }
+
+  // defaults to  cpm
+  const bidDesirabilityAdjusted = adjustDesirability(bid, bidRequest);
+  bid.desirability = bidDesirabilityAdjusted;
 }
 
 /**
