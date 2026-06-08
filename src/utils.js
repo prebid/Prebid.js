@@ -356,28 +356,27 @@ export function waitForElementToLoad(element, timeout) {
 }
 
 /**
- * Fires a fire-and-forget request for `url` on the background task queue (a keepalive fetch, falling
- * back to an image pixel) for cookie sync and similar best-effort pixels.
- * @param {string} url URL string to request
- * @param {string} [credentials='include'] fetch credentials mode (e.g. `'include'`, `'omit'`); pass
- *   `'omit'` for a cookieless request — the image fallback (which cannot omit cookies) is then skipped.
+ * Inserts an image pixel with the specified `url` for cookie sync
+ * @param {string} url URL string of the image pixel to load
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
  */
 
-export function politeTriggerPixel(url, credentials = 'include') {
+export function politeTriggerPixel(url) {
   const triggerSync = () => {
     if (window.fetch && window.Request) {
       try {
         const request = new Request(url, {
           method: 'GET',
           mode: 'no-cors',
-          credentials,
+          credentials: 'include',
           keepalive: true
         });
-        window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
+        window.fetch(request).catch(() => triggerPixel(url));
         return;
       } catch (e) {}
     }
-    if (credentials !== 'omit') triggerPixel(url);
+    triggerPixel(url);
   };
 
   runBackgroundTask(triggerSync);

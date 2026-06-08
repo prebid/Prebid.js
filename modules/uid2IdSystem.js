@@ -18,14 +18,8 @@ import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').uid2Id} uid2Id
- * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
- * @typedef {import('./uid2IdSystem.d.ts').Uid2IdSystemModuleName} Uid2IdSystemModuleName
- * @typedef {import('./uid2IdSystem.d.ts').Uid2IdSystemParams} Uid2IdSystemParams
  */
 
-/**
- * @type {Uid2IdSystemModuleName}
- */
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
@@ -49,11 +43,11 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-/** @type {IdProviderSpec<Uid2IdSystemModuleName>} */
+/** @type {Submodule} */
 export const uid2IdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {Uid2IdSystemModuleName}
+   * @type {string}
    */
   name: MODULE_NAME,
 

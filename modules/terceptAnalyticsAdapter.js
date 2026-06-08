@@ -10,14 +10,15 @@ import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v2.1.0';
+const terceptAnalyticsVersion = 'v2.0.0';
 const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
-const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 0;
+const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 5000;
 
 /** @type {TerceptAnalyticsAdapterOptions} */
 let initOptions;
 
+// auctionId → { auctionInit, bids[], timer } — isolated per auction
 const pendingAuctions = new Map();
 
 let adUnitMap = new Map();
@@ -56,7 +57,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         const auctionId = args.auctionId;
         adUnitMap.set(auctionId, args.adUnits);
 
-        // only first bidderRequest needed, device/site data is identical across all
+        // only first bidderRequest needed — device/site data is identical across all
         const auctionInit = Object.assign({}, args, {
           bidderRequests: args.bidderRequests ? args.bidderRequests.slice(0, 1) : []
         });
@@ -82,12 +83,12 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
       } else if (eventType === EVENTS.AUCTION_END) {
         const auction = pendingAuctions.get(args.auctionId);
         if (!auction) return;
-        // configurable window to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
+        // configurable window (default 5s) to collect BID_WON, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BIDDER_ERROR
         const timeout = initOptions?.analyticsBatchTimeout ?? DEFAULT_ANALYTICS_BATCH_TIMEOUT;
         auction.timer = setTimeout(() => flush(args.auctionId), timeout);
       } else if (eventType === EVENTS.BID_WON) {
         const { adserverAdSlot, pbAdSlot } = getAdSlotData(args.auctionId, args.adUnitCode);
-        const winFields = {
+        updateBid(args.auctionId, args.requestId, {
           renderStatus: 4,
           renderedSize: args.size,
           host: window.location.hostname,
@@ -95,27 +96,6 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           search: window.location.search,
           adserverAdSlot,
           pbAdSlot
-        };
-        updateBid(args.auctionId, args.requestId, winFields);
-        send({
-          bidWon: {
-            bidId: args.requestId,
-            bidderCode: args.bidderCode,
-            adUnitCode: args.adUnitCode,
-            auctionId: args.auctionId,
-            creativeId: args.creativeId,
-            transactionId: args.transactionId,
-            currency: args.currency,
-            cpm: args.cpm,
-            netRevenue: args.netRevenue,
-            mediaType: args.mediaType,
-            statusMessage: args.statusMessage,
-            status: args.status,
-            timeToRespond: args.timeToRespond,
-            requestTimestamp: args.requestTimestamp,
-            responseTimestamp: args.responseTimestamp,
-            ...winFields
-          }
         });
       } else if (eventType === EVENTS.AD_RENDER_SUCCEEDED) {
         const bid = args.bid;

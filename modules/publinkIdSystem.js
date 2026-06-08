@@ -16,14 +16,8 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
- * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
- * @typedef {import('./publinkIdSystem.d.ts').PublinkIdSystemModuleName} PublinkIdSystemModuleName
- * @typedef {import('./publinkIdSystem.d.ts').PublinkIdSystemParams} PublinkIdSystemParams
  */
 
-/**
- * @type {PublinkIdSystemModuleName}
- */
 const MODULE_NAME = 'publinkId';
 const GVLID = 24;
 const PUBLINK_COOKIE = '_publink';
@@ -36,10 +30,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
 }
-/**
- *
- * @param {PublinkIdSystemParams} params
- */
+
 function publinkIdUrl(params, consentData, storedId) {
   const url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
@@ -129,11 +120,11 @@ function getlocalValue() {
   return result;
 }
 
-/** @type {IdProviderSpec<PublinkIdSystemModuleName>} */
+/** @type {Submodule} */
 export const publinkIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {PublinkIdSystemModuleName}
+   * @type {string}
    */
   name: MODULE_NAME,
   gvlid: GVLID,

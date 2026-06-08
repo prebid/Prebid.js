@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
+import { triggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
 
 const BIDDER_CODE = 'floxis';
 const DEFAULT_BID_TTL = 300;
@@ -39,23 +39,6 @@ function getEndpointUrl(seat, region, partner) {
 // the partner subdomain used for bidding. The trackers /sync endpoint resolves seat -> supply partner.
 function getSyncHost(region) {
   return isValidHostLabel(region) ? `https://px-${region}.floxis.tech` : null;
-}
-
-// Telemetry event host is pinned to px-us-e regardless of bid region. Only us-e is provisioned;
-// a beacon to an unprovisioned host would lose the very signal meant to catch misconfiguration.
-// SHIPPING-INTENT: switch to region-derived host (getSyncHost(region)) when px-eu and px-apac are provisioned.
-const TELEMETRY_HOST = 'https://px-us-e.floxis.tech';
-const TELEMETRY_PATH = '/event';
-
-// Assemble an event-beacon URL. consentSuffix is a pre-built '&k=v&...' string (may be empty).
-// extras is a plain object of optional dimension key→value pairs; falsy values are omitted.
-function buildEventUrl(eventType, { seat, region }, extras, consentSuffix) {
-  const base = `${TELEMETRY_HOST}${TELEMETRY_PATH}?event=${encodeURIComponent(eventType)}&seat=${encodeURIComponent(seat)}&region=${encodeURIComponent(region)}`;
-  const extraParams = Object.entries(extras)
-    .filter(([, v]) => v != null && v !== '')
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-    .join('&');
-  return base + (extraParams ? '&' + extraParams : '') + consentSuffix;
 }
 
 // IAB consent query params for the trackers /sync endpoint.
@@ -248,64 +231,6 @@ export const spec = {
     if (bid.burl) {
       triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm));
     }
-  },
-
-  onTimeout(timeoutData) {
-    // Report client-observed auction timeouts as cookieless operational telemetry.
-    // One beacon per distinct (seat, region); no consent exposed in timeout entries.
-    try {
-      if (!Array.isArray(timeoutData)) return;
-      const seen = {};
-      timeoutData.forEach((entry) => {
-        const { seat, region } = normalizeBidParams(entry.params);
-        if (!seat) return;
-        const key = `${seat}|${region}`;
-        if (seen[key]) return;
-        seen[key] = true;
-        const extras = {
-          ...(entry.timeout != null ? { duration: entry.timeout } : {}),
-          ...(entry.auctionId != null ? { auctionId: entry.auctionId } : {})
-        };
-        // 'omit' keeps this beacon cookieless — the px-us-e sync cookie never rides along.
-        politeTriggerPixel(buildEventUrl('timeout', { seat, region }, extras, ''), 'omit');
-      });
-    } catch (e) { }
-  },
-
-  onBidderError({ error, bidderRequest }) {
-    // Report client-observed bidder transport errors as cookieless operational telemetry.
-    // One beacon per distinct (seat, region); status/timedout are constant across the call.
-    try {
-      const bids = bidderRequest?.bids;
-      if (!Array.isArray(bids)) return;
-      const status = error?.status != null ? error.status : undefined;
-      const timedout = error?.timedOut ? 1 : 0;
-      const auctionId = bidderRequest?.auctionId;
-      // domain (not page): refererInfo.page carries the location query string, which can hold
-      // identifiers — the domain is enough to know which publisher errored and keeps the beacon identifier-free.
-      const puburl = bidderRequest?.refererInfo?.domain;
-      const consentQuery = buildConsentQuery(
-        bidderRequest?.gdprConsent,
-        bidderRequest?.uspConsent,
-        bidderRequest?.gppConsent
-      );
-      const consentSuffix = consentQuery.length ? '&' + consentQuery.join('&') : '';
-      const seen = {};
-      bids.forEach((bid) => {
-        const { seat, region } = normalizeBidParams(bid.params);
-        if (!seat) return;
-        const key = `${seat}|${region}`;
-        if (seen[key]) return;
-        seen[key] = true;
-        const extras = {
-          ...(status != null ? { status } : {}),
-          timedout,
-          ...(auctionId != null ? { auctionId } : {}),
-          ...(puburl ? { puburl } : {})
-        };
-        politeTriggerPixel(buildEventUrl('bidder-error', { seat, region }, extras, consentSuffix), 'omit');
-      });
-    } catch (e) { }
   }
 };
 

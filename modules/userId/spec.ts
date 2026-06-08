@@ -71,7 +71,7 @@ export interface UserIdConfig<P extends UserIdProvider> {
    * Used only if the page has a separate mechanism for storing a User ID.
    * The value is an object containing the values to be sent to the adapters.
    */
-  value?: DecodedId<P>;
+  value?: UserIdFor<P>;
 }
 
 type SerializableId = string | Record<string, unknown>;
