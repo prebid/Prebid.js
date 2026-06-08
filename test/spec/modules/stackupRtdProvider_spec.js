@@ -859,6 +859,78 @@ describe("StackUp RTD Provider", function () {
       expect(storageSetStub.called).to.be.false;
     });
 
+    it("should skip cache read/write when params.cache.enabled is false", async function () {
+      const noCacheConfig = {
+        ...VALID_CONFIG,
+        params: {
+          ...VALID_CONFIG.params,
+          cache: { enabled: false, ttlSeconds: 3600, storage: "session" },
+        },
+      };
+      storageGetStub.returns(
+        JSON.stringify({ v: 1, t: Date.now(), d: cachedSnapshot })
+      );
+
+      subModuleObj.init(noCacheConfig, {});
+      expect(storageGetStub.called).to.be.false;
+      expect(server.requests.length).to.equal(1);
+
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+      expect(storageSetStub.called).to.be.false;
+    });
+
+    it("should support params.cache.storage='memory' (no sessionStorage I/O)", async function () {
+      const memoryCacheConfig = {
+        ...VALID_CONFIG,
+        params: {
+          ...VALID_CONFIG.params,
+          cache: { enabled: true, ttlSeconds: 3600, storage: "memory" },
+        },
+      };
+
+      subModuleObj.init(memoryCacheConfig, {});
+      expect(server.requests.length).to.equal(1);
+      respond200(VALID_API_RESPONSE);
+      await flushMicrotasks();
+      // Verify API was called and result cached in memory, not sessionStorage
+      expect(storageSetStub.called).to.be.false;
+      expect(server.requests.length).to.equal(1);
+
+      // Second init in same session hits in-memory cache (no new API call)
+      const cb = sinon.spy();
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: { global: {} } },
+        cb,
+        memoryCacheConfig
+      );
+      expect(cb.calledOnce).to.be.true;
+      // sessionStorage was never accessed
+      expect(storageGetStub.called).to.be.false;
+      // Still only one API request (cache hit)
+      expect(server.requests.length).to.equal(1);
+    });
+
+    it("should use DEFAULT_TIMEOUT when params.timeout is invalid", function () {
+      const clock = sinon.useFakeTimers();
+      const cb = sinon.spy();
+      const badTimeoutConfig = {
+        ...VALID_CONFIG,
+        params: { ...VALID_CONFIG.params, timeout: NaN },
+      };
+      subModuleObj.init(badTimeoutConfig, {});
+      subModuleObj.getBidRequestData(
+        { ortb2Fragments: { global: {} } },
+        cb,
+        badTimeoutConfig
+      );
+      clock.tick(299);
+      expect(cb.called).to.be.false;
+      clock.tick(2);
+      expect(cb.calledOnce).to.be.true;
+      clock.restore();
+    });
+
     it("should mark cached snapshots with source 'cache'", async function () {
       storageGetStub.returns(
         JSON.stringify({ v: 1, t: Date.now(), d: cachedSnapshot })

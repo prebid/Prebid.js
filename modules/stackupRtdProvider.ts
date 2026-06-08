@@ -80,9 +80,9 @@ export interface StackupRtdParams {
   articleId?: string;
   articleIdMode?: "explicit" | "path";
   cache?: {
-    enabled: boolean;
-    ttlSeconds: number;
-    storage: "session" | "memory";
+    enabled?: boolean;
+    ttlSeconds?: number;
+    storage?: "session" | "memory";
   };
   debug?: boolean;
   debugDomain?: string; // overrides the domain sent to the API when debug: true
@@ -130,7 +130,7 @@ export interface Ortb2ContentSegment {
   };
   segment: Array<{
     id: string;
-    name?: string;  // optional — some segments carry only id + value
+    name?: string; // optional — some segments carry only id + value
     value?: string;
     ext?: { confidence?: number };
   }>;
@@ -145,7 +145,7 @@ export interface Ortb2UserSegment {
   };
   segment: Array<{
     id: string;
-    name?: string;  // optional — profile dimension uses only id + value
+    name?: string; // optional — profile dimension uses only id + value
     value?: string;
     ext?: { confidence?: number };
   }>;
@@ -168,6 +168,26 @@ interface RawEnrichmentResponse {
   };
   user?: {
     data?: Ortb2UserSegment[];
+  };
+}
+
+type CacheStorageMode = "session" | "memory";
+
+const inMemoryEnrichmentCache = new Map<
+  string,
+  { v: number; t: number; d: EnrichmentSnapshot }
+>();
+
+function getCacheConfig(): {
+  enabled: boolean;
+  ttlSeconds: number;
+  storage: CacheStorageMode;
+} {
+  const c = state.config?.params?.cache;
+  return {
+    enabled: c?.enabled ?? true,
+    ttlSeconds: c?.ttlSeconds ?? 3600,
+    storage: c?.storage ?? "session",
   };
 }
 
@@ -333,9 +353,6 @@ function fetchEnrichment(
       };
       setCachedEnrichment(articleId, snapshot);
       return snapshot;
-    })
-    .catch((err) => {
-      throw err;
     });
 }
 
@@ -368,17 +385,31 @@ function isValidEnrichment(data: any): data is RawEnrichmentResponse {
   return true;
 }
 
-function cacheKey(articleId: string): string {
-  return CACHE_KEY_PREFIX + "path_" + cyrb53Hash(articleId);
+function cacheKey(articleId: string, params?: StackupRtdParams): string {
+  const p = params ?? state.config?.params;
+  const domain = (p?.debug ? p?.debugDomain : getRefererInfo().domain) ?? "";
+  const base = p?.apiUrl ?? DEFAULT_API_URL;
+  const keyInput = `${articleId}|pub:${
+    p?.pubId ?? ""
+  }|domain:${domain}|api:${base}`;
+  return CACHE_KEY_PREFIX + "path_" + cyrb53Hash(keyInput);
 }
 
 function getCachedEnrichment(articleId: string): EnrichmentSnapshot | null {
+  const cache = getCacheConfig();
+  if (!cache.enabled) return null;
   try {
-    const raw = storage.getDataFromSessionStorage(cacheKey(articleId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
+    const key = cacheKey(articleId);
+    const parsed =
+      cache.storage === "memory"
+        ? inMemoryEnrichmentCache.get(key)
+        : (() => {
+            const raw = storage.getDataFromSessionStorage(key);
+            return raw ? JSON.parse(raw) : null;
+          })();
+    if (!parsed) return null;
     if (parsed.v !== CACHE_SCHEMA_VERSION) return null;
-    const ttlMs = (state.config?.params?.cache?.ttlSeconds ?? 3600) * 1000;
+    const ttlMs = cache.ttlSeconds * 1000;
     if (Date.now() - parsed.t > ttlMs) return null;
     return parsed.d;
   } catch {
@@ -390,11 +421,16 @@ function setCachedEnrichment(
   articleId: string,
   data: EnrichmentSnapshot
 ): void {
+  const cache = getCacheConfig();
+  if (!cache.enabled) return;
   try {
-    storage.setDataInSessionStorage(
-      cacheKey(articleId),
-      JSON.stringify({ v: CACHE_SCHEMA_VERSION, t: Date.now(), d: data })
-    );
+    const key = cacheKey(articleId);
+    const payload = { v: CACHE_SCHEMA_VERSION, t: Date.now(), d: data };
+    if (cache.storage === "memory") {
+      inMemoryEnrichmentCache.set(key, payload);
+      return;
+    }
+    storage.setDataInSessionStorage(key, JSON.stringify(payload));
   } catch {
     // quota exceeded — silently ignore
   }
@@ -490,7 +526,13 @@ function getBidRequestData(
   _userConsent: AllConsentData,
   timeout: number
 ): void {
-  const ownTimeout = config.params?.timeout ?? DEFAULT_TIMEOUT;
+  const requestedTimeout = config.params?.timeout;
+  const ownTimeout =
+    isNumber(requestedTimeout) &&
+    isFinite(requestedTimeout) &&
+    requestedTimeout > 0
+      ? requestedTimeout
+      : DEFAULT_TIMEOUT;
   // Honor the auction-delay budget passed by core as the 5th argument.
   // Core computes it as `shouldDelayAuction ? auctionDelay : 0`, so it is 0
   // when the publisher runs us non-blocking or omits auctionDelay entirely.
@@ -654,5 +696,6 @@ export function _resetStateForTesting(): void {
   state.fetchAbortController = null;
   state.pendingCallbacks.length = 0;
   state.snapshotsByAuctionId.clear();
+  inMemoryEnrichmentCache.clear();
   state.config = null as any;
 }
