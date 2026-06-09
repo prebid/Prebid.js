@@ -159,6 +159,8 @@ export const spec = {
         adUnitCode: bid.adUnitCode,
         adUnitId: adUnitId,
         sizes: sizes,
+        // Internal reference — stripped before sending to server
+        _sourceBid: bid,
       };
 
       // Optional params
@@ -173,11 +175,16 @@ export const spec = {
     });
 
     return Object.values(groups).map(function(group) {
+      // Use the first bid from THIS group (not the whole auction)
+      // to avoid mixing schain/eids from different publishers
+      const representativeBid = group.bids[0]._sourceBid;
+
       // Read schain from ORTB source path (preferred) or legacy field
-      const firstBid = validBidRequests[0];
-      const schain = deepAccess(firstBid, 'ortb2.source.ext.schain') ||
+      const schain = deepAccess(representativeBid, 'ortb2.source.ext.schain') ||
                      deepAccess(bidderRequest, 'ortb2.source.ext.schain') ||
-                     firstBid.schain || null;
+                     representativeBid.schain || null;
+
+      const eids = representativeBid.userIdAsEids || [];
 
       return {
         method: 'POST',
@@ -188,7 +195,11 @@ export const spec = {
             page: deepAccess(bidderRequest, 'refererInfo.page') || window.location.href,
             ref: deepAccess(bidderRequest, 'refererInfo.ref') || document.referrer,
           },
-          bids: group.bids,
+          bids: group.bids.map(function(b) {
+            const clean = Object.assign({}, b);
+            delete clean._sourceBid;
+            return clean;
+          }),
           gdpr: {
             applies: !!(deepAccess(bidderRequest, 'gdprConsent.gdprApplies')),
             consent: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
@@ -198,7 +209,7 @@ export const spec = {
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
           gppSid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
           schain: schain,
-          eids: firstBid.userIdAsEids || [],
+          eids: eids,
         }),
         options: {
           // Using text/plain to avoid CORS preflight requests which can
