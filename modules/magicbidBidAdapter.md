@@ -21,19 +21,7 @@ When you onboard a publisher, MagicBid provides two values specific to that publ
 
 ## Bid Params
 
-```typescript
-interface MagicBidParams {
-  host: string;        // required — publisher-specific RTB host provided by MagicBid
-  adUnitId: number;    // required — ad unit ID for this placement, provided by MagicBid
-  adUnitType?: string; // optional — 'banner' or 'video'; inferred from mediaTypes if omitted
-  publisherId?: string; // optional — required only for Prebid Server / server-side
-  custom1?: string;    // optional — custom targeting parameter
-  custom2?: string;    // optional — custom targeting parameter
-  custom3?: string;    // optional — custom targeting parameter
-  custom4?: string;    // optional — custom targeting parameter
-  custom5?: string;    // optional — custom targeting parameter
-}
-```
+Types are defined in `modules/magicbidBidAdapter.d.ts`.
 
 | Name          | Scope    | Type     | Description                                                  | Example                         |
 |---------------|----------|----------|--------------------------------------------------------------|---------------------------------|
