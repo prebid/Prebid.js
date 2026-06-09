@@ -3279,42 +3279,77 @@ describe('adapterManager tests', function () {
   });
 
   describe('reportAnalytics check', () => {
+    let adapters;
+    let allowed;
+    function mockAnalyticsAdapter(code) {
+      let enabled = false;
+      return {
+        get enabled() {
+          return enabled
+        },
+        code,
+        enableAnalytics: sinon.stub().callsFake(() => { enabled =  true }),
+        disableAnalytics: sinon.stub().callsFake(() => { enabled =  false })
+      }
+    }
+
     beforeEach(() => {
-      sinon.stub(dep, 'isAllowed');
+      adapters = {
+        an1: mockAnalyticsAdapter('an1'),
+        an2: mockAnalyticsAdapter('an2')
+      }
+      Object.values(adapters).forEach(adapter => adapterManager.registerAnalyticsAdapter({code: adapter.code, adapter}))
+      allowed = {};
+      sinon.stub(dep, 'isAllowed').callsFake((activity, { componentName, _config }) => {
+        return allowed[componentName] && _config.provider === componentName && activity === ACTIVITY_REPORT_ANALYTICS
+      })
+
     });
     afterEach(() => {
       dep.isAllowed.restore();
+      Object.values(adapters).forEach(({code}) => delete adapterManager.analyticsRegistry[code]);
     });
 
-    it('should check for reportAnalytics before registering analytics adapter', () => {
-      const enabled = {};
-      ['mockAnalytics1', 'mockAnalytics2'].forEach((code) => {
-        adapterManager.registerAnalyticsAdapter({
-          code,
-          adapter: {
-            enableAnalytics: sinon.stub().callsFake(() => { enabled[code] = true })
-          }
-        })
-      })
+
+    it('should check for reportAnalytics before enabling analytics adapter', () => {
 
       const anlCfg = [
         {
-          provider: 'mockAnalytics1',
+          provider: 'an1',
           random: 'values'
         },
         {
-          provider: 'mockAnalytics2'
+          provider: 'an2'
         }
       ]
-      dep.isAllowed.callsFake((activity, { component, _config }) => {
-        return activity === ACTIVITY_REPORT_ANALYTICS &&
-          component === `${MODULE_TYPE_ANALYTICS}.${anlCfg[0].provider}` &&
-          _config === anlCfg[0]
-      })
-
+      allowed.an1 = true;
       adapterManager.enableAnalytics(anlCfg);
-      expect(enabled).to.eql({ mockAnalytics1: true });
+      expect(adapters.an1.enabled).to.be.true;
+      expect(adapters.an2.enabled).to.be.false;
     });
+
+    it('should enable / disable again when consent changes', () => {
+      allowed.an2 = true;
+      adapterManager.enableAnalytics({provider: 'an1'});
+      adapterManager.enableAnalytics({provider: 'an2'});
+      expect(adapters.an1.enabled).to.be.false;
+      expect(adapters.an2.enabled).to.be.true;
+      allowed.an1 = true;
+      allowed.an2 = false;
+      adapterManager.refreshAnalytics();
+      expect(adapters.an1.enabled).to.be.true;
+      expect(adapters.an2.enabled).to.be.false;
+    });
+
+    it('should not choke if the adapter does not provide disableAnalytics', () => {
+      allowed.an1 = true;
+      delete adapters.an1.disableAnalytics;
+      adapterManager.enableAnalytics({provider: 'an1'});
+      allowed.an1 = false;
+      adapterManager.refreshAnalytics();
+      expect(adapters.an1.enabled).to.be.true;
+    });
+
   });
 
   describe('registers GVL IDs', () => {
