@@ -3,6 +3,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, logWarn } from '../src/utils.js';
+/** @import { MagicBidParams } from './magicbidBidAdapter.d.ts' */
 
 // ─────────────────────────────────────────────
 //  MagicBid Prebid.js Bid Adapter
