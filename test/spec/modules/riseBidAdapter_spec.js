@@ -732,7 +732,7 @@ describe('riseAdapter', function () {
         mediaType: VIDEO,
         advertiserDomains: ['example.com'],
         primaryCatId: 'IAB1-1',
-        secondaryCatIds: ['IAB1-2', 'IAB1-33']
+        secondaryCatIds: ['IAB1-2', 'IAB1-3']
       });
     });
 
