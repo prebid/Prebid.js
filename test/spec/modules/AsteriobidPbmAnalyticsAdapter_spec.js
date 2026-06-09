@@ -120,6 +120,8 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      prebidmanagerAnalytics.flush();
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
@@ -142,6 +144,8 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      prebidmanagerAnalytics.flush();
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
