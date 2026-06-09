@@ -69,3 +69,4 @@ This file contains instructions for the Codex agent and its friends when working
 - Submodules need to register in submodules.json
 - No one should be accessing navigator from vendor modules, if navigator needs to be accessed it should be in a common method or library
 - Low priority calls should be import ajax method and use fetch keepalive; they shouldnt use trigger pixel when it can be avoided or fail to specify keepalive.
+- Analytics modules must provide a disableAnalytics method
