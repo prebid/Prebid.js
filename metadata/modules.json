@@ -892,42 +892,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "streamkey",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "janet",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ocm",
-      "aliasOf": "adtelligent",
-      "gvlid": 1148,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "9dotsmedia",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "indicue",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "stellormedia",
       "aliasOf": "adtelligent",
       "gvlid": null,
       "disclosureURL": null
