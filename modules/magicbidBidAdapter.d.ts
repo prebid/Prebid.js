@@ -1,4 +1,4 @@
-import { BidderSpec, OrtbBannerRequest } from '../src/types.js';
+import { BidderSpec } from '../src/adapters/bidderFactory.js';
 
 export interface MagicBidParams {
   /** Publisher-specific RTB host provided by MagicBid (unique per publisher) */
@@ -23,7 +23,7 @@ export interface MagicBidParams {
 
 export declare const spec: BidderSpec;
 
-declare module '../src/adUnits' {
+declare module '../src/adUnits.js' {
   interface BidderParams {
     magicbid: MagicBidParams;
   }
