@@ -708,6 +708,51 @@ describe('riseAdapter', function () {
       const result = spec.interpretResponse({ body: response });
       expect(result[2].native).to.eql(expectedNativeResponse.native)
     });
+
+    it('should include meta fields from server response', function () {
+      const responseWithMeta = {
+        bids: [{
+          cpm: 1.5,
+          vastXml: '<VAST/>',
+          width: 640,
+          height: 480,
+          requestId: 'test-id',
+          creativeId: 'cr-1',
+          nurl: 'http://example.com/win',
+          mediaType: VIDEO,
+          meta: {
+            advertiserDomains: ['example.com'],
+            primaryCatId: 'IAB1-1',
+            secondaryCatIds: ['IAB1-2', 'IAB1-3']
+          }
+        }]
+      };
+      const result = spec.interpretResponse({ body: responseWithMeta });
+      expect(result[0].meta).to.deep.equal({
+        mediaType: VIDEO,
+        advertiserDomains: ['example.com'],
+        primaryCatId: 'IAB1-1',
+        secondaryCatIds: ['IAB1-2', 'IAB1-33']
+      });
+    });
+
+    it('should fall back to adomain for advertiserDomains when meta is absent', function () {
+      const responseWithAdomain = {
+        bids: [{
+          cpm: 1.5,
+          ad: '<div/>',
+          width: 300,
+          height: 250,
+          requestId: 'test-id',
+          creativeId: 'cr-1',
+          nurl: 'http://example.com/win',
+          mediaType: BANNER,
+          adomain: ['fallback.com']
+        }]
+      };
+      const result = spec.interpretResponse({ body: responseWithAdomain });
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['fallback.com']);
+    });
   })
 
   describe('getUserSyncs', function() {
