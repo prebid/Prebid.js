@@ -7,10 +7,20 @@ const BIDDER_CODE = 'engerio';
 const ENDPOINT_URL = 'https://api.engerio.sk/api/v1/adserver/prebid/auction/';
 const TTL = 300; // seconds a cached bid is valid
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ */
+
 function getAdUnitCode(bid) {
   return bid.params?.adUnitCode || bid.adUnitCode;
 }
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -18,6 +28,9 @@ export const spec = {
   /**
    * Validates a single bid request.
    * `params.adUnitCode` overrides the conventional `adUnitCode` field.
+    *
+    * @param {BidRequest} bid
+    * @returns {boolean}
    */
   isBidRequestValid(bid) {
     if (!getAdUnitCode(bid)) {
@@ -29,6 +42,10 @@ export const spec = {
 
   /**
    * Builds an OpenRTB 2.5 BidRequest from Prebid.js bid requests.
+    *
+    * @param {BidRequest[]} validBidRequests
+    * @param {BidderRequest} bidderRequest
+    * @returns {ServerRequest}
    */
   buildRequests(validBidRequests, bidderRequest) {
     const imps = validBidRequests.map(bid => {
@@ -96,6 +113,9 @@ export const spec = {
 
   /**
    * Maps an OpenRTB 2.5 BidResponse back to Prebid.js bids.
+    *
+    * @param {ServerResponse} serverResponse
+    * @returns {Bid[]}
    */
   interpretResponse(serverResponse) {
     const bids = [];
@@ -141,6 +161,8 @@ export const spec = {
   /**
    * Fires the win notice (nurl) when Prebid.js renders the winning bid.
    * Engerio uses this to mark the ImpressionLog as won and deduct budget.
+    *
+    * @param {Bid} bid
    */
   onBidWon(bid) {
     if (bid.nurl) {
