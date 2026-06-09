@@ -22,3 +22,9 @@ export interface MagicBidParams {
 }
 
 export declare const spec: BidderSpec;
+
+declare module '../src/adUnits' {
+  interface BidderParams {
+    magicbid: MagicBidParams;
+  }
+}
