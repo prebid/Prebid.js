@@ -21,7 +21,7 @@ export interface MagicBidParams {
   custom5?: string;
 }
 
-export declare const spec: BidderSpec;
+export declare const spec: BidderSpec<'magicbid'>;
 
 declare module '../src/adUnits.js' {
   interface BidderParams {
