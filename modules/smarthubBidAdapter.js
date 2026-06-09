@@ -14,6 +14,7 @@ const DEFAULT_REGION = 'us_east';
 
 const SYNC_URLS = {
   '1': 'https://us.shb-sync.com',
+  '2': 'https://us2.shb-sync.com',
   '4': 'https://us4.shb-sync.com',
 };
 
@@ -31,6 +32,7 @@ const ALIASES = {
   'amcom': { area: '1', pid: '397' },
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
+  'adnimationex': { area: '2', pid: '359' },
 };
 
 const BASE_URL_TEMPLATES = {
@@ -77,6 +79,9 @@ const PARTNER_ENDPOINTS = {
   },
   radiantfusion: {
     us_east: 'https://radiantfusion-prebid.attekmi.co/pbjs',
+  },
+  adnimationex: {
+    us_east: 'https://adnimationex-prebid.attekmi.co/pbjs',
   }
 };
 
