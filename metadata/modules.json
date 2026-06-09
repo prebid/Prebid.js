@@ -4147,6 +4147,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "realry",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "rediads",
       "aliasOf": null,
       "gvlid": null,
