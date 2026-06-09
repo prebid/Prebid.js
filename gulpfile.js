@@ -569,7 +569,7 @@ gulp.task('extract-metadata', function (done) {
 })
 gulp.task('compile-metadata', function (done) {
   import('./metadata/compileMetadata.mjs').then(({default: compile}) => {
-    compile().then(() => done(), done);
+    compile(argv.fetch ?? true).then(() => done(), done);
   })
 })
 gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));

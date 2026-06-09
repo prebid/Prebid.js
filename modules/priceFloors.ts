@@ -17,7 +17,7 @@ import {
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import * as events from '../src/events.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import { getHook } from '../src/hook.js';
@@ -34,6 +34,7 @@ import { ALL_MEDIATYPES, BANNER, type MediaType } from '../src/mediaTypes.js';
 import type { Currency, Size, BidderCode } from "../src/types/common.d.ts";
 import type { BidRequest } from '../src/adapterManager.ts';
 import type { Bid } from "../src/bidfactory.ts";
+import { MODULE_TYPE_PREBID } from "../src/activities/modules.ts";
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -48,7 +49,7 @@ const MODULE_NAME = 'Price Floors';
 /**
  * @summary Instantiate Ajax so we control the timeout
  */
-const ajax = ajaxBuilder(10000);
+const ajax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'priceFloors', 10000);
 
 // eslint-disable-next-line symbol-description
 const SYN_FIELD = Symbol();

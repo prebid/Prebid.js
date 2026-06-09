@@ -25,7 +25,7 @@ function enableInstreamTracking(regex) {
 }
 
 function mockPerformanceApi({ adServerCallSent, videoPresent }) {
-  const performanceStub = sandbox.stub(window.performance, 'getEntriesByType');
+  const performanceStub = window.performance.getEntriesByType = sandbox.stub();
   const entries = [{
     name: 'https://domain.com/img.png',
     initiatorType: 'img'
@@ -145,7 +145,9 @@ function getMockInput(mediaType) {
 }
 
 describe('Instream Tracking', function () {
+  let origPerf;
   beforeEach(function () {
+    origPerf = window.performance.getEntriesByType;
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
   });
@@ -153,6 +155,7 @@ describe('Instream Tracking', function () {
   afterEach(function () {
     sandbox.restore();
     clock.restore();
+    window.performance.getEntriesByType = origPerf;
   });
 
   describe('gaurd checks', function () {

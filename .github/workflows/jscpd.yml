@@ -24,7 +24,7 @@ jobs:
         node-version-file: '.nvmrc'
 
     - name: Install jscpd
-      run: npm install -g jscpd
+      run: npm install -g jscpd cpd-linux-x64-gnu
 
     - name: Create jscpd config file
       run: |

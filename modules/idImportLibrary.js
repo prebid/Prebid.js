@@ -3,11 +3,12 @@ import { ACTIVITY_ENRICH_UFPD } from '../src/activities/activities.js';
 import { activityParams } from '../src/activities/activityParams.js';
 import { MODULE_TYPE_PREBID } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
-import { ajax } from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { logError, logInfo } from '../src/utils.js';
 
+const moduleName = 'idImportLibrary';
 let email;
 let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
@@ -235,7 +236,7 @@ function postData() {
   syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   _logInfo(payloadString);
-  ajax(conf.url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
+  qualifiedAjaxBuilder(MODULE_TYPE_PREBID, moduleName)(conf.url, syncCallback(), payloadString, { method: 'POST', withCredentials: true });
 }
 
 function associateIds() {
@@ -261,7 +262,7 @@ export function setConfig(config) {
     _logError('The required url is not configured');
     return;
   }
-  if (!isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_PREBID, 'idImportLibrary'))) {
+  if (!isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_PREBID, moduleName))) {
     _logError('Permission for id import was denied by CMP');
     return;
   }
