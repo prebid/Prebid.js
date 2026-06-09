@@ -3,6 +3,7 @@ import { noCredsAjax as ajax } from '../../src/ajax.js';
 import { logError, logMessage } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { config } from '../../src/config.js';
+import * as utils from "../../src/utils";
 
 export const _internal = {
   ajax
@@ -90,6 +91,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   let enabled = false;
   let sampled = true;
   let provider: PROVIDER;
+  let lastTrackedTimestamp = null;
 
   const emptyQueue = (() => {
     let running = false;
@@ -147,6 +149,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
 
   function _track(arg) {
     const { eventType, args } = arg;
+
     if (this.getAdapterType() === BUNDLE) {
       (window[global] as any)(handler, eventType, args);
     }
@@ -160,13 +163,16 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
     _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: allLabels }));
   }
 
-  function _enqueue({ eventType, args }) {
+  function _enqueue({ eventType, args, timestamp }) {
     queue.push(() => {
       if (Object.keys(allLabels || []).length > 0) {
         args = {
           [LABELS_KEY]: allLabels,
           ...args,
         }
+      }
+      if (lastTrackedTimestamp == null || timestamp > lastTrackedTimestamp) {
+        lastTrackedTimestamp = timestamp;
       }
       this.track({ eventType, labels: allLabels, args });
     });
@@ -193,20 +199,21 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
       })();
 
       // first send all events fired before enableAnalytics called
-      events.getEvents().forEach(event => {
+      events.getEvents()
+        .filter(({elapsedTime}) => lastTrackedTimestamp == null || elapsedTime > lastTrackedTimestamp)
+        .forEach(event => {
         if (!event || !trackedEvents.has(event.eventType)) {
           return;
         }
-
-        const { eventType, args } = event;
-        _enqueue.call(this, { eventType, args });
+        const { eventType, args , elapsedTime} = event;
+        _enqueue.call(this, { eventType, args, timestamp: elapsedTime});
       });
 
       // Next register event listeners to send data immediately
       handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
-            const handler = (args) => this.enqueue({ eventType: ev, args });
+            const handler = (args) => this.enqueue({ eventType: ev, args, timestamp: utils.getPerformanceNow() });
             events.on(ev, handler);
             return [ev, handler];
           })
