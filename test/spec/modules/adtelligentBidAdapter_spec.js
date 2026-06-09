@@ -11,7 +11,13 @@ const EXPECTED_ENDPOINTS = [
   'https://ghb.adtelligent.com/v2/auction/'
 ];
 const aliasEP = {
+  'janet_publisherSuffix': 'https://ghb.bidder.jmgads.com/v2/auction/',
+  'streamkey': 'https://ghb.hb.streamkey.net/v2/auction/',
+  'janet': 'https://ghb.bidder.jmgads.com/v2/auction/',
+  'ocm': 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
+  '9dotsmedia': 'https://ghb.platform.audiodots.com/v2/auction/',
   'indicue': 'https://ghb.console.indicue.com/v2/auction/',
+  'stellormedia': 'https://ghb.ads.stellormedia.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent', ortb2: { source: { ext: { schain: { ver: 1 } } } } };
