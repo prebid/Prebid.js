@@ -1,7 +1,5 @@
-import { BidderSpec } from '../src/adapters/bidderFactory.js';
-
 export interface MagicBidParams {
-  /** Publisher-specific RTB host provided by MagicBid (unique per publisher) */
+  /** Publisher-specific RTB host provided by MagicBid (unique per publisher, always ends with .rtb-magicbid.ai) */
   host: string;
   /** Ad Unit ID for this placement, provided by MagicBid */
   adUnitId: number;
@@ -20,8 +18,6 @@ export interface MagicBidParams {
   /** Custom targeting parameter 5 */
   custom5?: string;
 }
-
-export declare const spec: BidderSpec<'magicbid'>;
 
 declare module '../src/adUnits.js' {
   interface BidderParams {
