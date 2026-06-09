@@ -171,6 +171,129 @@ describe('imAnalyticsAdapter', function() {
         expect(payload.consent.gpp).to.equal('7');
         expect(payload.consent.gppStr).to.equal('gpp-string');
       });
+
+      it('should cancel existing timer when same auctionId receives duplicate AUCTION_INIT', function() {
+        const clock = sandbox.useFakeTimers();
+
+        // 1回目の AUCTION_INIT
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-dup', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-dup', requestId: 'req-1' }
+        });
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_END,
+          args: { auctionId: 'auc-dup' }
+        });
+        requests = [];
+
+        // タイマー発火前に同一 auctionId で AUCTION_INIT が再度来る
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-dup', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // 古いタイマーがキャンセルされているので won リクエストは来ない
+        clock.tick(BID_WON_TIMEOUT + 10);
+        expect(requests.length).to.equal(0);
+      });
+
+      it('should remove stale auction entries that exceed TTL on AUCTION_INIT', function() {
+        const clock = sandbox.useFakeTimers();
+
+        // 1つ目のオークションを開始
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-stale', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // デフォルト TTL (30秒) を超過させる
+        clock.tick(30 * 1000 + 1);
+
+        // 2つ目のオークションを開始 → auc-stale が削除されるはず
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-new', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+
+        // TTL 超過エントリ削除後に BID_WON が届いても無視される
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-stale', requestId: 'req-stale' }
+        });
+
+        expect(requests.length).to.equal(1); // auc-new の pv のみ
+      });
+
+      it('should keep entries within TTL on AUCTION_INIT', function() {
+        const clock = sandbox.useFakeTimers();
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-active', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // TTL 未満しか経過させない
+        clock.tick(10 * 1000);
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-new2', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+
+        // auc-active はまだ生きているので BID_WON が処理される
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_END,
+          args: { auctionId: 'auc-active' }
+        });
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-active', requestId: 'req-active' }
+        });
+
+        clock.tick(BID_WON_TIMEOUT + 10);
+        const wonRequests = requests.filter(r => r.url.includes('/won'));
+        expect(wonRequests.length).to.equal(1);
+      });
+
+      it('should use cacheTtl from options when provided', function() {
+        // cacheTtl を 5秒に設定
+        imAnalyticsAdapter.disableAnalytics();
+        imAnalyticsAdapter.enableAnalytics({
+          provider: 'imAnalytics',
+          options: { cid: 5126, cacheTtl: 5 * 1000 }
+        });
+
+        const clock = sandbox.useFakeTimers();
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-custom-ttl', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+        requests = [];
+
+        // 5秒を超過させる（デフォルトの30秒は未満）
+        clock.tick(5 * 1000 + 1);
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-after', timestamp: clock.now, bidderRequests: [], adUnits: [] }
+        });
+
+        // auc-custom-ttl は削除されているはず
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.BID_WON,
+          args: { ...bidWonArgs, auctionId: 'auc-custom-ttl', requestId: 'req-custom' }
+        });
+
+        expect(requests.length).to.equal(1); // auc-after の pv のみ
+      });
     });
 
     describe('BID_WON', function() {
