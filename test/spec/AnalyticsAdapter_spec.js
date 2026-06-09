@@ -70,12 +70,12 @@ FEATURE: Analytics Adapters API
   });
 
   it('should not fire twice for the same event', () => {
-    events.emit(BID_WON, {n: 1});
+    events.emit(BID_WON, { n: 1 });
     adapter.enableAnalytics();
     adapter.disableAnalytics();
-    events.emit(BID_WON, {n: 2});
+    events.emit(BID_WON, { n: 2 });
     adapter.enableAnalytics();
-    const sent = server.requests.map(req => JSON.parse(req.requestBody)).filter(({eventType}) => eventType === BID_WON).map(({args}) => args.n);
+    const sent = server.requests.map(req => JSON.parse(req.requestBody)).filter(({ eventType }) => eventType === BID_WON).map(({ args }) => args.n);
     expect(sent).to.eql([1, 2]);
   })
 

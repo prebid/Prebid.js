@@ -3288,8 +3288,8 @@ describe('adapterManager tests', function () {
           return enabled
         },
         code,
-        enableAnalytics: sinon.stub().callsFake(() => { enabled =  true }),
-        disableAnalytics: sinon.stub().callsFake(() => { enabled =  false })
+        enableAnalytics: sinon.stub().callsFake(() => { enabled = true }),
+        disableAnalytics: sinon.stub().callsFake(() => { enabled = false })
       }
     }
 
@@ -3298,21 +3298,18 @@ describe('adapterManager tests', function () {
         an1: mockAnalyticsAdapter('an1'),
         an2: mockAnalyticsAdapter('an2')
       }
-      Object.values(adapters).forEach(adapter => adapterManager.registerAnalyticsAdapter({code: adapter.code, adapter}))
+      Object.values(adapters).forEach(adapter => adapterManager.registerAnalyticsAdapter({ code: adapter.code, adapter }))
       allowed = {};
       sinon.stub(dep, 'isAllowed').callsFake((activity, { componentName, _config }) => {
         return allowed[componentName] && _config.provider === componentName && activity === ACTIVITY_REPORT_ANALYTICS
       })
-
     });
     afterEach(() => {
       dep.isAllowed.restore();
-      Object.values(adapters).forEach(({code}) => delete adapterManager.analyticsRegistry[code]);
+      Object.values(adapters).forEach(({ code }) => delete adapterManager.analyticsRegistry[code]);
     });
 
-
     it('should check for reportAnalytics before enabling analytics adapter', () => {
-
       const anlCfg = [
         {
           provider: 'an1',
@@ -3330,8 +3327,8 @@ describe('adapterManager tests', function () {
 
     it('should enable / disable again when consent changes', () => {
       allowed.an2 = true;
-      adapterManager.enableAnalytics({provider: 'an1'});
-      adapterManager.enableAnalytics({provider: 'an2'});
+      adapterManager.enableAnalytics({ provider: 'an1' });
+      adapterManager.enableAnalytics({ provider: 'an2' });
       expect(adapters.an1.enabled).to.be.false;
       expect(adapters.an2.enabled).to.be.true;
       allowed.an1 = true;
@@ -3344,12 +3341,11 @@ describe('adapterManager tests', function () {
     it('should not choke if the adapter does not provide disableAnalytics', () => {
       allowed.an1 = true;
       delete adapters.an1.disableAnalytics;
-      adapterManager.enableAnalytics({provider: 'an1'});
+      adapterManager.enableAnalytics({ provider: 'an1' });
       allowed.an1 = false;
       adapterManager.refreshAnalytics();
       expect(adapters.an1.enabled).to.be.true;
     });
-
   });
 
   describe('registers GVL IDs', () => {
