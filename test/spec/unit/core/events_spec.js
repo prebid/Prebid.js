@@ -44,13 +44,18 @@ describe('events', () => {
     logErrorStub.restore();
   });
 
-  it('can use off on handlers passed to on', () => {
-    const handler = sinon.stub();
-    on('bidWon', handler);
-    off('bidWon', handler);
-    emit('bidWon', {});
-    sinon.assert.notCalled(handler);
-  });
+  Object.entries({
+    on,
+    listen
+  }).forEach(([name, fn]) => {
+    it(`can use off on handlers passed to ${name}`, () => {
+      const handler = sinon.stub();
+      fn('bidWon', handler);
+      off('bidWon', handler);
+      emit('bidWon', {});
+      sinon.assert.notCalled(handler);
+    });
+  })
 
   it('can get event record using listen', () => {
     const handler = sinon.stub();
