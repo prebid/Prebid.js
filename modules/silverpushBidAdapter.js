@@ -225,7 +225,7 @@ function buildVideoOutstreamResponse(bidResponse, context) {
       url: bidResponse.rendererUrl
     });
 
-    bidResponse.renderer.setRender(_renderer(bidResponse));
+    bidResponse.renderer.setRender(() => _renderer(bidResponse));
 
     bidResponse.renderer.render(bidResponse);
   }
