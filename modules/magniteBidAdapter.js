@@ -87,28 +87,8 @@ export function masSizeOrdering(sizes) {
   });
 }
 
-function getPpuidFromEids(eids) {
-  for (const eid of eids) {
-    const ppId = eid.uids.find(uid => uid?.ext?.stype === 'ppuid' && uid?.id);
-    if (ppId) {
-      return ppId.id;
-    }
-  }
-}
-
 function getPpuid(req) {
-  const user = req.user;
-  if (user?.id) {
-    return user.id;
-  }
-
-  const userConfigId = config.getConfig('user.id');
-  if (userConfigId) {
-    return userConfigId;
-  }
-
-  const eids = user?.ext?.eids || [];
-  return getPpuidFromEids(eids);
+  return req.user?.id;
 }
 
 function cleanFpd(fpdObj) {
@@ -193,7 +173,7 @@ const converter = ortbConverter({
     // we do not need to send addtlConsent to DV+
     delete req?.ext?.ConsentedProvidersSettings?.consented_providers;
 
-    // If user.id is not set try pub conf user.id else undefined
+    // Respect upstream redaction controls and only keep existing req.user.id if present
     const ppuid = getPpuid(req);
     if (ppuid) {
       deepSetValue(req, 'user.id', ppuid);

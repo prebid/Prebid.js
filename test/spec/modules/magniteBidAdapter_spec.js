@@ -585,10 +585,10 @@ describe('the magnite adapter', function () {
     });
 
     describe('ppuid handling', function () {
-      it('should set user.id from config user.id when ortb user.id is not set', function () {
+      it('should not set user.id from config user.id when ortb user.id is not set', function () {
         config.setConfig({ 'user': { id: 'config-ppuid-123' } });
         const requests = spec.buildRequests([getBannerBidRequest()], bidderRequest);
-        expect(requests[0].data.user.id).to.equal('config-ppuid-123');
+        expect(requests[0].data.user?.id).to.be.undefined;
       });
     });
   });
