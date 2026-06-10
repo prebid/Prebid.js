@@ -459,7 +459,20 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
     return '';
   }
 
-  const escapedUrl = encode(url);
+  const escapedUrl = encode(url).replace(/["'&<>]/g, (char) => {
+    switch (char) {
+      case '"':
+        return '&quot;';
+      case '\'':
+        return '&#x27;';
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+    }
+  });
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
