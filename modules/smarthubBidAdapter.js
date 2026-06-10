@@ -200,7 +200,8 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   let res = serverResponses?.find?.(r => r.partner && r.area && r.pid);
 
   if (!res) {
-    res = ALIASES[DEFAULT_PROVIDER];
+    const fallbackAlias = ALIASES[DEFAULT_PROVIDER] || { area: '1', pid: '300' };
+    res = { partner: DEFAULT_PROVIDER, area: fallbackAlias.area, pid: fallbackAlias.pid };
   }
 
   const { area, pid } = res;
