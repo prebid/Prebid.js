@@ -274,9 +274,9 @@ describe('adtelligentBidAdapter', () => {
     })
 
     it('building requests as arrays', () => {
-      expect(videoRequest).to.be.a('array');
-      expect(displayRequest).to.be.a('array');
-      expect(videoAndDisplayRequests).to.be.a('array');
+      expect(videoRequest).to.be.an('array');
+      expect(displayRequest).to.be.an('array');
+      expect(videoAndDisplayRequests).to.be.an('array');
     })
 
     it('sending as POST', () => {
