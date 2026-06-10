@@ -4467,6 +4467,14 @@ describe('the rubicon adapter', function () {
       });
     });
 
+    it('should encode gdpr consent string for iframe url', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 'foo" onload="alert(1)'
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo%22%20onload%3D%22alert(1)`
+      });
+    });
+
     it('should pass no params if gdpr consentString is not defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`

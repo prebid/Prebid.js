@@ -765,6 +765,9 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+      if (typeof params.gdpr_consent === 'string') {
+        params.gdpr_consent = encodeURIComponent(params.gdpr_consent);
+      }
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       return {
