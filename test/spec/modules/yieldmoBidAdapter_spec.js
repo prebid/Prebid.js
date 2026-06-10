@@ -59,7 +59,7 @@ describe('YieldmoAdapter', function () {
         startdelay: 10,
         protocols: [2, 3],
         api: [2, 3],
-        skipppable: true,
+        skippable: true,
         playbackmethod: [1, 2],
         ...videoParams,
       },
