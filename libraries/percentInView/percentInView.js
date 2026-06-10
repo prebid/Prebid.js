@@ -107,7 +107,7 @@ const percentInViewStatic = (element, { w, h } = {}) => {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
-}
+};
 
 export const dep = {
   // for stubbing in tests, see test/mocks/percentInView.js
@@ -126,11 +126,11 @@ export function intersections(mkObserver) {
   function observerCallback(entries) {
     entries.forEach(entry => {
       if ((intersections.get(entry.target)?.time ?? -1) < entry.time) {
-        intersections.set(entry.target, entry)
+        intersections.set(entry.target, entry);
         next.resolve();
         next = defer();
       }
-    })
+    });
   }
 
   let obs = null;
@@ -172,7 +172,7 @@ export function intersections(mkObserver) {
   return {
     observe,
     getIntersection,
-  }
+  };
 }
 
 export const viewportIntersections = intersections((callback) => new IntersectionObserver(callback, {
@@ -192,7 +192,7 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
       // just to be sure, cap the amount of time we wait for intersections
       delay(20)
     ]).then(() => next.call(this, request));
-  }
+  };
 }
 
 startAuction.before(mkIntersectionHook());

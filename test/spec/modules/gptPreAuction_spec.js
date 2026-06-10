@@ -30,7 +30,7 @@ describe('GPT pre-auction module', () => {
     makeSlot({ code: 'slotCode4', divId: 'div5' })
   ];
 
-  const mockTargeting = { '/123456/header-bid-tag-0': { 'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus' } }
+  const mockTargeting = { '/123456/header-bid-tag-0': { 'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus' } };
 
   const mockAuctionManager = {
     findBidByAdId(adId) {
@@ -49,7 +49,7 @@ describe('GPT pre-auction module', () => {
         return mocksAuctions.find(auction => auction.auctionId === auctionId);
       }
     }
-  }
+  };
 
   const mocksAuctions = [
     {
@@ -109,7 +109,7 @@ describe('GPT pre-auction module', () => {
         }
       })
     },
-  ]
+  ];
 
   describe('appendGptSlots', () => {
     it('should not add adServer object to context if no slots defined', () => {
@@ -166,8 +166,8 @@ describe('GPT pre-auction module', () => {
       const adUnit = { code: '/12345,21212/slot' };
       expect(appendGptSlots([adUnit])).to.eql({
         '/12345,21212/slot': '/12345,21212/slot'
-      })
-    })
+      });
+    });
 
     it('will not trim child id if mcmEnabled is not set to true', () => {
       window.googletag.pubads().setSlots([
@@ -339,7 +339,7 @@ describe('GPT pre-auction module', () => {
       });
       sandbox.stub(window, 'googletag').value(null);
       makeBidRequestsHook(sinon.stub(), [{}]);
-    })
+    });
 
     it('should use useDefaultPreAuction logic', () => {
       config.setConfig({
@@ -445,7 +445,7 @@ describe('GPT pre-auction module', () => {
 
     it('should properly get auctions ids from targeting', () => {
       const auctionsIds = getAuctionsIdsFromTargeting(mockTargeting, mockAuctionManager);
-      expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId])
+      expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]);
     });
 
     it('should filter out adIds that do not map to any auction', () => {
@@ -454,7 +454,7 @@ describe('GPT pre-auction module', () => {
         'au': { 'hb_adid': 'missing' },
       }, mockAuctionManager);
       expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]);
-    })
+    });
 
     it('should properly return empty array of auction ids for invalid targeting', () => {
       let auctionsIds = getAuctionsIdsFromTargeting({}, mockAuctionManager);

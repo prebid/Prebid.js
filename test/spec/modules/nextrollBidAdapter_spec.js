@@ -52,8 +52,8 @@ describe('nextrollBidAdapter', function() {
         }
       }];
 
-      const request = spec.buildRequests(nativeAdUnit)
-      const assets = request[0].data.imp.native.request.native.assets
+      const request = spec.buildRequests(nativeAdUnit);
+      const assets = request[0].data.imp.native.request.native.assets;
 
       const excptedAssets = [
         { id: 1, required: 1, title: { len: 80 } },
@@ -61,10 +61,10 @@ describe('nextrollBidAdapter', function() {
         { id: 3, required: 1, img: { w: 50, h: 50, wmin: 4, hmin: 3, type: 1 } },
         { id: 5, required: 0, data: { len: 20, type: 1 } },
         { id: 6, required: 1, data: { len: 25, type: 2 } }
-      ]
-      expect(assets).to.be.deep.equal(excptedAssets)
-    })
-  })
+      ];
+      expect(assets).to.be.deep.equal(excptedAssets);
+    });
+  });
 
   describe('isBidRequestValid', function() {
     it('validates the bids correctly when the bid has an id', function() {
@@ -210,13 +210,13 @@ describe('nextrollBidAdapter', function() {
   });
 
   describe('interpret native response', () => {
-    const clickUrl = 'https://clickurl.com/with/some/path'
-    const titleText = 'Some title'
-    const imgW = 300
-    const imgH = 250
-    const imgUrl = 'https://clickurl.com/img.png'
-    const brandText = 'Some Brand'
-    const impUrl = 'https://clickurl.com/imptracker'
+    const clickUrl = 'https://clickurl.com/with/some/path';
+    const titleText = 'Some title';
+    const imgW = 300;
+    const imgH = 250;
+    const imgUrl = 'https://clickurl.com/img.png';
+    const brandText = 'Some Brand';
+    const impUrl = 'https://clickurl.com/imptracker';
 
     const responseBody = {
       body: {
@@ -240,7 +240,7 @@ describe('nextrollBidAdapter', function() {
     };
 
     it('Should interpret response', () => {
-      const response = spec.interpretResponse(utils.deepClone(responseBody))
+      const response = spec.interpretResponse(utils.deepClone(responseBody));
       const expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
@@ -251,24 +251,24 @@ describe('nextrollBidAdapter', function() {
         sponsoredBy: brandText,
         clickTrackers: [],
         jstracker: []
-      }
+      };
 
-      expect(response[0].native).to.be.deep.equal(expectedResponse)
-    })
+      expect(response[0].native).to.be.deep.equal(expectedResponse);
+    });
 
     it('Should interpret all assets', () => {
-      const allAssetsResponse = utils.deepClone(responseBody)
-      const iconUrl = imgUrl + '?icon=true'; const iconW = 10; const iconH = 15
-      const logoUrl = imgUrl + '?logo=true'; const logoW = 20; const logoH = 25
-      const bodyText = 'Some body text'
+      const allAssetsResponse = utils.deepClone(responseBody);
+      const iconUrl = imgUrl + '?icon=true'; const iconW = 10; const iconH = 15;
+      const logoUrl = imgUrl + '?logo=true'; const logoW = 20; const logoH = 25;
+      const bodyText = 'Some body text';
 
       allAssetsResponse.body.seatbid[0].bid[0].adm.assets.push(...[
         { id: 3, img: { w: iconW, h: iconH, url: iconUrl } },
         { id: 4, img: { w: logoW, h: logoH, url: logoUrl } },
         { id: 6, data: { value: bodyText } }
-      ])
+      ]);
 
-      const response = spec.interpretResponse(allAssetsResponse)
+      const response = spec.interpretResponse(allAssetsResponse);
       const expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
@@ -282,9 +282,9 @@ describe('nextrollBidAdapter', function() {
         logo: { url: logoUrl, width: logoW, height: logoH },
         body: bodyText,
         sponsoredBy: brandText
-      }
+      };
 
-      expect(response[0].native).to.be.deep.equal(expectedResponse)
-    })
-  })
+      expect(response[0].native).to.be.deep.equal(expectedResponse);
+    });
+  });
 });

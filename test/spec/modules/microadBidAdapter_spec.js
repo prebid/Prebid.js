@@ -274,14 +274,14 @@ describe('microadBidAdapter', () => {
       const bidRequestWithOutLiveramp = Object.assign({}, bidRequestTemplate, {
         userId: {}
       });
-      const requests = spec.buildRequests([bidRequestWithOutLiveramp], bidderRequest)
+      const requests = spec.buildRequests([bidRequestWithOutLiveramp], bidderRequest);
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
             cbt: request.data.cbt
           })
         );
-      })
+      });
     });
 
     Object.entries({
@@ -319,17 +319,17 @@ describe('microadBidAdapter', () => {
       }
     }).forEach(([test, arg]) => {
       it(`should add ${test} if it is available in request parameters`, () => {
-        const bidRequestWithUserId = { ...bidRequestTemplate, userId: arg.userId }
-        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
+        const bidRequestWithUserId = { ...bidRequestTemplate, userId: arg.userId };
+        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest);
         requests.forEach((request) => {
           expect(request.data).to.deep.equal({
             ...expectedResultTemplate,
             cbt: request.data.cbt,
             ...arg.expected
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     Object.entries({
       'ID5 ID': {
@@ -367,17 +367,17 @@ describe('microadBidAdapter', () => {
           ...bidRequestTemplate,
           userId: arg.userId,
           userIdAsEids: arg.userIdAsEids
-        }
-        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
+        };
+        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest);
         requests.forEach((request) => {
           expect(request.data).to.deep.equal({
             ...expectedResultTemplate,
             cbt: request.data.cbt,
             ...arg.expected
-          })
-        })
+          });
+        });
       });
-    })
+    });
 
     describe('should send gpid', () => {
       it('from gpid', () => {
@@ -392,7 +392,7 @@ describe('microadBidAdapter', () => {
             }
           }
         });
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -401,8 +401,8 @@ describe('microadBidAdapter', () => {
               pbadslot: '3333/4444'
             })
           );
-        })
-      })
+        });
+      });
 
       it('from pbadslot', () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, {
@@ -414,7 +414,7 @@ describe('microadBidAdapter', () => {
             }
           }
         });
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -422,9 +422,9 @@ describe('microadBidAdapter', () => {
               gpid: '3333/4444',
             })
           );
-        })
-      })
-    })
+        });
+      });
+    });
 
     const notGettingGpids = {
       'they are not existing': bidRequestTemplate,
@@ -439,12 +439,12 @@ describe('microadBidAdapter', () => {
           }
         }
       }
-    }
+    };
 
     Object.entries(notGettingGpids).forEach(([testTitle, param]) => {
       it(`should not send gpid because ${testTitle}`, () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, param);
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -453,9 +453,9 @@ describe('microadBidAdapter', () => {
           );
           expect(request.data.gpid).to.be.undefined;
           expect(request.data.pbadslot).to.be.undefined;
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('should send adservname', () => {
       const bidRequest = Object.assign({}, bidRequestTemplate, {
@@ -470,7 +470,7 @@ describe('microadBidAdapter', () => {
           }
         }
       });
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
@@ -478,8 +478,8 @@ describe('microadBidAdapter', () => {
             adservname: 'gam'
           })
         );
-      })
-    })
+      });
+    });
 
     const notGettingAdservnames = {
       'it is not existing': bidRequestTemplate,
@@ -495,12 +495,12 @@ describe('microadBidAdapter', () => {
           }
         }
       }
-    }
+    };
 
     Object.entries(notGettingAdservnames).forEach(([testTitle, param]) => {
       it(`should not send adservname because ${testTitle}`, () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, param);
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -508,9 +508,9 @@ describe('microadBidAdapter', () => {
             })
           );
           expect(request.data.adservname).to.be.undefined;
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('should send adservadslot', () => {
       const bidRequest = Object.assign({}, bidRequestTemplate, {
@@ -525,7 +525,7 @@ describe('microadBidAdapter', () => {
           }
         }
       });
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
@@ -533,8 +533,8 @@ describe('microadBidAdapter', () => {
             adservadslot: '/1111/home'
           })
         );
-      })
-    })
+      });
+    });
 
     const notGettingAdservadslots = {
       'it is not existing': bidRequestTemplate,
@@ -550,12 +550,12 @@ describe('microadBidAdapter', () => {
           }
         }
       }
-    }
+    };
 
     Object.entries(notGettingAdservadslots).forEach(([testTitle, param]) => {
       it(`should not send adservadslot because ${testTitle}`, () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, param);
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -563,9 +563,9 @@ describe('microadBidAdapter', () => {
             })
           );
           expect(request.data.adservadslot).to.be.undefined;
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('interpretResponse', () => {

@@ -22,7 +22,7 @@ let allLabels = {};
 
 config.getConfig(LABELS_KEY, (cfg) => {
   labels.publisher = cfg[LABELS_KEY];
-  allLabels = combineLabels(); ;
+  allLabels = combineLabels();
 });
 
 export function setLabels(internalLabels) {
@@ -56,7 +56,7 @@ export type DefaultOptions = {
    * Defaults to 1
    */
   sampling?: number;
-}
+};
 
 export type AnalyticsConfig<P extends AnalyticsProvider> = (
     P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : { [key: string]: unknown }
@@ -77,7 +77,7 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
        * Adapter specific options
        */
       options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
-    }
+    };
 
 export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }: {
   analyticsType?: AnalyticsType;
@@ -107,10 +107,10 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
             if (queue.length >= len) {
               notDecreasing++;
             } else {
-              notDecreasing = 0
+              notDecreasing = 0;
             }
             if (notDecreasing >= 10) {
-              logError('Detected probable infinite loop, discarding events', queue)
+              logError('Detected probable infinite loop, discarding events', queue);
               queue.length = 0;
               return;
             }
@@ -127,7 +127,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
         timer = null;
       }
       debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
-    }
+    };
   })();
 
   return Object.defineProperties({
@@ -166,7 +166,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
         args = {
           [LABELS_KEY]: allLabels,
           ...args,
-        }
+        };
       }
       this.track({ eventType, labels: allLabels, args });
     });
@@ -210,7 +210,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
             events.on(ev, handler);
             return [ev, handler];
           })
-      )
+      );
     } else {
       logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }
@@ -226,7 +226,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   function _disable() {
     Object.entries(handlers || {}).forEach(([event, handler]: any) => {
       events.off(event, handler);
-    })
+    });
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
     enabled = false;
   }

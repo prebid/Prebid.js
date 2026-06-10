@@ -13,7 +13,7 @@ import {
 } from '../../../modules/yandexIdSystem.js';
 import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
-import { createSandbox } from 'sinon'
+import { createSandbox } from 'sinon';
 import * as utils from '../../../src/utils.js';
 
 /**
@@ -115,7 +115,7 @@ describe('YandexId module', () => {
       const generatedId = yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG, undefined, storedId)?.id;
 
       expect(generatedId).to.be.equal(storedId);
-    })
+    });
 
     describe('config validation', () => {
       INCORRECT_SUBMODULE_CONFIGS.forEach((config, i) => {
@@ -124,9 +124,9 @@ describe('YandexId module', () => {
 
           expect(generatedId).to.be.undefined;
           expect(logErrorSpy.called).to.be.true;
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('crypto', () => {
       it('uses Math.random when crypto is not available', () => {

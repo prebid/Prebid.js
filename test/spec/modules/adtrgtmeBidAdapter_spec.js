@@ -33,7 +33,7 @@ const createBidRequest = ({ bidId, adUnitCode, bidOverride, zid, ortb2 }) => {
     bR.params.zid = zid;
   }
   return bR;
-}
+};
 
 const createBidderRequest = (arr, code = 'default-code', ortb2 = {}) => {
   return {
@@ -65,7 +65,7 @@ const createRequestMock = ({ bidId, adUnitCode, type, zid, bidOverride, pubIdMod
     pubIdMode: pubIdMode || false,
     ortb2: ortb2 || {}
   });
-  return { bidRequest: bR, validBR: [bR], bidderRequest: createBidderRequest([bR], adUnitCode, ortb2) }
+  return { bidRequest: bR, validBR: [bR], bidderRequest: createBidderRequest([bR], adUnitCode, ortb2) };
 };
 
 const createAdm = (type) => {
@@ -105,7 +105,7 @@ const createResponseMock = (type) => {
   const data = spec.buildRequests(validBR, bidderRequest)[0].data;
 
   return { sR, data, bidderRequest };
-}
+};
 
 describe('Adtrgtme Bid Adapter:', () => {
   it('PLACEHOLDER TO PASS GULP', () => {
@@ -114,7 +114,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
   describe('check basic properties', () => {
     it('should define bidder code', () => {
-      expect(spec.code).to.equal('adtrgtme')
+      expect(spec.code).to.equal('adtrgtme');
     });
   });
 
@@ -138,7 +138,7 @@ describe('Adtrgtme Bid Adapter:', () => {
             ]
           }
         }
-      }
+      };
     });
 
     after(() => {
@@ -166,7 +166,7 @@ describe('Adtrgtme Bid Adapter:', () => {
           { type: 'iframe', 'url': IFRAME_SYNC_ONE_URL },
           { type: 'iframe', 'url': IFRAME_SYNC_TWO_URL }
         ]
-      )
+      );
     });
 
     it('sync check for image only', () => {
@@ -180,7 +180,7 @@ describe('Adtrgtme Bid Adapter:', () => {
         [
           { type: 'image', 'url': IMAGE_SYNC_URL }
         ]
-      )
+      );
     });
 
     it('Sync for iframe and image', () => {
@@ -196,7 +196,7 @@ describe('Adtrgtme Bid Adapter:', () => {
           { type: 'iframe', 'url': IFRAME_SYNC_ONE_URL },
           { type: 'iframe', 'url': IFRAME_SYNC_TWO_URL }
         ]
-      )
+      );
     });
   });
 
@@ -240,7 +240,7 @@ describe('Adtrgtme Bid Adapter:', () => {
           floor: bidRequest.floors.values[floorObj.mediaType + '|300x250'],
           currency: floorObj.currency,
           mediaType: floorObj.mediaType
-        }
+        };
       };
       bidRequest.floors = {
         currency: 'AUD',
@@ -280,7 +280,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     const BAD_ORTB2_TYPES = [null, [], 123, 'invalidID', true, false, undefined];
     BAD_ORTB2_TYPES.forEach(key => {
       it(`should remove bad site data: ${JSON.stringify(key)}`, () => {
-        const ortb2 = { site: key }
+        const ortb2 = { site: key };
         const { validBR, bidderRequest } = createRequestMock({ ortb2 });
         const data = spec.buildRequests(validBR, bidderRequest)[0].data;
         expect(data.site[key]).to.be.undefined;
@@ -360,7 +360,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     const BAD_ORTB2_TYPES = [null, [], 'unsupportedKeyName', true, false, undefined];
     BAD_ORTB2_TYPES.forEach(key => {
       it(`should not allow bad site types to be added to bid request: ${JSON.stringify(key)}`, () => {
-        const ortb2 = { user: key }
+        const ortb2 = { user: key };
         const { validBR, bidderRequest } = createRequestMock({ ortb2 });
         const data = spec.buildRequests(validBR, bidderRequest)[0].data;
         expect(data.user[key]).to.be.undefined;
@@ -402,7 +402,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({});
       validBR[0].ortb2Imp = {
         ext: {
           data: {
@@ -415,7 +415,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(data.imp[0].ext.data).to.deep.equal(validBR[0].ortb2Imp.ext.data);
     });
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({});
       validBR[0].ortb2Imp = {
         instl: 1
       };
@@ -424,7 +424,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({});
       validBR[0].ortb2Imp = {
         instl: true
       };
@@ -433,7 +433,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean false to be added to the bid request`, () => {
-      const { validBR, bidderRequest } = createRequestMock({})
+      const { validBR, bidderRequest } = createRequestMock({});
       validBR[0].ortb2Imp = {
         instl: false
       };
@@ -633,7 +633,7 @@ describe('Adtrgtme Bid Adapter:', () => {
         expect(response[0].ad).to.equal(`<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
       <img src="${DEFAULT_BANNER_URL}" />`);
         expect(response[0].mediaType).to.equal('banner');
-      })
+      });
     });
 
     describe('Support adomains', () => {
@@ -642,7 +642,7 @@ describe('Adtrgtme Bid Adapter:', () => {
         const response = spec.interpretResponse(sR, { bidderRequest });
         expect(response[0].meta.advertiserDomains).to.be.a('array');
         expect(response[0].meta.advertiserDomains[0]).to.equal('some-advertiser-domain.com');
-      })
+      });
     });
 
     describe('Check response Ad ID / Creative ID', () => {

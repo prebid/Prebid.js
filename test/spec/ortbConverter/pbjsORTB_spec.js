@@ -10,7 +10,7 @@ describe('pbjsORTB register / get processors', () => {
   let registerOrtbProcessor, getProcessors;
   beforeEach(() => {
     ({ registerOrtbProcessor, getProcessors } = processorRegistry());
-  })
+  });
   PROCESSOR_TYPES.forEach(type => {
     it(`can get and set ${type} processors`, () => {
       const proc = function () {};
@@ -48,7 +48,7 @@ describe('pbjsORTB register / get processors', () => {
           fn: proc
         }
       }
-    })
+    });
   });
 
   it('can assign processors to specific dialects', () => {
@@ -62,6 +62,6 @@ describe('pbjsORTB register / get processors', () => {
           fn: proc
         }
       }
-    })
+    });
   });
 });

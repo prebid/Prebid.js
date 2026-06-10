@@ -155,7 +155,7 @@ function adRenderSucceededHandler(args) {
     page: page,
     bid: buildReceivedBid(args.bid),
     device: buildDevice(args.bid)
-  }
+  };
   sendEvent(EVENTS.AD_RENDER_SUCCEEDED, event);
 }
 
@@ -170,7 +170,7 @@ function adRenderFailedHandler(args) {
     message: args.message,
     bid: buildReceivedBid(args.bid),
     device: buildDevice(args.bid)
-  }
+  };
   sendEvent(EVENTS.AD_RENDER_FAILED, event);
 }
 
@@ -187,7 +187,7 @@ function auctionEndHandler(args) {
       };
     }),
     bidsReceived: args.bidsReceived?.map(buildReceivedBid)
-  }
+  };
   sendEvent(EVENTS.AUCTION_END, event);
 }
 
@@ -201,7 +201,7 @@ function bidTimeoutHandler(args) {
       ...buildBidRequestBid(t),
       timeout: t?.timeout
     }))
-  }
+  };
   sendEvent(EVENTS.BID_TIMEOUT, event);
 }
 
@@ -217,7 +217,7 @@ function bidderErrorHandler(args) {
       page: siteContext.page,
       bids: bidderRequest?.bids?.map(buildBidRequestBid)
     }
-  }
+  };
   sendEvent(EVENTS.BIDDER_ERROR, event);
 }
 
@@ -231,7 +231,7 @@ function browserInterventionHandler(args) {
     intervention: args.intervention,
     bid: buildReceivedBid(args.bid),
     device: buildDevice(args.bid)
-  }
+  };
   sendEvent(EVENTS.BROWSER_INTERVENTION, event);
 }
 

@@ -65,7 +65,7 @@ export const ftrackIdSubmodule = {
         uid: '',
         ext: {}
       }
-    }
+    };
 
     // Loop over the value's properties:
     // -- if string, assign value as is.

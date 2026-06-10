@@ -25,7 +25,7 @@ describe('Mobkoi bidding Adapter', function () {
         ext: { integrationEndpoint: testIntegrationEndpoint }
       }
     }
-  })
+  });
 
   const getBidRequest = () => ({
     bidder: bidderCode,
@@ -40,7 +40,7 @@ describe('Mobkoi bidding Adapter', function () {
       integrationEndpoint: testIntegrationEndpoint,
       placementId: testPlacementId
     }
-  })
+  });
 
   const getBidderRequest = () => ({
     bidderCode,
@@ -48,7 +48,7 @@ describe('Mobkoi bidding Adapter', function () {
     bidderRequestId: testRequestId,
     bids: [getBidRequest()],
     ortb2: getOrtb2()
-  })
+  });
 
   const getConvertedBidRequest = () => ({
     id: testRequestId,
@@ -58,7 +58,7 @@ describe('Mobkoi bidding Adapter', function () {
     }],
     ...getOrtb2(),
     test: 0
-  })
+  });
 
   const adm = '<div>test ad</div>';
   const lurl = 'test.com/loss';
@@ -95,7 +95,7 @@ describe('Mobkoi bidding Adapter', function () {
         }
       ],
     }
-  })
+  });
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
@@ -192,7 +192,7 @@ describe('Mobkoi bidding Adapter', function () {
       expect(bid.netRevenue).to.be.true;
       expect(bid.ttl).to.equal(30);
     });
-  })
+  });
 
   describe('utils', function () {
     let bidderRequest;
@@ -213,7 +213,7 @@ describe('Mobkoi bidding Adapter', function () {
 
         expect(utils.getIntegrationEndpoint(bidderRequest)).to.equal(DEFAULT_PREBID_JS_INTEGRATION_ENDPOINT);
       });
-    })
+    });
 
     describe('getOrtbId', function () {
       it('should return the ortbId from the prebid request object (i.e bidderRequestId)', function () {
@@ -244,8 +244,8 @@ describe('Mobkoi bidding Adapter', function () {
           utils.getOrtbId(bidderRequest);
         }).to.throw();
       });
-    })
-  })
+    });
+  });
 
   describe('getUserSyncs', function () {
     let syncOptions;
@@ -344,5 +344,5 @@ describe('Mobkoi bidding Adapter', function () {
       expect(result).to.have.length(1);
       expect(result[0].url).to.equal('https://valid.com/pixel');
     });
-  })
-})
+  });
+});

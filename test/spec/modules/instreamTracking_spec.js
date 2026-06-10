@@ -72,11 +72,11 @@ function mockBidResponse(adUnit, requestId) {
     'creativeId': 'id',
     'netRevenue': true,
     'currency': 'USD',
-  }
+  };
   if (adUnit.mediaTypes.video) {
     bid.videoCacheKey = VIDEO_CACHE_KEY;
   }
-  return bid
+  return bid;
 }
 
 function mockBidRequest(adUnit, bidResponse) {
@@ -175,10 +175,10 @@ describe('Instream Tracking', function () {
 
     it('checks for instream bids', function () {
       enableInstreamTracking();
-      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput('banner')), 'should not start tracking when banner bids are present')
-      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput(OUTSTREAM)), 'should not start tracking when outstream bids are present')
+      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput('banner')), 'should not start tracking when banner bids are present');
+      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput(OUTSTREAM)), 'should not start tracking when outstream bids are present');
       mockPerformanceApi({});
-      assert.isOk(trackInstreamDeliveredImpressions(getMockInput(INSTREAM)), 'should start tracking when instream bids are present')
+      assert.isOk(trackInstreamDeliveredImpressions(getMockInput(INSTREAM)), 'should start tracking when instream bids are present');
       clock.tick(10);
     });
   });

@@ -59,7 +59,7 @@ describe('YieldmoAdapter', function () {
         startdelay: 10,
         protocols: [2, 3],
         api: [2, 3],
-        skipppable: true,
+        skippable: true,
         playbackmethod: [1, 2],
         ...videoParams,
       },
@@ -113,7 +113,7 @@ describe('YieldmoAdapter', function () {
         const bid = mockVideoBid();
         delete utils.deepAccess(bid, key)[paramToRemove];
         return bid;
-      }
+      };
 
       it('should return true when necessary information is found', function () {
         expect(spec.isBidRequestValid(mockVideoBid())).to.be.true;
@@ -364,7 +364,7 @@ describe('YieldmoAdapter', function () {
 
       it('should not write 0 bidfloor value by default', function() {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
-        expect(placementsData[0].bidfloor).to.undefined;
+        expect(placementsData[0].bidfloor).to.be.undefined;
       });
 
       it('should not exceed max url length', () => {
@@ -552,7 +552,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
 
         it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
@@ -584,7 +584,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if params.video.skippable is false', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
       });
 
@@ -1028,11 +1028,11 @@ describe('YieldmoAdapter', function () {
     const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
     it('should use type iframe when iframeEnabled', function() {
       const syncs = spec.getUserSyncs({ iframeEnabled: true });
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe' }])
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe' }]);
     });
     it('should use type image when pixelEnabled', function() {
       const syncs = spec.getUserSyncs({ pixelEnabled: true });
-      expect(syncs).to.deep.equal([{ type: 'image', url: pbCookieAssistSyncUrl + '&type=image' }])
+      expect(syncs).to.deep.equal([{ type: 'image', url: pbCookieAssistSyncUrl + '&type=image' }]);
     });
     it('should register no syncs', function () {
       expect(spec.getUserSyncs({})).to.deep.equal([]);

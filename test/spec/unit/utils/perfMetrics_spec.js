@@ -27,7 +27,7 @@ describe('metricsFactory', () => {
       metrics.measureTime('test', () => now += 3);
       expect(metrics.getMetrics()).to.eql({
         test: 3
-      })
+      });
     });
 
     it('still measures if fn throws', () => {
@@ -40,7 +40,7 @@ describe('metricsFactory', () => {
       expect(metrics.getMetrics()).to.eql({
         test: 4
       });
-    })
+    });
   });
 
   describe('measureHookTime', () => {
@@ -67,19 +67,19 @@ describe('metricsFactory', () => {
                   now += 10;
                   fn(next)();
                   q.resolve();
-                })
-              })
+                });
+              });
             });
             testHook();
             return q.promise.then(() => {
               expect(metrics.getMetrics()).to.eql({
                 test: 10
               });
-            })
+            });
           });
         });
-      })
-    })
+      });
+    });
   });
 
   describe('checkpoints', () => {
@@ -123,8 +123,8 @@ describe('metricsFactory', () => {
         if (checkSecond) {
           metrics.checkpoint('B');
         }
-        expect(metrics.timeBetween('A', 'B')).to.equal(null)
-      })
+        expect(metrics.timeBetween('A', 'B')).to.equal(null);
+      });
     });
 
     it('saves a metric with timeBetween if given a name', () => {
@@ -153,7 +153,7 @@ describe('metricsFactory', () => {
       m3.setMetric('3', 'three');
       sinon.assert.match(metrics.getMetrics(), {
         1: 'one'
-      })
+      });
       sinon.assert.match(m2.getMetrics(), {
         1: 'one',
         2: 'two'
@@ -212,7 +212,7 @@ describe('metricsFactory', () => {
       expect(child.getMetrics()).to.eql({
         test: [1]
       });
-    })
+    });
   });
 
   describe('join', () => {
@@ -235,7 +235,7 @@ describe('metricsFactory', () => {
       metrics.join(other);
       now = 20;
       expect(other.timeSince('test')).to.eql(10);
-    })
+    });
 
     it('groups metrics after joining', () => {
       metrics.join(other);
@@ -287,7 +287,7 @@ describe('metricsFactory', () => {
       expect(other.getMetrics()).to.eql({
         test: [1]
       });
-    })
+    });
 
     Object.entries({
       'join with a common ancestor': () => [metrics.fork(), metrics.fork()],
@@ -300,7 +300,7 @@ describe('metricsFactory', () => {
         const expected = { 'test': 1 };
         expect(m1.getMetrics()).to.eql(expected);
         expect(m2.getMetrics()).to.eql(expected);
-      })
+      });
     });
 
     it('can join into a cycle', () => {
@@ -311,11 +311,11 @@ describe('metricsFactory', () => {
       expect(c.getMetrics()).to.eql({
         child: 1,
         parent: [1]
-      })
+      });
       expect(metrics.getMetrics()).to.eql({
         parent: 1,
         child: [1]
-      })
+      });
     });
   });
   describe('newMetrics', () => {
@@ -329,10 +329,10 @@ describe('metricsFactory', () => {
       expect(m0.getMetrics()).to.eql({
         m0: 1,
         m1: 1
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});
 
 describe('nullMetrics', () => {
   let nullMetrics;
@@ -355,8 +355,8 @@ describe('nullMetrics', () => {
       it('does not register timing metrics', () => {
         wrapFn(sinon.stub())();
         expect(nullMetrics.getMetrics()).to.eql({});
-      })
-    })
+      });
+    });
   });
 
   it('does not save checkpoints', () => {
@@ -368,7 +368,7 @@ describe('nullMetrics', () => {
     nullMetrics.setMetric('test', 1);
     expect(nullMetrics.getMetrics()).to.eql({});
   });
-})
+});
 
 describe('configuration toggle', () => {
   afterEach(() => {

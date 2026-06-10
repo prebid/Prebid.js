@@ -633,7 +633,7 @@ const SAMPLE_EVENTS = {
       }
     }
   ]
-}
+};
 
 describe('Zeta Global SSP Analytics Adapter', function () {
   let sandbox;
@@ -643,7 +643,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
     sandbox = sinon.createSandbox();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
-    config.setConfig({ pageUrl: 'https://www.config.domain.com/index.html' })
+    config.setConfig({ pageUrl: 'https://www.config.domain.com/index.html' });
   });
 
   afterEach(function () {

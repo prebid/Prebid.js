@@ -5,7 +5,7 @@ before(() => {
   disableAjaxForAnalytics();
   // make analytics event handling synchronous
   setDebounceDelay(0);
-})
+});
 
 export function disableAjaxForAnalytics() {
   sinon.stub(_internal, 'ajax').callsFake(() => null);

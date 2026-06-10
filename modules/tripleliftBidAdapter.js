@@ -246,7 +246,7 @@ function _getFloor (bid) {
 
 function _getGlobalFpd(bidderRequest) {
   const fpd = {};
-  const context = {}
+  const context = {};
   const user = {};
   const ortbData = bidderRequest.ortb2 || {};
   const opeCloudStorage = _fetchOpeCloud();
@@ -255,12 +255,12 @@ function _getGlobalFpd(bidderRequest) {
   const fpdUser = Object.assign({}, ortbData.user);
 
   if (opeCloudStorage) {
-    fpdUser.data = fpdUser.data || []
+    fpdUser.data = fpdUser.data || [];
     try {
       fpdUser.data.push({
         name: 'www.1plusx.com',
         ext: opeCloudStorage
-      })
+      });
     } catch (err) {
       logError('Triplelift: error adding 1plusX segments: ', err);
     }
@@ -283,10 +283,10 @@ function _fetchOpeCloud() {
   if (!opeCloud) return null;
   try {
     const parsedJson = JSON.parse(opeCloud);
-    return parsedJson
+    return parsedJson;
   } catch (err) {
     logError('Triplelift: error parsing JSON: ', err);
-    return null
+    return null;
   }
 }
 
@@ -378,9 +378,9 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source === 'hdx') {
       if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
-        bidResponse.meta.mediaType = 'video'
+        bidResponse.meta.mediaType = 'video';
       } else {
-        bidResponse.meta.mediaType = 'banner'
+        bidResponse.meta.mediaType = 'banner';
       }
     }
 

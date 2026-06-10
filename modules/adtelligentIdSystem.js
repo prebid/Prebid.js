@@ -82,7 +82,7 @@ export const adtelligentIdModule = {
     });
 
     if (window.adtDmp && window.adtDmp.ready) {
-      return { id: window.adtDmp.getUID() }
+      return { id: window.adtDmp.getUID() };
     }
 
     return {
@@ -92,7 +92,7 @@ export const adtelligentIdModule = {
         });
       }
 
-    }
+    };
   },
   eids: {
     'adtelligentId': {

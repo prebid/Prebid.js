@@ -35,5 +35,5 @@ export function domainOverrideToRootDomain(storage, moduleName) {
         return topDomain;
       }
     }
-  }
+  };
 }

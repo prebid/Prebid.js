@@ -13,7 +13,7 @@ export const _getUrlVars = function(url) {
     myJson[hash[0]] = hash[1];
   }
   return myJson;
-}
+};
 
 describe('temedya adapter', function() {
   let bidRequests;
@@ -33,7 +33,7 @@ describe('temedya adapter', function() {
           }
         }
       }
-    ]
+    ];
 
     nativeBidRequests = [
       {
@@ -51,8 +51,8 @@ describe('temedya adapter', function() {
           }
         }
       }
-    ]
-  })
+    ];
+  });
 
   describe('isBidRequestValid', function () {
     it('valid bid case', function () {
@@ -62,7 +62,7 @@ describe('temedya adapter', function() {
           widgetId: 753497,
           count: 1
         }
-      }
+      };
       const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
@@ -72,11 +72,11 @@ describe('temedya adapter', function() {
         bidder: 'temedya',
         params: {
         }
-      }
+      };
       const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(false);
-    })
-  })
+    });
+  });
 
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via GET', function () {
@@ -99,12 +99,12 @@ describe('temedya adapter', function() {
 
     it('Request params check', function() {
       const request = spec.buildRequests(bidRequests)[0];
-      const data = _getUrlVars(request.url)
+      const data = _getUrlVars(request.url);
       data.type = 'native';
       data.wid = bidRequests[0].params.widgetId;
       data.count = bidRequests[0].params.count;
-    })
-  })
+    });
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -173,5 +173,5 @@ describe('temedya adapter', function() {
       expect(result[0].currency).to.equal('TRY');
       expect(result[0].netRevenue).to.equal(false);
     });
-  })
-})
+  });
+});
