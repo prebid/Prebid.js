@@ -20,7 +20,9 @@ const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
 const PUB_COMMON_ID = 'PublisherCommonId';
 
-type SharedIdParams = {
+export type SharedIdSystemModuleName = 'sharedId' | 'pubCommonId';
+
+export type SharedIdParams = {
   /**
    * If true, then an id is created automatically if it’s missing.
    * Default is true. If your server has a component that generates the id instead, then this should be set to false

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "11.15.0-pre",
+  "version": "11.17.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -119,7 +119,7 @@
     "plugin-error": "^2.0.1",
     "puppeteer": "^24.10.0",
     "resolve-from": "^5.0.0",
-    "sinon": "^20.0.0",
+    "sinon": "^22.0.0",
     "through2": "^4.0.2",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",

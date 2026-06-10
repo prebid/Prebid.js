@@ -17,8 +17,14 @@ import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../librar
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./euidIdSystem.d.ts').EuidIdSystemModuleName} EuidIdSystemModuleName
+ * @typedef {import('./euidIdSystem.d.ts').EuidIdSystemParams} EuidIdSystemParams
  */
 
+/**
+ * @type {EuidIdSystemModuleName}
+ */
 const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
@@ -52,11 +58,11 @@ function hasWriteToDeviceConsent(consentData) {
   return true;
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<EuidIdSystemModuleName>} */
 export const euidIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {EuidIdSystemModuleName}
    */
   name: MODULE_NAME,
 

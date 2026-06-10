@@ -892,42 +892,7 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "streamkey",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "janet",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ocm",
-      "aliasOf": "adtelligent",
-      "gvlid": 1148,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "9dotsmedia",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "indicue",
-      "aliasOf": "adtelligent",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "stellormedia",
       "aliasOf": "adtelligent",
       "gvlid": null,
       "disclosureURL": null
@@ -2386,6 +2351,13 @@
       "componentName": "feedad",
       "aliasOf": null,
       "gvlid": 781,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ferio",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4136,6 +4108,13 @@
       "componentName": "readpeak",
       "aliasOf": null,
       "gvlid": 290,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "realry",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -6394,6 +6373,11 @@
     {
       "componentType": "analytics",
       "componentName": "hadronAnalytics",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "hubvisor",
       "gvlid": null
     },
     {
