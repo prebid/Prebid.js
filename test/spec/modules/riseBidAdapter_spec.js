@@ -243,9 +243,9 @@ describe('riseAdapter', function () {
     it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].sizes).to.be.an('array');
-      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes);
       expect(request.data.bids[1].sizes).to.be.an('array');
-      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes);
       expect(request.data.bids[2].sizes).to.be.an('array');
       expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes)
     });
@@ -387,8 +387,6 @@ describe('riseAdapter', function () {
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
       const bidderRequestWithGPP = Object.assign({ gppConsent: { gppString: 'gpp-consent', applicableSections: [7] } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
-      console.log('request.data.params');
-      console.log(request.data.params);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gpp', 'gpp-consent');
       expect(request.data.params.gpp_sid[0]).to.be.equal(7);
@@ -549,7 +547,7 @@ describe('riseAdapter', function () {
         const bid = utils.deepClone(bidRequests[0]);
         const userIds = [
           {
-            sourcer: 'pubcid.org',
+            source: 'pubcid.org',
             uids: [{
               id: '12345678',
               atype: 1,
@@ -707,6 +705,51 @@ describe('riseAdapter', function () {
     it('native type should have native key', function () {
       const result = spec.interpretResponse({ body: response });
       expect(result[2].native).to.eql(expectedNativeResponse.native)
+    });
+
+    it('should include meta fields from server response', function () {
+      const responseWithMeta = {
+        bids: [{
+          cpm: 1.5,
+          vastXml: '<VAST/>',
+          width: 640,
+          height: 480,
+          requestId: 'test-id',
+          creativeId: 'cr-1',
+          nurl: 'http://example.com/win',
+          mediaType: VIDEO,
+          meta: {
+            advertiserDomains: ['example.com'],
+            primaryCatId: 'IAB1-1',
+            secondaryCatIds: ['IAB1-2', 'IAB1-3']
+          }
+        }]
+      };
+      const result = spec.interpretResponse({ body: responseWithMeta });
+      expect(result[0].meta).to.deep.equal({
+        mediaType: VIDEO,
+        advertiserDomains: ['example.com'],
+        primaryCatId: 'IAB1-1',
+        secondaryCatIds: ['IAB1-2', 'IAB1-3']
+      });
+    });
+
+    it('should fall back to adomain for advertiserDomains when meta is absent', function () {
+      const responseWithAdomain = {
+        bids: [{
+          cpm: 1.5,
+          ad: '<div/>',
+          width: 300,
+          height: 250,
+          requestId: 'test-id',
+          creativeId: 'cr-1',
+          nurl: 'http://example.com/win',
+          mediaType: BANNER,
+          adomain: ['fallback.com']
+        }]
+      };
+      const result = spec.interpretResponse({ body: responseWithAdomain });
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['fallback.com']);
     });
   })
 

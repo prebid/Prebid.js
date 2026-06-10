@@ -339,9 +339,7 @@ export function buildBidResponse(adUnit) {
     netRevenue: adUnit.netRevenue || true,
     nurl: adUnit.nurl,
     mediaType: adUnit.mediaType,
-    meta: {
-      mediaType: adUnit.mediaType
-    }
+    meta: buildBidMeta(adUnit)
   };
 
   if (adUnit.mediaType === VIDEO) {
@@ -352,11 +350,20 @@ export function buildBidResponse(adUnit) {
     bidResponse.native = { ortb: adUnit.native };
   }
 
-  if (adUnit.adomain && adUnit.adomain.length) {
-    bidResponse.meta.advertiserDomains = adUnit.adomain;
+  return bidResponse;
+}
+
+export function buildBidMeta(adUnit) {
+  const meta = {
+    mediaType: adUnit.mediaType,
+    ...(adUnit.meta || {})
+  };
+
+  if (!meta.advertiserDomains && adUnit.adomain && adUnit.adomain.length) {
+    meta.advertiserDomains = adUnit.adomain;
   }
 
-  return bidResponse;
+  return meta;
 }
 
 export function generateGeneralParams(generalObject, bidderRequest, adapterVersion) {

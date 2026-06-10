@@ -163,22 +163,24 @@ describe('tercept analytics adapter', function () {
   // ─── Request timing ───────────────────────────────────────────────────────
 
   describe('request timing', function () {
-    it('sends no request before the 5s timer fires', function () {
+    it('does not send synchronously — batch only fires on the next tick after AUCTION_END', function () {
       emitFullAuction();
-      clock.tick(4999);
+      // setTimeout(..., 0) is still async; hasn't fired yet without a tick
       expect(server.requests.length).to.equal(0);
+      clock.tick(0);
+      expect(server.requests.length).to.equal(1);
     });
 
-    it('sends exactly one request per auction after 5s', function () {
+    it('sends exactly one batch request per auction after AUCTION_END', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       expect(server.requests.length).to.equal(1);
     });
 
     it('sends one request per auction when two auctions run concurrently', function () {
       emitFullAuction('auction-a');
       emitFullAuction('auction-b');
-      clock.tick(5000);
+      clock.tick(0);
       expect(server.requests.length).to.equal(2);
     });
 
@@ -192,15 +194,6 @@ describe('tercept analytics adapter', function () {
       clock.tick(1);
       expect(server.requests.length).to.equal(1);
     });
-
-    it('treats analyticsBatchTimeout: 0 as immediate flush, not as missing', function () {
-      terceptAnalyticsAdapter.disableAnalytics();
-      adapterManager.enableAnalytics({ provider: 'tercept', options: { ...initOptions, analyticsBatchTimeout: 0 } });
-
-      emitFullAuction();
-      clock.tick(0);
-      expect(server.requests.length).to.equal(1);
-    });
   });
 
   // ─── Payload structure ────────────────────────────────────────────────────
@@ -208,14 +201,14 @@ describe('tercept analytics adapter', function () {
   describe('payload structure', function () {
     it('has auctionInit, bids and initOptions at top level', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const payload = JSON.parse(server.requests[0].requestBody);
       expect(payload).to.have.all.keys(['auctionInit', 'bids', 'initOptions']);
     });
 
     it('limits auctionInit.bidderRequests to first entry only', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const { auctionInit: ai } = JSON.parse(server.requests[0].requestBody);
       expect(ai.bidderRequests).to.have.length(1);
       expect(ai.bidderRequests[0].bidderCode).to.equal('appnexus');
@@ -223,7 +216,7 @@ describe('tercept analytics adapter', function () {
 
     it('attaches host, path and search to auctionInit at send time', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const { auctionInit: ai } = JSON.parse(server.requests[0].requestBody);
       expect(ai.host).to.be.a('string');
       expect(ai.path).to.be.a('string');
@@ -232,14 +225,14 @@ describe('tercept analytics adapter', function () {
 
     it('includes initOptions in the payload', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const payload = JSON.parse(server.requests[0].requestBody);
       expect(payload.initOptions).to.deep.equal(initOptions);
     });
 
     it('does not include ad, native or adUrl fields in bids', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       bids.forEach(bid => {
         expect(bid).not.to.have.property('ad');
@@ -256,7 +249,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].bidId).to.equal(BID_ID);
       expect(bids[0].renderStatus).to.equal(1);
@@ -271,7 +264,7 @@ describe('tercept analytics adapter', function () {
   describe('BID_RESPONSE', function () {
     it('updates bid to renderStatus 2 with response fields', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(2);
       expect(bids[0].cpm).to.equal(0.5);
@@ -289,7 +282,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
       events.emit(EVENTS.BID_TIMEOUT, [{ auctionId: AUCTION_ID, bidId: BID_ID, adUnitCode: AD_UNIT_CODE }]);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(3);
     });
@@ -303,7 +296,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
       events.emit(EVENTS.NO_BID, { auctionId: AUCTION_ID, bidId: BID_ID, adUnitCode: AD_UNIT_CODE, bidder: 'appnexus' });
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(5);
     });
@@ -312,24 +305,58 @@ describe('tercept analytics adapter', function () {
   // ─── BID_WON ──────────────────────────────────────────────────────────────
 
   describe('BID_WON', function () {
-    it('updates bid to renderStatus 4 with win fields when fired before timer', function () {
+    it('sends an immediate win beacon before the batch timer fires', function () {
       emitFullAuction();
       events.emit(EVENTS.BID_WON, bidWon);
-      clock.tick(5000);
-      const { bids } = JSON.parse(server.requests[0].requestBody);
+      // beacon sent synchronously — no clock tick needed
+      expect(server.requests.length).to.equal(1);
+      const payload = JSON.parse(server.requests[0].requestBody);
+      expect(payload).to.have.property('bidWon');
+    });
+
+    it('immediate win beacon contains renderStatus 4 and win fields', function () {
+      emitFullAuction();
+      events.emit(EVENTS.BID_WON, bidWon);
+      const { bidWon: bw } = JSON.parse(server.requests[0].requestBody);
+      expect(bw.renderStatus).to.equal(4);
+      expect(bw.renderedSize).to.equal('300x250');
+      expect(bw.bidId).to.equal(BID_ID);
+      expect(bw.auctionId).to.equal(AUCTION_ID);
+      expect(bw.cpm).to.equal(0.5);
+      expect(bw.host).to.be.a('string');
+      expect(bw.path).to.be.a('string');
+    });
+
+    it('immediate win beacon maps adserverAdSlot and pbAdSlot', function () {
+      emitFullAuction();
+      events.emit(EVENTS.BID_WON, bidWon);
+      const { bidWon: bw } = JSON.parse(server.requests[0].requestBody);
+      expect(bw.adserverAdSlot).to.equal('/1234567/homepage-banner');
+      expect(bw.pbAdSlot).to.equal('homepage-banner-pbadslot');
+    });
+
+    it('batch payload also carries the bid at renderStatus 4', function () {
+      emitFullAuction();
+      events.emit(EVENTS.BID_WON, bidWon);
+      clock.tick(0);
+      // requests[0] = win beacon, requests[1] = batch
+      const { bids } = JSON.parse(server.requests[1].requestBody);
       expect(bids[0].renderStatus).to.equal(4);
       expect(bids[0].renderedSize).to.equal('300x250');
       expect(bids[0].host).to.be.a('string');
-      expect(bids[0].path).to.be.a('string');
+      expect(bids[0].adserverAdSlot).to.equal('/1234567/homepage-banner');
     });
 
-    it('maps adserverAdSlot and pbAdSlot from adUnitMap', function () {
+    it('sends win beacon even after the batch timer has already flushed the auction', function () {
       emitFullAuction();
-      events.emit(EVENTS.BID_WON, bidWon);
-      clock.tick(5000);
-      const { bids } = JSON.parse(server.requests[0].requestBody);
-      expect(bids[0].adserverAdSlot).to.equal('/1234567/homepage-banner');
-      expect(bids[0].pbAdSlot).to.equal('homepage-banner-pbadslot');
+      clock.tick(0); // batch fires, auction deleted from pendingAuctions
+      expect(server.requests.length).to.equal(1);
+
+      events.emit(EVENTS.BID_WON, bidWon); // fires after batch timer
+      expect(server.requests.length).to.equal(2);
+      const { bidWon: bw } = JSON.parse(server.requests[1].requestBody);
+      expect(bw.renderStatus).to.equal(4);
+      expect(bw.bidId).to.equal(BID_ID);
     });
   });
 
@@ -341,7 +368,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AD_RENDER_SUCCEEDED, {
         bid: { requestId: BID_ID, auctionId: AUCTION_ID, adUnitCode: AD_UNIT_CODE, size: '300x250' }
       });
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(7);
       expect(bids[0].renderTimestamp).to.be.a('number');
@@ -355,7 +382,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AD_RENDER_SUCCEEDED, {
         bid: { requestId: BID_ID, auctionId: AUCTION_ID, adUnitCode: AD_UNIT_CODE, size: '300x250' }
       });
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].adserverAdSlot).to.equal('/1234567/homepage-banner');
       expect(bids[0].pbAdSlot).to.equal('homepage-banner-pbadslot');
@@ -372,7 +399,7 @@ describe('tercept analytics adapter', function () {
         reason: 'exception',
         message: 'Cannot read property of undefined'
       });
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(8);
       expect(bids[0].reason).to.equal('exception');
@@ -396,7 +423,7 @@ describe('tercept analytics adapter', function () {
         error: { message: 'Network error' }
       });
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(6);
       expect(bids[0].status).to.equal('bidError');
@@ -415,7 +442,7 @@ describe('tercept analytics adapter', function () {
         error: 'timeout'
       });
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].error).to.equal('timeout');
     });
@@ -424,7 +451,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.BIDDER_ERROR, { bidderRequest: null, error: 'err' });
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       expect(server.requests.length).to.equal(1);
     });
   });
@@ -434,7 +461,7 @@ describe('tercept analytics adapter', function () {
   describe('is_pl flag', function () {
     it('sets is_pl true only on the first bid of the first auction', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].is_pl).to.equal(true);
     });
@@ -449,7 +476,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
       events.emit(EVENTS.BID_REQUESTED, bidRequested2);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].is_pl).to.equal(true);
       expect(bids[1].is_pl).to.equal(false);
@@ -457,10 +484,10 @@ describe('tercept analytics adapter', function () {
 
     it('sets is_pl false on all bids of subsequent auctions', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
 
       emitFullAuction('auction-2');
-      clock.tick(5000);
+      clock.tick(0);
 
       const p2 = JSON.parse(server.requests[1].requestBody);
       p2.bids.forEach(bid => expect(bid.is_pl).to.equal(false));
@@ -488,7 +515,7 @@ describe('tercept analytics adapter', function () {
       });
       events.emit(EVENTS.AUCTION_END, { auctionId: id1 });
       events.emit(EVENTS.AUCTION_END, { auctionId: id2 });
-      clock.tick(5000);
+      clock.tick(0);
 
       expect(server.requests.length).to.equal(2);
       const p1 = JSON.parse(server.requests[0].requestBody);
@@ -516,12 +543,14 @@ describe('tercept analytics adapter', function () {
         bids: [{ ...bidRequested.bids[0], auctionId: id2, bidId: 'bid-y' }]
       });
       events.emit(EVENTS.BID_WON, { ...bidWon, auctionId: id1, requestId: 'bid-x' });
+      // requests[0] = immediate win beacon for id1
       events.emit(EVENTS.AUCTION_END, { auctionId: id1 });
       events.emit(EVENTS.AUCTION_END, { auctionId: id2 });
-      clock.tick(5000);
+      clock.tick(0);
+      // requests[1] = batch for id1, requests[2] = batch for id2
 
-      const p1 = JSON.parse(server.requests[0].requestBody);
-      const p2 = JSON.parse(server.requests[1].requestBody);
+      const p1 = JSON.parse(server.requests[1].requestBody);
+      const p2 = JSON.parse(server.requests[2].requestBody);
       expect(p1.bids[0].renderStatus).to.equal(4); // won
       expect(p2.bids[0].renderStatus).to.equal(1); // only requested
     });
@@ -560,7 +589,7 @@ describe('tercept analytics adapter', function () {
       Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true });
       document.dispatchEvent(new Event('visibilitychange'));
 
-      clock.tick(5000);
+      clock.tick(0);
       expect(server.requests.length).to.equal(0);
     });
   });
@@ -572,7 +601,7 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
       terceptAnalyticsAdapter.disableAnalytics();
-      clock.tick(5000);
+      clock.tick(0);
       expect(server.requests.length).to.equal(0);
     });
 
@@ -583,14 +612,14 @@ describe('tercept analytics adapter', function () {
 
       adapterManager.enableAnalytics({ provider: 'tercept', options: initOptions });
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       // only one request — from the fresh enable, not from before disable
       expect(server.requests.length).to.equal(1);
     });
 
     it('resets firstSent so re-enabled adapter marks first auction as page load', function () {
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const p1 = JSON.parse(server.requests[0].requestBody);
       expect(p1.bids[0].is_pl).to.equal(true);
 
@@ -598,7 +627,7 @@ describe('tercept analytics adapter', function () {
       adapterManager.enableAnalytics({ provider: 'tercept', options: initOptions });
 
       emitFullAuction();
-      clock.tick(5000);
+      clock.tick(0);
       const p2 = JSON.parse(server.requests[1].requestBody);
       expect(p2.bids[0].is_pl).to.equal(true);
     });
@@ -620,7 +649,7 @@ describe('tercept analytics adapter', function () {
         bids: [{ ...bidRequested.bids[0], auctionId: 'no-ortb2' }]
       });
       events.emit(EVENTS.AUCTION_END, { auctionId: 'no-ortb2' });
-      clock.tick(5000);
+      clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].adserverAdSlot).to.be.undefined;
       expect(bids[0].pbAdSlot).to.be.undefined;
@@ -636,14 +665,14 @@ describe('tercept analytics adapter', function () {
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: id2, adUnits: [unit2] });
       events.emit(EVENTS.BID_WON, { ...bidWon, auctionId: id1, requestId: 'r1' });
       events.emit(EVENTS.BID_WON, { ...bidWon, auctionId: id2, requestId: 'r2' });
+      // requests[0],[1] = immediate win beacons for id1, id2
       events.emit(EVENTS.AUCTION_END, { auctionId: id1 });
       events.emit(EVENTS.AUCTION_END, { auctionId: id2 });
-      clock.tick(5000);
+      clock.tick(0);
+      // requests[2],[3] = batch payloads for id1, id2
 
-      // BID_WON updates are stored on pending bids; but since no BID_REQUESTED was emitted
-      // there are no bids to update — this test confirms slot lookup is isolated per auctionId
-      const p1 = JSON.parse(server.requests[0].requestBody);
-      const p2 = JSON.parse(server.requests[1].requestBody);
+      const p1 = JSON.parse(server.requests[2].requestBody);
+      const p2 = JSON.parse(server.requests[3].requestBody);
       expect(p1.auctionInit.auctionId).to.equal(id1);
       expect(p2.auctionInit.auctionId).to.equal(id2);
     });
@@ -668,7 +697,7 @@ describe('tercept analytics adapter', function () {
     it('still flushes other auctions when one auction has unknown events applied', function () {
       emitFullAuction();
       events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, auctionId: 'ghost-auction' });
-      clock.tick(5000);
+      clock.tick(0);
       expect(server.requests.length).to.equal(1);
     });
   });

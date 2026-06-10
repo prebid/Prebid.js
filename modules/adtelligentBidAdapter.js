@@ -25,12 +25,7 @@ const HOST_GETTERS = {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
     }
   }()),
-  streamkey: () => 'ghb.hb.streamkey.net',
-  janet: () => 'ghb.bidder.jmgads.com',
-  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
-  '9dotsmedia': () => 'ghb.platform.audiodots.com',
   indicue: () => 'ghb.console.indicue.com',
-  stellormedia: () => 'ghb.ads.stellormedia.com'
 }
 const getUri = function (bidderCode) {
   const bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -47,12 +42,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: [
-    'streamkey',
-    'janet',
-    { code: 'ocm', gvlid: 1148 },
-    '9dotsmedia',
     'indicue',
-    'stellormedia'
   ],
   supportedMediaTypes,
   isBidRequestValid,
