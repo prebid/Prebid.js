@@ -243,9 +243,9 @@ describe('riseAdapter', function () {
     it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].sizes).to.be.an('array');
-      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes);
       expect(request.data.bids[1].sizes).to.be.an('array');
-      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes);
       expect(request.data.bids[2].sizes).to.be.an('array');
       expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes)
     });
