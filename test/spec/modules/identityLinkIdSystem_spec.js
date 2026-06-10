@@ -207,7 +207,7 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(callBackSpy.calledOnce).to.be.true;
-  })
+  });
 
   it('should replace invalid characters if initial atob fails', function () {
     setTestEnvelopeCookie();
@@ -219,7 +219,7 @@ describe('IdentityLinkId tests', function () {
     stubAtob.restore();
     expect(stubAtob.calledTwice).to.be.true;
     expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
-  })
+  });
 
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
     const envelopeValueFromStorage = getEnvelopeFromStorage();
@@ -234,7 +234,7 @@ describe('IdentityLinkId tests', function () {
     );
     expect(envelopeValueFromStorage).to.be.a('undefined');
     expect(callBackSpy.calledOnce).to.be.true;
-  })
+  });
 
   it('if ats is present on a page, and envelope is generated and stored in storage, call a callback', function () {
     setTestEnvelopeCookie();
@@ -242,15 +242,15 @@ describe('IdentityLinkId tests', function () {
     window.ats = {
       retrieveEnvelope: function() {
       }
-    }
+    };
     // mock ats.retrieveEnvelope to return envelope
-    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage })
+    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage; });
     const callBackSpy = sinon.spy();
     const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(envelopeValueFromStorage).to.be.eq(testEnvelopeValue);
-  })
+  });
 
   describe('eid', () => {
     before(() => {
@@ -267,5 +267,5 @@ describe('IdentityLinkId tests', function () {
         uids: [{ id: 'some-random-id-value', atype: 3 }]
       });
     });
-  })
+  });
 });

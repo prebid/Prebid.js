@@ -505,7 +505,7 @@ describe('unicornBidAdapterTest', () => {
       delete data['id'];
       data['imp'].forEach(imp => {
         delete imp['id'];
-      })
+      });
       delete data['user']['id'];
       return data;
     };
@@ -535,7 +535,7 @@ describe('unicornBidAdapterTest', () => {
         id5id: {
           uid: 'id5_XXXXX'
         }
-      }
+      };
       const req = spec.buildRequests(_validBidRequests, bidderRequest);
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest));
@@ -548,9 +548,9 @@ describe('unicornBidAdapterTest', () => {
             }
           ]
         }
-      ]
+      ];
       assert.deepStrictEqual(reqData, openRTBRequestData);
-    })
+    });
   });
 
   describe('interpretResponse', () => {

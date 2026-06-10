@@ -92,7 +92,7 @@ function makeCallback(config = {}, consentData, storedId) {
     } else if (config.params.e) {
       logError('params.e must be a hex string');
     }
-  }
+  };
 }
 
 function getlocalValue() {

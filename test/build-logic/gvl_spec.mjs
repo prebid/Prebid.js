@@ -25,10 +25,10 @@ describe('gvl build time checks', () => {
           vendors: {
             "123": vendor
           }
-        }
+        };
         expect(await isValidGvlId(123, getGvl)).to.be.false;
-      })
-    })
+      });
+    });
   });
 
   describe('getPurposes', () => {
@@ -45,10 +45,10 @@ describe('gvl build time checks', () => {
             ...purposes
           }
         }
-      }
+      };
       expect(await getPurposes(123, getGvl)).to.eql(purposes);
-    })
-  })
+    });
+  });
 
   describe('validatePurposeDeclarations', () => {
     Object.entries({
@@ -65,7 +65,7 @@ describe('gvl build time checks', () => {
     }).forEach(([t, purposes]) => {
       it(`should fail on ${t}`, () => {
         expect(validatePurposeDeclarations(purposes)).to.be.a('string');
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

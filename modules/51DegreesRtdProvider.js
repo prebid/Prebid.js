@@ -104,7 +104,7 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   }
 
   return { resourceKey, onPremiseJSUrl };
-}
+};
 
 /**
  * Gets 51Degrees JS URL
@@ -147,7 +147,7 @@ export const get51DegreesJSURL = (pathData, win) => {
   const _qsString = _qs ? `${queryPrefix}${_qs}` : '';
 
   return `${baseURL}${_qsString}`;
-}
+};
 
 /**
  * Retrieves high entropy values from `navigator.userAgentData` if available
@@ -209,7 +209,7 @@ export const is51DegreesMetaPresent = () => {
       ? false
       : meta.content.includes('cloud.51degrees')
   );
-}
+};
 
 /**
  * Sets the value of a key in the ORTB2 object if the value is not empty
@@ -226,7 +226,7 @@ export const deepSetNotEmptyValue = (obj, key, value) => {
   if (value) {
     deepSetValue(obj, key, value);
   }
-}
+};
 
 /**
  * Converts all 51Degrees data to ORTB2 format
@@ -316,7 +316,7 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
   }
 
   return { device: ortb2Device };
-}
+};
 
 /**
  * Converts 51Degrees IP data to ORTB2 format. Maps device.ip, device.ipv6,
@@ -387,7 +387,7 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   }
 
   return ortb2;
-}
+};
 
 /**
  * Converts 51Degrees fodid (51DiD) data to an ORTB2 user.eids entry.
@@ -431,7 +431,7 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
   }
 
   return { user: { eids: [entry] } };
-}
+};
 
 // PMP localStorage contract, duplicated from pmp/src/storage.ts of the
 // 51Degrees/cloud repo. If PMP bumps SCHEMA_VERSION the shape check fails
@@ -469,7 +469,7 @@ export const resolveIdUsage = (moduleConfig) => {
     // Storage unavailable or JSON malformed; fall through.
   }
   return undefined;
-}
+};
 
 /**
  * Reads the raw TCF consent string from Prebid user consent.
@@ -480,7 +480,7 @@ export const resolveIdUsage = (moduleConfig) => {
 export const resolveTcString = (userConsent) => {
   const tc = deepAccess(userConsent, 'gdpr.consentString');
   return (typeof tc === 'string' && tc.length > 0) ? tc : undefined;
-}
+};
 
 /**
  * Reads the raw GPP string from Prebid user consent.
@@ -491,7 +491,7 @@ export const resolveTcString = (userConsent) => {
 export const resolveGpp = (userConsent) => {
   const gpp = deepAccess(userConsent, 'gpp.gppString');
   return (typeof gpp === 'string' && gpp.length > 0) ? gpp : undefined;
-}
+};
 
 /**
  * @param {Object} reqBidsConfigObj Bid request configuration object
@@ -553,7 +553,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     logError(error);
     callback();
   }
-}
+};
 
 /**
  * Init
@@ -563,13 +563,13 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
  */
 const init = (config, userConsent) => {
   return true;
-}
+};
 
 // 51Degrees RTD submodule object to be registered
 export const fiftyOneDegreesSubmodule = {
   name: MODULE_NAME,
   init,
   getBidRequestData,
-}
+};
 
 submodule('realTimeData', fiftyOneDegreesSubmodule);

@@ -12,7 +12,7 @@ export type PubProvidedIdSystemParams = {
    * Results are concatenated with `eids`.
    */
   eidsFunction?: () => EID[];
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -28,4 +28,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

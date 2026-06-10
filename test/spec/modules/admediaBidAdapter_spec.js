@@ -119,7 +119,7 @@ describe('admediaBidAdapter', function () {
             }
           }
         ]
-      }
+      };
       let result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result).to.be.an('array').that.is.not.empty;
       expect(Object.keys(result[0])).to.have.members(

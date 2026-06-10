@@ -142,7 +142,7 @@ export type PurposeDeclarations = {
    * Purpose IDs where the legal basis is flexible - can be performed either using consent or legitimate interest.   * Each purpose ID listed here must also be present one of `purposes` or `legIntPurposes`.
    */
   flexiblePurposes?: number[];
-}
+};
 
 declare module '../src/config' {
   interface Config {
@@ -230,13 +230,13 @@ export const DEFAULT_PURPOSE_DECLARATION: PurposeDeclarations = {
   legIntPurposes: [],
   flexiblePurposes: [2],
   specialFeatures: [1]
-}
+};
 export const NO_PURPOSE_DECLARATION: PurposeDeclarations = {
   purposes: [],
   legIntPurposes: [],
   flexiblePurposes: [],
   specialFeatures: []
-}
+};
 
 let gvlLegalBasisMapping = {};
 let defaultPurposeDeclaration = NO_PURPOSE_DECLARATION;
@@ -252,8 +252,8 @@ config.getConfig('gvlLegalBasisMapping', (cfg) => {
       value = NO_PURPOSE_DECLARATION;
     }
     gvlLegalBasisMapping[key] = value;
-  })
-})
+  });
+});
 
 export function getPurposeDeclarations(gvlId) {
   if (gvlId == null) return defaultPurposeDeclaration;
@@ -272,7 +272,7 @@ export function getAcceptableFlags(consentData: TCFConsentData, type: 'purpose' 
   let acceptConsent, acceptLI;
   if (gvlid === VENDORLESS_GVLID) {
     acceptConsent = true;
-    acceptLI = type === 'feature' ? false : PUBLISHER_LI_PURPOSES.includes(purpose)
+    acceptLI = type === 'feature' ? false : PUBLISHER_LI_PURPOSES.includes(purpose);
   } else {
     const { purposes, legIntPurposes, flexiblePurposes, specialFeatures } = purposeDeclarations(gvlid);
     acceptLI = type === 'feature' ? false : legIntPurposes.includes(purpose) || flexiblePurposes.includes(purpose);
@@ -309,7 +309,7 @@ function getConsent(consentData, type, purposeNo, gvlId) {
   return {
     purpose,
     vendor: getConsentOrLI(consentData, 'vendor', gvlId, acceptConsent, acceptLI)
-  }
+  };
 }
 
 /**
@@ -462,7 +462,7 @@ type TCFControlRule = {
    * If true, allows bidders with unknown GVL ID to be included in Prebid Server auctions.
    */
   deferS2Sbidders?: boolean
-}
+};
 
 declare module '../src/consentHandler' {
   interface ConsentManagementConfig {
@@ -501,7 +501,7 @@ export function setEnforcementConfig(config) {
   }
   rules = Object.fromEntries((rules as any || []).map(r => [r.purpose, r])) as any;
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
-  defaultPurposeDeclaration = Object.assign({}, NO_PURPOSE_DECLARATION, config.gdpr?.defaultLegalBasis ?? DEFAULT_PURPOSE_DECLARATION)
+  defaultPurposeDeclaration = Object.assign({}, NO_PURPOSE_DECLARATION, config.gdpr?.defaultLegalBasis ?? DEFAULT_PURPOSE_DECLARATION);
 
   Object.entries(CONFIGURABLE_RULES).forEach(([name, opts]) => {
     ACTIVE_RULES[opts.type][opts.id] = rules[name] ?? opts.default;

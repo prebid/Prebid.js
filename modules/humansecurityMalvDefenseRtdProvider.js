@@ -83,7 +83,7 @@ export function createRtdSubmodule(moduleName) {
         bidId: winnerBidResponse.requestId,
       });
     });
-  }
+  };
 
   // ============================ MODULE LOGIC ===============================
 

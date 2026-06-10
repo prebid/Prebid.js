@@ -25,7 +25,7 @@ const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
 // WURFL_JS_ENDPOINT_PATH is the path for the WURFL.js endpoint used to load WURFL data
 const WURFL_JS_ENDPOINT_PATH = '/wurfl.js';
 // STATS_HOST is the host for the WURFL stats endpoint
-const STATS_HOST = 'https://stats.prebid.wurflcloud.com'
+const STATS_HOST = 'https://stats.prebid.wurflcloud.com';
 // STATS_ENDPOINT_PATH is the path for the stats endpoint used to send analytics data
 const STATS_ENDPOINT_PATH = '/v2/prebid/stats';
 
@@ -1087,7 +1087,7 @@ const ABTestManager = {
     if (!this.isEnabled()) {
       return false;
     }
-    return (this._variant === AB_TEST.CONTROL_GROUP)
+    return (this._variant === AB_TEST.CONTROL_GROUP);
   },
 
   /**
@@ -1135,7 +1135,7 @@ const init = (config, userConsent) => {
   ABTestManager.init(config?.params);
 
   return true;
-}
+};
 
 /**
  * getBidRequestData enriches the OpenRTB 2.0 device data with WURFL data
@@ -1281,7 +1281,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
 
   WurflDebugger.moduleExecutionStop();
   callback();
-}
+};
 
 /**
  * onAuctionEndEvent is called when the auction ends
@@ -1444,7 +1444,7 @@ export const wurflSubmodule = {
   init,
   getBidRequestData,
   onAuctionEndEvent,
-}
+};
 
 // Exported for testing only
 export const __testing__ = {

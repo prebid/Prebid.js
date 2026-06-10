@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logError } from '../src/utils.js'
+import { logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';

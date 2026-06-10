@@ -41,7 +41,7 @@ const UID2_BASE_URL = UID2_PROD_URL;
 function createLogger(logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
-  }
+  };
 }
 
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
@@ -89,14 +89,14 @@ export const uid2IdSubmodule = {
       storage: config?.params?.storage ?? 'localStorage',
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
-    }
+    };
 
     if (FEATURES.UID2_CSTG) {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
         ...extractIdentityFromParams(config?.params ?? {})
-      }
+      };
     }
     _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);

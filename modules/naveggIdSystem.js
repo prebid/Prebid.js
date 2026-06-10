@@ -117,8 +117,8 @@ export const naveggIdSubmodule = {
    * @return {{id: string | undefined } | undefined}
    */
   getId(config, consentData) {
-    const resp = getIdFromAPI()
-    return { callback: resp }
+    const resp = getIdFromAPI();
+    return { callback: resp };
   },
   eids: {
     'naveggId': {

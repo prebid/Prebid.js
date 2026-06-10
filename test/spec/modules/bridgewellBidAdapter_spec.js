@@ -7,7 +7,7 @@ const userId = {
   'pubcid': '074864cb-3705-430e-9ff7-48ccf3c21b94',
   'sharedid': { 'id': '01F61MX53D786DSB2WYD38ZVM7', 'third': '01F61MX53D786DSB2WYD38ZVM7' },
   'uid2': { 'id': 'eb33b0cb-8d35-1234-b9c0-1a31d4064777' },
-}
+};
 const userIdAsEids = [{
   source: 'test.org',
   uids: [{
@@ -158,7 +158,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
 
@@ -190,7 +190,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/'
           }
         }
-      }
+      };
       const bidRequests2 = [
         {
           'bidder': 'bridgewell',
@@ -242,7 +242,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const validBidRequests = request.validBidRequests;
@@ -257,7 +257,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
       const bidRequestsWithOrtb2 = [
         {
           'bidder': 'bridgewell',
@@ -329,7 +329,7 @@ describe('bridgewellBidAdapter', function () {
             referer: 'https://www.bridgewell.com/',
           }
         }
-      }
+      };
       const bidRequestsWithFloor = [
         {
           'bidder': 'bridgewell',
@@ -375,7 +375,7 @@ describe('bridgewellBidAdapter', function () {
             name: 'test-site'
           }
         }
-      }
+      };
       const bidRequestsWithMetrics = [
         {
           'bidder': 'bridgewell',

@@ -47,9 +47,9 @@ export function getSignalsIntersection(signals) {
       allValues.reduce((commonElements, subArray) => {
         return commonElements.filter(element => subArray.includes(element));
       })
-    ) : []
+    ) : [];
     result[taxonomy] = { values: result[taxonomy] };
-  })
+  });
   return result;
 }
 
@@ -101,7 +101,7 @@ const sanitizeSlotPath = (path) => {
   }
 
   return path;
-}
+};
 
 const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
   // confirm that GPT is set up
@@ -122,7 +122,7 @@ const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
 
   // else the adunit code must be div id. append it.
   return `${adServerAdSlot}#${adUnit.code}`;
-}
+};
 
 export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   const adUnitPaths = appendGptSlots(adUnits);
@@ -145,7 +145,7 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
     } else if (useDefaultPreAuction) {
       result = defaultPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
     } else {
-      logWarn('Neither customPreAuction, defaultPreAuction and gpid were specified')
+      logWarn('Neither customPreAuction, defaultPreAuction and gpid were specified');
     }
     if (result) {
       context.gpid = result;
@@ -182,7 +182,7 @@ type GPTPreAuctionConfig = {
    * Removes extra network IDs when Multiple Customer Management is active. Default is false.
    */
   mcmEnabled?: boolean;
-}
+};
 
 declare module '../src/config' {
   interface Config {
@@ -200,7 +200,7 @@ const handleSetGptConfig = moduleConfig => {
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
       getHook('makeBidRequests').before(makeBidRequestsHook);
-      getHook('targetingDone').after(setPpsConfigFromTargetingSet)
+      getHook('targetingDone').after(setPpsConfigFromTargetingSet);
       hooksAdded = true;
     }
   } else {

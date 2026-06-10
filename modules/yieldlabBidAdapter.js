@@ -205,7 +205,7 @@ export const spec = {
           },
         };
 
-        const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid)
+        const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid);
         if (dsa !== undefined) {
           bidResponse.meta = { ...bidResponse.meta, dsa: dsa };
         }

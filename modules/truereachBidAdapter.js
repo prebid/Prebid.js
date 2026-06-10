@@ -81,7 +81,7 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
 
     var gdprParams = '';
     if (gdprConsent) {
