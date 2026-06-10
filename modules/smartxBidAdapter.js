@@ -446,7 +446,7 @@ function createOutstreamConfig(bid) {
 
   try {
     // eslint-disable-next-line
-    outstreamplayer.connect(divID).setup(playerConfig, playerListener)
+    outstreamplayer.connect(divID).setup(playerConfig, playerListener);
   } catch (e) {
     logError('[SMARTX][renderer] Error caught: ' + e);
   }
