@@ -19,6 +19,40 @@ Ferio bid adapter supports banner, video, and native ads.
 | `adUnitId`    | required | String | Ad unit ID on the Ferio platform.   |
 | `tenantId`    | required | String | Tenant ID on the Ferio platform.    |
 
+# Aliases
+
+| Alias       | Company   | Maintainer         | Endpoint domain |
+| ----------- | --------- | ------------------ | --------------- |
+| `featuretv` | FeatureTV | prebid@ferio.cloud | featuretv.bid   |
+
+Client-side aliases take the same bid params as `ferio` and request bids from
+their own endpoint domain. The `featuretv` alias is not configured as a Prebid
+Server/S2S alias. User syncs for aliases only run when the publisher enables
+`userSync.aliasSyncEnabled` via `pbjs.setConfig`.
+
+```javascript
+var adUnits = [
+  {
+    code: "banner-div",
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      },
+    },
+    bids: [
+      {
+        bidder: "featuretv",
+        params: {
+          tenantId: "featuretv-pbjs",
+          publisherId: "pub22yCUTGq6An3d",
+          adUnitId: "59a8d685-ed01-4b10-9f50-fe9ad0c9c0c1",
+        },
+      },
+    ],
+  },
+];
+```
+
 # Test Parameters
 
 ```javascript
@@ -34,7 +68,7 @@ var adUnits = [
       {
         bidder: "ferio",
         params: {
-          tenantId: "anyclip-pbjs",
+          tenantId: "client-pbjs",
           publisherId: "pub22yCUTGq6An3d",
           adUnitId: "59a8d685-ed01-4b10-9f50-fe9ad0c9c0c1",
         },
@@ -55,7 +89,7 @@ var adUnits = [
       {
         bidder: "ferio",
         params: {
-          tenantId: "anyclip-pbjs",
+          tenantId: "client-pbjs",
           publisherId: "pub22yCUTGq6An3d",
           adUnitId: "59a8d685-ed01-4b10-9f50-fe9ad0c9c0c1",
         },
@@ -93,7 +127,7 @@ var adUnits = [
       {
         bidder: "ferio",
         params: {
-          tenantId: "anyclip-pbjs",
+          tenantId: "client-pbjs",
           publisherId: "pub22yCUTGq6An3d",
           adUnitId: "59a8d685-ed01-4b10-9f50-fe9ad0c9c0c1",
         },
