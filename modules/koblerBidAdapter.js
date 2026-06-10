@@ -154,7 +154,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   let purpose2Given;
   let purpose3Given;
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.vendorData) {
-    const vendorData = bidderRequest.gdprConsent.vendorData
+    const vendorData = bidderRequest.gdprConsent.vendorData;
     const purposeData = vendorData.purpose;
     const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
     const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;

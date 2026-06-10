@@ -141,7 +141,7 @@ export const dereferenceWithoutRenderer = function(args) {
     return stringified;
   }
   if (args.bidsReceived) {
-    const tmp = {}
+    const tmp = {};
     for (const key in args.bidsReceived) {
       if (args.bidsReceived[key].renderer) {
         tmp[key] = args.bidsReceived[key].renderer;

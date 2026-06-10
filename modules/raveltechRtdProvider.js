@@ -81,7 +81,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
           request.url = RAVEL_ENDPOINT;
           request.method = 'POST';
           addRavelDataToRequest(request, adapterName);
-        })
+        });
       }
 
       return [...requests ?? [], ...ravelRequests ?? []];

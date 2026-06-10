@@ -474,7 +474,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
     res.dealChannel = bid.ext?.deal_channel ? dealChannel[bid.ext.deal_channel] || null : 'PMP';
   }
   if (seatbid.ext?.buyid) {
-    res.adserverTargeting = { 'hb_buyid_pubmatic': seatbid.ext.buyid }
+    res.adserverTargeting = { 'hb_buyid_pubmatic': seatbid.ext.buyid };
   }
   if (bid.ext?.marketplace) {
     res.bidderCode = bid.ext.marketplace;

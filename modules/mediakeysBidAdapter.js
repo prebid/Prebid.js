@@ -646,7 +646,7 @@ export const spec = {
       // TODO: reachedTop is probably not the right check here - it may be false when page is available or vice-versa
       if (bidderRequest.refererInfo.reachedTop) {
         deepSetValue(payload, 'site.page', bidderRequest.refererInfo.page);
-        deepSetValue(payload, 'site.domain', bidderRequest.refererInfo.domain)
+        deepSetValue(payload, 'site.domain', bidderRequest.refererInfo.domain);
         if (bidderRequest.refererInfo.ref) {
           deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref);
         }
@@ -669,7 +669,7 @@ export const spec = {
       options: {
         withCredentials: false
       }
-    }
+    };
 
     return request;
   },

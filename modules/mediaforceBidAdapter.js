@@ -102,7 +102,7 @@ export const spec = {
             validImp = true;
             break;
         }
-      })
+      });
 
       let request = requestsMap[bid.params.publisher_id];
       if (!request) {

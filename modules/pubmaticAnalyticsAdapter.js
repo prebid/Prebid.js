@@ -520,7 +520,7 @@ const eventHandlers = {
       }
     });
   }
-}
+};
 
 /// /////////// ADAPTER DEFINITION //////////////
 

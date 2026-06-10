@@ -127,7 +127,7 @@ const converter = ortbConverter({
     let mt = prebidBid.mediaType || reqMediaType || inferMediaTypeFromAdm(bid?.adm);
 
     if (!mt) {
-      mt = reqMediaType
+      mt = reqMediaType;
     }
 
     prebidBid.mediaType = mt;

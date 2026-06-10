@@ -91,10 +91,10 @@ export const spec = {
         }
       }
 
-      return prBid
+      return prBid;
     });
 
-    return data
+    return data;
   }
 }
 

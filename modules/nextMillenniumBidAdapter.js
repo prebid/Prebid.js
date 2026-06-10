@@ -149,7 +149,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const bidIds = new Map()
+    const bidIds = new Map();
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();

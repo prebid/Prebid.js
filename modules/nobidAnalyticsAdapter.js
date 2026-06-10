@@ -174,7 +174,7 @@ nobidAnalytics = {
   },
   ANALYTICS_DATA_NAME: 'analytics.nobid.io',
   ANALYTICS_OPT_NAME: 'analytics.nobid.io.optData'
-}
+};
 adapterManager.registerAnalyticsAdapter({
   adapter: nobidAnalytics,
   code: 'nobid',

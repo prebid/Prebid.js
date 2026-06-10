@@ -183,6 +183,6 @@ export const pubmaticSubmodule = {
 
 export const registerSubModule = () => {
   submodule(CONSTANTS.REAL_TIME_MODULE, pubmaticSubmodule);
-}
+};
 
 registerSubModule();

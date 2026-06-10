@@ -39,7 +39,7 @@ export const converter = ortbConverter({
     const hasRtdEnabled = hasRtd();
 
     if (!hasRtdEnabled) {
-      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.')
+      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.');
     }
 
     imp.ext.luponmedia = imp.ext.luponmedia || {};

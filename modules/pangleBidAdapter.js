@@ -22,7 +22,7 @@ const MEDIA_TYPES = {
   Video: 2
 };
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE });
 
 export function isValidUuid(uuid) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(

@@ -81,7 +81,7 @@ export const spec = {
 
       if (testBidsRequested) {
         deepSetValue(data, 'test', 1);
-        logWarn(`${LOG_PREFIX} test bids are enabled as rediads-test-bids is present in page URL hash.`)
+        logWarn(`${LOG_PREFIX} test bids are enabled as rediads-test-bids is present in page URL hash.`);
       }
 
       // handle impression/bid level requirements
